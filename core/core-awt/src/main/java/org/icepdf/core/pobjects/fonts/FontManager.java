@@ -75,11 +75,13 @@ public class FontManager {
      */
     public static final String DEFAULT_FONT_FILE_ALLOW_LIST_PATTERN = "";
 
-    // stores all font data
-    private static List<Object[]> fontList;
+    // stores all font data.  volatile for safe publication of the list reference; structural
+    // reads/iteration go through snapshotFontList() so a lookup never iterates a list a writer
+    // (readSystemFonts/setFontProperties) is concurrently mutating.
+    private static volatile List<Object[]> fontList;
 
     // stores fonts loaded from jar, these won't be cached
-    private static List<Object[]> fontJarList;
+    private static volatile List<Object[]> fontJarList;
 
     // flags for detecting font decorations
     private static final int PLAIN = 0xF0000001;
@@ -262,8 +264,8 @@ public class FontManager {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
     }
 
-    // Singleton instance of class
-    private static FontManager fontManager;
+    // Singleton instance of class.  volatile so double-checked locking in getInstance() publishes safely.
+    private static volatile FontManager fontManager;
 
     /**
      * VisibilityForTesting
@@ -278,11 +280,20 @@ public class FontManager {
      * @return instance of the FontManager.
      */
     public static FontManager getInstance() {
-        // make sure we have initialized the manager
-        if (fontManager == null) {
-            fontManager = new FontManager();
+        // double-checked locking; fontManager is volatile so the constructed instance is
+        // published safely and two threads can't each create their own manager (each build
+        // was compiling the allow-list regex needlessly, and worse, one could win the field).
+        FontManager local = fontManager;
+        if (local == null) {
+            synchronized (FontManager.class) {
+                local = fontManager;
+                if (local == null) {
+                    local = new FontManager();
+                    fontManager = local;
+                }
+            }
         }
-        return fontManager;
+        return local;
     }
 
     /**
@@ -292,11 +303,35 @@ public class FontManager {
      *
      * @return instance of the singleton fontManager.
      */
-    public FontManager initialize() {
+    public synchronized FontManager initialize() {
+        // synchronized so the check-then-read is atomic with the readSystemFonts writer;
+        // otherwise two first-render threads can both see an empty list and both scan.
         if (fontList == null || fontList.size() == 0) {
             readSystemFonts(null);
         }
         return fontManager;
+    }
+
+    /**
+     * Returns a stable snapshot of the system font list for lock-free iteration by the
+     * substitution lookups.  Taken under the FontManager monitor so it blocks until any
+     * in-progress writer (readSystemFonts/setFontProperties) has finished, then hands back
+     * a complete copy the caller can iterate without a ConcurrentModificationException or
+     * observing a half-built list.
+     *
+     * @return copy of the current font list, never null (empty when uninitialised).
+     */
+    private synchronized List<Object[]> snapshotFontList() {
+        return fontList == null ? new ArrayList<>(0) : new ArrayList<>(fontList);
+    }
+
+    /**
+     * Returns a stable snapshot of the jar font list, or null if none is registered.
+     *
+     * @return copy of the current jar font list, or null when uninitialised.
+     */
+    private synchronized List<Object[]> snapshotFontJarList() {
+        return fontJarList == null ? null : new ArrayList<>(fontJarList);
     }
 
     /**
@@ -307,7 +342,7 @@ public class FontManager {
      *
      * @return Properties object containing font data information.
      */
-    public Properties getFontProperties() {
+    public synchronized Properties getFontProperties() {
         Properties fontProperites;
         // make sure we are initialized
         if (fontList == null) {
@@ -345,7 +380,7 @@ public class FontManager {
      *                                  Properties file.  If thrown, the calling application should re-read
      *                                  the system fonts.
      */
-    public void setFontProperties(Preferences fontPreferences)
+    public synchronized void setFontProperties(Preferences fontPreferences)
             throws IllegalArgumentException {
         String errorString = "Error parsing font properties ";
         try {
@@ -386,7 +421,7 @@ public class FontManager {
      * Clears internal font list of items. Used to clean list while constructing
      * a new list.
      */
-    public void clearFontList() {
+    public synchronized void clearFontList() {
         if (fontList != null) {
             fontList.clear();
         }
@@ -548,7 +583,7 @@ public class FontManager {
      *
      * @return font names of all found fonts.
      */
-    public String[] getAvailableNames() {
+    public synchronized String[] getAvailableNames() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -567,7 +602,7 @@ public class FontManager {
      *
      * @return font family names of all found fonts.
      */
-    public String[] getAvailableFamilies() {
+    public synchronized String[] getAvailableFamilies() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -586,7 +621,7 @@ public class FontManager {
      *
      * @return font style names of all found fonts.
      */
-    public String[] getAvailableStyle() {
+    public synchronized String[] getAvailableStyle() {
         if (fontList != null) {
             String[] availableStyles = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -614,27 +649,24 @@ public class FontManager {
     }
 
     public FontFile getJapaneseInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, JAPANESE_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, JAPANESE_FONT_NAMES, fontFlags);
     }
 
     public FontFile getKoreanInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, KOREAN_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, KOREAN_FONT_NAMES, fontFlags);
     }
 
     public FontFile getChineseTraditionalInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, CHINESE_TRADITIONAL_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, CHINESE_TRADITIONAL_FONT_NAMES, fontFlags);
     }
 
     public FontFile getChineseSimplifiedInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, CHINESE_SIMPLIFIED_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, CHINESE_SIMPLIFIED_FONT_NAMES, fontFlags);
     }
 
     private FontFile getAsianInstance(List<Object[]> fontList, String name, String[] list, int flags) {
 
-        if (fontList == null) {
-            fontList = new ArrayList<>(150);
-        }
-
+        // fontList is a snapshot supplied by the caller (never null, may be empty).
         FontFile font;
         if (list != null) {
             // search for know list of fonts
@@ -681,7 +713,7 @@ public class FontManager {
      * @param fontResourcePackage package to look for the resources in.
      * @param resources           file names of font resources to load.
      */
-    public void readFontPackage(String fontResourcePackage, List<String> resources) {
+    public synchronized void readFontPackage(String fontResourcePackage, List<String> resources) {
         if (fontJarList == null) {
             fontJarList = new ArrayList<>(35);
         }
@@ -720,9 +752,11 @@ public class FontManager {
      */
     public FontFile getInstance(String name, int flags) {
 
-        if (fontList == null) {
-            fontList = new ArrayList<>();
-        }
+        // Iterate stable snapshots rather than the live static lists: the lookups below
+        // (and the slow buildFont disk reads they trigger) then run lock-free while a
+        // concurrent readSystemFonts/setFontProperties can safely rebuild the shared lists.
+        final List<Object[]> fontList = snapshotFontList();
+        final List<Object[]> fontJarList = snapshotFontJarList();
 
         FontFile font;
 
@@ -981,6 +1015,8 @@ public class FontManager {
      */
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
+        // iterate a stable snapshot, not the live static list
+        final List<Object[]> fontList = snapshotFontList();
         int decorations = guessFontStyle(fontName);
         fontName = FontUtil.normalizeString(fontName);
         FontFile font;

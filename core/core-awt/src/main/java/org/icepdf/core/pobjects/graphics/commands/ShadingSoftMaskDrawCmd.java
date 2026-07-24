@@ -244,14 +244,9 @@ public class ShadingSoftMaskDrawCmd extends AbstractDrawCmd {
         mg.setTransform(prevMaskTransform);
         // Substitute any null sentinel shading-fill shape with the fill region so
         // the gradient covers the buffer (mirrors FormDrawCmd.clampShadingFillShape).
-        for (DrawCmd cmd : maskShapes.getShapes()) {
-            if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
-                ((ShapeDrawCmd) cmd).setShape(fillClip);
-            }
-        }
-        maskShapes.setPageParent(parentPage);
-        maskShapes.paint(mg);
-        maskShapes.setPageParent(null);
+        // Passed as a call-local paint override rather than written into the shared
+        // cached command, so concurrent paints don't collide.
+        maskShapes.paint(mg, parentPage, fillClip);
         mg.dispose();
         return mask;
     }

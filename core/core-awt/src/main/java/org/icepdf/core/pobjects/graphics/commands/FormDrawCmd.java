@@ -41,6 +41,16 @@ public class FormDrawCmd extends AbstractDrawCmd {
 
     private BufferedImage xFormBuffer;
     private int x, y;
+    // A FormDrawCmd lives in a Form's cached Shapes, so a form shared across
+    // pages (a header/logo/branding form) has ONE FormDrawCmd painted by several
+    // page-render threads at once.  The buffer build below is a lazy one-shot
+    // that mutates instance fields (xFormBuffer/x/y/bufferFrame) AND shared cached
+    // soft-mask state (SoftMask.setParentResources / mask-form setShading); two
+    // threads racing it corrupt the buffer -> a soft-masked element loses its mask
+    // and paints as an opaque black box (GH-495, "Run & Gun.pdf" logo).  Build
+    // once under lock; xFormBufferBuilt is published (volatile) LAST so a reader
+    // taking the lock-free fast path never sees a half-built buffer / stale x,y.
+    private volatile boolean xFormBufferBuilt;
 
     // When a transparency group's bbox exceeds MAX_IMAGE_SIZE it is rasterised
     // into a proportionally down-scaled buffer to bound heap; these capture the
@@ -260,7 +270,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        if (optionalContentState.isVisible() && xFormBuffer == null) {
+        if (optionalContentState.isVisible() && !xFormBufferBuilt) {
+          synchronized (this) {
+           if (!xFormBufferBuilt) {
             RenderingHints renderingHints = g.getRenderingHints();
             Rectangle2D bBox = xForm.getBBox();
             x = (int) bBox.getX();
@@ -442,6 +454,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
             bufferFrame = null;
+            xFormBufferBuilt = true; // publish LAST: buffer + x,y are now final
+           }
+          }
         }
         // §10: a backdrop-composited buffer already holds the group's
         // contribution with the backdrop removed; the page blend (e.g. Multiply)
@@ -557,8 +572,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * {@code scale . translate(-x,-y) . curTransform^-1 . base}.  No raster
      * readback required.  Returns null if a backdrop can't be built.
      */
-    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h) {
-        return captureBackdrop(g, base, w, h, false);
+    private BufferedImage captureBackdrop(Graphics2D g, Page parentPage, AffineTransform base, int w, int h) {
+        return captureBackdrop(g, parentPage, base, w, h, false);
     }
 
     /**
@@ -568,7 +583,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * Used by the §10 decline gate to evaluate the true page backdrop independent
      * of the other groups in the same stack.
      */
-    private BufferedImage captureBackdrop(Graphics2D g, AffineTransform base, int w, int h, boolean skipFormGroups) {
+    private BufferedImage captureBackdrop(Graphics2D g, Page parentPage, AffineTransform base, int w, int h,
+                                          boolean skipFormGroups) {
         if (capturingBackdrop.get() || backdropShapes == null || w <= 0 || h <= 0) {
             return null;
         }
@@ -596,7 +612,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             b.concatenate(g.getTransform().createInverse());
             b.concatenate(base);
             bg.setTransform(b);
-            backdropShapes.paintBackdrop(bg, backdropIndex, skipFormGroups);
+            backdropShapes.paintBackdrop(bg, parentPage, backdropIndex, skipFormGroups);
             bg.dispose();
             return backdrop;
         } catch (Exception e) {
@@ -649,7 +665,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 ImageUtility.setPreserveCmyk(prevPreserve);
             }
         }
-        BufferedImage backdrop = captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight());
+        BufferedImage backdrop = captureBackdrop(g, parentPage, base, isolated.getWidth(), isolated.getHeight());
         if (backdrop == null) {
             return isolated;
         }
@@ -675,7 +691,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // re-engage §10 and wash out (978 recovers only partially).
         if (ca >= 0.99f && isWhiteWashingBlend(blend)) {
             BufferedImage gateBackdrop =
-                    captureBackdrop(g, base, isolated.getWidth(), isolated.getHeight(), true);
+                    captureBackdrop(g, parentPage, base, isolated.getWidth(), isolated.getHeight(), true);
             boolean blankPage = gateBackdrop == null || isBlankBackdrop(gateBackdrop);
             if (gateBackdrop != null) {
                 gateBackdrop.flush();
@@ -1064,7 +1080,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
         try {
             Shapes xFormShapes = xForm.getShapes();
             if (xFormShapes != null) {
-                xFormShapes.setPageParent(parentPage);
+                // Sentinel shading-fill override, resolved below for shading forms
+                // and passed to paint() call-locally (never written into the cache).
+                Shape nullShapeFill = null;
                 // translate the coordinate system as we'll paint the g
                 // graphic at the correctly location later.
                 if (!xForm.isShading()) {
@@ -1086,6 +1104,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     // Detect that overflow and substitute the buffer region (the
                     // area the mask actually covers), reusing the same transform
                     // the fill will run under so the gradient still lands 1:1.
+                    // Resolve the sentinel fill shape read-only (no mutation of the
+                    // shared cached commands): track the latest cm to build fillXform,
+                    // then compute the clamped fill and hand it to paint() as a
+                    // call-local override so concurrent paints don't collide.
                     AffineTransform fillXform = AffineTransform.getTranslateInstance(-x, -y);
                     for (DrawCmd cmd : xFormShapes.getShapes()) {
                         if (cmd instanceof TransformDrawCmd) {
@@ -1095,8 +1117,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
                             fillXform.concatenate(((TransformDrawCmd) cmd).getAffineTransform());
                         } else if (cmd instanceof ShapeDrawCmd && ((ShapeDrawCmd) cmd).getShape() == null) {
                             Rectangle2D bounds = bBox.getBounds2D();
-                            ((ShapeDrawCmd) cmd).setShape(clampShadingFillShape(bounds, fillXform,
-                                    bufferWidth, bufferHeight));
+                            nullShapeFill = clampShadingFillShape(bounds, fillXform,
+                                    bufferWidth, bufferHeight);
                         }
                     }
                     canvas.translate(-x, -y);
@@ -1106,13 +1128,14 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
                 }
                 try {
-                    xFormShapes.paint(canvas);
+                    // parent page and any sentinel fill override passed as call-local
+                    // parameters, no shared-state mutation.
+                    xFormShapes.paint(canvas, parentPage, nullShapeFill);
                 } finally {
                     if (captureCmykInk) {
                         capturedInk = ImageUtility.endCmykInkCapture();
                     }
                 }
-                xFormShapes.setPageParent(null);
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

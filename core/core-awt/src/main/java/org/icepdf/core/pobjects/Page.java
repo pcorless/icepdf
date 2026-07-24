@@ -482,8 +482,11 @@ public class Page extends Dictionary {
                 } catch (InterruptedException e) {
                     throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
+                    // Page-level init fault discards ALL content for the page;
+                    // record for the race-audit tripwire before we drop it.
+                    RenderExceptionMonitor.record("Page.init", e);
                     shapes = new Shapes();
-                    logger.log(Level.WARNING, "Error initializing Page.", e);
+                    logger.log(Level.WARNING, "Error initializing Page; all page content discarded.", e);
                 }
             }
             // empty page, nothing to do.
@@ -697,13 +700,16 @@ public class Page extends Dictionary {
             AffineTransform pageTransform = g2.getTransform();
             Shape pageClip = g2.getClip();
 
-            shapes.setPageParent(this);
+            // Pass this page through paint() as a call-local parameter rather than
+            // writing it into the shared Shapes and resetting to null afterwards:
+            // several threads can paint this same cached display list concurrently,
+            // and the reset-to-null raced (nulling the parent mid-paint of another
+            // thread dropped form content -- missing content on the page).
             if (isPageGroupBufferCandidate()) {
                 paintPageGroupBuffered(g2);
             } else {
-                shapes.paint(g2);
+                shapes.paint(g2, this);
             }
-            shapes.setPageParent(null);
 
             g2.setTransform(pageTransform);
             g2.setClip(pageClip);
@@ -805,7 +811,7 @@ public class Page extends Dictionary {
                 : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
         if (devBounds.width <= 0 || devBounds.height <= 0) {
             // nothing to buffer; fall back to the direct paint.
-            shapes.paint(g2);
+            shapes.paint(g2, this);
             return;
         }
         BufferedImage buffer = new BufferedImage(devBounds.width, devBounds.height,
@@ -834,7 +840,7 @@ public class Page extends Dictionary {
             FormDrawCmd.setRenderingIntoPageGroup(true);
             boolean prevTransparent = BlendComposite.setTransparentBackdrop(true);
             try {
-                shapes.paint(bg);
+                shapes.paint(bg, this);
             } finally {
                 BlendComposite.setTransparentBackdrop(prevTransparent);
                 FormDrawCmd.setRenderingIntoPageGroup(false);
@@ -1411,19 +1417,25 @@ public class Page extends Dictionary {
     }
 
     public float getPageRotation() {
+        // Compute in a local: this method is called from getPageTransform on every
+        // paint, and several threads can paint the same Page concurrently.  The
+        // previous code mutated the shared pageRotation field in place and, worse,
+        // non-idempotently (pageRotation = 360 - pageRotation): two concurrent
+        // calls could double-apply the 360-minus normalisation, turning a /Rotate 90
+        // page's 270 into 90 (a 180 degree difference) and flipping the whole page.
+        float rotation = 0;
         // Get the pages default orientation if available, if not defined
         // then it is zero.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
         if (tmpRotation != null) {
-            pageRotation = ((Number) tmpRotation).floatValue();
-//            System.out.println("Page Rotation  " + pageRotation);
+            rotation = ((Number) tmpRotation).floatValue();
         }
         // check parent to see if value has been set
         else {
             PageTree pageTree = getParent();
             while (pageTree != null) {
                 if (pageTree.isRotationFactor) {
-                    pageRotation = pageTree.rotationFactor;
+                    rotation = pageTree.rotationFactor;
                     break;
                 }
                 pageTree = pageTree.getParent();
@@ -1431,10 +1443,12 @@ public class Page extends Dictionary {
         }
         // PDF specifies rotation as clockwise, but Java2D does it
         //  counter-clockwise, so normalise it to Java2D
-        pageRotation = 360 - pageRotation;
-        pageRotation %= 360;
-//        System.out.println("New Page Rotation " + pageRotation);
-        return pageRotation;
+        rotation = 360 - rotation;
+        rotation %= 360;
+        // publish the normalised value (idempotent: every call computes the same
+        // result, so a concurrent write is harmless).
+        pageRotation = rotation;
+        return rotation;
     }
 
     /**
@@ -1524,26 +1538,31 @@ public class Page extends Dictionary {
         if (mediaBox != null) {
             return mediaBox;
         }
+        // Compute into a local and publish the shared mediaBox field ONCE so a
+        // concurrent caller never observes it mid-resolution (parent-walk /
+        // default fallback), which would yield an inconsistent page dimension.
+        PRectangle box = null;
         // add all of the pages media box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
-            mediaBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
-        if (mediaBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && mediaBox == null) {
-                mediaBox = pageTree.getMediaBox();
-                if (mediaBox == null) {
+            while (pageTree != null && box == null) {
+                box = (PRectangle) pageTree.getMediaBox();
+                if (box == null) {
                     pageTree = pageTree.getParent();
                 }
             }
         }
         // last resort
-        if (mediaBox == null) {
-            mediaBox = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
+        if (box == null) {
+            box = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
         }
-        return mediaBox;
+        mediaBox = box;
+        return box;
     }
 
     /**
@@ -1556,21 +1575,28 @@ public class Page extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
+        // Compute into a local and publish the shared cropBox field ONCE, fully
+        // resolved.  This method assigned cropBox to the RAW box first and then
+        // replaced it with the media-box intersection, so a concurrent caller
+        // could see the field in that intermediate (un-intersected) state and
+        // return a different-sized box -- yielding a different page dimension
+        // than a serial render (same lazy-init publication bug as getPageRotation).
+        PRectangle box = null;
         // add all the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
-            cropBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If cropbox is null check with the parent pages, as media box is inheritable
         boolean isParentCropBox = false;
-        if (cropBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && cropBox == null) {
+            while (pageTree != null && box == null) {
                 if (pageTree.getCropBox() == null) {
                     break;
                 }
-                cropBox = pageTree.getCropBox();
-                if (cropBox != null) {
+                box = (PRectangle) pageTree.getCropBox();
+                if (box != null) {
                     isParentCropBox = true;
                 }
                 pageTree = pageTree.getParent();
@@ -1578,15 +1604,16 @@ public class Page extends Dictionary {
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
         PRectangle mediaBox = (PRectangle) getMediaBox();
-        if ((cropBox == null || isParentCropBox) && mediaBox != null) {
-            cropBox = (PRectangle) mediaBox.clone();
-        } else if (cropBox != null && mediaBox != null) {
+        if ((box == null || isParentCropBox) && mediaBox != null) {
+            box = (PRectangle) mediaBox.clone();
+        } else if (box != null && mediaBox != null) {
             // PDF 1.5 spec states that the media box should be intersected with the
             // crop box to get the new box. But we only want to do this if the
             // cropBox is not the same as the mediaBox
-            cropBox = mediaBox.createCartesianIntersection(cropBox);
+            box = mediaBox.createCartesianIntersection(box);
         }
-        return cropBox;
+        cropBox = box;
+        return box;
     }
 
     /**
@@ -1599,16 +1626,19 @@ public class Page extends Dictionary {
         if (artBox != null) {
             return artBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, ARTBOX_KEY));
         if (boxDimensions != null) {
-            artBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the artBox is the bleed if not set implicitly
-        if (artBox == null) {
-            artBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return artBox;
+        artBox = box;
+        return box;
     }
 
     /**
@@ -1621,17 +1651,19 @@ public class Page extends Dictionary {
         if (bleedBox != null) {
             return bleedBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, BLEEDBOX_KEY));
         if (boxDimensions != null) {
-            bleedBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - BleedBox " + bleedBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the bleedBox is the bleed if not set implicitly
-        if (bleedBox == null) {
-            bleedBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return bleedBox;
+        bleedBox = box;
+        return box;
     }
 
     /**
@@ -1644,17 +1676,19 @@ public class Page extends Dictionary {
         if (trimBox != null) {
             return trimBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, TRIMBOX_KEY));
         if (boxDimensions != null) {
-            trimBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - TrimBox " + trimBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the trimBox is the bleed if not set implicitly
-        if (trimBox == null) {
-            trimBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return trimBox;
+        trimBox = box;
+        return box;
     }
 
     /**
@@ -1739,6 +1773,7 @@ public class Page extends Dictionary {
                     }
                 }
             } catch (Exception e) {
+                RenderExceptionMonitor.record("Page.getText", e);
                 logger.log(Level.WARNING, "Error getting page text.", e);
             }
         }

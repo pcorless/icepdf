@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.commands.*;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.RenderExceptionMonitor;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -43,8 +44,12 @@ public class Shapes {
             Logger.getLogger(Shapes.class.getName());
 
     private static int shapesInitialCapacity = 5000;
-    // disables alpha painting.
-    protected boolean paintAlpha =
+
+    // Global render option (-Dorg.icepdf.core.paint.disableAlpha): whether alpha
+    // draw commands are honoured.  This is a process-wide toggle, not per-Shapes
+    // state, so it lives in one place and is read here rather than threaded
+    // through paint() as a parameter.
+    private static final boolean PAINT_ALPHA =
             !Defs.sysPropertyBoolean("org.icepdf.core.paint.disableAlpha", false);
 
     static {
@@ -61,9 +66,6 @@ public class Shapes {
 
     // Graphics stack for a page's content.
     protected final ArrayList<DrawCmd> shapes = new ArrayList<>(shapesInitialCapacity);
-
-    // stores the state of the currently visible optional content.
-    protected final OptionalContentState optionalContentState = new OptionalContentState();
 
     // the collection of objects listening for page paint events
     private Page parentPage;
@@ -121,14 +123,6 @@ public class Shapes {
         }
     }
 
-    public boolean isPaintAlpha() {
-        return paintAlpha;
-    }
-
-    public void setPaintAlpha(boolean paintAlpha) {
-        this.paintAlpha = paintAlpha;
-    }
-
     /**
      * Disable BlendComposites for compatibility with x11 windowing system that fail to paint this blending type.
      * This is generally on done for annotation appearance streams were the numbers of shapes is quite small compared
@@ -152,11 +146,57 @@ public class Shapes {
      * @throws InterruptedException thread interrupted.
      */
     public void paint(Graphics2D g) throws InterruptedException {
+        paint(g, parentPage);
+    }
+
+    /**
+     * Paint the graphics stack to the graphics context using the supplied parent
+     * page rather than this Shapes' instance field.
+     * <p>
+     * The same nested Shapes object is shared across every concurrent paint of a
+     * cached page display list, so all per-paint traversal state must be
+     * call-local, not stored on the shared instance:
+     * <ul>
+     *   <li>{@code parentPage} is passed in (the previous set/paint/reset-to-null
+     *   pattern let one thread null it mid-paint of another, which NPE'd a draw
+     *   command; that exception was swallowed below and the rest of the form's
+     *   shapes skipped -- missing content on a concurrently rendered page), and</li>
+     *   <li>the {@link OptionalContentState} stack is built fresh here rather than
+     *   being a shared field: OCGStart/OCGEnd draw commands push/pop it during the
+     *   traversal, so a shared instance would let concurrent paints corrupt each
+     *   other's layer visibility.</li>
+     * </ul>
+     * The alpha flag is the process-wide {@link #PAINT_ALPHA} render option.
+     *
+     * @param g          graphics context to paint to.
+     * @param parentPage parent page for this paint (call-local, not stored).
+     * @throws InterruptedException thread interrupted.
+     */
+    public void paint(Graphics2D g, Page parentPage) throws InterruptedException {
+        paint(g, parentPage, null);
+    }
+
+    /**
+     * As {@link #paint(Graphics2D, Page)}, but resolves any shading-fill sentinel
+     * {@link org.icepdf.core.pobjects.graphics.commands.ShapeDrawCmd} (one whose
+     * shape is {@code null}, meaning "fill the whole group region") to
+     * {@code nullShapeFill} for the duration of this paint only.  The override is
+     * applied call-locally here rather than by writing the shape back into the
+     * shared cached command, so a group's Shapes stays immutable and can be
+     * painted concurrently.  {@code nullShapeFill} may be null (no override).
+     *
+     * @param g            graphics context to paint to.
+     * @param parentPage   parent page for this paint (call-local, not stored).
+     * @param nullShapeFill shape substituted for a null-shape sentinel, or null.
+     * @throws InterruptedException thread interrupted.
+     */
+    public void paint(Graphics2D g, Page parentPage, Shape nullShapeFill) throws InterruptedException {
         try {
-            boolean interrupted = false;
             AffineTransform base = new AffineTransform(g.getTransform());
             Shape clip = g.getClip();
 
+            // per-paint OCG visibility stack; never shared across concurrent paints.
+            OptionalContentState optionalContentState = new OptionalContentState();
             PaintTimer paintTimer = new PaintTimer();
             Shape previousShape = null;
 
@@ -169,14 +209,24 @@ public class Shapes {
                 }
 
                 nextShape = shapes.get(i);
+                // Resolve a null-shape shading sentinel to the caller's fill region
+                // locally, without mutating the shared cached command.
+                if (nullShapeFill != null && nextShape instanceof ShapeDrawCmd
+                        && ((ShapeDrawCmd) nextShape).getShape() == null) {
+                    previousShape = nullShapeFill;
+                    continue;
+                }
                 previousShape = nextShape.paintOperand(g, parentPage,
-                        previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
+                        previousShape, clip, base, optionalContentState, PAINT_ALPHA, paintTimer);
             }
         }
         catch (InterruptedException e){
             throw new InterruptedException(e.getMessage());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error painting shapes.", e);
+            // Swallow so the rest of the page still paints; record for the
+            // race-audit tripwire (no-op unless -Dorg.icepdf.core.debug.renderExceptions).
+            RenderExceptionMonitor.record("Shapes.paint", e);
+            logger.log(Level.WARNING, "Error painting shapes; remaining shapes in this list skipped.", e);
         }
     }
 
@@ -189,8 +239,8 @@ public class Shapes {
      * (see FormDrawCmd backdrop capture).  The caller sets {@code g}'s transform
      * and clip; this captures {@code base} from it exactly like {@link #paint}.
      */
-    public void paintBackdrop(Graphics2D g, int uptoIndex) throws InterruptedException {
-        paintBackdrop(g, uptoIndex, false);
+    public void paintBackdrop(Graphics2D g, Page parentPage, int uptoIndex) throws InterruptedException {
+        paintBackdrop(g, parentPage, uptoIndex, false);
     }
 
     /**
@@ -202,9 +252,12 @@ public class Shapes {
      * stack (otherwise an earlier group's painted content darkens later groups'
      * backdrops, making the per-group decision order-dependent).
      */
-    public void paintBackdrop(Graphics2D g, int uptoIndex, boolean skipFormGroups) throws InterruptedException {
+    public void paintBackdrop(Graphics2D g, Page parentPage, int uptoIndex, boolean skipFormGroups)
+            throws InterruptedException {
         AffineTransform base = new AffineTransform(g.getTransform());
         Shape clip = g.getClip();
+        // per-paint OCG visibility stack; never shared across concurrent paints.
+        OptionalContentState optionalContentState = new OptionalContentState();
         PaintTimer paintTimer = new PaintTimer();
         Shape previousShape = null;
         int max = Math.min(uptoIndex, shapes.size());
@@ -214,7 +267,7 @@ public class Shapes {
                 continue;
             }
             previousShape = cmd.paintOperand(g, parentPage,
-                    previousShape, clip, base, optionalContentState, paintAlpha, paintTimer);
+                    previousShape, clip, base, optionalContentState, PAINT_ALPHA, paintTimer);
         }
     }
 

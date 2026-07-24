@@ -295,7 +295,13 @@ public class EncryptionDictionary extends Dictionary {
     // encryption algorithms
     private final List fileID;
 
-    private CryptFilter cryptFilter;
+    // volatile + double-checked build in getCryptFilter(): concurrent stream
+    // decodes first-touch this to resolve the stream's crypt-filter method.  A
+    // racy lazy build let a caller see cryptFilter == null (or a half-published
+    // instance) and fall back to the default V2/RC4 algorithm for an AES stream,
+    // producing a wrong per-object key -> garbage plaintext -> 0-byte inflate ->
+    // silently dropped page content (GH-495).
+    private volatile CryptFilter cryptFilter;
 
     // Revision 5 authentication holders as they are passwords
     // are validate when the key is calculated.
@@ -446,14 +452,20 @@ public class EncryptionDictionary extends Dictionary {
      * @return crypt filter object if found, null otherwise.
      */
     public CryptFilter getCryptFilter() {
-        if (cryptFilter == null) {
-            DictionaryEntries tmp = (DictionaryEntries) library.getObject(entries, CF_KEY);
-            if (tmp != null) {
-                cryptFilter = new CryptFilter(library, tmp);
-                return cryptFilter;
+        CryptFilter cf = cryptFilter;
+        if (cf == null) {
+            synchronized (this) {
+                cf = cryptFilter;
+                if (cf == null) {
+                    DictionaryEntries tmp = (DictionaryEntries) library.getObject(entries, CF_KEY);
+                    if (tmp != null) {
+                        cf = new CryptFilter(library, tmp);
+                        cryptFilter = cf;
+                    }
+                }
             }
         }
-        return cryptFilter;
+        return cf;
     }
 
     /**

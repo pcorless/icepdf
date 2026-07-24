@@ -453,14 +453,21 @@ public class Lexer {
     private void nextContentStream() throws IOException {
         markContentStreamEnd();
         streamCount++;
-        // assign next byte array, but skip over the corner
-        // case of a zero length content stream.
-        if (streams[streamCount].getDecompressedBytes() != null &&
-                streams[streamCount].getDecompressedBytes().length == 0 &&
-                streamCount + 1 < streams.length) {
+        // Decode robustly, mirroring setContentStream(): getDecodedStreamBytes()
+        // re-inflates from the still-compressed rawBytes when the decompressed
+        // cache is absent.  The previous getDecompressedBytes() read the nullable
+        // cache field directly, so when a page shared a content stream with
+        // another page that had already finished parsing and called
+        // disposeDecompressed(), this advance saw null -> numRead 0 -> the whole
+        // (often trailing, e.g. footer) stream was silently skipped and its
+        // content dropped under concurrency (GH-495, HA_20120316a footer).
+        byte[] next = streams[streamCount].getDecodedStreamBytes();
+        // skip over the corner case of a zero length content stream.
+        if (next != null && next.length == 0 && streamCount + 1 < streams.length) {
             streamCount++;
+            next = streams[streamCount].getDecodedStreamBytes();
         }
-        streamBytes = streams[streamCount].getDecompressedBytes();
+        streamBytes = next;
         markContentStreamStart();
         // reset the  pointers.
         pos = 0;
