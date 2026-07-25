@@ -238,6 +238,19 @@ public abstract class AbstractPageViewComponent
      * @return true if page is visible in viewport, false otherwise (including when the model or
      * scroll pane is unavailable).
      */
+    /**
+     * Releases the strong buffer pin when this page is not intersecting the viewport,
+     * letting an off-screen page's back buffer be GC-reclaimed (it stays reachable via
+     * the soft fallback until then).  On-screen pages keep their pin so GC cannot yank
+     * the buffer mid-render and trigger a re-capture/re-decode storm.  Invoked by the
+     * document view on scroll and by the capture task when a page tears down.
+     */
+    public void releaseBufferPinIfOffscreen() {
+        if (!isPageIntersectViewport()) {
+            pageBufferStore.releasePin();
+        }
+    }
+
     private boolean isPageIntersectViewport() {
         if (documentViewModel == null) {
             return false;
@@ -298,13 +311,16 @@ public abstract class AbstractPageViewComponent
         BufferedImage pageImage = snapshot.image;
         if (pageImage != null) {
             Rectangle paintingClip = snapshot.imageLocation;
-            // check if we should scale and rotate the current capture
+            // If the buffer was captured at a different zoom/rotation, scale/rotate it
+            // so it fills the page smoothly until the fresh capture lands.  The stale
+            // buffer is flagged dirty in calculateBufferLocation (which then submits a
+            // new capture); we deliberately do NOT setDirty()+repaint() here.  Doing so
+            // spun a tight EDT loop while the (slow) capture was still in flight -- the
+            // capture-completion repaint (see PageImageCaptureTask.call) is what drives
+            // convergence, exactly once, when the new buffer is actually ready.
             if (pageZoom != snapshot.pageZoom ||
                     pageRotation != snapshot.pageRotation) {
                 g2d.transform(calculateBufferAffineTransform(snapshot));
-                pageBufferStore.setDirty(true);
-                // force one more paint to make sure we build a new buffer using the current zoom and rotation.
-                repaint();
             }
             // will scale buffer to fit the current clip with smooths out any artifacts from screen scale factor
             g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
@@ -332,8 +348,13 @@ public abstract class AbstractPageViewComponent
         Rectangle viewPort = parentScrollPane.getViewport().getViewRect();
         Rectangle imageLocation;
         Rectangle imageClipLocation;
-        if (pageLocation.width < viewPort.width || pageLocation.height < viewPort.height) {
-            // if page is smaller than viewport then we use the full page size.
+        if (pageLocation.width < viewPort.width && pageLocation.height < viewPort.height) {
+            // Only buffer the whole page when it fits the viewport in BOTH dimensions.
+            // With '||' a page narrower than the viewport but taller than it (a portrait
+            // page zoomed in, scrolling vertically) took this branch and allocated a
+            // full-page buffer sized to the zoomed page height -- hundreds of MB at high
+            // zoom, retained per page via the SoftReference store.  '&&' keeps such pages
+            // on the viewport-clipped branch below so the buffer stays viewport-bounded.
             imageLocation = new Rectangle(0, 0, pageLocation.width, pageLocation.height);
             imageClipLocation = new Rectangle(imageLocation);
         } else {
@@ -356,6 +377,16 @@ public abstract class AbstractPageViewComponent
                     pageBufferStore.setDirty(true);
                 }
             }
+        }
+
+        // A buffer captured at a different zoom/rotation than the live view is stale
+        // and needs a fresh capture.  Detecting it here (rather than via a setDirty()
+        // +repaint() in paintComponent) means the capture is submitted once and the
+        // capture-completion repaint drives convergence, instead of a busy EDT loop.
+        if (pageBufferStore.getImageReference() != null &&
+                (pageZoom != pageBufferStore.getPageZoom() ||
+                        pageRotation != pageBufferStore.getPageRotation())) {
+            pageBufferStore.setDirty(true);
         }
 
         // check if we need to create or refresh the back buffer.
@@ -434,7 +465,9 @@ public abstract class AbstractPageViewComponent
 
         public Object call() {
             if (!isPageIntersectViewport()) {
-                // page teardown when out of view.
+                // page teardown when out of view; drop the strong buffer pin so the
+                // off-screen buffer can be reclaimed.
+                pageBufferStore.releasePin();
                 pageTeardownCallback();
                 return null;
             }
@@ -507,7 +540,13 @@ public abstract class AbstractPageViewComponent
      */
     protected static class PageBufferStore {
 
-        // last page buffer store,
+        // last page buffer store.  The buffer is held two ways: a strong "pin" while
+        // the page is on-screen so GC cannot reclaim the buffer out from under the
+        // render loop (which would make getImageReference() return null and trigger
+        // an endless re-capture / re-decode storm), plus a SoftReference fallback so
+        // an off-screen page whose pin has been released can still be GC-reclaimed
+        // under memory pressure (pages are not disposed until the document closes).
+        private BufferedImage pinnedImage;
         private SoftReference<BufferedImage> imageReference;
         // paint location if buffer is clipped to be smaller than the page size.
         private Rectangle imageLocation;
@@ -551,13 +590,14 @@ public abstract class AbstractPageViewComponent
 
         Snapshot getSnapshot() {
             synchronized (objectLock) {
-                return new Snapshot(imageReference.get(), imageLocation, pageSize, pageZoom, pageRotation);
+                return new Snapshot(currentImage(), imageLocation, pageSize, pageZoom, pageRotation);
             }
         }
 
         void setState(BufferedImage pageBufferImage, Rectangle imageLocation, Rectangle imageClipLocation,
                       Rectangle pageSize, float pageZoom, float pageRotation, boolean isDirty) {
             synchronized (objectLock) {
+                this.pinnedImage = pageBufferImage;
                 this.imageReference = new SoftReference<>(pageBufferImage);
                 this.imageLocation = imageLocation;
                 this.imageClipLocation = imageClipLocation;
@@ -570,13 +610,34 @@ public abstract class AbstractPageViewComponent
 
         void setImageReference(BufferedImage bufferedImage) {
             synchronized (objectLock) {
+                this.pinnedImage = bufferedImage;
                 this.imageReference = new SoftReference<>(bufferedImage);
             }
         }
 
         public BufferedImage getImageReference() {
             synchronized (objectLock) {
-                return imageReference.get();
+                return currentImage();
+            }
+        }
+
+        // Prefer the strong pin; fall back to the soft reference for an off-screen
+        // page whose pin was released but whose buffer GC has not yet reclaimed.
+        private BufferedImage currentImage() {
+            if (pinnedImage != null) {
+                return pinnedImage;
+            }
+            return imageReference != null ? imageReference.get() : null;
+        }
+
+        /**
+         * Releases the strong pin (keeping the soft fallback) so an off-screen page's
+         * buffer becomes eligible for GC.  Called when the page scrolls out of the
+         * viewport.  A no-op re-pin happens automatically on the next capture.
+         */
+        void releasePin() {
+            synchronized (objectLock) {
+                this.pinnedImage = null;
             }
         }
 

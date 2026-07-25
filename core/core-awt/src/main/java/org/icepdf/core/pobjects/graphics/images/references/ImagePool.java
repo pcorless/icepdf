@@ -19,9 +19,8 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Defs;
 
 import java.awt.image.BufferedImage;
-import java.util.Collections;
+import java.lang.ref.SoftReference;
 import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
@@ -51,8 +50,16 @@ public class ImagePool {
     private static final Logger log =
             Logger.getLogger(ImagePool.class.getName());
 
-    // Image pool
-    private final Map<Reference, BufferedImage> fCache;
+    // Image pool.  Values are held via SoftReference so a decoded image survives
+    // normal garbage collection (letting a page repaint / a shared XObject on
+    // another page reuse it without re-decoding) but is reclaimed when the heap is
+    // genuinely under pressure.  The previous implementation used a WeakHashMap
+    // keyed by a freshly-allocated Reference that nothing else strongly held, so
+    // every entry was collectable on the very next GC -- under the allocation churn
+    // of zooming, entries were purged as fast as they were inserted and get()
+    // returned null, forcing constant re-decodes (and masking as a timing bug that
+    // "went away" when a breakpoint changed GC timing).
+    private final Map<Reference, SoftReference<BufferedImage>> fCache;
 
     // Decodes currently in flight, keyed by image object reference, so that two references to the same image
     // (e.g. the same XObject drawn on multiple pages, or an eager pre-decode racing the content parser) share a
@@ -68,29 +75,37 @@ public class ImagePool {
 
 
     public ImagePool() {
-        fCache = Collections.synchronizedMap(new WeakHashMap<>(50));
+        fCache = new ConcurrentHashMap<>(50);
     }
 
     public void put(Reference ref, BufferedImage image) {
-        // create a new reference so we don't have a hard link to the page
-        // which will likely keep a page from being GC'd.
-        if (enabled) {
-//            synchronized (fCache) {
-                fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()), image);
-//            }
+        if (enabled && ref != null && image != null) {
+            // copy the reference for the key so the map never holds the caller's
+            // Reference instance (keeps parity with the previous behaviour).
+            fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()),
+                    new SoftReference<>(image));
         }
     }
 
     public BufferedImage get(Reference ref) {
-        if (enabled) {
-                return fCache.get(ref);
-        } else {
+        if (!enabled || ref == null) {
             return null;
         }
+        SoftReference<BufferedImage> softReference = fCache.get(ref);
+        if (softReference == null) {
+            return null;
+        }
+        BufferedImage image = softReference.get();
+        if (image == null) {
+            // the soft reference was cleared under memory pressure; drop the dead
+            // entry so the map doesn't accumulate empty holders.
+            fCache.remove(ref, softReference);
+        }
+        return image;
     }
 
     public boolean containsKey(Reference ref) {
-        return enabled && fCache.containsKey(ref);
+        return get(ref) != null;
     }
 
     /**

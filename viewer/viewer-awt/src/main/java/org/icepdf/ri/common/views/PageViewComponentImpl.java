@@ -153,6 +153,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
         if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
             pageImageCaptureTask.cancel(true);
         }
+        // drop the strong buffer pin so the back buffer can be reclaimed.
+        pageBufferStore.releasePin();
         // remove annotation listeners.
         removeMouseMotionListener(currentToolHandler);
         removeMouseListener(currentToolHandler);

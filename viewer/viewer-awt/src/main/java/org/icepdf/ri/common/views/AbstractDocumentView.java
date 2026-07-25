@@ -298,7 +298,21 @@ public abstract class AbstractDocumentView
     }
 
     public void adjustmentValueChanged(AdjustmentEvent e) {
-
+        // On scroll, release the strong buffer pin of any page that is no longer in
+        // the viewport so its back buffer can be GC-reclaimed (pages are not disposed
+        // until the document closes).  On-screen pages keep their pin, which prevents
+        // GC from reclaiming the live buffer mid-render and triggering an endless
+        // re-capture / re-decode loop.
+        if (documentViewModel != null) {
+            java.util.List<AbstractPageViewComponent> pages = documentViewModel.getPageComponents();
+            if (pages != null) {
+                for (AbstractPageViewComponent page : pages) {
+                    if (page != null) {
+                        page.releaseBufferPinIfOffscreen();
+                    }
+                }
+            }
+        }
     }
 
     public void focusGained(FocusEvent e) {

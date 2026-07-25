@@ -643,7 +643,11 @@ public class Page extends Dictionary {
             g2.setClip(rect);
         }
 
-        paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
+        // oldClip is the original (viewport) clip before it was union'd with the
+        // full page box above; a buffered page group uses it to size its offscreen
+        // to the visible region instead of the whole zoomed page.
+        paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight,
+                oldClip);
 
         // one last repaint, just to be sure
         notifyPaintPageListeners();
@@ -685,11 +689,12 @@ public class Page extends Dictionary {
         }
 
         paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations,
-                paintSearchHighlight);
+                paintSearchHighlight, ((Graphics2D) g).getClip());
     }
 
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
-                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+                                  boolean paintAnnotations, boolean paintSearchHighlight,
+                                  Shape viewportClip) throws InterruptedException {
         // draw page content
         if (shapes != null) {
             pagePainted = false;
@@ -699,7 +704,7 @@ public class Page extends Dictionary {
 
             shapes.setPageParent(this);
             if (isPageGroupBufferCandidate()) {
-                paintPageGroupBuffered(g2);
+                paintPageGroupBuffered(g2, viewportClip);
             } else {
                 shapes.paint(g2);
             }
@@ -796,13 +801,22 @@ public class Page extends Dictionary {
         return pageGroup != null && DeviceCMYK.DEVICECMYK_KEY.equals(pageGroup.getColorSpace());
     }
 
-    private void paintPageGroupBuffered(Graphics2D g2) throws InterruptedException {
+    private void paintPageGroupBuffered(Graphics2D g2, Shape viewportClip) throws InterruptedException {
         AffineTransform savedTx = g2.getTransform();
         Shape savedClip = g2.getClip();
         // device-space pixel bounds of the current clip (the page footprint).
         Rectangle devBounds = savedClip != null
                 ? savedTx.createTransformedShape(savedClip).getBounds()
                 : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
+        // The page clip was union'd with the full page box in paint() (so print
+        // popups outside the page still render), which erases the viewport bound.
+        // Re-apply the original viewport clip here so the group offscreen covers
+        // only the visible region -- otherwise it is the whole page x zoom, which
+        // grows ~zoom^2 into a multi-GB single allocation at high zoom.
+        if (viewportClip != null) {
+            Rectangle vp = savedTx.createTransformedShape(viewportClip).getBounds();
+            devBounds = devBounds.intersection(vp);
+        }
         if (devBounds.width <= 0 || devBounds.height <= 0) {
             // nothing to buffer; fall back to the direct paint.
             shapes.paint(g2);
