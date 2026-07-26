@@ -116,8 +116,9 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // set up the store for the back buffer and current clip
-        pageBufferStore = new PageBufferStore();
+        // set up the store for the back buffer and current clip; its pin budget is
+        // shared per-document so pages of the same document share a pin cap.
+        pageBufferStore = new PageBufferStore(budgetFor(documentViewModel));
 
         // initialize page size
         pageSize = new Rectangle();
@@ -535,6 +536,78 @@ public abstract class AbstractPageViewComponent
         }
     }
 
+    // Maximum strongly-pinned page buffers PER DOCUMENT.  A pin keeps a page's live
+    // buffer from being GC'd mid-render (which would trigger a re-capture); the
+    // per-document budget bounds total pinned memory even when a page leaves the
+    // viewport WITHOUT the release path firing (e.g. a window resize or view-mode
+    // change raises no scrollbar AdjustmentEvent, so releaseBufferPinIfOffscreen is
+    // never called).  Default 6 (~a screen of pages plus neighbours).
+    private static final int MAX_PINNED_BUFFERS =
+            Math.max(1, Defs.intProperty("org.icepdf.core.views.maxPinnedPageBuffers", 6));
+
+    // One PinnedBufferBudget per open document, keyed weakly by its view model so a
+    // closed document's budget is released with it.  Per-document (not a single
+    // JVM-wide pool) so two documents in two viewers don't evict each other's pins.
+    private static final java.util.Map<DocumentViewModel, PinnedBufferBudget> PIN_BUDGETS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    // Fallback for a null view model (headless / detached page): its own isolated
+    // budget so it can't be starved by, or starve, real documents.
+    private static final PinnedBufferBudget NO_MODEL_PIN_BUDGET = new PinnedBufferBudget();
+
+    private static PinnedBufferBudget budgetFor(DocumentViewModel model) {
+        if (model == null) {
+            return NO_MODEL_PIN_BUDGET;
+        }
+        synchronized (PIN_BUDGETS) {
+            return PIN_BUDGETS.computeIfAbsent(model, m -> new PinnedBufferBudget());
+        }
+    }
+
+    /**
+     * An access-ordered LRU of pinned {@link PageBufferStore}s for a single document.
+     * When a store pins a buffer beyond {@link #MAX_PINNED_BUFFERS}, the eldest
+     * (least-recently captured) store's pin is released so its buffer falls back to
+     * its {@link SoftReference} and becomes GC-eligible.  Actively rendered pages
+     * re-capture (moving them to newest), so the visible pages stay pinned.
+     */
+    private static final class PinnedBufferBudget {
+        private final java.util.LinkedHashMap<PageBufferStore, Boolean> lru =
+                new java.util.LinkedHashMap<>(16, 0.75f, true);
+
+        // Register store as most-recently-pinned; release any pin beyond the cap.
+        // Evicted pins are released OUTSIDE the lock to avoid nested locking.
+        void pin(PageBufferStore store) {
+            java.util.List<PageBufferStore> evicted = null;
+            synchronized (lru) {
+                lru.put(store, Boolean.TRUE);
+                java.util.Iterator<PageBufferStore> it = lru.keySet().iterator();
+                while (lru.size() > MAX_PINNED_BUFFERS && it.hasNext()) {
+                    PageBufferStore eldest = it.next();
+                    if (eldest == store) {
+                        continue; // never evict the buffer we just pinned
+                    }
+                    if (evicted == null) {
+                        evicted = new java.util.ArrayList<>();
+                    }
+                    evicted.add(eldest);
+                    it.remove();
+                }
+            }
+            if (evicted != null) {
+                for (PageBufferStore s : evicted) {
+                    s.releasePin();
+                }
+            }
+        }
+
+        void drop(PageBufferStore store) {
+            synchronized (lru) {
+                lru.remove(store);
+            }
+        }
+    }
+
     /**
      * Synchronized page buffer property store, insures that a page capture occurs using the correct properties.
      */
@@ -560,8 +633,25 @@ public abstract class AbstractPageViewComponent
 
         private final Object objectLock = new Object();
 
-        PageBufferStore() {
+        // The pin budget that caps how many of this DOCUMENT's page buffers stay
+        // strongly pinned (see PinnedBufferBudget).  Scoped per view model so two
+        // documents open in two viewers each keep their own visible buffers pinned
+        // instead of evicting each other's from a single JVM-wide pool.
+        private final PinnedBufferBudget pinBudget;
+
+        PageBufferStore(PinnedBufferBudget pinBudget) {
+            this.pinBudget = pinBudget;
             imageReference = new SoftReference<>(null);
+        }
+
+        // Track this store as most-recently-pinned (or drop it, for a null buffer)
+        // within its document's budget, which releases any pin beyond the cap.
+        private void registerPin(BufferedImage buffer) {
+            if (buffer == null) {
+                pinBudget.drop(this);
+            } else {
+                pinBudget.pin(this);
+            }
         }
 
         /**
@@ -606,6 +696,7 @@ public abstract class AbstractPageViewComponent
                 this.pageRotation = pageRotation;
                 this.isDirty = isDirty;
             }
+            registerPin(pageBufferImage);
         }
 
         void setImageReference(BufferedImage bufferedImage) {
@@ -613,6 +704,7 @@ public abstract class AbstractPageViewComponent
                 this.pinnedImage = bufferedImage;
                 this.imageReference = new SoftReference<>(bufferedImage);
             }
+            registerPin(bufferedImage);
         }
 
         public BufferedImage getImageReference() {
@@ -639,6 +731,7 @@ public abstract class AbstractPageViewComponent
             synchronized (objectLock) {
                 this.pinnedImage = null;
             }
+            pinBudget.drop(this);
         }
 
         Rectangle getImageLocation() {
