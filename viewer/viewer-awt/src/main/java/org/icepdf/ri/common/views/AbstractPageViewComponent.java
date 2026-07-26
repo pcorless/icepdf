@@ -239,19 +239,6 @@ public abstract class AbstractPageViewComponent
      * @return true if page is visible in viewport, false otherwise (including when the model or
      * scroll pane is unavailable).
      */
-    /**
-     * Releases the strong buffer pin when this page is not intersecting the viewport,
-     * letting an off-screen page's back buffer be GC-reclaimed (it stays reachable via
-     * the soft fallback until then).  On-screen pages keep their pin so GC cannot yank
-     * the buffer mid-render and trigger a re-capture/re-decode storm.  Invoked by the
-     * document view on scroll and by the capture task when a page tears down.
-     */
-    public void releaseBufferPinIfOffscreen() {
-        if (!isPageIntersectViewport()) {
-            pageBufferStore.releasePin();
-        }
-    }
-
     private boolean isPageIntersectViewport() {
         if (documentViewModel == null) {
             return false;
@@ -538,10 +525,11 @@ public abstract class AbstractPageViewComponent
 
     // Maximum strongly-pinned page buffers PER DOCUMENT.  A pin keeps a page's live
     // buffer from being GC'd mid-render (which would trigger a re-capture); the
-    // per-document budget bounds total pinned memory even when a page leaves the
-    // viewport WITHOUT the release path firing (e.g. a window resize or view-mode
-    // change raises no scrollbar AdjustmentEvent, so releaseBufferPinIfOffscreen is
-    // never called).  Default 6 (~a screen of pages plus neighbours).
+    // per-document budget is the sole release mechanism -- a page that scrolls out
+    // of view stops capturing and is evicted (its pin released, buffer left to its
+    // SoftReference) once newer pages capture, so off-screen buffers can't
+    // accumulate no matter how the page left the viewport (scroll, resize, view-mode
+    // change).  Default 6 (~a screen of pages plus neighbours).
     private static final int MAX_PINNED_BUFFERS =
             Math.max(1, Defs.intProperty("org.icepdf.core.views.maxPinnedPageBuffers", 6));
 
