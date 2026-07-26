@@ -618,7 +618,7 @@ public class Page extends Dictionary {
         float x = 0 - pageBoundary.x;
         float y = 0 - (pageBoundary.y - pageBoundary.height);
 
-        // Draw the (typically white) background
+        // Draw the (typically white) 692
         Color backgroundColor = grh.getPageBackgroundColor(renderHintType);
         if (backgroundColor != null) {
             g2.setColor(backgroundColor);
@@ -689,7 +689,7 @@ public class Page extends Dictionary {
         }
 
         paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations,
-                paintSearchHighlight, ((Graphics2D) g).getClip());
+                paintSearchHighlight, g.getClip());
     }
 
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
