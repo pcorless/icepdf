@@ -618,7 +618,7 @@ public class Page extends Dictionary {
         float x = 0 - pageBoundary.x;
         float y = 0 - (pageBoundary.y - pageBoundary.height);
 
-        // Draw the (typically white) 692
+        // Draw the (typically white) background
         Color backgroundColor = grh.getPageBackgroundColor(renderHintType);
         if (backgroundColor != null) {
             g2.setColor(backgroundColor);
@@ -644,7 +644,7 @@ public class Page extends Dictionary {
         }
 
         // oldClip is the original (viewport) clip before it was union'd with the
-        // full page box above; a buffered page group uses it to size its offscreen
+        // full page box above; a buffered page group uses it to size it's offscreen
         // to the visible region instead of the whole zoomed page.
         paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight,
                 oldClip);

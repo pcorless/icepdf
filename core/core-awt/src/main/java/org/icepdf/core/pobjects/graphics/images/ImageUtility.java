@@ -244,8 +244,8 @@ public class ImageUtility {
     private static final ThreadLocal<CmykInkSink> INK_SINK = new ThreadLocal<>();
 
     /** True when a {@link CmykInkSink} is active on the current thread, i.e. a CMYK
-     *  group is being rasterised.  Callers that want to trim an image blit to the
-     *  visible clip must skip that optimisation while this holds, because
+     *  group is being rasterized.  Callers that want to trim an image blit to the
+     *  visible clip must skip that optimization while this holds, because
      *  {@link #captureCmykInk} assumes the full source-&gt;user box was drawn. */
     public static boolean isCmykInkCapturing() {
         return INK_SINK.get() != null;
