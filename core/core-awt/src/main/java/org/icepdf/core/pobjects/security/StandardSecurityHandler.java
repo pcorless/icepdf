@@ -133,10 +133,12 @@ public class StandardSecurityHandler extends SecurityHandler {
                 // Get user, password, as it is used for generating encryption keys
                 if (value) {
                     this.password = standardEncryption.getUserPassword();
+                    this.encryptionKey = null; // invalidate cached key on (re)auth
                 }
             } else {
                 // assign password for future use
                 this.password = password;
+                this.encryptionKey = null; // invalidate cached key on (re)auth
             }
             return value;
         } else if (revision == 5 || revision == 6) {
@@ -145,6 +147,7 @@ public class StandardSecurityHandler extends SecurityHandler {
                     password,
                     encryptionDictionary.getKeyLength());
             this.password = password;
+            this.encryptionKey = null; // invalidate cached key on (re)auth
             return encryptionKey != null;
         } else {
             logger.warning("Unknown encryption revision : " + revision);
@@ -167,6 +170,7 @@ public class StandardSecurityHandler extends SecurityHandler {
             boolean value = standardEncryption.authenticateUserPassword(password);
             if (value) {
                 this.password = password;
+                this.encryptionKey = null; // invalidate cached key on (re)auth
             }
             return value;
         } else {
@@ -296,17 +300,25 @@ public class StandardSecurityHandler extends SecurityHandler {
                 objectReference, encryptionKey, algorithmType, input, encrypted);
     }
 
-    public byte[] getEncryptionKey() {
-
-        if (!initiated) {
-            // make sure class instance var have been setup
-            this.init();
+    public synchronized byte[] getEncryptionKey() {
+        // Compute exactly once and cache.  Concurrent page/stream decodes all
+        // first-touch this, and it both re-runs init() (which REPLACES the shared
+        // standardEncryption instance) and recomputes standardEncryption's
+        // encryptionKey field -- which generalEncryptionInputStream/resetObjectReference
+        // read to derive each per-object key.  Recomputing under concurrency handed
+        // a decrypt a half-set key -> garbage plaintext -> a raw-deflate stream that
+        // inflates to 0 bytes -> silently dropped page content (GH-495).  The cache is
+        // invalidated on (re)authorization (see isAuthorized/isUserAuthorized).
+        if (encryptionKey == null) {
+            if (!initiated) {
+                // make sure class instance var have been setup
+                this.init();
+            }
+            // calculate the encryptionKey based on the given user name
+            encryptionKey = standardEncryption.encryptionKeyAlgorithm(
+                    password,
+                    encryptionDictionary.getKeyLength());
         }
-        // calculate the encryptionKey based on the given user name
-        encryptionKey = standardEncryption.encryptionKeyAlgorithm(
-                password,
-                encryptionDictionary.getKeyLength());
-
         return encryptionKey;
     }
 

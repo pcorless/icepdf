@@ -279,15 +279,32 @@ public class TilingPattern extends Stream implements Pattern {
             resources = leafResources;
         }
 
+        // Parse the pattern's own content with a COPY of the caller's graphics
+        // state, detached from the caller's Shapes.  init() is a one-shot cached
+        // per shared TilingPattern instance, but it used to (a) mutate the
+        // caller's parentGraphicState (setFillColor/Stroke for uncoloured) and
+        // (b) hand that same state to its ContentParser, whose parse() setup does
+        // setCTM()/setClip(null) -- and those emit Transform/NoClip/Clip commands
+        // onto whatever Shapes the state still references, i.e. the CALLER's page
+        // Shapes.  So the very first fill with a given pattern got a spurious
+        // clip triplet baked into the page while later (cached) fills did not.
+        // Under concurrency a pattern shared across pages might already be inited
+        // by another page, so a page's first-use fill would inconsistently gain
+        // or lose that triplet -> different clip state -> pixel divergence
+        // (GH-495, A.pdf p2/p3).  Copying + detaching keeps all that side-effect
+        // graphics-state churn off the page and off the shared caller state, so
+        // every fill is treated identically regardless of init order.
+        GraphicsState patternGraphicState = new GraphicsState(parentGraphicState);
+        patternGraphicState.setShapes(new Shapes());
         if (paintType == PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
-            parentGraphicState.setFillColor(unColored);
-            parentGraphicState.setStrokeColor(unColored);
+            patternGraphicState.setFillColor(unColored);
+            patternGraphicState.setStrokeColor(unColored);
         }
 
         // Build a new content parser for the content streams and apply the
         // content stream of the calling content stream.
         ContentParser cp = new ContentParser(library, resources);
-        cp.setGraphicsState(parentGraphicState);
+        cp.setGraphicsState(patternGraphicState);
         try {
             shapes = cp.parse(new Stream[]{this},
                     null).getShapes();

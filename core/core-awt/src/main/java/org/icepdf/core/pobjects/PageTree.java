@@ -136,22 +136,26 @@ public class PageTree extends Dictionary {
         if (mediaBox != null) {
             return mediaBox;
         }
+        // compute into a local and publish once so concurrent callers never see
+        // the field mid-resolution (same lazy-init publication fix as Page).
+        PRectangle box = null;
         // add all of the pages media box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
-            mediaBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
-        if (mediaBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && mediaBox == null) {
-                mediaBox = pageTree.getMediaBox();
-                if (mediaBox == null) {
+            while (pageTree != null && box == null) {
+                box = pageTree.getMediaBox();
+                if (box == null) {
                     pageTree = pageTree.getParent();
                 }
             }
         }
-        return mediaBox;
+        mediaBox = box;
+        return box;
     }
 
     /**
@@ -168,22 +172,27 @@ public class PageTree extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
+        // compute into a local and publish once: assigning the raw box first and
+        // then the media-box intersection let a concurrent caller return the
+        // intermediate (un-intersected) box -- a page-dimension race.
+        PRectangle box = null;
         // add all of the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
-            cropBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
         PRectangle mediaBox = getMediaBox();
-        if (cropBox == null && mediaBox != null) {
-            cropBox = (PRectangle) mediaBox.clone();
+        if (box == null && mediaBox != null) {
+            box = (PRectangle) mediaBox.clone();
         } else if (mediaBox != null) {
             // PDF 1.5 spec states that the media box should be intersected with the
             // crop box to get the new box. But we only want to do this if the
             // cropBox is not the same as the mediaBox
-            cropBox = mediaBox.createCartesianIntersection(cropBox);
+            box = mediaBox.createCartesianIntersection(box);
         }
-        return cropBox;
+        cropBox = box;
+        return box;
     }
 
     /**

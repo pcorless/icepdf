@@ -11,7 +11,10 @@ description = 'ICEpdf qa framework application'
 
 application {
     mainClass = "org.icepdf.qa.viewer.Launcher"
-    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx4096m"]
+    // App-JVM heap. Override per run with -PqaMaxHeap=8g (default 4096m).
+    // Note: -Xmx on the gradle command / -Dorg.gradle.jvmargs size the daemon,
+    // not this forked app JVM, so the max heap must be set here.
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx" + (project.findProperty('qaMaxHeap') ?: '12G')]
 }
 
 def sectionName = 'org/icepdf/qa/'

@@ -28,12 +28,15 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.RenderExceptionMonitor;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -43,11 +46,15 @@ public class ContentParser extends AbstractContentParser {
             Logger.getLogger(ContentParser.class.getName());
 
     /**
-     * Inline image cache,  for heavily tiled background images.  Can be cleared
-     * between document parses if needed.
+     * Inline image cache, for heavily tiled background images.  Can be cleared
+     * between document parses if needed.  Values are held via SoftReference so a
+     * decoded inline image survives normal GC (so repeated tiles reuse it) but is
+     * reclaimed under memory pressure.  A WeakHashMap here would be keyed by the
+     * freshly-built content-hash String, which nothing holds strongly, so a GC
+     * mid-parse would drop entries and defeat the tiling reuse this cache exists for.
      */
-    public static final Map<String, ImageReference> inlineImageCache =
-            Collections.synchronizedMap(new WeakHashMap<>());
+    public static final Map<String, SoftReference<ImageReference>> inlineImageCache =
+            new ConcurrentHashMap<>();
 
     public ContentParser(Library l, Resources r) {
         super(l, r, null);
@@ -165,6 +172,7 @@ public class ContentParser extends AbstractContentParser {
                             try {
                                 yBTstart = parseText(lexer, shapes, yBTstart);
                             } catch (Exception e) {
+                                RenderExceptionMonitor.record("ContentParser.parseText(BT)", e);
                                 logger.log(Level.SEVERE, "Error parsing text block", e);
                             } finally {
                                 inTextBlock = false;
@@ -592,7 +600,11 @@ public class ContentParser extends AbstractContentParser {
             logger.log(Level.FINE, "ContentParser thread interrupted");
             throw new InterruptedException("ContentParser thread interrupted");
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error parsing content stream. ", e);
+            // Swallow so the shapes parsed before the fault still paint; record
+            // for the race-audit tripwire.  This is the catch that absorbed the
+            // shared-form PageText race (aborting the rest of the stream).
+            RenderExceptionMonitor.record("ContentParser.parse", e);
+            logger.log(Level.WARNING, "Error parsing content stream; remaining operators in this stream skipped. ", e);
         }
         return this;
     }
@@ -1060,7 +1072,12 @@ public class ContentParser extends AbstractContentParser {
                 String tmpKey = new String(data).concat(graphicState.getFillColor() != null ?
                         graphicState.getFillColor().toString() : "");
                 // pepper the key with the fill colour.
-                ImageReference imageReference = inlineImageCache.get(tmpKey);
+                SoftReference<ImageReference> cached = inlineImageCache.get(tmpKey);
+                ImageReference imageReference = cached != null ? cached.get() : null;
+                if (cached != null && imageReference == null) {
+                    // soft reference cleared under memory pressure; drop the dead entry.
+                    inlineImageCache.remove(tmpKey, cached);
+                }
                 if (imageReference != null) {
                     imageStreamReference = imageReference;
                     imageStream = imageStreamReference.getImageStream();
@@ -1069,7 +1086,7 @@ public class ContentParser extends AbstractContentParser {
                     imageStream = new ImageStream(library, iih, data);
                     imageStreamReference = ImageReferenceFactory.getImageReference(
                             imageStream, null, resources, graphicState, imageIndex.get(), page);
-                    inlineImageCache.put(tmpKey, imageStreamReference);
+                    inlineImageCache.put(tmpKey, new SoftReference<>(imageStreamReference));
                 }
             } else {
                 // create the image stream
@@ -1092,6 +1109,7 @@ public class ContentParser extends AbstractContentParser {
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {
+            RenderExceptionMonitor.record("ContentParser.parseInlineImage", e);
             logger.log(Level.FINE, "Error parsing inline image.", e);
         }
     }
