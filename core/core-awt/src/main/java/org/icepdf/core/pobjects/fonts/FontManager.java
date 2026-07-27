@@ -306,7 +306,7 @@ public class FontManager {
     public synchronized FontManager initialize() {
         // synchronized so the check-then-read is atomic with the readSystemFonts writer;
         // otherwise two first-render threads can both see an empty list and both scan.
-        if (fontList == null || fontList.size() == 0) {
+        if (fontList == null || fontList.isEmpty()) {
             readSystemFonts(null);
         }
         return fontManager;

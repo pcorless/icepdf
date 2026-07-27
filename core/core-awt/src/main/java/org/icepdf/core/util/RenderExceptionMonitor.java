@@ -1,5 +1,5 @@
 /*
- * Copyright 2006-2019 ICEsoft Technologies Canada Corp.
+ * Copyright 2026 Patrick Corless
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the
@@ -38,8 +38,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * stack frame) and counts occurrences, so a concurrent corpus sweep can diff
  * the signatures it sees against a serial baseline: anything concurrent-only is
  * a candidate race.  Off by default and safe to leave in the tree.
- *
- * @see "THREADING-RACE-AUDIT-PLAN.md"
  */
 public final class RenderExceptionMonitor {
 

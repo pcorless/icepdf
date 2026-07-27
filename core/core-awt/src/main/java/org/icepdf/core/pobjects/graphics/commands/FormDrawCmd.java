@@ -221,15 +221,19 @@ public class FormDrawCmd extends AbstractDrawCmd {
     // case; such groups keep the legacy inline path.
     private static final double SMASK_SENTINEL_BBOX = 30000;
 
-    /** True when this command's group carries a soft mask (from either the
-     *  captured graphics state or the form's own ExtGState); such groups are
-     *  buffered 1:1 up to {@link #MAX_SMASK_IMAGE_SIZE} rather than down-scaled. */
+    /**
+     * True when this command's group carries a soft mask (from either the
+     * captured graphics state or the form's own ExtGState); such groups are
+     * buffered 1:1 up to {@link #MAX_SMASK_IMAGE_SIZE} rather than down-scaled.
+     */
     private boolean hasSoftMaskGroup() {
         return hasFiniteSoftMask(xForm);
     }
 
-    /** True when the group has a soft mask with a realistically sized (non-sentinel)
-     *  mask group bbox -- the case the 1:1 SMask buffer path handles. */
+    /**
+     * True when the group has a soft mask with a realistically sized (non-sentinel)
+     * mask group bbox -- the case the 1:1 SMask buffer path handles.
+     */
     private static boolean hasFiniteSoftMask(Form form) {
         SoftMask sm = null;
         GraphicsState gs = form.getGraphicsState();
@@ -271,192 +275,193 @@ public class FormDrawCmd extends AbstractDrawCmd {
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
         if (optionalContentState.isVisible() && !xFormBufferBuilt) {
-          synchronized (this) {
-           if (!xFormBufferBuilt) {
-            RenderingHints renderingHints = g.getRenderingHints();
-            Rectangle2D bBox = xForm.getBBox();
-            x = (int) bBox.getX();
-            y = (int) bBox.getY();
-            boolean hasMask = ((xForm.getGraphicsState().getExtGState() != null &&
-                    xForm.getGraphicsState().getExtGState().getSMask() != null) ||
-                    (xForm.getExtGState() != null && xForm.getExtGState().getSMask() != null));
-            boolean isExtendGraphicState = xForm.getGraphicsState().getExtGState() != null &&
-                    xForm.getExtGState() != null;
-            boolean normalBM = false;
-            if (isExtendGraphicState && xForm.getExtGState().getBlendingMode() != null) {
-                normalBM = xForm.getExtGState().getBlendingMode().equals(new Name("Normal")) &&
-                        xForm.getGraphicsState().getExtGState().getBlendingMode().equals(new Name("Normal")) &&
-                        (xForm.getExtGState() != null &&
-                                (!xForm.getExtGState().isAlphaAShape() || xForm.getExtGState().getOverprintMode() == 0));
-            }
-
-            SoftMask formSoftMask = null;
-            SoftMask softMask = null;
-
-            if (xForm.getGraphicsState().getExtGState().getSMask() != null) {
-                softMask = xForm.getGraphicsState().getExtGState().getSMask();
-                // A luminosity/alpha mask group form often carries an empty
-                // /Resources and resolves its XObjects (e.g. a pre-rendered
-                // grayscale drop-shadow image) through the enclosing content
-                // form's resources.  Wire those before getG() initialises the
-                // mask so it actually rasterises instead of collapsing to an
-                // unmasked box.
-                softMask.setParentResources(xForm.getLeafResources());
-                boolean isShading = softMask.getG().getResources().isShading();
-                if (isShading) {
-                    isShading = checkForShaddingFill(softMask.getG());
-                    softMask.getG().setShading(isShading);
-                }
-                if (!isShading) {
-                    x = (int) softMask.getG().getBBox().getX();
-                    y = (int) softMask.getG().getBBox().getY();
-                }
-            }
-            if (xForm.getExtGState().getSMask() != null) {
-                formSoftMask = xForm.getExtGState().getSMask();
-                formSoftMask.setParentResources(xForm.getLeafResources());
-                boolean isShading = formSoftMask.getG().getResources().isShading();
-                if (isShading) {
-                    isShading = checkForShaddingFill(formSoftMask.getG());
-                    formSoftMask.getG().setShading(isShading);
-                }
-                if (!isShading) {
-                    x = (int) formSoftMask.getG().getBBox().getX();
-                    y = (int) formSoftMask.getG().getBBox().getY();
-                }
-            }
-            // check if we have the same xobject.
-            if (softMask != null && formSoftMask != null) {
-                if (softMask.getPObjectReference() != null && formSoftMask.getPObjectReference() != null &&
-                        softMask.getPObjectReference().equals(formSoftMask.getPObjectReference())) {
-                    softMask = null;
-                } else if (softMask.getG().getPObjectReference() != null &&
-                        formSoftMask.getG().getPObjectReference() != null &&
-                        softMask.getG().getPObjectReference().equals(formSoftMask.getG().getPObjectReference())) {
-                    softMask = null;
-                }
-            }
-            // need to check if we really have a shading pattern, as the resources check can be false positive.
-            if (xForm.getResources().isShading()) {
-                boolean isFormShading = checkForShaddingFill(xForm);
-                xForm.setShading(isFormShading);
-            }
-
-            // Frame the content buffer and the mask sub-buffer to the UNION of the
-            // content and (finite, non-shading) mask bboxes so the two align 1:1;
-            // x,y move to the union origin for the draw-back.  This keeps the
-            // mask's soft feather where it extends past the content bbox (a drop
-            // shadow's outer edge) instead of clipping it to a hard edge.
-            SoftMask alignMask = softMask != null ? softMask : formSoftMask;
-            if (alignMask != null && alignMask.getG() != null && !alignMask.getG().isShading()
-                    && !xForm.isShading() && hasFiniteSoftMask(xForm)) {
-                Rectangle2D mBox = alignMask.getG().getBBox();
-                if (mBox != null) {
-                    bufferFrame = bBox.createUnion(mBox);
-                    x = (int) Math.floor(bufferFrame.getX());
-                    y = (int) Math.floor(bufferFrame.getY());
-                }
-            }
-
-            // create the form and we'll paint it at the very least.  An isolated
-            // group composites against a transparent backdrop, so flag the blend
-            // for this buffer's paint: a separable blend over the still
-            // -transparent backdrop is weighted by backdrop alpha and reduces to
-            // the source colour where the backdrop is empty, instead of
-            // multiplying against zero and going black (see
-            // BlendComposite.TRANSPARENT_BACKDROP).  Scoped to isolated groups
-            // only.  Restored after, so the mask/outline sub-buffers below and
-            // the shared paths are unaffected.
-            boolean isolatedGroup = xForm.isIsolated();
-            boolean previousTransparentBackdrop = isolatedGroup
-                    && BlendComposite.setTransparentBackdrop(true);
-            try {
-                // Inside the page-group buffer §10 is normally bypassed so a
-                // separable (non-Normal) group blends against the live accumulating
-                // buffer.  But a NON-isolated NORMAL group has no blend to interact
-                // with the backdrop at draw-back, so rendering it isolated (over the
-                // transparent seed) yields its bare, un-composited content -- a light
-                // gradient that then washes the page (P100002589 turtle divider band,
-                // forms 46/58).  Such groups still need §10's backdrop-aware
-                // compositing, so keep it for Normal blends even inside the buffer.
-                // Only a separable (non-Normal) group blend interacts with the
-                // backdrop at draw-back (its BlendComposite reads the accumulated
-                // buffer as the blend destination); for those the §10 reconstruction
-                // is redundant inside the page-group buffer and is bypassed.  A
-                // Normal / no-blend group draws back with AlphaComposite, which just
-                // overlays its isolated content -- so it still needs §10's real
-                // backdrop compositing or it washes the page (turtle forms 46/58).
-                boolean separableGroupBlend = g.getComposite() instanceof BlendComposite;
-                boolean pageGroupBypass = renderingIntoPageGroup.get() && separableGroupBlend;
-                if (!hasMask && !annotationAppearance.get() && !pageGroupBypass
-                        && backdropShapes != null
-                        && isBackdropCompositeCandidate(xForm)) {
-                    // §10 backdrop-aware compositing: render the group over its
-                    // real page backdrop (reconstructed by replaying the stack),
-                    // then remove the backdrop so the page is not composited
-                    // twice.  Replaces the legacy white-fill backdrop proxy.
-                    // Returns null when it declines (blank/white backdrop -- see
-                    // isBlankBackdrop); fall back to the direct blended path.
-                    xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
-                    usedBackdropComposite = xFormBuffer != null;
-                }
-                if (xFormBuffer == null) {
-                    xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
-                }
-            } finally {
-                if (isolatedGroup) {
-                    BlendComposite.setTransparentBackdrop(previousTransparentBackdrop);
-                }
-            }
-            if (!disableXObjectSMask && hasMask) {
-
-                // apply the mask and paint.
-                if (!xForm.isShading()) {
-                    if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_ALPHA)) {
-                        logger.warning("Smask alpha example, currently not supported.");
-                    } else if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)) {
-                        xFormBuffer = applyMask(parentPage, xFormBuffer, softMask, formSoftMask, g.getRenderingHints());
+            synchronized (this) {
+                if (!xFormBufferBuilt) {
+                    RenderingHints renderingHints = g.getRenderingHints();
+                    Rectangle2D bBox = xForm.getBBox();
+                    x = (int) bBox.getX();
+                    y = (int) bBox.getY();
+                    boolean hasMask = ((xForm.getGraphicsState().getExtGState() != null &&
+                            xForm.getGraphicsState().getExtGState().getSMask() != null) ||
+                            (xForm.getExtGState() != null && xForm.getExtGState().getSMask() != null));
+                    boolean isExtendGraphicState = xForm.getGraphicsState().getExtGState() != null &&
+                            xForm.getExtGState() != null;
+                    boolean normalBM = false;
+                    if (isExtendGraphicState && xForm.getExtGState().getBlendingMode() != null) {
+                        normalBM = xForm.getExtGState().getBlendingMode().equals(new Name("Normal")) &&
+                                xForm.getGraphicsState().getExtGState().getBlendingMode().equals(new Name("Normal")) &&
+                                (xForm.getExtGState() != null &&
+                                        (!xForm.getExtGState().isAlphaAShape() || xForm.getExtGState().getOverprintMode() == 0));
                     }
-                } else if (softMask != null) {
-                    // still not property aligning the form or mask space to correctly apply a shading pattern.
-                    // experimental as it fixes some, breaks others, but regardless we don't support it well.
-                    logger.warning("Smask pattern paint example, currently not supported.");
-                    xFormBuffer.flush();
-                    xFormBuffer = createBufferXObject(parentPage, softMask.getG(), null, renderingHints, true);
-                    return currentShape;
-                }
-                // apply the form mask to current form content that has been rasterized to xFormBuffer
-                if (formSoftMask != null) {
-                    BufferedImage formSMaskBuffer = applyMask(parentPage, xFormBuffer, formSoftMask, softMask,
-                            g.getRenderingHints());
-                    // compost all the images.
-                    if (softMask != null) {
-                        BufferedImage formBuffer = ImageUtility.createTranslucentCompatibleImage(
-                                xFormBuffer.getWidth(), xFormBuffer.getHeight());
-                        Graphics2D g2d = (Graphics2D) formBuffer.getGraphics();
+
+                    SoftMask formSoftMask = null;
+                    SoftMask softMask = null;
+
+                    if (xForm.getGraphicsState().getExtGState().getSMask() != null) {
+                        softMask = xForm.getGraphicsState().getExtGState().getSMask();
+                        // A luminosity/alpha mask group form often carries an empty
+                        // /Resources and resolves its XObjects (e.g. a pre-rendered
+                        // grayscale drop-shadow image) through the enclosing content
+                        // form's resources.  Wire those before getG() initialises the
+                        // mask so it actually rasterises instead of collapsing to an
+                        // unmasked box.
+                        softMask.setParentResources(xForm.getLeafResources());
+                        boolean isShading = softMask.getG().getResources().isShading();
+                        if (isShading) {
+                            isShading = checkForShaddingFill(softMask.getG());
+                            softMask.getG().setShading(isShading);
+                        }
+                        if (!isShading) {
+                            x = (int) softMask.getG().getBBox().getX();
+                            y = (int) softMask.getG().getBBox().getY();
+                        }
+                    }
+                    if (xForm.getExtGState().getSMask() != null) {
+                        formSoftMask = xForm.getExtGState().getSMask();
+                        formSoftMask.setParentResources(xForm.getLeafResources());
+                        boolean isShading = formSoftMask.getG().getResources().isShading();
+                        if (isShading) {
+                            isShading = checkForShaddingFill(formSoftMask.getG());
+                            formSoftMask.getG().setShading(isShading);
+                        }
+                        if (!isShading) {
+                            x = (int) formSoftMask.getG().getBBox().getX();
+                            y = (int) formSoftMask.getG().getBBox().getY();
+                        }
+                    }
+                    // check if we have the same xobject.
+                    if (softMask != null && formSoftMask != null) {
+                        if (softMask.getPObjectReference() != null && formSoftMask.getPObjectReference() != null &&
+                                softMask.getPObjectReference().equals(formSoftMask.getPObjectReference())) {
+                            softMask = null;
+                        } else if (softMask.getG().getPObjectReference() != null &&
+                                formSoftMask.getG().getPObjectReference() != null &&
+                                softMask.getG().getPObjectReference().equals(formSoftMask.getG().getPObjectReference())) {
+                            softMask = null;
+                        }
+                    }
+                    // need to check if we really have a shading pattern, as the resources check can be false positive.
+                    if (xForm.getResources().isShading()) {
+                        boolean isFormShading = checkForShaddingFill(xForm);
+                        xForm.setShading(isFormShading);
+                    }
+
+                    // Frame the content buffer and the mask sub-buffer to the UNION of the
+                    // content and (finite, non-shading) mask bboxes so the two align 1:1;
+                    // x,y move to the union origin for the draw-back.  This keeps the
+                    // mask's soft feather where it extends past the content bbox (a drop
+                    // shadow's outer edge) instead of clipping it to a hard edge.
+                    SoftMask alignMask = softMask != null ? softMask : formSoftMask;
+                    if (alignMask != null && alignMask.getG() != null && !alignMask.getG().isShading()
+                            && !xForm.isShading() && hasFiniteSoftMask(xForm)) {
+                        Rectangle2D mBox = alignMask.getG().getBBox();
+                        if (mBox != null) {
+                            bufferFrame = bBox.createUnion(mBox);
+                            x = (int) Math.floor(bufferFrame.getX());
+                            y = (int) Math.floor(bufferFrame.getY());
+                        }
+                    }
+
+                    // create the form and we'll paint it at the very least.  An isolated
+                    // group composites against a transparent backdrop, so flag the blend
+                    // for this buffer's paint: a separable blend over the still
+                    // -transparent backdrop is weighted by backdrop alpha and reduces to
+                    // the source colour where the backdrop is empty, instead of
+                    // multiplying against zero and going black (see
+                    // BlendComposite.TRANSPARENT_BACKDROP).  Scoped to isolated groups
+                    // only.  Restored after, so the mask/outline sub-buffers below and
+                    // the shared paths are unaffected.
+                    boolean isolatedGroup = xForm.isIsolated();
+                    boolean previousTransparentBackdrop = isolatedGroup
+                            && BlendComposite.setTransparentBackdrop(true);
+                    try {
+                        // Inside the page-group buffer §10 is normally bypassed so a
+                        // separable (non-Normal) group blends against the live accumulating
+                        // buffer.  But a NON-isolated NORMAL group has no blend to interact
+                        // with the backdrop at draw-back, so rendering it isolated (over the
+                        // transparent seed) yields its bare, un-composited content -- a light
+                        // gradient that then washes the page (P100002589 turtle divider band,
+                        // forms 46/58).  Such groups still need §10's backdrop-aware
+                        // compositing, so keep it for Normal blends even inside the buffer.
+                        // Only a separable (non-Normal) group blend interacts with the
+                        // backdrop at draw-back (its BlendComposite reads the accumulated
+                        // buffer as the blend destination); for those the §10 reconstruction
+                        // is redundant inside the page-group buffer and is bypassed.  A
+                        // Normal / no-blend group draws back with AlphaComposite, which just
+                        // overlays its isolated content -- so it still needs §10's real
+                        // backdrop compositing or it washes the page (turtle forms 46/58).
+                        boolean separableGroupBlend = g.getComposite() instanceof BlendComposite;
+                        boolean pageGroupBypass = renderingIntoPageGroup.get() && separableGroupBlend;
+                        if (!hasMask && !annotationAppearance.get() && !pageGroupBypass
+                                && backdropShapes != null
+                                && isBackdropCompositeCandidate(xForm)) {
+                            // §10 backdrop-aware compositing: render the group over its
+                            // real page backdrop (reconstructed by replaying the stack),
+                            // then remove the backdrop so the page is not composited
+                            // twice.  Replaces the legacy white-fill backdrop proxy.
+                            // Returns null when it declines (blank/white backdrop -- see
+                            // isBlankBackdrop); fall back to the direct blended path.
+                            xFormBuffer = compositeOverBackdrop(parentPage, xForm, renderingHints, normalBM, g, base);
+                            usedBackdropComposite = xFormBuffer != null;
+                        }
+                        if (xFormBuffer == null) {
+                            xFormBuffer = createBufferXObject(parentPage, xForm, null, renderingHints, normalBM);
+                        }
+                    } finally {
+                        if (isolatedGroup) {
+                            BlendComposite.setTransparentBackdrop(previousTransparentBackdrop);
+                        }
+                    }
+                    if (!disableXObjectSMask && hasMask) {
+
+                        // apply the mask and paint.
+                        if (!xForm.isShading()) {
+                            if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_ALPHA)) {
+                                logger.warning("Smask alpha example, currently not supported.");
+                            } else if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)) {
+                                xFormBuffer = applyMask(parentPage, xFormBuffer, softMask, formSoftMask,
+                                        g.getRenderingHints());
+                            }
+                        } else if (softMask != null) {
+                            // still not property aligning the form or mask space to correctly apply a shading pattern.
+                            // experimental as it fixes some, breaks others, but regardless we don't support it well.
+                            logger.warning("Smask pattern paint example, currently not supported.");
+                            xFormBuffer.flush();
+                            xFormBuffer = createBufferXObject(parentPage, softMask.getG(), null, renderingHints, true);
+                            return currentShape;
+                        }
+                        // apply the form mask to current form content that has been rasterized to xFormBuffer
+                        if (formSoftMask != null) {
+                            BufferedImage formSMaskBuffer = applyMask(parentPage, xFormBuffer, formSoftMask, softMask,
+                                    g.getRenderingHints());
+                            // compost all the images.
+                            if (softMask != null) {
+                                BufferedImage formBuffer = ImageUtility.createTranslucentCompatibleImage(
+                                        xFormBuffer.getWidth(), xFormBuffer.getHeight());
+                                Graphics2D g2d = (Graphics2D) formBuffer.getGraphics();
 //                        java.util.List<Number> compRaw = formSoftMask.getBC();
 //                        if (compRaw != null) {
 //                            g2d.setColor(Color.BLACK);
 //                            g2d.fillRect(0, 0, xFormBuffer.getWidth(), xFormBuffer.getHeight());
 //                        }
-                        g2d.drawImage(formSMaskBuffer, 0, 0, null);
+                                g2d.drawImage(formSMaskBuffer, 0, 0, null);
 //                        g2d.drawImage(xFormBuffer, 0, 0, null);
-                        xFormBuffer.flush();
-                        xFormBuffer = formBuffer;
-                    } else {
-                        xFormBuffer = formSMaskBuffer;
+                                xFormBuffer.flush();
+                                xFormBuffer = formBuffer;
+                            } else {
+                                xFormBuffer = formSMaskBuffer;
+                            }
+                        }
+                    } else if (isExtendGraphicState) {
+                        BufferedImage shape = createBufferXObject(parentPage, xForm, null, renderingHints, true);
+                        xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
                     }
-                }
-            } else if (isExtendGraphicState) {
-                BufferedImage shape = createBufferXObject(parentPage, xForm, null, renderingHints, true);
-                xFormBuffer = ImageUtility.applyExplicitOutline(xFormBuffer, shape);
-            }
 //            ImageUtility.displayImage(xFormBuffer, "final" + xForm.getGroup() + " " + xForm.getPObjectReference() +
 //                    xFormBuffer.getHeight() + "x" + xFormBuffer.getHeight());
-            bufferFrame = null;
-            xFormBufferBuilt = true; // publish LAST: buffer + x,y are now final
-           }
-          }
+                    bufferFrame = null;
+                    xFormBufferBuilt = true; // publish LAST: buffer + x,y are now final
+                }
+            }
         }
         // §10: a backdrop-composited buffer already holds the group's
         // contribution with the backdrop removed; the page blend (e.g. Multiply)
@@ -543,7 +548,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static final ThreadLocal<Boolean> annotationAppearance =
             ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-    /** Toggle the annotation-appearance backdrop bypass (see field). */
+    /**
+     * Toggle the annotation-appearance backdrop bypass (see field).
+     */
     public static void setAnnotationAppearance(boolean painting) {
         annotationAppearance.set(painting);
     }
@@ -559,7 +566,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static final ThreadLocal<Boolean> renderingIntoPageGroup =
             ThreadLocal.withInitial(() -> Boolean.FALSE);
 
-    /** Toggle the page-group-buffer §10 bypass (see field). */
+    /**
+     * Toggle the page-group-buffer §10 bypass (see field).
+     */
     public static void setRenderingIntoPageGroup(boolean rendering) {
         renderingIntoPageGroup.set(rendering);
     }
@@ -623,9 +632,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
         }
     }
 
-    /** A non-isolated transparency group whose blend benefits from compositing
-     *  against the real reconstructed backdrop rather than a transparent buffer:
-     *  a non-Normal blend over an additive (RGB/CMYK/ICC) colour space. */
+    /**
+     * A non-isolated transparency group whose blend benefits from compositing
+     * against the real reconstructed backdrop rather than a transparent buffer:
+     * a non-Normal blend over an additive (RGB/CMYK/ICC) colour space.
+     */
     private static boolean isBackdropCompositeCandidate(Form xForm) {
         if (xForm.getExtGState() == null || xForm.getExtGState().getBlendingMode() == null
                 || new Name("Normal").equals(xForm.getExtGState().getBlendingMode())
@@ -723,9 +734,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
     private static final double BLANK_BACKDROP_MIN_MEAN_LUM =
             Defs.doubleProperty("org.icepdf.core.blankBackdropMeanLum", 245d);
 
-    /** True when {@code backdrop} is effectively uniform white paper (mean
-     *  luminance at/above {@link #BLANK_BACKDROP_MIN_MEAN_LUM}), i.e. the group
-     *  sits over no meaningful reconstructed content. */
+    /**
+     * True when {@code backdrop} is effectively uniform white paper (mean
+     * luminance at/above {@link #BLANK_BACKDROP_MIN_MEAN_LUM}), i.e. the group
+     * sits over no meaningful reconstructed content.
+     */
     private static boolean isBlankBackdrop(BufferedImage backdrop) {
         int w = backdrop.getWidth(), h = backdrop.getHeight();
         long total = (long) w * h;
@@ -743,10 +756,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
         return sumLum / total >= BLANK_BACKDROP_MIN_MEAN_LUM;
     }
 
-    /** True for blend modes that collapse to white when the backdrop is white --
-     *  B(white, Cs) ~ white.  Over a blank backdrop these erase opaque group
-     *  content, so §10 is declined for them (see {@link #compositeOverBackdrop}).
-     *  ColorBurn is included: ColorBurn(1, Cs) = 1 - min(1, 0/Cs) = 1. */
+    /**
+     * True for blend modes that collapse to white when the backdrop is white --
+     * B(white, Cs) ~ white.  Over a blank backdrop these erase opaque group
+     * content, so §10 is declined for them (see {@link #compositeOverBackdrop}).
+     * ColorBurn is included: ColorBurn(1, Cs) = 1 - min(1, 0/Cs) = 1.
+     */
     private static boolean isWhiteWashingBlend(Name blend) {
         return blend != null && (
                 blend.equals(BlendComposite.COLOR_DODGE_VALUE)
@@ -756,8 +771,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
                         || blend.equals(BlendComposite.LIGHTEN_VALUE));
     }
 
-    /** A DeviceCMYK transparency group (the raster-level subtractive path's scope;
-     *  ICCBased-CMYK groups are left to the additive path for now). */
+    /**
+     * A DeviceCMYK transparency group (the raster-level subtractive path's scope;
+     * ICCBased-CMYK groups are left to the additive path for now).
+     */
     private static boolean isCmykGroup(Form xForm) {
         if (xForm.getGroup() == null) {
             return false;
@@ -859,7 +876,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     continue;
                 }
                 int outAlpha = (int) Math.round(ca * ag);
-                if (outAlpha < 0) outAlpha = 0; else if (outAlpha > 255) outAlpha = 255;
+                if (outAlpha < 0) outAlpha = 0;
+                else if (outAlpha > 255) outAlpha = 255;
                 space.fromSRGB(is[xx], cs);   // isolated group colour Cs
                 space.fromSRGB(b0[xx], cb);   // real backdrop colour Cb
                 for (int c = 0; c < n; c++) {
@@ -872,9 +890,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
         return isolated;
     }
 
-    /** Maps a PDF blend-mode {@link Name} to the {@link BlendComposite.BlendingMode}
-     *  the {@link BlendingSpace} understands; only the separable modes appear on a
-     *  transparency group, anything else falls back to Normal. */
+    /**
+     * Maps a PDF blend-mode {@link Name} to the {@link BlendComposite.BlendingMode}
+     * the {@link BlendingSpace} understands; only the separable modes appear on a
+     * transparency group, anything else falls back to Normal.
+     */
     private static BlendComposite.BlendingMode toBlendingMode(Name blend) {
         if (blend == null) return BlendComposite.BlendingMode.NORMAL;
         if (BlendComposite.MULTIPLY_VALUE.equals(blend)) return BlendComposite.BlendingMode.MULTIPLY;
@@ -896,9 +916,12 @@ public class FormDrawCmd extends AbstractDrawCmd {
         if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_ALPHA)) {
             logger.warning("Smask alpha example, currently not supported.");
         } else if (softMask != null && softMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)) {
-            BufferedImage sMaskBuffer = createBufferXObject(parentPage, softMask.getG(), softMask, renderingHints, true);
-//            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer.getHeight() + " x " + xFormBuffer.getHeight());
-//            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " + useLuminosity);
+            BufferedImage sMaskBuffer = createBufferXObject(parentPage, softMask.getG(), softMask, renderingHints,
+                    true);
+//            ImageUtility.displayImage(xFormBuffer, "base " + xForm.getPObjectReference() + " " + xFormBuffer
+//            .getHeight() + " x " + xFormBuffer.getHeight());
+//            ImageUtility.displayImage(sMaskBuffer, "smask " + softMask.getG().getPObjectReference() + " " +
+//            useLuminosity);
             // A luminosity mask that renders to zero luminosity everywhere would
             // erase the whole group (applyExplicitSMask/Outline read the mask's red
             // channel as the alpha weight).  That happens when the mask group's own
