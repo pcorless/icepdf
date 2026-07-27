@@ -243,6 +243,14 @@ public class ImageUtility {
 
     private static final ThreadLocal<CmykInkSink> INK_SINK = new ThreadLocal<>();
 
+    /** True when a {@link CmykInkSink} is active on the current thread, i.e. a CMYK
+     *  group is being rasterized.  Callers that want to trim an image blit to the
+     *  visible clip must skip that optimization while this holds, because
+     *  {@link #captureCmykInk} assumes the full source-&gt;user box was drawn. */
+    public static boolean isCmykInkCapturing() {
+        return INK_SINK.get() != null;
+    }
+
     /** Begins CMYK ink capture for a {@code w x h} group buffer on this thread. */
     public static CmykInkSink beginCmykInkCapture(int w, int h) {
         CmykInkSink sink = new CmykInkSink(w, h);
@@ -364,6 +372,75 @@ public class ImageUtility {
 
     private ImageUtility() {
 
+    }
+
+    // Repack opaque, effectively-grayscale decoded images from 32-bit ARGB to
+    // 8-bit (1/4 the memory).  Content decoded through the sRGB path (DeviceN /
+    // Separation / DeviceGray scans) commonly lands in an INT_ARGB buffer even
+    // though every pixel is opaque grey; caching those at 8-bit cuts the resident
+    // image footprint 4x with no visual change.  Toggle off with
+    // -Dorg.icepdf.core.imageCompact=false.
+    private static final boolean COMPACT_IMAGES =
+            Defs.booleanProperty("org.icepdf.core.imageCompact", true);
+
+    // 256-entry gray palette whose index i maps to the exact sRGB grey
+    // 0xFFiiiiii, so an 8-bit indexed copy reproduces the ARGB grey precisely
+    // (unlike TYPE_BYTE_GRAY, whose CS_GRAY colour space would gamma-shift it).
+    private static final IndexColorModel GRAY_256 = buildGray256();
+
+    private static IndexColorModel buildGray256() {
+        byte[] ramp = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            ramp[i] = (byte) i;
+        }
+        return new IndexColorModel(8, 256, ramp, ramp, ramp);
+    }
+
+    /**
+     * Returns a memory-compact equivalent of {@code image} when its content
+     * allows it: an <em>opaque, effectively-grayscale</em> {@code INT_ARGB}/
+     * {@code INT_RGB} image is repacked as an 8-bit gray-indexed image (1/4 the
+     * memory).  Anything with transparency, real colour, an unsupported type, or
+     * preserved CMYK samples (keyed by the exact image instance) is returned
+     * unchanged.  The single pass bails on the first non-grey/translucent pixel,
+     * so colour images pay only a cheap scan.
+     *
+     * @param image decoded image to (possibly) compact.
+     * @return a compacted copy, or {@code image} unchanged when no gain is safe.
+     */
+    public static BufferedImage compactImage(BufferedImage image) {
+        if (!COMPACT_IMAGES || image == null) {
+            return image;
+        }
+        int type = image.getType();
+        if (type != BufferedImage.TYPE_INT_ARGB
+                && type != BufferedImage.TYPE_INT_ARGB_PRE
+                && type != BufferedImage.TYPE_INT_RGB) {
+            return image;
+        }
+        // preserved CMYK samples are keyed by this exact image; don't swap it out.
+        if (getCmykSamples(image) != null) {
+            return image;
+        }
+        DataBuffer db = image.getRaster().getDataBuffer();
+        if (!(db instanceof DataBufferInt)) {
+            return image;
+        }
+        int[] px = ((DataBufferInt) db).getData();
+        for (int p : px) {
+            int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+            if (((p >>> 24) & 0xFF) != 0xFF || r != g || g != b) {
+                // translucent or coloured -> no safe 8-bit gray repack.
+                return image;
+            }
+        }
+        int w = image.getWidth(), h = image.getHeight();
+        BufferedImage gray = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_INDEXED, GRAY_256);
+        byte[] gp = ((DataBufferByte) gray.getRaster().getDataBuffer()).getData();
+        for (int i = 0; i < px.length; i++) {
+            gp[i] = (byte) (px[i] & 0xFF); // R==G==B, any channel is the grey level
+        }
+        return gray;
     }
 
     /**

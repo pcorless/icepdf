@@ -116,8 +116,9 @@ public abstract class AbstractPageViewComponent
             pageBoundaryBox = PAGE_BOUNDARY_BOX;
         }
 
-        // set up the store for the back buffer and current clip
-        pageBufferStore = new PageBufferStore();
+        // set up the store for the back buffer and current clip; its pin budget is
+        // shared per-document so pages of the same document share a pin cap.
+        pageBufferStore = new PageBufferStore(budgetFor(documentViewModel));
 
         // initialize page size
         pageSize = new Rectangle();
@@ -298,13 +299,16 @@ public abstract class AbstractPageViewComponent
         BufferedImage pageImage = snapshot.image;
         if (pageImage != null) {
             Rectangle paintingClip = snapshot.imageLocation;
-            // check if we should scale and rotate the current capture
+            // If the buffer was captured at a different zoom/rotation, scale/rotate it
+            // so it fills the page smoothly until the fresh capture lands.  The stale
+            // buffer is flagged dirty in calculateBufferLocation (which then submits a
+            // new capture); we deliberately do NOT setDirty()+repaint() here.  Doing so
+            // spun a tight EDT loop while the (slow) capture was still in flight -- the
+            // capture-completion repaint (see PageImageCaptureTask.call) is what drives
+            // convergence, exactly once, when the new buffer is actually ready.
             if (pageZoom != snapshot.pageZoom ||
                     pageRotation != snapshot.pageRotation) {
                 g2d.transform(calculateBufferAffineTransform(snapshot));
-                pageBufferStore.setDirty(true);
-                // force one more paint to make sure we build a new buffer using the current zoom and rotation.
-                repaint();
             }
             // will scale buffer to fit the current clip with smooths out any artifacts from screen scale factor
             g2d.drawImage(pageImage, paintingClip.x, paintingClip.y, paintingClip.width, paintingClip.height, null);
@@ -332,8 +336,13 @@ public abstract class AbstractPageViewComponent
         Rectangle viewPort = parentScrollPane.getViewport().getViewRect();
         Rectangle imageLocation;
         Rectangle imageClipLocation;
-        if (pageLocation.width < viewPort.width || pageLocation.height < viewPort.height) {
-            // if page is smaller than viewport then we use the full page size.
+        if (pageLocation.width < viewPort.width && pageLocation.height < viewPort.height) {
+            // Only buffer the whole page when it fits the viewport in BOTH dimensions.
+            // With '||' a page narrower than the viewport but taller than it (a portrait
+            // page zoomed in, scrolling vertically) took this branch and allocated a
+            // full-page buffer sized to the zoomed page height -- hundreds of MB at high
+            // zoom, retained per page via the SoftReference store.  '&&' keeps such pages
+            // on the viewport-clipped branch below so the buffer stays viewport-bounded.
             imageLocation = new Rectangle(0, 0, pageLocation.width, pageLocation.height);
             imageClipLocation = new Rectangle(imageLocation);
         } else {
@@ -356,6 +365,16 @@ public abstract class AbstractPageViewComponent
                     pageBufferStore.setDirty(true);
                 }
             }
+        }
+
+        // A buffer captured at a different zoom/rotation than the live view is stale
+        // and needs a fresh capture.  Detecting it here (rather than via a setDirty()
+        // +repaint() in paintComponent) means the capture is submitted once and the
+        // capture-completion repaint drives convergence, instead of a busy EDT loop.
+        if (pageBufferStore.getImageReference() != null &&
+                (pageZoom != pageBufferStore.getPageZoom() ||
+                        pageRotation != pageBufferStore.getPageRotation())) {
+            pageBufferStore.setDirty(true);
         }
 
         // check if we need to create or refresh the back buffer.
@@ -434,7 +453,9 @@ public abstract class AbstractPageViewComponent
 
         public Object call() {
             if (!isPageIntersectViewport()) {
-                // page teardown when out of view.
+                // page teardown when out of view; drop the strong buffer pin so the
+                // off-screen buffer can be reclaimed.
+                pageBufferStore.releasePin();
                 pageTeardownCallback();
                 return null;
             }
@@ -502,12 +523,91 @@ public abstract class AbstractPageViewComponent
         }
     }
 
+    // Maximum strongly-pinned page buffers PER DOCUMENT.  A pin keeps a page's live
+    // buffer from being GC'd mid-render (which would trigger a re-capture); the
+    // per-document budget is the sole release mechanism -- a page that scrolls out
+    // of view stops capturing and is evicted (its pin released, buffer left to its
+    // SoftReference) once newer pages capture, so off-screen buffers can't
+    // accumulate no matter how the page left the viewport (scroll, resize, view-mode
+    // change).  Default 6 (~a screen of pages plus neighbours).
+    private static final int MAX_PINNED_BUFFERS =
+            Math.max(1, Defs.intProperty("org.icepdf.core.views.maxPinnedPageBuffers", 6));
+
+    // One PinnedBufferBudget per open document, keyed weakly by its view model so a
+    // closed document's budget is released with it.  Per-document (not a single
+    // JVM-wide pool) so two documents in two viewers don't evict each other's pins.
+    private static final java.util.Map<DocumentViewModel, PinnedBufferBudget> PIN_BUDGETS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    // Fallback for a null view model (headless / detached page): its own isolated
+    // budget so it can't be starved by, or starve, real documents.
+    private static final PinnedBufferBudget NO_MODEL_PIN_BUDGET = new PinnedBufferBudget();
+
+    private static PinnedBufferBudget budgetFor(DocumentViewModel model) {
+        if (model == null) {
+            return NO_MODEL_PIN_BUDGET;
+        }
+        synchronized (PIN_BUDGETS) {
+            return PIN_BUDGETS.computeIfAbsent(model, m -> new PinnedBufferBudget());
+        }
+    }
+
+    /**
+     * An access-ordered LRU of pinned {@link PageBufferStore}s for a single document.
+     * When a store pins a buffer beyond {@link #MAX_PINNED_BUFFERS}, the eldest
+     * (least-recently captured) store's pin is released so its buffer falls back to
+     * its {@link SoftReference} and becomes GC-eligible.  Actively rendered pages
+     * re-capture (moving them to newest), so the visible pages stay pinned.
+     */
+    private static final class PinnedBufferBudget {
+        private final java.util.LinkedHashMap<PageBufferStore, Boolean> lru =
+                new java.util.LinkedHashMap<>(16, 0.75f, true);
+
+        // Register store as most-recently-pinned; release any pin beyond the cap.
+        // Evicted pins are released OUTSIDE the lock to avoid nested locking.
+        void pin(PageBufferStore store) {
+            java.util.List<PageBufferStore> evicted = null;
+            synchronized (lru) {
+                lru.put(store, Boolean.TRUE);
+                java.util.Iterator<PageBufferStore> it = lru.keySet().iterator();
+                while (lru.size() > MAX_PINNED_BUFFERS && it.hasNext()) {
+                    PageBufferStore eldest = it.next();
+                    if (eldest == store) {
+                        continue; // never evict the buffer we just pinned
+                    }
+                    if (evicted == null) {
+                        evicted = new java.util.ArrayList<>();
+                    }
+                    evicted.add(eldest);
+                    it.remove();
+                }
+            }
+            if (evicted != null) {
+                for (PageBufferStore s : evicted) {
+                    s.releasePin();
+                }
+            }
+        }
+
+        void drop(PageBufferStore store) {
+            synchronized (lru) {
+                lru.remove(store);
+            }
+        }
+    }
+
     /**
      * Synchronized page buffer property store, insures that a page capture occurs using the correct properties.
      */
     protected static class PageBufferStore {
 
-        // last page buffer store,
+        // last page buffer store.  The buffer is held two ways: a strong "pin" while
+        // the page is on-screen so GC cannot reclaim the buffer out from under the
+        // render loop (which would make getImageReference() return null and trigger
+        // an endless re-capture / re-decode storm), plus a SoftReference fallback so
+        // an off-screen page whose pin has been released can still be GC-reclaimed
+        // under memory pressure (pages are not disposed until the document closes).
+        private BufferedImage pinnedImage;
         private SoftReference<BufferedImage> imageReference;
         // paint location if buffer is clipped to be smaller than the page size.
         private Rectangle imageLocation;
@@ -521,8 +621,25 @@ public abstract class AbstractPageViewComponent
 
         private final Object objectLock = new Object();
 
-        PageBufferStore() {
+        // The pin budget that caps how many of this DOCUMENT's page buffers stay
+        // strongly pinned (see PinnedBufferBudget).  Scoped per view model so two
+        // documents open in two viewers each keep their own visible buffers pinned
+        // instead of evicting each other's from a single JVM-wide pool.
+        private final PinnedBufferBudget pinBudget;
+
+        PageBufferStore(PinnedBufferBudget pinBudget) {
+            this.pinBudget = pinBudget;
             imageReference = new SoftReference<>(null);
+        }
+
+        // Track this store as most-recently-pinned (or drop it, for a null buffer)
+        // within its document's budget, which releases any pin beyond the cap.
+        private void registerPin(BufferedImage buffer) {
+            if (buffer == null) {
+                pinBudget.drop(this);
+            } else {
+                pinBudget.pin(this);
+            }
         }
 
         /**
@@ -551,13 +668,14 @@ public abstract class AbstractPageViewComponent
 
         Snapshot getSnapshot() {
             synchronized (objectLock) {
-                return new Snapshot(imageReference.get(), imageLocation, pageSize, pageZoom, pageRotation);
+                return new Snapshot(currentImage(), imageLocation, pageSize, pageZoom, pageRotation);
             }
         }
 
         void setState(BufferedImage pageBufferImage, Rectangle imageLocation, Rectangle imageClipLocation,
                       Rectangle pageSize, float pageZoom, float pageRotation, boolean isDirty) {
             synchronized (objectLock) {
+                this.pinnedImage = pageBufferImage;
                 this.imageReference = new SoftReference<>(pageBufferImage);
                 this.imageLocation = imageLocation;
                 this.imageClipLocation = imageClipLocation;
@@ -566,18 +684,42 @@ public abstract class AbstractPageViewComponent
                 this.pageRotation = pageRotation;
                 this.isDirty = isDirty;
             }
+            registerPin(pageBufferImage);
         }
 
         void setImageReference(BufferedImage bufferedImage) {
             synchronized (objectLock) {
+                this.pinnedImage = bufferedImage;
                 this.imageReference = new SoftReference<>(bufferedImage);
             }
+            registerPin(bufferedImage);
         }
 
         public BufferedImage getImageReference() {
             synchronized (objectLock) {
-                return imageReference.get();
+                return currentImage();
             }
+        }
+
+        // Prefer the strong pin; fall back to the soft reference for an off-screen
+        // page whose pin was released but whose buffer GC has not yet reclaimed.
+        private BufferedImage currentImage() {
+            if (pinnedImage != null) {
+                return pinnedImage;
+            }
+            return imageReference != null ? imageReference.get() : null;
+        }
+
+        /**
+         * Releases the strong pin (keeping the soft fallback) so an off-screen page's
+         * buffer becomes eligible for GC.  Called when the page scrolls out of the
+         * viewport.  A no-op re-pin happens automatically on the next capture.
+         */
+        void releasePin() {
+            synchronized (objectLock) {
+                this.pinnedImage = null;
+            }
+            pinBudget.drop(this);
         }
 
         Rectangle getImageLocation() {

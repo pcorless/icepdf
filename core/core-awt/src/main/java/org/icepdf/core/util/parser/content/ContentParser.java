@@ -33,8 +33,10 @@ import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,11 +46,15 @@ public class ContentParser extends AbstractContentParser {
             Logger.getLogger(ContentParser.class.getName());
 
     /**
-     * Inline image cache,  for heavily tiled background images.  Can be cleared
-     * between document parses if needed.
+     * Inline image cache, for heavily tiled background images.  Can be cleared
+     * between document parses if needed.  Values are held via SoftReference so a
+     * decoded inline image survives normal GC (so repeated tiles reuse it) but is
+     * reclaimed under memory pressure.  A WeakHashMap here would be keyed by the
+     * freshly-built content-hash String, which nothing holds strongly, so a GC
+     * mid-parse would drop entries and defeat the tiling reuse this cache exists for.
      */
-    public static final Map<String, ImageReference> inlineImageCache =
-            Collections.synchronizedMap(new WeakHashMap<>());
+    public static final Map<String, SoftReference<ImageReference>> inlineImageCache =
+            new ConcurrentHashMap<>();
 
     public ContentParser(Library l, Resources r) {
         super(l, r, null);
@@ -1066,7 +1072,12 @@ public class ContentParser extends AbstractContentParser {
                 String tmpKey = new String(data).concat(graphicState.getFillColor() != null ?
                         graphicState.getFillColor().toString() : "");
                 // pepper the key with the fill colour.
-                ImageReference imageReference = inlineImageCache.get(tmpKey);
+                SoftReference<ImageReference> cached = inlineImageCache.get(tmpKey);
+                ImageReference imageReference = cached != null ? cached.get() : null;
+                if (cached != null && imageReference == null) {
+                    // soft reference cleared under memory pressure; drop the dead entry.
+                    inlineImageCache.remove(tmpKey, cached);
+                }
                 if (imageReference != null) {
                     imageStreamReference = imageReference;
                     imageStream = imageStreamReference.getImageStream();
@@ -1075,7 +1086,7 @@ public class ContentParser extends AbstractContentParser {
                     imageStream = new ImageStream(library, iih, data);
                     imageStreamReference = ImageReferenceFactory.getImageReference(
                             imageStream, null, resources, graphicState, imageIndex.get(), page);
-                    inlineImageCache.put(tmpKey, imageStreamReference);
+                    inlineImageCache.put(tmpKey, new SoftReference<>(imageStreamReference));
                 }
             } else {
                 // create the image stream
