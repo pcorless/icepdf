@@ -163,6 +163,11 @@ public class ImageStream extends Stream {
         // associate any preserved CMYK samples with this stable stream key so the
         // draw-time ink capture finds them regardless of downstream mask/scale.
         ImageUtility.associateCmykStream(this, rawDecoded);
+        // Trim the resident footprint: an opaque, effectively-grayscale result
+        // (common for DeviceN / Separation / DeviceGray scans that decode through
+        // the sRGB ARGB path) is repacked to 8-bit, 1/4 the memory, no visual
+        // change.  No-op for coloured/translucent/CMYK-preserving images.
+        decodedImage = ImageUtility.compactImage(decodedImage);
         return decodedImage;
     }
 

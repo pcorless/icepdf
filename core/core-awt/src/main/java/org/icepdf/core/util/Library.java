@@ -124,7 +124,10 @@ public class Library {
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
             new ConcurrentHashMap<>(1024);
-    private final ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
+    // Soft (not weak): an ICCBased colour space is expensive to build (parses an
+    // ICC_Profile), so keep it across normal GC and only reclaim under real memory
+    // pressure, rather than re-parsing on the next GC as a weak reference would.
+    private final ConcurrentHashMap<Reference, SoftReference<ICCBased>> lookupReference2ICCBased =
             new ConcurrentHashMap<>(256);
 
     private Header fileHeader;
@@ -262,7 +265,6 @@ public class Library {
             if (type != null) {
                 return type.equals(Font.TYPE) ||
                         type.equals(PageTree.TYPE) ||
-                        type.equals(Font.TYPE) ||
                         type.equals(Annotation.TYPE) ||
                         type.equals(ImageStream.TYPE_VALUE) ||
                         type.equals(Catalog.TYPE);
@@ -806,7 +808,7 @@ public class Library {
     public ICCBased getICCBased(Reference ref) {
         ICCBased cs = null;
 
-        WeakReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
+        SoftReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
         if (csRef != null) {
             cs = csRef.get();
         }
@@ -816,7 +818,7 @@ public class Library {
             if (obj instanceof Stream) {
                 Stream stream = (Stream) obj;
                 cs = new ICCBased(this, stream);
-                lookupReference2ICCBased.put(ref, new WeakReference<>(cs));
+                lookupReference2ICCBased.put(ref, new SoftReference<>(cs));
             }
         }
         return cs;
