@@ -57,9 +57,12 @@ public class SecurityManager {
     // Pointer to class which implements the SecurityHandler interface
     private final SecurityHandler securityHandler;
 
-    // key caches, fairly expensive calculation
-    private byte[] encryptionKey;
-    private byte[] decryptionKey;
+    // key caches, fairly expensive calculation.  volatile + double-checked
+    // publication in getDecryptionKey(): concurrent page/stream decodes all
+    // first-touch this lazily, and the underlying securityHandler.getEncryptionKey()
+    // mutates shared crypto state, so it must be computed exactly once.
+    private volatile byte[] encryptionKey;
+    private volatile byte[] decryptionKey;
 
     /**
      * Disposes of the security handler instance.
@@ -129,10 +132,17 @@ public class SecurityManager {
      * @return encryption key used to encrypt the data
      */
     public byte[] getEncryptionKey() {
-        if (encryptionKey == null) {
-            encryptionKey = securityHandler.getEncryptionKey();
+        byte[] key = encryptionKey;
+        if (key == null) {
+            synchronized (this) {
+                key = encryptionKey;
+                if (key == null) {
+                    key = securityHandler.getEncryptionKey();
+                    encryptionKey = key;
+                }
+            }
         }
-        return encryptionKey;
+        return key;
     }
 
     /**
@@ -141,10 +151,17 @@ public class SecurityManager {
      * @return decryption key used to encrypt the data
      */
     public byte[] getDecryptionKey() {
-        if (decryptionKey == null) {
-            decryptionKey = securityHandler.getDecryptionKey();
+        byte[] key = decryptionKey;
+        if (key == null) {
+            synchronized (this) {
+                key = decryptionKey;
+                if (key == null) {
+                    key = securityHandler.getDecryptionKey();
+                    decryptionKey = key;
+                }
+            }
         }
-        return decryptionKey;
+        return key;
     }
 
     /**
