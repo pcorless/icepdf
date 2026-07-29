@@ -135,22 +135,23 @@ public class ReadingOrderXYCutTest {
                         + lastLeft + " firstRight=" + firstRight + ")");
     }
 
-    @DisplayName("2005CAT p1: vertical INTRODUCTION label is not reversed (reads bottom-to-top)")
+    @DisplayName("2005CAT p1: vertical INTRODUCTION label groups into one contiguous line")
     @Test
     public void verticalLabelPreserved() throws Exception {
         List<LineText> lines = orderedLines("/redact/2005CAT.pdf", 0);
-        // the vertical run is the skinny left-margin stack (x < 40, single glyphs)
-        List<Integer> vy = new ArrayList<>();
+        // with vertical-text detection the skinny left-margin stack (x < 40) is grouped into a single line
+        // rather than one glyph per line; assert that line reads as the contiguous "INTRODUCTION" label.
+        boolean found = false;
         for (LineText l : lines) {
-            Rectangle2D.Double b = l.getBounds();
-            if (b.getMaxX() < 40) vy.add((int) b.getY());
+            if (l.getBounds().getMaxX() < 40) {
+                String label = lineText(l).replace(" ", "");
+                if (label.contains("INTRODUCTION")) {
+                    found = true;
+                    break;
+                }
+            }
         }
-        assertTrue(vy.size() >= 5, "expected the vertical INTRODUCTION stack");
-        // vertical text here reads bottom-to-top, so emitted y should be ascending (not reversed)
-        for (int i = 1; i < vy.size(); i++) {
-            assertTrue(vy.get(i) >= vy.get(i - 1),
-                    "vertical label must stay in bottom-to-top order, not be reversed by a y-sort");
-        }
+        assertTrue(found, "vertical INTRODUCTION label should extract as one contiguous left-margin line");
     }
 
     // ------------------------------------------------------------------

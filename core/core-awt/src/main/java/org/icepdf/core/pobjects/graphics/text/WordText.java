@@ -84,10 +84,12 @@ public class WordText extends AbstractText implements TextSelect {
                 logger.warning("Error reading text multiple space insertion");
             }
         }
-        // opt-in rotated/vertical text grouping; off while the feature lands incrementally.
+        // rotated/vertical text grouping; on by default - horizontal text is unaffected because the vertical
+        // branches are gated per glyph on the actual writing axis.  Set the property false to restore the old
+        // one-glyph-per-line behaviour for rotated/stacked text.
         try {
             detectVerticalText = Defs.sysPropertyBoolean(
-                    "org.icepdf.core.views.page.text.detectVerticalText", false);
+                    "org.icepdf.core.views.page.text.detectVerticalText", true);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading vertical text detection");

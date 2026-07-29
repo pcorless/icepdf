@@ -100,36 +100,27 @@
   L065 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
 
 === 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
-  L000 y=  253.7 x=    2.1..24.6     IN
-  L001 y=  270.5 x=    2.1..24.6     T
-  L002 y=  280.3 x=    2.1..24.6     R
-  L003 y=  291.7 x=   -5.2..24.6     O
-  L004 y=  303.9 x=    2.6..24.4     D
-  L005 y=  315.6 x=    2.6..24.4     U
-  L006 y=  327.1 x=    2.6..24.4     C
-  L007 y=  338.2 x=    2.6..24.4     T
-  L008 y=  347.7 x=    2.6..24.4     IO
-  L009 y=  362.9 x=    9.8..31.6     N
-  L010 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
-  L011 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
-  L012 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
-  L013 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
-  L014 y=  443.2 x=   60.8..257.5    providing durability and performance from
-  L015 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
-  L016 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
-  L017 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
-  L018 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
-  L019 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
-  L020 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
-  L021 y=  283.2 x=   60.8..150.9    more durable fork.
-  L022 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
-  L023 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
-  L024 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
-  L025 y=  183.2 x=   60.8..270.3    extensive line to date. We feel that for every
-  L026 y=  163.2 x=   60.8..258.4    rider there is a fork. If you can’t ﬁ nd what
-  L027 y=  143.2 x=   60.8..214.6    you’re looking for in this catalog,
-  L028 y=  123.2 x=   60.8..159.4    then it doesn’t exist.
-  L029 y=   83.1 x=   60.8..236.1    Enjoy the mountain, ride Marzocchi.
+  L000 y=  253.7 x=    9.6..24.6     INTRODUCTION
+  L001 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
+  L002 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
+  L003 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
+  L004 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
+  L005 y=  443.2 x=   60.8..257.5    providing durability and performance from
+  L006 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
+  L007 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
+  L008 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
+  L009 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
+  L010 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
+  L011 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
+  L012 y=  283.2 x=   60.8..150.9    more durable fork.
+  L013 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
+  L014 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
+  L015 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
+  L016 y=  183.2 x=   60.8..270.3    extensive line to date. We feel that for every
+  L017 y=  163.2 x=   60.8..258.4    rider there is a fork. If you can’t ﬁ nd what
+  L018 y=  143.2 x=   60.8..214.6    you’re looking for in this catalog,
+  L019 y=  123.2 x=   60.8..159.4    then it doesn’t exist.
+  L020 y=   83.1 x=   60.8..236.1    Enjoy the mountain, ride Marzocchi.
 
 === test_print p1 - plain single column [/redact/test_print.pdf p0] ===
   L000 y=  807.6 x=  286.7..322.7    - 1 -
