@@ -78,6 +78,8 @@ public class VerticalTextExtractionTest {
             String text = flatten(d.getPageText(0));
             assertTrue(text.contains("Sample"), "rotated header 'Sample' should be contiguous");
             assertTrue(text.contains("ProductName"), "rotated header 'Product Name' should be contiguous");
+            // two words stacked on one vertical line must read in order (top-to-bottom), not reversed.
+            assertTrue(text.contains("HelloTesting"), "stacked words should read Hello then Testing");
         } finally {
             d.dispose();
         }

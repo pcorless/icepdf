@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
+import java.awt.geom.Point2D;
 import java.util.Comparator;
 
 /**
@@ -33,17 +34,50 @@ import java.util.Comparator;
 public class WordPositionComparator implements
         Comparator<AbstractText> {
 
+    private final boolean directional;
+    private final double dirX, dirY;
+
     /**
-     * Compares the x coordinates of the AbstractText bounding box's x coordinate.
+     * Orders words left-to-right by the x coordinate of their bounding box (the default for horizontal text).
+     */
+    public WordPositionComparator() {
+        this.directional = false;
+        this.dirX = 1;
+        this.dirY = 0;
+    }
+
+    /**
+     * Orders words along an arbitrary writing direction by projecting each word's bounding-box centre onto the
+     * direction vector.  Used for rotated/vertical lines where an x-only comparison scrambles reading order.
+     *
+     * @param writeDirection page-space writing-direction vector (need not be unit length).
+     */
+    public WordPositionComparator(Point2D writeDirection) {
+        this.directional = true;
+        this.dirX = writeDirection.getX();
+        this.dirY = writeDirection.getY();
+    }
+
+    /**
+     * Compares two words by position: by x for horizontal text, or by projection onto the writing direction when a
+     * direction was supplied.
      *
      * @param lt1 word text object to compare
      * @param lt2 word text object to compare
-     * @return the value 0 if lt1.x is numerically equal to lt2.x; a value less
-     *         than 0 if lt1.x is numerically less than lt2.x; and a value greater than 0
-     *         if lt1.x is numerically greater than lt2.x.
+     * @return negative, zero or positive as lt1 reads before, same as, or after lt2 along the writing direction.
      */
     public int compare(AbstractText lt1, AbstractText lt2) {
-        return Double.compare(lt1.getTextExtractionBounds().x,
-                lt2.getTextExtractionBounds().x);
+        if (!directional) {
+            return Double.compare(lt1.getTextExtractionBounds().x,
+                    lt2.getTextExtractionBounds().x);
+        }
+        return Double.compare(projection(lt1), projection(lt2));
+    }
+
+    private double projection(AbstractText text) {
+        java.awt.geom.Rectangle2D.Double b = text.getTextExtractionBounds();
+        double cx = b.x + b.width / 2;
+        double cy = b.y + b.height / 2;
+        return cx * dirX + cy * dirY;
     }
 }

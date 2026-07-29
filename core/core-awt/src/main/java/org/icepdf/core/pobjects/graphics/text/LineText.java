@@ -175,21 +175,37 @@ public class LineText extends AbstractText implements TextSelect {
      * @return true if the line's dominant writing axis is vertical.
      */
     public boolean isVerticalWriting() {
+        GlyphText glyph = representativeGlyph();
+        return glyph != null && glyph.isVerticalWriting();
+    }
+
+    /**
+     * The line's page-space writing direction, taken from its first non-whitespace glyph.  Used to order words along
+     * the reading axis for rotated/vertical lines.
+     *
+     * @return writing-direction vector, or a horizontal (1,0) default when the line has no glyphs.
+     */
+    public java.awt.geom.Point2D getWriteDirection() {
+        GlyphText glyph = representativeGlyph();
+        return glyph != null ? glyph.getWriteDirection() : new java.awt.geom.Point2D.Double(1, 0);
+    }
+
+    /** First non-whitespace glyph (falling back to any glyph) used to characterise the line's orientation. */
+    private GlyphText representativeGlyph() {
         for (WordText word : words) {
             if (word.isWhiteSpace()) {
                 continue;
             }
             for (GlyphText glyph : word.getGlyphs()) {
-                return glyph.isVerticalWriting();
+                return glyph;
             }
         }
-        // fall back to any glyph (e.g. a line that is only whitespace)
         for (WordText word : words) {
             for (GlyphText glyph : word.getGlyphs()) {
-                return glyph.isVerticalWriting();
+                return glyph;
             }
         }
-        return false;
+        return null;
     }
 
     /**

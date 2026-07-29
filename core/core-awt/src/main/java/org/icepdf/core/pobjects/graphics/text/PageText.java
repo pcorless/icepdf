@@ -664,10 +664,14 @@ public class PageText implements TextSelect {
             }
         }
 
-        // sort each line by x coordinate.
+        // sort each line by x coordinate; vertical lines order along their writing direction instead.
         if (sortedPageLines.size() > 0) {
             for (LineText lineText : sortedPageLines) {
-                lineText.getWords().sort(new WordPositionComparator());
+                if (mergeBaselines && WordText.detectVerticalText && lineText.isVerticalWriting()) {
+                    lineText.getWords().sort(new WordPositionComparator(lineText.getWriteDirection()));
+                } else {
+                    lineText.getWords().sort(new WordPositionComparator());
+                }
             }
         }
 
