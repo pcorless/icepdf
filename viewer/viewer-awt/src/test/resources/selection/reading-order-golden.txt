@@ -1,5 +1,5 @@
 === xr_650 p6 - single column drawn out of order (Environmental/Programs/legal) [/redact/xr_650.pdf p5] ===
-  L000 y=  471.1 x=  143.9..432.0    P R O G R A M S T H A T P E R F O R M
+  L000 y=  471.1 x=  143.9..432.0    PROGRAMS THAT PERFORM
   L001 y=  453.9 x=  143.9..480.0    You chose your new Honda XR or XRL because it has so many gr
   L002 y=  441.9 x=  143.9..480.0    all of the programs available to you as a Honda owner. Take 
   L003 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
@@ -23,7 +23,7 @@
   L021 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
   L022 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
   L023 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
-  L024 y=  569.4 x=  144.0..476.5    E N V I R O N M E N T A L C O M M I T M E N T
+  L024 y=  569.4 x=  144.0..476.5    ENVIRONMENTAL COMMITMENT
   L025 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
   L026 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
   L027 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre

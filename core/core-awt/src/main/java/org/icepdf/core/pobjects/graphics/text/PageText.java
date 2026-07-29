@@ -53,6 +53,17 @@ public class PageText implements TextSelect {
     /** Merge sliced lines that share a baseline back into a single line (see {@link #mergeLinesByBaseline}). */
     private static final boolean mergeBaselines;
 
+    /** Collapse letter-spaced runs (e.g. "S P E C I F I C A T I O N S") into words (see {@link #collapseLetterSpacing}). */
+    private static final boolean collapseLetterSpacing;
+
+    // A letter-spaced run must have at least this many short tokens before it is collapsed.
+    private static final int LETTER_SPACING_MIN_RUN = 4;
+    // Tokens longer than this end a letter-spaced run - they are ordinary words, not spaced-out letters.
+    private static final int LETTER_SPACING_MAX_TOKEN = 4;
+    // If the largest inter-token gap is no more than this multiple of the median gap the run is treated as a single
+    // word (uniform spacing, no word breaks) - this keeps "SPECIFICATIONS" from splitting on its even letter gaps.
+    private static final double LETTER_SPACING_UNIFORM_FACTOR = 2.0;
+
     /** Page reading-order strategy applied to the sorted line list. */
     private enum ReadingOrder {PLOT, YSORT, XYCUT}
 
@@ -64,6 +75,9 @@ public class PageText implements TextSelect {
 
         mergeBaselines = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.mergeBaselines", true);
+
+        collapseLetterSpacing = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.collapseLetterSpacing", true);
 
         // readingOrder supersedes the older boolean preserveColumns; when readingOrder is not set
         // we derive the mode from preserveColumns so existing configurations behave unchanged.
@@ -594,6 +608,177 @@ public class PageText implements TextSelect {
     }
 
     /**
+     * Collapses letter-spaced runs within a line into whole words.  Headings are often drawn with a full space
+     * between every letter ("S P E C I F I C A T I O N S", or "P E R F O R M A N C E  F I R S T"), whether the
+     * spacing comes from real space glyphs in the content or from synthetic spaces inserted for a wide gap.  By any
+     * geometric measure those inter-letter gaps look exactly like word spaces, so the only reliable signal is
+     * structural: a run of mostly single-character short tokens.  Such a run is merged into one word, re-inserting a
+     * space only where the inter-token gap is much larger than the run's typical gap (a genuine word boundary).
+     *
+     * @param line line whose words have already been placed in reading order.
+     */
+    /**
+     * Allocation-free scan for whether a line contains at least one collapsible letter-spaced run, so the common
+     * case (ordinary prose, no run) skips the rebuild entirely.  Mirrors the run-gathering in
+     * {@link #collapseLetterSpacing} but only counts tokens.
+     */
+    private boolean hasLetterSpacedRun(List<WordText> words) {
+        int n = words.size(), i = 0;
+        while (i < n) {
+            WordText w0 = words.get(i);
+            if (w0.isWhiteSpace() || w0.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                i++;
+                continue;
+            }
+            int tokens = 0, singles = 0, j = i;
+            while (j < n) {
+                WordText w = words.get(j);
+                if (w.isWhiteSpace() || w.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                    break;
+                }
+                tokens++;
+                if (w.getText().trim().length() == 1) {
+                    singles++;
+                }
+                j++;
+                int q = j;
+                while (q < n && words.get(q).isWhiteSpace()) {
+                    q++;
+                }
+                if (q > j && q < n && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                    j = q;
+                }
+            }
+            if (tokens >= LETTER_SPACING_MIN_RUN && singles * 4 >= tokens * 3) {
+                return true;
+            }
+            i = Math.max(j, i + 1);
+        }
+        return false;
+    }
+
+    private void collapseLetterSpacing(LineText line) {
+        List<WordText> words = line.getWords();
+        if (words.size() < LETTER_SPACING_MIN_RUN || !hasLetterSpacedRun(words)) {
+            // fast path: most lines contain no letter-spaced run, so avoid allocating/rebuilding the word list.
+            return;
+        }
+        boolean vertical = WordText.detectVerticalText && line.isVerticalWriting();
+        List<WordText> result = new ArrayList<>(words.size());
+        int i = 0, n = words.size();
+        while (i < n) {
+            if (words.get(i).isWhiteSpace()) {
+                result.add(words.get(i));
+                i++;
+                continue;
+            }
+            // gather a maximal run of short tokens separated by at most one whitespace word
+            List<WordText> tokens = new ArrayList<>();
+            List<WordText> sepAfter = new ArrayList<>();
+            int j = i, singles = 0;
+            while (j < n) {
+                WordText w = words.get(j);
+                if (w.isWhiteSpace()) {
+                    break; // handled below as a separator lookahead
+                }
+                if (w.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                    break;
+                }
+                tokens.add(w);
+                if (w.getText().trim().length() == 1) {
+                    singles++;
+                }
+                j++;
+                // bridge a run of whitespace words to the next token, but only if that token still qualifies -
+                // a wide word gap can be several spaces, and the run must not be split there.
+                int q = j;
+                while (q < n && words.get(q).isWhiteSpace()) {
+                    q++;
+                }
+                if (q > j && q < n && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                    sepAfter.add(words.get(j));
+                    j = q;
+                } else {
+                    sepAfter.add(null);
+                }
+            }
+            // require most tokens to be single characters: real prose with a few short words ("in the U.S.")
+            // must not be mistaken for a spaced-out heading.
+            boolean qualifies = tokens.size() >= LETTER_SPACING_MIN_RUN
+                    && singles * 4 >= tokens.size() * 3;
+            if (qualifies) {
+                result.addAll(rebuildLetterSpacedRun(tokens, sepAfter, vertical));
+                i = j;
+            } else {
+                result.add(words.get(i));
+                i++;
+            }
+        }
+        line.setWords(result);
+    }
+
+    /**
+     * Rebuilds a detected letter-spaced run: concatenates the token glyphs into one word, breaking into a new word
+     * (with the original separating space) wherever the inter-token gap exceeds the run's median gap by more than
+     * {@link #LETTER_SPACING_BOUNDARY_FACTOR}.
+     */
+    private List<WordText> rebuildLetterSpacedRun(List<WordText> tokens, List<WordText> sepAfter, boolean vertical) {
+        double[] gaps = new double[tokens.size() - 1];
+        for (int k = 0; k < gaps.length; k++) {
+            gaps[k] = tokenGap(tokens.get(k), tokens.get(k + 1), vertical);
+        }
+        double median = medianGap(gaps);
+        double max = 0;
+        for (double g : gaps) {
+            max = Math.max(max, g);
+        }
+        // Uniform gaps mean a single spaced-out word (no breaks).  Otherwise a word break is a gap sitting above the
+        // midpoint between the typical letter gap (median) and the widest gap (max) - large enough to exclude a minor
+        // per-glyph anomaly but below a genuine inter-word gap.
+        boolean uniform = max <= LETTER_SPACING_UNIFORM_FACTOR * median;
+        double threshold = (median + max) / 2;
+        List<WordText> rebuilt = new ArrayList<>();
+        WordText current = new WordText(pageRotation);
+        for (int k = 0; k < tokens.size(); k++) {
+            for (GlyphText glyph : tokens.get(k).getGlyphs()) {
+                current.addText(glyph);
+            }
+            if (k < gaps.length && !uniform && gaps[k] > threshold) {
+                // real word boundary - close the current word and keep a separating space
+                rebuilt.add(current);
+                if (sepAfter.get(k) != null) {
+                    rebuilt.add(sepAfter.get(k));
+                }
+                current = new WordText(pageRotation);
+            }
+        }
+        rebuilt.add(current);
+        return rebuilt;
+    }
+
+    /** Box-to-box gap between two consecutive tokens along the line's writing axis. */
+    private double tokenGap(WordText prev, WordText next, boolean vertical) {
+        Rectangle2D.Double a = prev.getTextExtractionBounds();
+        Rectangle2D.Double b = next.getTextExtractionBounds();
+        if (vertical) {
+            double down = Math.abs(b.y - (a.y + a.height));
+            double up = Math.abs(a.y - (b.y + b.height));
+            return Math.min(down, up);
+        }
+        return Math.abs(b.x - (a.x + a.width));
+    }
+
+    private static double medianGap(double[] gaps) {
+        if (gaps.length == 0) {
+            return 0;
+        }
+        double[] sorted = gaps.clone();
+        java.util.Arrays.sort(sorted);
+        int mid = sorted.length / 2;
+        return sorted.length % 2 == 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    /**
      * Insert optional content into the main LineText array, basically we are trying to consolidate all the
      * visible text in the document.
      *
@@ -672,6 +857,14 @@ public class PageText implements TextSelect {
                 } else {
                     lineText.getWords().sort(new WordPositionComparator());
                 }
+            }
+        }
+
+        // collapse letter-spaced runs ("S P E C I F I C A T I O N S" -> "SPECIFICATIONS") now that words are in
+        // reading order along their line.
+        if (collapseLetterSpacing && sortedPageLines.size() > 0) {
+            for (LineText lineText : sortedPageLines) {
+                collapseLetterSpacing(lineText);
             }
         }
 
