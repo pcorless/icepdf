@@ -47,6 +47,11 @@ public class WordText extends AbstractText implements TextSelect {
 
     public static boolean autoSpaceInsertion;
 
+    // When true a detected gap is filled with as many synthetic spaces as the gap width implies (layout-preserving
+    // mode).  The default emits a single space per gap, which is what search/extraction want - multiple runs of spaces
+    // produce variable spacing that breaks phrase matching.
+    public static boolean insertMultipleSpaces;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -64,6 +69,15 @@ public class WordText extends AbstractText implements TextSelect {
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text text auto space detection");
+            }
+        }
+        // opt-in layout-preserving mode; default single space per detected gap.
+        try {
+            insertMultipleSpaces = Defs.sysPropertyBoolean(
+                    "org.icepdf.core.views.page.text.multipleSpaces", false);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading text multiple space insertion");
             }
         }
     }
@@ -216,7 +230,7 @@ public class WordText extends AbstractText implements TextSelect {
         // Max out the spaces in the case the spaces value scale factor was
         // not correct.  We can end up with a very large number of spaces being
         // inserted in some cases.
-        if (autoSpaceInsertion) {
+        if (autoSpaceInsertion && insertMultipleSpaces) {
             for (int i = 0; i < spaces && i < 50; i++) {
                 whiteSpace = autoSpaceCalculation(offset, spaceBounds, whiteSpace);
                 if (ltr) {
