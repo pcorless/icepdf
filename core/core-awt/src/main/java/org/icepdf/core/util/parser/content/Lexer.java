@@ -56,14 +56,26 @@ public class Lexer {
     public void setContentStream(Stream[] in, ContentStreamCallback contentStreamCallback) throws IOException {
         streams = in;
         streamCount = 0;
+        contentStreamCallbackCallback = contentStreamCallback;
+        // A page's content-stream array can legitimately contain null entries (an unresolved or
+        // missing stream object); the multi-stream advance and the debug logging both guard for
+        // this.  Skip any leading null streams so the first real stream is loaded rather than
+        // dereferencing a null entry here (NPE on streams[0]).
+        while (streamCount < streams.length && streams[streamCount] == null) {
+            streamCount++;
+        }
+        if (streamCount >= streams.length) {
+            // no usable content stream found; leave streamBytes null so next() ends cleanly.
+            streamBytes = null;
+            numRead = 0;
+            streamCount = 0;
+            return;
+        }
         streamBytes = streams[streamCount].getDecodedStreamBytes();
         if (streamBytes != null) {
             numRead = streamBytes.length;
         }
-        contentStreamCallbackCallback = contentStreamCallback;
-        if (contentStreamCallbackCallback != null) {
-            contentStreamCallbackCallback.startContentStream(streams[streamCount]);
-        }
+        markContentStreamStart();
     }
 
     public Object next() throws IOException {
@@ -461,11 +473,19 @@ public class Lexer {
         // disposeDecompressed(), this advance saw null -> numRead 0 -> the whole
         // (often trailing, e.g. footer) stream was silently skipped and its
         // content dropped under concurrency (GH-495, HA_20120316a footer).
-        byte[] next = streams[streamCount].getDecodedStreamBytes();
+        // skip over any null entries (unresolved/missing stream objects) so we never dereference a
+        // null; a page's content-stream array can legitimately contain nulls.
+        while (streamCount < streams.length && streams[streamCount] == null) {
+            streamCount++;
+        }
+        byte[] next = streamCount < streams.length ? streams[streamCount].getDecodedStreamBytes() : null;
         // skip over the corner case of a zero length content stream.
         if (next != null && next.length == 0 && streamCount + 1 < streams.length) {
             streamCount++;
-            next = streams[streamCount].getDecodedStreamBytes();
+            while (streamCount < streams.length && streams[streamCount] == null) {
+                streamCount++;
+            }
+            next = streamCount < streams.length ? streams[streamCount].getDecodedStreamBytes() : null;
         }
         streamBytes = next;
         markContentStreamStart();
@@ -475,7 +495,7 @@ public class Lexer {
     }
 
     private void markContentStreamStart() throws IOException {
-        if (contentStreamCallbackCallback != null) {
+        if (contentStreamCallbackCallback != null && streamCount < streams.length && streams[streamCount] != null) {
             contentStreamCallbackCallback.startContentStream(streams[streamCount]);
         }
     }

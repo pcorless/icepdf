@@ -128,10 +128,16 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      */
     public int searchHighlightPage(int pageIndex, String term,
                                    boolean caseSensitive, boolean wholeWord) {
+        return searchHighlightPage(pageIndex, term, caseSensitive, wholeWord, false);
+    }
+
+    public int searchHighlightPage(int pageIndex, String term,
+                                   boolean caseSensitive, boolean wholeWord, boolean foldDiacritics) {
         // clear previous search
         clearSearchHighlight(pageIndex);
         // add the search term
-        addSearchTerm(term, caseSensitive, wholeWord);
+        SearchTerm searchTerm = addSearchTerm(term, caseSensitive, wholeWord, false);
+        searchTerm.setFoldDiacritics(foldDiacritics);
         // start the search and return the hit count.
         return searchHighlightPage(pageIndex);
     }
