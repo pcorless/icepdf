@@ -169,6 +169,30 @@ public class LineText extends AbstractText implements TextSelect {
     }
 
     /**
+     * Whether this line's text is written along a vertical axis (rotated or upright-stacked), determined from the
+     * first non-whitespace glyph.  Used by the extraction pipeline to slice/cluster along the correct axis.
+     *
+     * @return true if the line's dominant writing axis is vertical.
+     */
+    public boolean isVerticalWriting() {
+        for (WordText word : words) {
+            if (word.isWhiteSpace()) {
+                continue;
+            }
+            for (GlyphText glyph : word.getGlyphs()) {
+                return glyph.isVerticalWriting();
+            }
+        }
+        // fall back to any glyph (e.g. a line that is only whitespace)
+        for (WordText word : words) {
+            for (GlyphText glyph : word.getGlyphs()) {
+                return glyph.isVerticalWriting();
+            }
+        }
+        return false;
+    }
+
+    /**
      * Select all text in this line; all word and glyph children.
      */
     public void selectAll() {

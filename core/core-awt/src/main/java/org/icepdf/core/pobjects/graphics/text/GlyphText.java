@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.Name;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
 
@@ -39,6 +40,12 @@ public class GlyphText extends AbstractText {
 
     private final float advanceX;
     private final float advanceY;
+
+    // Page-space writing-direction vector (the glyph-space +x advance mapped through the render transform).
+    // Captured in normalizeToUserSpace; defaults to horizontal until then.  Used to detect rotated/vertical text
+    // so the extraction pipeline can group and order it along the correct axis.
+    private float writeDx = 1f;
+    private float writeDy = 0f;
 
     // character code used to represent glyph, maybe ascii or CID value
     private final char cid;
@@ -87,6 +94,50 @@ public class GlyphText extends AbstractText {
         double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
         bounds.setRect(minX, minY, maxX - minX, maxY - minY);
         textSelectionBounds = bounds;
+
+        // Capture the page-space writing direction: the glyph-space +x advance mapped through the same transform.
+        // deltaTransform ignores translation, so this is purely the orientation of the baseline advance.  For
+        // horizontal text this is (+,0); for text rotated 90 via Tm (or an upright vertical stack) it points along y.
+        Point2D d = af.deltaTransform(new Point2D.Double(1, 0), null);
+        writeDx = (float) d.getX();
+        writeDy = (float) d.getY();
+    }
+
+    /**
+     * Whether this glyph's baseline advances vertically (rotated/stacked text) rather than horizontally, evaluated
+     * in the same normalized space as {@link #getTextExtractionBounds()} (i.e. with any page rotation applied).
+     *
+     * @return true if the dominant writing axis is vertical.
+     */
+    public boolean isVerticalWriting() {
+        Point2D d = getWriteDirection();
+        return Math.abs(d.getY()) > Math.abs(d.getX());
+    }
+
+    /**
+     * The page-space writing-direction vector in the same normalized space as {@link #getTextExtractionBounds()}
+     * (i.e. with any page rotation applied).  Points in the direction the baseline advances glyph-to-glyph, so
+     * projecting glyph positions onto it yields reading order for both horizontal and rotated/vertical text.
+     *
+     * @return normalized-space writing-direction vector (not unit length).
+     */
+    public Point2D getWriteDirection() {
+        double dx = writeDx, dy = writeDy;
+        if (pageRotation != 0) {
+            double r = Math.toRadians(pageRotation);
+            double cos = Math.cos(r), sin = Math.sin(r);
+            double rx = dx * cos - dy * sin;
+            double ry = dx * sin + dy * cos;
+            dx = rx;
+            dy = ry;
+        }
+        return new Point2D.Double(dx, dy);
+    }
+
+    /** Copies the writing direction from another glyph; used for synthetic spaces that are never normalized. */
+    public void inheritWriteDirection(GlyphText other) {
+        this.writeDx = other.writeDx;
+        this.writeDy = other.writeDy;
     }
 
     public boolean isFlagged() {

@@ -52,6 +52,10 @@ public class WordText extends AbstractText implements TextSelect {
     // produce variable spacing that breaks phrase matching.
     public static boolean insertMultipleSpaces;
 
+    // When true, space/new-line detection is evaluated along each glyph's actual writing axis so that rotated or
+    // vertically-stacked text is grouped along its baseline instead of being shattered one glyph per line.
+    public static boolean detectVerticalText;
+
     static {
         // sets the shadow colour of the decorator.
         try {
@@ -78,6 +82,15 @@ public class WordText extends AbstractText implements TextSelect {
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading text multiple space insertion");
+            }
+        }
+        // opt-in rotated/vertical text grouping; off while the feature lands incrementally.
+        try {
+            detectVerticalText = Defs.sysPropertyBoolean(
+                    "org.icepdf.core.views.page.text.detectVerticalText", false);
+        } catch (NumberFormatException e) {
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("Error reading vertical text detection");
             }
         }
     }
@@ -115,6 +128,12 @@ public class WordText extends AbstractText implements TextSelect {
             Rectangle2D previousBounds = currentGlyph.getTextExtractionBounds();
             Rectangle2D currentBounds = sprite.getTextExtractionBounds();
 
+            if (detectVerticalText && currentGlyph.isVerticalWriting()) {
+                // vertical text runs along y, so a new line is a shift along the cross (x) axis.
+                double tolerance = previousBounds.getWidth() / spaceFraction;
+                double xdiff = Math.abs(currentBounds.getX() - previousBounds.getX());
+                return xdiff > tolerance;
+            }
             // half previous glyph width will be used to determine a space
             double tolerance = previousBounds.getHeight() / spaceFraction;
             // checking the y coordinate as well as any shift normall means a new work, this might need to get fuzzy later.
@@ -130,6 +149,15 @@ public class WordText extends AbstractText implements TextSelect {
             Rectangle2D previousBounds = currentGlyph.getTextExtractionBounds();
             Rectangle2D currentBounds = sprite.getTextExtractionBounds();
 
+            if (detectVerticalText && currentGlyph.isVerticalWriting()) {
+                // vertical text advances along y; the inter-glyph gap that marks a space is measured along y and the
+                // reading direction may be either sign, so take the smaller of the two box-to-box gaps.
+                double gapDown = Math.abs(currentBounds.getY() - (previousBounds.getY() + previousBounds.getHeight()));
+                double gapUp = Math.abs(previousBounds.getY() - (currentBounds.getY() + currentBounds.getHeight()));
+                double space = Math.min(gapDown, gapUp);
+                double tolerance = previousBounds.getHeight() / spaceFraction;
+                return space > tolerance;
+            }
             // spaces can be negative if we have a LTR layout.
             double space = Math.abs(currentBounds.getX() - (previousBounds.getX() + previousBounds.getWidth()));
             // half previous glyph width will be used to determine a space
@@ -261,6 +289,9 @@ public class WordText extends AbstractText implements TextSelect {
                 (char) 32,
                 String.valueOf((char) 32),
                 currentGlyph.getFontName());
+        // synthetic spaces are never normalized, so carry the writing direction of the glyph they follow to keep
+        // rotated/vertical runs classified consistently.
+        spaceText.inheritWriteDirection(currentGlyph);
         whiteSpace.addText(spaceText);
         whiteSpace.setWhiteSpace(true);
         return whiteSpace;

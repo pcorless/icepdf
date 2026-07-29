@@ -567,22 +567,27 @@ public class PageText implements TextSelect {
         }
         ArrayList<LineText> merged = new ArrayList<>(lines.size());
         LineText current = null;
-        double bandY = 0, bandTolerance = 0;
+        double bandCoord = 0, bandTolerance = 0;
+        boolean bandVertical = false;
         for (LineText line : lines) {
             Rectangle2D.Double bounds = line.getBounds();
-            double y = Math.round(bounds.getY());
-            double halfHeight = bounds.getHeight() / 2;
-            if (current != null && Math.abs(y - bandY) <= bandTolerance) {
-                // same baseline as the previous line - fold this line's words into the current band
+            // Horizontal text shares a baseline (top-y); vertical text shares a column (left-x).  Cluster on the
+            // cross-axis coordinate and tolerate up to half the cross-axis extent.
+            boolean vertical = WordText.detectVerticalText && line.isVerticalWriting();
+            double coord = Math.round(vertical ? bounds.getX() : bounds.getY());
+            double halfExtent = (vertical ? bounds.getWidth() : bounds.getHeight()) / 2;
+            if (current != null && vertical == bandVertical && Math.abs(coord - bandCoord) <= bandTolerance) {
+                // same band as the previous line - fold this line's words into the current band
                 current.addAll(line.getWords());
-                bandTolerance = Math.max(bandTolerance, halfHeight);
+                bandTolerance = Math.max(bandTolerance, halfExtent);
             } else {
-                // baseline break - start a new line, preserving plot order
+                // band break - start a new line, preserving plot order
                 current = new LineText(pageRotation);
                 current.addAll(line.getWords());
                 merged.add(current);
-                bandY = y;
-                bandTolerance = halfHeight;
+                bandCoord = coord;
+                bandTolerance = halfExtent;
+                bandVertical = vertical;
             }
         }
         return merged;
