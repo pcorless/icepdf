@@ -102,15 +102,17 @@ public class ReadingOrderXYCutTest {
     @Test
     public void nearTieFragmentsNotReversed() throws Exception {
         // "FLEXenabled" (y=391.2958) and its superscripted continuation "tm software, and hundreds
-        // of Fortune" (y=391.3020) share a visual line but differ in y by 0.006pt.  An exact-tie
-        // x comparison loses that, emitting the continuation first and reversing the line.
-        List<String> order = texts(orderedLines("/redact/windrivercasestudy1n3d2m8km0r.pdf", 1));
-        assertTrue(indexOfContaining(order, "FLEXenabled") < indexOfContaining(order, "tm software"),
+        // of Fortune" (y=391.3020) share a visual line but differ in y by 0.006pt.  The baseline merge
+        // (PageText.mergeLinesByBaseline) now folds them into one line, so the left-to-right requirement
+        // becomes an in-line character-order check on the flattened reading order: the left fragment must
+        // still precede its continuation regardless of whether they end up on one line or two.
+        String order = flatten(texts(orderedLines("/redact/windrivercasestudy1n3d2m8km0r.pdf", 1)));
+        assertTrue(order.indexOf("FLEXenabled") < order.indexOf("tmsoftware"),
                 "left fragment must read before the superscripted continuation on the same line");
 
         // same defect class on xr_650 p6: a trademark glyph at the right edge of a body line.
-        List<String> xr = texts(orderedLines("/redact/xr_650.pdf", 5));
-        assertTrue(indexOfContaining(xr, "Honda Genuine Accessories") < indexOfContaining(xr, "Oils and"),
+        String xr = flatten(texts(orderedLines("/redact/xr_650.pdf", 5)));
+        assertTrue(xr.indexOf("HondaGenuineAccessories") < xr.indexOf("Oilsand"),
                 "body text must read before the trademark fragment sharing its line");
     }
 
@@ -178,6 +180,15 @@ public class ReadingOrderXYCutTest {
             if (texts.get(i).replace(" ", "").contains(needle.replace(" ", ""))) return i;
         }
         return Integer.MAX_VALUE;
+    }
+
+    /** Concatenates the reading-order line texts (spaces removed) so in-line character order can be asserted. */
+    private static String flatten(List<String> texts) {
+        StringBuilder sb = new StringBuilder();
+        for (String t : texts) {
+            sb.append(t);
+        }
+        return sb.toString().replace(" ", "");
     }
 
     private static void dump(List<LineText> lines, StringBuilder out) {

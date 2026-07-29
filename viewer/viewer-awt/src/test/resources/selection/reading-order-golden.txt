@@ -5,33 +5,31 @@
   L003 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
   L004 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
   L005 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
-  L006 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
-  L007 y=  393.9 x=  444.6..480.0    ™ Oils and
-  L008 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
-  L009 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
-  L010 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
-  L011 y=  357.9 x=  454.6..480.0    ™ revolv-
-  L012 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
-  L013 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
-  L014 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
-  L015 y=  309.9 x=  143.9..254.6    grams and support to go with them.
-  L016 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
-  L017 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
-  L018 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
-  L019 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
-  L020 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
-  L021 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
-  L022 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
-  L023 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
-  L024 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
-  L025 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
-  L026 y=  569.4 x=  144.0..476.5    E N V I R O N M E N T A L C O M M I T M E N T
-  L027 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
-  L028 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
-  L029 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre
-  L030 y=  516.1 x=  144.0..480.0    2008 CARB emissions requirements years ahead of schedule. An
-  L031 y=  504.1 x=  144.0..192.9    can appreciate.
-  L032 y=   97.9 x=  331.5..396.8    honda.com
+  L006 y=  393.9 x=  143.9..480.0    selection of Honda Genuine Accessories. Time for service? Be
+  L007 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
+  L008 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
+  L009 y=  357.9 x=  143.9..480.0    can set everything up for you right in the showroom. Another
+  L010 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
+  L011 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
+  L012 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
+  L013 y=  309.9 x=  143.9..254.6    grams and support to go with them.
+  L014 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
+  L015 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
+  L016 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
+  L017 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
+  L018 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
+  L019 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
+  L020 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
+  L021 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
+  L022 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
+  L023 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
+  L024 y=  569.4 x=  144.0..476.5    E N V I R O N M E N T A L C O M M I T M E N T
+  L025 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
+  L026 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
+  L027 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre
+  L028 y=  516.1 x=  144.0..480.0    2008 CARB emissions requirements years ahead of schedule. An
+  L029 y=  504.1 x=  144.0..192.9    can appreciate.
+  L030 y=   97.9 x=  331.5..396.8    honda.com
 
 === windriver p2 - clean two-column body + full-width footer [/redact/windrivercasestudy1n3d2m8km0r.pdf p1] ===
   L000 y=   46.0 x=   76.7..153.5    Macrovision Corporation
@@ -89,18 +87,17 @@
   L052 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
   L053 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
   L054 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
-  L055 y=  391.3 x=  319.4..371.7    FLEXenabled
-  L056 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
-  L057 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
-  L058 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
-  L059 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
-  L060 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
-  L061 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
-  L062 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
-  L063 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
-  L064 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
-  L065 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
-  L066 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
+  L055 y=  391.3 x=  319.4..520.7    FLEXenabledtm software, and hundreds of Fortune
+  L056 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L057 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L058 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L059 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L060 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L061 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L062 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L063 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L064 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L065 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
 
 === 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
   L000 y=  253.7 x=    2.1..24.6     IN
@@ -166,9 +163,8 @@
 === potato_out p1 [/redact/potato_out.pdf p0] ===
   L000 y=  692.1 x=  311.0..443.5    SOUPS,STARTERS & SNACKS
   L001 y=  647.0 x=  147.4..463.5    Spanish potato omelette
-  L002 y=  676.8 x=   23.0..472.4    PAN    5
-  L003 y=  674.1 x=   36.1..67.5     PREPARATION
-  L004 y=  664.6 x=   38.3..56.6     25 mins
-  L005 y=  653.7 x=   36.0..62.2     COOKING
-  L006 y=  644.7 x=   38.3..56.6     40mins
+  L002 y=  674.1 x=   23.0..472.4    PAN PREPARATION    5
+  L003 y=  664.6 x=   38.3..56.6     25 mins
+  L004 y=  653.7 x=   36.0..62.2     COOKING
+  L005 y=  644.7 x=   38.3..56.6     40mins
 

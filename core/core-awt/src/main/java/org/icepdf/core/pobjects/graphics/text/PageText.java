@@ -50,6 +50,9 @@ public class PageText implements TextSelect {
 
     private static final boolean checkForDuplicates;
 
+    /** Merge sliced lines that share a baseline back into a single line (see {@link #mergeLinesByBaseline}). */
+    private static final boolean mergeBaselines;
+
     /** Page reading-order strategy applied to the sorted line list. */
     private enum ReadingOrder {PLOT, YSORT, XYCUT}
 
@@ -58,6 +61,9 @@ public class PageText implements TextSelect {
     static {
         checkForDuplicates = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.trim.duplicates", false);
+
+        mergeBaselines = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.mergeBaselines", true);
 
         // readingOrder supersedes the older boolean preserveColumns; when readingOrder is not set
         // we derive the mode from preserveColumns so existing configurations behave unchanged.
@@ -533,7 +539,53 @@ public class PageText implements TextSelect {
                 }
             }
         }
+        // The slicing above only ever splits a single input line - it can never merge words that were emitted as
+        // separate lines (each T*/'/'" or per-glyph text object starts a fresh line in the parser).  Documents that
+        // draw letter-spaced titles, or one text-showing operator per glyph, therefore end up with one glyph per
+        // LineText and stay that way.  Merge lines that share a baseline back into a single line so downstream
+        // x-sorting and word/space detection can reconstruct the visual line.
+        if (mergeBaselines) {
+            sortedPageLines = mergeLinesByBaseline(sortedPageLines);
+        }
         return sortedPageLines;
+    }
+
+    /**
+     * Merges <em>consecutive</em> lines that sit on the same baseline (top-y within half the line height) into a
+     * single line.  Only adjacent lines in the incoming (content-stream/plot) order are considered, so the merge
+     * collapses runs of per-glyph or letter-spaced lines - which the parser emits consecutively - without globally
+     * re-sorting.  This preserves the plot reading order and, because two columns are not interleaved glyph-by-glyph
+     * in the stream, avoids pulling column text onto a shared line.  Words keep their order within a band and are
+     * re-sorted by x downstream in {@link #sortAndFormatText}.
+     *
+     * @param lines sliced lines to merge.
+     * @return merged lines, one per run of same-baseline lines.
+     */
+    private ArrayList<LineText> mergeLinesByBaseline(ArrayList<LineText> lines) {
+        if (lines.size() < 2) {
+            return lines;
+        }
+        ArrayList<LineText> merged = new ArrayList<>(lines.size());
+        LineText current = null;
+        double bandY = 0, bandTolerance = 0;
+        for (LineText line : lines) {
+            Rectangle2D.Double bounds = line.getBounds();
+            double y = Math.round(bounds.getY());
+            double halfHeight = bounds.getHeight() / 2;
+            if (current != null && Math.abs(y - bandY) <= bandTolerance) {
+                // same baseline as the previous line - fold this line's words into the current band
+                current.addAll(line.getWords());
+                bandTolerance = Math.max(bandTolerance, halfHeight);
+            } else {
+                // baseline break - start a new line, preserving plot order
+                current = new LineText(pageRotation);
+                current.addAll(line.getWords());
+                merged.add(current);
+                bandY = y;
+                bandTolerance = halfHeight;
+            }
+        }
+        return merged;
     }
 
     /**
