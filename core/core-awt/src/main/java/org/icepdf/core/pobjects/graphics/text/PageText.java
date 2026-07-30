@@ -622,6 +622,20 @@ public class PageText implements TextSelect {
         return word.getText().trim().isEmpty();
     }
 
+    /** True for a multi-character token made entirely of lowercase letters - a real embedded word (e.g. "and"). */
+    private static boolean isLowercaseWord(String text) {
+        if (text.length() < 2) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (!Character.isLetter(c) || !Character.isLowerCase(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Allocation-free scan for whether a line contains at least one collapsible letter-spaced run, so the common
      * case (ordinary prose, no run) skips the rebuild entirely.  Mirrors the run-gathering in
@@ -636,6 +650,7 @@ public class PageText implements TextSelect {
                 continue;
             }
             int tokens = 0, singles = 0, j = i;
+            boolean hasLowerWord = false;
             while (j < n) {
                 WordText w = words.get(j);
                 if (w.isWhiteSpace() || w.getText().length() > LETTER_SPACING_MAX_TOKEN) {
@@ -644,6 +659,9 @@ public class PageText implements TextSelect {
                 tokens++;
                 if (w.getText().trim().length() == 1) {
                     singles++;
+                }
+                if (isLowercaseWord(w.getText())) {
+                    hasLowerWord = true;
                 }
                 j++;
                 int q = j;
@@ -655,7 +673,7 @@ public class PageText implements TextSelect {
                     j = q;
                 }
             }
-            if (tokens >= LETTER_SPACING_MIN_RUN && singles * 4 >= tokens * 3) {
+            if (tokens >= LETTER_SPACING_MIN_RUN && singles * 4 >= tokens * 3 && !hasLowerWord) {
                 return true;
             }
             i = Math.max(j, i + 1);
@@ -692,6 +710,7 @@ public class PageText implements TextSelect {
             List<WordText> tokens = new ArrayList<>();
             List<WordText> sepAfter = new ArrayList<>();
             int j = i, singles = 0;
+            boolean hasLowerWord = false;
             while (j < n) {
                 WordText w = words.get(j);
                 if (w.isWhiteSpace()) {
@@ -703,6 +722,9 @@ public class PageText implements TextSelect {
                 tokens.add(w);
                 if (w.getText().trim().length() == 1) {
                     singles++;
+                }
+                if (isLowercaseWord(w.getText())) {
+                    hasLowerWord = true;
                 }
                 j++;
                 // bridge a run of blank space words to the next token, but only if that token still qualifies - a
@@ -722,9 +744,12 @@ public class PageText implements TextSelect {
                 }
             }
             // require most tokens to be single characters: real prose with a few short words ("in the U.S.")
-            // must not be mistaken for a spaced-out heading.
+            // must not be mistaken for a spaced-out heading.  A multi-character all-lowercase token (e.g. "and" in a
+            // letter-spaced "L A T E X and pdfL A T E X" logo) is a real embedded word, not a spaced-out letter, so
+            // it disqualifies the run - uppercase fragments like "OR"/"MANC" (from "PERFORMANCE") still collapse.
             boolean qualifies = tokens.size() >= LETTER_SPACING_MIN_RUN
-                    && singles * 4 >= tokens.size() * 3;
+                    && singles * 4 >= tokens.size() * 3
+                    && !hasLowerWord;
             if (qualifies) {
                 result.addAll(rebuildLetterSpacedRun(tokens, sepAfter, vertical));
                 i = j;
