@@ -56,6 +56,10 @@ public class PageText implements TextSelect {
     /** Collapse letter-spaced runs (e.g. "S P E C I F I C A T I O N S") into words (see {@link #collapseLetterSpacing}). */
     private static final boolean collapseLetterSpacing;
 
+    // Two lines are merged into one only when their cross-axis extents overlap by at least this fraction of the
+    // smaller extent - enough to catch a fragment split off the same baseline, but not two stacked rows.
+    private static final double LINE_MERGE_OVERLAP = 0.5;
+
     // A letter-spaced run must have at least this many short tokens before it is collapsed.
     private static final int LETTER_SPACING_MIN_RUN = 4;
     // Tokens longer than this end a letter-spaced run - they are ordinary words, not spaced-out letters.
@@ -581,42 +585,43 @@ public class PageText implements TextSelect {
         }
         ArrayList<LineText> merged = new ArrayList<>(lines.size());
         LineText current = null;
-        double bandCoord = 0, bandTolerance = 0;
-        boolean bandVertical = false;
+        double bandLo = 0, bandHi = 0;
         for (LineText line : lines) {
-            Rectangle2D.Double bounds = line.getBounds();
-            // Horizontal text shares a baseline (top-y); vertical text shares a column (left-x).  Cluster on the
-            // cross-axis coordinate and tolerate up to half the cross-axis extent.
+            // Only vertical (rotated/stacked) lines are merged, and only when their x columns overlap substantially.
+            // Horizontal lines are never merged: the parser can split a visual line into fragments, but a fragment on
+            // the same baseline is not reliably distinguishable from the next row (tight leading makes their boxes
+            // overlap), so fusing them would scramble reading order across the corpus.  Vertical runs are columns,
+            // disjoint from the horizontal rows around them, so merging them by x overlap is safe.
             boolean vertical = WordText.detectVerticalText && line.isVerticalWriting();
-            double coord = Math.round(vertical ? bounds.getX() : bounds.getY());
-            double halfExtent = (vertical ? bounds.getWidth() : bounds.getHeight()) / 2;
-            if (current != null && vertical == bandVertical && Math.abs(coord - bandCoord) <= bandTolerance) {
-                // same band as the previous line - fold this line's words into the current band
+            if (!vertical) {
+                merged.add(line);
+                current = null; // a horizontal line breaks any open vertical band
+                continue;
+            }
+            Rectangle2D.Double bounds = line.getBounds();
+            double lo = bounds.getX();
+            double hi = lo + bounds.getWidth();
+            double overlap = Math.min(hi, bandHi) - Math.max(lo, bandLo);
+            double minExtent = Math.min(hi - lo, bandHi - bandLo);
+            if (current != null && minExtent > 0 && overlap >= LINE_MERGE_OVERLAP * minExtent) {
+                // same column as the previous vertical line - fold its words in, keeping the original band interval.
                 current.addAll(line.getWords());
-                bandTolerance = Math.max(bandTolerance, halfExtent);
             } else {
-                // band break - start a new line, preserving plot order
                 current = new LineText(pageRotation);
                 current.addAll(line.getWords());
                 merged.add(current);
-                bandCoord = coord;
-                bandTolerance = halfExtent;
-                bandVertical = vertical;
+                bandLo = lo;
+                bandHi = hi;
             }
         }
         return merged;
     }
 
-    /**
-     * Collapses letter-spaced runs within a line into whole words.  Headings are often drawn with a full space
-     * between every letter ("S P E C I F I C A T I O N S", or "P E R F O R M A N C E  F I R S T"), whether the
-     * spacing comes from real space glyphs in the content or from synthetic spaces inserted for a wide gap.  By any
-     * geometric measure those inter-letter gaps look exactly like word spaces, so the only reliable signal is
-     * structural: a run of mostly single-character short tokens.  Such a run is merged into one word, re-inserting a
-     * space only where the inter-token gap is much larger than the run's typical gap (a genuine word boundary).
-     *
-     * @param line line whose words have already been placed in reading order.
-     */
+    /** True only for a word whose text is entirely whitespace (a real space word, not punctuation flagged whitespace). */
+    private static boolean isBlank(WordText word) {
+        return word.getText().trim().isEmpty();
+    }
+
     /**
      * Allocation-free scan for whether a line contains at least one collapsible letter-spaced run, so the common
      * case (ordinary prose, no run) skips the rebuild entirely.  Mirrors the run-gathering in
@@ -642,10 +647,11 @@ public class PageText implements TextSelect {
                 }
                 j++;
                 int q = j;
-                while (q < n && words.get(q).isWhiteSpace()) {
+                while (q < n && isBlank(words.get(q))) {
                     q++;
                 }
-                if (q > j && q < n && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                if (q > j && q < n && !words.get(q).isWhiteSpace()
+                        && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
                     j = q;
                 }
             }
@@ -657,6 +663,16 @@ public class PageText implements TextSelect {
         return false;
     }
 
+    /**
+     * Collapses letter-spaced runs within a line into whole words.  Headings are often drawn with a full space
+     * between every letter ("S P E C I F I C A T I O N S", or "P E R F O R M A N C E  F I R S T"), whether the
+     * spacing comes from real space glyphs in the content or from synthetic spaces inserted for a wide gap.  By any
+     * geometric measure those inter-letter gaps look exactly like word spaces, so the only reliable signal is
+     * structural: a run of mostly single-character short tokens.  Such a run is merged into one word, re-inserting a
+     * space only where the inter-token gap is much larger than the run's typical gap (a genuine word boundary).
+     *
+     * @param line line whose words have already been placed in reading order.
+     */
     private void collapseLetterSpacing(LineText line) {
         List<WordText> words = line.getWords();
         if (words.size() < LETTER_SPACING_MIN_RUN || !hasLetterSpacedRun(words)) {
@@ -689,13 +705,16 @@ public class PageText implements TextSelect {
                     singles++;
                 }
                 j++;
-                // bridge a run of whitespace words to the next token, but only if that token still qualifies -
-                // a wide word gap can be several spaces, and the run must not be split there.
+                // bridge a run of blank space words to the next token, but only if that token still qualifies - a
+                // wide word gap can be several spaces, and the run must not be split there.  Only truly blank words
+                // are bridged: punctuation (e.g. TOC leader dots) is flagged whitespace but carries real glyphs, so
+                // it must terminate the run and pass through untouched rather than be swallowed as a separator.
                 int q = j;
-                while (q < n && words.get(q).isWhiteSpace()) {
+                while (q < n && isBlank(words.get(q))) {
                     q++;
                 }
-                if (q > j && q < n && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                if (q > j && q < n && !words.get(q).isWhiteSpace()
+                        && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
                     sepAfter.add(words.get(j));
                     j = q;
                 } else {

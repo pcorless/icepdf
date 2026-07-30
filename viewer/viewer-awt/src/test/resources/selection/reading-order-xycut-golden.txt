@@ -11,25 +11,27 @@
   L009 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
   L010 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
   L011 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
-  L012 y=  393.9 x=  143.9..480.0    selection of Honda Genuine Accessories. Time for service? Be
-  L013 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
-  L014 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
-  L015 y=  357.9 x=  143.9..480.0    can set everything up for you right in the showroom. Another
-  L016 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
-  L017 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
-  L018 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
-  L019 y=  309.9 x=  143.9..254.6    grams and support to go with them.
-  L020 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
-  L021 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
-  L022 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
-  L023 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
-  L024 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
-  L025 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
-  L026 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
-  L027 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
-  L028 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
-  L029 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
-  L030 y=   97.9 x=  331.5..396.8    honda.com
+  L012 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L013 y=  393.9 x=  444.6..480.0    ™ Oils and
+  L014 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
+  L015 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
+  L016 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L017 y=  357.9 x=  454.6..480.0    ™ revolv-
+  L018 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
+  L019 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
+  L020 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
+  L021 y=  309.9 x=  143.9..254.6    grams and support to go with them.
+  L022 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
+  L023 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
+  L024 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
+  L025 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
+  L026 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
+  L027 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
+  L028 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
+  L029 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
+  L030 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
+  L031 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
+  L032 y=   97.9 x=  331.5..396.8    honda.com
 
 === windriver p2 - clean two-column body + full-width footer [/redact/windrivercasestudy1n3d2m8km0r.pdf p1] ===
   L000 y=  670.6 x=   77.1..283.6    information helps both parties improve their support
@@ -81,23 +83,24 @@
   L046 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
   L047 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
   L048 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
-  L049 y=  391.3 x=  319.4..520.7    FLEXenabledtm software, and hundreds of Fortune
-  L050 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
-  L051 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
-  L052 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
-  L053 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
-  L054 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
-  L055 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
-  L056 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
-  L057 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
-  L058 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
-  L059 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
-  L060 y=   46.0 x=   76.7..153.5    Macrovision Corporation
-  L061 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
-  L062 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
-  L063 y=   19.0 x=   76.7..145.9    www.macrovision .com
-  L064 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
-  L065 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
+  L049 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L050 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
+  L051 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L052 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L053 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L054 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L055 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L056 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L057 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L058 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L059 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L060 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
+  L061 y=   46.0 x=   76.7..153.5    Macrovision Corporation
+  L062 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
+  L063 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
+  L064 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L065 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
+  L066 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
 
 === 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
   L000 y=  253.7 x=    9.6..24.6     INTRODUCTION
@@ -153,9 +156,10 @@
 
 === potato_out p1 [/redact/potato_out.pdf p0] ===
   L000 y=  692.1 x=  311.0..443.5    SOUPS,STARTERS & SNACKS
-  L001 y=  674.1 x=   23.0..472.4    PAN PREPARATION    5
-  L002 y=  664.6 x=   38.3..56.6     25 mins
-  L003 y=  653.7 x=   36.0..62.2     COOKING
-  L004 y=  644.7 x=   38.3..56.6     40mins
-  L005 y=  647.0 x=  147.4..463.5    Spanish potato omelette
+  L001 y=  676.8 x=   23.0..472.4    PAN    5
+  L002 y=  674.1 x=   36.1..67.5     PREPARATION
+  L003 y=  664.6 x=   38.3..56.6     25 mins
+  L004 y=  653.7 x=   36.0..62.2     COOKING
+  L005 y=  644.7 x=   38.3..56.6     40mins
+  L006 y=  647.0 x=  147.4..463.5    Spanish potato omelette
 
