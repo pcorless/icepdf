@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.graphics.text;
 
+import java.awt.geom.Rectangle2D;
 import java.util.Comparator;
 import java.util.List;
 
@@ -61,11 +62,18 @@ public class LinePositionComparator implements
      * belongs beside, reversing the line (e.g. {@code "tm software..."} emitted before
      * {@code "FLEXenabled"}).
      * <p>
-     * So lines are first grouped into horizontal bands using a tolerance derived from line height,
-     * and only then sorted by x within each band.  The banding is deliberately not folded into
-     * {@link #compare} as a fuzzy y-comparison: a tolerance-based comparator is not transitive
-     * (a~b and b~c does not give a~c) and {@code TimSort} rejects it at runtime with
-     * "Comparison method violates its general contract!".
+     * So lines are first grouped into horizontal bands, and only then sorted by x within each band.
+     * The banding is deliberately not folded into {@link #compare} as a fuzzy y-comparison: a
+     * tolerance-based comparator is not transitive (a~b and b~c does not give a~c) and
+     * {@code TimSort} rejects it at runtime with "Comparison method violates its general contract!".
+     * <p>
+     * Band membership is decided by actual vertical overlap of the pair being compared, not by a
+     * page-wide height tolerance.  A global tolerance breaks on pages that mix very large and very
+     * small type (a cover with an 86&nbsp;pt title and a 4&nbsp;pt trademark): the median line
+     * height inflates the tolerance past the real leading, so two genuinely separate lines get
+     * banded together and x-sorted into the wrong order.  Same-visual-line fragments always overlap
+     * heavily in y, so an overlap test keeps them together while never merging stacked lines,
+     * whatever the font-size spread.
      *
      * @param lines lines to order; sorted in place
      */
@@ -74,19 +82,13 @@ public class LinePositionComparator implements
             return;
         }
         lines.sort(new LinePositionComparator());
-        // tolerance of half a line height matches the slicing rule used by
-        // PageText.sortLinesVertically, and stays well inside normal leading.
-        double tolerance = medianHeight(lines) * 0.5;
-        if (tolerance <= 0) {
-            return;
-        }
-        // walk the y-sorted lines, sorting each band of near-equal y by x.  Band membership is
-        // measured against the band's first line, not the previous one, so a run of slightly
-        // decreasing y cannot chain into one oversized band.
+        // walk the y-sorted lines, sorting each band of vertically-overlapping lines by x.  Band
+        // membership is measured against the band's first line, not the previous one, so a run of
+        // slightly decreasing y cannot chain into one oversized band.
         int start = 0;
         for (int i = 1; i <= lines.size(); i++) {
             boolean endOfBand = i == lines.size()
-                    || lines.get(start).getBounds().y - lines.get(i).getBounds().y > tolerance;
+                    || !sameBand(lines.get(start).getBounds(), lines.get(i).getBounds());
             if (endOfBand) {
                 if (i - start > 1) {
                     // sort on getBounds() throughout; WordPositionComparator works off
@@ -99,13 +101,16 @@ public class LinePositionComparator implements
         }
     }
 
-    /** Median bounding-box height of {@code lines}, used to scale the band tolerance. */
-    private static double medianHeight(List<LineText> lines) {
-        double[] heights = new double[lines.size()];
-        for (int i = 0; i < lines.size(); i++) {
-            heights[i] = lines.get(i).getBounds().height;
-        }
-        java.util.Arrays.sort(heights);
-        return heights[heights.length / 2];
+    /**
+     * Two lines share a band when their vertical extents overlap by at least half the shorter
+     * line's height.  Requiring real overlap (rather than a page-wide tolerance) means a small
+     * fragment nudged off its neighbour's baseline still bands with the line it sits on, while two
+     * separated lines never merge even when the page's largest type dwarfs them.
+     */
+    private static boolean sameBand(Rectangle2D.Double ref, Rectangle2D.Double cand) {
+        double overlap = Math.min(ref.getMaxY(), cand.getMaxY())
+                - Math.max(ref.getMinY(), cand.getMinY());
+        double minHeight = Math.min(ref.height, cand.height);
+        return minHeight > 0 && overlap >= 0.5 * minHeight;
     }
 }
