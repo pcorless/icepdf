@@ -215,7 +215,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             "ts.left", "ts.leftExtend", "ts.right", "ts.rightExtend",
             "ts.up", "ts.upExtend", "ts.down", "ts.downExtend",
             "ts.home", "ts.homeExtend", "ts.end", "ts.endExtend",
-            "ts.wordLeft", "ts.wordLeftExtend", "ts.wordRight", "ts.wordRightExtend"
+            "ts.wordLeft", "ts.wordLeftExtend", "ts.wordRight", "ts.wordRightExtend",
+            "ts.lineUp", "ts.lineUpExtend", "ts.lineDown", "ts.lineDownExtend"
     };
 
     private static KeyStroke[] caretKeyStrokes() {
@@ -230,6 +231,8 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
                 KeyStroke.getKeyStroke(KeyEvent.VK_END, 0), KeyStroke.getKeyStroke(KeyEvent.VK_END, shift),
                 KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_LEFT, ctrl | shift),
                 KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, ctrl | shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_UP, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_UP, ctrl | shift),
+                KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, ctrl), KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, ctrl | shift),
         };
     }
 
@@ -252,6 +255,10 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
             case 13: h.caretWordLeft(true); break;
             case 14: h.caretWordRight(false); break;
             case 15: h.caretWordRight(true); break;
+            case 16: h.caretUp(false); break;
+            case 17: h.caretUp(true); break;
+            case 18: h.caretDown(false); break;
+            case 19: h.caretDown(true); break;
             default: break;
         }
     }
