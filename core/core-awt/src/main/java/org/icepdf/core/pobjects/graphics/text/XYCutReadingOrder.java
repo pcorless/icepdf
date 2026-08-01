@@ -11,38 +11,32 @@ package org.icepdf.core.pobjects.graphics.text;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
- * Geometry-driven page reading order via recursive XY-cut (projection profiling).
+ * Geometry-driven, column-contiguous page reading order.
  * <p>
  * Operates on the already-sliced {@link LineText} list produced by
- * {@code PageText.sortAndFormatText()} and returns the same lines re-ordered.  At each region it
- * prefers a <em>vertical</em> cut (a whitespace gutter between columns) so a column is read
- * top-to-bottom before moving right; failing that a <em>horizontal</em> cut (a band break); and if
- * neither is significant the region is a leaf and is sorted plain top-to-bottom.
+ * {@code PageText.sortAndFormatText()} and returns the same lines re-ordered so that each column is
+ * read top-to-bottom before moving to the next column.  Columns are found by {@link ColumnLayout}
+ * (a per-x-bin line-count coverage profile), which is robust to the header, title and caption lines
+ * that span columns and defeat classic zero-coverage XY-cut gutter detection on dense pages.
+ * <p>
+ * Full-width lines (titles, rules) act as horizontal band separators: content is split into stripes
+ * at each separator, every stripe is read column-by-column, and the separators are emitted between
+ * stripes.  Lines that span some but not all columns are read inline in the column their centre
+ * falls in.
  * <p>
  * Coordinate note: line bounds are in PDF space where larger {@code y} is higher on the page, so
  * "top first" means descending {@code y}.
  * <p>
- * Design and rationale: {@code READING-ORDER-XYCUT-PLAN.md}.  This is opt-in
- * ({@code org.icepdf.core.views.page.text.readingOrder=xycut}); it does not change the default.
+ * Design and rationale: {@code READING-ORDER-XYCUT-PLAN.md} and {@code TEXT-SELECTION-PLAN.md}
+ * Appendix E/F.  This is opt-in ({@code org.icepdf.core.views.page.text.readingOrder=xycut}); it does
+ * not change the default.
  *
  * @since 7.5
  */
 public final class XYCutReadingOrder {
-
-    /** Column gutter must exceed this many median line-heights to split columns. */
-    private static final double COL_GUTTER_MIN = 1.5;
-    /** Band gap must exceed this many median line-heights to split rows. */
-    private static final double ROW_GAP_MIN = 1.5;
-    /** A column side must overlap the other in y by at least this fraction to be a genuine column. */
-    private static final double COL_Y_OVERLAP_MIN = 0.25;
-    /** Refuse a vertical cut that would leave a side with fewer than this many lines. */
-    private static final int MIN_COLUMN_LINES = 2;
-    /** Recursion guard against pathological input. */
-    private static final int MAX_DEPTH = 48;
 
     private XYCutReadingOrder() {
     }
@@ -51,70 +45,74 @@ public final class XYCutReadingOrder {
      * Returns {@code lines} re-ordered into reading order.  The input list is not modified.
      */
     public static ArrayList<LineText> order(List<LineText> lines) {
-        ArrayList<LineText> out = new ArrayList<>(lines.size());
-        order(new ArrayList<>(lines), 0, out);
-        return out;
-    }
-
-    private static void order(List<LineText> region, int depth, List<LineText> out) {
-        int n = region.size();
-        if (n <= 1 || depth > MAX_DEPTH) {
-            emitLeaf(region, out);
-            return;
+        ArrayList<LineText> in = new ArrayList<>(lines);
+        if (in.size() <= 1) {
+            return in;
         }
-        double scale = medianHeight(region);
-
-        // 1. columns first: a vertical gutter, provided both sides are genuinely side-by-side.
-        Gap gutter = widestGap(region, true);
-        if (gutter != null && gutter.width > COL_GUTTER_MIN * scale) {
-            List<LineText> left = new ArrayList<>();
-            List<LineText> right = new ArrayList<>();
-            for (LineText line : region) {
-                if (line.getBounds().getCenterX() < gutter.mid) left.add(line);
-                else right.add(line);
-            }
-            if (left.size() >= MIN_COLUMN_LINES && right.size() >= MIN_COLUMN_LINES
-                    && yOverlapFraction(left, right) >= COL_Y_OVERLAP_MIN) {
-                order(left, depth + 1, out);   // left-to-right
-                order(right, depth + 1, out);
-                return;
-            }
+        List<double[]> bands = ColumnLayout.detectBands(in);
+        if (bands.size() < 2) {
+            // single column: plain top-to-bottom, left-to-right.
+            LinePositionComparator.orderTopLeft(in);
+            return in;
         }
-
-        // 2. otherwise a horizontal band break (harmless within a single column: order is preserved).
-        Gap band = widestGap(region, false);
-        if (band != null && band.width > ROW_GAP_MIN * scale) {
-            List<LineText> top = new ArrayList<>();
-            List<LineText> bottom = new ArrayList<>();
-            for (LineText line : region) {
-                if (line.getBounds().getCenterY() > band.mid) top.add(line);   // larger y = higher
-                else bottom.add(line);
-            }
-            if (!top.isEmpty() && !bottom.isEmpty()) {
-                order(top, depth + 1, out);    // top-to-bottom
-                order(bottom, depth + 1, out);
-                return;
-            }
-        }
-
-        // 3. leaf.
-        emitLeaf(region, out);
+        return columnBandOrder(in, bands);
     }
 
     /**
-     * Emits a leaf region.  A skinny, tall block (a vertical glyph stack such as rotated marginal
-     * text) is left in its incoming order rather than forced top-to-bottom: we do not know its true
-     * flow direction, and re-sorting a bottom-to-top vertical run would reverse it.  Fixing vertical
-     * text order is an explicit non-goal (see plan); preserving plot order is the no-regression choice.
-     * Everything else is a normal horizontal block sorted top-to-bottom, left-to-right.
+     * Orders a multi-column page: split into horizontal stripes at full-width separators, then read
+     * each stripe column-by-column (left-to-right), each column top-to-bottom.
      */
-    private static void emitLeaf(List<LineText> region, List<LineText> out) {
-        if (isVerticalStack(region)) {
-            out.addAll(region);
-        } else {
-            LinePositionComparator.orderTopLeft(region);
-            out.addAll(region);
+    private static ArrayList<LineText> columnBandOrder(List<LineText> lines, List<double[]> bands) {
+        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+        for (LineText line : lines) {
+            minX = Math.min(minX, line.getBounds().getMinX());
+            maxX = Math.max(maxX, line.getBounds().getMaxX());
         }
+        double separatorMin = (maxX - minX) * ColumnLayout.FULL_WIDTH_RATIO;
+
+        // separators = full-width lines; they define the horizontal stripe boundaries (top-first).
+        List<LineText> separators = new ArrayList<>();
+        List<LineText> body = new ArrayList<>();
+        for (LineText line : lines) {
+            if (line.getBounds().getWidth() >= separatorMin) separators.add(line);
+            else body.add(line);
+        }
+        separators.sort((a, b) -> Double.compare(b.getBounds().getCenterY(), a.getBounds().getCenterY()));
+
+        int stripes = separators.size() + 1;
+        int cols = bands.size();
+        List<List<List<LineText>>> buckets = new ArrayList<>(stripes);
+        for (int s = 0; s < stripes; s++) {
+            List<List<LineText>> row = new ArrayList<>(cols);
+            for (int c = 0; c < cols; c++) row.add(new ArrayList<>());
+            buckets.add(row);
+        }
+        for (LineText line : body) {
+            double cy = line.getBounds().getCenterY();
+            int stripe = 0;
+            for (LineText sep : separators) {
+                if (sep.getBounds().getCenterY() > cy) stripe++;   // separators above this line
+            }
+            int col = ColumnLayout.bandOf(line.getBounds().getCenterX(), bands);
+            buckets.get(stripe).get(col).add(line);
+        }
+
+        ArrayList<LineText> out = new ArrayList<>(lines.size());
+        for (int s = 0; s < stripes; s++) {
+            for (int c = 0; c < cols; c++) {
+                List<LineText> bucket = buckets.get(s).get(c);
+                // Order the column top-to-bottom.  orderTopLeft (not a naive y-sort) bands near-equal
+                // y fragments and sorts them left-to-right, so a line split into two boxes at a
+                // sub-point y offset still reads in order.  A rotated glyph-stack is left in incoming
+                // order: re-sorting a bottom-to-top vertical run would reverse it.
+                if (!isVerticalStack(bucket)) {
+                    LinePositionComparator.orderTopLeft(bucket);
+                }
+                out.addAll(bucket);
+            }
+            if (s < separators.size()) out.add(separators.get(s));
+        }
+        return out;
     }
 
     /**
@@ -139,62 +137,10 @@ public final class XYCutReadingOrder {
         }
         java.util.Arrays.sort(widths);
         double medianLineWidth = widths[widths.length / 2];
+        double medianLineHeight = medianHeight(region);
         boolean tallerThanWide = (maxY - minY) > (maxX - minX);
-        boolean glyphWideLines = medianLineWidth < medianHeight(region) * 3;
+        boolean glyphWideLines = medianLineWidth < medianLineHeight * 3;
         return tallerThanWide && glyphWideLines;
-    }
-
-    /**
-     * Widest zero-coverage gap along one axis, computed by projecting each line box onto that axis,
-     * merging overlapping intervals, and taking the largest interior gap.
-     *
-     * @param horizontalAxis true for the x-axis (column gutter), false for the y-axis (band break)
-     * @return the widest gap, or null if the projection has no interior gap
-     */
-    private static Gap widestGap(List<LineText> region, boolean horizontalAxis) {
-        double[][] iv = new double[region.size()][2];
-        for (int i = 0; i < region.size(); i++) {
-            Rectangle2D.Double b = region.get(i).getBounds();
-            iv[i][0] = horizontalAxis ? b.getMinX() : b.getMinY();
-            iv[i][1] = horizontalAxis ? b.getMaxX() : b.getMaxY();
-        }
-        java.util.Arrays.sort(iv, Comparator.comparingDouble(a -> a[0]));
-        double bestLo = 0, bestHi = 0, best = 0;
-        double coverEnd = iv[0][1];
-        for (int i = 1; i < iv.length; i++) {
-            if (iv[i][0] > coverEnd) {
-                double w = iv[i][0] - coverEnd;
-                if (w > best) {
-                    best = w;
-                    bestLo = coverEnd;
-                    bestHi = iv[i][0];
-                }
-            }
-            coverEnd = Math.max(coverEnd, iv[i][1]);
-        }
-        return best > 0 ? new Gap(bestLo, bestHi, best) : null;
-    }
-
-    /**
-     * Fraction of the smaller y-extent over which the two column candidates overlap.  Stacked blocks
-     * (one above the other) overlap little and are rejected as columns; true side-by-side columns
-     * overlap heavily.
-     */
-    private static double yOverlapFraction(List<LineText> a, List<LineText> b) {
-        double aMin = Double.MAX_VALUE, aMax = -Double.MAX_VALUE;
-        double bMin = Double.MAX_VALUE, bMax = -Double.MAX_VALUE;
-        for (LineText l : a) {
-            aMin = Math.min(aMin, l.getBounds().getMinY());
-            aMax = Math.max(aMax, l.getBounds().getMaxY());
-        }
-        for (LineText l : b) {
-            bMin = Math.min(bMin, l.getBounds().getMinY());
-            bMax = Math.max(bMax, l.getBounds().getMaxY());
-        }
-        double overlap = Math.min(aMax, bMax) - Math.max(aMin, bMin);
-        if (overlap <= 0) return 0;
-        double smaller = Math.min(aMax - aMin, bMax - bMin);
-        return smaller <= 0 ? 0 : overlap / smaller;
     }
 
     private static double medianHeight(List<LineText> region) {
@@ -203,16 +149,5 @@ public final class XYCutReadingOrder {
         java.util.Arrays.sort(h);
         double m = h[h.length / 2];
         return m > 0 ? m : 1; // guard against zero-height degenerate lines
-    }
-
-    /** A zero-coverage interval [lo, hi] of the given width along one axis. */
-    private static final class Gap {
-        final double mid;
-        final double width;
-
-        Gap(double lo, double hi, double width) {
-            this.mid = (lo + hi) / 2;
-            this.width = width;
-        }
     }
 }

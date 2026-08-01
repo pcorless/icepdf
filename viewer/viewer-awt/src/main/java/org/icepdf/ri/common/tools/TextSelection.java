@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.BreakType;
 import org.icepdf.core.pobjects.graphics.text.Caret;
+import org.icepdf.core.pobjects.graphics.text.ColumnBlock;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -62,6 +63,13 @@ public class TextSelection extends SelectionBoxHandler {
 
     // sticky page-space column for vertical caret navigation; -1 when not navigating vertically.
     protected double goalX = -1;
+
+    // column the mouse drag started in (D4 column-aware selection): a drag stays inside this column
+    // until the pointer passes its bottom, then wraps to the next column in reading order.  Null when
+    // the anchor is on a full-width line or a single-column page.
+    protected ColumnBlock anchorColumn;
+    // page index the anchor column belongs to; column constraint only applies while dragging on it.
+    protected int anchorColumnPage = -1;
 
     public TextSelection(DocumentViewController documentViewController, AbstractPageViewComponent pageViewComponent) {
         super(documentViewController, pageViewComponent);
@@ -109,8 +117,16 @@ public class TextSelection extends SelectionBoxHandler {
             Page currentPage = pageViewComponent.getPage();
             if (currentPage != null) {
                 PageText pageText = currentPage.getViewText();
-                int offset = caretOffset(pageText, startPoint);
+                Point2D.Float pagePoint = convertToPageSpace(startPoint);
+                int offset = pageText != null
+                        ? pageText.getTextSequence().caretAt(pagePoint).getOffset() : 0;
                 pageLock = currentPage;
+                // remember which column the drag started in so it can be confined to it (D4).
+                // Resolve geometrically by the click point, not the offset: interleaved reading
+                // orders can make column offset ranges overlap, but their x-bands never do.
+                anchorColumn = pageText != null
+                        ? pageText.getTextSequence().columnAt(pagePoint) : null;
+                anchorColumnPage = pageViewComponent.getPageIndex();
                 documentViewController.getDocumentViewModel()
                         .collapseTo(pageViewComponent.getPageIndex(), offset);
                 selectedCount = 0;
@@ -144,6 +160,8 @@ public class TextSelection extends SelectionBoxHandler {
         // release the page lock so the Reference API can collect the page post selection.
         pageLock = null;
         selectedCount = 0;
+        anchorColumn = null;
+        anchorColumnPage = -1;
     }
 
     public void clearSelectionState() {
@@ -168,7 +186,8 @@ public class TextSelection extends SelectionBoxHandler {
                 if (currentPage != null) {
                     pageLock = currentPage;
                     PageText pageText = currentPage.getViewText();
-                    int offset = caretOffset(pageText, dragPoint);
+                    int offset = columnAwareCaretOffset(pageText, dragPoint,
+                            pageViewComponent.getPageIndex());
                     DocumentViewModel documentViewModel = documentViewController.getDocumentViewModel();
                     if (documentViewModel.getTextSelection().isEmpty()) {
                         documentViewModel.collapseTo(pageViewComponent.getPageIndex(), offset);
@@ -212,6 +231,25 @@ public class TextSelection extends SelectionBoxHandler {
     protected int caretOffset(PageText pageText, Point componentPoint) {
         if (pageText == null) return 0;
         return pageText.getTextSequence().caretAt(convertToPageSpace(componentPoint)).getOffset();
+    }
+
+    /**
+     * Column-aware drag mapping (D4).  The nearest-line fallback (used when the pointer is over no
+     * glyph &mdash; an inter-line gap or a margin) is confined to the column the pointer is currently
+     * over, so dragging down a column keeps resolving to <em>that</em> column between lines instead
+     * of snapping back to the anchor column (which caused selection flicker).  When the pointer is in
+     * a true gutter (over no column at all) it falls back to the anchor column so a sideways drift
+     * can't jump columns.  Direct glyph hits are never constrained, so moving the pointer over the
+     * next column's text still extends the selection there (contiguous cross-column selection).
+     */
+    protected int columnAwareCaretOffset(PageText pageText, Point componentPoint, int pageIndex) {
+        if (pageText == null) return 0;
+        Point2D.Float pagePoint = convertToPageSpace(componentPoint);
+        TextSequence seq = pageText.getTextSequence();
+        ColumnBlock pointColumn = seq.columnAt(pagePoint);
+        ColumnBlock constrain = pointColumn != null ? pointColumn
+                : (pageIndex == anchorColumnPage ? anchorColumn : null);
+        return seq.caretAt(pagePoint, constrain).getOffset();
     }
 
     /**

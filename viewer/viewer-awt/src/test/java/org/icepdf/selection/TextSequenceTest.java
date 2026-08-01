@@ -12,6 +12,7 @@ package org.icepdf.selection;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.BreakType;
 import org.icepdf.core.pobjects.graphics.text.Caret;
+import org.icepdf.core.pobjects.graphics.text.ColumnBlock;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -295,5 +296,125 @@ public class TextSequenceTest {
     private static Point2D center(GlyphText g) {
         Rectangle2D.Double b = g.getBounds();
         return new Point2D.Double(b.getCenterX(), b.getCenterY());
+    }
+
+    // ------------------------------------------------------------------
+    // column detection + column-aware selection (Appendix E / D4)
+    // ------------------------------------------------------------------
+
+    @DisplayName("windriver p2: two body columns detected, left reads before right, ranges disjoint")
+    @Test
+    public void columns_twoColumnBody() throws Exception {
+        TextSequence seq = pageText("/redact/windrivercasestudy1n3d2m8km0r.pdf", 1).getTextSequence();
+        List<ColumnBlock> cols = seq.columns();
+        assertEquals(2, cols.size(), "expected two body columns");
+
+        ColumnBlock left = cols.get(0), right = cols.get(1);
+        // ordered left-to-right
+        assertTrue(left.getBounds().getMinX() < right.getBounds().getMinX());
+        // columns don't overlap horizontally (a real gutter separates them)
+        assertTrue(left.getBounds().getMaxX() <= right.getBounds().getMinX(),
+                "columns overlap in x: " + left.getBounds() + " / " + right.getBounds());
+        // reading order: the whole left column precedes the whole right column, no offset overlap
+        assertTrue(left.getRange().getEnd() <= right.getRange().getStart(),
+                "column offset ranges overlap: " + left.getRange() + " / " + right.getRange());
+        // every column offset resolves back to that column
+        assertSame(left, seq.columnAt(left.getRange().getStart()));
+        assertSame(right, seq.columnAt(right.getRange().getStart()));
+    }
+
+    @DisplayName("column-constrained caret keeps a gutter-crossing drag inside the anchor column")
+    @Test
+    public void columns_constrainedCaretDoesNotJumpTheGutter() throws Exception {
+        TextSequence seq = pageText("/redact/windrivercasestudy1n3d2m8km0r.pdf", 1).getTextSequence();
+        ColumnBlock left = seq.columns().get(0), right = seq.columns().get(1);
+        OffsetRange leftRange = left.getRange();
+
+        // a y within both columns' vertical span, so an unconstrained lookup can reach either.
+        double y = (Math.max(left.getBounds().getMinY(), right.getBounds().getMinY())
+                + Math.min(left.getBounds().getMaxY(), right.getBounds().getMaxY())) / 2.0;
+        double leftX = left.getBounds().getCenterX();
+        double rightX = right.getBounds().getCenterX();
+
+        // A point in the GUTTER (over no glyph), anchored to the left column, resolves to the left
+        // column: a sideways drift while dragging down the left column must not jump to the right.
+        double gutterX = (left.getBounds().getMaxX() + right.getBounds().getMinX()) / 2.0;
+        int gutter = seq.caretAt(new Point2D.Double(gutterX, y), left).getOffset();
+        assertFalse(right.getRange().contains(gutter),
+                "gutter drift jumped to the right column: " + gutter);
+
+        // But a point genuinely OVER the right column's text still crosses (direct glyph hit) — that
+        // is how an intentional cross-column drag selects the rest of the left column plus the head
+        // of the right.
+        int overRight = seq.caretAt(new Point2D.Double(rightX, y), left).getOffset();
+        assertFalse(leftRange.contains(overRight),
+                "a point over the right column's text should cross to it, not clamp: " + overRight);
+
+        // and a point genuinely in the left column is unaffected by the constraint.
+        assertEquals(seq.caretAt(new Point2D.Double(leftX, y)).getOffset(),
+                seq.caretAt(new Point2D.Double(leftX, y), left).getOffset());
+    }
+
+    @DisplayName("Steinfeld p1: three columns detected despite column-spanning headers; constraint holds")
+    @Test
+    public void columns_threeColumnWithSpanningHeaders() throws Exception {
+        TextSequence seq = pageText("/selection/Steinfeld-88.pdf", 0).getTextSequence();
+        List<ColumnBlock> cols = seq.columns();
+        assertEquals(3, cols.size(), "expected three body columns");
+
+        // x-bands are ordered and disjoint (the spanning title/abstract lines didn't bridge a gutter).
+        for (int i = 1; i < cols.size(); i++) {
+            assertTrue(cols.get(i - 1).getBounds().getMaxX() <= cols.get(i).getBounds().getMinX(),
+                    "columns overlap in x at " + i + ": " + cols.get(i - 1).getBounds()
+                            + " / " + cols.get(i).getBounds());
+        }
+
+        // a drag anchored in the middle column, drifting into either gutter at a y where all three
+        // columns have body text, stays in the middle column (no accidental jump).
+        ColumnBlock mid = cols.get(1);
+        Rectangle2D.Double mb = mid.getBounds();
+        // y in the vertical overlap of all three columns (near the top of the bodies).
+        double y = Math.max(cols.get(0).getBounds().getMinY(),
+                Math.max(cols.get(1).getBounds().getMinY(), cols.get(2).getBounds().getMinY())) + 5;
+        double leftGutter = (cols.get(0).getBounds().getMaxX() + mb.getMinX()) / 2.0;
+        double rightGutter = (mb.getMaxX() + cols.get(2).getBounds().getMinX()) / 2.0;
+        for (double gx : new double[]{leftGutter, rightGutter}) {
+            int off = seq.caretAt(new Point2D.Double(gx, y), mid).getOffset();
+            GlyphText g = seq.glyphAt(off);
+            if (g != null) {
+                double cx = g.getBounds().getCenterX();
+                assertTrue(cx >= mb.getMinX() && cx <= mb.getMaxX(),
+                        "gutter point jumped out of the middle column at x=" + gx + ": glyph x=" + cx);
+            }
+        }
+        // but a point genuinely over an outer column's text crosses to it (direct glyph hit).
+        int overLeft = seq.caretAt(new Point2D.Double(cols.get(0).getBounds().getCenterX(), y), mid).getOffset();
+        GlyphText gl = seq.glyphAt(overLeft);
+        if (gl != null) {
+            assertTrue(gl.getBounds().getCenterX() < mb.getMinX(),
+                    "a point over the left column's text should cross to it, not clamp to middle");
+        }
+    }
+
+    @DisplayName("single-column page yields one whole-page column; constraint is a no-op")
+    @Test
+    public void columns_singleColumnInvariant() throws Exception {
+        TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
+        List<ColumnBlock> cols = seq.columns();
+        assertEquals(1, cols.size());
+        assertEquals(seq.fullRange(), cols.get(0).getRange());
+
+        // caretAt(p, wholePageColumn) == caretAt(p) across a grid: no behaviour change on single-column.
+        ColumnBlock whole = cols.get(0);
+        Rectangle2D pb = bounds(seq);
+        for (int gx = 0; gx <= 10; gx++) {
+            for (int gy = 0; gy <= 10; gy++) {
+                double x = pb.getMinX() + pb.getWidth() * gx / 10.0;
+                double y = pb.getMinY() + pb.getHeight() * gy / 10.0;
+                Point2D pt = new Point2D.Double(x, y);
+                assertEquals(seq.caretAt(pt).getOffset(), seq.caretAt(pt, whole).getOffset(),
+                        "constraint changed the caret at (" + x + "," + y + ")");
+            }
+        }
     }
 }

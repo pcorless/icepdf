@@ -20,6 +20,7 @@ import java.awt.geom.Rectangle2D;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 
@@ -81,6 +82,9 @@ public final class TextSequence {
     // "ataúdes").
     private String foldedSearchText;
     private int[] foldedToCanonical;
+
+    // lazily detected text columns (geometric lens over the reading order); see columns().
+    private List<ColumnBlock> columns;
 
     TextSequence(PageText pageText) {
         List<LineText> pageLines = pageText.getPageLines();
@@ -338,12 +342,30 @@ public final class TextSequence {
      * @return nearest caret
      */
     public Caret caretAt(Point2D pagePoint) {
+        return caretAt(pagePoint, null);
+    }
+
+    /**
+     * Column-aware variant of {@link #caretAt(Point2D)} for drag selection.  A direct glyph hit is
+     * always honoured &mdash; if the pointer is over the other column's text, the caret lands there,
+     * so an intentional cross-column drag selects the rest of the anchor column plus the head of the
+     * next column (contiguous reading order).  Only the ambiguous <em>nearest-line</em> fallback,
+     * used when the pointer is over no glyph (a gutter or margin), is confined to {@code column},
+     * which stops a sideways drift across the gutter from jumping columns while dragging straight
+     * down.  A {@code null} column is the whole page and makes this identical to
+     * {@link #caretAt(Point2D)}.
+     *
+     * @param pagePoint point in page space
+     * @param column    column to confine the nearest-line fallback to, or {@code null} for the page
+     * @return the caret nearest the point (in-column when the point is over no glyph)
+     */
+    public Caret caretAt(Point2D pagePoint, ColumnBlock column) {
         if (glyphs.length == 0) return new Caret(0, Bias.FORWARD);
         double px = pagePoint.getX(), py = pagePoint.getY();
 
         // 1. direct hit: the glyph whose bounds contain the point (closest centre if several overlap).
-        // This is essential on multi-column or rotated (vertical) layouts where many lines share a
-        // y-band; a y-only line lookup would grab the wrong line and select the wrong word.
+        // Not column-filtered: a point genuinely over the neighbouring column's text should select
+        // there (that is how a cross-column drag extends).
         int hit = -1;
         double hitDist = Double.MAX_VALUE;
         for (int i = 0; i < glyphs.length; i++) {
@@ -365,7 +387,7 @@ public final class TextSequence {
         }
 
         // 2. no glyph under the point: pick the nearest line in 2D, then position within it by x.
-        return caretInLine(nearestLine(pagePoint), px);
+        return caretInLine(nearestLine(pagePoint, column), px);
     }
 
     /**
@@ -408,12 +430,22 @@ public final class TextSequence {
         return false;
     }
 
-    /** Index of the line whose bounding box is nearest the point in 2D (0 if the point is inside). */
-    private int nearestLine(Point2D p) {
-        int best = 0;
+    /**
+     * Index of the line whose bounding box is nearest the point in 2D.  When {@code column} is
+     * non-null the search is confined to lines belonging to that column, so a point that has drifted
+     * into another column still resolves to a line in the anchor's column.
+     *
+     * @param p      point in page space
+     * @param column column to confine the search to, or {@code null} for all lines
+     * @return the nearest line index (falls back to the unconstrained nearest if the column matched
+     * no line, which cannot normally happen for a non-empty column)
+     */
+    private int nearestLine(Point2D p, ColumnBlock column) {
+        int best = -1;
         double bestDist = Double.MAX_VALUE;
         double px = p.getX(), py = p.getY();
         for (int i = 0; i < lines.length; i++) {
+            if (column != null && !lineInColumn(i, column)) continue;
             Rectangle2D.Double b = lines[i].getBounds();
             double dx = Math.max(Math.max(b.getMinX() - px, px - b.getMaxX()), 0);
             double dy = Math.max(Math.max(b.getMinY() - py, py - b.getMaxY()), 0);
@@ -423,7 +455,155 @@ public final class TextSequence {
                 best = i;
             }
         }
-        return best;
+        // defensive: a non-null column that somehow matched nothing falls back to the whole page.
+        return best >= 0 ? best : nearestLine(p, null);
+    }
+
+    /** True when line {@code i}'s horizontal centre lies within {@code column}'s x-band. */
+    private boolean lineInColumn(int i, ColumnBlock column) {
+        double cx = lines[i].getBounds().getCenterX();
+        return cx >= column.getBounds().getMinX() && cx <= column.getBounds().getMaxX();
+    }
+
+    // ------------------------------------------------------------------
+    // column detection (geometric lens over the reading order)
+    // ------------------------------------------------------------------
+
+    /** A real column must hold at least this many lines (guards against a stray line splitting a page). */
+    private static final int MIN_COLUMN_LINES = 2;
+
+    /**
+     * Detects the page's text columns: contiguous x-bands of text separated by vertical gutters
+     * (whitespace lanes wider than half the median line height).  Full-width lines (headers, footers,
+     * rules spanning &gt;80% of the text width) are excluded from the scan so a running header cannot
+     * bridge two columns.  The result is a geometric lens over the reading order &mdash; it never
+     * re-orders text; it only tells the viewer which offset ranges form each column so a drag can be
+     * confined to one (see {@link #caretAt(Point2D, OffsetRange)}).
+     * <p>
+     * A page with no detectable gutter (the common single-column case) returns a single block
+     * spanning the whole page, which makes column-constrained selection a no-op there.
+     *
+     * @return the page's columns left-to-right; never null, empty only for an empty page.
+     */
+    public List<ColumnBlock> columns() {
+        if (columns == null) {
+            columns = detectColumns();
+        }
+        return columns;
+    }
+
+    /**
+     * @param offset a reading-order offset
+     * @return the column whose range contains {@code offset}, or {@code null} if none (e.g. a
+     * full-width header line that belongs to no column).  Note: on pages whose reading order
+     * interleaves columns the offset ranges can overlap, so prefer {@link #columnAt(Point2D)} when a
+     * page-space point is available (mouse selection).
+     */
+    public ColumnBlock columnAt(int offset) {
+        for (ColumnBlock c : columns()) {
+            if (c.getRange().contains(offset)) return c;
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the column a page-space point falls in, geometrically (column x-bands are disjoint,
+     * so this is robust even when reading order interleaves the columns' offsets).  Used to pin the
+     * anchor column when a drag selection starts.
+     *
+     * @param pagePoint point in page space
+     * @return the containing column, the column whose x-band spans the point if it fell in a vertical
+     * gap, or {@code null} if the point is outside every column (e.g. over a full-width header).
+     */
+    public ColumnBlock columnAt(Point2D pagePoint) {
+        List<ColumnBlock> cs = columns();
+        for (ColumnBlock c : cs) {
+            if (c.getBounds().contains(pagePoint)) return c;
+        }
+        double px = pagePoint.getX();
+        for (ColumnBlock c : cs) {
+            if (px >= c.getBounds().getMinX() && px <= c.getBounds().getMaxX()) return c;
+        }
+        return null;
+    }
+
+    private List<ColumnBlock> detectColumns() {
+        if (lines.length == 0) return Collections.emptyList();
+
+        // shared column-band detection (see ColumnLayout); the same routine drives XY-cut reading order.
+        List<double[]> bands = ColumnLayout.detectBands(Arrays.asList(lines));
+        if (bands.size() < 2) return wholePage();
+
+        double fullWidth = bandsWidth(bands) * ColumnLayout.FULL_WIDTH_RATIO;
+        double slack = medianLineHeight() * ColumnLayout.GUTTER_HEIGHT_RATIO;
+
+        // assign lines to the band they FIT inside (within a gutter-width of slack); lines that
+        // straddle two lanes - multi-column titles, captions - fit no single lane and belong to no
+        // column, so they don't inflate a column's bounds or drag its offset range across a neighbour.
+        // Keep only bands that are real columns (>= MIN_COLUMN_LINES); < 2 survivors -> single column.
+        List<List<LineText>> members = new ArrayList<>();
+        int[] rangeStart = new int[bands.size()];
+        int[] rangeEnd = new int[bands.size()];
+        for (int b = 0; b < bands.size(); b++) {
+            members.add(new ArrayList<>());
+            rangeStart[b] = Integer.MAX_VALUE;
+            rangeEnd[b] = Integer.MIN_VALUE;
+        }
+        for (int li = 0; li < lines.length; li++) {
+            Rectangle2D.Double lb = lines[li].getBounds();
+            if (lb.getWidth() >= fullWidth) continue;    // full-width lines belong to no column
+            for (int b = 0; b < bands.size(); b++) {
+                if (lb.getMinX() >= bands.get(b)[0] - slack && lb.getMaxX() <= bands.get(b)[1] + slack) {
+                    members.get(b).add(lines[li]);
+                    rangeStart[b] = Math.min(rangeStart[b], lineStart[li]);
+                    rangeEnd[b] = Math.max(rangeEnd[b], lineEnd[li]);
+                    break;
+                }
+            }
+        }
+
+        List<ColumnBlock> result = new ArrayList<>();
+        for (int b = 0; b < bands.size(); b++) {
+            if (members.get(b).size() < MIN_COLUMN_LINES) continue;
+            result.add(new ColumnBlock(unionBounds(members.get(b)),
+                    OffsetRange.of(rangeStart[b], rangeEnd[b])));
+        }
+        if (result.size() < 2) return wholePage();
+        result.sort((a, c) -> Double.compare(a.getBounds().getMinX(), c.getBounds().getMinX()));
+        return result;
+    }
+
+    /** Full text width spanned by the detected bands (leftmost band start to rightmost band end). */
+    private static double bandsWidth(List<double[]> bands) {
+        return bands.get(bands.size() - 1)[1] - bands.get(0)[0];
+    }
+
+    /** Single column spanning the whole page (single-column pages and the no-gutter fallback). */
+    private List<ColumnBlock> wholePage() {
+        List<ColumnBlock> one = new ArrayList<>(1);
+        one.add(new ColumnBlock(unionBounds(Arrays.asList(lines)), OffsetRange.of(0, length())));
+        return one;
+    }
+
+    private double medianLineHeight() {
+        if (lines.length == 0) return 0;
+        double[] h = new double[lines.length];
+        for (int i = 0; i < lines.length; i++) h[i] = lines[i].getBounds().getHeight();
+        Arrays.sort(h);
+        return h[h.length / 2];
+    }
+
+    private static Rectangle2D.Double unionBounds(List<LineText> ls) {
+        Rectangle2D.Double u = null;
+        for (LineText l : ls) {
+            Rectangle2D.Double b = l.getBounds();
+            if (u == null) {
+                u = new Rectangle2D.Double(b.x, b.y, b.width, b.height);
+            } else {
+                Rectangle2D.union(u, b, u);
+            }
+        }
+        return u != null ? u : new Rectangle2D.Double();
     }
 
     // ------------------------------------------------------------------

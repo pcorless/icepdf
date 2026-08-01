@@ -67,55 +67,55 @@
   L030 y=  132.6 x=   77.1..287.6    the strengths and weaknesses of traditional models,
   L031 y=  115.6 x=   77.1..296.5    and then determine what is most important to a specific
   L032 y=   98.6 x=   77.1..130.1    market need.
-  L033 y=  670.3 x=  319.4..527.4    Says Hogan, “A major benefit of Macrovision’s utility
-  L034 y=  653.3 x=  319.4..515.4    pricing is being able to create a new offering for
-  L035 y=  636.3 x=  319.4..531.2    existing and new buyers to consider. And that usually
-  L036 y=  619.3 x=  319.4..530.0    translates into new revenue streams and an increasing
-  L037 y=  602.3 x=  319.4..514.1    ability to be more responsive to your customers .”
-  L038 y=  578.3 x=  319.4..396.0    About Macrovision
-  L039 y=  561.3 x=  319.4..531.9    Macrovision Corporation (Nasdaq:MVSN) is the market
-  L040 y=  544.3 x=  319.4..520.7    leader in electronic licensing, copy protection, and
-  L041 y=  527.3 x=  319.4..519.0    digital rights management ("DRM") technologies.
-  L042 y=  510.3 x=  319.4..520.0    Analysts recognize Macrovision as the clear market
-  L043 y=  493.3 x=  319.4..530.7    leader, and it's estimated that the company sells more
-  L044 y=  476.3 x=  319.4..531.1    software-based licensing solutions than all its compet-
-  L045 y=  459.3 x=  319.4..529.0    itors combined. Macrovision FLEXnet, the world's first
-  L046 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
-  L047 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
-  L048 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
-  L049 y=  391.3 x=  319.4..371.7    FLEXenabled
-  L050 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
-  L051 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
-  L052 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
-  L053 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
-  L054 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
-  L055 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
-  L056 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
-  L057 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
-  L058 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
-  L059 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
-  L060 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
-  L061 y=   46.0 x=   76.7..153.5    Macrovision Corporation
-  L062 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
-  L063 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
-  L064 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L033 y=   46.0 x=   76.7..153.5    Macrovision Corporation
+  L034 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
+  L035 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
+  L036 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L037 y=  670.3 x=  319.4..527.4    Says Hogan, “A major benefit of Macrovision’s utility
+  L038 y=  653.3 x=  319.4..515.4    pricing is being able to create a new offering for
+  L039 y=  636.3 x=  319.4..531.2    existing and new buyers to consider. And that usually
+  L040 y=  619.3 x=  319.4..530.0    translates into new revenue streams and an increasing
+  L041 y=  602.3 x=  319.4..514.1    ability to be more responsive to your customers .”
+  L042 y=  578.3 x=  319.4..396.0    About Macrovision
+  L043 y=  561.3 x=  319.4..531.9    Macrovision Corporation (Nasdaq:MVSN) is the market
+  L044 y=  544.3 x=  319.4..520.7    leader in electronic licensing, copy protection, and
+  L045 y=  527.3 x=  319.4..519.0    digital rights management ("DRM") technologies.
+  L046 y=  510.3 x=  319.4..520.0    Analysts recognize Macrovision as the clear market
+  L047 y=  493.3 x=  319.4..530.7    leader, and it's estimated that the company sells more
+  L048 y=  476.3 x=  319.4..531.1    software-based licensing solutions than all its compet-
+  L049 y=  459.3 x=  319.4..529.0    itors combined. Macrovision FLEXnet, the world's first
+  L050 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
+  L051 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
+  L052 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
+  L053 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L054 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
+  L055 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L056 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L057 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L058 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L059 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L060 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L061 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L062 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L063 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L064 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
   L065 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
   L066 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
 
 === 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
-  L000 y=  253.7 x=    9.6..24.6     INTRODUCTION
-  L001 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
-  L002 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
-  L003 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
-  L004 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
-  L005 y=  443.2 x=   60.8..257.5    providing durability and performance from
-  L006 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
-  L007 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
-  L008 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
-  L009 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
-  L010 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
-  L011 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
-  L012 y=  283.2 x=   60.8..150.9    more durable fork.
+  L000 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
+  L001 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
+  L002 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
+  L003 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
+  L004 y=  443.2 x=   60.8..257.5    providing durability and performance from
+  L005 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
+  L006 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
+  L007 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
+  L008 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
+  L009 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
+  L010 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
+  L011 y=  283.2 x=   60.8..150.9    more durable fork.
+  L012 y=  253.7 x=    9.6..24.6     INTRODUCTION
   L013 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
   L014 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
   L015 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
