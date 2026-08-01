@@ -88,6 +88,31 @@ public class ReadingOrderXYCutTest {
                         + "-Dupdate.reading.order.xycut.golden=true and review the diff.");
     }
 
+    @DisplayName("Steinfeld p3: three columns read contiguously (col-spanning caption/footer don't interleave)")
+    @Test
+    public void steinfeldThreeColumnsContiguous() throws Exception {
+        List<LineText> ordered = orderedLines("/selection/Steinfeld-88.pdf", 2);
+        double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+        for (LineText l : ordered) {
+            minX = Math.min(minX, l.getBounds().getMinX());
+            maxX = Math.max(maxX, l.getBounds().getMaxX());
+        }
+        double width = maxX - minX;
+        // three body columns with gutters near x=218 and x=396 (see ColumnLayout detection).
+        int prev = -1;
+        java.util.Set<Integer> closed = new java.util.HashSet<>();
+        for (LineText l : ordered) {
+            if (l.getBounds().getWidth() >= width * 0.6) continue;   // skip column-spanning lines
+            double cx = l.getBounds().getCenterX();
+            int col = cx < 218 ? 0 : (cx < 396 ? 1 : 2);
+            if (col == prev) continue;
+            assertFalse(closed.contains(col),
+                    "column " + col + " reappears in the reading order — columns are interleaved");
+            if (prev >= 0) closed.add(prev);
+            prev = col;
+        }
+    }
+
     @DisplayName("xr_650 p6: out-of-order single column reads top-to-bottom (Environmental before Programs)")
     @Test
     public void xr650SingleColumnOrdered() throws Exception {

@@ -38,6 +38,15 @@ import java.util.List;
  */
 public final class XYCutReadingOrder {
 
+    /**
+     * A line must span at least this fraction of the text width to act as a horizontal stripe
+     * separator (a true page-wide title or rule).  Deliberately higher than
+     * {@link ColumnLayout#FULL_WIDTH_RATIO} (which only needs a line to span across a gutter to be
+     * excluded from the column profile): a caption or footer that spans two of three columns must
+     * <em>not</em> break the page into stripes, or the columns interleave.
+     */
+    private static final double SEPARATOR_RATIO = 0.85;
+
     private XYCutReadingOrder() {
     }
 
@@ -68,9 +77,9 @@ public final class XYCutReadingOrder {
             minX = Math.min(minX, line.getBounds().getMinX());
             maxX = Math.max(maxX, line.getBounds().getMaxX());
         }
-        double separatorMin = (maxX - minX) * ColumnLayout.FULL_WIDTH_RATIO;
+        double separatorMin = (maxX - minX) * SEPARATOR_RATIO;
 
-        // separators = full-width lines; they define the horizontal stripe boundaries (top-first).
+        // separators = full-page-width lines; they define the horizontal stripe boundaries (top-first).
         List<LineText> separators = new ArrayList<>();
         List<LineText> body = new ArrayList<>();
         for (LineText line : lines) {
