@@ -52,9 +52,10 @@ public class TextSequenceTest {
     public void invariants_testPrint() throws Exception {
         TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
 
-        // canonical reading order
+        // canonical reading order (default xycut orders the top page-number line first, then the
+        // verse; the verse text is present and intact regardless of where the page number sorts).
         assertEquals(6, seq.lineCount());
-        assertTrue(seq.text().toString().startsWith("Qué es un antipoeta:"),
+        assertTrue(seq.text().toString().contains("Qué es un antipoeta:"),
                 "unexpected reading order: " + seq.text());
         assertEquals(seq.text().toString(), seq.text(0, seq.length()));   // select-all identity
         assertEquals(seq.text().length(), seq.length());
@@ -129,24 +130,29 @@ public class TextSequenceTest {
     public void navigation() throws Exception {
         TextSequence seq = pageText("/redact/test_print.pdf", 0).getTextSequence();
 
-        // glyph boundary: +/- 1
-        assertEquals(6, seq.nextBoundary(5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, true));
-        assertEquals(4, seq.nextBoundary(5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, false));
+        // base assertions at the verse start ("Qué"), which under the default xycut order is not
+        // necessarily offset 0 (the top page-number line sorts first).
+        int q = seq.text().toString().indexOf("Qué");
+        assertTrue(q >= 0, "verse start not found");
 
-        // word boundary at start of the first word "Qué"
-        OffsetRange firstWord = seq.wordRange(0);
-        assertEquals(firstWord.getEnd(), seq.nextBoundary(0, org.icepdf.core.pobjects.graphics.text.BreakType.WORD, true));
+        // glyph boundary: +/- 1
+        assertEquals(q + 6, seq.nextBoundary(q + 5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, true));
+        assertEquals(q + 4, seq.nextBoundary(q + 5, org.icepdf.core.pobjects.graphics.text.BreakType.GLYPH, false));
+
+        // word boundary at start of the word "Qué"
+        OffsetRange firstWord = seq.wordRange(q);
+        assertEquals(firstWord.getEnd(), seq.nextBoundary(q, org.icepdf.core.pobjects.graphics.text.BreakType.WORD, true));
 
         // word navigation must not double-stop on the space between words: one forward step from a
         // word end lands on the *next* word end, not on the intervening whitespace (GH-513).
         BreakType word = org.icepdf.core.pobjects.graphics.text.BreakType.WORD;
-        int afterQue = seq.nextBoundary(0, word, true);
+        int afterQue = seq.nextBoundary(q, word, true);
         int afterEs = seq.nextBoundary(afterQue, word, true);
-        assertEquals("Qué", seq.text(0, afterQue));
-        assertEquals("Qué es", seq.text(0, afterEs), "forward word step skipped straight over the space");
+        assertEquals("Qué", seq.text(q, afterQue));
+        assertEquals("Qué es", seq.text(q, afterEs), "forward word step skipped straight over the space");
         // backward mirrors forward: from inside "es" one step reaches the start of "Qué" in a
         // single move, not stopping on the lone space between them.
-        assertEquals(0, seq.nextBoundary(afterQue + 1, word, false));
+        assertEquals(q, seq.nextBoundary(afterQue + 1, word, false));
 
         // line boundary
         OffsetRange line0 = seq.lineRange(3);
@@ -411,13 +417,15 @@ public class TextSequenceTest {
         OffsetRange half = OffsetRange.of(0, multi.length() / 2);
         assertTrue(multi.extractText(half).length() <= x.length());
 
-        // single-paragraph prose (poem) does not get a break inserted mid-paragraph.
+        // single-paragraph prose (poem) does not get a break inserted mid-paragraph: the verse from
+        // "Qué" to "mundo" is one paragraph, so no blank line appears within it (the page-number line
+        // may be its own paragraph, but that is outside the verse span).
         TextSequence poem = pageText("/redact/test_print.pdf", 0).getTextSequence();
         String p = poem.extractText();
-        int firstBreak = p.indexOf("\n\n");
-        // the running verse before the page-number line is one paragraph: its wrapped lines are joined
-        // by single newlines, so the first blank line (if any) comes only at the trailing "- 1 -".
-        assertTrue(firstBreak < 0 || p.substring(0, firstBreak).split("\n").length >= 4,
+        int qi = p.indexOf("Qué");
+        int mi = p.indexOf("mundo");
+        assertTrue(qi >= 0 && mi > qi, "verse text not found");
+        assertFalse(p.substring(qi, mi).contains("\n\n"),
                 "poem verse should read as one paragraph, not split at every wrapped line");
     }
 

@@ -122,14 +122,18 @@ public class DocumentTextSelectionTest {
         document.setFile(DocumentTextSelectionTest.class.getResource("/redact/test_print.pdf").getFile());
         TextSequence seq = document.getPageText(0).getTextSequence();
 
+        // selectedText is the paragraph-formatted extraction of the range (line/paragraph breaks),
+        // so it matches extractText(range), not the raw canonical substring.
         DocumentTextSelection sel = new DocumentTextSelection();
         sel.set(0, 0, 0, 20);
-        assertEquals(seq.text(0, 20), TextSelectionSupport.selectedText(sel, document));
+        assertEquals(seq.extractText(OffsetRange.of(0, 20)),
+                TextSelectionSupport.selectedText(sel, document));
 
         // reversed anchor/focus yields the same normalized text
         DocumentTextSelection rev = new DocumentTextSelection();
         rev.set(0, 20, 0, 0);
-        assertEquals(seq.text(0, 20), TextSelectionSupport.selectedText(rev, document));
+        assertEquals(seq.extractText(OffsetRange.of(0, 20)),
+                TextSelectionSupport.selectedText(rev, document));
     }
 
     @DisplayName("drag simulation: point -> caret -> range -> flags matches the model text")

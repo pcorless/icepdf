@@ -72,10 +72,13 @@ public class PageText implements TextSelect {
     private enum ReadingOrder {PLOT, YSORT, XYCUT}
 
     /**
-     * The reading order used when nothing is configured.  Kept as a single constant so the planned
-     * plot&rarr;xycut default flip (after corpus validation) is a one-line change.
+     * The reading order used when nothing is configured.  Default is {@code XYCUT}: geometry-driven,
+     * column-contiguous ordering, validated across the corpus to preserve every glyph while fixing
+     * multi-column reading/selection/copy order (a plot-vs-xycut sweep of ~3900 docs showed zero text
+     * loss/gain).  Set {@code org.icepdf.core.views.page.text.readingOrder=plot} to restore the old
+     * content-stream order.
      */
-    private static final ReadingOrder DEFAULT_READING_ORDER = ReadingOrder.PLOT;
+    private static final ReadingOrder DEFAULT_READING_ORDER = ReadingOrder.XYCUT;
 
     private static final ReadingOrder readingOrder;
 
