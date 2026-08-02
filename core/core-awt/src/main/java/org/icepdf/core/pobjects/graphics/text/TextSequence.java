@@ -221,16 +221,46 @@ public final class TextSequence {
         for (int li = firstLine; li <= lastLine; li++) {
             int s = Math.max(lineStart[li], lo);
             int e = Math.min(lineEnd[li], hi);
-            if (s < e) sb.append(canonical, s, e);
+            String lineText = s < e ? canonical.substring(s, e) : "";
+            boolean paragraphBreak = li < lastLine && ExtractionFormat.PARAGRAPHS
+                    && ExtractionFormat.isParagraphBreak(lines[li], lines[li + 1], medianH);
+
+            if (ExtractionFormat.REFLOW && li < lastLine && !paragraphBreak) {
+                // reflow: join this wrapped line into the next within the same paragraph.
+                if (ExtractionFormat.endsWithWordHyphen(lineText)) {
+                    // a line-break hyphen: join directly (no space); drop it only if it's a soft split.
+                    String next = nextLineText(li, lo, hi);
+                    int end = ExtractionFormat.deHyphenate(lineText, next) ? lineText.length() - 1
+                            : lineText.length();
+                    sb.append(lineText, 0, end);
+                } else {
+                    sb.append(lineText);
+                    if (endsWithNonSpace(sb)) sb.append(' ');        // space-join, avoiding doubles
+                }
+                continue;
+            }
+
+            sb.append(lineText);
             if (li < lastLine) {
                 sb.append(ExtractionFormat.LINE_SEPARATOR);
-                if (ExtractionFormat.PARAGRAPHS
-                        && ExtractionFormat.isParagraphBreak(lines[li], lines[li + 1], medianH)) {
-                    sb.append(ExtractionFormat.LINE_SEPARATOR);
-                }
+                if (paragraphBreak) sb.append(ExtractionFormat.LINE_SEPARATOR);
             }
         }
         return sb.toString();
+    }
+
+    /** Clipped text of line {@code li + 1} within {@code [lo, hi)} (for the reflow join lookahead). */
+    private String nextLineText(int li, int lo, int hi) {
+        int n = li + 1;
+        if (n >= lines.length) return "";
+        int s = Math.max(lineStart[n], lo);
+        int e = Math.min(lineEnd[n], hi);
+        return s < e ? canonical.substring(s, e) : "";
+    }
+
+    /** True when {@code sb} is non-empty and does not already end in whitespace. */
+    private static boolean endsWithNonSpace(StringBuilder sb) {
+        return sb.length() > 0 && !Character.isWhitespace(sb.charAt(sb.length() - 1));
     }
 
     /** Paragraph-formatted extraction of the whole page. */

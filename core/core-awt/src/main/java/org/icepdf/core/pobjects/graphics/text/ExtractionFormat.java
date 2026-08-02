@@ -34,6 +34,9 @@ import java.awt.geom.Rectangle2D;
  *     paragraphs; default {@code true}.</li>
  *     <li>{@code org.icepdf.core.views.page.text.lineEnding} &mdash; {@code lf} (default) or
  *     {@code crlf} for Windows-native line endings.</li>
+ *     <li>{@code org.icepdf.core.views.page.text.reflow} &mdash; join a paragraph's wrapped lines
+ *     into one line (space-joined, de-hyphenating soft line-break hyphens) instead of one output line
+ *     per visual line; default {@code false}.  Paragraph boundaries still produce a blank line.</li>
  * </ul>
  *
  * @since 7.5
@@ -42,6 +45,8 @@ final class ExtractionFormat {
 
     /** Insert a blank line at detected paragraph boundaries. */
     static final boolean PARAGRAPHS;
+    /** Reflow each paragraph's wrapped lines into a single line (space-join + de-hyphenate). */
+    static final boolean REFLOW;
     /** Line ending appended after every line ("\n" or "\r\n"). */
     static final String LINE_SEPARATOR;
 
@@ -53,11 +58,43 @@ final class ExtractionFormat {
     static {
         PARAGRAPHS = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.paragraphDetection", true);
+        REFLOW = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.reflow", false);
         String ending = Defs.sysProperty("org.icepdf.core.views.page.text.lineEnding", "lf");
         LINE_SEPARATOR = "crlf".equalsIgnoreCase(ending == null ? "" : ending.trim()) ? "\r\n" : "\n";
     }
 
     private ExtractionFormat() {
+    }
+
+    /** True when {@code line} ends with a letter immediately followed by a hyphen (a line-break
+     *  hyphen); such a join is direct (no space) whether or not the hyphen is dropped. */
+    static boolean endsWithWordHyphen(CharSequence line) {
+        int n = line.length();
+        return n >= 2 && line.charAt(n - 1) == '-' && Character.isLetter(line.charAt(n - 2));
+    }
+
+    /**
+     * When reflowing a line that {@link #endsWithWordHyphen ends with a word hyphen}, decides whether
+     * the hyphen is a <em>soft</em> line-break hyphen to drop (de-hyphenate) rather than a real
+     * compound hyphen to keep.  Soft when the next line resumes with a lowercase letter whose first
+     * token has no internal hyphen ("acti-" + "vates" &rarr; "activates").  A capitalised
+     * continuation ("well-\nKnown") or a hyphenated continuation token ("sequence-" + "of-events")
+     * signals a real compound, so the hyphen is kept ("sequence-of-events").
+     */
+    static boolean deHyphenate(CharSequence line, CharSequence nextLine) {
+        if (!endsWithWordHyphen(line)) {
+            return false;
+        }
+        int i = 0;
+        while (i < nextLine.length() && Character.isWhitespace(nextLine.charAt(i))) i++;
+        if (i >= nextLine.length() || !Character.isLowerCase(nextLine.charAt(i))) {
+            return false;
+        }
+        for (int j = i; j < nextLine.length() && !Character.isWhitespace(nextLine.charAt(j)); j++) {
+            if (nextLine.charAt(j) == '-') return false;   // continuation token is itself hyphenated
+        }
+        return true;
     }
 
     /**
