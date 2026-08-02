@@ -149,13 +149,17 @@ public class TextExtractionSweep {
     }
 
     /**
-     * {@code nonSpaceChars\tsha1(sortedNonSpaceChars)} - the order- and whitespace-independent glyph multiset that
-     * only changes when real text is lost or gained.
+     * {@code nonSpaceChars\tsha1(sortedNonSpaceChars)\tsha1(orderedNonSpaceChars)}.  The sorted hash is
+     * the order- and whitespace-independent glyph multiset that changes only when real text is lost or
+     * gained.  The ordered hash preserves glyph order, so it also changes when the <em>reading order</em>
+     * changes (same multiset, different sequence) - the signal for A/B-ing a reading-order change such as
+     * plot vs xycut.
      */
     private static String signature(String text) throws Exception {
-        char[] ns = text.replaceAll("\\s", "").toCharArray();
-        Arrays.sort(ns);
-        return ns.length + "\t" + sha1(new String(ns));
+        String ns = text.replaceAll("\\s", "");
+        char[] sorted = ns.toCharArray();
+        Arrays.sort(sorted);
+        return ns.length() + "\t" + sha1(new String(sorted)) + "\t" + sha1(ns);
     }
 
     private static ExecutorService newWorker() {
