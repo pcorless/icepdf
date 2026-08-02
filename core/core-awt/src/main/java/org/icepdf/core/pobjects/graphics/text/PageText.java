@@ -71,6 +71,12 @@ public class PageText implements TextSelect {
     /** Page reading-order strategy applied to the sorted line list. */
     private enum ReadingOrder {PLOT, YSORT, XYCUT}
 
+    /**
+     * The reading order used when nothing is configured.  Kept as a single constant so the planned
+     * plot&rarr;xycut default flip (after corpus validation) is a one-line change.
+     */
+    private static final ReadingOrder DEFAULT_READING_ORDER = ReadingOrder.PLOT;
+
     private static final ReadingOrder readingOrder;
 
     static {
@@ -83,37 +89,46 @@ public class PageText implements TextSelect {
         collapseLetterSpacing = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.collapseLetterSpacing", true);
 
-        // readingOrder supersedes the older boolean preserveColumns; when readingOrder is not set
-        // we derive the mode from preserveColumns so existing configurations behave unchanged.
-        //   plot  = preserveColumns=true  (default): keep content-stream plot order
-        //   ysort = preserveColumns=false          : global top-to-bottom y-sort
-        //   xycut =                                  geometry-driven column/band ordering
-        boolean preserveColumns = Defs.booleanProperty(
-                "org.icepdf.core.views.page.text.preserveColumns", true);
+        readingOrder = resolveReadingOrder();
+    }
+
+    /**
+     * Resolves the page reading order.  {@code org.icepdf.core.views.page.text.readingOrder} is the
+     * canonical setting ({@code plot} | {@code ysort} | {@code xycut}); an unset or unrecognised
+     * value falls back to {@link #DEFAULT_READING_ORDER}.
+     * <p>
+     * The older boolean {@code org.icepdf.core.views.page.text.preserveColumns} is <b>deprecated</b>
+     * and honoured only as an alias when {@code readingOrder} is not set: {@code true} keeps the
+     * default order, {@code false} selects {@code ysort}.  Prefer {@code readingOrder} alone.
+     */
+    private static ReadingOrder resolveReadingOrder() {
         String mode = Defs.sysProperty("org.icepdf.core.views.page.text.readingOrder");
-        if (mode == null) {
-            readingOrder = preserveColumns ? ReadingOrder.PLOT : ReadingOrder.YSORT;
-        } else {
+        if (mode != null) {
             switch (mode.trim().toLowerCase()) {
                 case "ysort":
-                    readingOrder = ReadingOrder.YSORT;
-                    break;
+                    return ReadingOrder.YSORT;
                 case "xycut":
-                    readingOrder = ReadingOrder.XYCUT;
-                    break;
+                    return ReadingOrder.XYCUT;
                 case "plot":
-                    readingOrder = ReadingOrder.PLOT;
-                    break;
+                    return ReadingOrder.PLOT;
                 default:
                     // an unrecognised value is almost always a typo (e.g. "ycut"); falling back
                     // silently makes it look like the flag had no effect at all.
                     logger.warning("Unknown reading-order mode '" + mode + "' for "
                             + "org.icepdf.core.views.page.text.readingOrder; expected one of "
-                            + "plot, ysort, xycut.  Falling back to plot.");
-                    readingOrder = ReadingOrder.PLOT;
-                    break;
+                            + "plot, ysort, xycut.  Falling back to the default.");
+                    return DEFAULT_READING_ORDER;
             }
         }
+        // deprecated preserveColumns alias, consulted only when readingOrder is unset.
+        if (Defs.sysProperty("org.icepdf.core.views.page.text.preserveColumns") != null) {
+            logger.warning("org.icepdf.core.views.page.text.preserveColumns is deprecated; "
+                    + "use org.icepdf.core.views.page.text.readingOrder=plot|ysort|xycut instead.");
+            boolean preserveColumns = Defs.booleanProperty(
+                    "org.icepdf.core.views.page.text.preserveColumns", true);
+            return preserveColumns ? DEFAULT_READING_ORDER : ReadingOrder.YSORT;
+        }
+        return DEFAULT_READING_ORDER;
     }
 
     // pointer to current line during document parse, no other use.
