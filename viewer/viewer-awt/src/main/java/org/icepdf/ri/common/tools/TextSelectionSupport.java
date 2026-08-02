@@ -161,7 +161,10 @@ public final class TextSelectionSupport {
                 if (pageText == null) continue;
                 TextSequence seq = pageText.getTextSequence();
                 OffsetRange r = rangeForPage(sel, p, seq);
-                if (r != null) sb.append(seq.text(r));
+                if (r == null) continue;
+                // paragraph break between pages so a multi-page copy doesn't run pages together.
+                if (sb.length() > 0) sb.append(seq.extractSeparator()).append(seq.extractSeparator());
+                sb.append(seq.extractText(r));
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

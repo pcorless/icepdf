@@ -322,12 +322,19 @@ public class DocumentViewControllerImpl
             return TextSelectionSupport.selectedText(
                     documentViewModel.getTextSelection(), documentViewModel.getDocument());
         }
-        // select all text
+        // select all text — same paragraph-formatted extraction as mouse/keyboard selection and the
+        // text-extraction task, so all copy paths agree (line/paragraph breaks + configured ending).
         StringBuilder selectedText = new StringBuilder();
         try {
             Document document = documentViewModel.getDocument();
             for (int i = 0; i < document.getNumberOfPages(); i++) {
-                selectedText.append(document.getPageText(i));
+                var pageText = document.getPageText(i);
+                if (pageText == null) continue;
+                var seq = pageText.getTextSequence();
+                if (selectedText.length() > 0) {
+                    selectedText.append(seq.extractSeparator()).append(seq.extractSeparator());
+                }
+                selectedText.append(seq.extractText());
             }
         } catch (InterruptedException e) {
             logger.log(Level.SEVERE, "Page text extraction thread interrupted.", e);

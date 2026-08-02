@@ -396,6 +396,31 @@ public class TextSequenceTest {
         }
     }
 
+    @DisplayName("extractText inserts paragraph breaks between paragraphs, LF endings, no over-segmentation")
+    @Test
+    public void extractText_paragraphs() throws Exception {
+        // multi-paragraph body page: paragraphs separated by a blank line, no stacked blanks, LF only.
+        TextSequence multi = pageText("/selection/Steinfeld-88.pdf", 2).getTextSequence();
+        String x = multi.extractText();
+        assertTrue(x.contains("\n\n"), "expected blank-line paragraph breaks in extracted text");
+        assertFalse(x.contains("\n\n\n"), "paragraph breaks must not stack into multiple blank lines");
+        assertTrue(x.indexOf('\r') < 0, "default line ending is LF");
+        assertEquals("\n", multi.extractSeparator());
+
+        // a sub-range extracts a subset (and never more than the whole page).
+        OffsetRange half = OffsetRange.of(0, multi.length() / 2);
+        assertTrue(multi.extractText(half).length() <= x.length());
+
+        // single-paragraph prose (poem) does not get a break inserted mid-paragraph.
+        TextSequence poem = pageText("/redact/test_print.pdf", 0).getTextSequence();
+        String p = poem.extractText();
+        int firstBreak = p.indexOf("\n\n");
+        // the running verse before the page-number line is one paragraph: its wrapped lines are joined
+        // by single newlines, so the first blank line (if any) comes only at the trailing "- 1 -".
+        assertTrue(firstBreak < 0 || p.substring(0, firstBreak).split("\n").length >= 4,
+                "poem verse should read as one paragraph, not split at every wrapped line");
+    }
+
     @DisplayName("single-column page yields one whole-page column; constraint is a no-op")
     @Test
     public void columns_singleColumnInvariant() throws Exception {

@@ -199,6 +199,50 @@ public final class TextSequence {
         return OffsetRange.of(0, length());
     }
 
+    /**
+     * Extracts the text of {@code range} formatted for reading / clipboard: every visual line ends
+     * with the configured line separator, and &mdash; when paragraph detection is enabled &mdash; a
+     * blank line separates detected paragraphs (see {@link ExtractionFormat}).  Unlike
+     * {@link #text(OffsetRange)}, which returns the raw canonical substring (one {@code '\n'} per
+     * line), this is the human-facing extraction used by copy and the text-extraction task.
+     *
+     * @param range offset range to extract
+     * @return paragraph-formatted text, or an empty string for an empty/degenerate range
+     */
+    public String extractText(OffsetRange range) {
+        if (range == null || lines.length == 0) return "";
+        int lo = Math.max(0, Math.min(range.getStart(), length()));
+        int hi = Math.max(0, Math.min(range.getEnd(), length()));
+        if (lo >= hi) return "";
+        int firstLine = Math.max(0, lineIndexOf(lo));
+        int lastLine = Math.max(0, lineIndexOf(hi - 1));
+        double medianH = medianLineHeight();
+        StringBuilder sb = new StringBuilder(hi - lo + 16);
+        for (int li = firstLine; li <= lastLine; li++) {
+            int s = Math.max(lineStart[li], lo);
+            int e = Math.min(lineEnd[li], hi);
+            if (s < e) sb.append(canonical, s, e);
+            if (li < lastLine) {
+                sb.append(ExtractionFormat.LINE_SEPARATOR);
+                if (ExtractionFormat.PARAGRAPHS
+                        && ExtractionFormat.isParagraphBreak(lines[li], lines[li + 1], medianH)) {
+                    sb.append(ExtractionFormat.LINE_SEPARATOR);
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    /** Paragraph-formatted extraction of the whole page. */
+    public String extractText() {
+        return extractText(fullRange());
+    }
+
+    /** The configured extraction line separator ("\n" or "\r\n"); for joining pages/blocks. */
+    public String extractSeparator() {
+        return ExtractionFormat.LINE_SEPARATOR;
+    }
+
     // ------------------------------------------------------------------
     // search corpus
     // ------------------------------------------------------------------
