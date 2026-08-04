@@ -53,6 +53,7 @@ public class ReadingOrderXYCutTest {
             {"/redact/pdf_reference_addendum_redaction.pdf", "0", "reference addendum p1 - dense reference layout"},
             {"/redact/libre-test.pdf", "0", "libre-test p1"},
             {"/redact/potato_out.pdf", "0", "potato_out p1"},
+            {"/selection/java_embedded.pdf", "0", "java_embedded p1 - wide body over a narrow multi-lane list + sidebar"},
     };
 
     private static final String GOLDEN_RESOURCE = "/selection/reading-order-xycut-golden.txt";

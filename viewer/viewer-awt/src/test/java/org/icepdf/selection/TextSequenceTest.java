@@ -402,6 +402,42 @@ public class TextSequenceTest {
         }
     }
 
+    @DisplayName("java_embedded p1: a wide body over a narrow list is one column; a straight drag never reverses")
+    @Test
+    public void columns_bridgedGutterDoesNotSplitTheBody() throws Exception {
+        // This page changes layout down the page: a wide single-column body (x 24..437) over a
+        // three-lane category list (x 24..385), plus a right sidebar (x 448..586).  The body's ragged
+        // short lines sit inside the list's first lane, so treating the lane boundary as a gutter
+        // split the body in two and scattered its short lines to the head of the reading order —
+        // which made a straight downward drag flip the selection backwards at every inter-line gap.
+        TextSequence seq = pageText("/selection/java_embedded.pdf", 0).getTextSequence();
+        List<ColumnBlock> cols = seq.columns();
+        assertEquals(2, cols.size(), "body + sidebar, not the list's lanes: " + cols);
+        assertTrue(cols.get(0).getBounds().getMaxX() < 440, "left column swallowed the sidebar: " + cols.get(0));
+
+        // the body reads top-to-bottom: the headline before the paragraph that follows it.
+        String text = seq.text().toString();
+        assertTrue(text.indexOf("Reach 25,000 embedded") < text.indexOf("Extension Media is pleased"),
+                "body paragraphs are out of order");
+        assertTrue(text.indexOf("Extension Media is pleased") < text.indexOf("purchasing decisions."),
+                "a short ragged body line was hoisted out of its paragraph");
+
+        // drag invariant: sweeping the pointer straight down the body never moves the caret
+        // backwards, at any x, whether the sample lands on a glyph or in an inter-line gap.
+        for (double x : new double[]{40, 60, 100, 200, 300, 400}) {
+            int previous = -1;
+            for (double y = 700; y >= 380; y -= 2) {
+                Point2D.Double p = new Point2D.Double(x, y);
+                ColumnBlock column = seq.columnAt(p);
+                int offset = seq.caretAt(p, column).getOffset();
+                assertTrue(offset >= previous,
+                        "caret moved backwards dragging down x=" + x + " at y=" + y
+                                + " (" + previous + " -> " + offset + ")");
+                previous = offset;
+            }
+        }
+    }
+
     @DisplayName("extractText inserts paragraph breaks between paragraphs, LF endings, no over-segmentation")
     @Test
     public void extractText_paragraphs() throws Exception {

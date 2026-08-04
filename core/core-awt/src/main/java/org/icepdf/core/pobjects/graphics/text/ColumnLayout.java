@@ -60,6 +60,18 @@ final class ColumnLayout {
      * spurious column of line-end superscripts.
      */
     static final int MIN_COLUMN_PEAK = 3;
+    /**
+     * A line at least this fraction of the text width is a page-wide rule, title or footer; such a
+     * line crosses every gutter on the page by definition and is not counted as bridging one.
+     * Matches {@code XYCutReadingOrder}'s stripe-separator ratio.
+     */
+    static final double SPANNING_RATIO = 0.85;
+    /** Up to this many lines may cross a gutter (a couple of column-spanning headings) before it is
+     *  judged bridged; below this count the ratio test is not applied at all. */
+    static final int BRIDGE_ALLOWANCE = 2;
+    /** A gutter crossed by more than this fraction of the thinner adjacent band's lines is bridged:
+     *  the "columns" it separates are really one column plus the ragged edge of the crossing lines. */
+    static final double BRIDGE_RATIO = 0.5;
 
     private ColumnLayout() {
     }
@@ -122,7 +134,9 @@ final class ColumnLayout {
             int j = i;
             while (j < bins && !body[j]) j++;
             boolean internal = j < bins;                 // bounded by body on the right
-            if (internal && (j - i) >= gutterMin) {       // a gutter: close the current band
+            if (internal && (j - i) >= gutterMin
+                    && !isBridged(lines, coverage, minX, width, bandStart, i, j)) {
+                // a real gutter: close the current band
                 addBand(bands, coverage, bandStart, i, minX, minBandPeak);
                 bandStart = j;
             }
@@ -130,6 +144,58 @@ final class ColumnLayout {
         }
         addBand(bands, coverage, bandStart, bins, minX, minBandPeak);
         return bands.size() >= 2 ? bands : single;
+    }
+
+    /**
+     * True when the candidate gutter {@code [gutterStart, gutterEnd)} is <em>bridged</em>: enough
+     * lines run straight across it that it can't be a column separator.
+     * <p>
+     * The coverage profile deliberately ignores lines wider than {@link #FULL_WIDTH_RATIO} of the
+     * text width so that a handful of column-spanning headers can't paint over a gutter.  On a page
+     * whose layout changes down the page &mdash; a wide single-column body above a narrow multi-column
+     * list below &mdash; that exclusion hides the body entirely, and the ragged short lines of the
+     * body then look like a column of their own next to the list's first column.  Counting the lines
+     * that actually span the gutter tells the two apart: a real gutter is crossed by a few headers, a
+     * phantom one by a whole paragraph's worth of body lines.
+     * <p>
+     * Page-wide rules and footers ({@code >= SPANNING_RATIO} of the text width) are never counted:
+     * they legitimately cross every gutter on the page.
+     *
+     * @param lines       the page's lines
+     * @param coverage    per-bin line-count profile
+     * @param minX        page-space x of bin 0
+     * @param width       text width in page space
+     * @param bandStart   first bin of the band to the left of the gutter
+     * @param gutterStart first bin of the gutter (exclusive end of the left band)
+     * @param gutterEnd   first bin of the band to the right of the gutter
+     * @return true when the gutter is bridged and the two bands should stay merged
+     */
+    private static boolean isBridged(List<LineText> lines, int[] coverage, double minX, double width,
+                                     int bandStart, int gutterStart, int gutterEnd) {
+        double spanning = width * SPANNING_RATIO;
+        int crossings = 0;
+        for (LineText line : lines) {
+            Rectangle2D.Double b = line.getBounds();
+            if (b.getWidth() >= spanning) continue;               // page-wide rule / footer
+            double from = b.getMinX() - minX, to = b.getMaxX() - minX;
+            if (from < gutterStart && to > gutterEnd) crossings++;
+        }
+        if (crossings <= BRIDGE_ALLOWANCE) return false;
+        // Compare against the sparser side: the band being closed on the left, and everything to the
+        // right of the gutter (its own gutters aren't known yet, which only makes this side denser and
+        // so biases towards keeping the gutter).  Crossing more than a fraction of the sparser side's
+        // lines means that side is really the ragged edge of the crossing lines' own column.
+        int sparser = Math.min(peakBetween(coverage, bandStart, gutterStart),
+                peakBetween(coverage, gutterEnd, coverage.length));
+        return crossings > Math.max(BRIDGE_ALLOWANCE, sparser * BRIDGE_RATIO);
+    }
+
+    private static int peakBetween(int[] coverage, int from, int to) {
+        int peak = 0;
+        for (int x = Math.max(0, from); x < Math.min(coverage.length, to); x++) {
+            peak = Math.max(peak, coverage[x]);
+        }
+        return peak;
     }
 
     /** Adds {@code [bandStart, bandEnd)} as a column band only if it is dense enough to be a real
@@ -147,17 +213,18 @@ final class ColumnLayout {
     }
 
     /**
-     * @return index of the band containing {@code x}, else the nearest band by centre distance.
+     * @return index of the band containing {@code x}, else the nearest band by <em>edge</em>
+     * distance.  Edge distance, not centre distance: a point just outside a narrow band (a sub-column
+     * too sparse to be a column of its own) belongs to that neighbour, whereas centre distance would
+     * hand it to whichever band happens to be widest.
      */
     static int bandOf(double x, List<double[]> bands) {
-        for (int i = 0; i < bands.size(); i++) {
-            if (x >= bands.get(i)[0] && x <= bands.get(i)[1]) return i;
-        }
         int nearest = 0;
         double best = Double.MAX_VALUE;
         for (int i = 0; i < bands.size(); i++) {
-            double mid = (bands.get(i)[0] + bands.get(i)[1]) / 2;
-            double d = Math.abs(x - mid);
+            double[] band = bands.get(i);
+            if (x >= band[0] && x <= band[1]) return i;
+            double d = Math.min(Math.abs(x - band[0]), Math.abs(x - band[1]));
             if (d < best) {
                 best = d;
                 nearest = i;

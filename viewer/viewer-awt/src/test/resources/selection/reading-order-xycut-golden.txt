@@ -163,3 +163,99 @@
   L005 y=  647.0 x=  147.4..463.5    Spanish potato omelette
   L006 y=  644.7 x=   38.3..56.6     40mins
 
+=== java_embedded p1 - wide body over a narrow multi-lane list + sidebar [/selection/java_embedded.pdf p0] ===
+  L000 y=  728.6 x=   82.3..529.7    Java Embedded Resource Catalog 2004
+  L001 y=  683.0 x=   25.0..432.9    Reach 25,000 embedded Java developers & engineers!
+  L002 y=  660.0 x=   24.0..436.8    Extension Media is pleased to present the Java Embedded Reso
+  L003 y=  648.0 x=   24.0..436.8    print and online buyers’ guide designed to help embedded Jav
+  L004 y=  636.0 x=   24.0..124.2    purchasing decisions.
+  L005 y=  615.0 x=   24.0..361.1    We invite you to participate now at a 30% special early bird
+  L006 y=  594.0 x=   24.0..436.8    This buyers’ guide will help embedded Java developers and en
+  L007 y=  582.0 x=   24.0..436.8    purchasing decisions all year long—a great opportunity for y
+  L008 y=  570.0 x=   24.0..128.6    products and services.
+  L009 y=  544.6 x=   24.0..295.2    Who will use the Java Embedded Resource Catalog?
+  L010 y=  523.8 x=   24.0..436.8    The print version of the Catalog will be directly distribute
+  L011 y=  511.8 x=   24.0..436.8    developers and engineers—with an average pass along readersh
+  L012 y=  499.8 x=   24.0..112.3    a reach of 25,000!
+  L013 y=  478.8 x=   24.0..436.8    The Catalog is targeted at decision-makers who will use it w
+  L014 y=  466.8 x=   24.0..217.4    hardware, software, tools and services.
+  L015 y=  445.8 x=   24.0..436.8    In addition, the Catalog will be available in a convenient, 
+  L016 y=  433.8 x=   24.0..318.6    continually updated, and aggressively marketed for 12 months
+  L017 y=  412.3 x=   24.0..343.5    Shouldn’t your company be included in this inﬂuential resour
+  L018 y=  391.3 x=   24.0..436.8    You can participate with product data sheets, display ads, a
+  L019 y=  379.3 x=   24.0..143.3    rates starting at just $595.
+  L020 y=  353.9 x=   24.0..127.7    Advertising Beneﬁts
+  L021 y=  335.5 x=   24.0..356.3    ➽ Catalogs are used for one key reason: to make purchasing d
+  L022 y=  316.9 x=   24.0..430.9    ➽ The shelf life of a Catalog lasts 12+ months—more than any
+  L023 y=  298.3 x=   24.0..396.9    ➽ The convenient catalog format—in print (8.375” x 10.875”) 
+  L024 y=  285.7 x=   42.0..304.0    preferred format of developers—a one-stop buying guide
+  L025 y=  267.1 x=   24.0..432.7    ➽ Data Sheets enable you to communicate detailed information
+  L026 y=  254.5 x=   42.0..106.1    your products
+  L027 y=  229.1 x=   24.0..181.5    Product & Services Categories
+  L028 y=  206.5 x=   27.0..141.7    Hardware / Hardware Tools
+  L029 y=  206.5 x=  163.5..276.1    Software Products (cont’d)
+  L030 y=  206.5 x=  306.5..345.0    Services
+  L031 y=  195.8 x=   33.0..68.0     • Chips
+  L032 y=  195.8 x=  169.5..265.8    • Design / Debug Tools
+  L033 y=  195.8 x=  315.0..369.4    • Consulting
+  L034 y=  185.0 x=   33.0..129.3    • Design / Debug Tools
+  L035 y=  185.0 x=  169.5..231.7    • File Systems
+  L036 y=  185.0 x=  315.0..357.7    • Training
+  L037 y=  174.2 x=   33.0..97.9     • Networking /
+  L038 y=  174.2 x=  169.5..282.6    • Graphics / User Interface
+  L039 y=  174.2 x=  315.0..354.4    • Design
+  L040 y=  163.4 x=   42.7..112.0    Communications
+  L041 y=  163.4 x=  179.0..216.7    Software
+  L042 y=  163.4 x=  315.0..385.2    • Other Services
+  L043 y=  152.6 x=   33.0..89.3     • Processors
+  L044 y=  152.6 x=  169.5..251.7    • JVM (Java Virtual
+  L045 y=  141.8 x=  179.2..217.5    Machine)
+  L046 y=  135.7 x=   27.0..105.4    Software Products
+  L047 y=  131.0 x=  169.5..287.4    • Network / Communication
+  L048 y=  125.0 x=   33.0..147.4    • RTOS / Operating Sytems
+  L049 y=  120.2 x=  179.2..220.4    Packages
+  L050 y=  114.2 x=   33.0..75.1     • Applets
+  L051 y=  109.4 x=  169.5..230.4    • Middleware
+  L052 y=  103.4 x=   33.0..93.7     • Applications
+  L053 y=   92.6 x=   33.0..150.7    • Compilers / JIT Compilers
+  L054 y=  677.0 x=  470.0..564.6    Java Embedded
+  L055 y=  663.0 x=  465.1..569.5    Resource Catalog
+  L056 y=  649.0 x=  483.5..544.2    Highlights
+  L057 y=  628.7 x=  447.8..556.0    ◆ Distributed directly to
+  L058 y=  616.7 x=  459.8..579.4    10,000 direct requests and
+  L059 y=  604.7 x=  459.8..573.0    qualiﬁed embedded Java
+  L060 y=  592.7 x=  459.8..572.6    developers and engineers
+  L061 y=  571.7 x=  447.8..580.9    ◆ Distribution at Key Industry
+  L062 y=  559.7 x=  459.8..537.0    Events, including:
+  L063 y=  538.7 x=  460.8..567.6    ➤ JavaOne Conference
+  L064 y=  526.7 x=  472.8..567.2    (San Francisco: June
+  L065 y=  514.7 x=  467.5..497.2    2004)
+  L066 y=  493.7 x=  460.8..564.7    ➤ Embedded Software
+  L067 y=  481.7 x=  472.8..586.0    Development Conference
+  L068 y=  469.7 x=  472.8..578.2    (San Jose: August 2004)
+  L069 y=  448.7 x=  460.8..564.3    ➤ Embedded Systems
+  L070 y=  436.7 x=  472.8..548.1    Conference East
+  L071 y=  424.7 x=  472.8..559.7    (Boston: Sept 2004)
+  L072 y=  403.7 x=  460.8..564.3    ➤ Embedded Systems
+  L073 y=  391.7 x=  472.8..561.3    Conference Munich
+  L074 y=  379.7 x=  472.8..557.7    (Munich: Nov 2004)
+  L075 y=  358.7 x=  447.8..555.3    ◆ Available online 24/7
+  L076 y=  346.7 x=  459.8..559.2    for 12 Months at www.
+  L077 y=  334.7 x=  459.8..551.0    extensionmedia .com
+  L078 y=  313.7 x=  447.8..548.9    ◆ Early bird discounts
+  L079 y=  301.7 x=  459.8..569.5    available through May 19
+  L080 y=  280.7 x=  447.8..576.2    ◆ Contents include: product
+  L081 y=  268.7 x=  459.8..553.8    data sheets, industry
+  L082 y=  256.7 x=  459.8..584.7    analysis, application articles
+  L083 y=  244.7 x=  459.8..581.9    & case studies, and display
+  L084 y=  232.7 x=  455.7..475.9    ads
+  L085 y=  211.7 x=  447.8..562.3    ◆ Size: 8.375” x 10.875”
+  L086 y=  190.7 x=  447.8..550.7    ◆ Off press: June 2004
+  L087 y=  162.9 x=  464.6..570.8    Space Deadline
+  L088 y=  146.1 x=  492.5..539.2    May 19
+  L089 y=  117.3 x=  470.4..565.0    Materials Due
+  L090 y=   98.1 x=  492.5..539.2    May 23
+  L091 y=   67.7 x=   29.3..582.7    Contact Patricia Grannan at 415.255.0390 x17 or pgrannan@ext
+  L092 y=   52.3 x=   24.0..67.4     Published by
+  L093 y=   22.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
+

@@ -533,10 +533,19 @@ public final class TextSequence {
         return best >= 0 ? best : nearestLine(p, null);
     }
 
-    /** True when line {@code i}'s horizontal centre lies within {@code column}'s x-band. */
+    /**
+     * True when line {@code i} belongs to {@code column}: its centre lies in the column's x-band, or
+     * the line spans the band outright.  The span case matters on a page whose layout changes down
+     * the page &mdash; a wide body line above a narrow column is centred outside that column's band
+     * but still runs through it, and excluding it would make a drag over the body resolve to a
+     * distant line of the narrow column instead of the line under the pointer.
+     */
     private boolean lineInColumn(int i, ColumnBlock column) {
-        double cx = lines[i].getBounds().getCenterX();
-        return cx >= column.getBounds().getMinX() && cx <= column.getBounds().getMaxX();
+        Rectangle2D.Double b = lines[i].getBounds();
+        double minX = column.getBounds().getMinX(), maxX = column.getBounds().getMaxX();
+        double cx = b.getCenterX();
+        if (cx >= minX && cx <= maxX) return true;
+        return b.getMinX() <= minX && b.getMaxX() >= maxX;
     }
 
     // ------------------------------------------------------------------
@@ -587,16 +596,20 @@ public final class TextSequence {
      *
      * @param pagePoint point in page space
      * @return the containing column, the column whose x-band spans the point if it fell in a vertical
-     * gap, or {@code null} if the point is outside every column (e.g. over a full-width header).
+     * gap <em>within</em> that column, or {@code null} if the point is outside every column (e.g.
+     * over a full-width header, or above/below the columns entirely).
      */
     public ColumnBlock columnAt(Point2D pagePoint) {
-        List<ColumnBlock> cs = columns();
-        for (ColumnBlock c : cs) {
-            if (c.getBounds().contains(pagePoint)) return c;
-        }
-        double px = pagePoint.getX();
-        for (ColumnBlock c : cs) {
-            if (px >= c.getBounds().getMinX() && px <= c.getBounds().getMaxX()) return c;
+        // Edge-inclusive containment: a point in a vertical gap between the column's lines is still
+        // in the column, but one above or below its text is not.  Resolving such a point to a column
+        // by x alone would confine the caret to lines nowhere near the pointer, which on a page whose
+        // layout changes down the page (wide body over a narrow list) makes a straight drag jump.
+        double px = pagePoint.getX(), py = pagePoint.getY();
+        for (ColumnBlock c : columns()) {
+            Rectangle2D.Double b = c.getBounds();
+            if (px >= b.getMinX() && px <= b.getMaxX() && py >= b.getMinY() && py <= b.getMaxY()) {
+                return c;
+            }
         }
         return null;
     }
