@@ -438,6 +438,45 @@ public class TextSequenceTest {
         }
     }
 
+    @DisplayName("R&D-05-Carbon: a gutter-spanning deck stays whole and the running header reads first")
+    @Test
+    public void columns_gutterSpanningLinesReadInPlace() throws Exception {
+        // p1's deck paragraph spans the gutter, so each of its lines is centred within a couple of
+        // points of the gutter centre.  Overlap and edge distance both flip between sibling lines over
+        // that much jitter, which tore the paragraph in half and scattered it across the reading order.
+        String deck = pageText("/selection/R-D-05-Carbon.pdf", 0).getTextSequence().text().toString();
+        int line1 = deck.indexOf("So you want to take a little width");
+        int line2 = deck.indexOf("handlebars? You cut down");
+        int line3 = deck.indexOf("no problem");
+        assertTrue(line1 >= 0 && line2 >= 0 && line3 >= 0, "deck paragraph text missing");
+        assertTrue(line1 < line2 && line2 < line3, "the deck paragraph's lines are out of order");
+        assertTrue(deck.indexOf("your seatpost.") > line3, "deck paragraph split from its tail");
+
+        // p2's running header spans the gutter above everything else; it must read first rather than
+        // sorting into whichever column it happens to be centred over (i.e. after the left column).
+        TextSequence p2 = pageText("/selection/R-D-05-Carbon.pdf", 1).getTextSequence();
+        String header = "TECHNOLOGY REPORT";
+        assertTrue(p2.text().toString().startsWith(header),
+                "running header should lead the page, got: " + p2.text().subSequence(0, 40));
+
+        // and a straight drag down the deck and the columns below it never runs backwards.  x values
+        // are inside a column: a drag held in the gutter itself is inherently ambiguous once the
+        // spanning lines end, and is resolved a level up by the anchor-column stickiness in
+        // TextSelection, which these page-level primitives don't model.
+        TextSequence seq = pageText("/selection/R-D-05-Carbon.pdf", 0).getTextSequence();
+        for (double x : new double[]{60, 100, 150, 250, 300, 340}) {
+            int previous = -1;
+            for (double y = 620; y >= 260; y -= 2) {
+                Point2D.Double p = new Point2D.Double(x, y);
+                int offset = seq.caretAt(p, seq.columnAt(p)).getOffset();
+                assertTrue(offset >= previous,
+                        "caret moved backwards dragging down x=" + x + " at y=" + y
+                                + " (" + previous + " -> " + offset + ")");
+                previous = offset;
+            }
+        }
+    }
+
     @DisplayName("extractText inserts paragraph breaks between paragraphs, LF endings, no over-segmentation")
     @Test
     public void extractText_paragraphs() throws Exception {

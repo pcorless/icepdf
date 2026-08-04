@@ -533,19 +533,29 @@ public final class TextSequence {
         return best >= 0 ? best : nearestLine(p, null);
     }
 
+    /** A line centred outside a column still counts as reachable from it once it covers this much of
+     *  the column's width; below that it is only clipping the column's edge. */
+    private static final double COLUMN_OVERLAP_RATIO = 0.4;
+
     /**
-     * True when line {@code i} belongs to {@code column}: its centre lies in the column's x-band, or
-     * the line spans the band outright.  The span case matters on a page whose layout changes down
-     * the page &mdash; a wide body line above a narrow column is centred outside that column's band
-     * but still runs through it, and excluding it would make a drag over the body resolve to a
-     * distant line of the narrow column instead of the line under the pointer.
+     * True when line {@code i} is reachable from {@code column}: its centre lies in the column's
+     * x-band, or it runs through a good part of the band.  The overlap case matters for
+     * column-spanning lines &mdash; a deck paragraph, or a wide body line above a narrow column, is
+     * centred in the gutter or in a neighbouring band but physically passes under this column, so a
+     * pointer here is nearer to it than to anything else.  Excluding it made the nearest-line fallback
+     * jump to a distant line of the column's own body in the gaps between the spanning lines.
+     * <p>
+     * Lines that merely clip the column's edge (a running header reaching a little past the gutter)
+     * stay excluded, which is what keeps a drag that drifts sideways into the gutter from resolving
+     * into the next column.
      */
     private boolean lineInColumn(int i, ColumnBlock column) {
         Rectangle2D.Double b = lines[i].getBounds();
         double minX = column.getBounds().getMinX(), maxX = column.getBounds().getMaxX();
         double cx = b.getCenterX();
         if (cx >= minX && cx <= maxX) return true;
-        return b.getMinX() <= minX && b.getMaxX() >= maxX;
+        double overlap = Math.min(b.getMaxX(), maxX) - Math.max(b.getMinX(), minX);
+        return overlap >= (maxX - minX) * COLUMN_OVERLAP_RATIO;
     }
 
     // ------------------------------------------------------------------

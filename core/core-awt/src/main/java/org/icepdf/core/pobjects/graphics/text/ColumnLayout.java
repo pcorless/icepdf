@@ -213,21 +213,50 @@ final class ColumnLayout {
     }
 
     /**
-     * @return index of the band containing {@code x}, else the nearest band by <em>edge</em>
-     * distance.  Edge distance, not centre distance: a point just outside a narrow band (a sub-column
-     * too sparse to be a column of its own) belongs to that neighbour, whereas centre distance would
-     * hand it to whichever band happens to be widest.
+     * Assigns a line to a column band.
+     * <p>
+     * A line centred inside a band belongs to it, whatever else it overlaps &mdash; the ordinary case.
+     * <p>
+     * A line centred in a gutter but <em>touching</em> at least one band goes to the touched band
+     * whose centre is nearest the line's centre.  Centre distance, deliberately, for the hard case: a column-spanning deck or
+     * intro paragraph straddles the gutter, so its lines touch both bands with near-equal overlap and
+     * near-equal edge distance &mdash; both of those measures flip between sibling lines of the same
+     * paragraph over a couple of points of line-length jitter, which tears the paragraph in two and
+     * scatters half of it across the reading order.  Band centres are far apart, so centre distance
+     * decides such a line the same way for every line of the paragraph.
+     * <p>
+     * A line that touches <em>no</em> band (a sub-column too sparse to be a column of its own) has no
+     * such tie to break, and goes to the nearest band by edge distance &mdash; its geometric
+     * neighbour, rather than whichever band happens to be widest.
+     *
+     * @param lineMinX line's left edge in page space
+     * @param lineMaxX line's right edge in page space
+     * @param bands    the detected column bands, left to right
+     * @return index of the band the line belongs to
      */
-    static int bandOf(double x, List<double[]> bands) {
+    static int bandOf(double lineMinX, double lineMaxX, List<double[]> bands) {
+        double cx = (lineMinX + lineMaxX) / 2;
+        for (int i = 0; i < bands.size(); i++) {                       // centred in a band: that band
+            if (cx >= bands.get(i)[0] && cx <= bands.get(i)[1]) return i;
+        }
         int nearest = 0;
-        double best = Double.MAX_VALUE;
+        double bestCentre = Double.MAX_VALUE, bestEdge = Double.MAX_VALUE;
+        boolean touched = false;
         for (int i = 0; i < bands.size(); i++) {
             double[] band = bands.get(i);
-            if (x >= band[0] && x <= band[1]) return i;
-            double d = Math.min(Math.abs(x - band[0]), Math.abs(x - band[1]));
-            if (d < best) {
-                best = d;
-                nearest = i;
+            if (lineMaxX >= band[0] && lineMinX <= band[1]) {          // overlaps the band
+                double d = Math.abs(cx - (band[0] + band[1]) / 2);
+                if (!touched || d < bestCentre) {
+                    bestCentre = d;
+                    nearest = i;
+                }
+                touched = true;
+            } else if (!touched) {
+                double d = Math.min(Math.abs(cx - band[0]), Math.abs(cx - band[1]));
+                if (d < bestEdge) {
+                    bestEdge = d;
+                    nearest = i;
+                }
             }
         }
         return nearest;

@@ -259,3 +259,151 @@
   L092 y=   52.3 x=   24.0..67.4     Published by
   L093 y=   22.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
 
+=== R&D-05-Carbon p1 - gutter-spanning deck over two columns [/selection/R-D-05-Carbon.pdf p0] ===
+  L000 y=  754.0 x=  155.6..403.4    TECHNOLOGY REPORT
+  L001 y=  687.3 x=   38.0..464.1    CUTTINGCARBON NUMBERFIVE
+  L002 y=  622.0 x=   45.8..325.6    CLEAN CUT CARBON
+  L003 y=  604.3 x=   45.8..355.7    So you want to take a little width off those carbon
+  L004 y=  584.3 x=   45.8..352.0    handlebars? You cut down your old aluminum bars —
+  L005 y=  564.3 x=   45.8..355.7    no problem — but you spent a bundle on those new
+  L006 y=  544.3 x=   45.8..355.7    carbon bars. Here are some tips for safely trimming
+  L007 y=  524.3 x=   45.8..355.8    off a little exotic material from your handlebars…or
+  L008 y=  504.3 x=   45.8..124.1    your seatpost.
+  L009 y=  478.5 x=   79.9..193.4    arbon tubing (i.e. han-
+  L010 y=  464.5 x=   79.9..196.1    dlebars, seatpost, fork
+  L011 y=  440.9 x=   42.2..92.5     C
+  L012 y=  450.5 x=   79.9..196.2    steerer tubes, etc.) can
+  L013 y=  436.5 x=   79.9..196.3    be quite easily cut using
+  L014 y=  422.5 x=   46.0..196.2    a standard hacksaw. There are,
+  L015 y=  408.5 x=   46.0..196.1    however, some precautions
+  L016 y=  394.5 x=   46.0..196.2    that must be taken to prevent
+  L017 y=  380.5 x=   46.0..196.3    damage to the component, and
+  L018 y=  366.5 x=   46.0..126.8    harm to yourself.
+  L019 y=  352.5 x=   60.4..196.2    Here’s a step-by-step guide
+  L020 y=  338.5 x=   46.0..196.2    to carbon handlebar trimming.
+  L021 y=  324.5 x=   46.0..193.4    If you don’t feel confident fol-
+  L022 y=  310.5 x=   46.0..196.2    lowing these instruction, there’s
+  L023 y=  296.5 x=   46.0..196.2    no shame in taking your bar to
+  L024 y=  282.5 x=   46.0..196.3    a qualified bicycle mechanic.
+  L025 y=  268.5 x=   46.0..196.2    (You might want to take these
+  L026 y=  254.5 x=   46.0..173.0    directions along with you. )
+  L027 y=  226.5 x=   46.0..76.8     STEP 1
+  L028 y=  212.5 x=   46.0..196.3    You’ll need a sharp, fine tooth
+  L029 y=  198.5 x=   46.0..193.4    blade (32 teeth per inch) appro-
+  L030 y=  184.5 x=   46.0..162.1    priate for cutting metals.
+  L031 y=  156.5 x=   46.0..76.8     STEP 2
+  L032 y=  142.5 x=   46.0..196.3    Wrap the bar with several layers
+  L033 y=  128.5 x=   46.0..196.3    of masking tape in the area of
+  L034 y=  114.5 x=   46.0..196.2    the cut. This will ensure a clean
+  L035 y=  100.5 x=   46.0..196.2    cut with minimal unraveling of
+  L036 y=   86.5 x=   46.0..127.9    the carbon fibres.
+  L037 y=  629.4 x=  370.4..407.5    STEP 1
+  L038 y=  478.5 x=  205.4..236.2    STEP 3
+  L039 y=  478.2 x=  370.4..407.1    STEP 2
+  L040 y=  464.5 x=  205.4..352.8    Determine the amount of mate-
+  L041 y=  450.5 x=  205.4..355.6    rial to be removed. The cut line
+  L042 y=  436.5 x=  205.4..355.6    can be marked with a pen or
+  L043 y=  422.5 x=  205.4..355.6    pencil directly on the masking
+  L044 y=  408.5 x=  205.4..355.6    tape. Make sure you remove the
+  L045 y=  394.5 x=  205.4..355.6    same length of material from
+  L046 y=  380.5 x=  205.4..355.6    both ends of the bar. (Unless
+  L047 y=  366.5 x=  205.4..355.6    you like to lean to one side
+  L048 y=  352.5 x=  205.4..293.2    while your riding. )
+  L049 y=  326.9 x=  370.4..407.1    STEP 3
+  L050 y=  292.4 x=  215.5..350.1    “Double check your
+  L051 y=  272.4 x=  216.6..348.9    measurements! It’s
+  L052 y=  252.4 x=  221.9..343.6    easier to measure
+  L053 y=  232.4 x=  221.3..344.3    twice than to buy
+  L054 y=  212.4 x=  221.5..343.4    a new bar twice.”
+  L055 y=  175.7 x=  370.4..407.1    STEP 4
+  L056 y=  156.5 x=  205.4..236.2    STEP 4
+  L057 y=  142.5 x=  205.4..352.8    Double check your measure-
+  L058 y=  128.5 x=  205.4..355.6    ments! It’s easier to measure
+  L059 y=  114.5 x=  205.4..355.6    twice than to buy a new bar
+  L060 y=  100.5 x=  205.4..235.7    twice.
+  L061 y=   48.3 x=  480.3..514.0    continued
+
+=== R&D-05-Carbon p2 - gutter-spanning running header [/selection/R-D-05-Carbon.pdf p1] ===
+  L000 y=  726.0 x=  155.6..403.4    TECHNOLOGY REPORT
+  L001 y=  660.5 x=   46.0..79.7     STEP 5
+  L002 y=  646.5 x=   46.0..196.4    For the best results the bar
+  L003 y=  632.5 x=   46.0..196.4    should be clamped securely in
+  L004 y=  618.5 x=   46.0..193.5    a vice for cutting. To accommo-
+  L005 y=  604.5 x=   46.0..196.4    date this without cracking the
+  L006 y=  590.5 x=   46.0..196.3    bar, the bar should be held in
+  L007 y=  576.5 x=   46.0..196.4    a tubing fixture. You can make
+  L008 y=  562.5 x=   46.0..193.5    this fixture quite easily by bor-
+  L009 y=  548.5 x=   46.0..196.4    ing a 7/8” hole in a 4” section
+  L010 y=  534.5 x=   46.0..196.4    of a 2” x 4” and then cutting
+  L011 y=  520.5 x=   46.0..176.2    the block in half as shown.
+  L012 y=  453.2 x=   56.5..185.3    “When it comes to
+  L013 y=  433.2 x=   59.5..178.1    composite compo-
+  L014 y=  413.2 x=   57.4..184.3    nents, it is critical
+  L015 y=  393.2 x=   64.7..177.1    that any fixture
+  L016 y=  373.2 x=   58.9..182.8    that clamps them
+  L017 y=  353.2 x=   69.0..172.7    is free of sharp
+  L018 y=  333.2 x=   60.3..180.8    edges and burrs.”
+  L019 y=  268.5 x=   46.0..76.8     STEP 6
+  L020 y=  254.5 x=   46.0..196.4    The two blocks can then be
+  L021 y=  240.5 x=   46.0..196.3    placed into a vice holding the
+  L022 y=  226.5 x=   46.0..196.4    bar firmly in place. Be careful
+  L023 y=  212.5 x=   46.0..196.3    not to overtighten the vice
+  L024 y=  198.5 x=   46.0..196.3    however, if you hear a crack,
+  L025 y=  184.5 x=   46.0..190.4    you’re buying a new bar twice.
+  L026 y=  170.5 x=   60.4..196.4    In a pinch, you can cut your
+  L027 y=  156.5 x=   46.0..196.4    bar while it is mounted on the
+  L028 y=  142.5 x=   46.0..196.4    bike. Make sure your handlebar
+  L029 y=  128.5 x=   46.0..196.4    is installed properly in your
+  L030 y=  114.5 x=   46.0..196.4    stem. Then secure the front
+  L031 y=  100.5 x=   46.0..196.3    wheel to the down tube or have
+  L032 y=   86.5 x=   46.0..196.4    someone straddle the wheel to
+  L033 y=   72.5 x=   46.0..178.4    steady the bar as you cut it.
+  L034 y=  687.3 x=  233.1..331.1    CUTTING CARBON
+  L035 y=  660.5 x=  205.5..236.3    STEP 7
+  L036 y=  658.3 x=  369.5..406.2    STEP 5
+  L037 y=  646.5 x=  205.5..355.9    Start cutting along your marked
+  L038 y=  632.5 x=  205.5..355.9    line with slow, smooth, even
+  L039 y=  618.5 x=  205.5..355.9    strokes. Take care not inhale
+  L040 y=  604.5 x=  205.5..355.9    any of the carbon dust! (As
+  L041 y=  590.5 x=  205.5..355.9    with any project of this nature,
+  L042 y=  576.5 x=  205.5..355.9    we recommend taking proper
+  L043 y=  562.5 x=  205.5..355.9    safety precautions. Please wear
+  L044 y=  548.5 x=  205.5..355.9    safety googles, gloves and a
+  L045 y=  534.5 x=  205.5..355.9    dust mask.) Take care at the end
+  L046 y=  530.0 x=  369.5..406.2    STEP 6
+  L047 y=  520.5 x=  205.5..355.9    of the cut to avoid splintering
+  L048 y=  506.5 x=  205.5..265.1    the material.
+  L049 y=  464.5 x=  205.5..236.3    STEP 8
+  L050 y=  450.5 x=  205.5..355.9    After cutting, any burrs can be
+  L051 y=  436.5 x=  205.5..355.9    carefully sanded off with fine
+  L052 y=  422.5 x=  205.5..355.9    emery paper. Do not inhale or
+  L053 y=  423.2 x=  217.9..346.8    “It is important to
+  L054 y=  408.5 x=  205.5..333.5    touch the shavings or dust.
+  L055 y=  403.2 x=  219.2..345.5    note that a higher
+  L056 y=  401.7 x=  369.5..406.2    STEP 7
+  L057 y=  383.2 x=  223.8..340.9    number does not
+  L058 y=  366.5 x=  205.5..236.3    STEP 9
+  L059 y=  363.2 x=  223.0..341.7    necessarily mean
+  L060 y=  352.5 x=  205.5..355.8    Clean off the dust using a damp
+  L061 y=  343.2 x=  228.3..336.4    that an alloy is
+  L062 y=  338.5 x=  205.5..351.3    cloth and discard immediately.
+  L063 y=  323.2 x=  247.6..313.0    superior. ”
+  L064 y=  296.5 x=  205.5..314.7    Installation of bar ends
+  L065 y=  282.5 x=  205.5..355.9    Be sure to follow manufacturer’s
+  L066 y=  268.5 x=  205.5..355.8    recommendations concerning
+  L067 y=  273.5 x=  369.5..406.2    STEP 8
+  L068 y=  254.5 x=  205.5..355.9    the installation of bar ends on
+  L069 y=  240.5 x=  205.5..355.9    carbon fiber handlebars. Some
+  L070 y=  226.5 x=  205.5..355.9    handlebars (including Easton’s
+  L071 y=  212.5 x=  205.5..355.9    MonkeyLite riser bars) are not
+  L072 y=  198.5 x=  205.5..355.9    designed to accommodate bar
+  L073 y=  184.5 x=  205.5..355.9    ends. Easton’s carbon fiber flat
+  L074 y=  170.5 x=  205.5..355.9    bars are designed with thicker
+  L075 y=  156.5 x=  205.5..353.0    material at the ends for clamp-
+  L076 y=  142.5 x=  205.5..355.8    ing of bar ends. The riser bars
+  L077 y=  145.2 x=  369.5..406.2    STEP 9
+  L078 y=  128.5 x=  205.5..355.9    do not have this extra material
+  L079 y=  114.5 x=  205.5..355.8    and will break if you mount bar
+  L080 y=  100.5 x=  205.5..230.0    ends.
+  L081 y=   65.0 x=  315.1..351.5    continued
+

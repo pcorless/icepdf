@@ -86,6 +86,7 @@ public final class XYCutReadingOrder {
             if (line.getBounds().getWidth() >= separatorMin) separators.add(line);
             else body.add(line);
         }
+        promoteBoundarySpanners(body, separators, bands);
         separators.sort((a, b) -> Double.compare(b.getBounds().getCenterY(), a.getBounds().getCenterY()));
 
         int stripes = separators.size() + 1;
@@ -102,7 +103,7 @@ public final class XYCutReadingOrder {
             for (LineText sep : separators) {
                 if (sep.getBounds().getCenterY() > cy) stripe++;   // separators above this line
             }
-            int col = ColumnLayout.bandOf(line.getBounds().getCenterX(), bands);
+            int col = ColumnLayout.bandOf(line.getBounds().getMinX(), line.getBounds().getMaxX(), bands);
             buckets.get(stripe).get(col).add(line);
         }
 
@@ -122,6 +123,80 @@ public final class XYCutReadingOrder {
             if (s < separators.size()) out.add(separators.get(s));
         }
         return out;
+    }
+
+    /** A line must overlap a band by at least this much to count as reaching into it, so that a line
+     *  merely clipping a band's edge isn't mistaken for one that spans the gutter. */
+    private static final double BAND_REACH = 2.0;
+
+    /**
+     * Promotes gutter-spanning lines at the very top and very bottom of the page from body to
+     * separator, so they read before / after the columns rather than inside whichever column they
+     * happen to be centred over.
+     * <p>
+     * A running header ("TECHNOLOGY REPORT") or a strap-line that spans the gutter is centred in the
+     * right-hand band, so it sorts with that column &mdash; i.e. after the whole left column, even
+     * though it sits above everything on the page.  A drag that starts on it and moves down then runs
+     * backwards through the reading order.  Promoting it makes it a stripe separator, which is
+     * emitted at its y position.
+     * <p>
+     * Only lines that bound the remaining content are promoted &mdash; the current topmost or
+     * bottommost body line, repeatedly &mdash; so the stripe they create is always empty on one side.
+     * The line must also stand alone at its height: a boundary region that is itself multi-column
+     * (side-by-side legal blocks at the foot of a page) has nothing to promote, because emitting such
+     * lines as separators would sort those blocks together by y and interleave them.  A
+     * gutter-spanning caption in the <em>middle</em> of the body is likewise left alone (see
+     * {@link #SEPARATOR_RATIO}).
+     */
+    private static void promoteBoundarySpanners(List<LineText> body, List<LineText> separators,
+                                                List<double[]> bands) {
+        for (boolean fromTop : new boolean[]{true, false}) {
+            while (!body.isEmpty()) {
+                LineText edge = body.get(0);
+                for (LineText line : body) {
+                    double cy = line.getBounds().getCenterY(), best = edge.getBounds().getCenterY();
+                    if (fromTop ? cy > best : cy < best) edge = line;
+                }
+                if (!spansGutter(edge, bands) || !standsApart(edge, body)) break;
+                separators.add(edge);
+                body.remove(edge);
+            }
+        }
+    }
+
+    /**
+     * True when {@code line} has its height on the page to itself <em>and</em> is separated from the
+     * rest of the body by at least a blank line's worth of whitespace &mdash; the signature of a
+     * running header, strap-line or footer.
+     * <p>
+     * The whitespace test is what keeps a wide multi-line block at the foot of a page (side-by-side
+     * legal paragraphs, a spanning notice under a table) from being promoted line by line: its lines
+     * sit a normal leading apart, so the first one is not set apart from its own continuation and the
+     * block stays intact in its column.
+     */
+    private static boolean standsApart(LineText line, List<LineText> body) {
+        Rectangle2D.Double b = line.getBounds();
+        double gapMin = medianHeight(body);
+        double nearest = Double.MAX_VALUE;
+        for (LineText other : body) {
+            if (other == line) continue;
+            Rectangle2D.Double o = other.getBounds();
+            if (o.getMaxY() > b.getMinY() && o.getMinY() < b.getMaxY()) return false;   // beside it
+            nearest = Math.min(nearest, o.getMinY() > b.getMaxY()
+                    ? o.getMinY() - b.getMaxY() : b.getMinY() - o.getMaxY());
+        }
+        return nearest >= gapMin;
+    }
+
+    /** True when the line reaches into two or more column bands, i.e. it crosses a gutter. */
+    private static boolean spansGutter(LineText line, List<double[]> bands) {
+        Rectangle2D.Double b = line.getBounds();
+        int reached = 0;
+        for (double[] band : bands) {
+            double overlap = Math.min(b.getMaxX(), band[1]) - Math.max(b.getMinX(), band[0]);
+            if (overlap >= BAND_REACH) reached++;
+        }
+        return reached >= 2;
     }
 
     /**
