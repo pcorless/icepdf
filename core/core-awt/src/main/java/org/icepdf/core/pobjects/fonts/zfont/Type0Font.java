@@ -27,6 +27,8 @@ import org.icepdf.core.util.Library;
 
 import java.io.IOException;
 import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Type0Font extends SimpleFont {
@@ -46,6 +48,63 @@ public class Type0Font extends SimpleFont {
      */
     public Type0Font(Library library, DictionaryEntries entries) {
         super(library, entries);
+    }
+
+    /**
+     * Splits the string into character codes using the encoding CMap's codespace ranges, as required
+     * by PDF 32000-1 9.7.6.2.
+     * <p>
+     * A composite font's code width is a property of its CMap, not of the string data and not of the
+     * font's glyph coverage.  {@code Identity-H} declares one codespace range, {@code <0000>} to
+     * {@code <FFFF>}, so every code is two bytes; a Shift-JIS CMap such as {@code 90ms-RKSJ-H} mixes
+     * one- and two-byte ranges, so the width varies from code to code.  Codes that fall outside every
+     * range still consume the width of the range their first byte selects and map to CID&nbsp;0 &mdash;
+     * they are never silently narrowed, which would desynchronise the rest of the string.
+     *
+     * @param bytes the string's raw bytes
+     * @return the character codes, one per char
+     */
+    @Override
+    public StringBuilder toCodes(byte[] bytes) {
+        if (cMap != null) {
+            StringBuilder codes = new StringBuilder(bytes.length);
+            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+            try {
+                while (in.available() > 0) {
+                    codes.append((char) cMap.readCode(in));
+                }
+                return codes;
+            } catch (IOException e) {
+                // The bytes ran out mid-code: the string is truncated, but what came before it is
+                // still good, so keep it rather than re-reading the whole string another way.
+                logger.log(Level.FINER, "Truncated character code in show-text string", e);
+                return codes;
+            } catch (RuntimeException e) {
+                // A CMap that declares no codespace ranges at all leaves FontBox with nothing to
+                // match against and it indexes past the end of its buffer.  Malformed, but it must
+                // not take the content stream down with it; fall through to the two-byte default.
+                logger.log(Level.WARNING, () -> "Unusable codespace ranges in CMap "
+                        + cMap.getName() + ", falling back to two-byte character codes");
+            }
+        }
+        return twoByteCodes(bytes);
+    }
+
+    /**
+     * The composite-font default: fixed two-byte codes.  Used when there is no CMap, or the CMap
+     * cannot say how wide a code is.  Two bytes because that is what every Identity and every
+     * CJK-ordering CMap in common use declares, and because a fixed width at least keeps the rest of
+     * the string in step, which is what actually matters &mdash; a mis-sized code corrupts one glyph,
+     * a mis-*aligned* one corrupts every glyph after it.
+     */
+    private static StringBuilder twoByteCodes(byte[] bytes) {
+        StringBuilder codes = new StringBuilder((bytes.length + 1) / 2);
+        for (int i = 0; i < bytes.length; i += 2) {
+            int code = (bytes[i] & 0xFF) << 8;
+            if (i + 1 < bytes.length) code |= bytes[i + 1] & 0xFF;
+            codes.append((char) code);
+        }
+        return codes;
     }
 
     @Override

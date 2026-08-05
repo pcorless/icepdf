@@ -214,6 +214,19 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
+     * The string's bytes.  A literal string's data is stored one byte per char, so this is a
+     * straight narrowing.
+     */
+    public byte[] getRawBytes() {
+        int length = stringData.length();
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) stringData.charAt(i);
+        }
+        return bytes;
+    }
+
+    /**
      * Utility method for converting literal strings to hexadecimal.
      *
      * @param string StringBuffer in literal form

@@ -277,6 +277,20 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
+     * The bytes the hex digits encode, two digits per byte.  The constructor has already stripped
+     * whitespace and padded an odd digit count with a trailing zero (PDF 32000-1 7.3.4.3), so the
+     * digits always pair up.
+     */
+    public byte[] getRawBytes() {
+        int digits = stringData.length();
+        byte[] bytes = new byte[digits / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) getUnsignedInt(i * 2, 2);
+        }
+        return bytes;
+    }
+
+    /**
      * Utility method to removed all none hex character from the string and
      * ensure that the length is an even length.
      *

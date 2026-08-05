@@ -89,7 +89,26 @@ public interface StringObject {
      * @return StringBuffer which contains all renderable characters for the
      * given font.
      */
+    /**
+     * @deprecated the character-code width of a composite font's string cannot be derived from the
+     * font's glyph metrics; it is defined by the encoding CMap's codespace ranges (PDF 32000-1
+     * 9.7.6.2).  Use {@link #getRawBytes()} and
+     * {@link org.icepdf.core.pobjects.fonts.Font#toCodes(byte[])} instead, which splits the string
+     * as the CMap specifies.  Retained for API compatibility; the composite-font branch mis-splits
+     * multi-byte strings.
+     */
+    @Deprecated
     StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
+
+    /**
+     * The string's raw bytes, as they appeared in the file: no character-code interpretation, and
+     * for a hexadecimal string no hex decoding artefacts.  This is the input to
+     * {@link org.icepdf.core.pobjects.fonts.Font#toCodes(byte[])}, which is the only thing that
+     * knows how wide a character code is.
+     *
+     * @return the string's bytes; never null, may be empty.
+     */
+    byte[] getRawBytes();
 
     /**
      * The length of the underlying objects data.

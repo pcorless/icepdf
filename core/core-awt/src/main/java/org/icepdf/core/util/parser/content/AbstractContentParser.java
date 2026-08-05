@@ -1474,9 +1474,8 @@ public abstract class AbstractContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
                             graphicState, oCGs, contentStreamCallback);
@@ -1518,9 +1517,8 @@ public abstract class AbstractContentParser {
                 // before a valid Tf or an unresolved font resource).
                 if (stringObject.getLength() > 0 && textState.font != null
                         && textState.font.getFont() != null) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             textState,
                             shapes,
