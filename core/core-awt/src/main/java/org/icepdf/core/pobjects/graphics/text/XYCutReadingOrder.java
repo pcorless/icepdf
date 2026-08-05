@@ -58,71 +58,153 @@ public final class XYCutReadingOrder {
         if (in.size() <= 1) {
             return in;
         }
-        List<double[]> bands = ColumnLayout.detectBands(in);
-        if (bands.size() < 2) {
-            // single column: plain top-to-bottom, left-to-right.
-            LinePositionComparator.orderTopLeft(in);
-            return in;
+        ArrayList<LineText> out = new ArrayList<>(in.size());
+        orderRegion(in, out, 0);
+        return out;
+    }
+
+    /** Recursion guard; layouts this deeply nested don't occur in practice. */
+    private static final int MAX_CUT_DEPTH = 12;
+    /** How many candidate horizontal cuts to try before giving up on a region. */
+    private static final int MAX_GAP_CANDIDATES = 24;
+
+    /**
+     * Appends one region to {@code out} in reading order, cutting it recursively.  Three cuts are
+     * tried in turn, and whichever fires first recurses into its parts:
+     * <ol>
+     *     <li><b>Separator</b> &mdash; lines spanning the region's own width (a title, a table rule, a
+     *     full-width table row) are lifted out; they split the region into stripes and are emitted
+     *     between them, at their own y.</li>
+     *     <li><b>Vertical</b> &mdash; the region's gutters, if it has any: each column left to right.</li>
+     *     <li><b>Horizontal</b> &mdash; a band of whitespace that no line crosses: top half, then
+     *     bottom.</li>
+     * </ol>
+     * Anything that survives all three is a leaf and is read plain top-to-bottom.
+     * <p>
+     * Recursing rather than deciding once per page is what makes the order regional, and regional is
+     * what real pages need: they change layout down the page.  On a rate card, two side-by-side
+     * sponsorship panels sit above a billing form whose wide rows run straight across the panels'
+     * gutter.  Decide once for the whole page and there is no right answer &mdash; call it two-column
+     * and the form is torn along the panels' gutter, call it one and the panels interleave row-wise.
+     * Cutting the form away first lets the panels answer for themselves.
+     *
+     * @see #revealingHorizontalCut for why only structure-revealing horizontal cuts are taken
+     */
+    private static void orderRegion(List<LineText> region, List<LineText> out, int depth) {
+        if (region.size() <= 1 || depth >= MAX_CUT_DEPTH) {
+            orderColumn(region);
+            out.addAll(region);
+            return;
         }
-        return columnBandOrder(in, bands);
+        // 1. separator cut: lines spanning the region's width split it into stacked stripes.
+        double separatorMin = width(region) * SEPARATOR_RATIO;
+        List<LineText> wide = new ArrayList<>();
+        for (LineText line : region) {
+            if (line.getBounds().getWidth() >= separatorMin) wide.add(line);
+        }
+        if (stripeAt(region, wide, out, depth)) return;
+
+        // 2. vertical cut: the region's own columns, left to right.
+        List<double[]> bands = ColumnLayout.detectBands(region);
+        if (bands.size() >= 2) {
+            // A line straddling the gutter is a heading over the columns, not a member of one; emit it
+            // at its own y instead (see spanningSeparators).
+            if (stripeAt(region, spanningSeparators(region, bands), out, depth)) return;
+            List<List<LineText>> columns = new ArrayList<>(bands.size());
+            for (int c = 0; c < bands.size(); c++) columns.add(new ArrayList<>());
+            for (LineText line : region) {
+                columns.get(ColumnLayout.bandOf(line.getBounds().getMinX(), line.getBounds().getMaxX(), bands))
+                        .add(line);
+            }
+            boolean progress = true;
+            for (List<LineText> column : columns) {
+                if (column.size() == region.size()) progress = false;   // everything landed in one band
+            }
+            if (progress) {
+                for (List<LineText> column : columns) {
+                    orderRegion(column, out, depth + 1);
+                }
+                return;
+            }
+        }
+        // 3. horizontal cut at a whitespace band, top half first.
+        List<LineText> sorted = topFirst(region);
+        int split = revealingHorizontalCut(sorted);
+        if (split > 0) {
+            orderRegion(new ArrayList<>(sorted.subList(0, split)), out, depth + 1);
+            orderRegion(new ArrayList<>(sorted.subList(split, sorted.size())), out, depth + 1);
+            return;
+        }
+        // 4. leaf.
+        orderColumn(region);
+        out.addAll(region);
     }
 
     /**
-     * Orders a multi-column page: split into horizontal stripes at full-width separators, then read
-     * each stripe column-by-column (left-to-right), each column top-to-bottom.
+     * Chooses a horizontal cut for a region that has no gutter of its own.
+     * <p>
+     * Candidates are the bands of whitespace that <em>no</em> line crosses, tried widest first.  A
+     * candidate is taken only when it <em>reveals structure</em>: one of the two halves has a gutter
+     * that the undivided region did not.  That self-justifying test is deliberate &mdash; picking
+     * cuts by a whitespace-width threshold means tuning a number against whichever document is in
+     * front of you, and the gap that matters here (5pt between a panel block and the table under it)
+     * is narrower than gaps that must not be cut elsewhere on the same page.  Requiring the cut to
+     * pay for itself needs no threshold at all, and leaves genuinely single-column regions untouched:
+     * no half of them finds a gutter, so nothing is cut and the region reads top-to-bottom as before.
+     *
+     * @param topFirst region's lines sorted top-first
+     * @return index in {@code topFirst} to split before, or -1 for no useful cut
      */
-    private static ArrayList<LineText> columnBandOrder(List<LineText> lines, List<double[]> bands) {
+    private static int revealingHorizontalCut(List<LineText> topFirst) {
+        // A gap exists before line i when every line above it bottoms out above line i's top.
+        List<double[]> candidates = new ArrayList<>();     // {gap, index}
+        double lowestBottom = topFirst.get(0).getBounds().getMinY();
+        for (int i = 1; i < topFirst.size(); i++) {
+            Rectangle2D.Double b = topFirst.get(i).getBounds();
+            double gap = lowestBottom - b.getMaxY();
+            if (gap > 0) candidates.add(new double[]{gap, i});
+            lowestBottom = Math.min(lowestBottom, b.getMinY());
+        }
+        candidates.sort((a, b) -> Double.compare(b[0], a[0]));      // widest gap first
+        int tried = 0;
+        for (double[] candidate : candidates) {
+            if (++tried > MAX_GAP_CANDIDATES) break;
+            int at = (int) candidate[1];
+            if (ColumnLayout.detectBands(topFirst.subList(0, at)).size() >= 2
+                    || ColumnLayout.detectBands(topFirst.subList(at, topFirst.size())).size() >= 2) {
+                return at;
+            }
+        }
+        return -1;
+    }
+
+    /** @return the x extent covered by {@code lines}. */
+    private static double width(List<LineText> lines) {
         double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
         for (LineText line : lines) {
             minX = Math.min(minX, line.getBounds().getMinX());
             maxX = Math.max(maxX, line.getBounds().getMaxX());
         }
-        double separatorMin = (maxX - minX) * SEPARATOR_RATIO;
+        return maxX - minX;
+    }
 
-        // separators = full-page-width lines; they define the horizontal stripe boundaries (top-first).
-        List<LineText> separators = new ArrayList<>();
-        List<LineText> body = new ArrayList<>();
-        for (LineText line : lines) {
-            if (line.getBounds().getWidth() >= separatorMin) separators.add(line);
-            else body.add(line);
-        }
-        promoteBoundarySpanners(body, separators, bands);
-        separators.sort((a, b) -> Double.compare(b.getBounds().getCenterY(), a.getBounds().getCenterY()));
+    /** @return a copy of {@code region} sorted by top edge, highest first. */
+    private static List<LineText> topFirst(List<LineText> region) {
+        List<LineText> sorted = new ArrayList<>(region);
+        sorted.sort((a, b) -> Double.compare(b.getBounds().getMaxY(), a.getBounds().getMaxY()));
+        return sorted;
+    }
 
-        int stripes = separators.size() + 1;
-        int cols = bands.size();
-        List<List<List<LineText>>> buckets = new ArrayList<>(stripes);
-        for (int s = 0; s < stripes; s++) {
-            List<List<LineText>> row = new ArrayList<>(cols);
-            for (int c = 0; c < cols; c++) row.add(new ArrayList<>());
-            buckets.add(row);
+    /**
+     * Orders one column top-to-bottom.  {@code orderTopLeft} (not a naive y-sort) bands near-equal y
+     * fragments and sorts them left-to-right, so a line split into two boxes at a sub-point y offset
+     * still reads in order.  A rotated glyph-stack is left in incoming order: re-sorting a
+     * bottom-to-top vertical run would reverse it.
+     */
+    private static void orderColumn(List<LineText> column) {
+        if (!isVerticalStack(column)) {
+            LinePositionComparator.orderTopLeft(column);
         }
-        for (LineText line : body) {
-            double cy = line.getBounds().getCenterY();
-            int stripe = 0;
-            for (LineText sep : separators) {
-                if (sep.getBounds().getCenterY() > cy) stripe++;   // separators above this line
-            }
-            int col = ColumnLayout.bandOf(line.getBounds().getMinX(), line.getBounds().getMaxX(), bands);
-            buckets.get(stripe).get(col).add(line);
-        }
-
-        ArrayList<LineText> out = new ArrayList<>(lines.size());
-        for (int s = 0; s < stripes; s++) {
-            for (int c = 0; c < cols; c++) {
-                List<LineText> bucket = buckets.get(s).get(c);
-                // Order the column top-to-bottom.  orderTopLeft (not a naive y-sort) bands near-equal
-                // y fragments and sorts them left-to-right, so a line split into two boxes at a
-                // sub-point y offset still reads in order.  A rotated glyph-stack is left in incoming
-                // order: re-sorting a bottom-to-top vertical run would reverse it.
-                if (!isVerticalStack(bucket)) {
-                    LinePositionComparator.orderTopLeft(bucket);
-                }
-                out.addAll(bucket);
-            }
-            if (s < separators.size()) out.add(separators.get(s));
-        }
-        return out;
     }
 
     /** A line must overlap a band by at least this much to count as reaching into it, so that a line
@@ -130,62 +212,85 @@ public final class XYCutReadingOrder {
     private static final double BAND_REACH = 2.0;
 
     /**
-     * Promotes gutter-spanning lines at the very top and very bottom of the page from body to
-     * separator, so they read before / after the columns rather than inside whichever column they
-     * happen to be centred over.
+     * The lines of {@code region} that straddle its gutters and so belong to no column: a running
+     * header, a strap-line, a heading centred over both columns of a panel pair.
      * <p>
-     * A running header ("TECHNOLOGY REPORT") or a strap-line that spans the gutter is centred in the
-     * right-hand band, so it sorts with that column &mdash; i.e. after the whole left column, even
-     * though it sits above everything on the page.  A drag that starts on it and moves down then runs
-     * backwards through the reading order.  Promoting it makes it a stripe separator, which is
-     * emitted at its y position.
+     * Such a line is centred in a gutter or in one band, so bucketing it by x sorts it into a column
+     * &mdash; i.e. after everything above it in that column, even though it sits above all of them on
+     * the page.  A drag that starts on it and moves down then runs backwards through the reading
+     * order.  Emitting them as stripe separators instead puts them at their own y.
      * <p>
-     * Only lines that bound the remaining content are promoted &mdash; the current topmost or
-     * bottommost body line, repeatedly &mdash; so the stripe they create is always empty on one side.
-     * The line must also stand alone at its height: a boundary region that is itself multi-column
-     * (side-by-side legal blocks at the foot of a page) has nothing to promote, because emitting such
-     * lines as separators would sort those blocks together by y and interleave them.  A
-     * gutter-spanning caption in the <em>middle</em> of the body is likewise left alone (see
-     * {@link #SEPARATOR_RATIO}).
+     * Two tests keep this to real headings.  A candidate must be <em>alone at its height</em>, and it
+     * must be an <em>isolated</em> spanner &mdash; neither the line above nor the line below it spans
+     * as well.  Without the isolation test a wide multi-line block (the side-by-side legal paragraphs
+     * at the foot of xr_650 p5) is promoted line by line, and emitting those as separators sorts the
+     * blocks together by y and interleaves them.  Isolation, rather than a minimum whitespace gap
+     * above the line, because the gap that separates a heading from its block is a typographic choice:
+     * 5pt on a rate card's panel heading, a full line elsewhere.  How many lines in a row span the
+     * gutter is not &mdash; one is a heading, a dozen is a block of text.
      */
-    private static void promoteBoundarySpanners(List<LineText> body, List<LineText> separators,
-                                                List<double[]> bands) {
-        for (boolean fromTop : new boolean[]{true, false}) {
-            while (!body.isEmpty()) {
-                LineText edge = body.get(0);
-                for (LineText line : body) {
-                    double cy = line.getBounds().getCenterY(), best = edge.getBounds().getCenterY();
-                    if (fromTop ? cy > best : cy < best) edge = line;
-                }
-                if (!spansGutter(edge, bands) || !standsApart(edge, body)) break;
-                separators.add(edge);
-                body.remove(edge);
-            }
+    private static List<LineText> spanningSeparators(List<LineText> region, List<double[]> bands) {
+        List<LineText> sorted = topFirst(region);
+        boolean[] spanning = new boolean[sorted.size()];
+        for (int i = 0; i < sorted.size(); i++) {
+            spanning[i] = spansGutter(sorted.get(i), bands) && aloneAtItsHeight(sorted.get(i), region);
         }
+        List<LineText> spanners = new ArrayList<>();
+        for (int i = 0; i < sorted.size(); i++) {
+            if (!spanning[i]) continue;
+            if (i > 0 && spanning[i - 1]) continue;                       // part of a spanning block
+            if (i < sorted.size() - 1 && spanning[i + 1]) continue;
+            spanners.add(sorted.get(i));
+        }
+        return spanners;
     }
 
     /**
-     * True when {@code line} has its height on the page to itself <em>and</em> is separated from the
-     * rest of the body by at least a blank line's worth of whitespace &mdash; the signature of a
-     * running header, strap-line or footer.
-     * <p>
-     * The whitespace test is what keeps a wide multi-line block at the foot of a page (side-by-side
-     * legal paragraphs, a spanning notice under a table) from being promoted line by line: its lines
-     * sit a normal leading apart, so the first one is not set apart from its own continuation and the
-     * block stays intact in its column.
+     * Emits {@code region} as stripes divided by {@code separators}: each stripe is cut recursively,
+     * and the separator that closed it follows at its own y.
+     *
+     * @return false when there is nothing to divide (no separators, or they are the whole region), in
+     * which case nothing has been written to {@code out}
      */
-    private static boolean standsApart(LineText line, List<LineText> body) {
+    private static boolean stripeAt(List<LineText> region, List<LineText> separators,
+                                    List<LineText> out, int depth) {
+        if (separators.isEmpty() || separators.size() == region.size()) return false;
+        List<LineText> body = new ArrayList<>(region);
+        body.removeAll(separators);
+        separators.sort((a, b) -> Double.compare(b.getBounds().getCenterY(), a.getBounds().getCenterY()));
+        List<List<LineText>> stripes = new ArrayList<>(separators.size() + 1);
+        for (int s = 0; s <= separators.size(); s++) stripes.add(new ArrayList<>());
+        for (LineText line : body) {
+            int stripe = 0;
+            for (LineText separator : separators) {
+                // A separator counts as above the line unless the line clears its top outright.  Not
+                // centre against centre: a narrow fragment sharing a visual line with a separator (a
+                // trademark glyph at the right edge of a body line) overlaps it, their centres tie to
+                // within a hundredth of a point, and the fragment must read after the line it sits on
+                // rather than closing the stripe above it.
+                if (line.getBounds().getCenterY() < separator.getBounds().getMaxY()) stripe++;
+            }
+            stripes.get(stripe).add(line);
+        }
+        for (int s = 0; s < stripes.size(); s++) {
+            orderRegion(stripes.get(s), out, depth + 1);
+            if (s < separators.size()) out.add(separators.get(s));
+        }
+        return true;
+    }
+
+    /**
+     * True when no other line in {@code region} overlaps {@code line} vertically: it has its height to
+     * itself, so lifting it out reorders nothing that sits beside it.
+     */
+    private static boolean aloneAtItsHeight(LineText line, List<LineText> region) {
         Rectangle2D.Double b = line.getBounds();
-        double gapMin = medianHeight(body);
-        double nearest = Double.MAX_VALUE;
-        for (LineText other : body) {
+        for (LineText other : region) {
             if (other == line) continue;
             Rectangle2D.Double o = other.getBounds();
-            if (o.getMaxY() > b.getMinY() && o.getMinY() < b.getMaxY()) return false;   // beside it
-            nearest = Math.min(nearest, o.getMinY() > b.getMaxY()
-                    ? o.getMinY() - b.getMaxY() : b.getMinY() - o.getMaxY());
+            if (o.getMaxY() > b.getMinY() && o.getMinY() < b.getMaxY()) return false;
         }
-        return nearest >= gapMin;
+        return true;
     }
 
     /** True when the line reaches into two or more column bands, i.e. it crosses a gutter. */

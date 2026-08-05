@@ -54,6 +54,7 @@ public class ReadingOrderXYCutTest {
             {"/redact/libre-test.pdf", "0", "libre-test p1"},
             {"/redact/potato_out.pdf", "0", "potato_out p1"},
             {"/selection/java_embedded.pdf", "0", "java_embedded p1 - wide body over a narrow multi-lane list + sidebar"},
+            {"/selection/java_embedded.pdf", "1", "java_embedded p2 - side-by-side panels between full-width tables"},
             {"/selection/R-D-05-Carbon.pdf", "0", "R&D-05-Carbon p1 - gutter-spanning deck over two columns"},
             {"/selection/R-D-05-Carbon.pdf", "1", "R&D-05-Carbon p2 - gutter-spanning running header"},
     };

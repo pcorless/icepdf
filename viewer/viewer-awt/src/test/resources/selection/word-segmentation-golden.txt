@@ -12,61 +12,61 @@
 
 === xr_650 p5 - vertical SPECIFICATIONS heading + labels ===
    Engine
+  Bore and stroke
+  Compression ratio
+   Carburetion
+   Ignition
+  Transmission
+  Final drive
+  Front suspension
+  Rear suspension
+  Front brake
+  Rear brake
+  Front tire
+  Rear tire
+   Wheelbase
+   Rake
+   Trail
+  Seat height
+  Ground clearance
+  SPECIFICATIONS
+  Dry weight
+  Fuel capacity
+  Honda Genuine
+  Accessories ™
   649cc SOHC liquid-cooled
    single-cylinder
-  Bore and stroke
   100.0 x 82.6mm
-  Compression ratio
    10.0:1
-   Carburetion
   Keihinnull 40.0mm piston-valve
-   Ignition
   Solid-state CD with
   electronic advance
-  Transmission
   Five-speed
-  Final drive
   #520 O-ring-sealed chain;
   14T/ 48T
-  Front suspension
   46mm leading-axle Kayaba
   cartridge fork with compres-
   sion- and rebound-damping
   adjustability; 11.2-inch travel
-  Rear suspension
   Pro-Link Kayaba single-shock
   with spring-preload, compres-
   sion and rebound-damping
   adjustability; 12.1-inch travel
-  Front brake
   Single disc with twin-piston
    caliper
-  Rear brake
   Single disc with single-piston
    caliper
-  Front tire
    80/100-21
-  Rear tire
    110/100-18
-   Wheelbase
   58.3 inches
-   Rake
    27.8˚
-   Trail
   4.3 inches
-  Seat height
   36.8 inches
-  Ground clearance
   12.0 inches
-  SPECIFICATIONS
-  Dry weight
   277 pounds
-  Fuel capacity
   2.6 gallons, including 0.5-
   gallon reserve
-  Honda Genuine
   HRCnull power-up kit, 17-inch
-  Accessories ™
   work stand
   WHAT’S IN A NAME?When you choose a new Honda XR or XRL,
   you’ve done more than just pick a great way to enjoy life on two
@@ -83,77 +83,77 @@
   drugs or alcohol, and never use the street as a racetrack. Inspect your
   XR650R XR650L XR400R XR250R
   644cc RFVC air-cooled
-  397cc RFVC air-cooled
-   single-cylinder
    single-cylinder
   100.0 x 82.0mm
-  85.0 x 70.0mm
    8.3:1
-   9.3:1
   42.5mm diaphram-type CV
-  36.0mm piston-valve
-  Solid-state CD with
   Solid-state CD with
   electronic advance
-  electronic advance
-  Five-speed
   Five-speed
   #520 O-ring-sealed chain;
-  #520 O-ring-sealed chain;
-  15T/ 45T
   15T/ 45T
   43mm air-adjustable lead-
-  43mm leading-axle Showa
   ing-axle Showa cartridge
-  cartridge fork with compres-
   fork with compression-
-  sion- and rebound-damping
   damping adjustability;
-  adjustability; 11.0-inch travel
   11.6-inch travel
   Pro-Link Showa single-shock
-  Pro-Link Showa single-shock
   with spring-preload, compres-
-  with spring-preload, compres-
-  sion and rebound-damping
   sion and rebound-damping
   adjustability; 11.0-inch travel
-  adjustability; 11.8-inch travel
-  Single disc with twin-piston
   Single disc with twin-piston
    caliper
-   caliper
   Single disc with single-piston
-  Single disc with single-piston
-   caliper
    caliper
    3.00-21
-   80/100-21
    4.60-18
-   110/100-18
   57.3 inches
-  56.1 inches
    27.0˚
-   25.3˚
   4.0 inches
-  3.7 inches
   37.0 inches
-  36.6 inches
   13.0 inches
-  12.2 inches
   324 pounds
-  257 pounds
   2.8 gallons, including 0.6-
-  2.5 gallons, including 0.4-
-  gallon reserve
   gallon reserve
   17-inch work stand
+  rider training.
+  397cc RFVC air-cooled
+   single-cylinder
+  85.0 x 70.0mm
+   9.3:1
+  36.0mm piston-valve
+  Solid-state CD with
+  electronic advance
+  Five-speed
+  #520 O-ring-sealed chain;
+  15T/ 45T
+  43mm leading-axle Showa
+  cartridge fork with compres-
+  sion- and rebound-damping
+  adjustability; 11.0-inch travel
+  Pro-Link Showa single-shock
+  with spring-preload, compres-
+  sion and rebound-damping
+  adjustability; 11.8-inch travel
+  Single disc with twin-piston
+   caliper
+  Single disc with single-piston
+   caliper
+   80/100-21
+   110/100-18
+  56.1 inches
+   25.3˚
+  3.7 inches
+  36.6 inches
+  12.2 inches
+  257 pounds
+  2.5 gallons, including 0.4-
+  gallon reserve
   HRC power-up kit, 17-inch
   work stand
   XR or XRL before riding, read your owner’s manual, and check your
   HRCAnull guide or the HRCA website concerning reimbursement through
   the Honda Rider’s Club of America
-  rider training.
    *
   Always obey local laws, use common sense, and respect the rights of
   others when you ride. Make sure you have a proper license when riding

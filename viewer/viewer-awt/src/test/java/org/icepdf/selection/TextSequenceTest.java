@@ -438,6 +438,44 @@ public class TextSequenceTest {
         }
     }
 
+    @DisplayName("java_embedded p2: side-by-side panels between full-width tables don't interleave")
+    @Test
+    public void columns_regionalPanelsDoNotInterleave() throws Exception {
+        // The page is a rate card: two side-by-side sponsorship panels sit between full-width tables,
+        // and a billing form below them has wide rows that run straight across the panels' gutter.
+        // A page-wide column decision fits neither region, so the panels used to be read row-wise and
+        // a drag down the Diamond bullets picked up the Platinum ones interleaved with them.
+        TextSequence seq = pageText("/selection/java_embedded.pdf", 1).getTextSequence();
+        String text = seq.text().toString();
+
+        // each panel's bullets are contiguous: no Platinum text inside the Diamond run.
+        int diamond = text.indexOf("DIAMOND SPONSORSHIP");
+        int gold = text.indexOf("GOLD CO-SPONSORSHIP");
+        int platinum = text.indexOf("PLATINUM SPONSORSHIP");
+        int deluxe = text.indexOf("DELUXE PACKAGE");
+        assertTrue(diamond >= 0 && gold >= 0 && platinum >= 0 && deluxe >= 0, "panel headings missing");
+        assertTrue(diamond < gold, "left panel column out of order");
+        assertTrue(gold < platinum, "the right panel's text is interleaved into the left panel");
+        assertTrue(platinum < deluxe, "right panel column out of order");
+
+        // the heading centred over both panels reads before them, not inside a column.
+        int heading = text.indexOf("Integrated Sponsorship Programs");
+        assertTrue(heading >= 0 && heading < diamond, "spanning heading did not read before the panels");
+
+        // and a straight drag down either panel never runs backwards.
+        for (double x : new double[]{60, 150, 250, 350, 420, 500}) {
+            int previous = -1;
+            for (double y = 650; y >= 390; y -= 2) {
+                Point2D.Double p = new Point2D.Double(x, y);
+                int offset = seq.caretAt(p, seq.columnAt(p)).getOffset();
+                assertTrue(offset >= previous,
+                        "caret moved backwards dragging down x=" + x + " at y=" + y
+                                + " (" + previous + " -> " + offset + ")");
+                previous = offset;
+            }
+        }
+    }
+
     @DisplayName("R&D-05-Carbon: a gutter-spanning deck stays whole and the running header reads first")
     @Test
     public void columns_gutterSpanningLinesReadInPlace() throws Exception {

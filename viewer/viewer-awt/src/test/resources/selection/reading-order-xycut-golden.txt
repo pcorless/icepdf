@@ -193,31 +193,31 @@
   L026 y=  254.5 x=   42.0..106.1    your products
   L027 y=  229.1 x=   24.0..181.5    Product & Services Categories
   L028 y=  206.5 x=   27.0..141.7    Hardware / Hardware Tools
-  L029 y=  206.5 x=  163.5..276.1    Software Products (cont’d)
-  L030 y=  206.5 x=  306.5..345.0    Services
-  L031 y=  195.8 x=   33.0..68.0     • Chips
-  L032 y=  195.8 x=  169.5..265.8    • Design / Debug Tools
-  L033 y=  195.8 x=  315.0..369.4    • Consulting
-  L034 y=  185.0 x=   33.0..129.3    • Design / Debug Tools
-  L035 y=  185.0 x=  169.5..231.7    • File Systems
-  L036 y=  185.0 x=  315.0..357.7    • Training
-  L037 y=  174.2 x=   33.0..97.9     • Networking /
-  L038 y=  174.2 x=  169.5..282.6    • Graphics / User Interface
-  L039 y=  174.2 x=  315.0..354.4    • Design
-  L040 y=  163.4 x=   42.7..112.0    Communications
-  L041 y=  163.4 x=  179.0..216.7    Software
-  L042 y=  163.4 x=  315.0..385.2    • Other Services
-  L043 y=  152.6 x=   33.0..89.3     • Processors
+  L029 y=  195.8 x=   33.0..68.0     • Chips
+  L030 y=  185.0 x=   33.0..129.3    • Design / Debug Tools
+  L031 y=  174.2 x=   33.0..97.9     • Networking /
+  L032 y=  163.4 x=   42.7..112.0    Communications
+  L033 y=  152.6 x=   33.0..89.3     • Processors
+  L034 y=  135.7 x=   27.0..105.4    Software Products
+  L035 y=  125.0 x=   33.0..147.4    • RTOS / Operating Sytems
+  L036 y=  114.2 x=   33.0..75.1     • Applets
+  L037 y=  103.4 x=   33.0..93.7     • Applications
+  L038 y=   92.6 x=   33.0..150.7    • Compilers / JIT Compilers
+  L039 y=  206.5 x=  163.5..276.1    Software Products (cont’d)
+  L040 y=  195.8 x=  169.5..265.8    • Design / Debug Tools
+  L041 y=  185.0 x=  169.5..231.7    • File Systems
+  L042 y=  174.2 x=  169.5..282.6    • Graphics / User Interface
+  L043 y=  163.4 x=  179.0..216.7    Software
   L044 y=  152.6 x=  169.5..251.7    • JVM (Java Virtual
   L045 y=  141.8 x=  179.2..217.5    Machine)
-  L046 y=  135.7 x=   27.0..105.4    Software Products
-  L047 y=  131.0 x=  169.5..287.4    • Network / Communication
-  L048 y=  125.0 x=   33.0..147.4    • RTOS / Operating Sytems
-  L049 y=  120.2 x=  179.2..220.4    Packages
-  L050 y=  114.2 x=   33.0..75.1     • Applets
-  L051 y=  109.4 x=  169.5..230.4    • Middleware
-  L052 y=  103.4 x=   33.0..93.7     • Applications
-  L053 y=   92.6 x=   33.0..150.7    • Compilers / JIT Compilers
+  L046 y=  131.0 x=  169.5..287.4    • Network / Communication
+  L047 y=  120.2 x=  179.2..220.4    Packages
+  L048 y=  109.4 x=  169.5..230.4    • Middleware
+  L049 y=  206.5 x=  306.5..345.0    Services
+  L050 y=  195.8 x=  315.0..369.4    • Consulting
+  L051 y=  185.0 x=  315.0..357.7    • Training
+  L052 y=  174.2 x=  315.0..354.4    • Design
+  L053 y=  163.4 x=  315.0..385.2    • Other Services
   L054 y=  677.0 x=  470.0..564.6    Java Embedded
   L055 y=  663.0 x=  465.1..569.5    Resource Catalog
   L056 y=  649.0 x=  483.5..544.2    Highlights
@@ -259,6 +259,76 @@
   L092 y=   52.3 x=   24.0..67.4     Published by
   L093 y=   22.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
 
+=== java_embedded p2 - side-by-side panels between full-width tables [/selection/java_embedded.pdf p1] ===
+  L000 y=  745.4 x=  261.5..584.3    Java Embedded Resource Catalog 2004
+  L001 y=  733.5 x=  196.4..573.3    Rates & Reservation FormReserve space by May 19th and save o
+  L002 y=  713.1 x=   28.4..507.6    PRODUCT / SERVICE DATA SHEETS STANDARD RATE EARLY BIRD RATE 
+  L003 y=  699.1 x=   27.4..490.3    1st Full Page Datasheet ❏ $1,300 ❏ $910 ❏ $250
+  L004 y=  686.1 x=   27.4..556.8    Each Additional Full Page Datasheet ❏ $1,060 x_____ (qty) ❏ 
+  L005 y=  673.2 x=   27.4..556.8    ½ Page Datasheet ❏ $975 x_____ (qty) ❏ $595 x_____ (qty) ❏ $
+  L006 y=  660.2 x=   27.4..556.8    Matrix Page (multiple products in chart) ❏ $1,900 x_____ (qt
+  L007 y=  644.0 x=  224.2..372.3    Integrated Sponsorship Programs
+  L008 y=  628.0 x=   77.3..246.5    DIAMOND SPONSORSHIP (VALUED AT $25,000)
+  L009 y=  612.6 x=   28.4..283.1    Standard Rate ❏ $15,000 Discount Rate ❏ $8,950
+  L010 y=  598.1 x=   28.4..281.9    • Logo in top position on Catalog Cover as the Diamond Spons
+  L011 y=  588.6 x=   28.4..159.7    • 6 Full Page, 4-color Datasheets
+  L012 y=  579.1 x=   28.4..231.8    • 3 Editorial Pages (Application Article / Case Study)
+  L013 y=  569.6 x=   28.4..230.1    • Your Logo & Link on Home page of Online Version
+  L014 y=  560.1 x=   28.4..261.7    • One 4-Color Full Page Display Ad w/ Back Cover Position
+  L015 y=  550.6 x=   28.4..221.9    • 100 Copies of Print Catalog for your distribution
+  L016 y=  541.1 x=   28.4..168.2    • Limited to 1 company per catalog
+  L017 y=  502.3 x=   78.3..245.5    GOLD CO-SPONSORSHIP (VALUED AT $13,250)
+  L018 y=  486.9 x=   28.4..283.1    Standard Rate ❏ $10,750 Discount Rate ❏ $6,500
+  L019 y=  472.4 x=   28.4..201.9    • Logo on Catalog Cover as a Gold Sponsor
+  L020 y=  462.9 x=   28.4..159.7    • 3 Full Page, 4-color Datasheets
+  L021 y=  453.4 x=   28.4..227.5    • 1 Editorial Page (Application Article / Case Study)
+  L022 y=  443.9 x=   28.4..230.1    • Your Logo & Link on Home page of Online Version
+  L023 y=  434.4 x=   28.4..246.4    • One 4-Color Full Page Display Ad w/ Priority Position:
+  L024 y=  424.9 x=   28.4..237.0    ❏ Opposite Introduction ❏ Opposite your edit page
+  L025 y=  415.4 x=   28.4..238.1    ❏ Opposite ToC1 ❏ Opposite ToC2
+  L026 y=  405.9 x=   28.4..132.5    ❏ Best Available upfront
+  L027 y=  396.4 x=   28.4..217.2    • 50 Copies of Print Catalog for your distribution
+  L028 y=  386.9 x=   28.4..174.7    • Limited to 4 companies per catalog
+  L029 y=  628.0 x=  364.1..535.6    PLATINUM SPONSORSHIP (VALUED AT $18,300)
+  L030 y=  612.6 x=  316.4..571.1    Standard Rate ❏ $15,000 Discount Rate ❏ $7,950
+  L031 y=  598.1 x=  316.4..504.9    • Logo on Catalog Cover as a Platinum Sponsor
+  L032 y=  588.6 x=  316.4..447.7    • 5 Full Page, 4-color Datasheets
+  L033 y=  579.1 x=  316.4..519.8    • 2 Editorial Pages (Application Article / Case Study)
+  L034 y=  569.6 x=  316.4..518.1    • Your Logo & Link on Home page of Online Version
+  L035 y=  560.1 x=  316.4..534.4    • One 4-Color Full Page Display Ad w/ Priority Position:
+  L036 y=  550.6 x=  316.4..502.6    ❏ Inside Front Cover ❏ Inside Back Cover
+  L037 y=  541.1 x=  316.4..394.1    ❏ Opposite ToC1
+  L038 y=  531.6 x=  316.4..509.9    • 100 Copies of Print Catalog for your distribution
+  L039 y=  522.1 x=  316.4..462.7    • Limited to 3 companies per catalog
+  L040 y=  502.3 x=  380.1..519.7    DELUXE PACKAGE (VALUED AT $8,710)
+  L041 y=  486.9 x=  316.4..566.4    Standard Rate ❏ 5,250 Discount Rate ❏ 3,950
+  L042 y=  472.4 x=  316.4..447.7    • 2 Full Page, 4-color Datasheets
+  L043 y=  462.9 x=  316.4..515.5    • 1 Editorial Page (Application Article / Case Study)
+  L044 y=  453.4 x=  316.4..449.6    • 1 Full Page, 4-Color Display Ad:
+  L045 y=  443.9 x=  316.4..552.5    ❏ Opposite your edit page ❏ Best Available upfront
+  L046 y=  434.4 x=  316.4..431.1    ❏ Opposite your datasheet
+  L047 y=  371.5 x=  254.5..342.0    Display Advertising
+  L048 y=  357.1 x=   28.4..507.6    DISPLAY ADVERTISING STANDARD RATE DISCOUNT RATE ADD COLOR
+  L049 y=  343.1 x=   27.4..490.3    2-Page Spread, Black and White ❏ $3,750 ❏ $2,500 ❏ $400
+  L050 y=  330.1 x=   27.4..490.3    1-Page, Black and White ❏ $2,750 ❏ $1,750 ❏ $300
+  L051 y=  317.2 x=   27.4..490.3    1/2 Page, Black and White ❏ $2,000 ❏ $1,250 ❏ $250
+  L052 y=  296.9 x=   24.0..249.7    ❏ Please contact me about insert options
+  L053 y=  282.6 x=   24.0..181.8    Billing Information (All pricing USD. All pricing net .)
+  L054 y=  260.5 x=   24.0..407.5    Company:Total Amount:
+  L055 y=  238.8 x=   24.0..375.7    Name:Title:
+  L056 y=  217.0 x=   24.0..376.5    Address:PO#:
+  L057 y=  195.3 x=   24.0..466.2    City/State:Postal Code:Country:
+  L058 y=  173.5 x=   24.0..362.4    Telephone:Fax:Email:
+  L059 y=  151.8 x=   24.0..377.5    Signature:Date:
+  L060 y=  116.6 x=   76.7..535.3    Space Deadline: May 19 • Materials Deadline: May 23 • Fax to
+  L061 y=  101.0 x=   62.9..549.1    Contact: Patricia Grannan • 415-255-0390 x17 • pgrannan@exte
+  L062 y=   81.1 x=   24.0..586.9    The above Advertiser is contracting for the advertising prog
+  L063 y=   74.1 x=   24.0..582.5    Terms: Payment due upon receipt with interest accruing at th
+  L064 y=   67.1 x=   24.0..588.2    errors which may appear in ads; advertiser/agency will indem
+  L065 y=   60.1 x=   24.0..585.9    agreed to its conditions without any further agreement or no
+  L066 y=   53.1 x=   24.0..41.7     orders.
+  L067 y=   21.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
+
 === R&D-05-Carbon p1 - gutter-spanning deck over two columns [/selection/R-D-05-Carbon.pdf p0] ===
   L000 y=  754.0 x=  155.6..403.4    TECHNOLOGY REPORT
   L001 y=  687.3 x=   38.0..464.1    CUTTINGCARBON NUMBERFIVE
@@ -297,30 +367,30 @@
   L034 y=  114.5 x=   46.0..196.2    the cut. This will ensure a clean
   L035 y=  100.5 x=   46.0..196.2    cut with minimal unraveling of
   L036 y=   86.5 x=   46.0..127.9    the carbon fibres.
-  L037 y=  629.4 x=  370.4..407.5    STEP 1
-  L038 y=  478.5 x=  205.4..236.2    STEP 3
-  L039 y=  478.2 x=  370.4..407.1    STEP 2
-  L040 y=  464.5 x=  205.4..352.8    Determine the amount of mate-
-  L041 y=  450.5 x=  205.4..355.6    rial to be removed. The cut line
-  L042 y=  436.5 x=  205.4..355.6    can be marked with a pen or
-  L043 y=  422.5 x=  205.4..355.6    pencil directly on the masking
-  L044 y=  408.5 x=  205.4..355.6    tape. Make sure you remove the
-  L045 y=  394.5 x=  205.4..355.6    same length of material from
-  L046 y=  380.5 x=  205.4..355.6    both ends of the bar. (Unless
-  L047 y=  366.5 x=  205.4..355.6    you like to lean to one side
-  L048 y=  352.5 x=  205.4..293.2    while your riding. )
-  L049 y=  326.9 x=  370.4..407.1    STEP 3
-  L050 y=  292.4 x=  215.5..350.1    “Double check your
-  L051 y=  272.4 x=  216.6..348.9    measurements! It’s
-  L052 y=  252.4 x=  221.9..343.6    easier to measure
-  L053 y=  232.4 x=  221.3..344.3    twice than to buy
-  L054 y=  212.4 x=  221.5..343.4    a new bar twice.”
-  L055 y=  175.7 x=  370.4..407.1    STEP 4
-  L056 y=  156.5 x=  205.4..236.2    STEP 4
-  L057 y=  142.5 x=  205.4..352.8    Double check your measure-
-  L058 y=  128.5 x=  205.4..355.6    ments! It’s easier to measure
-  L059 y=  114.5 x=  205.4..355.6    twice than to buy a new bar
-  L060 y=  100.5 x=  205.4..235.7    twice.
+  L037 y=  478.5 x=  205.4..236.2    STEP 3
+  L038 y=  464.5 x=  205.4..352.8    Determine the amount of mate-
+  L039 y=  450.5 x=  205.4..355.6    rial to be removed. The cut line
+  L040 y=  436.5 x=  205.4..355.6    can be marked with a pen or
+  L041 y=  422.5 x=  205.4..355.6    pencil directly on the masking
+  L042 y=  408.5 x=  205.4..355.6    tape. Make sure you remove the
+  L043 y=  394.5 x=  205.4..355.6    same length of material from
+  L044 y=  380.5 x=  205.4..355.6    both ends of the bar. (Unless
+  L045 y=  366.5 x=  205.4..355.6    you like to lean to one side
+  L046 y=  352.5 x=  205.4..293.2    while your riding. )
+  L047 y=  292.4 x=  215.5..350.1    “Double check your
+  L048 y=  272.4 x=  216.6..348.9    measurements! It’s
+  L049 y=  252.4 x=  221.9..343.6    easier to measure
+  L050 y=  232.4 x=  221.3..344.3    twice than to buy
+  L051 y=  212.4 x=  221.5..343.4    a new bar twice.”
+  L052 y=  156.5 x=  205.4..236.2    STEP 4
+  L053 y=  142.5 x=  205.4..352.8    Double check your measure-
+  L054 y=  128.5 x=  205.4..355.6    ments! It’s easier to measure
+  L055 y=  114.5 x=  205.4..355.6    twice than to buy a new bar
+  L056 y=  100.5 x=  205.4..235.7    twice.
+  L057 y=  629.4 x=  370.4..407.5    STEP 1
+  L058 y=  478.2 x=  370.4..407.1    STEP 2
+  L059 y=  326.9 x=  370.4..407.1    STEP 3
+  L060 y=  175.7 x=  370.4..407.1    STEP 4
   L061 y=   48.3 x=  480.3..514.0    continued
 
 === R&D-05-Carbon p2 - gutter-spanning running header [/selection/R-D-05-Carbon.pdf p1] ===
@@ -360,50 +430,50 @@
   L033 y=   72.5 x=   46.0..178.4    steady the bar as you cut it.
   L034 y=  687.3 x=  233.1..331.1    CUTTING CARBON
   L035 y=  660.5 x=  205.5..236.3    STEP 7
-  L036 y=  658.3 x=  369.5..406.2    STEP 5
-  L037 y=  646.5 x=  205.5..355.9    Start cutting along your marked
-  L038 y=  632.5 x=  205.5..355.9    line with slow, smooth, even
-  L039 y=  618.5 x=  205.5..355.9    strokes. Take care not inhale
-  L040 y=  604.5 x=  205.5..355.9    any of the carbon dust! (As
-  L041 y=  590.5 x=  205.5..355.9    with any project of this nature,
-  L042 y=  576.5 x=  205.5..355.9    we recommend taking proper
-  L043 y=  562.5 x=  205.5..355.9    safety precautions. Please wear
-  L044 y=  548.5 x=  205.5..355.9    safety googles, gloves and a
-  L045 y=  534.5 x=  205.5..355.9    dust mask.) Take care at the end
-  L046 y=  530.0 x=  369.5..406.2    STEP 6
-  L047 y=  520.5 x=  205.5..355.9    of the cut to avoid splintering
-  L048 y=  506.5 x=  205.5..265.1    the material.
-  L049 y=  464.5 x=  205.5..236.3    STEP 8
-  L050 y=  450.5 x=  205.5..355.9    After cutting, any burrs can be
-  L051 y=  436.5 x=  205.5..355.9    carefully sanded off with fine
-  L052 y=  422.5 x=  205.5..355.9    emery paper. Do not inhale or
-  L053 y=  423.2 x=  217.9..346.8    “It is important to
-  L054 y=  408.5 x=  205.5..333.5    touch the shavings or dust.
-  L055 y=  403.2 x=  219.2..345.5    note that a higher
-  L056 y=  401.7 x=  369.5..406.2    STEP 7
-  L057 y=  383.2 x=  223.8..340.9    number does not
-  L058 y=  366.5 x=  205.5..236.3    STEP 9
-  L059 y=  363.2 x=  223.0..341.7    necessarily mean
-  L060 y=  352.5 x=  205.5..355.8    Clean off the dust using a damp
-  L061 y=  343.2 x=  228.3..336.4    that an alloy is
-  L062 y=  338.5 x=  205.5..351.3    cloth and discard immediately.
-  L063 y=  323.2 x=  247.6..313.0    superior. ”
-  L064 y=  296.5 x=  205.5..314.7    Installation of bar ends
-  L065 y=  282.5 x=  205.5..355.9    Be sure to follow manufacturer’s
-  L066 y=  268.5 x=  205.5..355.8    recommendations concerning
-  L067 y=  273.5 x=  369.5..406.2    STEP 8
-  L068 y=  254.5 x=  205.5..355.9    the installation of bar ends on
-  L069 y=  240.5 x=  205.5..355.9    carbon fiber handlebars. Some
-  L070 y=  226.5 x=  205.5..355.9    handlebars (including Easton’s
-  L071 y=  212.5 x=  205.5..355.9    MonkeyLite riser bars) are not
-  L072 y=  198.5 x=  205.5..355.9    designed to accommodate bar
-  L073 y=  184.5 x=  205.5..355.9    ends. Easton’s carbon fiber flat
-  L074 y=  170.5 x=  205.5..355.9    bars are designed with thicker
-  L075 y=  156.5 x=  205.5..353.0    material at the ends for clamp-
-  L076 y=  142.5 x=  205.5..355.8    ing of bar ends. The riser bars
-  L077 y=  145.2 x=  369.5..406.2    STEP 9
-  L078 y=  128.5 x=  205.5..355.9    do not have this extra material
-  L079 y=  114.5 x=  205.5..355.8    and will break if you mount bar
-  L080 y=  100.5 x=  205.5..230.0    ends.
-  L081 y=   65.0 x=  315.1..351.5    continued
+  L036 y=  646.5 x=  205.5..355.9    Start cutting along your marked
+  L037 y=  632.5 x=  205.5..355.9    line with slow, smooth, even
+  L038 y=  618.5 x=  205.5..355.9    strokes. Take care not inhale
+  L039 y=  604.5 x=  205.5..355.9    any of the carbon dust! (As
+  L040 y=  590.5 x=  205.5..355.9    with any project of this nature,
+  L041 y=  576.5 x=  205.5..355.9    we recommend taking proper
+  L042 y=  562.5 x=  205.5..355.9    safety precautions. Please wear
+  L043 y=  548.5 x=  205.5..355.9    safety googles, gloves and a
+  L044 y=  534.5 x=  205.5..355.9    dust mask.) Take care at the end
+  L045 y=  520.5 x=  205.5..355.9    of the cut to avoid splintering
+  L046 y=  506.5 x=  205.5..265.1    the material.
+  L047 y=  464.5 x=  205.5..236.3    STEP 8
+  L048 y=  450.5 x=  205.5..355.9    After cutting, any burrs can be
+  L049 y=  436.5 x=  205.5..355.9    carefully sanded off with fine
+  L050 y=  423.2 x=  217.9..346.8    “It is important to
+  L051 y=  422.5 x=  205.5..355.9    emery paper. Do not inhale or
+  L052 y=  408.5 x=  205.5..333.5    touch the shavings or dust.
+  L053 y=  403.2 x=  219.2..345.5    note that a higher
+  L054 y=  383.2 x=  223.8..340.9    number does not
+  L055 y=  363.2 x=  223.0..341.7    necessarily mean
+  L056 y=  366.5 x=  205.5..236.3    STEP 9
+  L057 y=  352.5 x=  205.5..355.8    Clean off the dust using a damp
+  L058 y=  343.2 x=  228.3..336.4    that an alloy is
+  L059 y=  338.5 x=  205.5..351.3    cloth and discard immediately.
+  L060 y=  323.2 x=  247.6..313.0    superior. ”
+  L061 y=  296.5 x=  205.5..314.7    Installation of bar ends
+  L062 y=  282.5 x=  205.5..355.9    Be sure to follow manufacturer’s
+  L063 y=  268.5 x=  205.5..355.8    recommendations concerning
+  L064 y=  254.5 x=  205.5..355.9    the installation of bar ends on
+  L065 y=  240.5 x=  205.5..355.9    carbon fiber handlebars. Some
+  L066 y=  226.5 x=  205.5..355.9    handlebars (including Easton’s
+  L067 y=  212.5 x=  205.5..355.9    MonkeyLite riser bars) are not
+  L068 y=  198.5 x=  205.5..355.9    designed to accommodate bar
+  L069 y=  184.5 x=  205.5..355.9    ends. Easton’s carbon fiber flat
+  L070 y=  170.5 x=  205.5..355.9    bars are designed with thicker
+  L071 y=  156.5 x=  205.5..353.0    material at the ends for clamp-
+  L072 y=  142.5 x=  205.5..355.8    ing of bar ends. The riser bars
+  L073 y=  128.5 x=  205.5..355.9    do not have this extra material
+  L074 y=  114.5 x=  205.5..355.8    and will break if you mount bar
+  L075 y=  100.5 x=  205.5..230.0    ends.
+  L076 y=   65.0 x=  315.1..351.5    continued
+  L077 y=  401.7 x=  369.5..406.2    STEP 7
+  L078 y=  273.5 x=  369.5..406.2    STEP 8
+  L079 y=  530.0 x=  369.5..406.2    STEP 6
+  L080 y=  658.3 x=  369.5..406.2    STEP 5
+  L081 y=  145.2 x=  369.5..406.2    STEP 9
 
