@@ -167,6 +167,30 @@ public class FontManager {
      * Fallback is not a substitute: it has no ASCII at all, so the Latin runs a CJK document mixes in
      * (part numbers, URLs) would turn into .notdef instead.
      */
+    /*
+     * Last-resort substitutes by family class, tried in order.
+     *
+     * The Lucida faces at the front are what the JDK used to install under ${java.home}/lib/fonts;
+     * JDK 9 dropped them, so on any modern runtime the whole core-font fallback found nothing and
+     * getInstance fell through to "first font in the list", which is alphabetical and therefore
+     * arbitrary - a Tahoma document was being drawn in Andale Mono, a monospace face.  The entries
+     * after them are the families that are actually present on current systems.
+     */
+    private static final String[] SERIF_SUBSTITUTES = {
+            "lucidabright", "DejaVu Serif", "Liberation Serif", "Nimbus Roman",
+            "FreeSerif", "Times New Roman", "Thorndale AMT", "Serif",
+    };
+
+    private static final String[] SANS_SUBSTITUTES = {
+            "DejaVu Sans", "Liberation Sans", "Nimbus Sans", "FreeSans",
+            "Arial", "Helvetica", "Albany AMT", "SansSerif",
+    };
+
+    private static final String[] MONO_SUBSTITUTES = {
+            "lucidasanstypewriter", "DejaVu Sans Mono", "Liberation Mono", "Nimbus Mono PS",
+            "FreeMono", "Courier New", "Cumberland AMT", "Monospaced",
+    };
+
     private static final String[] JAPANESE_FONT_NAMES = {
             // windows
             "Arial Unicode MS", "PMingLiU", "MingLiU",
@@ -1189,6 +1213,34 @@ public class FontManager {
      * @param flags    style flags
      * @return a valid FontFile if a match is found, null otherwise.
      */
+    /**
+     * Returns the first of {@code candidates} that is actually installed, styled to match.
+     * <p>
+     * A list rather than a single name because the right answer differs per platform and per decade:
+     * the Lucida faces the original code asked for shipped with the JDK until 9 removed them, and
+     * nothing replaced them, so the lookup silently failed everywhere.
+     */
+    private FontFile findFirstAvailable(List<Object[]> fontList, String[] candidates,
+                                        int decorations, int flags) {
+        String style = getFontStyle(decorations, flags);
+        // an explicitly configured base font wins over the built-in candidates
+        List<String> ordered = new ArrayList<>(candidates.length + 1);
+        if (baseFontName != null && !baseFontName.isEmpty()) {
+            ordered.add(baseFontName);
+        }
+        ordered.addAll(Arrays.asList(candidates));
+        for (String candidate : ordered) {
+            FontFile font = findFont(fontList, FontUtil.normalizeString(candidate) + "-" + style, 0);
+            if (font != null) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Font Substitution: core font fallback " + candidate + " -> " + font.getName());
+                }
+                return font;
+            }
+        }
+        return null;
+    }
+
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
         // iterate a stable snapshot, not the live static list
@@ -1213,7 +1265,7 @@ public class FontManager {
                 fontName.contains("georgia") ||
                 fontName.contains("bitstreamcyberbit")) {
             // important, add style information
-            font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, SERIF_SUBSTITUTES, decorations, flags);
         }
         // see if we working with a monospaced font, we sub "Sans Serif",
         // java equivalent is "Lucida Sans"
@@ -1230,7 +1282,7 @@ public class FontManager {
                 fontName.contains("frutiger") ||
                 fontName.contains("grotesk")) {
             // important, add style information
-            font = findFont(fontList, baseFontName + "-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, SANS_SUBSTITUTES, decorations, flags);
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
@@ -1239,20 +1291,18 @@ public class FontManager {
                 fontName.contains("prestige") ||
                 fontName.contains("eversonmono")) {
             // important, add style information
-            font = findFont(fontList, baseFontName + "typewriter-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, MONO_SUBSTITUTES, decorations, flags);
         }
         // first try get the first match based on the style type and finally on failure
         // failure go with the serif as it is the most common font family
         else {
             if (isSerif) {
-                font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, SERIF_SUBSTITUTES, decorations, flags);
             } else if (isFixedPitch) {
-                // lucidatypewriter, seems to make the font engine barf, converting to other
-                // common fixed pitch font courier-new.
-                font = findFont(fontList, "couriernew-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, MONO_SUBSTITUTES, decorations, flags);
             } else {
                 // sans serif
-                font = findFont(fontList, "lucidasans-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, SANS_SUBSTITUTES, decorations, flags);
             }
         }
 
