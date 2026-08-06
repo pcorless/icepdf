@@ -266,6 +266,26 @@ public abstract class ZSimpleFont implements FontFile {
         this.cidUnicodeCmap = ucs2CMap;
     }
 
+    /**
+     * Records the composite font's encoding CMap, which maps a character code to a CID.  Needed
+     * whenever something is indexed by CID rather than by code &mdash; the {@code /W} widths above
+     * all, since a non-identity CMap makes the two differ.
+     *
+     * @param encodingCMap character code &rarr; CID; null for an identity mapping
+     */
+    public void setCidEncoding(CMap encodingCMap) {
+        this.cidEncodingCmap = encodingCMap;
+    }
+
+    /**
+     * The CID a character code selects.  {@code /W} and {@code /DW} are defined against CIDs
+     * (PDF 32000-1 9.7.4.3), so a width lookup must come through here; indexing them by the code, or
+     * worse by a glyph index, silently returns another glyph's width.
+     */
+    protected int toCid(char code) {
+        return cidEncodingCmap != null ? cidEncodingCmap.toCID(code) : code;
+    }
+
     @Override
     public String toUnicode(char displayChar) {
         if (cidUnicodeCmap != null) {

@@ -85,8 +85,10 @@ public class ZFontType0 extends ZSimpleFont {
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
-        if (widths != null && ech < widths.length) {
-            advance = widths[ech];
+        // by CID, not by the character code; see ZFontType2.getAdvance.
+        int cid = toCid(ech);
+        if (widths != null && cid >= 0 && cid < widths.length) {
+            advance = widths[cid];
         }
         if (advance == 0) {
             if (defaultWidth > 0.0f) {

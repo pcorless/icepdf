@@ -170,7 +170,13 @@ public class Type0Font extends SimpleFont {
      * the only thing that can describe a subset font with an {@code Identity} ordering.
      */
     private void applyCidSystemInfoToUnicode(CompositeFont descendantFont) {
-        if (toUnicodeCMap != null || !(font instanceof ZSimpleFont)) {
+        if (!(font instanceof ZSimpleFont)) {
+            return;
+        }
+        // The encoding CMap is needed whatever else is going on: /W and /DW are indexed by CID, so
+        // the font file cannot look a width up without it.
+        ((ZSimpleFont) font).setCidEncoding(cMap);
+        if (toUnicodeCMap != null) {
             return;
         }
         CMap ucs2CMap = descendantFont.getUcs2CMap();
