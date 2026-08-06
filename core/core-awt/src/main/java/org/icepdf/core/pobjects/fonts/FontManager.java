@@ -200,13 +200,21 @@ public class FontManager {
             "Noto Sans CJK TC", "Noto Serif CJK TC",
     };
 
+    /*
+     * Korean is the one collection where the Japanese last resort is nearly useless: Han unification
+     * covers the hanja, but a Japanese face carries no Hangul whatsoever, so a Korean page drawn with
+     * one is mostly .notdef.  The Japanese entries therefore sit at the FRONT here - lowest priority,
+     * still better than no font at all - so that any face with Hangul outranks them.  Everywhere else
+     * they stay where they were.
+     */
     private static final String[] KOREAN_FONT_NAMES = {
+            // last resort, hanja only
+            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
             "Arial Unicode MS", "Dotum", "Gulim", "New Gulim", "GulimChe", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro",
             "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim",
-            // linux
-            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
             // linux, korean specific (highest priority)
+            "WenQuanYi Zen Hei", "WenQuanYi Micro Hei",
             "NanumGothic", "NanumMyeongjo", "Noto Sans CJK KR", "Noto Serif CJK KR",
     };
 
