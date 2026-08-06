@@ -63,6 +63,29 @@ public class ZFontTrueType extends ZSimpleFont {
         source = url;
     }
 
+    /**
+     * Wraps a font that has already been parsed, as happens for one face of a TrueType/OpenType
+     * collection: the collection is parsed once and hands back each face it contains, so there are
+     * no bytes of its own to re-parse.
+     *
+     * @param trueTypeFont the parsed face
+     * @param url          the collection file the face came from
+     */
+    public ZFontTrueType(TrueTypeFont trueTypeFont, URL url) throws Exception {
+        try {
+            this.trueTypeFont = trueTypeFont;
+            fontBoxFont = trueTypeFont;
+            source = url;
+
+            extractCmapTable();
+            extractMetricsTable();
+            extractHeadTable();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font from collection", e);
+            throw e;
+        }
+    }
+
     public ZFontTrueType(Stream fontStream) throws Exception {
         this(fontStream.getDecodedStreamBytes());
     }

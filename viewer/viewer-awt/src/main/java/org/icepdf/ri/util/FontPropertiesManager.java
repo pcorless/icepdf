@@ -49,6 +49,22 @@ public class FontPropertiesManager {
 
     public static final String PREFERENCES_KEY_CLASS = "org.icepdf.ri.util.FontPreferencesKey";
 
+    /**
+     * Version of the cached font list held in the backing store.  Raise it whenever {@link FontManager}
+     * learns to discover fonts it previously skipped, so existing installations re-scan once instead
+     * of loading a list that predates the change.
+     * <p>
+     * 1 -&gt; 2: TrueType/OpenType collections (.ttc/.otc) are now read, one entry per contained face.
+     */
+    private static final int FONT_CACHE_VERSION = 2;
+    /**
+     * Held in a child node, not alongside the font entries: {@link FontManager#setFontProperties} reads
+     * every key of the font node and parses its value as {@code family|decorations|path}, so a key
+     * that isn't a font would make the whole cache fail to load.
+     */
+    private static final Preferences cacheMeta = prefs.node("cache");
+    private static final String FONT_CACHE_VERSION_KEY = "version";
+
     private static Class<?> getPreferencesClass() {
         String fontPreferencesKey = Defs.sysProperty(PREFERENCES_KEY_CLASS);
         if (fontPreferencesKey != null) {
@@ -86,13 +102,26 @@ public class FontPropertiesManager {
      * otherwise a full read of the system fonts takes place and the results are stored in the backing store.
      */
     public void loadOrReadSystemFonts() {
-        if (isFontPropertiesEmpty()) {
+        if (isFontPropertiesEmpty() || isFontCacheStale()) {
             readDefaultFontProperties();
             saveProperties();
-        }else{
+        } else {
             // load properties from cache into the fontManager
             loadProperties();
         }
+    }
+
+    /**
+     * True when the cached font list was written by a build whose scanner found fewer fonts than this
+     * one does.  The cache is keyed only by "has anything been stored", so without this check a
+     * scanner improvement would never reach an existing installation: it would keep loading the list
+     * it wrote the first time it ran, missing whatever the new scanner can now see.
+     * <p>
+     * Bump {@link #FONT_CACHE_VERSION} whenever the set of fonts {@link FontManager} can discover
+     * changes, so installations re-scan once and then carry on using the cache.
+     */
+    private boolean isFontCacheStale() {
+        return cacheMeta.getInt(FONT_CACHE_VERSION_KEY, 0) < FONT_CACHE_VERSION;
     }
 
     /**
@@ -143,6 +172,7 @@ public class FontPropertiesManager {
     public void clearProperties() {
         try {
             prefs.clear();
+            cacheMeta.clear();
             fontManager.clearFontList();
         } catch (BackingStoreException e) {
             if (logger.isLoggable(Level.WARNING)) {
@@ -159,6 +189,7 @@ public class FontPropertiesManager {
         for (Object key : fontProps.keySet()) {
             prefs.put((String) key, fontProps.getProperty((String) key));
         }
+        cacheMeta.putInt(FONT_CACHE_VERSION_KEY, FONT_CACHE_VERSION);
     }
 
     /**

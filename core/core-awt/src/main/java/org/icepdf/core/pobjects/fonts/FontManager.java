@@ -20,6 +20,11 @@ import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.SystemProperties;
 
 import java.awt.*;
+import org.apache.fontbox.ttf.TrueTypeCollection;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.apache.fontbox.ttf.TrueTypeFont;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -148,6 +153,20 @@ public class FontManager {
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
             };
 
+    /*
+     * Substitution candidates per character collection, searched by getAsianInstance.
+     *
+     * NOTE the search runs from the END of each array towards the front, so the LAST entry has the
+     * HIGHEST priority.  The Japanese faces that close the original lists are deliberate last
+     * resorts - Han unification means a Japanese face draws most Chinese and Korean text acceptably -
+     * but they must not outrank a face made for the document's own collection: a Japanese font has no
+     * glyph for the traditional forms (產 U+7522, 內 U+5167) or for Chinese-only characters
+     * (另 U+53E6), which came out as .notdef on a Traditional Chinese page.
+     *
+     * Only families that carry Latin as well as CJK belong here.  A CJK-only face such as Droid Sans
+     * Fallback is not a substitute: it has no ASCII at all, so the Latin runs a CJK document mixes in
+     * (part numbers, URLs) would turn into .notdef instead.
+     */
     private static final String[] JAPANESE_FONT_NAMES = {
             // windows
             "Arial Unicode MS", "PMingLiU", "MingLiU",
@@ -155,7 +174,8 @@ public class FontManager {
             "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro",
             // linux
             "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
-
+            // linux, japanese specific (highest priority)
+            "Noto Sans CJK JP", "Noto Serif CJK JP",
     };
 
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
@@ -164,6 +184,9 @@ public class FontManager {
             "Adobe Song Std Acro", "stsong",
             // linux
             "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, simplified chinese specific (highest priority)
+            "AR PL UMing CN", "AR PL UKai CN", "WenQuanYi Zen Hei",
+            "Noto Sans CJK SC", "Noto Serif CJK SC",
     };
 
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
@@ -172,6 +195,9 @@ public class FontManager {
             "Adobe Song Std Acro",
             // linux
             "umingcn", "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, traditional chinese specific (highest priority)
+            "AR PL UKai TW", "AR PL UMing TW",
+            "Noto Sans CJK TC", "Noto Serif CJK TC",
     };
 
     private static final String[] KOREAN_FONT_NAMES = {
@@ -180,6 +206,8 @@ public class FontManager {
             "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim",
             // linux
             "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, korean specific (highest priority)
+            "NanumGothic", "NanumMyeongjo", "Noto Sans CJK KR", "Noto Serif CJK KR",
     };
 
     /**
@@ -539,6 +567,12 @@ public class FontManager {
     }
 
     private void evaluateFontForInsertion(String fontPath) {
+        // a collection holds several faces and has to contribute one entry each, or only the first
+        // would ever be found by name.
+        if (isFontCollection(fontPath)) {
+            evaluateFontCollectionForInsertion(fontPath);
+            return;
+        }
         // try loading the font
         FontFile font = buildFont(fontPath);
         // if a readable font was found
@@ -557,6 +591,49 @@ public class FontManager {
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Adding system font: " + font.getName() + " " + fontPath);
             }
+        }
+    }
+
+    /**
+     * Registers every face of a TrueType/OpenType collection, one font-list entry each, all pointing
+     * at the same file.  {@link #buildFont(String, String)} later re-selects the face by the
+     * PostScript name recorded here.
+     * <p>
+     * Only the names are needed at scan time, so the faces are read and dropped; nothing keeps the
+     * collection's buffer alive.
+     */
+    private void evaluateFontCollectionForInsertion(String fontPath) {
+        File file = new File(fontPath);
+        if (!file.canRead()) {
+            return;
+        }
+        try {
+            TrueTypeCollection collection = new TrueTypeCollection(
+                    new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
+            collection.processAllFonts(face -> {
+                String name = face.getName();
+                if (name == null || isPostScriptOutlines(face)) {
+                    // CFF-outline faces (Noto CJK and most OpenType collections) are skipped: the
+                    // renderer only draws glyf outlines for system fonts, so registering them would
+                    // hand the substitution machinery a font that silently draws nothing.
+                    return;
+                }
+                String fontName = name.toLowerCase();
+                Object[] fontProperty = new Object[]{fontName,      // original PS name
+                        FontUtil.normalizeString(face.getNaming() != null
+                                ? face.getNaming().getFontFamily() : name),  // family name
+                        guessFontStyle(fontName),                   // weight and decorations
+                        fontPath};
+                if (!checkExclusionLists(fontProperty)) {
+                    fontList.add(fontProperty);
+                }
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Adding system font from collection: " + name + " " + fontPath);
+                }
+            });
+            collection.close();
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error reading font collection " + fontPath, e);
         }
     }
 
@@ -834,13 +911,13 @@ public class FontManager {
                     found = true;
                 }
                 if (found) {
-                    font = buildFont((String) fontData[3]);
+                    font = buildFont((String) fontData[3], (String) fontData[0]);
                     break;
                 }
             }
             if (!found) {
                 fontData = fontList.get(0);
-                font = buildFont((String) fontData[3]);
+                font = buildFont((String) fontData[3], (String) fontData[0]);
             }
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Font Substitution: Found failed " + name + " " + font.getName());
@@ -917,7 +994,7 @@ public class FontManager {
                             logger.finer("Match Found for: " + fontName + ":" + getFontStyle(style, 0).trim() +
                                     " Substituting " + baseName + ":" + path);
                         }
-                        font = buildFont((String) fontData[3]);
+                        font = buildFont((String) fontData[3], (String) fontData[0]);
                         // make sure the font does indeed exist
                         if (font != null) {
                             break;
@@ -937,6 +1014,15 @@ public class FontManager {
      * @return a valid font if loadable, null otherwise
      */
     private FontFile buildFont(String fontPath) {
+        return buildFont(fontPath, null);
+    }
+
+    /**
+     * @param fontPath       font file to load
+     * @param postScriptName the face wanted, when {@code fontPath} is a TrueType/OpenType collection
+     *                       holding several; ignored for a single-font file
+     */
+    private FontFile buildFont(String fontPath, String postScriptName) {
         FontFile font = null;
         try {
             if (fontPath.startsWith("jar:file")) {
@@ -946,13 +1032,95 @@ public class FontManager {
                 if (!file.canRead()) {
                     return null;
                 }
-                font = buildFont(file);
+                font = isFontCollection(fontPath)
+                        ? buildCollectionFont(file, postScriptName) : buildFont(file);
             }
         } catch (Exception e) {
             // there are a lot of system font that don't ready correctly, so don't get to noisy
             logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;
+    }
+
+    /**
+     * True for a TrueType or OpenType <em>collection</em>, a single file holding several faces.  The
+     * CJK fonts shipped by most Linux distributions (Noto CJK, AR PL UMing/UKai) come this way, and
+     * FontBox's plain TrueType parser cannot read the {@code ttcf} header they start with.
+     */
+    private static boolean isFontCollection(String fontPath) {
+        String lower = fontPath.toLowerCase();
+        return lower.endsWith(".ttc") || lower.endsWith(".otc");
+    }
+
+    /**
+     * Loads one face out of a collection by its PostScript name, the name the scan recorded for it.
+     *
+     * @return the named face, or the first one if the name is unknown; null if the file won't parse
+     */
+    private FontFile buildCollectionFont(File file, String postScriptName) {
+        try {
+            // Parse from memory: the returned faces read through the collection's buffer, so a
+            // file-backed collection would have to stay open for as long as any face is alive.
+            TrueTypeCollection collection = new TrueTypeCollection(
+                    new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
+            // Not getFontByName: the scan records names lower-cased, and that method matches exactly,
+            // so every lookup would miss and quietly hand back the collection's first face - which on
+            // Noto CJK is the Japanese one, whatever collection was actually asked for.
+            FaceByName wanted = new FaceByName(postScriptName);
+            collection.processAllFonts(wanted);
+            TrueTypeFont face = wanted.match != null ? wanted.match : wanted.first;
+            if (face != null) {
+                return new ZFontTrueType(face, file.toURI().toURL());
+            }
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error reading font collection " + file, e);
+        }
+        return null;
+    }
+
+    /**
+     * True when the face carries PostScript/CFF outlines rather than {@code glyf} ones.  ZFontTrueType
+     * and ZFontOpenType both read glyphs out of the {@code glyf} table, so a CFF face parses cleanly
+     * and then draws nothing at all.
+     */
+    private static boolean isPostScriptOutlines(TrueTypeFont face) {
+        try {
+            return face instanceof org.apache.fontbox.ttf.OpenTypeFont
+                    && ((org.apache.fontbox.ttf.OpenTypeFont) face).isPostScript();
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * Finds a collection's face by PostScript name, ignoring case, and remembers the first face as a
+     * fallback.  FontBox only offers a visitor over a collection, hence the accumulator.
+     */
+    private static class FaceByName implements TrueTypeCollection.TrueTypeFontProcessor {
+        private final String wanted;
+        private TrueTypeFont match;
+        private TrueTypeFont first;
+
+        private FaceByName(String postScriptName) {
+            this.wanted = postScriptName != null ? postScriptName.toLowerCase() : null;
+        }
+
+        @Override
+        public void process(TrueTypeFont ttf) {
+            if (first == null) {
+                first = ttf;
+            }
+            if (match == null && wanted != null) {
+                try {
+                    String name = ttf.getName();
+                    if (name != null && wanted.equals(name.toLowerCase())) {
+                        match = ttf;
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.FINE, "Could not read a collection face's name", e);
+                }
+            }
+        }
     }
 
     private FontFile buildFont(File fontFile) {
