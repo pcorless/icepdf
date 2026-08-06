@@ -62,6 +62,12 @@ public abstract class ZSimpleFont implements FontFile {
     protected float defaultWidth;
     protected boolean isTypeCidSubstitution;
     protected CMap ucs2Cmap;
+    /** CID &rarr; Unicode from the character collection, set only when the PDF supplied no
+     *  {@code /ToUnicode}; see {@link #setCidToUnicode}.  Distinct from {@link #ucs2Cmap}, which
+     *  {@code ZFontType2} uses to pick substitute glyphs rather than to extract text. */
+    protected CMap cidUnicodeCmap;
+    /** Character code &rarr; CID, the composite font's encoding CMap; identity when null. */
+    protected CMap cidEncodingCmap;
 
     // Why have one encoding when you can three.
     protected Encoding encoding;
@@ -97,6 +103,8 @@ public abstract class ZSimpleFont implements FontFile {
         this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
+        this.cidUnicodeCmap = font.cidUnicodeCmap;
+        this.cidEncodingCmap = font.cidEncodingCmap;
         this.size = font.size;
         this.source = font.source;
         this.fontBoxFont = font.fontBoxFont;
@@ -243,8 +251,35 @@ public abstract class ZSimpleFont implements FontFile {
         return sb.toString();
     }
 
+    /**
+     * Supplies the CID&rarr;Unicode mapping for a composite font that carries no {@code /ToUnicode}
+     * CMap, per PDF 32000-1 9.10.2 (b)&ndash;(d): the descendant font's {@code CIDSystemInfo} names a
+     * character collection, and the collection's {@code <Registry>-<Ordering>-UCS2} CMap maps its CIDs
+     * to Unicode.  Without this an embedded CID font extracts as raw CIDs.
+     *
+     * @param encodingCMap character code &rarr; CID (the composite font's /Encoding CMap); null for
+     *                     an identity mapping, where the code is already the CID
+     * @param ucs2CMap     CID &rarr; Unicode for the character collection
+     */
+    public void setCidToUnicode(CMap encodingCMap, CMap ucs2CMap) {
+        this.cidEncodingCmap = encodingCMap;
+        this.cidUnicodeCmap = ucs2CMap;
+    }
+
     @Override
     public String toUnicode(char displayChar) {
+        if (cidUnicodeCmap != null) {
+            // The PDF supplied no /ToUnicode, so go the long way round: code -> CID -> Unicode
+            // (9.10.2).  Only when the collection actually covers the CID; an unmapped one falls
+            // through to the behaviour below.  Note this cannot test toUnicode == null: deriveToUnicode
+            // always leaves a map in place (a guess from the encoding, else Identity-H), and the
+            // Identity one returns the CID unchanged - which is the raw-CID extraction being fixed.
+            int cid = cidEncodingCmap != null ? cidEncodingCmap.toCID(displayChar) : displayChar;
+            String unicode = cidUnicodeCmap.toUnicode(cid);
+            if (unicode != null && !unicode.isEmpty()) {
+                return unicode;
+            }
+        }
         // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
         // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
         // differences.

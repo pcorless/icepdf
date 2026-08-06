@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZSimpleFont;
 import org.icepdf.core.util.Library;
 
 import java.io.IOException;
@@ -155,6 +156,30 @@ public class Type0Font extends SimpleFont {
         }
     }
 
+    /**
+     * Gives the font file a CID&rarr;Unicode route when the PDF supplies no {@code /ToUnicode} CMap.
+     * <p>
+     * {@code /ToUnicode} is optional, and an embedded CID font routinely omits it &mdash; the glyphs
+     * render from the CIDs alone, so nothing about <em>display</em> needs Unicode.  Extraction, copy
+     * and search do, and without this they get the raw CID: the anchor case (GH-521) extracted an
+     * entire Japanese page as control characters while rendering it perfectly.  PDF 32000-1 9.10.2
+     * (b)&ndash;(d) covers exactly this: the descendant font's {@code CIDSystemInfo} names the
+     * character collection, and the collection's UCS2 CMap maps its CIDs to Unicode.
+     * <p>
+     * Only fills the gap &mdash; an explicit {@code /ToUnicode} always wins, as it must, since it is
+     * the only thing that can describe a subset font with an {@code Identity} ordering.
+     */
+    private void applyCidSystemInfoToUnicode(CompositeFont descendantFont) {
+        if (toUnicodeCMap != null || !(font instanceof ZSimpleFont)) {
+            return;
+        }
+        CMap ucs2CMap = descendantFont.getUcs2CMap();
+        if (ucs2CMap != null) {
+            // cMap is the /Encoding CMap, code -> CID; null (Identity) means the code is the CID.
+            ((ZSimpleFont) font).setCidToUnicode(cMap, ucs2CMap);
+        }
+    }
+
     private void parseDescendantFont() {
         if (entries.containsKey(DESCENDANT_FONTS_KEY)) {
             Object descendant = library.getObject(entries, DESCENDANT_FONTS_KEY);
@@ -184,6 +209,7 @@ public class Type0Font extends SimpleFont {
                     } else {
                         font = font.deriveFont(encoding, toUnicodeCMap);
                     }
+                    applyCidSystemInfoToUnicode(descendantFont);
                     isFontSubstitution = descendantFont.isFontSubstitution() && font != null;
                 }
             }

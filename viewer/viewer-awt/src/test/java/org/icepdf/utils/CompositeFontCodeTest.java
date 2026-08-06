@@ -73,4 +73,29 @@ public class CompositeFontCodeTest {
                 "too many notdef CIDs (" + notdef + " of " + glyphs
                         + "): the code stream is desynchronised");
     }
+
+    @DisplayName("a CID font with no /ToUnicode extracts through its character collection's UCS2 CMap")
+    @Test
+    public void cidSystemInfoSuppliesUnicode() throws Exception {
+        // The fixture is Adobe-Japan1-4 with no /ToUnicode at all.  Rendering never needed Unicode -
+        // the glyphs come straight off the CIDs - so the gap only showed up in extraction, which
+        // returned the raw CIDs (印, CID 1209, extracted as U+04B9).  PDF 32000-1 9.10.2 (b)-(d)
+        // resolves it from CIDSystemInfo: Adobe + Japan1 -> Adobe-Japan1-UCS2 -> CID 1209 = 印.
+        Document document = new Document();
+        document.setFile(CompositeFontCodeTest.class.getResource(
+                "/fonts/gh-521-identity-h-cid.pdf").getFile());
+        StringBuilder text = new StringBuilder();
+        for (LineText line : document.getPageText(0).getPageLines()) {
+            for (WordText word : line.getWords()) {
+                text.append(word.getText());
+            }
+        }
+        document.dispose();
+
+        String extracted = text.toString();
+        assertTrue(extracted.contains("印刷時の設定を確認する"),
+                "expected the page's running title, extracted: "
+                        + extracted.substring(0, Math.min(80, extracted.length())));
+        assertTrue(extracted.contains("プロパティ"), "expected the table's row labels");
+    }
 }
