@@ -40,8 +40,22 @@ public class ZFontType0 extends ZSimpleFont {
     private FontBoxFont t1Font; // Top DICT that does not use CIDFont operators
 
     public ZFontType0(Stream fontStream) throws Exception {
+        this(fontStream.getDecodedStreamBytes(), new FF3ByteSource(fontStream));
+    }
 
-        byte[] fontBytes = fontStream.getDecodedStreamBytes();
+    /**
+     * Builds from a raw CFF program rather than a stream, for a CFF that had to be lifted out of
+     * an OpenType wrapper because the producer labelled it as something it isn't.
+     *
+     * @param fontBytes the CFF program
+     * @throws Exception if the program can't be read
+     */
+    public ZFontType0(byte[] fontBytes) throws Exception {
+        this(fontBytes, () -> fontBytes);
+    }
+
+    private ZFontType0(byte[] fontBytes, CFFParser.ByteSource byteSource) throws Exception {
+
         CFFFont cffFont = null;
         if (fontBytes != null && fontBytes.length > 0 && (fontBytes[0] & 0xff) == '%') {
             logger.warning("Found PFB but expected embedded CFF font");
@@ -49,7 +63,7 @@ public class ZFontType0 extends ZSimpleFont {
         } else if (fontBytes != null) {
             CFFParser cffParser = new CFFParser();
             try {
-                cffFont = cffParser.parse(fontBytes, new FF3ByteSource(fontStream)).get(0);
+                cffFont = cffParser.parse(fontBytes, byteSource).get(0);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Can't read the embedded CFF font ", e);
                 throw new Exception(e);
