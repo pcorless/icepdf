@@ -125,6 +125,9 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
+            if (isSubstitutedNotdef(estr)) {
+                return;
+            }
             AffineTransform af = g.getTransform();
             int gid = getCharToGid(estr);
             GlyphData glyphData = trueTypeFont.getGlyph() != null

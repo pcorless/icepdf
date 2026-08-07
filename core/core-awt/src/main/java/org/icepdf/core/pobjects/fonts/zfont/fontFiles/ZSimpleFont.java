@@ -179,6 +179,9 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
+            if (isSubstitutedNotdef(estr)) {
+                return;
+            }
             AffineTransform af = g.getTransform();
             Shape outline = getGlphyShape(estr);
 
@@ -202,6 +205,9 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public Shape getOutline(char estr, float x, float y) {
         try {
+            if (isSubstitutedNotdef(estr)) {
+                return new Area();
+            }
             Shape glyph = getGlphyShape(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();
@@ -275,6 +281,30 @@ public abstract class ZSimpleFont implements FontFile {
      */
     public void setCidEncoding(CMap encodingCMap) {
         this.cidEncodingCmap = encodingCMap;
+    }
+
+    /**
+     * True when the code selects CID&nbsp;0 in a font we had to substitute, in which case nothing
+     * should be drawn.
+     * <p>
+     * CID&nbsp;0 is the CIDFont's {@code .notdef} (PDF 32000-2 9.7.4.2), and what it looks like "is at
+     * the discretion of the font designer" (9.6.5.2).  That designer is the document's own font, which
+     * by definition we do not have here: a producer that emits {@code 0000} codes usually pairs them
+     * with a blank {@code .notdef}, so painting the substitute's box invents a mark the document never
+     * asked for.  Leaving the slot empty is the closer approximation.
+     * <p>
+     * Deliberately narrow, since suppressing glyphs hides real faults:
+     * <ul>
+     *     <li>only for substituted fonts &mdash; an embedded font's own {@code .notdef} is drawn as
+     *     the spec intends;</li>
+     *     <li>only for CID&nbsp;0 itself, not for any CID whose glyph the substitute happens to lack.
+     *     Those still show a box, which is how the missing traditional-Chinese forms were spotted.</li>
+     * </ul>
+     * The advance is unaffected either way: the code still consumes its {@code /W} or {@code /DW}
+     * width, so nothing moves.
+     */
+    protected boolean isSubstitutedNotdef(char estr) {
+        return source != null && cidEncodingCmap != null && toCid(estr) == 0;
     }
 
     /**
