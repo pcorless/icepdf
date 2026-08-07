@@ -171,11 +171,20 @@ public class ZFontType3 extends ZSimpleFont implements Cloneable {
      * @param x      x-coordinate of the string rendering location
      * @param y      y-coordinate of the string rendering location
      * @param layout layout mode of this font, not value for type3 font
-     * @param mode   rendering mode, not applicable for type3 fonts.
+     * @param mode   rendering mode; a type3 glyph paints itself so fill and stroke are the
+     *               glyph procedure's business, but the modes that paint nothing still have to
+     *               be honoured.
      */
     public void paint(Graphics2D g2d, char estr,
                       float x, float y,
                       long layout, int mode, Color color) {
+
+        // Mode 3 is invisible and mode 7 adds to the clip only; a type3 glyph cannot be used for
+        // clipping (PDF 32000-1 9.3.6), so neither paints anything.  This matters for the OCR
+        // text layers scanners put under a scanned page.
+        if (mode == TextState.MODE_INVISIBLE || mode == TextState.MODE_ADD) {
+            return;
+        }
 
         AffineTransform oldTransform = g2d.getTransform();
         AffineTransform currentCTM = g2d.getTransform();
