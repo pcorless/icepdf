@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.util.Utils;
 
 /**
@@ -162,47 +160,6 @@ public class LiteralStringObject extends AbstractStringObject {
      */
     public String getLiteralString() {
         return stringData.toString();
-    }
-
-    /**
-     * <p>Gets a literal String representation of this object's data using the
-     * specified font and format.  The font is used to verify that the
-     * specific character codes can be rendered; if they cannot, they may be
-     * removed or combined with the next character code to get a displayable
-     * character code.
-     *
-     * @param fontFormat the type of pdf font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderable characters for the
-     *         given font.
-     */
-    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-
-        if (fontFormat == Font.SIMPLE_FORMAT
-                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE)) {
-            return stringData;
-        } else if (fontFormat == Font.CID_FORMAT) {
-            int length = getLength();
-            int charValue;
-            StringBuilder tmp = new StringBuilder(length);
-            for (int i = 0; i < length; i += 1) {
-                // check range for possible 2 byte char.
-                charValue = getUnsignedInt(i, 2);
-                if (font.canDisplay((char) charValue)) {
-                    tmp.append((char) charValue);
-                    i += 1;
-                } else {
-                    charValue = getUnsignedInt(i, 1);
-                    if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue);
-                    }
-                }
-            }
-            return tmp;
-        }
-        return null;
     }
 
     /**

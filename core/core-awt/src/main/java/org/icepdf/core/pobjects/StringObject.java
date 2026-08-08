@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 /**
@@ -77,28 +76,6 @@ public interface StringObject {
      * @return integer value of the specified range of characters.
      */
     int getUnsignedInt(int start, int offset);
-
-    /**
-     * Gets a literal String representation of this objects data using the
-     * specified font and format.
-     *
-     * @param fontFormat the type of PDF font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderable characters for the
-     * given font.
-     */
-    /**
-     * @deprecated the character-code width of a composite font's string cannot be derived from the
-     * font's glyph metrics; it is defined by the encoding CMap's codespace ranges (PDF 32000-1
-     * 9.7.6.2).  Use {@link #getRawBytes()} and
-     * {@link org.icepdf.core.pobjects.fonts.Font#toCodes(byte[])} instead, which splits the string
-     * as the CMap specifies.  Retained for API compatibility; the composite-font branch mis-splits
-     * multi-byte strings.
-     */
-    @Deprecated
-    StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
 
     /**
      * The string's raw bytes, as they appeared in the file: no character-code interpretation, and

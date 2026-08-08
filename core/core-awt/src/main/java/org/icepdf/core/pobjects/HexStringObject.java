@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.util.logging.Level;
@@ -140,17 +138,6 @@ public class HexStringObject extends AbstractStringObject {
         return unsignedInt;
     }
 
-    public int getUnsignedInt(String data) {
-        int unsignedInt = 0;
-        try {
-            unsignedInt = Integer.parseInt(data, 16);
-        } catch (NumberFormatException e) {
-            int finalUnsignedInt = unsignedInt;
-            logger.log(Level.FINER, () -> "Number Format Exception " + finalUnsignedInt);
-        }
-        return unsignedInt;
-    }
-
     /**
      * <p>Returns a string representation of the object.
      * The hex data is converted to an equivalent string representation</p>
@@ -199,82 +186,6 @@ public class HexStringObject extends AbstractStringObject {
      */
     public String getLiteralString() {
         return hexToString(stringData).toString();
-    }
-
-    /**
-     * <p>Gets a literal String representation of this object's data using the
-     * specifed font and format.  The font is used to verify that the
-     * specific character codes can be rendered; if they can not, they may be
-     * removed or combined with the next character code to get a displayable
-     * character code.
-     *
-     * @param fontFormat the type of font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderaable characters for the
-     * given font.
-     */
-    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT) {
-            stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
-            int charOffset = 2;
-            int length = getLength();
-            StringBuilder tmp = new StringBuilder(length);
-            int lastIndex = 0;
-            int charValue;
-            int offset;
-            for (int i = 0; i < length; i += charOffset) {
-                offset = lastIndex + charOffset;
-                charValue = getUnsignedInt(i - lastIndex, offset);
-                // 0 cid is valid, so we have ot be careful we don't exclude the
-                // cid 00 = 0 or 0000 = 0, not 0000 = 00.
-                // removed font check as it was causing problems with a lot of Latin based hex strings
-                // may need to revisit in the future when getting back to multibyte encodings.
-                if (!(offset < length && charValue == 0)) {
-                    tmp.append((char) charValue);
-                    lastIndex = 0;
-                } else {
-                    lastIndex += charOffset;
-                }
-            }
-            return tmp;
-        } else if (fontFormat == Font.CID_FORMAT) {
-            stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
-            int charOffset = 2;
-            int length = getLength();
-            int charValue;
-            boolean notUCS2 = font.getToUnicode() != null
-                    && font.getToUnicode().getName() != null
-                    && !font.getToUnicode().getName().contains("UCS2");
-            StringBuilder tmp = new StringBuilder(length);
-            // attempt to detect mulibyte encoded strings.
-            for (int i = 0; i < length; i += charOffset) {
-                String first = stringData.substring(i, i + 2);
-                if (first.charAt(0) != '0') {
-                    // check range for possible 2 byte char ie mixed mode.
-                    charValue = getUnsignedInt(first);
-                    if (notUCS2 && font.canDisplay((char) charValue) && font.getSource() != null) {
-                        tmp.append((char) charValue);
-                    } else {
-                        charValue = getUnsignedInt(i, 4);
-                        if (font.canDisplay((char) charValue)) {
-                            tmp.append((char) charValue);
-                            i += 2;
-                        }
-                    }
-                } else {
-                    charValue = getUnsignedInt(i, 4);
-                    // should never have a 4 digit zero value.
-                    if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue);
-                        i += 2;
-                    }
-                }
-            }
-            return tmp;
-        }
-        return null;
     }
 
     /**
