@@ -89,14 +89,34 @@ public abstract class CompositeFont extends SimpleFont {
     protected void parseCidSystemInfo() {
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
         if (obj instanceof DictionaryEntries) {
-            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_ORDERING_KEY);
-            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_REGISTRY_KEY);
-            if (orderingObject != null && registryObject != null) {
-                ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
-                registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());
+            DictionaryEntries cidSystemInfo = (DictionaryEntries) obj;
+            // /Registry and /Ordering may be indirect, so they have to be resolved rather than read
+            // straight out of the dictionary - a raw get() hands back the Reference itself.  This
+            // runs for embedded fonts too now, so a cast failure here aborts Font.init() and the
+            // whole text block draws with no font at all.
+            String orderingValue = literalStringOf(cidSystemInfo, CID_SYSTEM_INFO_ORDERING_KEY);
+            String registryValue = literalStringOf(cidSystemInfo, CID_SYSTEM_INFO_REGISTRY_KEY);
+            if (orderingValue != null && registryValue != null) {
+                ordering = orderingValue;
+                registry = registryValue;
             }
         }
         substituteFontForOrdering();
+    }
+
+    /**
+     * Reads one {@code CIDSystemInfo} entry as a string, resolving an indirect reference and
+     * tolerating a producer that wrote a name where the spec calls for a string.
+     */
+    private String literalStringOf(DictionaryEntries cidSystemInfo, Name key) {
+        Object value = library.getObject(cidSystemInfo, key);
+        if (value instanceof StringObject) {
+            return ((StringObject) value).getDecryptedLiteralString(library.getSecurityManager());
+        }
+        if (value instanceof Name) {
+            return value.toString();
+        }
+        return null;
     }
 
     /**
@@ -109,7 +129,10 @@ public abstract class CompositeFont extends SimpleFont {
         }
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
         if (obj instanceof DictionaryEntries) {
-            Integer supplement = (Integer) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_SUPPLEMENT_KEY);
+            // resolved, not read straight out of the dictionary: /Supplement may be indirect, and a
+            // producer may write it as a real number rather than an integer
+            Object supplementValue = library.getObject((DictionaryEntries) obj, CID_SYSTEM_INFO_SUPPLEMENT_KEY);
+            int supplement = supplementValue instanceof Number ? ((Number) supplementValue).intValue() : 0;
             if (ordering != null && registry != null) {
                 FontManager fontManager = FontManager.getInstance().initialize();
                 isFontSubstitution = true;
@@ -136,7 +159,11 @@ public abstract class CompositeFont extends SimpleFont {
                 // might be a font loading error a we need check normal system fonts too
                 else if (ordering.startsWith("Identity")) {
                     font = fontManager.getInstance(basefont, fontFlags);
-                    font = new ZFontType2((ZFontTrueType) font);
+                    // the substitute is very nearly always a TrueType, but a system font list that
+                    // offers only a Type1 face must not take the whole font down with a cast error
+                    if (font instanceof ZFontTrueType) {
+                        font = new ZFontType2((ZFontTrueType) font);
+                    }
                 }
                 // fallback traditional Chinese.
                 else {
