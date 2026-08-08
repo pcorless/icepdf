@@ -28,10 +28,6 @@ import org.icepdf.core.util.Utils;
  */
 public class LiteralStringObject extends AbstractStringObject {
 
-    private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
-            '7', '8', '9', 'a', 'b', 'c', 'd',
-            'e', 'f'};
-
     /**
      * <p>Creates a new literal string object so that it represents the same
      * sequence of character data specified by the argument.</p>
@@ -94,8 +90,13 @@ public class LiteralStringObject extends AbstractStringObject {
      * @return unsigned integer value of the specifed data range
      */
     public int getUnsignedInt(int start, int offset) {
-        if (start < 0 || stringData.length() < (start + offset))
-            return stringData.charAt(0);
+        // out of range yields 0, as HexStringObject does for the same condition.  This used to
+        // answer stringData.charAt(0), which is an arbitrary value for a range that was not asked
+        // for, and threw outright on an empty string - and empty literal strings are real, the file
+        // ID in Library is built from two of them.
+        if (start < 0 || stringData.length() < (start + offset)) {
+            return 0;
+        }
 
         if (offset == 1) {
             return stringData.charAt(start);
@@ -205,15 +206,6 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * The length of the underlying object's data.
-     *
-     * @return length of objcts data.
-     */
-    public int getLength() {
-        return stringData.length();
-    }
-
-    /**
      * The string's bytes.  A literal string's data is stored one byte per char, so this is a
      * straight narrowing.
      */
@@ -230,15 +222,12 @@ public class LiteralStringObject extends AbstractStringObject {
      * Utility method for converting literal strings to hexadecimal.
      *
      * @param string StringBuffer in literal form
-     * @return StringBuffer in hexadecial form
+     * @return StringBuffer in hexadecimal form
      */
-    private StringBuilder stringToHex(StringBuilder string) {
+    private static StringBuilder stringToHex(StringBuilder string) {
         StringBuilder hh = new StringBuilder(string.length() * 2);
-        int charCode;
         for (int i = 0, max = string.length(); i < max; i++) {
-            charCode = string.charAt(i);
-            hh.append(hexChar[(charCode & 0xf0) >>> 4]);
-            hh.append(hexChar[charCode & 0x0f]);
+            appendHexByte(hh, string.charAt(i));
         }
         return hh;
     }

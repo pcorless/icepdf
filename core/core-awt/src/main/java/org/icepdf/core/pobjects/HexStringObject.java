@@ -33,6 +33,9 @@ public class HexStringObject extends AbstractStringObject {
     private static final Logger logger =
             Logger.getLogger(HexStringObject.class.getName());
 
+    /** UTF-16BE byte order marker, as hexadecimal digits: marks 4 digit character codes. */
+    private static final String BYTE_ORDER_MARKER = "FEFF";
+
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same
      * sequence of character data specified by the argument. This constructor should
@@ -67,19 +70,14 @@ public class HexStringObject extends AbstractStringObject {
         return new HexStringObject(hexString.toString());
     }
 
+    /**
+     * Encodes bytes as hexadecimal digits, two per byte.
+     *
+     * @param byteArray bytes to encode
+     * @return hexadecimal digits, upper case
+     */
     public static String encodeHexString(byte[] byteArray) {
-        StringBuffer hexStringBuffer = new StringBuffer();
-        for (int i = 0; i < byteArray.length; i++) {
-            hexStringBuffer.append(byteToHex(byteArray[i]));
-        }
-        return hexStringBuffer.toString();
-    }
-
-    private static String byteToHex(byte num) {
-        char[] hexDigits = new char[2];
-        hexDigits[0] = Character.forDigit((num >> 4) & 0xF, 16);
-        hexDigits[1] = Character.forDigit((num & 0xF), 16);
-        return new String(hexDigits);
+        return toHex(byteArray).toString();
     }
 
     /**
@@ -92,17 +90,12 @@ public class HexStringObject extends AbstractStringObject {
     public static StringBuilder encodeHexString(String contents) {
         StringBuilder hex = new StringBuilder();
         if (contents != null && !contents.isEmpty()) {
-            char[] chars = contents.toCharArray();
-            hex.append("FEFF");
-            String hexCode;
-            for (char aChar : chars) {
-                hexCode = Integer.toHexString(aChar);
-                if (hexCode.length() == 2) {
-                    hexCode = "00" + hexCode;
-                } else if (hexCode.length() == 1) {
-                    hexCode = "000" + hexCode;
-                }
-                hex.append(hexCode);
+            hex.append(BYTE_ORDER_MARKER);
+            for (int i = 0, max = contents.length(); i < max; i++) {
+                // 4 digits per character: the high byte first, so 'A' is 0041 and not 4100
+                char aChar = contents.charAt(i);
+                appendHexByte(hex, aChar >> 8);
+                appendHexByte(hex, aChar);
             }
         }
         return hex;
@@ -268,15 +261,6 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * The length of the underlying objects data.
-     *
-     * @return length of object's data.
-     */
-    public int getLength() {
-        return stringData.length();
-    }
-
-    /**
      * The bytes the hex digits encode, two digits per byte.  The constructor has already stripped
      * whitespace and padded an odd digit count with a trailing zero (PDF 32000-1 7.3.4.3), so the
      * digits always pair up.
@@ -325,6 +309,20 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
+     * True when the digits open with the UTF-16BE byte order marker, meaning the string is a
+     * sequence of 4 digit (2 byte) character codes rather than 2 digit ones.  Caller has already
+     * checked that there are at least {@link #BYTE_ORDER_MARKER} digits to read.
+     */
+    private static boolean isByteOrderMarked(StringBuilder hh) {
+        for (int i = 0; i < BYTE_ORDER_MARKER.length(); i++) {
+            if (Character.toUpperCase(hh.charAt(i)) != BYTE_ORDER_MARKER.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Utility method to test if the char is a none hexadecimal char.
      *
      * @param c charact to text
@@ -346,17 +344,16 @@ public class HexStringObject extends AbstractStringObject {
     private StringBuilder hexToString(StringBuilder hh) {
 
         // make sure we have a valid hex value to convert to string.
-        // can't decrypt an empty string.
-        if (hh != null && hh.length() == 0) {
-            return new StringBuilder();
+        // can't decrypt an empty string.  A string shorter than the marker cannot carry one either,
+        // and testing for it used to read past the end: <FE> matched the first two digits and then
+        // threw indexing the third.
+        if (hh == null || hh.length() < BYTE_ORDER_MARKER.length()) {
+            return hh == null ? new StringBuilder() : getRawHexToString();
         }
 
         StringBuilder sb;
         // special case, test for not a 4 byte character code format
-        if (!((hh.charAt(0) == 'F' | hh.charAt(0) == 'f')
-                && (hh.charAt(1) == 'E' | hh.charAt(1) == 'e')
-                && (hh.charAt(2) == 'F' | hh.charAt(2) == 'f')
-                && (hh.charAt(3) == 'F') | hh.charAt(3) == 'f')) {
+        if (!isByteOrderMarked(hh)) {
             return getRawHexToString();
         }
         // otherwise, assume 4 byte character codes

@@ -75,4 +75,52 @@ public class HexStringObjectTest {
         int unsignedInt = hexStringObject.getUnsignedInt(4, 4);
         assertEquals(69, unsignedInt);
     }
+
+    @DisplayName("HexStringObject - a two digit string starting FE is not a byte order marker")
+    @Test
+    public void decode_short_hex_string_starting_like_the_marker() {
+        // the marker test used to read four digits without checking there were four: <FE> matched
+        // the first two and then threw indexing the third.
+        assertEquals("\u00FE", new HexStringObject("FE").getLiteralString());
+        assertEquals("\u00FE", new HexStringObject("fe").getLiteralString());
+        assertEquals("\u00FE\u00F0", new HexStringObject("FEF").getLiteralString());
+    }
+
+    @DisplayName("HexStringObject - byte order marker is recognised in either case")
+    @Test
+    public void decode_lower_case_byte_order_marker() {
+        assertEquals("Hi", new HexStringObject("feff00480069").getLiteralString());
+        assertEquals("Hi", new HexStringObject("FeFf00480069").getLiteralString());
+    }
+
+    @DisplayName("HexStringObject - a marker on its own decodes to nothing")
+    @Test
+    public void decode_marker_only() {
+        assertEquals("", new HexStringObject("FEFF").getLiteralString());
+    }
+
+    @DisplayName("StringObject - getHexString is upper case for both implementations")
+    @Test
+    public void hex_string_case_is_consistent() {
+        String expected = "AB01";
+        assertEquals(expected, new HexStringObject("ab01").getHexString());
+        assertEquals(expected, new LiteralStringObject(new String(new char[]{0x00AB, 0x0001})).getHexString());
+        assertEquals(expected, HexStringObject.encodeHexString(new byte[]{(byte) 0xAB, 0x01}));
+    }
+
+    @DisplayName("LiteralStringObject - out of range getUnsignedInt yields 0, even when empty")
+    @Test
+    public void literal_unsigned_int_out_of_range() {
+        assertEquals(0, new LiteralStringObject("").getUnsignedInt(0, 2));
+        assertEquals(0, new LiteralStringObject("A").getUnsignedInt(0, 4));
+        assertEquals(0, new LiteralStringObject("A").getUnsignedInt(-1, 1));
+        assertEquals('A', new LiteralStringObject("A").getUnsignedInt(0, 1));
+    }
+
+    @DisplayName("StringObject - getLength measures the data each implementation holds")
+    @Test
+    public void length_of_both_implementations() {
+        assertEquals(4, new HexStringObject("4869").getLength());   // digits
+        assertEquals(2, new LiteralStringObject("Hi").getLength()); // characters
+    }
 }

@@ -20,6 +20,13 @@ import org.icepdf.core.util.Utils;
 
 public abstract class AbstractStringObject implements StringObject {
 
+    /**
+     * Hex digits, upper case.  PDF 32000-1 7.3.4.3 accepts either case on input, but a hexadecimal
+     * string is written in upper case, and {@link #getHexString()} answers in that form for both
+     * implementations.
+     */
+    private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
+
     // Reference is need for standard encryption
     protected Reference reference;
     // if isModified, string is always unencrypted, otherwise is the raw string data which can be
@@ -28,6 +35,44 @@ public abstract class AbstractStringObject implements StringObject {
 
     // modified string need to be encrypted when writing to file.
     protected boolean isModified;
+
+    /**
+     * The length of the underlying object's data.  Both implementations measure the data they
+     * actually hold: character count for a literal string, hexadecimal digit count for a hex string.
+     *
+     * @return length of the object's data.
+     */
+    public int getLength() {
+        return stringData.length();
+    }
+
+    /**
+     * Appends one byte to {@code out} as two hexadecimal digits.  The single place either
+     * implementation turns a byte into hex.
+     *
+     * @param out   buffer to append to
+     * @param value byte value; only the low eight bits are read
+     * @return {@code out}, for chaining
+     */
+    protected static StringBuilder appendHexByte(StringBuilder out, int value) {
+        out.append(HEX_DIGITS[(value & 0xF0) >>> 4]);
+        out.append(HEX_DIGITS[value & 0x0F]);
+        return out;
+    }
+
+    /**
+     * Encodes bytes as a hexadecimal string, two digits per byte.
+     *
+     * @param bytes bytes to encode
+     * @return hexadecimal digits, upper case
+     */
+    protected static StringBuilder toHex(byte[] bytes) {
+        StringBuilder out = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            appendHexByte(out, b);
+        }
+        return out;
+    }
 
     /**
      * Gets the decrypted stringData value of the data using the key provided by the
