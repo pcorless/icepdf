@@ -19,6 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HexStringObjectTest {
 
@@ -29,7 +30,9 @@ public class HexStringObjectTest {
                 "FEFF004500780061006D0070006C00650020004F00700065006E004F0066006600690063006500200031002E0031002E003500200044006F00630075006D0065006E0074");
         String literalString = hexStringObject.getLiteralString();
         assertEquals("Example OpenOffice 1.1.5 Document", literalString);
-        assertEquals(hexStringObject.getLength(), 138);
+        // 136 is the number of digits the string actually holds.  This asserted 138 because
+        // decoding used to append a stray "00" to the object it was reading.
+        assertEquals(136, hexStringObject.getLength());
     }
 
     @DisplayName("HexStringObject - decode hex string")
@@ -122,5 +125,30 @@ public class HexStringObjectTest {
     public void length_of_both_implementations() {
         assertEquals(4, new HexStringObject("4869").getLength());   // digits
         assertEquals(2, new LiteralStringObject("Hi").getLength()); // characters
+    }
+
+    @DisplayName("HexStringObject - decoding does not mutate the object it reads")
+    @Test
+    public void decode_is_side_effect_free() {
+        // 15 four digit codes after the marker: the old padding test keyed off an odd GROUP count
+        // rather than a leftover pair, so it appended "00" to well formed data - and did it again on
+        // every call, growing the object and eventually decoding a trailing NUL.
+        HexStringObject hex = new HexStringObject(
+                "FEFF004800650078002000700072006F00620065002000760061006C00750065");
+        String first = hex.getLiteralString();
+        assertEquals("Hex probe value", first);
+        assertEquals(64, hex.getLength());
+        assertEquals(first, hex.getLiteralString());
+        assertEquals(first, hex.getLiteralString());
+        assertEquals(64, hex.getLength(), "decoding must not grow the stored digits");
+    }
+
+    @DisplayName("HexStringObject - a string authored for writing is marked modified")
+    @Test
+    public void authored_string_is_modified() {
+        HexStringObject authored = new HexStringObject("Hi", new Reference(4, 0));
+        assertTrue(authored.isModified());
+        assertEquals("FEFF00480069", authored.getHexString());
+        assertEquals("Hi", authored.getLiteralString());
     }
 }

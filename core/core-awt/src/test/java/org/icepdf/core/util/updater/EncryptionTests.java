@@ -14,13 +14,14 @@
 package org.icepdf.core.util.updater;
 
 import org.icepdf.core.exceptions.PDFSecurityException;
-import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.*;
+import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class EncryptionTests {
     @DisplayName("encryption - document rewrite should still be encrypted")
@@ -46,5 +47,40 @@ public class EncryptionTests {
             // make sure we have no io errors.
             fail("should not be any exceptions");
         }
+    }
+
+    @DisplayName("encryption - a hex string authored on an encrypted document survives a rewrite")
+    @Test
+    public void testHexStringRoundTripsEncrypted() throws Exception {
+        // The corpus encrypted document holds no hexadecimal strings at all, so this path had no
+        // coverage: authoring one produced <EBEAE0> from a 62 digit string, because the writer put
+        // the DECODED text between the angle brackets and re-parsing kept only the characters that
+        // happened to be hexadecimal digits.
+        final Name probeKey = new Name("ICEpdfHexProbe");
+        final String plainText = "Hex probe value";
+
+        Document document = new Document();
+        document.setInputStream(
+                EncryptionTests.class.getResourceAsStream("/updater/DSCP73_om_en.pdf"), "DSCP73_om_en.pdf");
+        Library library = document.getCatalog().getLibrary();
+        assertNotNull(library.getSecurityManager(), "test document is expected to be encrypted");
+
+        PInfo info = document.getInfo();
+        info.getEntries().put(probeKey, new HexStringObject(plainText, info.getPObjectReference()));
+        library.getStateManager().addChange(new PObject(info, info.getPObjectReference()));
+
+        File out = new File("./src/test/out/EncryptionTest_testHexStringRoundTrip.pdf");
+        try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {
+            document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+        }
+        document.dispose();
+
+        Document rewritten = new Document();
+        rewritten.setFile(out.getAbsolutePath());
+        Object readBack = rewritten.getInfo().getEntries().get(probeKey);
+        assertInstanceOf(HexStringObject.class, readBack);
+        assertEquals(plainText, ((HexStringObject) readBack).getDecryptedLiteralString(
+                rewritten.getCatalog().getLibrary().getSecurityManager()));
+        rewritten.dispose();
     }
 }

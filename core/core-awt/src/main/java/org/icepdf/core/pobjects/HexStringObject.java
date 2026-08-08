@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.security.SecurityManager;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,6 +64,22 @@ public class HexStringObject extends AbstractStringObject {
     public HexStringObject(String string) {
         stringData = new StringBuilder(string.length());
         stringData.append(normalizeHex(new StringBuilder(string), 2).toString());
+    }
+
+    /**
+     * <p>Creates a new hexadecimal string object holding the given text, for strings created after
+     * the document was parsed - an annotation property value, say.  The counterpart of
+     * {@link LiteralStringObject#LiteralStringObject(String, Reference)}, and like it the string is
+     * marked modified so the writers know its contents are plain text that still needs encrypting.
+     * </p>
+     *
+     * @param string    the text to hold, unencrypted
+     * @param reference of parent PObject, needed to encrypt on write
+     */
+    public HexStringObject(String string, Reference reference) {
+        this.reference = reference;
+        this.isModified = true;
+        stringData = encodeHexString(string);
     }
 
     public static HexStringObject createHexString(String literalstring) {
@@ -261,6 +278,43 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
+     * Decrypts the bytes the digits encode and only then decodes them.
+     * <p>
+     * Order matters here in a way it does not for a literal string, which is why this overrides the
+     * inherited implementation.  A hexadecimal string's byte order marker belongs to the plain text,
+     * so decoding first - as decrypting {@link #getLiteralString()} does - reads the marker out of
+     * cipher text, where it is not.  A UTF-16 title in an encrypted document came back as its raw
+     * bytes, marker and interleaved nulls included, rather than as its text.
+     *
+     * @param securityManager security manager associated with parent document.
+     */
+    @Override
+    public String getDecryptedLiteralString(SecurityManager securityManager) {
+        if (isModified || securityManager == null || reference == null) {
+            // already plain text, or nothing to decrypt with
+            return getLiteralString();
+        }
+        byte[] decrypted = securityManager.decrypt(reference, securityManager.getDecryptionKey(), getRawBytes());
+        return hexToString(toHex(decrypted)).toString();
+    }
+
+    /**
+     * The digits to write for this string when the document is encrypted and the string is not:
+     * the bytes the digits encode, encrypted, back in hexadecimal.
+     * <p>
+     * Encrypting {@link #getHexString()} instead would encrypt the ASCII of the digits rather than
+     * the bytes they stand for.
+     *
+     * @param reference       parent object reference, part of the per object key
+     * @param securityManager security manager associated with parent document.
+     * @return hexadecimal digits of the encrypted bytes
+     */
+    public String getEncryptedHexString(Reference reference, SecurityManager securityManager) {
+        byte[] encrypted = securityManager.decrypt(reference, securityManager.getDecryptionKey(), getRawBytes());
+        return toHex(encrypted).toString();
+    }
+
+    /**
      * The bytes the hex digits encode, two digits per byte.  The constructor has already stripped
      * whitespace and padded an odd digit count with a trailing zero (PDF 32000-1 7.3.4.3), so the
      * digits always pair up.
@@ -341,37 +395,32 @@ public class HexStringObject extends AbstractStringObject {
      * @param hh StringBuffer containing data in hexadecimal form.
      * @return StringBuffer containing data in literal form.
      */
-    private StringBuilder hexToString(StringBuilder hh) {
+    private static StringBuilder hexToString(StringBuilder hh) {
 
         // make sure we have a valid hex value to convert to string.
         // can't decrypt an empty string.  A string shorter than the marker cannot carry one either,
         // and testing for it used to read past the end: <FE> matched the first two digits and then
         // threw indexing the third.
-        if (hh == null || hh.length() < BYTE_ORDER_MARKER.length()) {
-            return hh == null ? new StringBuilder() : getRawHexToString();
+        if (hh == null) {
+            return new StringBuilder();
         }
-
-        StringBuilder sb;
         // special case, test for not a 4 byte character code format
-        if (!isByteOrderMarked(hh)) {
-            return getRawHexToString();
+        if (hh.length() < BYTE_ORDER_MARKER.length() || !isByteOrderMarked(hh)) {
+            return rawHexToString(hh);
         }
         // otherwise, assume 4 byte character codes
-        else {
-            int length = hh.length();
-            // check for the need to add padding
-            if (((length - 4) / 4) % 2 != 0) {
-                hh.append("00");
-            }
-            sb = new StringBuilder(length / 4);
-            String subStr;
-            // make sure to skip the marker
-            for (int i = 4; i < length; i = i + 4) {
-                subStr = hh.substring(i, i + 4);
-                sb.append((char) Integer.parseInt(subStr, 16));
-            }
-            return sb;
+        int length = hh.length();
+        StringBuilder sb = new StringBuilder(length / 4);
+        // make sure to skip the marker
+        int i = BYTE_ORDER_MARKER.length();
+        for (; i + 4 <= length; i = i + 4) {
+            sb.append((char) Integer.parseInt(hh.substring(i, i + 4), 16));
         }
+        // a trailing pair too short to make a code unit is still a byte worth keeping
+        if (i + 2 <= length) {
+            sb.append((char) Integer.parseInt(hh.substring(i, i + 2), 16));
+        }
+        return sb;
     }
 
     /**
@@ -381,16 +430,19 @@ public class HexStringObject extends AbstractStringObject {
      * @return two byte hex string converted to plain string.
      */
     public StringBuilder getRawHexToString() {
+        return rawHexToString(stringData);
+    }
 
-        StringBuilder sb;
-
-        int length = stringData.length();
-        sb = new StringBuilder(length / 2);
-        String subStr;
-
-        for (int i = 0; i < length; i = i + 2) {
-            subStr = stringData.substring(i, i + 2);
-            sb.append((char) Integer.parseInt(subStr, 16));
+    /**
+     * One character per digit pair, no byte order marker interpretation.
+     */
+    private static StringBuilder rawHexToString(StringBuilder hex) {
+        int length = hex.length();
+        StringBuilder sb = new StringBuilder(length / 2);
+        // a trailing odd digit cannot form a byte; the constructor pads, but a buffer built
+        // elsewhere may not have
+        for (int i = 0; i + 1 < length; i = i + 2) {
+            sb.append((char) Integer.parseInt(hex.substring(i, i + 2), 16));
         }
         return sb;
     }
