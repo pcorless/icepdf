@@ -170,25 +170,51 @@ public class FontManager {
     /*
      * Last-resort substitutes by family class, tried in order.
      *
-     * The Lucida faces at the front are what the JDK used to install under ${java.home}/lib/fonts;
-     * JDK 9 dropped them, so on any modern runtime the whole core-font fallback found nothing and
-     * getInstance fell through to "first font in the list", which is alphabetical and therefore
-     * arbitrary - a Tahoma document was being drawn in Andale Mono, a monospace face.  The entries
-     * after them are the families that are actually present on current systems.
+     * The Lucida faces the original lists asked for are what the JDK used to install under
+     * ${java.home}/lib/fonts; JDK 9 dropped them, so on any modern runtime the whole core-font
+     * fallback found nothing and getInstance fell through to "first font in the list", which is
+     * alphabetical and therefore arbitrary - a Tahoma document was being drawn in Andale Mono, a
+     * monospace face.
+     *
+     * ORDER IS BY METRIC COMPATIBILITY, not by how complete the face is.  A substitute is laid out
+     * on the widths the PDF declares, so a face whose own advances are wider than those widths
+     * collides with itself; only the glyph shapes come from the substitute, never the spacing.
+     * Liberation and the msttcorefonts faces are width-for-width clones of Helvetica/Times/Courier
+     * (measured: ratio 1.000, worst glyph within 0%), which is why they lead.  DejaVu is a fine
+     * face with far better coverage, but it runs 6-30% wide against Helvetica and Times metrics,
+     * and it used to be first here: every non-embedded Type1 with a name the lists below do not
+     * recognise was drawn in a face too wide for its own layout.
      */
     private static final String[] SERIF_SUBSTITUTES = {
-            "lucidabright", "DejaVu Serif", "Liberation Serif", "Nimbus Roman",
-            "FreeSerif", "Times New Roman", "Thorndale AMT", "Serif",
+            "Liberation Serif", "Times New Roman", "Nimbus Roman", "Thorndale AMT",
+            "FreeSerif", "DejaVu Serif", "Serif",
     };
 
     private static final String[] SANS_SUBSTITUTES = {
-            "DejaVu Sans", "Liberation Sans", "Nimbus Sans", "FreeSans",
-            "Arial", "Helvetica", "Albany AMT", "SansSerif",
+            "Liberation Sans", "Arial", "Helvetica", "Nimbus Sans", "Albany AMT",
+            "FreeSans", "DejaVu Sans", "SansSerif",
     };
 
     private static final String[] MONO_SUBSTITUTES = {
-            "lucidasanstypewriter", "DejaVu Sans Mono", "Liberation Mono", "Nimbus Mono PS",
-            "FreeMono", "Courier New", "Cumberland AMT", "Monospaced",
+            "Liberation Mono", "Courier New", "Nimbus Mono PS", "Cumberland AMT",
+            "FreeMono", "DejaVu Sans Mono", "Monospaced",
+    };
+
+    /*
+     * Condensed counterparts, used when the base name declares a narrow width class.
+     *
+     * A condensed face laid out on a full-width substitute is the worst case of all - measured
+     * ratios of 1.3 to 1.9 against the document's own /Widths, i.e. glyphs half again as wide as
+     * the space they are given.  Each list falls back to its full-width equivalent, since a
+     * condensed face is far from universally installed and a normal-width match still beats
+     * nothing.
+     */
+    private static final String[] SERIF_CONDENSED_SUBSTITUTES = {
+            "Liberation Serif Narrow", "Times New Roman Condensed", "DejaVu Serif Condensed",
+    };
+
+    private static final String[] SANS_CONDENSED_SUBSTITUTES = {
+            "Liberation Sans Narrow", "Arial Narrow", "Nimbus Sans Narrow", "DejaVu Sans Condensed",
     };
 
     private static final String[] JAPANESE_FONT_NAMES = {
@@ -1246,6 +1272,10 @@ public class FontManager {
         // iterate a stable snapshot, not the live static list
         final List<Object[]> fontList = snapshotFontList();
         int decorations = guessFontStyle(fontName);
+        // the width class has to come off the RAW name: normalizeString truncates at the last dash,
+        // so "Futura-CondensedBold" normalizes to "futura" and "Frutiger-Cn" to "frutiger" - the
+        // very part that says the face is narrow is the part that gets thrown away.
+        boolean isCondensed = isCondensedName(fontName);
         fontName = FontUtil.normalizeString(fontName);
         FontFile font;
 
@@ -1265,7 +1295,7 @@ public class FontManager {
                 fontName.contains("georgia") ||
                 fontName.contains("bitstreamcyberbit")) {
             // important, add style information
-            font = findFirstAvailable(fontList, SERIF_SUBSTITUTES, decorations, flags);
+            font = findFirstAvailable(fontList, serifCandidates(isCondensed), decorations, flags);
         }
         // see if we working with a monospaced font, we sub "Sans Serif",
         // java equivalent is "Lucida Sans"
@@ -1282,7 +1312,7 @@ public class FontManager {
                 fontName.contains("frutiger") ||
                 fontName.contains("grotesk")) {
             // important, add style information
-            font = findFirstAvailable(fontList, SANS_SUBSTITUTES, decorations, flags);
+            font = findFirstAvailable(fontList, sansCandidates(isCondensed), decorations, flags);
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
@@ -1297,16 +1327,50 @@ public class FontManager {
         // failure go with the serif as it is the most common font family
         else {
             if (isSerif) {
-                font = findFirstAvailable(fontList, SERIF_SUBSTITUTES, decorations, flags);
+                font = findFirstAvailable(fontList, serifCandidates(isCondensed), decorations, flags);
             } else if (isFixedPitch) {
                 font = findFirstAvailable(fontList, MONO_SUBSTITUTES, decorations, flags);
             } else {
                 // sans serif
-                font = findFirstAvailable(fontList, SANS_SUBSTITUTES, decorations, flags);
+                font = findFirstAvailable(fontList, sansCandidates(isCondensed), decorations, flags);
             }
         }
 
         return font;
+    }
+
+    /**
+     * True when the base name declares a narrow width class.  Must be given the name as the
+     * document wrote it, before {@link FontUtil#normalizeString} strips everything after the last
+     * dash.
+     * <p>
+     * "Cn", "Cnd" and "Scn" are Adobe's abbreviations (Frutiger-Cn, Introspect-BldCnd,
+     * AdobeCorpID-MyriadRgScn).  They are matched only as a suffix of the whole name: two letters
+     * are common enough inside real family names that a substring test would misfire.
+     */
+    private static boolean isCondensedName(String fontName) {
+        if (fontName == null) return false;
+        String name = FontUtil.removeBaseFontSubset(fontName).toLowerCase();
+        return name.contains("cond")            // condensed, -Cond, CondensedBold
+                || name.contains("compressed")
+                || name.contains("narrow")
+                || name.endsWith("cn") || name.endsWith("scn") || name.endsWith("cnd");
+    }
+
+    /** Substitute list for a sans face, condensed candidates first when the name asks for them. */
+    private static String[] sansCandidates(boolean isCondensed) {
+        return isCondensed ? concat(SANS_CONDENSED_SUBSTITUTES, SANS_SUBSTITUTES) : SANS_SUBSTITUTES;
+    }
+
+    /** Substitute list for a serif face, condensed candidates first when the name asks for them. */
+    private static String[] serifCandidates(boolean isCondensed) {
+        return isCondensed ? concat(SERIF_CONDENSED_SUBSTITUTES, SERIF_SUBSTITUTES) : SERIF_SUBSTITUTES;
+    }
+
+    private static String[] concat(String[] first, String[] second) {
+        String[] all = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, all, first.length, second.length);
+        return all;
     }
 
     /**
