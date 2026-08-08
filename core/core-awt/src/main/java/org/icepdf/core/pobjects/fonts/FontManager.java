@@ -217,6 +217,31 @@ public class FontManager {
             "Liberation Sans Narrow", "Arial Narrow", "Nimbus Sans Narrow", "DejaVu Sans Condensed",
     };
 
+    /*
+     * Substitutes for the two symbolic core fonts.  Ranked by GLYPH COVERAGE, the opposite of the
+     * text lists above: a symbolic font that falls back to a text face draws nothing but .notdef
+     * boxes, which is how a bullet or a copyright sign goes missing.
+     *
+     * The URW clones lead because they are the real thing - metric clones that keep Adobe's own
+     * glyph NAMES (a1-a191 for the dingbats, "alpha"/"copyrightserif" for Symbol), so they need no
+     * name-to-Unicode step at all.  They ship as the urw-base35/gsfonts package on Linux and are
+     * commonly present wherever Ghostscript is.  Both the modern names (Standard Symbols PS,
+     * D050000L) and the older ones (StandardSymL, Dingbats) are listed since distributions renamed
+     * them.  After those come Unicode-cmap faces, which work only via the glyph-list lookup in
+     * ZFontTrueType.codeToGID.  DejaVu Sans is last and is the reliable one: measured here, it
+     * covers 100% of the sampled dingbat, Symbol and everyday (bullet, copyright) code points,
+     * where Liberation and the msttcorefonts faces cover none of the dingbats.
+     */
+    private static final String[] DINGBAT_SUBSTITUTES = {
+            "D050000L", "Dingbats", "Zapf Dingbats", "ZapfDingbats", "URW Dingbats L",
+            "OpenSymbol", "Noto Sans Symbols2", "Symbola", "DejaVu Sans",
+    };
+
+    private static final String[] SYMBOL_SUBSTITUTES = {
+            "Standard Symbols PS", "StandardSymL", "Standard Symbols L", "Symbol", "URW Symbol",
+            "OpenSymbol", "Noto Sans Symbols", "Symbola", "DejaVu Sans",
+    };
+
     private static final String[] JAPANESE_FONT_NAMES = {
             // windows
             "Arial Unicode MS", "PMingLiU", "MingLiU",
@@ -1285,6 +1310,25 @@ public class FontManager {
         boolean isSerif = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SERIF) != 0;
 //        boolean isSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SYMBOLIC) != 0;
 //        boolean isNotSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_NON_SYMBOLIC) != 0;
+        // A symbolic font has to be answered with a symbolic face; a text face has none of the
+        // glyphs and every code draws .notdef.  Tested before the text families below because
+        // "Symbol" would otherwise never be reached at all.
+        //
+        // Deliberately keyed on the NAME, never on the descriptor's symbolic flag: that flag is set
+        // on any font with a non-standard encoding, which includes a great many perfectly ordinary
+        // embedded text fonts (a subset Arial in the corpus carries Flags=6), and routing those to a
+        // dingbat face would be far worse than the bug being fixed.
+        if (isDingbatName(fontName)) {
+            font = findFirstAvailable(fontList, DINGBAT_SUBSTITUTES, decorations, flags);
+            if (font != null) {
+                return font;
+            }
+        } else if (isSymbolName(fontName)) {
+            font = findFirstAvailable(fontList, SYMBOL_SUBSTITUTES, decorations, flags);
+            if (font != null) {
+                return font;
+            }
+        }
         // If no name are found then match against the core java font names
         // "Serif", java equivalent is  "Lucida Bright"
         if (fontName.contains("timesnewroman") ||
@@ -1355,6 +1399,37 @@ public class FontManager {
                 || name.contains("compressed")
                 || name.contains("narrow")
                 || name.endsWith("cn") || name.endsWith("scn") || name.endsWith("cnd");
+    }
+
+    /**
+     * True for the dingbat families: ZapfDingbats and the Microsoft equivalents, whose codes map to
+     * pictographs rather than letters.  Takes an already normalized (lower case, unspaced) name.
+     * <p>
+     * NOTE, unfinished business: Wingdings and Webdings are lumped in with ZapfDingbats, but they do
+     * not share its code layout.  The geometric bullets happen to agree - the codes for the filled
+     * circle and square land on the same shapes - while the checkmarks and arrows do not, so those
+     * documents get a plausible wrong glyph where they used to get an empty box.  That trade is
+     * deliberate and matches what other viewers do, but it is a guess, not a mapping.  Doing it
+     * properly means a real Wingdings-to-Unicode table (the glyphs are in Unicode 7.0 and later, at
+     * U+1F5xx among others) and a substitute that actually carries them; revisit if a document turns
+     * up where the wrong glyph is worse than nothing.
+     */
+    private static boolean isDingbatName(String normalizedName) {
+        return normalizedName.contains("dingbat")           // ZapfDingbats, Dingbats, URW Dingbats
+                || normalizedName.contains("wingding")      // Wingdings, Wingdings2, Wingdings3
+                || normalizedName.contains("webding")
+                || normalizedName.startsWith("d050000l");   // the URW ZapfDingbats clone by its own name
+    }
+
+    /**
+     * True for the Symbol family: Greek and mathematical glyphs.  "Symbol" has to be matched
+     * tightly - it turns up inside plenty of unrelated names (NotoSansSymbols is itself a
+     * substitute, not a request for one) - so this looks for the family, not the substring.
+     */
+    private static boolean isSymbolName(String normalizedName) {
+        return normalizedName.equals("symbol")              // also "Symbol,Bold": guessFamily cuts at the comma
+                || normalizedName.startsWith("symbolmt")
+                || normalizedName.startsWith("standardsym"); // StandardSymL, Standard Symbols PS
     }
 
     /** Substitute list for a sans face, condensed candidates first when the name asks for them. */
