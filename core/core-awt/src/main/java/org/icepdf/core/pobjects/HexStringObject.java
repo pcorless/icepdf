@@ -186,8 +186,7 @@ public class HexStringObject extends AbstractStringObject {
             // already plain text, or nothing to decrypt with
             return getLiteralString();
         }
-        byte[] decrypted = securityManager.decrypt(reference, securityManager.getDecryptionKey(), getRawBytes());
-        return hexToString(toHex(decrypted)).toString();
+        return hexToString(toHex(getDecryptedRawBytes(securityManager))).toString();
     }
 
     /**

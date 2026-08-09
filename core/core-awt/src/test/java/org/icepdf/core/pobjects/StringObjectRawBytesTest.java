@@ -91,4 +91,27 @@ public class StringObjectRawBytesTest {
         }
         return bytes;
     }
+
+    @DisplayName("both - decrypted raw bytes are the raw bytes when there is nothing to decrypt")
+    @Test
+    public void decryptedRawBytesWithoutSecurityManager() {
+        HexStringObject hex = new HexStringObject("04B9086E");
+        assertArrayEquals(hex.getRawBytes(), hex.getDecryptedRawBytes(null));
+
+        LiteralStringObject literal = new LiteralStringObject(new String(new char[]{0x04, 0xB9}));
+        assertArrayEquals(literal.getRawBytes(), literal.getDecryptedRawBytes(null));
+    }
+
+    @DisplayName("hex string - binary data beginning FE FF keeps its bytes, unlike the text accessor")
+    @Test
+    public void decryptedRawBytesKeepsByteOrderMarkerBytes() {
+        // The reason this primitive exists.  An indexed colour lookup table whose first two bytes
+        // happen to be FE FF is binary, not UTF-16: reading it as text swallows those bytes as a
+        // marker and shifts every colour in the table.
+        HexStringObject lookup = new HexStringObject("FEFF0A0B0C");
+        assertArrayEquals(new byte[]{(byte) 0xFE, (byte) 0xFF, 0x0A, 0x0B, 0x0C},
+                lookup.getDecryptedRawBytes(null));
+        // the text accessor, correctly for text, drops the marker
+        assertEquals(2, lookup.getLiteralString().length());
+    }
 }

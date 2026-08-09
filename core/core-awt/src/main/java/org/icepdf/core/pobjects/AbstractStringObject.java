@@ -89,6 +89,27 @@ public abstract class AbstractStringObject implements StringObject {
     }
 
     /**
+     * The string's bytes, decrypted, with no character interpretation of any kind.
+     * <p>
+     * This is the primitive to use for a string that carries binary data rather than text - an
+     * indexed colour space's lookup table, say.  {@link #getDecryptedLiteralString} is the wrong
+     * tool there: it hands back text, and for a hexadecimal string that means byte order marker
+     * handling that would eat the first two bytes of a lookup table that happened to begin FE FF.
+     *
+     * @param securityManager security manager associated with parent document, null if the document
+     *                        is not encrypted
+     * @return the decrypted bytes; never null, may be empty
+     */
+    public byte[] getDecryptedRawBytes(SecurityManager securityManager) {
+        byte[] raw = getRawBytes();
+        if (isModified || securityManager == null || reference == null) {
+            // already plain, or nothing to decrypt with
+            return raw;
+        }
+        return securityManager.decrypt(reference, securityManager.getDecryptionKey(), raw);
+    }
+
+    /**
      * Decrypts or encrypts a string.
      *
      * @param string          string to encrypt or decrypt

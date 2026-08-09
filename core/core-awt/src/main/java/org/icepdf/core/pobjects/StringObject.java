@@ -64,6 +64,16 @@ public interface StringObject {
     byte[] getRawBytes();
 
     /**
+     * The string's bytes, decrypted, with no character interpretation.  The primitive for a string
+     * holding binary data rather than text; {@link #getDecryptedLiteralString} is the text
+     * counterpart.
+     *
+     * @param securityManager security manager associated with parent document.
+     * @return the decrypted bytes; never null, may be empty.
+     */
+    byte[] getDecryptedRawBytes(SecurityManager securityManager);
+
+    /**
      * The length of the underlying objects data.
      *
      * @return length of object's data.
