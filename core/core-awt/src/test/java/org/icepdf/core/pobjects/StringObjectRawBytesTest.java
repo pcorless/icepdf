@@ -67,4 +67,28 @@ public class StringObjectRawBytesTest {
         assertArrayEquals(new byte[]{0x04, (byte) 0xB9, 0x00, 0x6E},
                 new LiteralStringObject(data).getRawBytes());
     }
+
+    @DisplayName("both - raw bytes agree with parsing the hex digits in pairs")
+    @Test
+    public void rawBytesMatchHexDigitPairs() {
+        // Indexed's colour lookup table used to be built by walking getHexStringBuffer() two digits
+        // at a time.  That accessor is gone and the caller now asks for getRawBytes(); this pins the
+        // two as equivalent for both implementations, since no corpus document exercises the branch
+        // (an indexed lookup table held as an indirect string, rather than a stream or a direct
+        // string, did not occur once in ~460 documents).
+        assertArrayEquals(digitPairs(new HexStringObject("04B9086E08CC").getHexString()),
+                new HexStringObject("04B9086E08CC").getRawBytes());
+
+        LiteralStringObject literal = new LiteralStringObject(new String(new char[]{0x04, 0xB9, 0x00, 0x6E}));
+        assertArrayEquals(digitPairs(literal.getHexString()), literal.getRawBytes());
+    }
+
+    /** The old hand-rolled conversion, kept here as the reference implementation. */
+    private static byte[] digitPairs(String hexDigits) {
+        byte[] bytes = new byte[hexDigits.length() / 2];
+        for (int i = 0, j = 0; i < bytes.length; i++, j += 2) {
+            bytes[i] = (byte) Integer.parseInt(hexDigits.substring(j, j + 2), 16);
+        }
+        return bytes;
+    }
 }

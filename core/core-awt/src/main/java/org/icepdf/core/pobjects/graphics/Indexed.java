@@ -75,14 +75,11 @@ public class Indexed extends PColorSpace {
                 int length = Math.min(colors.length, colorStream.length);
                 System.arraycopy(colorStream, 0, colors, 0, length);
             } else if (tmp instanceof StringObject) {
-                // treating as raw unencrypted string
-                StringBuilder stringData = ((StringObject) tmp).getHexStringBuffer();
-                int colorStreamLength = stringData.length();
-                byte[] colorStream = new byte[colorStreamLength / 2];
+                // treating as raw unencrypted string.  getRawBytes is exactly the hex digit pairs
+                // this used to decode by hand, and it answers the same bytes for a literal string
+                // without the round trip through hexadecimal that took.
+                byte[] colorStream = ((StringObject) tmp).getRawBytes();
                 int length = Math.min(colors.length, colorStream.length);
-                for (int i = 0, j = 0, max = colorStreamLength / 2; i < max; i++, j += 2) {
-                    colorStream[i] = (byte) Integer.parseInt(stringData.substring(j, j + 2), 16);
-                }
                 System.arraycopy(colorStream, 0, colors, 0, length);
             }
         }

@@ -40,13 +40,6 @@ public interface StringObject {
     String toString();
 
     /**
-     * <p>Gets a literal StringBuffer representation of this object's data.</p>
-     *
-     * @return a StringBuffer representing the object's data.
-     */
-    StringBuilder getLiteralStringBuffer();
-
-    /**
      * <p>Gets a literal String representation of this object's data.
      *
      * @return a String representation of the object's data.
@@ -54,28 +47,11 @@ public interface StringObject {
     String getLiteralString();
 
     /**
-     * <p>Gets a hexadecimal StringBuffer representation of this objects data.</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    StringBuilder getHexStringBuffer();
-
-    /**
      * <p>Gets a hexadecimal String representation of this object's data. </p>
      *
      * @return a String representation of the object's data.
      */
     String getHexString();
-
-    /**
-     * Gets the unsigned integer value of this object's data specified by
-     * the start index and offset parameters.
-     *
-     * @param start  the beginning index, inclusive.
-     * @param offset the number of string characters to read.
-     * @return integer value of the specified range of characters.
-     */
-    int getUnsignedInt(int start, int offset);
 
     /**
      * The string's raw bytes, as they appeared in the file: no character-code interpretation, and

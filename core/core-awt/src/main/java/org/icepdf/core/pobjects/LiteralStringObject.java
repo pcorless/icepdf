@@ -80,39 +80,6 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * Gets the integer value of the hexidecimal data specified by the start and
-     * offset parameters.
-     *
-     * @param start  the begining index, inclusive
-     * @param offset the length of bytes to process
-     * @return unsigned integer value of the specifed data range
-     */
-    public int getUnsignedInt(int start, int offset) {
-        // out of range yields 0, as HexStringObject does for the same condition.  This used to
-        // answer stringData.charAt(0), which is an arbitrary value for a range that was not asked
-        // for, and threw outright on an empty string - and empty literal strings are real, the file
-        // ID in Library is built from two of them.
-        if (start < 0 || stringData.length() < (start + offset)) {
-            return 0;
-        }
-
-        if (offset == 1) {
-            return stringData.charAt(start);
-        }
-        if (offset == 2) {
-            return ((stringData.charAt(start) & 0xFF) << 8) |
-                    ((stringData.charAt(start + 1)) & 0xFF);
-        } else if (offset == 4) {
-            return ((stringData.charAt(start) & 0xFF) << 24) |
-                    ((stringData.charAt(start + 1) & 0xFF) << 16) |
-                    ((stringData.charAt(start + 2) & 0xFF) << 8) |
-                    ((stringData.charAt(start + 3)) & 0xFF);
-        } else {
-            return 0;
-        }
-    }
-
-    /**
      * <p>Returns a string representation of the object.</p>
      *
      * @return a string representing the object.
@@ -129,27 +96,6 @@ public class LiteralStringObject extends AbstractStringObject {
      */
     public String getHexString() {
         return stringToHex(stringData).toString();
-    }
-
-    /**
-     * <p>Gets a hexadecimal StringBuffer representation of this object's data,
-     * which is converted to hexadecimal form.</p>
-     *
-     * @return a StringBufffer representation of the object's data in hexadecimal
-     *         notation.
-     */
-    public StringBuilder getHexStringBuffer() {
-        return stringToHex(stringData);
-    }
-
-    /**
-     * <p>Gets a literal StringBuffer representation of this object's data
-     * which is in fact, the raw data contained in this object.</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    public StringBuilder getLiteralStringBuffer() {
-        return stringData;
     }
 
     /**

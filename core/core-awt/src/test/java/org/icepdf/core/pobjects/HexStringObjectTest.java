@@ -70,15 +70,6 @@ public class HexStringObjectTest {
                 hexStringObject.getHexString());
     }
 
-    @DisplayName("HexStringObject - get unsigned int from hex string")
-    @Test
-    public void get_unsigned_int_from_hex_string() {
-        HexStringObject hexStringObject = new HexStringObject(
-                "FEFF004500780061006D0070006C00650020004F00700065006E004F0066006600690063006500200031002E0031002E003500200044006F00630075006D0065006E0074");
-        int unsignedInt = hexStringObject.getUnsignedInt(4, 4);
-        assertEquals(69, unsignedInt);
-    }
-
     @DisplayName("HexStringObject - a two digit string starting FE is not a byte order marker")
     @Test
     public void decode_short_hex_string_starting_like_the_marker() {
@@ -109,15 +100,6 @@ public class HexStringObjectTest {
         assertEquals(expected, new HexStringObject("ab01").getHexString());
         assertEquals(expected, new LiteralStringObject(new String(new char[]{0x00AB, 0x0001})).getHexString());
         assertEquals(expected, HexStringObject.encodeHexString(new byte[]{(byte) 0xAB, 0x01}));
-    }
-
-    @DisplayName("LiteralStringObject - out of range getUnsignedInt yields 0, even when empty")
-    @Test
-    public void literal_unsigned_int_out_of_range() {
-        assertEquals(0, new LiteralStringObject("").getUnsignedInt(0, 2));
-        assertEquals(0, new LiteralStringObject("A").getUnsignedInt(0, 4));
-        assertEquals(0, new LiteralStringObject("A").getUnsignedInt(-1, 1));
-        assertEquals('A', new LiteralStringObject("A").getUnsignedInt(0, 1));
     }
 
     @DisplayName("StringObject - getLength measures the data each implementation holds")

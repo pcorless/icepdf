@@ -117,14 +117,15 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * Gets the integer value of the hexidecimal data specified by the start and
-     * offset parameters.
+     * Reads a run of hexadecimal digits as an unsigned integer.  Private because the only caller
+     * left is {@link #getRawBytes()}; the public form measured its offset in digits while the
+     * literal string's identically named method measured bytes, and nothing used either.
      *
-     * @param start  the begining index, inclusive
-     * @param offset the length of bytes to process
-     * @return unsigned integer value of the specifed data range
+     * @param start  the beginning index, inclusive
+     * @param offset the number of digits to process
+     * @return unsigned integer value of the specified data range, 0 if out of range or unparsable
      */
-    public int getUnsignedInt(int start, int offset) {
+    private int digitsToInt(int start, int offset) {
         if (start < 0 || stringData.length() < (start + offset))
             return 0;
         int unsignedInt = 0;
@@ -156,26 +157,6 @@ public class HexStringObject extends AbstractStringObject {
      */
     public String getHexString() {
         return stringData.toString().toUpperCase();
-    }
-
-    /**
-     * <p>Gets a hexadecimal StringBuffer representation of this object's data,
-     * which is in fact the raw data contained in this object.</p>
-     *
-     * @return a StringBuffer representation of the objects data in hexadecimal.
-     */
-    public StringBuilder getHexStringBuffer() {
-        return stringData;
-    }
-
-    /**
-     * <p>Gets a literal StringBuffer representation of this object's data.
-     * The hexadecimal data is converted to an equivalent string representation</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    public StringBuilder getLiteralStringBuffer() {
-        return hexToString(stringData);
     }
 
     /**
@@ -234,7 +215,7 @@ public class HexStringObject extends AbstractStringObject {
         int digits = stringData.length();
         byte[] bytes = new byte[digits / 2];
         for (int i = 0; i < bytes.length; i++) {
-            bytes[i] = (byte) getUnsignedInt(i * 2, 2);
+            bytes[i] = (byte) digitsToInt(i * 2, 2);
         }
         return bytes;
     }
