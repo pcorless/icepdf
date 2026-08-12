@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Utils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -166,7 +167,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return a String representation of the object's data.
      */
     public String getLiteralString() {
-        return hexToString(stringData).toString();
+        return decodeBytes(getRawBytes());
     }
 
     /**
@@ -182,11 +183,7 @@ public class HexStringObject extends AbstractStringObject {
      */
     @Override
     public String getDecryptedLiteralString(SecurityManager securityManager) {
-        if (isModified || securityManager == null || reference == null) {
-            // already plain text, or nothing to decrypt with
-            return getLiteralString();
-        }
-        return hexToString(toHex(getDecryptedRawBytes(securityManager))).toString();
+        return decodeBytes(getDecryptedRawBytes(securityManager));
     }
 
     /**
@@ -253,20 +250,6 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * True when the digits open with the UTF-16BE byte order marker, meaning the string is a
-     * sequence of 4 digit (2 byte) character codes rather than 2 digit ones.  Caller has already
-     * checked that there are at least {@link #BYTE_ORDER_MARKER} digits to read.
-     */
-    private static boolean isByteOrderMarked(StringBuilder hh) {
-        for (int i = 0; i < BYTE_ORDER_MARKER.length(); i++) {
-            if (Character.toUpperCase(hh.charAt(i)) != BYTE_ORDER_MARKER.charAt(i)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
      * Utility method to test if the char is a none hexadecimal char.
      *
      * @param c charact to text
@@ -280,37 +263,17 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * Utility method for converting a hexadecimal string to a literal string.
-     *
-     * @param hh StringBuffer containing data in hexadecimal form.
-     * @return StringBuffer containing data in literal form.
+     * Turns the bytes the digits encode into text: UTF-16BE when they open with the byte order
+     * marker, one character per byte otherwise.
+     * <p>
+     * Note the second case is a byte string, NOT PDFDocEncoding - unlike a PDF text string proper,
+     * which {@link org.icepdf.core.util.Utils#decodeTextString} handles.  This accessor has always
+     * answered raw bytes for unmarked data and callers depend on it; only the marker rule is shared.
      */
-    private static StringBuilder hexToString(StringBuilder hh) {
-
-        // make sure we have a valid hex value to convert to string.
-        // can't decrypt an empty string.  A string shorter than the marker cannot carry one either,
-        // and testing for it used to read past the end: <FE> matched the first two digits and then
-        // threw indexing the third.
-        if (hh == null) {
-            return new StringBuilder();
-        }
-        // special case, test for not a 4 byte character code format
-        if (hh.length() < BYTE_ORDER_MARKER.length() || !isByteOrderMarked(hh)) {
-            return rawHexToString(hh);
-        }
-        // otherwise, assume 4 byte character codes
-        int length = hh.length();
-        StringBuilder sb = new StringBuilder(length / 4);
-        // make sure to skip the marker
-        int i = BYTE_ORDER_MARKER.length();
-        for (; i + 4 <= length; i = i + 4) {
-            sb.append((char) Integer.parseInt(hh.substring(i, i + 4), 16));
-        }
-        // a trailing pair too short to make a code unit is still a byte worth keeping
-        if (i + 2 <= length) {
-            sb.append((char) Integer.parseInt(hh.substring(i, i + 2), 16));
-        }
-        return sb;
+    private static String decodeBytes(byte[] bytes) {
+        return Utils.isUtf16Be(bytes)
+                ? Utils.decodeUtf16Be(bytes)
+                : Utils.convertByteArrayToByteString(bytes);
     }
 
     /**
@@ -320,21 +283,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return two byte hex string converted to plain string.
      */
     public StringBuilder getRawHexToString() {
-        return rawHexToString(stringData);
-    }
-
-    /**
-     * One character per digit pair, no byte order marker interpretation.
-     */
-    private static StringBuilder rawHexToString(StringBuilder hex) {
-        int length = hex.length();
-        StringBuilder sb = new StringBuilder(length / 2);
-        // a trailing odd digit cannot form a byte; the constructor pads, but a buffer built
-        // elsewhere may not have
-        for (int i = 0; i + 1 < length; i = i + 2) {
-            sb.append((char) Integer.parseInt(hex.substring(i, i + 2), 16));
-        }
-        return sb;
+        return new StringBuilder(Utils.convertByteArrayToByteString(getRawBytes()));
     }
 
 }
