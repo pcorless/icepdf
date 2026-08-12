@@ -37,12 +37,6 @@ public class Outlines extends Dictionary {
     public static final Name D_KEY = new Name("D");
     public static final Name COUNT_KEY = new Name("Count");
 
-    // number of child outline items
-    private Integer count;
-
-    // needed for future dispose implementation.
-    //private OutlineItem rootOutlineItem;
-
     /**
      * Creates a new instance of Outlines.
      *
@@ -51,20 +45,26 @@ public class Outlines extends Dictionary {
      */
     public Outlines(Library l, DictionaryEntries h) {
         super(l, h);
-        if (entries != null) {
-            count = library.getInt(entries, COUNT_KEY);
-        }
     }
 
     /**
      * Gets the root OutlineItem.  The root outline item can be traversed to build
      * a visible outline of the hierarchy.
+     * <p>
+     * Whether a document has an outline at all is decided by {@link Catalog#getOutlines()}, which
+     * answers null unless the catalog carries an /Outlines reference.  An outline that exists but
+     * has nothing in it is reported by {@link OutlineItem#isEmpty()}, not by a null here.
      *
-     * @return root outline item.
+     * @return root outline item, never null.
      */
     public OutlineItem getRootOutlineItem() {
-        if (count == null)
-            return null;
+        // This used to read /Count into an Integer field and return null when that was null, which
+        // reads as "no /Count, no outline" but could never mean it, twice over: Library.getInt
+        // answers a primitive 0 for a missing key, and Dictionary substitutes an empty
+        // DictionaryEntries for a null one, so neither the count nor the entries were ever null.
+        // The guard was unreachable.  Worth knowing it never fired, because /Count really is
+        // optional - three documents in a 648 document corpus sample carry /First without it - so
+        // had it ever meant what it read as, those outlines would have gone missing.
         OutlineItem outlineItem = new OutlineItem(library, entries);
         outlineItem.setPObjectReference(getPObjectReference());
         return outlineItem;
