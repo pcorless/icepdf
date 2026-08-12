@@ -34,6 +34,13 @@ public interface StringObject {
 
     /**
      * <p>Returns a string representation of the object.</p>
+     * <p>
+     * CAUTION, this is not the same thing in both implementations, and it is not what you want for
+     * writing.  {@link LiteralStringObject} returns its stored data; {@link HexStringObject} returns
+     * its data <em>decoded</em>, which is not what the file held.  Writing that back out between
+     * angle brackets is how a 62 digit string once became {@code <EBEAE0>}: re-parsing kept only
+     * the characters that happened to be hexadecimal digits.  For writing use
+     * {@link #getHexString()}; for bytes use {@link #getRawBytes()}.
      *
      * @return a string representing the object.
      */
@@ -41,6 +48,16 @@ public interface StringObject {
 
     /**
      * <p>Gets a literal String representation of this object's data.
+     * <p>
+     * The two implementations differ, deliberately.  For a literal string this is the stored data,
+     * one character per byte.  For a hexadecimal string it is the data <em>decoded</em>: digit pairs
+     * become characters, and a leading UTF-16BE byte order marker is consumed and honoured.
+     * <p>
+     * So this is the accessor for TEXT.  For a string carrying binary - a signature, a colour lookup
+     * table, an /O or /U entry - use {@link #getRawBytes()}, or {@link #getDecryptedRawBytes} when
+     * the document is encrypted.  Reaching for bytes through here works only as long as the payload
+     * never begins FE FF, at which point the marker handling silently eats two bytes and shifts
+     * everything after them.
      *
      * @return a String representation of the object's data.
      */

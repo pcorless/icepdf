@@ -49,8 +49,11 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
 
         // get the signature bytes.
         HexStringObject hexStringObject = signatureDictionary.getContents();
-        // make sure we don't lose any bytes converting the string in the raw.
-        byte[] cmsData = Utils.convertByteCharSequenceToByteArray(hexStringObject.getLiteralString());
+        // the bytes as the file held them.  This went through getLiteralString, which for a
+        // hexadecimal string is the TEXT accessor: it applies byte order marker handling, so DER
+        // that happened to open FE FF would arrive two bytes short and shifted.  SignedData opens
+        // 0x30 so it never bit, but the signature has no business going through a text path.
+        byte[] cmsData = hexStringObject.getRawBytes();
 
         // Signed-data content type -- start of parsing
         ASN1Sequence signedData = captureSignedData(cmsData);
