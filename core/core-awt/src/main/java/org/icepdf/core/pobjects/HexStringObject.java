@@ -201,8 +201,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return hexadecimal digits of the encrypted bytes
      */
     public String getEncryptedHexString(Reference reference, SecurityManager securityManager) {
-        byte[] encrypted = securityManager.decrypt(reference, securityManager.getDecryptionKey(), getRawBytes());
-        return toHex(encrypted).toString();
+        return toHex(getEncryptedRawBytes(reference, securityManager)).toString();
     }
 
     /**

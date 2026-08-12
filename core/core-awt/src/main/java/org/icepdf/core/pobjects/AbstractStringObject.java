@@ -79,13 +79,10 @@ public abstract class AbstractStringObject implements StringObject {
      * security manager.
      *
      * @param securityManager security manager associated with parent document.
+     * @return the decrypted text.
      */
     public String getDecryptedLiteralString(SecurityManager securityManager) {
-        if (!isModified) {
-            return encryption(getLiteralString(), reference, securityManager);
-        } else {
-            return getLiteralString();
-        }
+        return Utils.convertByteArrayToByteString(getDecryptedRawBytes(securityManager));
     }
 
     /**
@@ -101,37 +98,48 @@ public abstract class AbstractStringObject implements StringObject {
      * @return the decrypted bytes; never null, may be empty
      */
     public byte[] getDecryptedRawBytes(SecurityManager securityManager) {
-        byte[] raw = getRawBytes();
-        if (isModified || securityManager == null || reference == null) {
-            // already plain, or nothing to decrypt with
-            return raw;
+        if (isModified) {
+            // authored since the document was opened, so already plain
+            return getRawBytes();
         }
-        return securityManager.decrypt(reference, securityManager.getDecryptionKey(), raw);
+        return crypt(getRawBytes(), reference, securityManager);
     }
 
     /**
-     * Decrypts or encrypts a string.
+     * The string's bytes ready to be written to an encrypted document: plain text in, cipher text
+     * out.  The counterpart of {@link #getDecryptedRawBytes}, and the only thing a writer needs.
+     * <p>
+     * It takes the reference rather than using the field because the two can differ, and at write
+     * time the caller's is the authoritative one: objects can be renumbered on a full update, and
+     * the per object key is derived from the number the object is being written under.
      *
-     * @param string          string to encrypt or decrypt
-     * @param securityManager security manager for document.
-     * @return encrypted or decrypted string, depends on value of decrypt param.
+     * @param writeReference  the reference the object is being written under
+     * @param securityManager security manager associated with parent document
+     * @return the encrypted bytes; never null, may be empty
      */
-    public String encryption(String string, Reference reference, SecurityManager securityManager) {
-        // get the security manager instance
-        if (securityManager != null && reference != null) {
-            // get the key
-            byte[] key = securityManager.getDecryptionKey();
+    public byte[] getEncryptedRawBytes(Reference writeReference, SecurityManager securityManager) {
+        return crypt(getRawBytes(), writeReference, securityManager);
+    }
 
-            // convert string to bytes.
-            byte[] textBytes = Utils.convertByteCharSequenceToByteArray(string);
-
-            // Decrypt/encrypt String
-            textBytes = securityManager.decrypt(reference, key, textBytes);
-
-            // convert back to a string
-            return Utils.convertByteArrayToByteString(textBytes);
+    /**
+     * Runs the document's cipher over some bytes.  The standard security handler's ciphers are
+     * symmetric, so this is both directions; which one it is depends only on what went in.
+     * <p>
+     * Byte in, byte out, deliberately.  This was a String based method, which worked only because
+     * every character happened to hold one byte - and it made it possible to hand it the wrong
+     * thing entirely: the writer used to encrypt getHexString(), the ASCII of the digits, rather
+     * than the bytes those digits stand for.
+     *
+     * @param bytes           the bytes to run through the cipher
+     * @param reference       object reference, part of the per object key
+     * @param securityManager security manager for document, null if the document is not encrypted
+     * @return the transformed bytes, or the input unchanged when there is nothing to do
+     */
+    private static byte[] crypt(byte[] bytes, Reference reference, SecurityManager securityManager) {
+        if (securityManager == null || reference == null) {
+            return bytes;
         }
-        return string;
+        return securityManager.decrypt(reference, securityManager.getDecryptionKey(), bytes);
     }
 
     /**
