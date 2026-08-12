@@ -73,13 +73,24 @@ public class Outlines extends Dictionary {
     /**
      * Creates a new instance of an OutlineItem and sets the reference number
      *
-     * @param library document library
+     * @param library document library, which must carry a state manager: the new item needs a
+     *                reference number, and only the state manager can issue one
      * @return new instance of an OutlineItem that is not registered with the state manager.
+     * @throws IllegalStateException if the library has no state manager
      */
     public static OutlineItem createNewOutlineItem(Library library) {
+        StateManager stateManager = library.getStateManager();
+        if (stateManager == null) {
+            // this used to be a NullPointerException naming getNewReferenceNumber, which sends the
+            // reader looking at the wrong object.  Handing back an item without a reference is not
+            // an option: the reference is part of the per object encryption key, so a title written
+            // to it could not be encrypted, and the state manager could not track it either.
+            throw new IllegalStateException(
+                    "Cannot create an outline item without a state manager; the library belongs to " +
+                            "a document that has not been loaded for editing");
+        }
         OutlineItem outlineItem = new OutlineItem(library, new DictionaryEntries());
-        Reference reference = library.getStateManager().getNewReferenceNumber();
-        outlineItem.setPObjectReference(reference);
+        outlineItem.setPObjectReference(stateManager.getNewReferenceNumber());
         return outlineItem;
     }
 

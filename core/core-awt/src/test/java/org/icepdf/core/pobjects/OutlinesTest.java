@@ -16,6 +16,8 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.util.Library;
+
+import java.io.InputStream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -74,6 +76,31 @@ public class OutlinesTest {
         Outlines outlines = new Outlines(new Library(), null);
         assertNotNull(outlines.getEntries());
         assertNotNull(outlines.getRootOutlineItem());
+    }
+
+    @DisplayName("creating an outline item without a state manager fails with a useful message")
+    @Test
+    public void createNewOutlineItemWithoutStateManager() {
+        // a bare library has no state manager, and only the state manager can issue the reference
+        // number a new item needs.  This used to surface as a NullPointerException naming
+        // getNewReferenceNumber, which points the reader at the wrong object.
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> Outlines.createNewOutlineItem(new Library()));
+        assertTrue(thrown.getMessage().contains("state manager"), thrown.getMessage());
+    }
+
+    @DisplayName("creating an outline item on a loaded document gives it a reference")
+    @Test
+    public void createNewOutlineItemGetsAReference() throws Exception {
+        Document document = new Document();
+        try (InputStream in = OutlinesTest.class.getResourceAsStream("/updater/R&D-05-Carbon.pdf")) {
+            document.setInputStream(in, "R&D-05-Carbon.pdf");
+            OutlineItem item = Outlines.createNewOutlineItem(document.getCatalog().getLibrary());
+            assertNotNull(item.getPObjectReference(),
+                    "a new outline item needs a reference; it is part of the per object encryption key");
+        } finally {
+            document.dispose();
+        }
     }
 
     @DisplayName("the root item inherits the outline dictionary's reference")
