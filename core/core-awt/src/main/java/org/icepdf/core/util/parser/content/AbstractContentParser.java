@@ -1828,12 +1828,8 @@ public abstract class AbstractContentParser {
                     commonOverPrintAlpha(graphicState.getStrokeAlpha(),
                             graphicState.getStrokeColorSpace()));
         }
-        // The knockout effect can only be achieved by changing the alpha
-        // composite to source.  I don't have a test case for this for stroke
-        // but what we do for stroke is usually what we do for fill...
-        else if (graphicState.isKnockOut()) {
-            setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getStrokeAlpha());
-        }
+        // Knockout is applied when the group is painted (see commonFill), not
+        // baked into a SRC composite here.
 
         // found a PatternColor
         if (graphicState.getStrokeColorSpace() instanceof PatternColor) {
@@ -1962,11 +1958,13 @@ public abstract class AbstractContentParser {
             }
             return;
         }
-        // The knockout effect can only be achieved by changing the alpha
-        // composite to source.
-        else if (graphicState.isKnockOut()) {
-            setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getFillAlpha());
-        } else if (graphicState.getExtGState() == null || graphicState.getExtGState().getBlendingMode() == null) {
+        // Knockout is applied when the group is painted, not baked in here: a
+        // SRC composite discards the destination's alpha as well as its colour,
+        // which flattened translucent fills in a knockout group to opaque and
+        // turned a ca=0 circle into a black disc (the PDF 32000-1 figure in
+        // transparent_groups.pdf).  The group is rasterised to its own buffer and
+        // its elements replace one another there -- see KnockoutComposite.
+        else if (graphicState.getExtGState() == null || graphicState.getExtGState().getBlendingMode() == null) {
             setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
 

@@ -55,7 +55,20 @@ public class ShapesDrawCmd extends AbstractDrawCmd {
             // set/paint/reset-to-null pattern raced (nulling parentPage mid-paint
             // of another thread dropped the form's content).  paint() builds its
             // own per-call OCG state and reads the global alpha option internally.
-            shapes.paint(g, parentPage);
+            // An inline (unbuffered) transparency group is ONE element of any
+            // enclosing knockout group, so its own contents must composite with
+            // each other normally -- not knock each other out.  Suspend the
+            // knockout scope for the nested shapes and restore it after, or the
+            // flag leaks down and every nested group replaces its siblings
+            // (opera-mask hair, shadding-2-3-6.pdf).  The group cannot itself be
+            // knocked out as a unit while it paints straight onto the parent
+            // surface; that needs a buffer (see FormDrawCmd.requiresOffscreenBuffer).
+            boolean previousKnockout = FormDrawCmd.suspendKnockoutScope();
+            try {
+                shapes.paint(g, parentPage);
+            } finally {
+                FormDrawCmd.restoreKnockoutScope(previousKnockout);
+            }
         }
         return currentShape;
     }
