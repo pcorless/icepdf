@@ -578,11 +578,16 @@ public class Document {
      * The OutputStream is not flushed or closed, in case this method's
      * caller requires otherwise.
      *
-     * @param out OutputStream to which the PDF file bytes are written.
+     * @param out       OutputStream to which the PDF file bytes are written.
+     * @param writeMode write mode used to update the file with changes.  Redactions are only burned
+     *                  by {@link WriteMode#FULL_UPDATE}; an incremental update can only append, so it
+     *                  cannot remove redacted content.  Saving incrementally with redactions pending
+     *                  logs a warning and leaves the redaction annotations unburned.
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
+        writeMode = warnIfRedactionsPending(writeMode);
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
@@ -611,6 +616,28 @@ public class Document {
         } else {
             return 0;
         }
+    }
+
+    /**
+     * Redactions are burned into the content streams by the full updater; by its nature an
+     * incremental update can only append, so it cannot remove the content being redacted.  Saving
+     * incrementally with redaction annotations still pending is a legitimate operation - the
+     * annotations are unburned markup, and the document is saved as work in progress - so this is a
+     * warning rather than an error, and the caller's chosen write mode is honoured.  Promoting the
+     * write to a full update would rewrite and renumber every object, invalidating any existing
+     * signature the incremental path would have preserved.
+     *
+     * @param writeMode write mode requested by the caller
+     * @return the caller's write mode, unchanged
+     */
+    private WriteMode warnIfRedactionsPending(WriteMode writeMode) {
+        if (writeMode == WriteMode.INCREMENT_UPDATE && stateManager != null
+                && stateManager.hasRedactions()) {
+            logger.warning("Saving incrementally with redaction annotations still pending; the " +
+                    "redacted content is NOT removed by an incremental update.  Write with " +
+                    "WriteMode.FULL_UPDATE to burn the redactions.");
+        }
+        return writeMode;
     }
 
     /**
@@ -732,7 +759,7 @@ public class Document {
             for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
                 page = pageTree.getPage(i);
                 redactions = page.getRedactionAnnotations();
-                if (redactions != null && redactions.size() > 1) {
+                if (redactions != null && !redactions.isEmpty()) {
                     return true;
                 }
             }
