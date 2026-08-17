@@ -290,6 +290,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED = "application.viewer.utility.search.whole.words.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.case.sensitive.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED = "application.viewer.utility.search.case.cumulative.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_FOLD_DIACRITICS_ENABLED = "application.viewer.utility.search.fold.diacritics.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED = "application.viewer.utility.search.comments.cumulative.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED = "application.viewer.utility.search.case.destinations.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED = "application.viewer.utility.search.case.text.enabled";

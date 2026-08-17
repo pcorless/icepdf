@@ -17,6 +17,7 @@ package org.icepdf.examples.search;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.SwingViewBuilder;
 import org.icepdf.ri.util.FontPropertiesManager;
@@ -81,9 +82,11 @@ public class SearchController {
         // get the search controller
         DocumentSearchController searchController =
                 controller.getDocumentSearchController();
-        // add a specified search terms.
+        // add the specified search terms.
         for (String term : terms) {
-            searchController.addSearchTerm(term, false, false);
+            SearchTerm searchTerm = searchController.addSearchTerm(term, false, false);
+            // enable accent-insensitive (Unicode-normalized) matching so, e.g., "cafe" finds "café".
+            searchTerm.setFoldDiacritics(true);
         }
         // search the pages in the document or a subset
         Document document = controller.getDocument();

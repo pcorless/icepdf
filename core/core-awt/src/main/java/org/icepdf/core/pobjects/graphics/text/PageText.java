@@ -22,6 +22,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Page text represents the root element of a page's text hierarchy which
@@ -45,15 +46,92 @@ import java.util.*;
  */
 public class PageText implements TextSelect {
 
+    private static final Logger logger = Logger.getLogger(PageText.class.getName());
+
     private static final boolean checkForDuplicates;
-    private static final boolean preserveColumns;
+
+    /** Merge sliced lines that share a baseline back into a single line (see {@link #mergeLinesByBaseline}). */
+    private static final boolean mergeBaselines;
+
+    /** Collapse letter-spaced runs (e.g. "S P E C I F I C A T I O N S") into words (see {@link #collapseLetterSpacing}). */
+    private static final boolean collapseLetterSpacing;
+
+    // Two lines are merged into one only when their cross-axis extents overlap by at least this fraction of the
+    // smaller extent - enough to catch a fragment split off the same baseline, but not two stacked rows.
+    private static final double LINE_MERGE_OVERLAP = 0.5;
+
+    // A letter-spaced run must have at least this many short tokens before it is collapsed.
+    private static final int LETTER_SPACING_MIN_RUN = 4;
+    // Tokens longer than this end a letter-spaced run - they are ordinary words, not spaced-out letters.
+    private static final int LETTER_SPACING_MAX_TOKEN = 4;
+    // If the largest inter-token gap is no more than this multiple of the median gap the run is treated as a single
+    // word (uniform spacing, no word breaks) - this keeps "SPECIFICATIONS" from splitting on its even letter gaps.
+    private static final double LETTER_SPACING_UNIFORM_FACTOR = 2.0;
+
+    /** Page reading-order strategy applied to the sorted line list. */
+    private enum ReadingOrder {PLOT, YSORT, XYCUT}
+
+    /**
+     * The reading order used when nothing is configured.  Default is {@code XYCUT}: geometry-driven,
+     * column-contiguous ordering, validated across the corpus to preserve every glyph while fixing
+     * multi-column reading/selection/copy order (a plot-vs-xycut sweep of ~3900 docs showed zero text
+     * loss/gain).  Set {@code org.icepdf.core.views.page.text.readingOrder=plot} to restore the old
+     * content-stream order.
+     */
+    private static final ReadingOrder DEFAULT_READING_ORDER = ReadingOrder.XYCUT;
+
+    private static final ReadingOrder readingOrder;
 
     static {
         checkForDuplicates = Defs.booleanProperty(
                 "org.icepdf.core.views.page.text.trim.duplicates", false);
 
-        preserveColumns = Defs.booleanProperty(
-                "org.icepdf.core.views.page.text.preserveColumns", true);
+        mergeBaselines = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.mergeBaselines", true);
+
+        collapseLetterSpacing = Defs.booleanProperty(
+                "org.icepdf.core.views.page.text.collapseLetterSpacing", true);
+
+        readingOrder = resolveReadingOrder();
+    }
+
+    /**
+     * Resolves the page reading order.  {@code org.icepdf.core.views.page.text.readingOrder} is the
+     * canonical setting ({@code plot} | {@code ysort} | {@code xycut}); an unset or unrecognised
+     * value falls back to {@link #DEFAULT_READING_ORDER}.
+     * <p>
+     * The older boolean {@code org.icepdf.core.views.page.text.preserveColumns} is <b>deprecated</b>
+     * and honoured only as an alias when {@code readingOrder} is not set: {@code true} keeps the
+     * default order, {@code false} selects {@code ysort}.  Prefer {@code readingOrder} alone.
+     */
+    private static ReadingOrder resolveReadingOrder() {
+        String mode = Defs.sysProperty("org.icepdf.core.views.page.text.readingOrder");
+        if (mode != null) {
+            switch (mode.trim().toLowerCase()) {
+                case "ysort":
+                    return ReadingOrder.YSORT;
+                case "xycut":
+                    return ReadingOrder.XYCUT;
+                case "plot":
+                    return ReadingOrder.PLOT;
+                default:
+                    // an unrecognised value is almost always a typo (e.g. "ycut"); falling back
+                    // silently makes it look like the flag had no effect at all.
+                    logger.warning("Unknown reading-order mode '" + mode + "' for "
+                            + "org.icepdf.core.views.page.text.readingOrder; expected one of "
+                            + "plot, ysort, xycut.  Falling back to the default.");
+                    return DEFAULT_READING_ORDER;
+            }
+        }
+        // deprecated preserveColumns alias, consulted only when readingOrder is unset.
+        if (Defs.sysProperty("org.icepdf.core.views.page.text.preserveColumns") != null) {
+            logger.warning("org.icepdf.core.views.page.text.preserveColumns is deprecated; "
+                    + "use org.icepdf.core.views.page.text.readingOrder=plot|ysort|xycut instead.");
+            boolean preserveColumns = Defs.booleanProperty(
+                    "org.icepdf.core.views.page.text.preserveColumns", true);
+            return preserveColumns ? DEFAULT_READING_ORDER : ReadingOrder.YSORT;
+        }
+        return DEFAULT_READING_ORDER;
     }
 
     // pointer to current line during document parse, no other use.
@@ -62,6 +140,9 @@ public class PageText implements TextSelect {
 
     private final ArrayList<LineText> pageLines;
     private ArrayList<LineText> sortedPageLines;
+
+    // reading-order view over sortedPageLines; lazily built, invalidated on re-sort.
+    private TextSequence textSequence;
 
     private AffineTransform previousTextTransform;
     private AffineTransform previousXObjectTransform;
@@ -137,6 +218,21 @@ public class PageText implements TextSelect {
             sortAndFormatText();
         }
         return sortedPageLines;
+    }
+
+    /**
+     * Gets the reading-order {@link TextSequence} for this page, a flattened view over the
+     * sorted page lines that maps between page-space points, character offsets, and the
+     * underlying glyph/word/line structure.  The value is cached and rebuilt whenever the
+     * page re-sorts (see {@link #sortAndFormatText}).
+     *
+     * @return reading-order sequence for this page's visible text.
+     */
+    public TextSequence getTextSequence() {
+        if (textSequence == null) {
+            textSequence = new TextSequence(this);
+        }
+        return textSequence;
     }
 
     /**
@@ -479,7 +575,269 @@ public class PageText implements TextSelect {
                 }
             }
         }
+        // The slicing above only ever splits a single input line - it can never merge words that were emitted as
+        // separate lines (each T*/'/'" or per-glyph text object starts a fresh line in the parser).  Documents that
+        // draw letter-spaced titles, or one text-showing operator per glyph, therefore end up with one glyph per
+        // LineText and stay that way.  Merge lines that share a baseline back into a single line so downstream
+        // x-sorting and word/space detection can reconstruct the visual line.
+        if (mergeBaselines) {
+            sortedPageLines = mergeLinesByBaseline(sortedPageLines);
+        }
         return sortedPageLines;
+    }
+
+    /**
+     * Merges <em>consecutive</em> lines that sit on the same baseline (top-y within half the line height) into a
+     * single line.  Only adjacent lines in the incoming (content-stream/plot) order are considered, so the merge
+     * collapses runs of per-glyph or letter-spaced lines - which the parser emits consecutively - without globally
+     * re-sorting.  This preserves the plot reading order and, because two columns are not interleaved glyph-by-glyph
+     * in the stream, avoids pulling column text onto a shared line.  Words keep their order within a band and are
+     * re-sorted by x downstream in {@link #sortAndFormatText}.
+     *
+     * @param lines sliced lines to merge.
+     * @return merged lines, one per run of same-baseline lines.
+     */
+    private ArrayList<LineText> mergeLinesByBaseline(ArrayList<LineText> lines) {
+        if (lines.size() < 2) {
+            return lines;
+        }
+        ArrayList<LineText> merged = new ArrayList<>(lines.size());
+        LineText current = null;
+        double bandLo = 0, bandHi = 0;
+        for (LineText line : lines) {
+            // Only vertical (rotated/stacked) lines are merged, and only when their x columns overlap substantially.
+            // Horizontal lines are never merged: the parser can split a visual line into fragments, but a fragment on
+            // the same baseline is not reliably distinguishable from the next row (tight leading makes their boxes
+            // overlap), so fusing them would scramble reading order across the corpus.  Vertical runs are columns,
+            // disjoint from the horizontal rows around them, so merging them by x overlap is safe.
+            boolean vertical = WordText.detectVerticalText && line.isVerticalWriting();
+            if (!vertical) {
+                merged.add(line);
+                current = null; // a horizontal line breaks any open vertical band
+                continue;
+            }
+            Rectangle2D.Double bounds = line.getBounds();
+            double lo = bounds.getX();
+            double hi = lo + bounds.getWidth();
+            double overlap = Math.min(hi, bandHi) - Math.max(lo, bandLo);
+            double minExtent = Math.min(hi - lo, bandHi - bandLo);
+            if (current != null && minExtent > 0 && overlap >= LINE_MERGE_OVERLAP * minExtent) {
+                // same column as the previous vertical line - fold its words in, keeping the original band interval.
+                current.addAll(line.getWords());
+            } else {
+                current = new LineText(pageRotation);
+                current.addAll(line.getWords());
+                merged.add(current);
+                bandLo = lo;
+                bandHi = hi;
+            }
+        }
+        return merged;
+    }
+
+    /** True only for a word whose text is entirely whitespace (a real space word, not punctuation flagged whitespace). */
+    private static boolean isBlank(WordText word) {
+        return word.getText().trim().isEmpty();
+    }
+
+    /** True for a multi-character token made entirely of lowercase letters - a real embedded word (e.g. "and"). */
+    private static boolean isLowercaseWord(String text) {
+        if (text.length() < 2) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (!Character.isLetter(c) || !Character.isLowerCase(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Allocation-free scan for whether a line contains at least one collapsible letter-spaced run, so the common
+     * case (ordinary prose, no run) skips the rebuild entirely.  Mirrors the run-gathering in
+     * {@link #collapseLetterSpacing} but only counts tokens.
+     */
+    private boolean hasLetterSpacedRun(List<WordText> words) {
+        int n = words.size(), i = 0;
+        while (i < n) {
+            WordText w0 = words.get(i);
+            if (w0.isWhiteSpace() || w0.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                i++;
+                continue;
+            }
+            int tokens = 0, singles = 0, j = i;
+            boolean hasLowerWord = false;
+            while (j < n) {
+                WordText w = words.get(j);
+                if (w.isWhiteSpace() || w.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                    break;
+                }
+                tokens++;
+                if (w.getText().trim().length() == 1) {
+                    singles++;
+                }
+                if (isLowercaseWord(w.getText())) {
+                    hasLowerWord = true;
+                }
+                j++;
+                int q = j;
+                while (q < n && isBlank(words.get(q))) {
+                    q++;
+                }
+                if (q > j && q < n && !words.get(q).isWhiteSpace()
+                        && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                    j = q;
+                }
+            }
+            if (tokens >= LETTER_SPACING_MIN_RUN && singles * 4 >= tokens * 3 && !hasLowerWord) {
+                return true;
+            }
+            i = Math.max(j, i + 1);
+        }
+        return false;
+    }
+
+    /**
+     * Collapses letter-spaced runs within a line into whole words.  Headings are often drawn with a full space
+     * between every letter ("S P E C I F I C A T I O N S", or "P E R F O R M A N C E  F I R S T"), whether the
+     * spacing comes from real space glyphs in the content or from synthetic spaces inserted for a wide gap.  By any
+     * geometric measure those inter-letter gaps look exactly like word spaces, so the only reliable signal is
+     * structural: a run of mostly single-character short tokens.  Such a run is merged into one word, re-inserting a
+     * space only where the inter-token gap is much larger than the run's typical gap (a genuine word boundary).
+     *
+     * @param line line whose words have already been placed in reading order.
+     */
+    private void collapseLetterSpacing(LineText line) {
+        List<WordText> words = line.getWords();
+        if (words.size() < LETTER_SPACING_MIN_RUN || !hasLetterSpacedRun(words)) {
+            // fast path: most lines contain no letter-spaced run, so avoid allocating/rebuilding the word list.
+            return;
+        }
+        boolean vertical = WordText.detectVerticalText && line.isVerticalWriting();
+        List<WordText> result = new ArrayList<>(words.size());
+        int i = 0, n = words.size();
+        while (i < n) {
+            if (words.get(i).isWhiteSpace()) {
+                result.add(words.get(i));
+                i++;
+                continue;
+            }
+            // gather a maximal run of short tokens separated by at most one whitespace word
+            List<WordText> tokens = new ArrayList<>();
+            List<WordText> sepAfter = new ArrayList<>();
+            int j = i, singles = 0;
+            boolean hasLowerWord = false;
+            while (j < n) {
+                WordText w = words.get(j);
+                if (w.isWhiteSpace()) {
+                    break; // handled below as a separator lookahead
+                }
+                if (w.getText().length() > LETTER_SPACING_MAX_TOKEN) {
+                    break;
+                }
+                tokens.add(w);
+                if (w.getText().trim().length() == 1) {
+                    singles++;
+                }
+                if (isLowercaseWord(w.getText())) {
+                    hasLowerWord = true;
+                }
+                j++;
+                // bridge a run of blank space words to the next token, but only if that token still qualifies - a
+                // wide word gap can be several spaces, and the run must not be split there.  Only truly blank words
+                // are bridged: punctuation (e.g. TOC leader dots) is flagged whitespace but carries real glyphs, so
+                // it must terminate the run and pass through untouched rather than be swallowed as a separator.
+                int q = j;
+                while (q < n && isBlank(words.get(q))) {
+                    q++;
+                }
+                if (q > j && q < n && !words.get(q).isWhiteSpace()
+                        && words.get(q).getText().length() <= LETTER_SPACING_MAX_TOKEN) {
+                    sepAfter.add(words.get(j));
+                    j = q;
+                } else {
+                    sepAfter.add(null);
+                }
+            }
+            // require most tokens to be single characters: real prose with a few short words ("in the U.S.")
+            // must not be mistaken for a spaced-out heading.  A multi-character all-lowercase token (e.g. "and" in a
+            // letter-spaced "L A T E X and pdfL A T E X" logo) is a real embedded word, not a spaced-out letter, so
+            // it disqualifies the run - uppercase fragments like "OR"/"MANC" (from "PERFORMANCE") still collapse.
+            boolean qualifies = tokens.size() >= LETTER_SPACING_MIN_RUN
+                    && singles * 4 >= tokens.size() * 3
+                    && !hasLowerWord;
+            if (qualifies) {
+                result.addAll(rebuildLetterSpacedRun(tokens, sepAfter, vertical));
+                i = j;
+            } else {
+                result.add(words.get(i));
+                i++;
+            }
+        }
+        line.setWords(result);
+    }
+
+    /**
+     * Rebuilds a detected letter-spaced run: concatenates the token glyphs into one word, breaking into a new word
+     * (with the original separating space) wherever the inter-token gap exceeds the run's median gap by more than
+     * {@link #LETTER_SPACING_BOUNDARY_FACTOR}.
+     */
+    private List<WordText> rebuildLetterSpacedRun(List<WordText> tokens, List<WordText> sepAfter, boolean vertical) {
+        double[] gaps = new double[tokens.size() - 1];
+        for (int k = 0; k < gaps.length; k++) {
+            gaps[k] = tokenGap(tokens.get(k), tokens.get(k + 1), vertical);
+        }
+        double median = medianGap(gaps);
+        double max = 0;
+        for (double g : gaps) {
+            max = Math.max(max, g);
+        }
+        // Uniform gaps mean a single spaced-out word (no breaks).  Otherwise a word break is a gap sitting above the
+        // midpoint between the typical letter gap (median) and the widest gap (max) - large enough to exclude a minor
+        // per-glyph anomaly but below a genuine inter-word gap.
+        boolean uniform = max <= LETTER_SPACING_UNIFORM_FACTOR * median;
+        double threshold = (median + max) / 2;
+        List<WordText> rebuilt = new ArrayList<>();
+        WordText current = new WordText(pageRotation);
+        for (int k = 0; k < tokens.size(); k++) {
+            for (GlyphText glyph : tokens.get(k).getGlyphs()) {
+                current.addText(glyph);
+            }
+            if (k < gaps.length && !uniform && gaps[k] > threshold) {
+                // real word boundary - close the current word and keep a separating space
+                rebuilt.add(current);
+                if (sepAfter.get(k) != null) {
+                    rebuilt.add(sepAfter.get(k));
+                }
+                current = new WordText(pageRotation);
+            }
+        }
+        rebuilt.add(current);
+        return rebuilt;
+    }
+
+    /** Box-to-box gap between two consecutive tokens along the line's writing axis. */
+    private double tokenGap(WordText prev, WordText next, boolean vertical) {
+        Rectangle2D.Double a = prev.getTextExtractionBounds();
+        Rectangle2D.Double b = next.getTextExtractionBounds();
+        if (vertical) {
+            double down = Math.abs(b.y - (a.y + a.height));
+            double up = Math.abs(a.y - (b.y + b.height));
+            return Math.min(down, up);
+        }
+        return Math.abs(b.x - (a.x + a.width));
+    }
+
+    private static double medianGap(double[] gaps) {
+        if (gaps.length == 0) {
+            return 0;
+        }
+        double[] sorted = gaps.clone();
+        java.util.Arrays.sort(sorted);
+        int mid = sorted.length / 2;
+        return sorted.length % 2 == 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
     }
 
     /**
@@ -553,10 +911,22 @@ public class PageText implements TextSelect {
             }
         }
 
-        // sort each line by x coordinate.
+        // sort each line by x coordinate; vertical lines order along their writing direction instead.
         if (sortedPageLines.size() > 0) {
             for (LineText lineText : sortedPageLines) {
-                lineText.getWords().sort(new WordPositionComparator());
+                if (mergeBaselines && WordText.detectVerticalText && lineText.isVerticalWriting()) {
+                    lineText.getWords().sort(new WordPositionComparator(lineText.getWriteDirection()));
+                } else {
+                    lineText.getWords().sort(new WordPositionComparator());
+                }
+            }
+        }
+
+        // collapse letter-spaced runs ("S P E C I F I C A T I O N S" -> "SPECIFICATIONS") now that words are in
+        // reading order along their line.
+        if (collapseLetterSpacing && sortedPageLines.size() > 0) {
+            for (LineText lineText : sortedPageLines) {
+                collapseLetterSpacing(lineText);
             }
         }
 
@@ -567,9 +937,21 @@ public class PageText implements TextSelect {
             }
         }
 
-        // sort the lines
-        if (sortedPageLines.size() > 0 && !preserveColumns) {
-            sortedPageLines.sort(new LinePositionComparator());
+        // order the lines according to the configured reading-order strategy.  PLOT keeps the
+        // content-stream order the slicing produced; YSORT is a global top-to-bottom sort; XYCUT
+        // applies geometry-driven column/band ordering (see XYCutReadingOrder).
+        if (sortedPageLines.size() > 0) {
+            switch (readingOrder) {
+                case YSORT:
+                    LinePositionComparator.orderTopLeft(sortedPageLines);
+                    break;
+                case XYCUT:
+                    sortedPageLines = XYCutReadingOrder.order(sortedPageLines);
+                    break;
+                case PLOT:
+                default:
+                    break;
+            }
         }
 
         // Round out the word bounds
@@ -594,6 +976,8 @@ public class PageText implements TextSelect {
         // assign back the sorted lines.
         this.sortedPageLines = sortedPageLines;
 
+        // invalidate the reading-order view so it rebuilds from the new sort.
+        this.textSequence = null;
     }
 
 

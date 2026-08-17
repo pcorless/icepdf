@@ -53,11 +53,12 @@ class SimpleSearchHelperTest {
         when(mockController.getDocumentSearchController()).thenReturn(mockSearchController);
         when(mockDocumentViewController.getViewContainer()).thenReturn(mockViewContainer);
 
-        // track last page searched and return 0 hits by default
+        // track last page searched and return 0 hits by default.  SimpleSearchHelper calls the
+        // 5-arg overload (…, foldDiacritics); stub that exact signature or the doAnswer never fires.
         doAnswer((Answer<Integer>) invocation -> {
             lastSearchedPage.set(invocation.getArgument(0));
             return 0;
-        }).when(mockSearchController).searchHighlightPage(anyInt(), anyString(), anyBoolean(), anyBoolean());
+        }).when(mockSearchController).searchHighlightPage(anyInt(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     private SimpleSearchHelper buildHelper(int pageCount, int startPage) {
@@ -70,7 +71,7 @@ class SimpleSearchHelperTest {
         doAnswer((Answer<Integer>) invocation -> {
             lastSearchedPage.set(invocation.getArgument(0));
             return invocation.getArgument(0).equals(page) ? hits : 0;
-        }).when(mockSearchController).searchHighlightPage(anyInt(), anyString(), anyBoolean(), anyBoolean());
+        }).when(mockSearchController).searchHighlightPage(anyInt(), anyString(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     @Test

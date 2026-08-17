@@ -56,6 +56,21 @@ public interface DocumentSearchController {
                             boolean caseSensitive, boolean wholeWord);
 
     /**
+     * Searches the given page for a single term, clearing any previous highlights on the page first.
+     * Behaves like {@link #searchHighlightPage(int, String, boolean, boolean)} but additionally allows
+     * accent-insensitive (Unicode-normalized) matching for literal terms.
+     *
+     * @param pageIndex      page to search
+     * @param term           term to search for
+     * @param caseSensitive  if true use case-sensitive searches
+     * @param wholeWord      if true use whole word searches
+     * @param foldDiacritics if true match accent-insensitively (folds diacritics)
+     * @return number of hits for this page.
+     */
+    int searchHighlightPage(int pageIndex, String term,
+                            boolean caseSensitive, boolean wholeWord, boolean foldDiacritics);
+
+    /**
      * Searches the page index given the search terms that have been added
      * with {@link #addSearchTerm(String, boolean, boolean)}.  If search
      * hits where detected then the Page's PageText is added to the cache.

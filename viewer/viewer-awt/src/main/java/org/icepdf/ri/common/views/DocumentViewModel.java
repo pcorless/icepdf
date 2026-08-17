@@ -177,6 +177,45 @@ public interface DocumentViewModel {
     void clearSelectedPageText();
 
     /**
+     * Gets the authoritative document-level text selection (a single anchor&#8594;focus
+     * caret pair).  Never null; may be {@link DocumentTextSelection#isEmpty() empty}.
+     *
+     * @return the document text selection.
+     */
+    DocumentTextSelection getTextSelection();
+
+    /**
+     * Places the selection caret at a single position (mouse press / click).
+     *
+     * @param page   page index
+     * @param offset char offset within that page's text sequence
+     */
+    void collapseTo(int page, int offset);
+
+    /**
+     * Moves the selection's focus end while keeping the anchor fixed (drag / shift-extend).
+     *
+     * @param page   page index
+     * @param offset char offset within that page's text sequence
+     */
+    void extendTo(int page, int offset);
+
+    /**
+     * Sets both ends of the selection explicitly.
+     *
+     * @param anchorPage   anchor page index
+     * @param anchorOffset anchor char offset
+     * @param focusPage    focus page index
+     * @param focusOffset  focus char offset
+     */
+    void setTextSelection(int anchorPage, int anchorOffset, int focusPage, int focusOffset);
+
+    /**
+     * Clears the document text selection.
+     */
+    void clearTextSelection();
+
+    /**
      * Gets the page components associated with this view model.
      *
      * @return vector of page components.

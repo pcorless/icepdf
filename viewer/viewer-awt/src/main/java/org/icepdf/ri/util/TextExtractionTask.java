@@ -17,8 +17,7 @@ package org.icepdf.ri.util;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.text.LineText;
-import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.pobjects.graphics.text.PageText;
 
 import javax.swing.*;
 import java.awt.*;
@@ -143,23 +142,15 @@ public class TextExtractionTask extends SwingWorker<Void, StringBuilder> {
                 fileOutputStream.write(10); // line break
 
                 Page page = document.getPageTree().getPage(i);
-                List<LineText> pageLines;
-                if (page.isInitiated()) {
-                    // get a pages already initialized text.
-                    pageLines = document.getPageViewText(i).getPageLines();
-                } else {
-                    // grap the text the fastest way possible.
-                    pageLines = document.getPageText(i).getPageLines();
+                // paragraph-formatted extraction (line separators + blank line between paragraphs).
+                PageText pageText = page.isInitiated()
+                        ? document.getPageViewText(i) : document.getPageText(i);
+                StringBuilder extractedText = new StringBuilder();
+                if (pageText != null) {
+                    extractedText.append(pageText.getTextSequence().extractText());
+                    extractedText.append(pageText.getTextSequence().extractSeparator());
                 }
-                StringBuilder extractedText = null;
-                for (LineText lineText : pageLines) {
-                    extractedText = new StringBuilder();
-                    for (WordText wordText : lineText.getWords()) {
-                        extractedText.append(wordText.getText());
-                    }
-                    extractedText.append('\n');
-                    fileOutputStream.write(extractedText.toString());
-                }
+                fileOutputStream.write(extractedText.toString());
                 publish(extractedText);
             }
             current = 0;
