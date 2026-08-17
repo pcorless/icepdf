@@ -1,0 +1,237 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.icepdf.core.util.redaction;
+
+import org.icepdf.core.pobjects.graphics.TextSprite;
+import org.icepdf.core.util.updater.callbacks.StringObjectWriter;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Byte-level tests for the text a redaction writes back into a content stream.
+ * <p>
+ * No PDF, no parser, no page - {@link GlyphRunBuilder} supplies the glyph runs directly, so these
+ * pin the writer's output exactly rather than inferring it from a rendered result.
+ * <p>
+ * Tests marked {@link Disabled} record defects found in the review that are fixed later in GH-525;
+ * they are the checklist for that work, and each names the finding it belongs to.
+ */
+public class RedactedStringObjectWriterTest {
+
+    private final RedactedStringObjectWriter writer = new RedactedStringObjectWriter();
+
+    @DisplayName("a run with nothing flagged is not rewritten")
+    @Test
+    public void noFlaggedGlyphsIsNotRewritten() {
+        ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
+                .glyphs("Hello")
+                .buildOperators();
+        assertFalse(StringObjectWriter.containsFlaggedText(operators),
+                "nothing is flagged, so the callback should copy the original bytes verbatim");
+    }
+
+    @DisplayName("a fully flagged run emits nothing")
+    @Test
+    public void fullyFlaggedRunEmitsNothing() throws Exception {
+        ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
+                .glyphs("Secret")
+                .flagAll()
+                .buildOperators();
+        assertEquals("", writeTj(operators),
+                "every glyph is redacted, so there is nothing left to show");
+    }
+
+    @DisplayName("a leading flagged run is dropped and the remainder repositioned")
+    @Test
+    public void leadingRunIsDropped() throws Exception {
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("SECRETvisible").flag(0, 6);
+        String out = writeTj(builder.buildOperators());
+
+        assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
+        assertTrue(out.contains("(visible)"), "the unflagged remainder should be shown: " + out);
+        assertBalancedDelimiters(out);
+    }
+
+    @DisplayName("a trailing flagged run is dropped")
+    @Test
+    public void trailingRunIsDropped() throws Exception {
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("visibleSECRET").flag(7, 13);
+        String out = writeTj(builder.buildOperators());
+
+        assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
+        assertTrue(out.contains("(visible)"), "the unflagged head should be shown: " + out);
+        assertBalancedDelimiters(out);
+    }
+
+    @DisplayName("a flagged run in the middle splits the string and repositions the tail")
+    @Test
+    public void middleRunSplitsTheString() throws Exception {
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("abSECRETyz").flag(2, 8);
+        String out = writeTj(builder.buildOperators());
+
+        assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
+        assertTrue(out.contains("(ab)"), "head should be shown: " + out);
+        assertTrue(out.contains("(yz)"), "tail should be shown: " + out);
+        assertBalancedDelimiters(out);
+    }
+
+    @DisplayName("alternating flags produce one string per surviving run")
+    @Test
+    public void alternatingFlagsSplitPerRun() throws Exception {
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f)
+                .glyphs("aXbXc").flag(1, 2).flag(3, 4);
+        String out = writeTj(builder.buildOperators());
+
+        assertFalse(out.contains("X"), "flagged glyphs must not survive: " + out);
+        assertBalancedDelimiters(out);
+        assertEquals(3, countOccurrences(out, "("),
+                "three surviving runs should give three strings: " + out);
+    }
+
+    @DisplayName("the repositioning offset covers the width of the removed glyphs")
+    @Test
+    public void offsetAccountsForRemovedGlyphs() throws Exception {
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("abSECRETyz").flag(2, 8);
+        float advance = builder.advance();
+        String out = writeTj(builder.buildOperators());
+
+        // "yz" starts eight glyphs in; whatever syntax carries the offset, the position it restores
+        // has to be that of the ninth glyph.
+        float expected = 8 * advance;
+        assertTrue(containsNumberNear(out, expected, 0.01f),
+                "expected an offset restoring x=" + expected + " but got: " + out);
+    }
+
+    // -- known defects, fixed later in GH-525 -----------------------------------------------------
+
+    @DisplayName("a CID code needing three hex digits is padded to four")
+    @Disabled("GH-525: writeCidCharacterCode pads lengths 1 and 2 but not 3, shifting every " +
+            "following code by a nibble")
+    @Test
+    public void cidCodeInThirdNibbleRangeIsPadded() throws Exception {
+        ArrayList<TextSprite> operators = GlyphRunBuilder.cidFont(12f)
+                .codes(0x0100, 0x0041)
+                .buildOperators();
+        String out = writeTj(operators);
+        assertTrue(out.contains("<01000041>"),
+                "each CID code must occupy exactly four hex digits, got: " + out);
+    }
+
+    @DisplayName("codes 128-255 are written as three octal digits")
+    @Test
+    public void highCodesAreWrittenAsThreeOctalDigits() throws Exception {
+        // Not a defect, pinned so it stays that way: the octal branch only handles 128-255, and
+        // every value in that range is already exactly three octal digits (200-377), so the
+        // unpadded Integer.toString(cid, 8) cannot run short and absorb a following digit.
+        ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
+                .codes(0x80, '2', 0xFF)
+                .buildOperators();
+        String out = writeTj(operators);
+        assertTrue(out.contains("\\2002\\377"),
+                "expected three-digit octal escapes around the literal '2', got: " + out);
+    }
+
+    @DisplayName("a carriage return code is escaped rather than written raw")
+    @Disabled("GH-525: writeSimpleCharacterCode writes codes <= 127 raw, escaping only ( ) and " +
+            "backslash. Per PDF 32000-1 7.3.4.2 an unescaped end-of-line inside a literal string " +
+            "is read back as a line feed, so code 0x0D round-trips as 0x0A")
+    @Test
+    public void carriageReturnCodeIsEscaped() throws Exception {
+        ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
+                .codes(0x0D, 'a')
+                .buildOperators();
+        String out = writeTj(operators);
+        assertFalse(out.contains("\r"),
+                "a raw CR in a literal string is normalised to LF on read-back, so it must be " +
+                        "escaped, got: " + out.replace("\r", "<CR>"));
+    }
+
+    @DisplayName("a tiny offset is not written in scientific notation")
+    @Disabled("GH-525: offsets go through String.valueOf(float), which yields 1.0E-5 - not valid " +
+            "PDF real syntax")
+    @Test
+    public void tinyOffsetIsNotScientificNotation() throws Exception {
+        ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(1e-4f)
+                .glyphs("aXb").flag(1, 2)
+                .buildOperators();
+        String out = writeTj(operators);
+        assertFalse(out.contains("E") || out.contains("e"),
+                "PDF reals have no exponent form, got: " + out);
+    }
+
+    @DisplayName("a second sprite opens its own string")
+    @Disabled("GH-525: writeTj declares operatorCount outside the sprite loop and never resets it " +
+            "after the trailing delimiter, so a following sprite omits its opening delimiter")
+    @Test
+    public void secondSpriteOpensItsOwnString() throws Exception {
+        ArrayList<TextSprite> operators = new ArrayList<>();
+        operators.add(GlyphRunBuilder.simpleFont(12f).glyphs("aXb").flag(1, 2).build());
+        operators.add(GlyphRunBuilder.simpleFont(12f).startingAt(100f).glyphs("cd").build());
+
+        String out = writeTj(operators);
+        assertBalancedDelimiters(out);
+        assertTrue(out.contains("(cd)"), "the second sprite should be a string of its own: " + out);
+    }
+
+    // -- helpers ---------------------------------------------------------------------------------
+
+    private String writeTj(ArrayList<TextSprite> operators) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writer.writeTj(out, operators, 0);
+        return out.toString(StandardCharsets.ISO_8859_1.name());
+    }
+
+    private static void assertBalancedDelimiters(String out) {
+        assertEquals(countOccurrences(out, "("), countOccurrences(out, ")"),
+                "unbalanced literal string delimiters in: " + out);
+        assertEquals(countOccurrences(out, "<"), countOccurrences(out, ">"),
+                "unbalanced hex string delimiters in: " + out);
+    }
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + 1)) {
+            count++;
+        }
+        return count;
+    }
+
+    /**
+     * True when the output carries a number within {@code tolerance} of {@code expected}. Kept
+     * syntax-agnostic on purpose: these tests should survive the move from Td offsets to TJ
+     * adjustments, which changes how the number is spelled but not which position it restores.
+     */
+    private static boolean containsNumberNear(String out, float expected, float tolerance) {
+        for (String token : out.split("[^0-9eE.+-]+")) {
+            if (token.isEmpty()) continue;
+            try {
+                if (Math.abs(Float.parseFloat(token) - expected) <= tolerance) {
+                    return true;
+                }
+            } catch (NumberFormatException ignored) {
+                // not a number, keep looking
+            }
+        }
+        return false;
+    }
+}
