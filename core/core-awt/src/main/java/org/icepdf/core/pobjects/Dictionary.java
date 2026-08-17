@@ -238,7 +238,7 @@ public class Dictionary {
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setHexString(final Name key, String value) {
-        entries.put(key, HexStringObject.createHexString(value));
+        entries.put(key, new HexStringObject(value, getPObjectReference()));
         return value;
     }
 

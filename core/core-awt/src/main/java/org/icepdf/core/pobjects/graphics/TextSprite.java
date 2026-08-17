@@ -135,6 +135,22 @@ public class TextSprite {
         }
         // can't have Rectangle2D with negative w or h, api will zero the bounds.
         w = Math.abs(w);
+
+        // a zero width culls the glyph for the same reason a zero height does: Rectangle2D
+        // treats an empty rectangle as intersecting nothing, so TextSpriteDrawCmd's clip test
+        // fails and the sprite is never painted.  A Type3 glyph that the producer positions
+        // individually with Tm legitimately advances by nothing at all -- Ghostscript writes
+        // `0 0 0 0 51 48 d1` and matching zero /Widths -- so the advance cannot be relied on to
+        // give the glyph a width here.
+        if (w == 0.0f) {
+            Rectangle2D glyphBounds = font.getBounds(cid, 0, 1);
+            if (glyphBounds != null && glyphBounds.getWidth() > 0) {
+                w = (float) glyphBounds.getWidth();
+            } else {
+                // match the height, mirroring what the zero-height case does with the width.
+                w = Math.abs(font.getSize());
+            }
+        }
         // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
         // figure out the geometry for the corner cases.
         Rectangle2D.Double glyphBounds;

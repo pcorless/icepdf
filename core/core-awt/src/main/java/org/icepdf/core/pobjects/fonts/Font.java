@@ -368,6 +368,28 @@ public abstract class Font extends Dictionary {
     }
 
     /**
+     * Splits a show-text string's bytes into character codes, one code per returned char.
+     * <p>
+     * A simple font's codes are always exactly one byte wide (PDF 32000-1 9.6), so that is what this
+     * base implementation produces.  Composite fonts override it: their code width is defined by the
+     * encoding CMap's codespace ranges and may vary from code to code
+     * ({@link org.icepdf.core.pobjects.fonts.zfont.Type0Font#toCodes}).
+     * <p>
+     * Code width is never a function of the font's glyph coverage or its {@code /W} widths &mdash;
+     * a code that maps to no glyph still consumes its full width in bytes and simply selects CID 0.
+     *
+     * @param bytes the string's raw bytes, from {@link org.icepdf.core.pobjects.StringObject#getRawBytes()}
+     * @return the character codes, one per char
+     */
+    public StringBuilder toCodes(byte[] bytes) {
+        StringBuilder codes = new StringBuilder(bytes.length);
+        for (byte b : bytes) {
+            codes.append((char) (b & 0xFF));
+        }
+        return codes;
+    }
+
+    /**
      * Gets the font encoding name.
      *
      * @return font encoding name.

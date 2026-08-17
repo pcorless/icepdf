@@ -28,8 +28,8 @@ public class HexStringObjectWriter extends BaseWriter {
     private static final byte[] BEGIN_HEX_STRING = "<".getBytes();
     private static final byte[] END_HEX_STRING = ">".getBytes();
 
-    private static final String HEX_REGEX = "(?=[<>\\\\])";
-    private static final String HEX_REPLACEMENT = "\\\\";
+    // no escaping table here on purpose: what gets written is always hexadecimal digits, and
+    // "0123456789ABCDEF" contains none of the characters that would need escaping
 
     public HexStringObjectWriter(SecurityManager securityManager) {
         this.securityManager = securityManager;
@@ -37,21 +37,20 @@ public class HexStringObjectWriter extends BaseWriter {
 
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
-        if (pObject.isDoNotEncrypt()) {
-            writeRaw(writeable.getHexString().replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
-        } else if (securityManager != null) {
-            if (writeable.isModified()) {
-                // encryption will take care of any escape issue.
-                String writeableString = writeable.encryption(writeable.getHexString(), pObject.getReference(),
-                        securityManager);
-                writeRaw(writeableString.replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
-            } else {
-                // just need to write the string data as is, string data will already be in the correct state
-                writeRaw(writeable.toString(), output);
-            }
+        if (!pObject.isDoNotEncrypt() && securityManager != null && writeable.isModified()) {
+            // A string authored since the document was opened holds plain text, so it is the one
+            // case that needs encrypting on the way out.  The bytes the digits stand for are what
+            // gets encrypted, and the cipher text goes back out as digits.
+            writeRaw(writeable.getEncryptedHexString(pObject.getReference(), securityManager), output);
         } else {
-            // plain string make sure it's properly escaped.
-            writeRaw(writeable.getHexString().replaceAll(HEX_REGEX, HEX_REPLACEMENT), output);
+            // Everything else is already in the state it should be written in: a string read from
+            // the file is still exactly as encrypted as the file it came from, and where there is no
+            // security manager nothing is encrypted at all.
+            //
+            // Note this writes the DIGITS.  Writing toString() here, as this used to, wrote the
+            // decoded text between the angle brackets, and re-parsing kept only those characters
+            // that happened to be hexadecimal: a 62 digit string came back as EBEAE0.
+            writeRaw(writeable.getHexString(), output);
         }
     }
 

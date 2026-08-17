@@ -914,6 +914,18 @@ public abstract class AbstractContentParser {
                         graphicState.getTextState().font.getFont().deriveFont(size);
             }
         }
+        // Last resort: a font resource that yields no font program at all - a malformed font
+        // dictionary whose init() threw, say - would otherwise leave currentfont null, and every
+        // show-text operator that follows throws, taking the whole text block off the page.  Text
+        // in an approximate face beats no text, so fall back to the standard sans substitute.
+        if (graphicState.getTextState().currentfont == null) {
+            FontFile fallback = FontManager.getInstance().initialize().getInstance("Helvetica", 0);
+            if (fallback != null) {
+                graphicState.getTextState().currentfont = fallback.deriveFont(size);
+                logger.warning("Font " + name2 + " supplied no font program, falling back to "
+                        + fallback.getName());
+            }
+        }
     }
 
     protected static void consume_Tc(GraphicsState graphicState, Stack<Object> stack) {
@@ -1474,9 +1486,8 @@ public abstract class AbstractContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
                             graphicState, oCGs, contentStreamCallback);
@@ -1518,9 +1529,8 @@ public abstract class AbstractContentParser {
                 // before a valid Tf or an unresolved font resource).
                 if (stringObject.getLength() > 0 && textState.font != null
                         && textState.font.getFont() != null) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             textState,
                             shapes,
