@@ -169,7 +169,16 @@ public class FontFactory {
         } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
             fontFile = new ZFontType0(fontStream);
         } else if (FONT_CID_TYPE_2 == fontType) {
-            fontFile = new ZFontType2(fontStream);
+            // Quartz labels an OpenType/CFF program as a CIDFontType2 and stores it in /FontFile2
+            // stripped of every TrueType table, so it can't be parsed as one; read the CFF it
+            // actually holds rather than failing over to substitution, which would strand the
+            // Identity-H codes since those are the subset's own glyph indices.
+            byte[] postScriptOutlines = SfntProgram.postScriptOutlines(fontStream.getDecodedStreamBytes());
+            if (postScriptOutlines != null) {
+                fontFile = new ZFontType0(postScriptOutlines);
+            } else {
+                fontFile = new ZFontType2(fontStream);
+            }
         }
         return fontFile;
     }
