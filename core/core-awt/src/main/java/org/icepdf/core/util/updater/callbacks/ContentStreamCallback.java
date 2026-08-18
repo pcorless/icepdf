@@ -49,7 +49,6 @@ public abstract class ContentStreamCallback {
     protected byte[] originalContentStreamBytes;
     protected int lastTokenPosition;
     protected int lastTextPosition;
-    protected float lastTjOffset;
     protected final Library library;
     protected final AffineTransform transform;
     protected boolean modifiedStream;
@@ -126,33 +125,17 @@ public abstract class ContentStreamCallback {
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
             lastTokenPosition = position;
-        } else if (token == T_STAR || token == TD || token == Td) {
-            // relative operators, so adjust for the modified content.
-            writeLastTjOffset();
+        } else if (token == T_STAR || token == TD || token == Td || token == BT || token == Tm) {
+            // Positioning operators are copied through untouched. Rewritten text is emitted as TJ
+            // adjustments, which move the text position only, so nothing a show operation did needs
+            // undoing before one of these.
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
                     (position - lastTokenPosition));
-            lastTjOffset = 0;
-            lastTokenPosition = position;
-        } else if (token == BT || token == Tm) {
-            burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
-                    (position - lastTokenPosition));
-            // hard reset, new coordinate system
-            lastTjOffset = 0;
             lastTokenPosition = position;
         }
         lastTextPosition = position;
     }
 
-    private void writeLastTjOffset() throws IOException {
-        if (lastTjOffset > 0) {
-            burnedContentOutputStream.write(' ');
-            burnedContentOutputStream.write(StringObjectWriter.formatReal(-lastTjOffset).getBytes());
-            burnedContentOutputStream.write(' ');
-            burnedContentOutputStream.write('0');
-            burnedContentOutputStream.write(" Td ".getBytes());
-            modifiedStream = true;
-        }
-    }
 
     private boolean isTextLayoutToken(int token) {
         // ' and " show text just as Tj does, so their bytes belong to the StringObjectWriter too.
@@ -185,8 +168,7 @@ public abstract class ContentStreamCallback {
                 burnedContentOutputStream.write(showPrefix.getBytes());
             }
             // apply end string writer
-            lastTjOffset = stringObjectWriter.writeShownText(burnedContentOutputStream, textOperators,
-                    Operands.TJ == operand, lastTjOffset);
+            stringObjectWriter.writeShownText(burnedContentOutputStream, textOperators);
             modifiedStream = true;
         } else {
             // copy not flagged StringObjects verbatim

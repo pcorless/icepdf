@@ -1,4 +1,4 @@
 BT
 /F1 12 Tf
-20 100 Td [ (alpha)-3250 (charlie)] TJ
+20 100 Td [ (alpha) -3250 (charlie)] TJ
 ET

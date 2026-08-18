@@ -2,6 +2,6 @@ BT
 /F1 12 Tf
 14 TL
 20 150 Td
-(alpha bravo) Tj T*  [-3500 ( delta)] TJ
+(alpha bravo) Tj T*  [ -3500 ( delta)] TJ
 1 2 (echo foxtrot) "
 ET

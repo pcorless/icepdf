@@ -189,7 +189,7 @@ public class RedactedStringObjectWriterTest {
 
     private String writeTj(ArrayList<TextSprite> operators) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        writer.writeTj(out, operators, 0);
+        writer.writeShownText(out, operators);
         return out.toString(StandardCharsets.ISO_8859_1.name());
     }
 

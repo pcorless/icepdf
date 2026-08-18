@@ -3,7 +3,7 @@ BT
 50 Tz
 2 Tc
 5 Tw
-20 100 Td [ (alpha )-3708.3333 (charlie)] TJ
+20 100 Td [ (alpha ) -3708.3333 (charlie)] TJ
 3 Ts
 (delta echo) Tj
 ET
