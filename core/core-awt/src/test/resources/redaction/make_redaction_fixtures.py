@@ -149,7 +149,22 @@ def rotated_page():
                        page_extra=b"/Rotate 90 ")
 
 
+def tight_leading():
+    """Three lines 8pt apart in a 12pt font, so adjacent lines' glyph bounds overlap vertically.
+
+    This is the case where flagging on any intersection can over-reach: a redaction box sized to a
+    word on the middle line also touches the glyphs above and below it.  The fixture exists to
+    measure that, not because tight leading is itself unusual.
+    """
+    return simple_page(b"BT\n/F1 12 Tf\n8 TL\n20 150 Td\n"
+                       b"(above line text) Tj\nT*\n"
+                       b"(middle bravo word) Tj\nT*\n"
+                       b"(below line text) Tj\n"
+                       b"ET\n")
+
+
 FIXTURES = {
+    "tight_leading.pdf": tight_leading,
     "simple_tj.pdf": simple_tj,
     "tj_array.pdf": tj_array,
     "quote_operators.pdf": quote_operators,

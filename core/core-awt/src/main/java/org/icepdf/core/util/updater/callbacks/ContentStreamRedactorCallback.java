@@ -71,7 +71,12 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         Rectangle2D glyphBounds = glyphText.getBounds();
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
-            if (redactionPath != null && redactionPath.contains(glyphBounds)) {
+            // Intersection, not containment.  A redaction rectangle drawn snugly over a word does
+            // not contain the glyph bounds, which carry ascender, descender and side-bearing slack,
+            // so containment left the glyph in the stream with the annotation merely painted over
+            // it.  Erring towards removing a glyph that only grazes the region is the right
+            // direction for a redaction, and it matches the predicate the image paths already use.
+            if (redactionPath != null && redactionPath.intersects(glyphBounds)) {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.flagged();
                 // flagged is not a counter, and the remaining annotations cannot unflag it

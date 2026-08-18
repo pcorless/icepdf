@@ -31,6 +31,7 @@ import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -133,6 +134,92 @@ public class RedactionGoldenTest {
     })
     public void knownFailingFixtures(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
+    }
+
+    /**
+     * A redaction rectangle drawn snugly over a word - the realistic case when a user drags a box,
+     * or when a search hit's bounds are tightened - does not fully contain the glyph bounds, which
+     * carry ascender, descender and side-bearing slack. Under a containment test the glyphs stayed
+     * in the content stream with the annotation merely painted over them, which is the classic
+     * redaction that isn't.
+     */
+    @DisplayName("a redaction box that only grazes the glyphs still removes them")
+    @Test
+    public void snugRedactionBoxStillRemovesGlyphs() throws Exception {
+        Document document = new Document();
+        document.setFile(FIXTURES.resolve("simple_tj.pdf").toString());
+        byte[] redacted;
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+
+            Rectangle2D wordBounds = null;
+            for (LineText lineText : page.getViewText().getPageLines()) {
+                for (WordText wordText : lineText.getWords()) {
+                    if (wordText.getText().trim().equals("bravo")) {
+                        wordBounds = wordText.getBounds();
+                    }
+                }
+            }
+            assertTrue(wordBounds != null, "fixture should contain 'bravo'");
+
+            // Inset vertically so the glyphs' full height pokes out of the redaction region: the
+            // box intersects every glyph but contains none of them.
+            Rectangle snug = new Rectangle(
+                    (int) wordBounds.getX(), (int) (wordBounds.getY() + 2),
+                    (int) wordBounds.getWidth(), (int) (wordBounds.getHeight() - 4));
+            assertFalse(new GeneralPath(snug).contains(wordBounds),
+                    "the test box must not contain the word bounds, or it proves nothing");
+
+            RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(
+                    document.getPageTree().getLibrary(), Annotation.SUBTYPE_REDACT, snug);
+            ArrayList<Shape> markupBounds = new ArrayList<>();
+            markupBounds.add(snug);
+            annotation.setColor(Color.BLACK);
+            annotation.setMarkupBounds(markupBounds);
+            annotation.setMarkupPath(new GeneralPath(snug));
+            annotation.setBBox(snug);
+            annotation.resetAppearanceStream(new AffineTransform());
+            page.addAnnotation(annotation, true);
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            redacted = out.toByteArray();
+        } finally {
+            document.dispose();
+        }
+
+        assertFalse(extractedText(redacted).contains("bravo"),
+                "'bravo' survived a redaction box drawn snugly over it");
+        assertFalse(contentStreams(redacted).contains("bravo"),
+                "'bravo' is still in the content stream after a snug redaction box");
+    }
+
+    /**
+     * Characterises the cost of flagging on any intersection: a redaction sized to a word can reach
+     * glyphs on a neighbouring line when leading is tight enough that their bounds overlap.
+     * <p>
+     * This is a measurement, not a pass/fail on a requirement - it records what the current
+     * predicate does so the trade is visible if it ever bites. If over-reach becomes a problem the
+     * answer is the coverage threshold from decision 1 (flag when the intersected fraction of a
+     * glyph exceeds some value) rather than a return to containment, which leaks.
+     */
+    @DisplayName("intersection flagging can reach a neighbouring line when leading is tight")
+    @Test
+    public void tightLeadingShowsTheCostOfIntersectionFlagging() throws Exception {
+        byte[] redacted = redact("tight_leading.pdf", "bravo");
+        String remaining = extractedText(redacted);
+
+        assertFalse(remaining.contains("bravo"), "the targeted word must go");
+        // What the neighbours look like afterwards is the measurement. Recorded as an assertion so
+        // a change in the predicate shows up here rather than silently.
+        // Measured: the only collateral is a space glyph on the line above, whose bounds overlap
+        // the redaction region. No word on either neighbouring line is lost. Pinned exactly so a
+        // change of predicate shows up as a diff here rather than silently widening the blast
+        // radius.
+        assertEquals("above line  text | middle   word | below line text",
+                remaining.trim().replace("\n", " | "),
+                "intersection flagging reached further than the measured baseline");
     }
 
     private void assertRedactionMatchesGolden(String fixture, String term) throws Exception {
