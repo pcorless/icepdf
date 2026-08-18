@@ -71,12 +71,33 @@ public class Form extends Stream {
 
     public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
+        initMatrix();
         initGroup();
     }
 
     public Form(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
         super(l, h, streamDataView);
+        initMatrix();
         initGroup();
+    }
+
+    /**
+     * Reads the form's /Matrix.
+     * <p>
+     * This is done at construction rather than in {@link #init(ContentStreamCallback)} because
+     * callers legitimately need the matrix <em>before</em> the form is initialised - notably
+     * {@code consume_Do}, which has to build a content stream callback's transform from
+     * {@code CTM x Matrix} and then pass that callback into {@code init}. Parsing it lazily left
+     * those callers holding the default identity, which silently mislocated everything they
+     * derived from it.
+     */
+    private void initMatrix() {
+        Object v = library.getObject(entries, MATRIX_KEY);
+        if (v instanceof List) {
+            matrix = getAffineTransform((List) v);
+        } else if (v instanceof AffineTransform) {
+            matrix = (AffineTransform) v;
+        }
     }
 
     private void initGroup() {
@@ -176,12 +197,8 @@ public class Form extends Stream {
         if (inited) {
             return;
         }
-        Object v = library.getObject(entries, MATRIX_KEY);
-        if (v instanceof List) {
-            matrix = getAffineTransform((List) v);
-        } else if (v instanceof AffineTransform) {
-            matrix = (AffineTransform) v;
-        }
+        // /Matrix is read in the constructor - see initMatrix() for why. Re-reading it here would
+        // also clobber a matrix supplied through setAppearance().
         bbox = library.getRectangle(entries, BBOX_KEY);
         // try and find the form's resources dictionary.
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);

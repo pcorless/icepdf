@@ -15,7 +15,11 @@
  */
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Form;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -41,6 +45,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -82,6 +87,7 @@ public class RedactionGoldenTest {
             "simple_tj.pdf, bravo",
             "tj_array.pdf, bravo",
             "rotated_page.pdf, bravo",
+            "form_xobject.pdf, bravo",
     })
     public void redactionMatchesGolden(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
@@ -97,9 +103,10 @@ public class RedactionGoldenTest {
      * <li>{@code text_state} - redacting 'bravo' moves 'charlie' from x=59.75 to x=103.25. With
      *     Tz 50 the offset is computed from glyph advances that carry the horizontal scale, but Td
      *     operands are in unscaled text space.</li>
-     * <li>{@code form_xobject}, {@code form_drawn_twice} - text inside a Form XObject is never
-     *     redacted at all; the child callback transform is applied to glyph bounds that the parser
-     *     has already mapped into page space.</li>
+     * <li>{@code form_drawn_twice} - one form, two placements, and Form.init() short-circuits on
+     *     its inited flag, so only the first placement is ever parsed with a redaction callback.
+     *     The second placement's glyphs are never offered for flagging. Bound up with the
+     *     copy-on-burn decision: one shared stream cannot carry two different redactions.</li>
      * <li>{@code multi_stream} - the original string stays in the file. Its operand is in one
      *     content stream and its Tj in the next, so the first stream is copied out verbatim and the
      *     replacement appended after it. The orphaned string has no operator so it is never shown,
@@ -107,15 +114,14 @@ public class RedactionGoldenTest {
      * </ul>
      */
     @DisplayName("known-failing fixtures (GH-525)")
-    @Disabled("GH-525: quote operators leak, Tz breaks layout, form XObject text is never " +
-            "redacted, a show operator split across content streams leaks its string")
+    @Disabled("GH-525: quote operators leak, Tz breaks layout, a show operator split across " +
+            "content streams leaks its string, a form drawn twice is only redacted once")
     @ParameterizedTest(name = "{0} redacting \"{1}\"")
     @CsvSource({
             "quote_operators.pdf, charlie",
             "text_state.pdf, bravo",
-            "form_xobject.pdf, bravo",
-            "form_drawn_twice.pdf, repeated",
             "multi_stream.pdf, charlie",
+            "form_drawn_twice.pdf, repeated",
     })
     public void knownFailingFixtures(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
@@ -210,6 +216,15 @@ public class RedactionGoldenTest {
                 text.append(new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
                 text.append('\n');
             }
+            // Form XObjects carry their own content streams, and text redacted inside one is
+            // rewritten there rather than in the page stream. Without these the golden would show
+            // only "/Fm0 Do" and the byte-level leak check would be blind to everything a form
+            // draws.
+            for (Stream stream : formStreams(page)) {
+                text.append("% form ").append(stream.getPObjectReference()).append('\n');
+                text.append(new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
+                text.append('\n');
+            }
             StringBuilder normalised = new StringBuilder();
             for (String line : text.toString().split("\\R")) {
                 String trimmed = line.trim();
@@ -221,6 +236,30 @@ public class RedactionGoldenTest {
         } finally {
             document.dispose();
         }
+    }
+
+    /**
+     * Form XObjects reachable from a page's resources, in a stable order.
+     */
+    private List<Stream> formStreams(Page page) {
+        List<Stream> forms = new ArrayList<>();
+        if (page.getResources() == null) {
+            return forms;
+        }
+        DictionaryEntries xObjects = page.getLibrary()
+                .getDictionary(page.getResources().getEntries(), Resources.XOBJECT_KEY);
+        if (xObjects == null) {
+            return forms;
+        }
+        List<Object> names = new ArrayList<>(xObjects.keySet());
+        names.sort(Comparator.comparing(Object::toString));
+        for (Object name : names) {
+            Object xObject = page.getLibrary().getObject(xObjects, (Name) name);
+            if (xObject instanceof Form) {
+                forms.add((Form) xObject);
+            }
+        }
+        return forms;
     }
 
     private String extractedText(byte[] pdf) throws Exception {
