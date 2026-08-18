@@ -64,13 +64,18 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
      * @param glyphText text to test for intersection with flagged content bounds
      */
     public void checkAndModifyText(GlyphText glyphText) {
+        // normalizeToUserSpace rewrites the glyph's bounds in place, so it must happen once for the
+        // glyph and not once per annotation - a second call re-applies the transform and every
+        // annotation after the first tests against bounds that have drifted off the page.
+        glyphText.normalizeToUserSpace(transform, null);
+        Rectangle2D glyphBounds = glyphText.getBounds();
         for (RedactionAnnotation annotation : redactionAnnotations) {
-            GeneralPath reactionPaths = annotation.getMarkupPath();
-            glyphText.normalizeToUserSpace(transform, null);
-            Rectangle2D glyphBounds = glyphText.getBounds();
-            if (reactionPaths != null && reactionPaths.contains(glyphBounds)) {
+            GeneralPath redactionPath = annotation.getMarkupPath();
+            if (redactionPath != null && redactionPath.contains(glyphBounds)) {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.flagged();
+                // flagged is not a counter, and the remaining annotations cannot unflag it
+                return;
             }
         }
     }

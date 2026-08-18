@@ -45,6 +45,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,10 @@ public class RedactionGoldenTest {
             "tj_array.pdf, bravo",
             "rotated_page.pdf, bravo",
             "form_xobject.pdf, bravo",
+            // two annotations inside a form: the transform is non-identity, so this is the case
+            // that catches normalizeToUserSpace being applied once per annotation instead of once
+            // per glyph.
+            "form_xobject.pdf, alpha|charlie",
     })
     public void redactionMatchesGolden(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
@@ -136,17 +141,22 @@ public class RedactionGoldenTest {
         byte[] redacted = redact(fixture, term);
         String actual = contentStreams(redacted);
 
-        assertFalse(extractedText(redacted).contains(term),
-                "'" + term + "' is still extractable from " + fixture);
+        for (String single : term.split("\\|")) {
+            assertFalse(extractedText(redacted).contains(single),
+                    "'" + single + "' is still extractable from " + fixture);
+        }
         // Extraction is not enough on its own: a string left in the stream without its operator is
         // never shown, so it cannot be extracted, but its bytes are still in the file for anyone
         // who opens it in an editor. Redaction has to remove the bytes, not just the rendering.
-        assertFalse(actual.contains(term),
-                "'" + term + "' is gone from the rendered text of " + fixture + " but its bytes " +
-                        "remain in the content stream:\n" + actual);
+        for (String single : term.split("\\|")) {
+            assertFalse(actual.contains(single),
+                    "'" + single + "' is gone from the rendered text of " + fixture + " but its " +
+                            "bytes remain in the content stream:\n" + actual);
+        }
         assertOnlyTheRedactedTermMoved(originsBefore, glyphOrigins(redacted), term, fixture);
 
-        Path golden = GOLDENS.resolve(fixture.replace(".pdf", ".txt"));
+        Path golden = GOLDENS.resolve(fixture.replace(".pdf", "") +
+                (term.contains("|") ? "_" + term.replace("|", "_") : "") + ".txt");
         if (BLESS || !Files.exists(golden)) {
             Files.createDirectories(GOLDENS);
             Files.write(golden, actual.getBytes(StandardCharsets.ISO_8859_1));
@@ -173,15 +183,17 @@ public class RedactionGoldenTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
 
+            List<String> terms = Arrays.asList(term.split("\\|"));
             List<Rectangle> targets = new ArrayList<>();
             for (LineText lineText : page.getViewText().getPageLines()) {
                 for (WordText wordText : lineText.getWords()) {
-                    if (wordText.getText().trim().equals(term)) {
+                    if (terms.contains(wordText.getText().trim())) {
                         targets.add(wordText.getBounds().getBounds());
                     }
                 }
             }
-            assertFalse(targets.isEmpty(), "fixture " + fixture + " should contain '" + term + "'");
+            assertEquals(terms.size(), targets.size(),
+                    "fixture " + fixture + " should contain each of " + terms + " exactly once");
 
             for (Rectangle bounds : targets) {
                 RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(
