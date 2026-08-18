@@ -20,8 +20,8 @@ import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 
 import java.io.ByteArrayOutputStream;
-import java.math.BigDecimal;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,32 +42,13 @@ public abstract class StringObjectWriter {
         return false;
     }
 
-    public static boolean partiallyFlaggedGlyphs(ArrayList<GlyphText> glyphTexts) {
+    private static boolean partiallyFlaggedGlyphs(ArrayList<GlyphText> glyphTexts) {
         for (GlyphText glyphText : glyphTexts) {
             if (glyphText.isFlagged()) {
                 return true;
             }
         }
         return false;
-    }
-
-    public static boolean fullyFlagged(ArrayList<GlyphText> glyphTexts) {
-        for (GlyphText glyphText : glyphTexts) {
-            if (!glyphText.isFlagged()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public static int flaggedCount(ArrayList<GlyphText> glyphTexts) {
-        int count = 0;
-        for (GlyphText glyphText : glyphTexts) {
-            if (glyphText.isFlagged()) {
-                count++;
-            }
-        }
-        return count;
     }
 
     /**
@@ -160,7 +141,11 @@ public abstract class StringObjectWriter {
     }
 
     /**
-     * @return true when this writer substitutes text for what it removes
+     * Whether {@link #writeRunReplacement} still has something to write. Consulted before stepping
+     * to a removed run - with nothing to put there, the next surviving glyph adjusts over the whole
+     * run in one element - and to decide whether an operation with no survivors is dropped entirely.
+     *
+     * @return true when a replacement is still outstanding
      */
     protected boolean writesReplacementText() {
         return false;
@@ -185,21 +170,21 @@ public abstract class StringObjectWriter {
      */
     private float writeAdjustment(ByteArrayOutputStream contentOutputStream, float target,
                                   float readerPosition, float fontSize, OpenString openString) throws IOException {
-        float gap = target - readerPosition;
-        if (Math.abs(gap) <= NEGLIGIBLE_ADJUSTMENT) {
+        float adjustment = -1000f * (target - readerPosition) / fontSize;
+        if (Math.abs(adjustment) <= NEGLIGIBLE_ADJUSTMENT) {
             return readerPosition;
         }
         closeString(contentOutputStream, openString);
         // Numbers need a separator: PDF does not treat '-' as a delimiter, so two adjacent
         // adjustments written as "-250-3000" lex as one malformed number rather than two elements.
         contentOutputStream.write(' ');
-        contentOutputStream.write(formatReal(-1000f * gap / fontSize).getBytes());
+        contentOutputStream.write(formatReal(adjustment).getBytes());
         return target;
     }
 
     private void closeString(ByteArrayOutputStream contentOutputStream, OpenString openString) throws IOException {
         if (openString.glyphText != null) {
-            writeDelimiterEnd(openString.glyphText, contentOutputStream, false);
+            writeDelimiterEnd(openString.glyphText, contentOutputStream);
             openString.glyphText = null;
         }
     }
@@ -222,15 +207,19 @@ public abstract class StringObjectWriter {
     }
 
     /**
+     * Adjustments smaller than this are dropped: they are float noise from accumulating advances
+     * rather than a real displacement, and cost bytes to say nothing. Expressed in the thousandths
+     * of an em a TJ element is written in, so the same rule applies at every font size - measuring
+     * the raw gap instead would suppress ten times as much at 60pt as at 6pt.
+     */
+    private static final float NEGLIGIBLE_ADJUSTMENT = 0.5f;
+
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
+
+    /**
      * The string currently open in the array, if any. Held in an object so the helpers above can
      * close it without threading it back through every return value.
      */
-    /**
-     * Gaps below this are float noise from accumulating advances rather than a real displacement,
-     * and an adjustment of -0.0001 costs bytes and says nothing.
-     */
-    private static final float NEGLIGIBLE_ADJUSTMENT = 0.01f;
-
     private static final class OpenString {
         private GlyphText glyphText;
     }
@@ -277,10 +266,6 @@ public abstract class StringObjectWriter {
         }
     }
 
-
-
-
-
     /**
      * Formats a number the way PDF requires it.
      * <p>
@@ -326,22 +311,26 @@ public abstract class StringObjectWriter {
                 contentOutputStream.write(cid);
             }
         } else {
-            // Codes 128-255 are always exactly three octal digits (200-377), so this cannot run
-            // short and absorb a following digit; writeOctalEscape pads regardless.
             writeOctalEscape(cid, contentOutputStream);
         }
     }
 
-    private static void writeOctalEscape(char cid, ByteArrayOutputStream contentOutputStream) throws IOException {
+    private static void writeOctalEscape(char cid, ByteArrayOutputStream contentOutputStream) {
         contentOutputStream.write('\\');
-        contentOutputStream.write(String.format("%03o", (int) cid).getBytes());
+        // Three digits always, so the escape cannot run short and absorb a following digit. Written
+        // digit by digit rather than through String.format, which builds a Formatter per glyph.
+        contentOutputStream.write('0' + ((cid >> 6) & 0x7));
+        contentOutputStream.write('0' + ((cid >> 3) & 0x7));
+        contentOutputStream.write('0' + (cid & 0x7));
     }
 
     protected static void writeCidCharacterCode(char cid, ByteArrayOutputStream contentOutputStream) throws IOException {
         // Every code must occupy the same number of hex digits or the string cannot be split back
         // into codes: a three digit code such as 0x100 written as <100> shifts everything after it
         // by a nibble.
-        contentOutputStream.write(String.format("%04x", (int) cid).getBytes());
+        for (int shift = 12; shift >= 0; shift -= 4) {
+            contentOutputStream.write(HEX_DIGITS[(cid >> shift) & 0xF]);
+        }
     }
 
     protected static void writeDelimiterStart(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
@@ -351,28 +340,18 @@ public abstract class StringObjectWriter {
         contentOutputStream.write(delimiter);
     }
 
-    protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
-        writeDelimiterEnd(glyphText, contentOutputStream, true);
-    }
-
     /**
-     * Closes a string, optionally showing it.
+     * Closes a string. No show operator follows it: every string this writer emits is an element of
+     * a TJ array, and the array's own operator shows them all.
      *
      * @param glyphText           glyph whose font decides the delimiter
      * @param contentOutputStream stream to write to
-     * @param withShowOperator    true to follow the delimiter with Tj. False inside a TJ array,
-     *                            where the array's own operator shows every element and an inner Tj
-     *                            would be a syntax error.
      * @throws IOException if the stream cannot be written
      */
-    protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream,
-                                            boolean withShowOperator) throws IOException {
-        int fontSubType = glyphText.getFontSubTypeFormat();
-        char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
+    protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        char delimiter = glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT ? ')' : '>';
         contentOutputStream.write(delimiter);
-        if (withShowOperator) {
-            contentOutputStream.write(" Tj ".getBytes());
-        }
     }
 
 }

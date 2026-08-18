@@ -587,7 +587,7 @@ public class Document {
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
-        writeMode = warnIfRedactionsPending(writeMode);
+        warnIfRedactionsPending(writeMode);
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
@@ -627,17 +627,15 @@ public class Document {
      * write to a full update would rewrite and renumber every object, invalidating any existing
      * signature the incremental path would have preserved.
      *
-     * @param writeMode write mode requested by the caller
-     * @return the caller's write mode, unchanged
+     * @param writeMode write mode requested by the caller, which is honoured either way
      */
-    private WriteMode warnIfRedactionsPending(WriteMode writeMode) {
+    private void warnIfRedactionsPending(WriteMode writeMode) {
         if (writeMode == WriteMode.INCREMENT_UPDATE && stateManager != null
                 && stateManager.hasRedactions()) {
             logger.warning("Saving incrementally with redaction annotations still pending; the " +
                     "redacted content is NOT removed by an incremental update.  Write with " +
                     "WriteMode.FULL_UPDATE to burn the redactions.");
         }
-        return writeMode;
     }
 
     /**

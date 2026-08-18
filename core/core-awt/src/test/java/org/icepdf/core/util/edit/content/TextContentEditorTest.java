@@ -17,18 +17,16 @@ package org.icepdf.core.util.edit.content;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.graphics.text.LineText;
-import org.icepdf.core.pobjects.graphics.text.WordText;
+import org.icepdf.core.util.redaction.RedactionFixtures;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -49,7 +47,7 @@ public class TextContentEditorTest {
     @Test
     public void replaceWithSameLength() throws Exception {
         byte[] edited = edit("bravo", "BRAVO");
-        String text = extractedText(edited);
+        String text = RedactionFixtures.extractedText(edited);
 
         assertTrue(text.contains("BRAVO"), "replacement should be present, got: " + text);
         assertFalse(text.contains("bravo"), "original should be gone, got: " + text);
@@ -61,8 +59,9 @@ public class TextContentEditorTest {
     @Test
     public void replaceWithShorter() throws Exception {
         byte[] edited = edit("charlie", "cat");
-        String text = extractedText(edited);
+        String text = RedactionFixtures.extractedText(edited);
 
+        assertTrue(text.contains("cat"), "replacement should be present, got: " + text);
         assertFalse(text.contains("charlie"), "original should be gone, got: " + text);
         assertTrue(text.contains("alpha") && text.contains("bravo"),
                 "surrounding words should survive, got: " + text);
@@ -72,13 +71,14 @@ public class TextContentEditorTest {
     @Test
     public void editedStreamStaysWellFormed() throws Exception {
         byte[] edited = edit("bravo", "BRAVO");
-        String stream = contentStream(edited);
+        String stream = RedactionFixtures.contentStreams(edited, false);
 
         assertFalse(stream.contains("bravo"), "the replaced text should not remain: " + stream);
         assertTrue(stream.contains("alpha"), "untouched text should remain: " + stream);
         // Parsing the reopened document is what extractedText does; if the stream were malformed
         // the surrounding words would not come back.
-        assertTrue(extractedText(edited).contains("alpha"), "stream should still parse");
+        assertTrue(RedactionFixtures.extractedText(edited).contains("alpha"),
+                "stream should still parse");
     }
 
     // -- helpers ---------------------------------------------------------------------------------
@@ -90,49 +90,15 @@ public class TextContentEditorTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
 
-            Rectangle bounds = null;
-            for (LineText lineText : page.getViewText().getPageLines()) {
-                for (WordText wordText : lineText.getWords()) {
-                    if (wordText.getText().trim().equals(target)) {
-                        bounds = wordText.getBounds().getBounds();
-                    }
-                }
-            }
-            assertNotNull(bounds, "fixture should contain '" + target + "'");
+            List<Rectangle> bounds = RedactionFixtures.wordBounds(page,
+                    Collections.singletonList(target));
+            assertEquals(1, bounds.size(), "fixture should contain '" + target + "' exactly once");
 
-            TextContentEditor.updateText(page, target, bounds, replacement);
+            TextContentEditor.updateText(page, target, bounds.get(0), replacement);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
             return out.toByteArray();
-        } finally {
-            document.dispose();
-        }
-    }
-
-    private String extractedText(byte[] pdf) throws Exception {
-        Document document = new Document();
-        document.setInputStream(new ByteArrayInputStream(pdf), "edited");
-        try {
-            Page page = document.getPageTree().getPage(0);
-            page.init();
-            return page.getViewText().toString();
-        } finally {
-            document.dispose();
-        }
-    }
-
-    private String contentStream(byte[] pdf) throws Exception {
-        Document document = new Document();
-        document.setInputStream(new ByteArrayInputStream(pdf), "edited");
-        try {
-            Page page = document.getPageTree().getPage(0);
-            page.init();
-            StringBuilder text = new StringBuilder();
-            for (Stream stream : page.getContentStreams()) {
-                text.append(new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
-            }
-            return text.toString();
         } finally {
             document.dispose();
         }

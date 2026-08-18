@@ -16,21 +16,14 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.AnnotationFactory;
-import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
-import org.icepdf.core.util.Library;
 import java.util.Iterator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,7 +53,8 @@ public class ImageBurnerTest {
             page.init();
 
             // Inset slightly so the fill cannot depend on how a boundary pixel rounds.
-            page.addAnnotation(redaction(document, new Rectangle(142, 102, 26, 26)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document,
+                    new Rectangle(142, 102, 26, 26)), true);
             Redactor.burnRedactions(document);
 
             BufferedImage burned = burnedImage(document);
@@ -84,18 +78,6 @@ public class ImageBurnerTest {
 
     // -- helpers ---------------------------------------------------------------------------------
 
-    private RedactionAnnotation redaction(Document document, Rectangle bounds) {
-        RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(
-                document.getPageTree().getLibrary(), Annotation.SUBTYPE_REDACT, bounds);
-        ArrayList<Shape> markupBounds = new ArrayList<>();
-        markupBounds.add(bounds);
-        annotation.setColor(Color.BLACK);
-        annotation.setMarkupBounds(markupBounds);
-        annotation.setMarkupPath(new GeneralPath(bounds));
-        annotation.setBBox(bounds);
-        annotation.resetAppearanceStream(new AffineTransform());
-        return annotation;
-    }
 
     /**
      * The burned raster, taken from the change the burn registered rather than from the page's

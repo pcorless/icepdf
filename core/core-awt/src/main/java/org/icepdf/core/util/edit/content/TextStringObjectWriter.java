@@ -51,9 +51,8 @@ public class TextStringObjectWriter extends StringObjectWriter {
     @Override
     protected float writeRunReplacement(ByteArrayOutputStream contentOutputStream,
                                         TextSprite textSprite, GlyphText firstRemoved) throws IOException {
-        if (written || newText.isEmpty()) {
-            return 0;
-        }
+        // The base class only calls this while writesReplacementText() holds, so there is no need
+        // to re-check it here.
         written = true;
         writeDelimiterStart(firstRemoved, contentOutputStream);
         float advance = 0;
@@ -63,7 +62,7 @@ public class TextStringObjectWriter extends StringObjectWriter {
             writeCharacterCode(textSprite.getFont().toSelector(character), textSprite.getSubTypeFormat(),
                     contentOutputStream);
         }
-        writeDelimiterEnd(firstRemoved, contentOutputStream, false);
+        writeDelimiterEnd(firstRemoved, contentOutputStream);
         // The reader has advanced by the width of what was just shown, plus the character spacing it
         // applies after each glyph.
         return advance + newText.length() * textSprite.getCharSpacing();

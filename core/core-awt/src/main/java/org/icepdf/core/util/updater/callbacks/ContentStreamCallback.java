@@ -146,19 +146,24 @@ public abstract class ContentStreamCallback {
                 || token == SINGLE_QUOTE || token == DOUBLE_QUOTE;
     }
 
-    // write string/hex Object stored in glyphText using the specified StringObjectWriter
-    public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
-        writeModifiedStringObject(textOperators, operand, null);
-    }
-
     /**
-     * @param showPrefix text to emit ahead of a rewritten string so that an operator which does more
-     *                   than show text keeps doing it - the line advance of ' and ", and the spacing
-     *                   " sets. Ignored when the string is copied through unchanged, because then
-     *                   the original operator is copied with it.
+     * Rewrites the string shown by a text operator, or copies it through untouched when nothing in
+     * it was flagged.
+     * <p>
+     * Which operator it was no longer matters to the writer - every rewrite is emitted as a TJ
+     * array - except for what the operator did <em>besides</em> showing text, which is what
+     * {@code showPrefix} carries.
+     *
+     * @param textOperators sprites of the show operation
+     * @param showPrefix    text to emit ahead of a rewritten string so an operator that does more
+     *                      than show text keeps doing it: the line advance of {@code '} and
+     *                      {@code "}, and the spacing {@code "} sets. Null for {@code Tj} and
+     *                      {@code TJ}, which do nothing else. Unused when the string is copied
+     *                      through unchanged, because then the original operator goes with it.
+     * @throws IOException if the stream cannot be written
      */
-    public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand,
-                                          String showPrefix) throws IOException {
+    public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, String showPrefix)
+            throws IOException {
         if (StringObjectWriter.containsFlaggedText(textOperators)) {
             if (showPrefix != null) {
                 // The bytes between the previous operator and this one are part of the range being

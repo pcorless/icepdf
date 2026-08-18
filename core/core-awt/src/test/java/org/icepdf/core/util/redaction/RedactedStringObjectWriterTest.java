@@ -56,7 +56,7 @@ public class RedactedStringObjectWriterTest {
                 .glyphs("Secret")
                 .flagAll()
                 .buildOperators();
-        assertEquals("", writeTj(operators),
+        assertEquals("", write(operators),
                 "every glyph is redacted, so there is nothing left to show");
     }
 
@@ -64,7 +64,7 @@ public class RedactedStringObjectWriterTest {
     @Test
     public void leadingRunIsDropped() throws Exception {
         GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("SECRETvisible").flag(0, 6);
-        String out = writeTj(builder.buildOperators());
+        String out = write(builder.buildOperators());
 
         assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
         assertTrue(out.contains("(visible)"), "the unflagged remainder should be shown: " + out);
@@ -75,7 +75,7 @@ public class RedactedStringObjectWriterTest {
     @Test
     public void trailingRunIsDropped() throws Exception {
         GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("visibleSECRET").flag(7, 13);
-        String out = writeTj(builder.buildOperators());
+        String out = write(builder.buildOperators());
 
         assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
         assertTrue(out.contains("(visible)"), "the unflagged head should be shown: " + out);
@@ -86,7 +86,7 @@ public class RedactedStringObjectWriterTest {
     @Test
     public void middleRunSplitsTheString() throws Exception {
         GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("abSECRETyz").flag(2, 8);
-        String out = writeTj(builder.buildOperators());
+        String out = write(builder.buildOperators());
 
         assertFalse(out.contains("SECRET"), "the flagged glyphs must not survive");
         assertTrue(out.contains("(ab)"), "head should be shown: " + out);
@@ -99,11 +99,11 @@ public class RedactedStringObjectWriterTest {
     public void alternatingFlagsSplitPerRun() throws Exception {
         GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f)
                 .glyphs("aXbXc").flag(1, 2).flag(3, 4);
-        String out = writeTj(builder.buildOperators());
+        String out = write(builder.buildOperators());
 
         assertFalse(out.contains("X"), "flagged glyphs must not survive: " + out);
         assertBalancedDelimiters(out);
-        assertEquals(3, countOccurrences(out, "("),
+        assertEquals(3, RedactionFixtures.countOccurrences(out, "("),
                 "three surviving runs should give three strings: " + out);
     }
 
@@ -113,7 +113,7 @@ public class RedactedStringObjectWriterTest {
         float fontSize = 12f;
         GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(fontSize).glyphs("abSECRETyz").flag(2, 8);
         float advance = builder.advance();
-        String out = writeTj(builder.buildOperators());
+        String out = write(builder.buildOperators());
 
         // Six glyphs were removed, so the text position has to step over 6 * advance. A TJ element
         // is measured in thousandths of an em and subtracts, hence -1000 * gap / fontSize.
@@ -131,7 +131,7 @@ public class RedactedStringObjectWriterTest {
         ArrayList<TextSprite> operators = GlyphRunBuilder.cidFont(12f)
                 .codes(0x0100, 0x0041)
                 .buildOperators();
-        String out = writeTj(operators);
+        String out = write(operators);
         assertTrue(out.contains("<01000041>"),
                 "each CID code must occupy exactly four hex digits, got: " + out);
     }
@@ -139,13 +139,13 @@ public class RedactedStringObjectWriterTest {
     @DisplayName("codes 128-255 are written as three octal digits")
     @Test
     public void highCodesAreWrittenAsThreeOctalDigits() throws Exception {
-        // Not a defect, pinned so it stays that way: the octal branch only handles 128-255, and
-        // every value in that range is already exactly three octal digits (200-377), so the
-        // unpadded Integer.toString(cid, 8) cannot run short and absorb a following digit.
+        // Pinned because the review first claimed the opposite: codes in this range were said to
+        // be written unpadded and to absorb a following digit. They cannot - 128-255 is exactly
+        // three octal digits (200-377) - and the escape now pads unconditionally regardless.
         ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
                 .codes(0x80, '2', 0xFF)
                 .buildOperators();
-        String out = writeTj(operators);
+        String out = write(operators);
         assertTrue(out.contains("\\2002\\377"),
                 "expected three-digit octal escapes around the literal '2', got: " + out);
     }
@@ -156,7 +156,7 @@ public class RedactedStringObjectWriterTest {
         ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
                 .codes(0x0D, 'a')
                 .buildOperators();
-        String out = writeTj(operators);
+        String out = write(operators);
         assertFalse(out.contains("\r"),
                 "a raw CR in a literal string is normalised to LF on read-back, so it must be " +
                         "escaped, got: " + out.replace("\r", "<CR>"));
@@ -168,7 +168,7 @@ public class RedactedStringObjectWriterTest {
         ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(1e-4f)
                 .glyphs("aXb").flag(1, 2)
                 .buildOperators();
-        String out = writeTj(operators);
+        String out = write(operators);
         assertFalse(out.contains("E") || out.contains("e"),
                 "PDF reals have no exponent form, got: " + out);
     }
@@ -180,33 +180,26 @@ public class RedactedStringObjectWriterTest {
         operators.add(GlyphRunBuilder.simpleFont(12f).glyphs("aXb").flag(1, 2).build());
         operators.add(GlyphRunBuilder.simpleFont(12f).startingAt(100f).glyphs("cd").build());
 
-        String out = writeTj(operators);
+        String out = write(operators);
         assertBalancedDelimiters(out);
         assertTrue(out.contains("(cd)"), "the second sprite should be a string of its own: " + out);
     }
 
     // -- helpers ---------------------------------------------------------------------------------
 
-    private String writeTj(ArrayList<TextSprite> operators) throws Exception {
+    private String write(ArrayList<TextSprite> operators) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         writer.writeShownText(out, operators);
         return out.toString(StandardCharsets.ISO_8859_1.name());
     }
 
     private static void assertBalancedDelimiters(String out) {
-        assertEquals(countOccurrences(out, "("), countOccurrences(out, ")"),
+        assertEquals(RedactionFixtures.countOccurrences(out, "("), RedactionFixtures.countOccurrences(out, ")"),
                 "unbalanced literal string delimiters in: " + out);
-        assertEquals(countOccurrences(out, "<"), countOccurrences(out, ">"),
+        assertEquals(RedactionFixtures.countOccurrences(out, "<"), RedactionFixtures.countOccurrences(out, ">"),
                 "unbalanced hex string delimiters in: " + out);
     }
 
-    private static int countOccurrences(String haystack, String needle) {
-        int count = 0;
-        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + 1)) {
-            count++;
-        }
-        return count;
-    }
 
     /**
      * True when the output carries a number within {@code tolerance} of {@code expected}. Kept

@@ -1022,9 +1022,11 @@ public abstract class AbstractContentParser {
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
         // A rewritten string is shown with TJ, which sets no spacing and advances no line, so both
-        // have to be restated ahead of it.
-        String showPrefix = StringObjectWriter.formatReal(wordSpacing) + " Tw " +
-                StringObjectWriter.formatReal(characterSpacing) + " Tc T* ";
+        // have to be restated ahead of it. Only worth building when a callback is there to write
+        // it; every other parse of this operator would discard it.
+        String showPrefix = contentStreamCallback == null ? null
+                : StringObjectWriter.formatReal(wordSpacing) + " Tw " +
+                        StringObjectWriter.formatReal(characterSpacing) + " Tc T* ";
         consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
                 contentStreamCallback, showPrefix);
     }
@@ -1511,7 +1513,7 @@ public abstract class AbstractContentParser {
         }
         graphicState.set(tmp);
         if (contentStreamCallback != null) {
-            contentStreamCallback.writeModifiedStringObject(textOperators, Operands.TJ);
+            contentStreamCallback.writeModifiedStringObject(textOperators, null);
         }
     }
 
@@ -1567,7 +1569,7 @@ public abstract class AbstractContentParser {
                 graphicState.set(tmp);
                 // pass them back to the redactor,
                 if (contentStreamCallback != null) {
-                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj, showPrefix);
+                    contentStreamCallback.writeModifiedStringObject(textOperators, showPrefix);
                 }
             }
         }

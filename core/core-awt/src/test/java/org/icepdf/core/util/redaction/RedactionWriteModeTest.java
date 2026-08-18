@@ -17,22 +17,15 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.AnnotationFactory;
-import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,12 +44,15 @@ public class RedactionWriteModeTest {
 
     private static final String FIXTURE = "src/test/resources/updater/annotation_popup.pdf";
 
+    /** The first word of six or more letters on page 0 of the fixture, asserted when it is found. */
+    private static final String TARGET_TERM = "DEFAULT";
+
     @DisplayName("a full update burns the redaction out of the content stream")
     @Test
     public void fullUpdateRemovesRedactedText() throws Exception {
-        String term = redactFirstLongWordAndSave(WriteMode.FULL_UPDATE);
-        assertFalse(extractedText().contains(term),
-                "FULL_UPDATE should have burned '" + term + "' out of the content stream");
+        byte[] saved = redactFirstLongWordAndSave(WriteMode.FULL_UPDATE);
+        assertFalse(RedactionFixtures.extractedText(saved).contains(TARGET_TERM),
+                "FULL_UPDATE should have burned '" + TARGET_TERM + "' out of the stream");
     }
 
     /**
@@ -68,9 +64,9 @@ public class RedactionWriteModeTest {
     @DisplayName("an incremental update leaves the redaction unburned")
     @Test
     public void incrementalUpdateLeavesRedactedTextInPlace() throws Exception {
-        String term = redactFirstLongWordAndSave(null);   // null = one-arg saveToOutputStream
-        assertTrue(extractedText().contains(term),
-                "an incremental update cannot remove content, so '" + term + "' should remain");
+        byte[] saved = redactFirstLongWordAndSave(null);   // null = one-arg saveToOutputStream
+        assertTrue(RedactionFixtures.extractedText(saved).contains(TARGET_TERM),
+                "an incremental update cannot remove content, so '" + TARGET_TERM + "' remains");
     }
 
     @DisplayName("pending redactions are detectable before choosing a write mode")
@@ -96,7 +92,7 @@ public class RedactionWriteModeTest {
     @DisplayName("a single unburned redaction is still detectable after a reopen")
     @Test
     public void singleRedactionIsDetectableAfterReopen() throws Exception {
-        redactFirstLongWordAndSave(null);   // incremental: the redaction stays unburned in the file
+        byte[] saved = redactFirstLongWordAndSave(null);   // incremental: redaction stays unburned
 
         Document reopened = new Document();
         reopened.setInputStream(new ByteArrayInputStream(saved), "redacted");
@@ -113,17 +109,15 @@ public class RedactionWriteModeTest {
 
     // -- helpers ---------------------------------------------------------------------------------
 
-    private byte[] saved;
-
     /**
      * Opens the fixture, drops a redaction annotation over the first long word on page 0, saves with
-     * the given write mode (null selects the one-arg convenience overload), and returns the word.
+     * the given write mode (null selects the one-arg convenience overload).
      */
-    private String redactFirstLongWordAndSave(WriteMode writeMode) throws Exception {
+    private byte[] redactFirstLongWordAndSave(WriteMode writeMode) throws Exception {
         Document document = new Document();
         document.setFile(FIXTURE);
         try {
-            String term = addRedactionOverFirstLongWord(document);
+            addRedactionOverFirstLongWord(document);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             if (writeMode == null) {
@@ -131,8 +125,7 @@ public class RedactionWriteModeTest {
             } else {
                 document.saveToOutputStream(out, writeMode);
             }
-            saved = out.toByteArray();
-            return term;
+            return out.toByteArray();
         } finally {
             document.dispose();
         }
@@ -142,55 +135,15 @@ public class RedactionWriteModeTest {
      * Drops a redaction annotation over the first word of six or more letters on page 0.
      *
      * @param document document to add the annotation to
-     * @return the text of the word now covered by a redaction
      */
-    private String addRedactionOverFirstLongWord(Document document) throws Exception {
+    private void addRedactionOverFirstLongWord(Document document) throws Exception {
         Page page = document.getPageTree().getPage(0);
         page.init();
-
-        WordText target = null;
-        for (LineText lineText : page.getViewText().getPageLines()) {
-            for (WordText wordText : lineText.getWords()) {
-                String text = wordText.getText().trim();
-                if (text.length() >= 6 && text.chars().allMatch(Character::isLetter)) {
-                    target = wordText;
-                    break;
-                }
-            }
-            if (target != null) break;
-        }
-        assertTrue(target != null, "fixture should contain a word of six or more letters");
-
-        Rectangle bounds = target.getBounds().getBounds();
-        RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(
-                document.getPageTree().getLibrary(), Annotation.SUBTYPE_REDACT, bounds);
-        assertTrue(annotation != null, "should have built a redaction annotation");
-
-        ArrayList<Shape> markupBounds = new ArrayList<>();
-        markupBounds.add(bounds);
-        annotation.setColor(Color.BLACK);
-        annotation.setMarkupBounds(markupBounds);
-        annotation.setMarkupPath(new GeneralPath(bounds));
-        annotation.setBBox(bounds);
-        annotation.resetAppearanceStream(new AffineTransform());
-        page.addAnnotation(annotation, true);
-        return target.getText().trim();
+        WordText target = RedactionFixtures.firstLongWord(page, 6);
+        assertEquals(TARGET_TERM, target.getText().trim(),
+                "fixture's first long word changed; the assertions below name it explicitly");
+        page.addAnnotation(RedactionFixtures.redactionOver(document,
+                target.getBounds().getBounds()), true);
     }
 
-    /**
-     * Text of page 0 of the document written by the last call to
-     * {@link #redactFirstLongWordAndSave}. Page 0 only - the fixture repeats much of its text on
-     * page 1, which no redaction covers.
-     */
-    private String extractedText() throws Exception {
-        Document document = new Document();
-        document.setInputStream(new ByteArrayInputStream(saved), "redacted");
-        try {
-            Page page = document.getPageTree().getPage(0);
-            page.init();
-            return page.getViewText().toString();
-        } finally {
-            document.dispose();
-        }
-    }
 }

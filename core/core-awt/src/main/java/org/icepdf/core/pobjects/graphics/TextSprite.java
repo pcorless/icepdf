@@ -321,7 +321,7 @@ public class TextSprite {
     }
 
     /**
-     * @return character spacing (Tc), scaled the way glyph positions were accumulated
+     * @return true when the font writes vertically, in text space
      */
     public boolean isVerticalWriting() {
         return verticalWriting;
@@ -331,6 +331,9 @@ public class TextSprite {
         this.verticalWriting = verticalWriting;
     }
 
+    /**
+     * @return character spacing (Tc), scaled the way glyph positions were accumulated
+     */
     public float getCharSpacing() {
         return charSpacing;
     }
