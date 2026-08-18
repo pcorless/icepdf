@@ -261,13 +261,13 @@
 
 === java_embedded p2 - side-by-side panels between full-width tables [/selection/java_embedded.pdf p1] ===
   L000 y=  745.4 x=  261.5..584.3    Java Embedded Resource Catalog 2004
-  L001 y=  733.5 x=  196.4..573.3    Rates & Reservation FormReserve space by May 19th and save o
+  L001 y=  733.5 x=  196.4..584.3    Rates & Reservation Form—Reserve space by May 19th and save 
   L002 y=  713.1 x=   28.4..507.6    PRODUCT / SERVICE DATA SHEETS STANDARD RATE EARLY BIRD RATE 
   L003 y=  699.1 x=   27.4..490.3    1st Full Page Datasheet ❏ $1,300 ❏ $910 ❏ $250
   L004 y=  686.1 x=   27.4..556.8    Each Additional Full Page Datasheet ❏ $1,060 x_____ (qty) ❏ 
   L005 y=  673.2 x=   27.4..556.8    ½ Page Datasheet ❏ $975 x_____ (qty) ❏ $595 x_____ (qty) ❏ $
   L006 y=  660.2 x=   27.4..556.8    Matrix Page (multiple products in chart) ❏ $1,900 x_____ (qt
-  L007 y=  644.0 x=  224.2..372.3    Integrated Sponsorship Programs
+  L007 y=  644.0 x=  224.2..387.8    — Integrated Sponsorship Programs —
   L008 y=  628.0 x=   77.3..246.5    DIAMOND SPONSORSHIP (VALUED AT $25,000)
   L009 y=  612.6 x=   28.4..283.1    Standard Rate ❏ $15,000 Discount Rate ❏ $8,950
   L010 y=  598.1 x=   28.4..281.9    • Logo in top position on Catalog Cover as the Diamond Spons
@@ -288,7 +288,7 @@
   L025 y=  415.4 x=   28.4..238.1    ❏ Opposite ToC1 ❏ Opposite ToC2
   L026 y=  405.9 x=   28.4..132.5    ❏ Best Available upfront
   L027 y=  396.4 x=   28.4..217.2    • 50 Copies of Print Catalog for your distribution
-  L028 y=  386.9 x=   28.4..174.7    • Limited to 4 companies per catalog
+  L028 y=  386.9 x=   28.4..179.2    • Limited to 4 companies per catalog
   L029 y=  628.0 x=  364.1..535.6    PLATINUM SPONSORSHIP (VALUED AT $18,300)
   L030 y=  612.6 x=  316.4..571.1    Standard Rate ❏ $15,000 Discount Rate ❏ $7,950
   L031 y=  598.1 x=  316.4..504.9    • Logo on Catalog Cover as a Platinum Sponsor
@@ -307,7 +307,7 @@
   L044 y=  453.4 x=  316.4..449.6    • 1 Full Page, 4-Color Display Ad:
   L045 y=  443.9 x=  316.4..552.5    ❏ Opposite your edit page ❏ Best Available upfront
   L046 y=  434.4 x=  316.4..431.1    ❏ Opposite your datasheet
-  L047 y=  371.5 x=  254.5..342.0    Display Advertising
+  L047 y=  371.5 x=  254.5..357.5    — Display Advertising —
   L048 y=  357.1 x=   28.4..507.6    DISPLAY ADVERTISING STANDARD RATE DISCOUNT RATE ADD COLOR
   L049 y=  343.1 x=   27.4..490.3    2-Page Spread, Black and White ❏ $3,750 ❏ $2,500 ❏ $400
   L050 y=  330.1 x=   27.4..490.3    1-Page, Black and White ❏ $2,750 ❏ $1,750 ❏ $300
