@@ -194,6 +194,14 @@ public class Form extends Stream {
      */
     public synchronized void init(ContentStreamCallback contentStreamRedactorCallback)
             throws InterruptedException {
+        // A callback means the caller is rewriting this form's content stream, not just rendering
+        // it, and the rewrite has to happen even though the form has been parsed before - otherwise
+        // a form that any earlier render already initialised is silently skipped, and the text
+        // inside it survives a redaction or an edit.  Page.init has always done this; Form.init did
+        // not, which is why a form drawn twice was only ever visited for its first placement.
+        if (contentStreamRedactorCallback != null) {
+            inited = false;
+        }
         if (inited) {
             return;
         }

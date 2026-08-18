@@ -81,6 +81,35 @@ public class TextContentEditorTest {
                 "stream should still parse");
     }
 
+    /**
+     * An edit whose bounds reach both the page's own text and text inside a form XObject. The
+     * replacement belongs to the edit, not to a content stream, so it must appear once however many
+     * streams the selection happens to span.
+     */
+    @DisplayName("an edit spanning a form writes the replacement once")
+    @Test
+    public void editSpanningAFormWritesTheReplacementOnce() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/form_xobject.pdf").toString());
+        byte[] edited;
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            // The whole page: "page level text" is in the page stream, "alpha bravo charlie" in the
+            // form's, so both callbacks see flagged glyphs.
+            TextContentEditor.updateText(page, "text", new Rectangle(0, 0, 300, 200), "ZZZ");
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            edited = out.toByteArray();
+        } finally {
+            document.dispose();
+        }
+
+        String streams = RedactionFixtures.contentStreams(edited, false);
+        assertEquals(1, RedactionFixtures.countOccurrences(streams, "ZZZ"),
+                "the replacement should appear once across all streams, got:\n" + streams);
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private byte[] edit(String target, String replacement) throws Exception {

@@ -43,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -88,6 +89,7 @@ public class RedactionGoldenTest {
             // that catches normalizeToUserSpace being applied once per annotation instead of once
             // per glyph.
             "form_xobject.pdf, alpha|charlie",
+            "form_drawn_twice.pdf, repeated",
             "quote_operators.pdf, charlie",
             "text_state.pdf, bravo",
     })
@@ -99,13 +101,6 @@ public class RedactionGoldenTest {
      * Fixtures the current writer gets wrong. Each was run and its failure recorded, so this is a
      * checklist rather than a suspicion - see REDACTION-REVIEW-PLAN.md for the findings:
      * <ul>
-     * <li>{@code form_drawn_twice} - one form, two placements. Form.init() short-circuits on its
-     *     inited flag, so only the first placement is parsed with a redaction callback, and the
-     *     form is therefore only ever tested against the first placement's transform. Policy is
-     *     that a redaction on a shared form applies to every placement (no copy-on-burn for forms),
-     *     so the fix is to flag against all placement transforms. Note extraction is not at fault:
-     *     both placements report correct distinct bounds, and multiple redactions on a plain page
-     *     work.</li>
      * <li>{@code multi_stream} - the original string stays in the file. Its operand is in one
      *     content stream and its Tj in the next, so the first stream is copied out verbatim and the
      *     replacement appended after it. The orphaned string has no operator so it is never shown,
@@ -113,12 +108,10 @@ public class RedactionGoldenTest {
      * </ul>
      */
     @DisplayName("known-failing fixtures (GH-525)")
-    @Disabled("GH-525: a show operator split across content streams leaks its string, and a form " +
-            "drawn twice is only redacted at its first placement")
+    @Disabled("GH-525: a show operator split across two content streams leaks its string")
     @ParameterizedTest(name = "{0} redacting \"{1}\"")
     @CsvSource({
             "multi_stream.pdf, charlie",
-            "form_drawn_twice.pdf, repeated",
     })
     public void knownFailingFixtures(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
@@ -280,8 +273,12 @@ public class RedactionGoldenTest {
 
             List<String> terms = Arrays.asList(term.split("\\|"));
             List<Rectangle> targets = RedactionFixtures.wordBounds(page, terms);
-            assertEquals(terms.size(), targets.size(),
-                    "fixture " + fixture + " should contain each of " + terms + " exactly once");
+            // A term may legitimately appear more than once - a form drawn twice shows its text at
+            // each placement - so require every term to be found, not a particular count.
+            for (String single : terms) {
+                assertFalse(RedactionFixtures.wordBounds(page, Collections.singletonList(single)).isEmpty(),
+                        "fixture " + fixture + " should contain '" + single + "'");
+            }
 
             for (Rectangle bounds : targets) {
                 page.addAnnotation(RedactionFixtures.redactionOver(document, bounds), true);

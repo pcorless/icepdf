@@ -46,16 +46,28 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
         this.textBounds = textBounds;
     }
 
+    /**
+     * @param stringObjectWriter writer shared with the callback this one was derived from, so the
+     *                           replacement text is written once for the edit rather than once per
+     *                           content stream the selection happens to span
+     */
     protected ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
-                                              AffineTransform transform) {
-        super(library, new TextStringObjectWriter(newText), transform);
+                                              StringObjectWriter stringObjectWriter, AffineTransform transform) {
+        super(library, stringObjectWriter, transform);
         this.textBounds = textBounds;
         this.newText = newText;
         this.text = text;
     }
 
+    /**
+     * A form XObject gets its own callback because it has its own content stream and byte offsets,
+     * but it is part of the same edit. The writer is therefore shared: it carries the "replacement
+     * already written" latch, and a fresh one per form would insert the new text again for every
+     * stream the selection reaches into.
+     */
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
-        return new ContentStreamTextEditorCallback(this.library, this.text, this.textBounds, this.newText, transform);
+        return new ContentStreamTextEditorCallback(this.library, this.text, this.textBounds,
+                this.newText, this.stringObjectWriter, transform);
     }
 
     /**
