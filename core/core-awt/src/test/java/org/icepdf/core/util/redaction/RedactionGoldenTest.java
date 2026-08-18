@@ -103,10 +103,13 @@ public class RedactionGoldenTest {
      * <li>{@code text_state} - redacting 'bravo' moves 'charlie' from x=59.75 to x=103.25. With
      *     Tz 50 the offset is computed from glyph advances that carry the horizontal scale, but Td
      *     operands are in unscaled text space.</li>
-     * <li>{@code form_drawn_twice} - one form, two placements, and Form.init() short-circuits on
-     *     its inited flag, so only the first placement is ever parsed with a redaction callback.
-     *     The second placement's glyphs are never offered for flagging. Bound up with the
-     *     copy-on-burn decision: one shared stream cannot carry two different redactions.</li>
+     * <li>{@code form_drawn_twice} - one form, two placements. Form.init() short-circuits on its
+     *     inited flag, so only the first placement is parsed with a redaction callback, and the
+     *     form is therefore only ever tested against the first placement's transform. Policy is
+     *     that a redaction on a shared form applies to every placement (no copy-on-burn for forms),
+     *     so the fix is to flag against all placement transforms. Note extraction is not at fault:
+     *     both placements report correct distinct bounds, and multiple redactions on a plain page
+     *     work.</li>
      * <li>{@code multi_stream} - the original string stays in the file. Its operand is in one
      *     content stream and its Tj in the next, so the first stream is copied out verbatim and the
      *     replacement appended after it. The orphaned string has no operator so it is never shown,
