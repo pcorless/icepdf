@@ -10,3 +10,8 @@
 # IDE files (exclude)
 /.idea/
 *.iml
+
+# Local benchmark corpus (exclude)
+# Large PDFs used by ParsingBenchmark, kept out of the repo: GitHub rejects any
+# file over 100MB and this corpus runs to several hundred.
+core/core-awt/src/test/resources/benchmark/
