@@ -172,6 +172,16 @@ public class GlyphText extends AbstractText {
         return advanceX;
     }
 
+    /**
+     * Advance along the vertical axis, the counterpart of {@link #getAdvanceX()} used when the font
+     * writes vertically.
+     *
+     * @return glyph advance in the y direction
+     */
+    public float getAdvanceY() {
+        return advanceY;
+    }
+
     public float getY() {
         return y;
     }

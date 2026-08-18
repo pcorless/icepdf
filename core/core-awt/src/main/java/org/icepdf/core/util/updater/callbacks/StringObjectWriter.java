@@ -75,6 +75,28 @@ public abstract class StringObjectWriter {
     public abstract float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
                                   float lastTdOffset) throws IOException;
 
+    /**
+     * Rewrites one show operation, whichever operator produced it.
+     * <p>
+     * The default routes to the Tj/TJ pair above, which keep a running Td offset the caller has to
+     * carry between operations. An implementation that needs no such state - one emitting TJ
+     * adjustments, which do not touch the line matrix - overrides this and returns 0.
+     *
+     * @param contentOutputStream stream to write the replacement to
+     * @param textOperators       sprites of the show operation being rewritten
+     * @param isArrayOperator     true when the source operator was TJ
+     * @param lastTdOffset        offset carried from the previous show operation
+     * @return offset to carry to the next show operation, 0 when none is pending
+     * @throws IOException if the stream cannot be written
+     */
+    public float writeShownText(ByteArrayOutputStream contentOutputStream,
+                                ArrayList<TextSprite> textOperators, boolean isArrayOperator,
+                                float lastTdOffset) throws IOException {
+        return isArrayOperator
+                ? writeTJ(contentOutputStream, textOperators, lastTdOffset)
+                : writeTj(contentOutputStream, textOperators, lastTdOffset);
+    }
+
 
     protected static float writeLastTdOffset(ByteArrayOutputStream contentOutputStream, float lastTdOffset,
                                              float start, float advance) throws IOException {
@@ -189,10 +211,27 @@ public abstract class StringObjectWriter {
     }
 
     protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) throws IOException {
+        writeDelimiterEnd(glyphText, contentOutputStream, true);
+    }
+
+    /**
+     * Closes a string, optionally showing it.
+     *
+     * @param glyphText           glyph whose font decides the delimiter
+     * @param contentOutputStream stream to write to
+     * @param withShowOperator    true to follow the delimiter with Tj. False inside a TJ array,
+     *                            where the array's own operator shows every element and an inner Tj
+     *                            would be a syntax error.
+     * @throws IOException if the stream cannot be written
+     */
+    protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream,
+                                            boolean withShowOperator) throws IOException {
         int fontSubType = glyphText.getFontSubTypeFormat();
         char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
         contentOutputStream.write(delimiter);
-        contentOutputStream.write(" Tj ".getBytes());
+        if (withShowOperator) {
+            contentOutputStream.write(" Tj ".getBytes());
+        }
     }
 
 }

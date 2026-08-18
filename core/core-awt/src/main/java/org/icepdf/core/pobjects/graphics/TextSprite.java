@@ -70,6 +70,16 @@ public class TextSprite {
     // font's resource name and size, used by PS writer.
     private String fontName;
     private float fontSize;
+    // Text-state values already folded into the glyph positions below, kept so a writer that
+    // rebuilds a show operation can work out how far the reader advances between two glyphs on its
+    // own.  Both carry the horizontal scaling, matching how drawString accumulates them.
+    private float charSpacing;
+    private float wordSpacing;
+    // The font's writing mode, i.e. whether the text advances down the page in text space.  Not the
+    // same question as GlyphText.isVerticalWriting(), which answers it in page space with any page
+    // rotation applied: on a /Rotate 90 page a horizontally written font is vertical there and
+    // horizontal here.  Anything reasoning about text-space geometry wants this one.
+    private boolean verticalWriting;
 
     private static final String TYPE_3 = "Type3";
 
@@ -308,6 +318,37 @@ public class TextSprite {
 
     public void setFontName(String fontName) {
         this.fontName = fontName;
+    }
+
+    /**
+     * @return character spacing (Tc), scaled the way glyph positions were accumulated
+     */
+    public boolean isVerticalWriting() {
+        return verticalWriting;
+    }
+
+    public void setVerticalWriting(boolean verticalWriting) {
+        this.verticalWriting = verticalWriting;
+    }
+
+    public float getCharSpacing() {
+        return charSpacing;
+    }
+
+    public void setCharSpacing(float charSpacing) {
+        this.charSpacing = charSpacing;
+    }
+
+    /**
+     * @return word spacing (Tw), scaled the way glyph positions were accumulated. Applies only to
+     * the single byte code 32.
+     */
+    public float getWordSpacing() {
+        return wordSpacing;
+    }
+
+    public void setWordSpacing(float wordSpacing) {
+        this.wordSpacing = wordSpacing;
     }
 
     public float getFontSize() {

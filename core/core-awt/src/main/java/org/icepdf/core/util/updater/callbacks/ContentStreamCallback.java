@@ -155,18 +155,38 @@ public abstract class ContentStreamCallback {
     }
 
     private boolean isTextLayoutToken(int token) {
-        return token == Tj || token == TJ || token == Td || token == TD || token == Tm || token == T_STAR || token == BT;
+        // ' and " show text just as Tj does, so their bytes belong to the StringObjectWriter too.
+        // Leaving them out of this set copied the original string into the output ahead of the
+        // replacement, and the redacted text stayed in the file.
+        return token == Tj || token == TJ || token == Td || token == TD || token == Tm
+                || token == T_STAR || token == BT
+                || token == SINGLE_QUOTE || token == DOUBLE_QUOTE;
     }
 
     // write string/hex Object stored in glyphText using the specified StringObjectWriter
     public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand) throws IOException {
+        writeModifiedStringObject(textOperators, operand, null);
+    }
+
+    /**
+     * @param showPrefix text to emit ahead of a rewritten string so that an operator which does more
+     *                   than show text keeps doing it - the line advance of ' and ", and the spacing
+     *                   " sets. Ignored when the string is copied through unchanged, because then
+     *                   the original operator is copied with it.
+     */
+    public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, final int operand,
+                                          String showPrefix) throws IOException {
         if (StringObjectWriter.containsFlaggedText(textOperators)) {
-            // apply end string writer
-            if (Operands.TJ == operand) {
-                lastTjOffset = stringObjectWriter.writeTJ(burnedContentOutputStream, textOperators, lastTjOffset);
-            } else {
-                lastTjOffset = stringObjectWriter.writeTj(burnedContentOutputStream, textOperators, lastTjOffset);
+            if (showPrefix != null) {
+                // The bytes between the previous operator and this one are part of the range being
+                // replaced, so the whitespace that separated them goes with it. Without a separator
+                // here the previous "Tj" and a following "T*" would run together into one token.
+                burnedContentOutputStream.write(' ');
+                burnedContentOutputStream.write(showPrefix.getBytes());
             }
+            // apply end string writer
+            lastTjOffset = stringObjectWriter.writeShownText(burnedContentOutputStream, textOperators,
+                    Operands.TJ == operand, lastTjOffset);
             modifiedStream = true;
         } else {
             // copy not flagged StringObjects verbatim

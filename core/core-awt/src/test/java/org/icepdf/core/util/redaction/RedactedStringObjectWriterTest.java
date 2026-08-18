@@ -107,18 +107,20 @@ public class RedactedStringObjectWriterTest {
                 "three surviving runs should give three strings: " + out);
     }
 
-    @DisplayName("the repositioning offset covers the width of the removed glyphs")
+    @DisplayName("the adjustment covers exactly the width of the removed glyphs")
     @Test
-    public void offsetAccountsForRemovedGlyphs() throws Exception {
-        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(12f).glyphs("abSECRETyz").flag(2, 8);
+    public void adjustmentAccountsForRemovedGlyphs() throws Exception {
+        float fontSize = 12f;
+        GlyphRunBuilder builder = GlyphRunBuilder.simpleFont(fontSize).glyphs("abSECRETyz").flag(2, 8);
         float advance = builder.advance();
         String out = writeTj(builder.buildOperators());
 
-        // "yz" starts eight glyphs in; whatever syntax carries the offset, the position it restores
-        // has to be that of the ninth glyph.
-        float expected = 8 * advance;
+        // Six glyphs were removed, so the text position has to step over 6 * advance. A TJ element
+        // is measured in thousandths of an em and subtracts, hence -1000 * gap / fontSize.
+        float gap = 6 * advance;
+        float expected = -1000f * gap / fontSize;
         assertTrue(containsNumberNear(out, expected, 0.01f),
-                "expected an offset restoring x=" + expected + " but got: " + out);
+                "expected an adjustment of " + expected + " for a gap of " + gap + ", got: " + out);
     }
 
     // -- byte-level encoding, each of these was a defect ------------------------------------------

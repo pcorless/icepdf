@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
+import org.icepdf.core.util.updater.callbacks.StringObjectWriter;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -1013,12 +1014,19 @@ public abstract class AbstractContentParser {
                                                LinkedList<OptionalContents> oCGs,
                                                ContentStreamCallback contentStreamCallback) throws IOException {
         StringObject stringObject = (StringObject) stack.pop();
-        graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
-        graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
+        float characterSpacing = ((Number) stack.pop()).floatValue();
+        float wordSpacing = ((Number) stack.pop()).floatValue();
+        graphicState.getTextState().cspace = characterSpacing;
+        graphicState.getTextState().wspace = wordSpacing;
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        // A rewritten string is shown with TJ, which sets no spacing and advances no line, so both
+        // have to be restated ahead of it.
+        String showPrefix = StringObjectWriter.formatReal(wordSpacing) + " Tw " +
+                StringObjectWriter.formatReal(characterSpacing) + " Tc T* ";
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, showPrefix);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
@@ -1030,7 +1038,8 @@ public abstract class AbstractContentParser {
             throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, "T* ");
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1512,6 +1521,23 @@ public abstract class AbstractContentParser {
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
                                      ContentStreamCallback contentStreamCallback) throws IOException {
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, null);
+    }
+
+    /**
+     * @param showPrefix content stream text that has to be emitted ahead of a rewritten string to
+     *                   preserve what the original operator did beyond showing text - the line
+     *                   advance of ' and ", and the spacing " also sets. Null for a plain Tj, whose
+     *                   bytes carry no other meaning.
+     */
+    protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
+                                     Shapes shapes,
+                                     TextMetrics textMetrics,
+                                     GlyphOutlineClip glyphOutlineClip,
+                                     LinkedList<OptionalContents> oCGs,
+                                     ContentStreamCallback contentStreamCallback,
+                                     String showPrefix) throws IOException {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1541,7 +1567,7 @@ public abstract class AbstractContentParser {
                 graphicState.set(tmp);
                 // pass them back to the redactor,
                 if (contentStreamCallback != null) {
-                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj);
+                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj, showPrefix);
                 }
             }
         }
@@ -1610,6 +1636,13 @@ public abstract class AbstractContentParser {
                         textLength,
                         new AffineTransform(graphicState.getCTM()),
                         new AffineTransform(textState.tmatrix));
+        textSprites.setCharSpacing(characterSpace);
+        textSprites.setWordSpacing(whiteSpace);
+        // Tf size. Without this the sprite reports a font size of zero, and anything converting a
+        // displacement into thousandths of an em - a TJ adjustment, for one - is left dividing by
+        // nothing.
+        textSprites.setFontSize(textState.tsize);
+        textSprites.setVerticalWriting(isVerticalWriting);
 
         // glyph placement params
         float currentX, currentY;

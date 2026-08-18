@@ -94,6 +94,8 @@ public class RedactionGoldenTest {
             // that catches normalizeToUserSpace being applied once per annotation instead of once
             // per glyph.
             "form_xobject.pdf, alpha|charlie",
+            "quote_operators.pdf, charlie",
+            "text_state.pdf, bravo",
     })
     public void redactionMatchesGolden(String fixture, String term) throws Exception {
         assertRedactionMatchesGolden(fixture, term);
@@ -127,8 +129,6 @@ public class RedactionGoldenTest {
             "content streams leaks its string, a form drawn twice is only redacted once")
     @ParameterizedTest(name = "{0} redacting \"{1}\"")
     @CsvSource({
-            "quote_operators.pdf, charlie",
-            "text_state.pdf, bravo",
             "multi_stream.pdf, charlie",
             "form_drawn_twice.pdf, repeated",
     })
