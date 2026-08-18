@@ -181,7 +181,34 @@ def inline_image():
                        b"1 0 0 1 160 40 Tm\n(over) Tj\nET\n" + image)
 
 
+def rotated_image():
+    """An 8x8 image XObject in four coloured quadrants, placed with a 90 degree rotation.
+
+    cm [0 60 -60 0 200 100] turns the image a quarter turn, so a mapping taken from the placement's
+    axis-aligned bounding box - which is square, and says nothing about which way the image faces -
+    burns the wrong quadrant.  The raster is 8x8 rather than 2x2 so a redaction covering a quadrant
+    lands on whole pixels: with antialiasing off, as a redaction needs, a sub-pixel fill covers no
+    pixel centre at all and changes nothing.
+
+    Quadrants, in raster order: red top-left, green top-right, blue bottom-left, white bottom-right.
+    """
+    rows = []
+    for y in range(8):
+        for x in range(8):
+            if y < 4:
+                rows.extend([255, 0, 0] if x < 4 else [0, 255, 0])
+            else:
+                rows.extend([0, 0, 255] if x < 4 else [255, 255, 255])
+    samples = bytes(rows)
+    image = (b"<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(samples) + samples + b"\nendstream")
+    return simple_page(b"q 0 60 -60 0 200 100 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "rotated_image.pdf": rotated_image,
     "inline_image.pdf": inline_image,
     "tight_leading.pdf": tight_leading,
     "simple_tj.pdf": simple_tj,

@@ -24,9 +24,12 @@ import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.logging.Logger;
 
 /**
  * Burn the redactionPath into the given image stream.  The image stream holds the fully decode image with masking
@@ -35,6 +38,8 @@ import java.awt.image.BufferedImage;
  * @since 7.2.0
  */
 public class ImageBurner {
+
+    private static final Logger logger = Logger.getLogger(ImageBurner.class.getName());
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
         BufferedImage image = imageStream.getDecodedImage();
@@ -60,10 +65,6 @@ public class ImageBurner {
     private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
                                          boolean copyImage) {
         ImageParams imageParams = imageStream.getImageParams();
-        Rectangle2D bbox = imageStream.getNormalizedBounds();
-        // image coords need to be adjusted for any layout scaling
-        double xScale = image.getWidth() / bbox.getWidth();
-        double yScale = image.getHeight() / bbox.getHeight();
         // try a new image to get around index colour space issue.
         if (copyImage && !imageParams.isColorKeyMask()) {
             image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
@@ -72,9 +73,10 @@ public class ImageBurner {
         }
         Graphics2D imageGraphics = image.createGraphics();
         imageGraphics.setColor(Color.BLACK);
-        imageGraphics.scale(xScale, -yScale);
-        imageGraphics.translate(0, -bbox.getHeight());
-        imageGraphics.translate(-bbox.getX(), -bbox.getY());
+        // Edge pixels must be fully painted; an antialiased edge keeps a fraction of what was
+        // underneath, which is exactly what a redaction is removing.
+        imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        imageGraphics.transform(userSpaceToImageSpace(imageStream, image));
         imageGraphics.fill(redactionPath);
         imageGraphics.dispose();
         // update the imageReference BufferedImage, as we may have multiple burns to apply
@@ -88,5 +90,49 @@ public class ImageBurner {
             ImageUtility.encodeColorKeyMask(imageStream);
         }
         return imageStream;
+    }
+
+    /**
+     * Maps user space onto the image's own pixel grid.
+     * <p>
+     * An image occupies the unit square in user space, placed by the CTM in force at its {@code Do},
+     * so going the other way is that CTM inverted followed by the unit square scaled onto the pixel
+     * grid - with y flipped, since PDF puts the origin at the bottom left and a raster puts it at the
+     * top left.
+     * <p>
+     * Deriving this from the CTM rather than from the axis-aligned bounding box matters as soon as a
+     * placement is anything but upright: a rotated or sheared image has a bounding box larger than
+     * itself, and scaling by its width and height puts the redaction in the wrong part of the raster
+     * and distorts its shape. A 90 degree rotation also swaps which of the box's dimensions
+     * corresponds to the image's width.
+     *
+     * @param imageStream image being burned
+     * @param image       decoded raster, whose dimensions give the pixel grid
+     * @return transform from user space to image space
+     */
+    private static AffineTransform userSpaceToImageSpace(ImageStream imageStream, BufferedImage image) {
+        AffineTransform unitSquareToPixels = new AffineTransform(
+                image.getWidth(), 0, 0, -image.getHeight(), 0, image.getHeight());
+        AffineTransform placement = imageStream.getGraphicsTransformMatrix();
+        if (placement != null) {
+            try {
+                AffineTransform userToImage = new AffineTransform(unitSquareToPixels);
+                userToImage.concatenate(placement.createInverse());
+                return userToImage;
+            } catch (NoninvertibleTransformException e) {
+                // A degenerate CTM collapses the image to a line or a point, so there is no sensible
+                // mapping; fall through and use the bounding box, which at least covers something.
+                logger.warning("Image placement matrix could not be inverted, " +
+                        "falling back to bounding box geometry: " + placement);
+            }
+        }
+        Rectangle2D bbox = imageStream.getNormalizedBounds();
+        if (bbox == null || bbox.getWidth() == 0 || bbox.getHeight() == 0) {
+            return new AffineTransform();
+        }
+        AffineTransform fallback = new AffineTransform();
+        fallback.scale(image.getWidth() / bbox.getWidth(), -image.getHeight() / bbox.getHeight());
+        fallback.translate(-bbox.getX(), -bbox.getY() - bbox.getHeight());
+        return fallback;
     }
 }
