@@ -27,7 +27,6 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.logging.Logger;
 
@@ -106,33 +105,38 @@ public class ImageBurner {
      * and distorts its shape. A 90 degree rotation also swaps which of the box's dimensions
      * corresponds to the image's width.
      *
+     * <p>
+     * There is deliberately no approximate fallback. A missing placement matrix means the parser
+     * never recorded one, and a matrix that cannot be inverted means the image was drawn collapsed
+     * to a line or a point; in either case the area to redact cannot be located within the raster.
+     * Burning some other part of the image would leave the caller believing content had been
+     * removed when it had not, which is the one failure a redaction must not have. Better to stop
+     * and say so.
+     * <p>
+     * Neither state is reachable through the content parser as it stands - it sets the matrix at
+     * every {@code Do}, and an image collapsed to no area intersects no redaction, so the burn is
+     * never asked for. These are precondition checks against a future caller, not a case with a
+     * test behind it.
+     *
      * @param imageStream image being burned
      * @param image       decoded raster, whose dimensions give the pixel grid
      * @return transform from user space to image space
+     * @throws IllegalStateException if the placement cannot be used to locate the redaction
      */
     private static AffineTransform userSpaceToImageSpace(ImageStream imageStream, BufferedImage image) {
-        AffineTransform unitSquareToPixels = new AffineTransform(
-                image.getWidth(), 0, 0, -image.getHeight(), 0, image.getHeight());
         AffineTransform placement = imageStream.getGraphicsTransformMatrix();
-        if (placement != null) {
-            try {
-                AffineTransform userToImage = new AffineTransform(unitSquareToPixels);
-                userToImage.concatenate(placement.createInverse());
-                return userToImage;
-            } catch (NoninvertibleTransformException e) {
-                // A degenerate CTM collapses the image to a line or a point, so there is no sensible
-                // mapping; fall through and use the bounding box, which at least covers something.
-                logger.warning("Image placement matrix could not be inverted, " +
-                        "falling back to bounding box geometry: " + placement);
-            }
+        if (placement == null) {
+            throw new IllegalStateException("Image has no placement matrix, so the area to redact " +
+                    "cannot be located within it: " + imageStream.getPObjectReference());
         }
-        Rectangle2D bbox = imageStream.getNormalizedBounds();
-        if (bbox == null || bbox.getWidth() == 0 || bbox.getHeight() == 0) {
-            return new AffineTransform();
+        AffineTransform userToImage = new AffineTransform(
+                image.getWidth(), 0, 0, -image.getHeight(), 0, image.getHeight());
+        try {
+            userToImage.concatenate(placement.createInverse());
+        } catch (NoninvertibleTransformException e) {
+            throw new IllegalStateException("Image placement matrix cannot be inverted, so the " +
+                    "area to redact cannot be located within it: " + placement, e);
         }
-        AffineTransform fallback = new AffineTransform();
-        fallback.scale(image.getWidth() / bbox.getWidth(), -image.getHeight() / bbox.getHeight());
-        fallback.translate(-bbox.getX(), -bbox.getY() - bbox.getHeight());
-        return fallback;
+        return userToImage;
     }
 }
