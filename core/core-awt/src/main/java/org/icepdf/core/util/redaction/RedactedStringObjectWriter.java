@@ -65,6 +65,10 @@ public class RedactedStringObjectWriter extends StringObjectWriter {
             }
             if (operatorCount > 0 && glyphText != null) {
                 writeDelimiterEnd(glyphText, contentOutputStream);
+                // The string was closed, so the next sprite has to open one of its own. Without
+                // this reset it would skip writeDelimiterStart and emit codes with no opening
+                // delimiter.
+                operatorCount = 0;
             }
         }
         return lastTdOffset;

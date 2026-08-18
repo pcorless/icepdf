@@ -7,5 +7,5 @@ ET
 % form 6 0 R
 BT
 /F1 12 Tf
-0 0 Td 30.0 0 Td  ( bravo ) Tj
+0 0 Td 30 0 Td  ( bravo ) Tj
 ET

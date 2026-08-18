@@ -17,7 +17,6 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.util.updater.callbacks.StringObjectWriter;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * No PDF, no parser, no page - {@link GlyphRunBuilder} supplies the glyph runs directly, so these
  * pin the writer's output exactly rather than inferring it from a rendered result.
  * <p>
- * Tests marked {@link Disabled} record defects found in the review that are fixed later in GH-525;
- * they are the checklist for that work, and each names the finding it belongs to.
+ * The cases under "known defects" were written against the pre-fix writer and each was verified
+ * to fail for the reason named in REDACTION-REVIEW-PLAN.md before the fix landed.
  */
 public class RedactedStringObjectWriterTest {
 
@@ -122,11 +121,9 @@ public class RedactedStringObjectWriterTest {
                 "expected an offset restoring x=" + expected + " but got: " + out);
     }
 
-    // -- known defects, fixed later in GH-525 -----------------------------------------------------
+    // -- byte-level encoding, each of these was a defect ------------------------------------------
 
     @DisplayName("a CID code needing three hex digits is padded to four")
-    @Disabled("GH-525: writeCidCharacterCode pads lengths 1 and 2 but not 3, shifting every " +
-            "following code by a nibble")
     @Test
     public void cidCodeInThirdNibbleRangeIsPadded() throws Exception {
         ArrayList<TextSprite> operators = GlyphRunBuilder.cidFont(12f)
@@ -152,9 +149,6 @@ public class RedactedStringObjectWriterTest {
     }
 
     @DisplayName("a carriage return code is escaped rather than written raw")
-    @Disabled("GH-525: writeSimpleCharacterCode writes codes <= 127 raw, escaping only ( ) and " +
-            "backslash. Per PDF 32000-1 7.3.4.2 an unescaped end-of-line inside a literal string " +
-            "is read back as a line feed, so code 0x0D round-trips as 0x0A")
     @Test
     public void carriageReturnCodeIsEscaped() throws Exception {
         ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(12f)
@@ -167,8 +161,6 @@ public class RedactedStringObjectWriterTest {
     }
 
     @DisplayName("a tiny offset is not written in scientific notation")
-    @Disabled("GH-525: offsets go through String.valueOf(float), which yields 1.0E-5 - not valid " +
-            "PDF real syntax")
     @Test
     public void tinyOffsetIsNotScientificNotation() throws Exception {
         ArrayList<TextSprite> operators = GlyphRunBuilder.simpleFont(1e-4f)
@@ -180,8 +172,6 @@ public class RedactedStringObjectWriterTest {
     }
 
     @DisplayName("a second sprite opens its own string")
-    @Disabled("GH-525: writeTj declares operatorCount outside the sprite loop and never resets it " +
-            "after the trailing delimiter, so a following sprite omits its opening delimiter")
     @Test
     public void secondSpriteOpensItsOwnString() throws Exception {
         ArrayList<TextSprite> operators = new ArrayList<>();

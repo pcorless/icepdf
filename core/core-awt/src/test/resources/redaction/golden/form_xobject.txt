@@ -7,5 +7,5 @@ ET
 % form 6 0 R
 BT
 /F1 12 Tf
-0 0 Td (alpha ) Tj  66.0 0 Td  ( charlie) Tj
+0 0 Td (alpha ) Tj  66 0 Td  ( charlie) Tj
 ET

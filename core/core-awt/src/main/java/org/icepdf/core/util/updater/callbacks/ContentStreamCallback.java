@@ -146,7 +146,7 @@ public abstract class ContentStreamCallback {
     private void writeLastTjOffset() throws IOException {
         if (lastTjOffset > 0) {
             burnedContentOutputStream.write(' ');
-            burnedContentOutputStream.write(String.valueOf(-lastTjOffset).getBytes());
+            burnedContentOutputStream.write(StringObjectWriter.formatReal(-lastTjOffset).getBytes());
             burnedContentOutputStream.write(' ');
             burnedContentOutputStream.write('0');
             burnedContentOutputStream.write(" Td ".getBytes());
