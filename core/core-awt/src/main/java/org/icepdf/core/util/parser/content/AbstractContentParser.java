@@ -27,8 +27,8 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.PdfNumberFormat;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
-import org.icepdf.core.util.updater.callbacks.StringObjectWriter;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -1025,8 +1025,8 @@ public abstract class AbstractContentParser {
         // have to be restated ahead of it. Only worth building when a callback is there to write
         // it; every other parse of this operator would discard it.
         String showPrefix = contentStreamCallback == null ? null
-                : StringObjectWriter.formatReal(wordSpacing) + " Tw " +
-                        StringObjectWriter.formatReal(characterSpacing) + " Tc T* ";
+                : PdfNumberFormat.format(wordSpacing) + " Tw " +
+                        PdfNumberFormat.format(characterSpacing) + " Tc T* ";
         consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
                 contentStreamCallback, showPrefix);
     }

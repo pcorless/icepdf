@@ -18,10 +18,10 @@ package org.icepdf.core.util.updater.callbacks;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
+import org.icepdf.core.util.PdfNumberFormat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -178,7 +178,7 @@ public abstract class StringObjectWriter {
         // Numbers need a separator: PDF does not treat '-' as a delimiter, so two adjacent
         // adjustments written as "-250-3000" lex as one malformed number rather than two elements.
         contentOutputStream.write(' ');
-        contentOutputStream.write(formatReal(adjustment).getBytes());
+        contentOutputStream.write(PdfNumberFormat.format(adjustment).getBytes());
         return target;
     }
 
@@ -266,22 +266,6 @@ public abstract class StringObjectWriter {
         }
     }
 
-    /**
-     * Formats a number the way PDF requires it.
-     * <p>
-     * PDF 32000-1 7.3.3 has no exponent form for a real, so {@code String.valueOf(float)} cannot be
-     * used: it yields {@code 1.0E-5} for small magnitudes and {@code 1.0E7} for large ones, and a
-     * conforming reader will reject or truncate the operand. Going through the float's own shortest
-     * decimal representation also drops the binary noise that
-     * {@code BigDecimal.valueOf(0.1f)} would otherwise spill into the stream
-     * ({@code 0.10000000149011612}).
-     *
-     * @param value number to write into a content stream
-     * @return plain decimal text, no exponent, no trailing zeros
-     */
-    public static String formatReal(float value) {
-        return new BigDecimal(Float.toString(value)).stripTrailingZeros().toPlainString();
-    }
 
     protected static void writeCharacterCode(GlyphText glyphText, ByteArrayOutputStream contentOutputStream)
             throws IOException {

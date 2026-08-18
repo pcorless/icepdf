@@ -47,14 +47,14 @@ public abstract class AbstractStringObject implements StringObject {
     }
 
     /**
-     * Appends one byte to {@code out} as two hexadecimal digits.  The single place either
-     * implementation turns a byte into hex.
+     * Appends one byte to {@code out} as two hexadecimal digits.  The single place anything in the
+     * library turns a byte into hex for a content stream or a string object.
      *
      * @param out   buffer to append to
      * @param value byte value; only the low eight bits are read
      * @return {@code out}, for chaining
      */
-    protected static StringBuilder appendHexByte(StringBuilder out, int value) {
+    public static StringBuilder appendHexByte(StringBuilder out, int value) {
         out.append(HEX_DIGITS[(value & 0xF0) >>> 4]);
         out.append(HEX_DIGITS[value & 0x0F]);
         return out;
