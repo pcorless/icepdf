@@ -222,6 +222,34 @@ public class RedactionGoldenTest {
                 "intersection flagging reached further than the measured baseline");
     }
 
+    /**
+     * An inline image is written out by the redaction callback rather than copied by the generic
+     * token path, and that write used to sit inside the loop over annotations - so the image was
+     * emitted once per annotation. With one intersecting and one non-intersecting redaction that
+     * meant emitting the burned image <em>and</em> the untouched original.
+     */
+    @DisplayName("an inline image is written exactly once regardless of annotation count")
+    @Test
+    public void inlineImageIsWrittenOnce() throws Exception {
+        byte[] redacted = redact("inline_image.pdf", "alpha|over");
+        String streams = contentStreams(redacted);
+
+        assertEquals(1, countOccurrences(streams, "ID "),
+                "expected exactly one inline image data marker in:\n" + streams);
+        assertEquals(1, countOccurrences(streams, "EI"),
+                "expected exactly one inline image terminator in:\n" + streams);
+        assertFalse(streams.contains("alpha") || streams.contains("over"),
+                "the redacted words should be gone in:\n" + streams);
+    }
+
+    private static int countOccurrences(String haystack, String needle) {
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + 1)) {
+            count++;
+        }
+        return count;
+    }
+
     private void assertRedactionMatchesGolden(String fixture, String term) throws Exception {
         List<Placement> originsBefore = glyphOrigins(Files.readAllBytes(FIXTURES.resolve(fixture)));
 

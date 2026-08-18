@@ -87,23 +87,33 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
 
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
             IOException {
+        // One image, one decision, one write. Burning and emitting inside the annotation loop
+        // produced one copy of the image per annotation: a page with one intersecting and one
+        // non-intersecting redaction emitted the burned image AND the untouched original, which is
+        // both corrupt and a leak. It also skipped the image entirely when the list was empty.
+        ImageStream imageStream = imageReference.getImageStream();
+        Rectangle2D imageBounds = imageStream.getNormalizedBounds();
+        boolean burned = false;
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
-            ImageStream imageStream = imageReference.getImageStream();
-            Rectangle2D imageBounds = imageStream.getNormalizedBounds();
-            if (redactionPath.intersects(imageBounds)) {
+            if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
-                ImageStream burnedImageStream = ImageBurner.burn(imageReference, redactionPath);
-                CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
-                InlineImageWriter.write(countingOutputStream, burnedImageStream);
-                modifiedStream = true;
-            } else {
-                // copy none redacted StringObjects verbatim
-                int length = pos - lastTokenPosition;
-                burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
+                // Successive burns accumulate on the stream's decoded image, so every intersecting
+                // annotation is applied before the result is written once.
+                ImageBurner.burn(imageReference, redactionPath);
+                burned = true;
             }
-            lastTokenPosition = pos;
         }
+        if (burned) {
+            CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
+            InlineImageWriter.write(countingOutputStream, imageStream);
+            modifiedStream = true;
+        } else {
+            // no redaction touches this image, copy it through verbatim
+            burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                    pos - lastTokenPosition);
+        }
+        lastTokenPosition = pos;
     }
 
     public void checkAndModifyImageXObject(ImageReference imageReference) throws InterruptedException {
@@ -111,7 +121,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             GeneralPath redactionPath = annotation.getMarkupPath();
             ImageStream imageStream = imageReference.getImageStream();
             Rectangle2D imageBounds = imageStream.getNormalizedBounds();
-            if (redactionPath.intersects(imageBounds)) {
+            if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
                 ImageBurner.burn(imageReference, redactionPath);

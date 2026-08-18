@@ -163,7 +163,26 @@ def tight_leading():
                        b"ET\n")
 
 
+def inline_image():
+    """A page carrying an inline image (BI/ID/EI) alongside text.
+
+    The image is emitted by the redaction callback rather than copied by the generic token path, so
+    it is the case where a per-annotation loop used to write one copy of the image per annotation.
+    Two redactable words give two annotations, which is all it takes.
+    """
+    # 4x4 8-bit greyscale, no filter: 16 bytes of raw samples.
+    samples = bytes(range(0, 256, 16))
+    image = (b"q 90 0 0 30 150 30 cm\n"
+             b"BI /W 4 /H 4 /CS /G /BPC 8 ID " + samples + b"\nEI\nQ\n")
+    # "over" sits inside the image's area so its redaction intersects the image; "alpha" on the
+    # line above does not.  The order matters: the non-intersecting annotation has to be processed
+    # first, which is why "alpha" is the higher of the two on the page.
+    return simple_page(b"BT\n/F1 12 Tf\n20 150 Td\n(alpha bravo charlie) Tj\n"
+                       b"1 0 0 1 160 40 Tm\n(over) Tj\nET\n" + image)
+
+
 FIXTURES = {
+    "inline_image.pdf": inline_image,
     "tight_leading.pdf": tight_leading,
     "simple_tj.pdf": simple_tj,
     "tj_array.pdf": tj_array,
