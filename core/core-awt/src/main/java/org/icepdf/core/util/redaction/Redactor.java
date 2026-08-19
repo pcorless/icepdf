@@ -82,6 +82,11 @@ public class Redactor {
                 || effective.getOptions().redacts(RedactionTarget.IMAGES)) {
             burnAnnotations(document, effective, report, stateManager);
         }
+        // The same words the annotations covered on the page usually also sit in a bookmark, a
+        // comment or the document title, where no rectangle reaches them.
+        if (effective.hasTerms()) {
+            new RedactedStringRewriter(document, effective, report).rewrite();
+        }
         return report;
     }
 
