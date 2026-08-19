@@ -259,6 +259,17 @@ public interface DocumentSearchController {
     void removeSearchTerm(SearchTerm searchTerm);
 
     /**
+     * The terms currently being searched for.
+     * <p>
+     * Needed by anything that acts on a search rather than just displaying it - redaction, for one,
+     * which has to remove the same words from bookmarks, comments and metadata, none of which are
+     * on a page and none of which a highlight can reach.
+     *
+     * @return the current search terms, empty if none have been added
+     */
+    List<SearchTerm> getSearchTerms();
+
+    /**
      * Clear all searched items for specified page.
      *
      * @param pageIndex page index to clear
