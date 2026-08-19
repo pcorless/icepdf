@@ -15,3 +15,8 @@
 # Large PDFs used by ParsingBenchmark, kept out of the repo: GitHub rejects any
 # file over 100MB and this corpus runs to several hundred.
 core/core-awt/src/test/resources/benchmark/
+
+# Test-generated keystore (exclude)
+# SigningTest calls PfxGenerator.createPfx to write this before each run, so it is a build artifact
+# with fresh key material every time, not a fixture.
+viewer/viewer-awt/src/test/resources/signing/certificate.pfx
