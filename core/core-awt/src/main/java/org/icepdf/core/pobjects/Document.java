@@ -31,6 +31,8 @@ import org.icepdf.core.pobjects.structure.Header;
 import org.icepdf.core.pobjects.structure.Trailer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.redaction.RedactionRequest;
 import org.icepdf.core.util.updater.DocumentBuilder;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
@@ -118,6 +120,10 @@ public class Document {
     private RandomAccessFile randomAccessFile;
     private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
+
+    // what the next write should redact, and what the last one did
+    private RedactionRequest redactionRequest;
+    private RedactionReport redactionReport;
 
     static {
         // sets if file caching is enabled or disabled.
@@ -744,6 +750,47 @@ public class Document {
         } else {
             return null;
         }
+    }
+
+    /**
+     * States how the next full write should redact this document.  Optional: a document saved with
+     * redaction annotations on it is redacted with the default options either way.
+     *
+     * @param redactionRequest what to redact and how, or null to go back to the defaults
+     * @see org.icepdf.core.util.redaction.Redactor
+     */
+    public void setRedactionRequest(RedactionRequest redactionRequest) {
+        this.redactionRequest = redactionRequest;
+    }
+
+    /**
+     * @return the request set by {@link #setRedactionRequest}, or null
+     */
+    public RedactionRequest getRedactionRequest() {
+        return redactionRequest;
+    }
+
+    /**
+     * What the last write removed from this document.
+     * <p>
+     * Null until the document has been written with {@link WriteMode#FULL_UPDATE}, because that is
+     * when redaction happens - an incremental update only appends, so it cannot remove anything.
+     * Worth reading rather than assuming: it carries warnings for anything that degraded rather than
+     * failing outright.
+     *
+     * @return the report from the last full write, or null if none has happened
+     */
+    public RedactionReport getRedactionReport() {
+        return redactionReport;
+    }
+
+    /**
+     * Records what a write removed.  Called by the writer.
+     *
+     * @param redactionReport report from the write that just happened
+     */
+    public void setRedactionReport(RedactionReport redactionReport) {
+        this.redactionReport = redactionReport;
     }
 
     public boolean hasRedactions() {

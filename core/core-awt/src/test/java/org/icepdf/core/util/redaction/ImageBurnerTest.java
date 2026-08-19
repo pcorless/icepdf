@@ -55,7 +55,7 @@ public class ImageBurnerTest {
             // Inset slightly so the fill cannot depend on how a boundary pixel rounds.
             page.addAnnotation(RedactionFixtures.redactionOver(document,
                     new Rectangle(142, 102, 26, 26)), true);
-            Redactor.burnRedactions(document);
+            Redactor.redact(document, RedactionRequest.ofAnnotations());
 
             BufferedImage burned = burnedImage(document);
             assertNotNull(burned, "the burn should have left a decoded image behind");

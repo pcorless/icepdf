@@ -1,0 +1,167 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.icepdf.core.util.redaction;
+
+import java.awt.*;
+import java.util.EnumSet;
+import java.util.Set;
+
+/**
+ * How a redaction should behave. Every value has a default that is safe for the common case, so a
+ * caller who wants the usual thing can use {@link #defaults()} and stop reading.
+ * <p>
+ * Settings return {@code this} so they chain:
+ * <pre>
+ *     RedactionOptions options = RedactionOptions.defaults()
+ *             .maskString("[removed]")
+ *             .targets(EnumSet.of(RedactionTarget.PAGE_CONTENT, RedactionTarget.IMAGES));
+ * </pre>
+ *
+ * @since 7.5.0
+ */
+public class RedactionOptions {
+
+    /**
+     * Any overlap at all flags a glyph. A redaction drawn snugly over a word does not fully contain
+     * the glyph bounds - those carry ascender, descender and side-bearing slack - so requiring
+     * containment leaves the text in the file with the annotation merely painted over it.
+     */
+    public static final float ANY_INTERSECTION = 0f;
+
+    private float glyphCoverageThreshold = ANY_INTERSECTION;
+    private String maskString = "****";
+    private Color redactionColor = Color.BLACK;
+    private boolean copyOnBurn = true;
+    private Set<RedactionTarget> targets = EnumSet.allOf(RedactionTarget.class);
+
+    private RedactionOptions() {
+    }
+
+    /**
+     * @return options that redact everything, mask with {@code ****}, and err towards removing a
+     * glyph rather than leaving it
+     */
+    public static RedactionOptions defaults() {
+        return new RedactionOptions();
+    }
+
+    /**
+     * How much of a glyph a redaction must cover before the glyph is removed, as a fraction of the
+     * glyph's area.
+     * <p>
+     * {@link #ANY_INTERSECTION}, the default, removes a glyph the redaction touches at all. That
+     * errs towards over-redacting: where lines are set tightly enough that their glyph bounds
+     * overlap, a redaction sized to a word on one line can also clip a glyph on the line above.
+     * Raising the threshold trades that back, at the risk of leaving a partly covered glyph in the
+     * file.
+     *
+     * @param glyphCoverageThreshold fraction between 0 and 1
+     * @return this
+     */
+    public RedactionOptions glyphCoverageThreshold(float glyphCoverageThreshold) {
+        if (glyphCoverageThreshold < 0 || glyphCoverageThreshold > 1) {
+            throw new IllegalArgumentException(
+                    "glyph coverage threshold is a fraction of a glyph's area, got " + glyphCoverageThreshold);
+        }
+        this.glyphCoverageThreshold = glyphCoverageThreshold;
+        return this;
+    }
+
+    public float getGlyphCoverageThreshold() {
+        return glyphCoverageThreshold;
+    }
+
+    /**
+     * What replaces a redacted string that has no position and so cannot be burned - an outline
+     * title, a field value.
+     * <p>
+     * The default is a fixed {@code ****} regardless of how much was removed. A mask that matched
+     * the length of what it replaced would leak the length of every redacted term, which for names,
+     * account numbers and dates is a meaningful amount of information.
+     *
+     * @param maskString replacement text, or empty to remove the matched text outright
+     * @return this
+     */
+    public RedactionOptions maskString(String maskString) {
+        this.maskString = maskString != null ? maskString : "";
+        return this;
+    }
+
+    public String getMaskString() {
+        return maskString;
+    }
+
+    /**
+     * Colour burned into images, and painted over redacted areas.
+     *
+     * @param redactionColor colour to burn, black by default
+     * @return this
+     */
+    public RedactionOptions redactionColor(Color redactionColor) {
+        this.redactionColor = redactionColor != null ? redactionColor : Color.BLACK;
+        return this;
+    }
+
+    public Color getRedactionColor() {
+        return redactionColor;
+    }
+
+    /**
+     * Whether a shared object that is redacted with geometry not applying to all of its uses is
+     * copied first.
+     * <p>
+     * Applies to image XObjects and to content streams shared between pages. It deliberately does
+     * <em>not</em> apply to form XObjects: a redaction on a form applies to every placement by
+     * design, which is both what a reader intuitively expects and what the search-and-redact
+     * workflow wants, since search finds every occurrence anyway.
+     *
+     * @param copyOnBurn true to copy before burning, the default
+     * @return this
+     */
+    public RedactionOptions copyOnBurn(boolean copyOnBurn) {
+        this.copyOnBurn = copyOnBurn;
+        return this;
+    }
+
+    public boolean isCopyOnBurn() {
+        return copyOnBurn;
+    }
+
+    /**
+     * Which kinds of content to redact. All of them by default; narrowing this is how a caller opts
+     * out of, say, rewriting metadata.
+     *
+     * @param targets targets to redact
+     * @return this
+     */
+    public RedactionOptions targets(Set<RedactionTarget> targets) {
+        this.targets = targets != null && !targets.isEmpty()
+                ? EnumSet.copyOf(targets) : EnumSet.allOf(RedactionTarget.class);
+        return this;
+    }
+
+    public Set<RedactionTarget> getTargets() {
+        return EnumSet.copyOf(targets);
+    }
+
+    /**
+     * @param target target to test
+     * @return true when this target is in scope
+     */
+    public boolean redacts(RedactionTarget target) {
+        return targets.contains(target);
+    }
+}

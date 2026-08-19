@@ -39,30 +39,32 @@ import java.util.logging.Logger;
 public class ImageBurner {
 
     private static final Logger logger = Logger.getLogger(ImageBurner.class.getName());
-    public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath) throws InterruptedException {
+    public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath,
+                                   Color redactionColor) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
         BufferedImage image = imageStream.getDecodedImage();
         if (image == null) {
             image = imageReference.getBaseImage();
         }
         // update any mask as they can have a content for some scanned documents.
-        checkAndBurnMasks(imageStream, redactionPath);
+        checkAndBurnMasks(imageStream, redactionPath, redactionColor);
 
-        return burnImage(imageStream, image, redactionPath, true);
+        return burnImage(imageStream, image, redactionPath, redactionColor, true);
     }
 
-    private static void checkAndBurnMasks(ImageStream imageStream, GeneralPath redactionPath) {
+    private static void checkAndBurnMasks(ImageStream imageStream, GeneralPath redactionPath,
+                                          Color redactionColor) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
         ImageDecoder imageMaskDecoder = imageStream.getImageParams().getMask(null);
         if (imageMaskDecoder != null) {
             maskImageStream.setGraphicsTransformMatrix(imageStream.getGraphicsTransformMatrix());
             BufferedImage imageMask = imageMaskDecoder.decode();
-            burnImage(maskImageStream, imageMask, redactionPath, false);
+            burnImage(maskImageStream, imageMask, redactionPath, redactionColor, false);
         }
     }
 
     private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
-                                         boolean copyImage) {
+                                         Color redactionColor, boolean copyImage) {
         ImageParams imageParams = imageStream.getImageParams();
         // try a new image to get around index colour space issue.
         if (copyImage && !imageParams.isColorKeyMask()) {
@@ -71,7 +73,7 @@ public class ImageBurner {
             image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_ARGB);
         }
         Graphics2D imageGraphics = image.createGraphics();
-        imageGraphics.setColor(Color.BLACK);
+        imageGraphics.setColor(redactionColor);
         // Edge pixels must be fully painted; an antialiased edge keeps a fraction of what was
         // underneath, which is exactly what a redaction is removing.
         imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);

@@ -22,13 +22,18 @@ import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.redaction.ImageBurner;
+import org.icepdf.core.util.redaction.RedactionOptions;
+import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.redaction.RedactionTarget;
 import org.icepdf.core.util.redaction.InlineImageWriter;
 import org.icepdf.core.util.redaction.RedactedStringObjectWriter;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -42,20 +47,33 @@ import java.util.List;
 public class ContentStreamRedactorCallback extends ContentStreamCallback {
 
     private final List<RedactionAnnotation> redactionAnnotations;
+    private final RedactionOptions options;
+    private final RedactionReport report;
 
-    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations) {
+    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
+                                         RedactionOptions options, RedactionReport report) {
         super(library, new RedactedStringObjectWriter());
         this.redactionAnnotations = redactionAnnotations;
+        this.options = options != null ? options : RedactionOptions.defaults();
+        this.report = report != null ? report : new RedactionReport();
     }
 
     protected ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
-                                          AffineTransform transform) {
+                                            RedactionOptions options, RedactionReport report,
+                                            AffineTransform transform) {
         super(library, new RedactedStringObjectWriter(), transform);
         this.redactionAnnotations = redactionAnnotations;
+        this.options = options;
+        this.report = report;
     }
 
+    /**
+     * A form XObject is redacted by its own callback, since it has its own stream and byte offsets,
+     * but it shares the options and the report: it is part of the same redaction.
+     */
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
-        return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations, transform);
+        return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations,
+                this.options, this.report, transform);
     }
 
     /**
@@ -64,6 +82,9 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
      * @param glyphText text to test for intersection with flagged content bounds
      */
     public void checkAndModifyText(GlyphText glyphText) {
+        if (!options.redacts(RedactionTarget.PAGE_CONTENT)) {
+            return;
+        }
         // normalizeToUserSpace rewrites the glyph's bounds in place, so it must happen once for the
         // glyph and not once per annotation - a second call re-applies the transform and every
         // annotation after the first tests against bounds that have drifted off the page.
@@ -76,13 +97,42 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             // so containment left the glyph in the stream with the annotation merely painted over
             // it.  Erring towards removing a glyph that only grazes the region is the right
             // direction for a redaction, and it matches the predicate the image paths already use.
-            if (redactionPath != null && redactionPath.intersects(glyphBounds)) {
+            if (covers(redactionPath, glyphBounds)) {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.flagged();
+                report.recordGlyphsRemoved(1, RedactionTarget.PAGE_CONTENT);
                 // flagged is not a counter, and the remaining annotations cannot unflag it
                 return;
             }
         }
+    }
+
+    /**
+     * Whether a redaction removes this glyph.
+     * <p>
+     * Any overlap counts by default. A redaction drawn snugly over a word does not contain the glyph
+     * bounds, which carry ascender, descender and side-bearing slack, so requiring containment left
+     * the text in the file with the annotation painted over it. Raising
+     * {@link RedactionOptions#getGlyphCoverageThreshold()} trades that back against clipping a glyph
+     * on a neighbouring line when leading is tight.
+     */
+    private boolean covers(GeneralPath redactionPath, Rectangle2D glyphBounds) {
+        if (redactionPath == null || !redactionPath.intersects(glyphBounds)) {
+            return false;
+        }
+        float threshold = options.getGlyphCoverageThreshold();
+        if (threshold <= RedactionOptions.ANY_INTERSECTION) {
+            return true;
+        }
+        double glyphArea = glyphBounds.getWidth() * glyphBounds.getHeight();
+        if (glyphArea <= 0) {
+            return true;
+        }
+        Area covered = new Area(redactionPath);
+        covered.intersect(new Area(glyphBounds));
+        Rectangle2D coveredBounds = covered.getBounds2D();
+        double coveredArea = coveredBounds.getWidth() * coveredBounds.getHeight();
+        return coveredArea / glyphArea >= threshold;
     }
 
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
@@ -94,19 +144,21 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         ImageStream imageStream = imageReference.getImageStream();
         Rectangle2D imageBounds = imageStream.getNormalizedBounds();
         boolean burned = false;
-        for (RedactionAnnotation annotation : redactionAnnotations) {
+        for (RedactionAnnotation annotation : options.redacts(RedactionTarget.IMAGES)
+                ? redactionAnnotations : Collections.<RedactionAnnotation>emptyList()) {
             GeneralPath redactionPath = annotation.getMarkupPath();
             if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
                 // Successive burns accumulate on the stream's decoded image, so every intersecting
                 // annotation is applied before the result is written once.
-                ImageBurner.burn(imageReference, redactionPath);
+                ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
                 burned = true;
             }
         }
         if (burned) {
             CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
             InlineImageWriter.write(countingOutputStream, imageStream);
+            report.recordImageBurned(RedactionTarget.IMAGES);
             modifiedStream = true;
         } else {
             // no redaction touches this image, copy it through verbatim
@@ -117,6 +169,9 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     }
 
     public void checkAndModifyImageXObject(ImageReference imageReference) throws InterruptedException {
+        if (!options.redacts(RedactionTarget.IMAGES)) {
+            return;
+        }
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
             ImageStream imageStream = imageReference.getImageStream();
@@ -124,7 +179,8 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
-                ImageBurner.burn(imageReference, redactionPath);
+                ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
+                report.recordImageBurned(RedactionTarget.IMAGES);
             }
         }
     }

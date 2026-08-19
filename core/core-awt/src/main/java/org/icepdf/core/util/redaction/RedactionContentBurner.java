@@ -35,11 +35,23 @@ public class RedactionContentBurner {
     private static final Logger logger =
             Logger.getLogger(RedactionContentBurner.class.getName());
 
-    public static void burn(Page page,
-                            List<RedactionAnnotation> redactionAnnotations) throws InterruptedException, IOException {
+    /**
+     * Rewrites a page's content and image streams with everything the given redactions cover
+     * removed.
+     *
+     * @param page                 page to redact
+     * @param redactionAnnotations areas to remove
+     * @param options              how the redaction should behave
+     * @param report               collects what was removed and anything that degraded
+     * @throws InterruptedException if page initialisation is interrupted
+     * @throws IOException          if a content stream cannot be rewritten
+     */
+    public static void burn(Page page, List<RedactionAnnotation> redactionAnnotations,
+                            RedactionOptions options, RedactionReport report)
+            throws InterruptedException, IOException {
         Library library = page.getLibrary();
         ContentStreamRedactorCallback contentStreamRedactorCallback =
-                new ContentStreamRedactorCallback(library, redactionAnnotations);
+                new ContentStreamRedactorCallback(library, redactionAnnotations, options, report);
         page.init(contentStreamRedactorCallback);
         // wrap up, ends the last or only content stream being processed and store the bytes
         contentStreamRedactorCallback.endContentStream();
