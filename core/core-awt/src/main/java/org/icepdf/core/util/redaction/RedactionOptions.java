@@ -46,6 +46,8 @@ public class RedactionOptions {
     private Color redactionColor = Color.BLACK;
     private boolean copyOnBurn = true;
     private Set<RedactionTarget> targets = EnumSet.allOf(RedactionTarget.class);
+    private boolean verify = true;
+    private boolean hashTermsInReport;
 
     private RedactionOptions() {
     }
@@ -155,6 +157,45 @@ public class RedactionOptions {
 
     public Set<RedactionTarget> getTargets() {
         return EnumSet.copyOf(targets);
+    }
+
+    /**
+     * Whether to check the written document afterwards and report what that established.
+     * <p>
+     * On by default: a redaction that silently did less than it claimed is the failure that matters,
+     * and nothing else in the process would notice. It costs a re-open and a text extraction of the
+     * result, so turn it off for a bulk job that verifies some other way.
+     *
+     * @param verify true to verify, the default
+     * @return this
+     */
+    public RedactionOptions verify(boolean verify) {
+        this.verify = verify;
+        return this;
+    }
+
+    public boolean isVerify() {
+        return verify;
+    }
+
+    /**
+     * Whether the report identifies terms by a salted hash rather than by the term itself.
+     * <p>
+     * A report keyed by plaintext lists exactly what was worth removing, which makes it as sensitive
+     * as the document it describes - awkward, since the point of a report is to be kept and shared.
+     * Hashing lets it be filed anywhere while still telling you which term a count belongs to across
+     * a batch.
+     *
+     * @param hashTermsInReport true to hash, false by default
+     * @return this
+     */
+    public RedactionOptions hashTermsInReport(boolean hashTermsInReport) {
+        this.hashTermsInReport = hashTermsInReport;
+        return this;
+    }
+
+    public boolean isHashTermsInReport() {
+        return hashTermsInReport;
     }
 
     /**

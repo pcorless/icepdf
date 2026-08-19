@@ -18,8 +18,11 @@ package org.icepdf.core.util.redaction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * What a redaction removed, and anything about it the caller should know.
@@ -42,6 +45,19 @@ public class RedactionReport {
     private int stringsRewritten;
     private final Map<RedactionTarget, Integer> countsByTarget = new EnumMap<>(RedactionTarget.class);
     private final List<RedactionWarning> warnings = new ArrayList<>();
+
+    // verification, filled in after the document has been written
+    private RedactionConfidence confidence;
+    private final Map<String, Integer> hitsBeforeByTerm = new LinkedHashMap<>();
+    private final Map<String, Integer> hitsAfterByTerm = new LinkedHashMap<>();
+    private int rawByteMatchesAfter;
+    private final List<UnverifiableRegion> unverifiableRegions = new ArrayList<>();
+    private float score;
+
+    // What the burn actually took out, used to give the verification something to search for when
+    // the redaction was driven by annotations and there are no terms. Deliberately not exposed:
+    // it is the redacted content, and a report is meant to be safe to keep.
+    private final Set<String> removedText = new LinkedHashSet<>();
 
     /**
      * @return glyphs removed from content streams
@@ -79,6 +95,70 @@ public class RedactionReport {
     }
 
     /**
+     * How much the verification pass could establish. Null when verification did not run, either
+     * because it was switched off or because the document was never written.
+     *
+     * @return the confidence level, or null
+     */
+    public RedactionConfidence getConfidence() {
+        return confidence;
+    }
+
+    /**
+     * How many times each term appeared before the redaction. Keyed by the term itself, or by a
+     * salted hash of it when {@link RedactionOptions#isHashTermsInReport()} is set - a report keyed
+     * by plaintext is as sensitive as the document it describes.
+     *
+     * @return occurrences per term before redacting
+     */
+    public Map<String, Integer> getHitsBeforeByTerm() {
+        return Collections.unmodifiableMap(hitsBeforeByTerm);
+    }
+
+    /**
+     * How many times each term could still be found afterwards. Anything above zero is a leak and
+     * forces {@link RedactionConfidence#FAILED}.
+     *
+     * @return occurrences per term after redacting
+     */
+    public Map<String, Integer> getHitsAfterByTerm() {
+        return Collections.unmodifiableMap(hitsAfterByTerm);
+    }
+
+    /**
+     * Occurrences found by scanning the written bytes rather than by searching the document.
+     * <p>
+     * This is the check that catches what extraction cannot see: a string left in a content stream
+     * without its operator is never shown and never extracted, but it is still in the file.
+     *
+     * @return byte-level occurrences after redacting
+     */
+    public int getRawByteMatchesAfter() {
+        return rawByteMatchesAfter;
+    }
+
+    /**
+     * @return parts of the document the verification could not check
+     */
+    public List<UnverifiableRegion> getUnverifiableRegions() {
+        return Collections.unmodifiableList(unverifiableRegions);
+    }
+
+    /**
+     * A number for sorting a batch, not a probability: 1 for a clean verified result, lower as
+     * warnings and unverifiable regions accumulate, 0 for a failure.
+     * <p>
+     * Threshold on it to triage a corpus, but read {@link #getConfidence()} to decide about a
+     * document. A failure is never reachable by a low score - it is set by a concrete surviving
+     * match - so no threshold can hide one.
+     *
+     * @return score between 0 and 1
+     */
+    public float getScore() {
+        return score;
+    }
+
+    /**
      * @return true when the redaction removed nothing at all, which is worth a second look if the
      * caller expected otherwise
      */
@@ -108,6 +188,21 @@ public class RedactionReport {
             first = false;
         }
         json.append(first ? "}" : "\n  }").append(",\n");
+        json.append("  \"confidence\": ").append(confidence == null ? "null" : "\"" + confidence + "\"")
+                .append(",\n");
+        json.append("  \"score\": ").append(confidence == null ? "null" : String.valueOf(score)).append(",\n");
+        json.append("  \"rawByteMatchesAfter\": ").append(rawByteMatchesAfter).append(",\n");
+        json.append("  \"hitsBeforeByTerm\": ").append(termMapJson(hitsBeforeByTerm)).append(",\n");
+        json.append("  \"hitsAfterByTerm\": ").append(termMapJson(hitsAfterByTerm)).append(",\n");
+        json.append("  \"unverifiableRegions\": [");
+        boolean firstRegion = true;
+        for (UnverifiableRegion region : unverifiableRegions) {
+            json.append(firstRegion ? "\n" : ",\n");
+            json.append("    {\"reason\": \"").append(region.getReason()).append("\", \"detail\": \"")
+                    .append(escape(region.getDetail())).append("\"}");
+            firstRegion = false;
+        }
+        json.append(firstRegion ? "]" : "\n  ]").append(",\n");
         json.append("  \"warnings\": [");
         first = true;
         for (RedactionWarning warning : warnings) {
@@ -122,7 +217,8 @@ public class RedactionReport {
 
     @Override
     public String toString() {
-        return "RedactionReport{glyphsRemoved=" + glyphsRemoved + ", imagesBurned=" + imagesBurned
+        return "RedactionReport{" + (confidence != null ? confidence + ", " : "")
+                + "glyphsRemoved=" + glyphsRemoved + ", imagesBurned=" + imagesBurned
                 + ", stringsRewritten=" + stringsRewritten + ", warnings=" + warnings.size() + "}";
     }
 
@@ -170,6 +266,53 @@ public class RedactionReport {
      */
     public void warn(RedactionWarning.Kind kind, String detail) {
         warnings.add(new RedactionWarning(kind, detail));
+    }
+
+    /**
+     * Records text the burn took out, so the verification has something to look for when the
+     * redaction was driven by annotations rather than terms. Called by the redaction implementation.
+     *
+     * @param text a run of removed characters
+     */
+    public void recordRemovedText(String text) {
+        if (text != null && !text.trim().isEmpty()) {
+            removedText.add(text.trim());
+        }
+    }
+
+    /**
+     * @return what the burn removed, for the verification pass to search for
+     */
+    public Set<String> getRemovedText() {
+        return Collections.unmodifiableSet(removedText);
+    }
+
+    /**
+     * Records what the verification pass established. Called by {@link RedactionVerifier}.
+     */
+    public void recordVerification(RedactionConfidence confidence, float score,
+                                   Map<String, Integer> hitsBefore, Map<String, Integer> hitsAfter,
+                                   int rawByteMatches, List<UnverifiableRegion> regions) {
+        this.confidence = confidence;
+        this.score = score;
+        this.hitsBeforeByTerm.putAll(hitsBefore);
+        this.hitsAfterByTerm.putAll(hitsAfter);
+        this.rawByteMatchesAfter = rawByteMatches;
+        this.unverifiableRegions.addAll(regions);
+    }
+
+    private static String termMapJson(Map<String, Integer> counts) {
+        if (counts.isEmpty()) {
+            return "{}";
+        }
+        StringBuilder json = new StringBuilder("{");
+        boolean first = true;
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            json.append(first ? "\n" : ",\n");
+            json.append("    \"").append(escape(entry.getKey())).append("\": ").append(entry.getValue());
+            first = false;
+        }
+        return json.append("\n  }").toString();
     }
 
     private static String escape(String value) {

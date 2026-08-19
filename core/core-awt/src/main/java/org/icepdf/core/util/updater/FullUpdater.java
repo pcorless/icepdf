@@ -26,6 +26,7 @@ import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.redaction.RedactionVerifier;
 import org.icepdf.core.util.redaction.RedactionRequest;
 import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
@@ -111,7 +112,10 @@ public class FullUpdater {
         if (stateManager.hasRedactions() || hasTermRedactions(document)) {
             // The burn runs on the reopened copy below, which knows nothing of the document the
             // caller configured, so the request travels with the updater instead.
-            redactionRequest = document.getRedactionRequest();
+            // A document saved with redaction annotations and no configuration still redacts, and
+            // still gets verified; the defaults stand in for the request the caller did not make.
+            redactionRequest = document.getRedactionRequest() != null
+                    ? document.getRedactionRequest() : RedactionRequest.ofAnnotations();
             Document tmpDocument = new Document();
             tmpRedactionOutputStream = new FileOutputStream(tmpRedactionFilePath.toFile());
             try {
@@ -141,6 +145,12 @@ public class FullUpdater {
                 File tempFile = currentPath.toFile();
                 DocumentSigner.signDocument(tmpDocument, tempFile,
                         signatureManager.getCurrentSignatureDictionary());
+            }
+            // Verify the bytes that are about to be handed to the caller, not the in-memory
+            // document: re-reading the objects the burn just produced would only confirm what the
+            // burn already believes, which is the thing being checked.
+            if (redactionReport != null && redactionRequest.getOptions().isVerify()) {
+                RedactionVerifier.verify(currentPath, document, redactionRequest, redactionReport);
             }
             Files.copy(currentPath, outputStream);
         } catch (Exception e) {

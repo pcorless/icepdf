@@ -49,6 +49,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     private final List<RedactionAnnotation> redactionAnnotations;
     private final RedactionOptions options;
     private final RedactionReport report;
+    private final StringBuilder removedRun = new StringBuilder();
 
     public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
                                          RedactionOptions options, RedactionReport report) {
@@ -101,9 +102,35 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
                 logger.finer(() -> "Redacting Text: " + glyphText.getCid() + " " + glyphText.getUnicode());
                 glyphText.flagged();
                 report.recordGlyphsRemoved(1, RedactionTarget.PAGE_CONTENT);
+                removedRun.append(glyphText.getUnicode());
                 // flagged is not a counter, and the remaining annotations cannot unflag it
                 return;
             }
+        }
+        // A glyph survived, so whatever run was being removed has ended.
+        flushRemovedRun();
+    }
+
+    @Override
+    public void endContentStream() throws IOException {
+        // The stream ended while a run was still being removed, which happens whenever the redacted
+        // text runs to the end of the last string shown.
+        flushRemovedRun();
+        super.endContentStream();
+    }
+
+    /**
+     * Hands the run of characters just removed to the report.
+     * <p>
+     * Glyphs arrive in show order, so consecutive flagged ones are a word or phrase; keeping them
+     * together gives the verification pass something meaningful to search the written file for.
+     * Without it a redaction driven by annotations rather than terms has nothing to check against,
+     * since nobody ever said what the words were.
+     */
+    private void flushRemovedRun() {
+        if (removedRun.length() > 0) {
+            report.recordRemovedText(removedRun.toString());
+            removedRun.setLength(0);
         }
     }
 
