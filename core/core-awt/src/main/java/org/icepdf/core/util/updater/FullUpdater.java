@@ -84,6 +84,15 @@ public class FullUpdater {
      * @throws java.io.IOException  error writing stream.
      * @throws InterruptedException
      */
+    /**
+     * @return true when the caller asked for words to be removed from content that has no position
+     * on a page, which no redaction annotation can express
+     */
+    private static boolean hasTermRedactions(Document document) {
+        RedactionRequest request = document.getRedactionRequest();
+        return request != null && request.hasTerms();
+    }
+
     public long writeDocument(
             Document document, OutputStream outputStream)
             throws IOException, InterruptedException {
@@ -96,8 +105,10 @@ public class FullUpdater {
         long bytesWritten = writeDocument(document, tmpOutputStream, false);
         tmpOutputStream.close();
 
-        // open the copy and burn the redactions to the specified outputStream
-        if (stateManager.hasRedactions()) {
+        // open the copy and burn the redactions to the specified outputStream.  Terms count as much
+        // as annotations here: a request that only names words to remove has nothing on any page,
+        // but it still has work to do in bookmarks, field values, destinations and metadata.
+        if (stateManager.hasRedactions() || hasTermRedactions(document)) {
             // The burn runs on the reopened copy below, which knows nothing of the document the
             // caller configured, so the request travels with the updater instead.
             redactionRequest = document.getRedactionRequest();

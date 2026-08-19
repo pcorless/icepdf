@@ -249,7 +249,51 @@ def positionless_text():
     return bytes(out)
 
 
+def form_and_destinations():
+    """A text field holding the redacted word, and a named destination named after it.
+
+    The field carries it twice, in /V and in /DV, because a reset would otherwise put it back.  The
+    destination is referenced from a link annotation and from a bookmark, which is what makes
+    renaming it more than a one-line change: the name is quoted by everything that jumps to it.
+    """
+    content = b"BT\n/F1 12 Tf\n20 100 Td\n(alpha bravo charlie) Tj\nET\n"
+    objs = {
+        1: (b"<< /Type /Catalog /Pages 2 0 R /Outlines 7 0 R /Names 11 0 R "
+            b"/AcroForm << /Fields [12 0 R] >> >>"),
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Annots [12 0 R 13 0 R] /Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(content),
+        5: helvetica(),
+        7: b"<< /Type /Outlines /First 8 0 R /Last 8 0 R /Count 1 >>",
+        # a bookmark that jumps to the named destination
+        8: b"<< /Title (go to section) /Parent 7 0 R /Dest (bravo dest) >>",
+        # the name tree holding that destination
+        11: b"<< /Dests 14 0 R >>",
+        14: b"<< /Names [(bravo dest) [3 0 R /Fit]] >>",
+        # a text field whose value and default value both carry the word
+        12: (b"<< /Type /Annot /Subtype /Widget /FT /Tx /T (notes) /Rect [20 20 200 40] "
+             b"/V (contains bravo) /DV (contains bravo) /DA (/Helv 0 Tf 0 g) >>"),
+        # a link annotation that jumps to the same destination
+        13: (b"<< /Type /Annot /Subtype /Link /Rect [20 60 200 80] "
+             b"/A << /S /GoTo /D (bravo dest) >> >>"),
+    }
+    out = bytearray(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
+    offsets = {}
+    for num in sorted(objs):
+        offsets[num] = len(out)
+        out += b"%d 0 obj\n" % num + objs[num] + b"\nendobj\n"
+    xref = len(out)
+    top = max(objs) + 1
+    out += b"xref\n0 %d\n" % top + b"0000000000 65535 f \n"
+    for num in range(1, top):
+        out += (b"%010d 00000 n \n" % offsets[num]) if num in offsets else b"0000000000 65535 f \n"
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (top, xref)
+    return bytes(out)
+
+
 FIXTURES = {
+    "form_and_destinations.pdf": form_and_destinations,
     "positionless_text.pdf": positionless_text,
     "rotated_image.pdf": rotated_image,
     "inline_image.pdf": inline_image,

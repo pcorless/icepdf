@@ -16,9 +16,14 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.actions.GoToAction;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -136,6 +141,58 @@ public class TermDrivenRedactionTest {
                 "a case-sensitive term should not match different case");
     }
 
+    @DisplayName("a form field's value and default value are both masked")
+    @Test
+    public void formValuesAreMasked() throws Exception {
+        byte[] saved = redactIn("form_and_destinations.pdf", RedactionRequest.ofTerms(terms("bravo")));
+
+        Document document = reopen(saved);
+        try {
+            FieldDictionary field = firstField(document);
+            assertEquals("contains ****", stringValue(document, field, FieldDictionary.V_KEY),
+                    "the value the field holds");
+            // /DV is a separate copy: leaving it would put the word back on a form reset.
+            assertEquals("contains ****", stringValue(document, field, FieldDictionary.DV_KEY),
+                    "the default value the field resets to");
+        } finally {
+            document.dispose();
+        }
+    }
+
+    @DisplayName("a named destination is renamed, and everything pointing at it follows")
+    @Test
+    public void destinationsAreRenamedWithTheirReferences() throws Exception {
+        byte[] saved = redactIn("form_and_destinations.pdf", RedactionRequest.ofTerms(terms("bravo")));
+
+        Document document = reopen(saved);
+        try {
+            NameTree dests = document.getCatalog().getNames().getDestsNameTree();
+            assertNotNull(dests.searchName("**** dest"), "the destination should be renamed");
+            assertNull(dests.searchName("bravo dest"), "and the old name should be gone");
+
+            // The name is quoted by whatever jumps to it, so a rename that stopped at the name tree
+            // would both leave the word readable in these and break the links.
+            OutlineItem bookmark = document.getCatalog().getOutlines().getRootOutlineItem().getSubItem(0);
+            assertEquals("**** dest", bookmark.getDest().getNamedDestination(),
+                    "the bookmark should point at the new name");
+            assertEquals("**** dest", linkDestination(document),
+                    "the link annotation should point at the new name");
+        } finally {
+            document.dispose();
+        }
+    }
+
+    @DisplayName("names that mask to the same string stay distinct")
+    @Test
+    public void collidingDestinationNamesAreKeptApart() {
+        // "bravo one" and "bravo two" both mask to "**** one"/"**** two" and are fine, but
+        // "bravo" and "bravo!" would both become "****". The rename planner appends a counter
+        // rather than letting the second overwrite the first and lose a destination.
+        TermMasker masker = new TermMasker(terms("bravo"), "****");
+        assertEquals("****", masker.mask("bravo"));
+        assertEquals("****!", masker.mask("bravo!"));
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private List<SearchTerm> terms(String word) {
@@ -154,6 +211,51 @@ public class TermDrivenRedactionTest {
      * Redacts the fixture with the given request, always dropping an annotation over "bravo" on the
      * page so the geometric and term axes are exercised together.
      */
+    /**
+     * Redacts a named fixture with the given request, without adding any annotation: these targets
+     * are reached by term, not by geometry.
+     */
+    private byte[] redactIn(String fixture, RedactionRequest request) throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/" + fixture).toString());
+        try {
+            Redactor.configure(document, request);
+            return save(document);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    private FieldDictionary firstField(Document document) {
+        Object field = document.getCatalog().getInteractiveForm().getFields().get(0);
+        if (field instanceof AbstractWidgetAnnotation) {
+            return ((AbstractWidgetAnnotation<?>) field).getFieldDictionary();
+        }
+        return (FieldDictionary) field;
+    }
+
+    private String stringValue(Document document, FieldDictionary field, Name key) {
+        Object value = document.getCatalog().getLibrary().getObject(field.getEntries(), key);
+        return value instanceof StringObject
+                ? Utils.convertStringObject(document.getCatalog().getLibrary(), (StringObject) value)
+                : null;
+    }
+
+    private String linkDestination(Document document) throws Exception {
+        Library library = document.getCatalog().getLibrary();
+        Page page = document.getPageTree().getPage(0);
+        for (Reference reference : page.getAnnotationReferences()) {
+            Object annotation = library.getObject(reference);
+            if (annotation instanceof Annotation) {
+                org.icepdf.core.pobjects.actions.Action action = ((Annotation) annotation).getAction();
+                if (action instanceof GoToAction) {
+                    return ((GoToAction) action).getDestination().getNamedDestination();
+                }
+            }
+        }
+        return null;
+    }
+
     private byte[] redact(RedactionRequest request) throws Exception {
         Document document = open();
         try {
