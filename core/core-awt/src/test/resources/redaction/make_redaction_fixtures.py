@@ -13,6 +13,8 @@ WIDTH/1000 * fontsize, on any machine.
 Run from this directory:  python3 make_redaction_fixtures.py
 """
 
+import os
+
 WIDTH = 500  # uniform glyph width, in 1/1000 text space units
 
 
@@ -63,10 +65,23 @@ def simple_page(content, extra_resources=b"", extra_objs=None, page_extra=b""):
     return build(objs)
 
 
+# Fixtures the viewer's tests need too.  Written to both places rather than copied by hand, so a
+# regenerated fixture cannot silently go stale in one of them.
+VIEWER_COPIES = {
+    "positionless_text.pdf": "../../../../../../viewer/viewer-awt/src/test/resources/redact",
+}
+
+
 def write(name, data):
     with open(name, "wb") as handle:
         handle.write(data)
     print("wrote %-28s %5d bytes" % (name, len(data)))
+    viewer_dir = VIEWER_COPIES.get(name)
+    if viewer_dir and os.path.isdir(viewer_dir):
+        viewer_path = os.path.join(viewer_dir, name)
+        with open(viewer_path, "wb") as handle:
+            handle.write(data)
+        print("  also   %-28s (viewer tests)" % viewer_path)
 
 
 # -- fixtures ------------------------------------------------------------------------------------
