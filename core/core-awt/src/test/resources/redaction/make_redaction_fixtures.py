@@ -399,7 +399,41 @@ def annotation_appearance():
     return bytes(out)
 
 
+def hidden_layer():
+    """A form on an optional-content layer that is OFF by default.
+
+    The parser stops at the visibility check and never descends into the form, so a redaction over
+    where the form draws used to leave its text sitting in the file - hidden by a flag anyone can
+    turn back on, and visible to text extraction regardless.
+
+    The form's /OC is a membership dictionary rather than the group directly.  Both are legal, but
+    only the OCMD path actually consults the group's off state in ICEpdf today - see
+    OptionalContent.isVisible(OptionalContentGroup), which reports any declared group as visible -
+    so a fixture pointing /OC straight at the OCG is painted, and tests nothing.
+    """
+    form_content = b"BT\n/F1 12 Tf\n0 0 Td\n(hidden layer secret) Tj\nET\n"
+    form = (b"<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 300 50] "
+            b"/Matrix [1 0 0 1 20 140] /OC 8 0 R /Resources << /Font << /F1 5 0 R >> >> " +
+            b"/Length %d >>\nstream\n" % len(form_content) + form_content + b"\nendstream")
+    ocg = b"<< /Type /OCG /Name (hidden layer) >>"
+    ocmd = b"<< /Type /OCMD /OCGs [7 0 R] /P /AllOn >>"
+    content = b"BT\n/F1 12 Tf\n20 40 Td\n(page says alpha) Tj\nET\n/Fm0 Do\n"
+    return build({
+        1: (b"<< /Type /Catalog /Pages 2 0 R /OCProperties << /OCGs [7 0 R] "
+            b"/D << /OFF [7 0 R] >> >> >>"),
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> /XObject << /Fm0 6 0 R >> >> >>"),
+        4: stream_obj(content),
+        5: helvetica(),
+        6: form,
+        7: ocg,
+        8: ocmd,
+    })
+
+
 FIXTURES = {
+    "hidden_layer.pdf": hidden_layer,
     "annotation_appearance.pdf": annotation_appearance,
     "hidden_copies.pdf": hidden_copies,
     "form_and_destinations.pdf": form_and_destinations,

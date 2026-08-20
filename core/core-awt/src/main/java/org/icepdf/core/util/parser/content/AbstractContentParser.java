@@ -510,6 +510,23 @@ public abstract class AbstractContentParser {
                 OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
                 optionalContent.init();
                 if (!optionalContent.isVisible(oc)) {
+                    // Not painting it does not remove it.  The form's content stream is still in the
+                    // file with whatever text it draws, kept out of sight by nothing more than a
+                    // visibility flag - turn the layer on, or run text extraction, and it is back.
+                    // So a rewrite still descends into the form; it is only the painting that the
+                    // visibility decides.  Note the CTM is copied rather than concatenated into:
+                    // getCTM() hands out the live transform.
+                    if (contentStreamCallback != null) {
+                        formXObject.setParentResources(resources);
+                        AffineTransform hiddenTransform = new AffineTransform(graphicState.getCTM());
+                        hiddenTransform.concatenate(formXObject.getMatrix());
+                        ContentStreamCallback hiddenCallback =
+                                contentStreamCallback.createChildInstance(hiddenTransform);
+                        formXObject.init(hiddenCallback);
+                        if (formXObject.getShapes() != null) {
+                            hiddenCallback.endContentStream();
+                        }
+                    }
                     return graphicState;
                 }
             }
