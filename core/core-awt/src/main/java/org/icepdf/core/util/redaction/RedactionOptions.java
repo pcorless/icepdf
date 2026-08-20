@@ -48,6 +48,7 @@ public class RedactionOptions {
     private Set<RedactionTarget> targets = EnumSet.allOf(RedactionTarget.class);
     private boolean verify = true;
     private boolean hashTermsInReport;
+    private boolean removeAttachments = true;
 
     private RedactionOptions() {
     }
@@ -196,6 +197,30 @@ public class RedactionOptions {
 
     public boolean isHashTermsInReport() {
         return hashTermsInReport;
+    }
+
+    /**
+     * Whether attached files are removed from a redacted document.
+     * <p>
+     * On by default, and for the same reason a redacted page's thumbnail is dropped: an attachment
+     * is an arbitrary file - a spreadsheet, another PDF, an image - and there is no general way to
+     * find a term inside one, let alone mask it. It is usually the source of the document it is
+     * attached to, so leaving it is the plainest possible leak, and any redaction it needed cannot
+     * be done here. Removal is recorded in the report either way.
+     * <p>
+     * Turn it off when the attachments are known to be safe and worth keeping; the report then
+     * carries an unverifiable region for them instead, since the pass cannot see inside.
+     *
+     * @param removeAttachments true to remove embedded files, the default
+     * @return this
+     */
+    public RedactionOptions removeAttachments(boolean removeAttachments) {
+        this.removeAttachments = removeAttachments;
+        return this;
+    }
+
+    public boolean isRemoveAttachments() {
+        return removeAttachments;
     }
 
     /**

@@ -80,5 +80,12 @@ public enum RedactionTarget {
     /**
      * Document information dictionary and XMP metadata, which routinely echo document content.
      */
-    METADATA
+    METADATA,
+
+    /**
+     * Files attached to the document. Nothing here can be masked - an attachment is an arbitrary
+     * file - so this covers removing them, controlled by
+     * {@link RedactionOptions#isRemoveAttachments()}.
+     */
+    ATTACHMENTS
 }

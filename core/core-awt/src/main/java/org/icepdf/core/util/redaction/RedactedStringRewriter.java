@@ -26,6 +26,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
 import java.awt.geom.AffineTransform;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -84,6 +85,44 @@ public class RedactedStringRewriter {
         if (options.redacts(RedactionTarget.METADATA)) {
             rewriteMetadata();
         }
+        if (options.redacts(RedactionTarget.ATTACHMENTS)) {
+            handleAttachments();
+        }
+    }
+
+    /**
+     * Attached files.
+     * <p>
+     * Nothing here can be masked: an attachment is an arbitrary file, and there is no general way to
+     * find a term inside a spreadsheet or an image, let alone remove it. An attachment is also
+     * frequently the source of the document it is attached to, which makes leaving one the plainest
+     * leak available. So the choice is to remove them or to say plainly that they were not checked -
+     * which is what {@link RedactionOptions#isRemoveAttachments()} selects between.
+     */
+    private void handleAttachments() {
+        Names names = document.getCatalog().getNames();
+        if (names == null || names.getEmbeddedFilesNameTree() == null) {
+            return;
+        }
+        NameTree attachments = names.getEmbeddedFilesNameTree();
+        List<?> namesAndValues = attachments.getNamesAndValues();
+        int count = namesAndValues == null ? 0 : namesAndValues.size() / 2;
+        if (count == 0) {
+            return;
+        }
+        Library library = document.getCatalog().getLibrary();
+        if (!options.isRemoveAttachments()) {
+            report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                    count + " attached file(s) were kept and cannot be redacted; their contents were "
+                            + "not examined");
+            return;
+        }
+        names.getEntries().remove(Names.EMBEDDED_FILES_KEY);
+        library.getStateManager().addChange(new PObject(names, names.getPObjectReference()));
+        report.recordStringRewritten(RedactionTarget.ATTACHMENTS);
+        report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                "Removed " + count + " attached file(s): an attachment cannot be redacted, and is "
+                        + "often the source of the document it is attached to");
     }
 
     /**
@@ -414,18 +453,46 @@ public class RedactedStringRewriter {
         }
     }
 
+    /**
+     * A comment carries its text in more than one place: the plain {@code /Contents}, a rich text
+     * copy in {@code /RC}, and the commenter's name in {@code /T}. Redacting only the first leaves
+     * the same words in the second, and a name is often exactly what a redaction is for.
+     */
     private void rewriteAnnotation(MarkupAnnotation annotation, Library library) {
-        String contents = annotation.getContents();
-        if (contents == null) {
-            return;
-        }
-        String masked = masker.mask(contents);
-        if (!masked.equals(contents)) {
-            annotation.setContents(masked);
+        boolean rewritten = maskAnnotationEntry(annotation.getContents(), annotation::setContents);
+        // Read from the dictionary rather than through getRichText(), which returns a field only
+        // filled in by init(): an annotation reached through the library has not necessarily been
+        // initialised, and would silently report no rich text at all.
+        rewritten |= maskAnnotationEntry(stringEntry(annotation, MarkupAnnotation.RC_KEY, library),
+                annotation::setRichText);
+        rewritten |= maskAnnotationEntry(annotation.getTitleText(), annotation::setTitleText);
+        if (rewritten) {
             library.getStateManager().addChange(
                     new PObject(annotation, annotation.getPObjectReference()));
             report.recordStringRewritten(RedactionTarget.ANNOTATION_CONTENTS);
         }
+    }
+
+    /**
+     * Reads a text entry straight out of a dictionary, without depending on whatever lazy field the
+     * owning object may or may not have filled in.
+     */
+    private String stringEntry(Dictionary dictionary, Name key, Library library) {
+        Object value = library.getObject(dictionary.getEntries(), key);
+        return value instanceof StringObject
+                ? Utils.convertStringObject(library, (StringObject) value) : null;
+    }
+
+    private boolean maskAnnotationEntry(String value, Consumer<String> setter) {
+        if (value == null) {
+            return false;
+        }
+        String masked = masker.mask(value);
+        if (masked.equals(value)) {
+            return false;
+        }
+        setter.accept(masked);
+        return true;
     }
 
     /**
@@ -434,15 +501,49 @@ public class RedactedStringRewriter {
      */
     private void rewriteMetadata() {
         PInfo info = document.getInfo();
-        if (info == null) {
+        if (info != null) {
+            // The typed setters rather than setProperty: they run the value through the document's
+            // encryption, which writing the string straight into the dictionary would skip.
+            rewriteInfoEntry(info.getTitle(), info::setTitle);
+            rewriteInfoEntry(info.getAuthor(), info::setAuthor);
+            rewriteInfoEntry(info.getSubject(), info::setSubject);
+            rewriteInfoEntry(info.getKeywords(), info::setKeywords);
+        }
+        // Outside the guard above: the two are independent, and a document can carry XMP with no
+        // information dictionary at all.
+        rewriteXmpMetadata();
+    }
+
+    /**
+     * The XMP metadata stream.
+     * <p>
+     * Separate from the information dictionary and usually a duplicate of it - title, subject,
+     * keywords and author again, in XML - so redacting only {@code /Info} leaves the same words
+     * sitting in a stream a text editor will show at a glance.
+     * <p>
+     * Masked as text rather than parsed as XML: the terms are content, they appear inside element
+     * text and attribute values, and replacing them there needs no understanding of the schema.
+     * Anything that would break the XML - a term matching a tag name - is a term the caller has
+     * chosen to remove from the document anyway.
+     */
+    private void rewriteXmpMetadata() {
+        Stream metadata = document.getCatalog().getMetaData();
+        if (metadata == null) {
             return;
         }
-        // The typed setters rather than setProperty: they run the value through the document's
-        // encryption, which writing the string straight into the dictionary would skip.
-        rewriteInfoEntry(info.getTitle(), info::setTitle);
-        rewriteInfoEntry(info.getAuthor(), info::setAuthor);
-        rewriteInfoEntry(info.getSubject(), info::setSubject);
-        rewriteInfoEntry(info.getKeywords(), info::setKeywords);
+        byte[] raw = metadata.getDecodedStreamBytes();
+        if (raw == null || raw.length == 0) {
+            return;
+        }
+        String xmp = new String(raw, StandardCharsets.UTF_8);
+        String masked = masker.mask(xmp);
+        if (masked.equals(xmp)) {
+            return;
+        }
+        metadata.setRawBytes(masked.getBytes(StandardCharsets.UTF_8));
+        Library library = document.getCatalog().getLibrary();
+        library.getStateManager().addChange(new PObject(metadata, metadata.getPObjectReference()));
+        report.recordStringRewritten(RedactionTarget.METADATA);
     }
 
     private void rewriteInfoEntry(String value, Consumer<String> setter) {

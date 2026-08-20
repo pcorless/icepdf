@@ -111,10 +111,30 @@ public class Redactor {
                 continue;
             }
             RedactionContentBurner.burn(page, redactionAnnotations, request.getOptions(), report);
+            discardThumbnail(page, stateManager, report);
             // Convert to a square annotation so the exported document shows where the redaction was
             // without still claiming to be a pending redaction.
             convertRedactionToSquareAnnotation(stateManager, redactionAnnotations);
         }
+    }
+
+    /**
+     * Drops a redacted page's thumbnail.
+     * <p>
+     * A thumbnail is a picture of the page as it was, stored beside it - so redacting the page
+     * leaves a small copy of exactly what was removed. There is no text in it to find and nothing to
+     * mask, so the only honest thing to do with one is get rid of it. Viewers that want a thumbnail
+     * render their own.
+     */
+    private static void discardThumbnail(Page page, StateManager stateManager, RedactionReport report) {
+        if (page.getEntries().get(Page.THUMB_KEY) == null) {
+            return;
+        }
+        page.getEntries().remove(Page.THUMB_KEY);
+        stateManager.addChange(new PObject(page, page.getPObjectReference()));
+        report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                "Removed the thumbnail of page " + page.getPObjectReference() + ": it is an image of "
+                        + "the page before redaction and cannot be redacted itself");
     }
 
     private static void convertRedactionToSquareAnnotation(StateManager stateManager,

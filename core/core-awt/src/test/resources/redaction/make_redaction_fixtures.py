@@ -307,7 +307,62 @@ def form_and_destinations():
     return bytes(out)
 
 
+def hidden_copies():
+    """The places a redacted word hides that neither a rectangle nor /Info reaches.
+
+    XMP metadata repeating the title, a comment carrying the word in /Contents, in its rich text
+    /RC and in its author /T, and a page thumbnail - a picture of the page as it was, which cannot
+    be redacted and can only be dropped.
+    """
+    content = b"BT\n/F1 12 Tf\n20 100 Td\n(alpha bravo charlie) Tj\nET\n"
+    xmp = (b"<?xpacket begin='' id='W5M0MpCehiHzreSzNTczkc9d'?>\n"
+           b"<x:xmpmeta xmlns:x='adobe:ns:meta/'><rdf:RDF "
+           b"xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+           b"<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+           b"<dc:title><rdf:Alt><rdf:li xml:lang='x-default'>bravo report</rdf:li></rdf:Alt></dc:title>"
+           b"<dc:subject><rdf:Bag><rdf:li>bravo</rdf:li></rdf:Bag></dc:subject>"
+           b"</rdf:Description></rdf:RDF></x:xmpmeta>\n<?xpacket end='w'?>")
+    # a 2x2 greyscale thumbnail; content is irrelevant, its presence is the point
+    thumb_samples = bytes([0, 64, 128, 255])
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R /Metadata 11 0 R /Names 13 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Annots [9 0 R] /Thumb 12 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(content),
+        5: helvetica(),
+        9: (b"<< /Type /Annot /Subtype /Text /Rect [250 150 270 170] "
+            b"/Contents (a note about bravo) /RC (<body>rich bravo</body>) /T (bravo reviewer) >>"),
+        # an attached file: nothing here can be masked, so a redaction can only drop it
+        13: b"<< /EmbeddedFiles 14 0 R >>",
+        14: b"<< /Names [(bravo source.txt) 15 0 R] >>",
+        15: (b"<< /Type /Filespec /F (bravo source.txt) /Desc (notes about bravo) "
+             b"/EF << /F 16 0 R >> >>"),
+        16: (b"<< /Type /EmbeddedFile /Length 22 >>\nstream\n"
+             b"bravo appears here too\nendstream"),
+        11: (b"<< /Type /Metadata /Subtype /XML /Length %d >>\nstream\n" % len(xmp)
+             + xmp + b"\nendstream"),
+        12: (b"<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceGray "
+             b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(thumb_samples)
+             + thumb_samples + b"\nendstream"),
+    }
+    out = bytearray(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
+    offsets = {}
+    for num in sorted(objs):
+        offsets[num] = len(out)
+        out += b"%d 0 obj\n" % num + objs[num] + b"\nendobj\n"
+    xref = len(out)
+    top = max(objs) + 1
+    out += b"xref\n0 %d\n" % top + b"0000000000 65535 f \n"
+    for num in range(1, top):
+        out += (b"%010d 00000 n \n" % offsets[num]) if num in offsets else b"0000000000 65535 f \n"
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (top, xref)
+    return bytes(out)
+
+
 FIXTURES = {
+    "hidden_copies.pdf": hidden_copies,
     "form_and_destinations.pdf": form_and_destinations,
     "positionless_text.pdf": positionless_text,
     "rotated_image.pdf": rotated_image,

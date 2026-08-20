@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -193,6 +194,109 @@ public class TermDrivenRedactionTest {
         assertEquals("****!", masker.mask("bravo!"));
     }
 
+    @DisplayName("XMP metadata is redacted, not just the info dictionary")
+    @Test
+    public void xmpMetadataIsRedacted() throws Exception {
+        byte[] saved = redactIn("hidden_copies.pdf", RedactionRequest.ofTerms(terms("bravo")));
+
+        // XMP is a separate stream that usually repeats the info dictionary, so redacting only
+        // /Info leaves the same words in an XML stream a text editor shows at a glance.
+        String xmp = xmpMetadata(saved);
+        assertNotNull(xmp, "fixture should carry XMP metadata");
+        assertFalse(xmp.contains("bravo"), "the word should be gone from XMP: " + xmp);
+        assertTrue(xmp.contains("****"), "and replaced by the mask: " + xmp);
+    }
+
+    @DisplayName("a comment's rich text and author are redacted with its contents")
+    @Test
+    public void annotationRichTextAndAuthorAreRedacted() throws Exception {
+        byte[] saved = redactIn("hidden_copies.pdf", RedactionRequest.ofTerms(terms("bravo")));
+
+        Document document = reopen(saved);
+        try {
+            MarkupAnnotation comment = firstMarkupAnnotation(document);
+            assertEquals("a note about ****", comment.getContents(), "plain contents");
+            // The same words live in the rich text copy and in the author's name, and a name is
+            // frequently the thing being redacted.
+            comment.init();
+            assertFalse(comment.getRichText().contains("bravo"),
+                    "rich text: " + comment.getRichText());
+            assertFalse(comment.getTitleText().contains("bravo"),
+                    "author: " + comment.getTitleText());
+        } finally {
+            document.dispose();
+        }
+    }
+
+    @DisplayName("a redacted page's thumbnail is dropped, since it cannot be redacted")
+    @Test
+    public void thumbnailIsDiscarded() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/hidden_copies.pdf").toString());
+        byte[] saved;
+        RedactionReport report;
+        try {
+            assertNotNull(document.getPageTree().getPage(0).getThumbnail(),
+                    "fixture should start with a thumbnail");
+            redactWord(document);
+            Redactor.configure(document, RedactionRequest.ofAnnotations());
+            saved = save(document);
+            report = document.getRedactionReport();
+        } finally {
+            document.dispose();
+        }
+
+        Document redacted = reopen(saved);
+        try {
+            // A thumbnail is a picture of the page as it was: nothing in it to find, nothing to
+            // mask, so the only honest thing is to remove it.
+            assertNull(redacted.getPageTree().getPage(0).getThumbnail(),
+                    "the thumbnail should be gone");
+        } finally {
+            redacted.dispose();
+        }
+        assertTrue(report.getWarnings().stream()
+                        .anyMatch(warning -> warning.getDetail().contains("thumbnail")),
+                "and the report should say so: " + report.getWarnings());
+    }
+
+    @DisplayName("attached files are removed, since nothing in one can be redacted")
+    @Test
+    public void attachmentsAreRemoved() throws Exception {
+        byte[] saved = redactIn("hidden_copies.pdf", RedactionRequest.ofTerms(terms("bravo")));
+
+        Document document = reopen(saved);
+        try {
+            assertNull(document.getCatalog().getNames().getEmbeddedFilesNameTree(),
+                    "the attachment should be gone");
+        } finally {
+            document.dispose();
+        }
+        // The file itself carried the word, and no masking could have reached inside it.
+        assertFalse(new String(saved, StandardCharsets.ISO_8859_1).contains("bravo appears here too"),
+                "and its contents should not still be in the file");
+    }
+
+    @DisplayName("attachments can be kept, and the report says they were not checked")
+    @Test
+    public void attachmentsCanBeKept() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/hidden_copies.pdf").toString());
+        RedactionReport report;
+        try {
+            Redactor.configure(document, RedactionRequest.ofTerms(terms("bravo"))
+                    .with(RedactionOptions.defaults().removeAttachments(false)));
+            save(document);
+            report = document.getRedactionReport();
+        } finally {
+            document.dispose();
+        }
+
+        assertTrue(report.getWarnings().stream()
+                        .anyMatch(warning -> warning.getDetail().contains("kept and cannot be redacted")),
+                "keeping an attachment should be reported, not silent: " + report.getWarnings());
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private List<SearchTerm> terms(String word) {
@@ -224,6 +328,29 @@ public class TermDrivenRedactionTest {
         } finally {
             document.dispose();
         }
+    }
+
+    private String xmpMetadata(byte[] pdf) throws Exception {
+        Document document = reopen(pdf);
+        try {
+            Stream metadata = document.getCatalog().getMetaData();
+            return metadata == null ? null
+                    : new String(metadata.getDecodedStreamBytes(), StandardCharsets.UTF_8);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    private MarkupAnnotation firstMarkupAnnotation(Document document) throws Exception {
+        Library library = document.getCatalog().getLibrary();
+        Page page = document.getPageTree().getPage(0);
+        for (Reference reference : page.getAnnotationReferences()) {
+            Object annotation = library.getObject(reference);
+            if (annotation instanceof MarkupAnnotation) {
+                return (MarkupAnnotation) annotation;
+            }
+        }
+        throw new IllegalStateException("fixture should carry a markup annotation");
     }
 
     private FieldDictionary firstField(Document document) {
