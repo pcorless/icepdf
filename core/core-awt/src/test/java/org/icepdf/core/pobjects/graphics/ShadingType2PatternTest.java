@@ -15,13 +15,20 @@
  */
 package org.icepdf.core.pobjects.graphics;
 
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.functions.Function;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.Test;
 
+import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pins {@link ShadingPattern#anchorToDefaultSpace} behind the GH-501 follow-up
@@ -138,5 +145,46 @@ public class ShadingType2PatternTest {
 
         assertEquals(patternMatrix, pattern.anchorToDefaultSpace(patternMatrix, stateWithCtm(degenerate)),
                 "a non-invertible CTM must fall back to the raw pattern matrix");
+    }
+
+    /**
+     * A near-vertical axis must still produce a gradient.  Sampling the axis by
+     * solving y = mx + b collapsed here: the ends differ by 9e-5 in x over 20
+     * units of y, so the slope is ~2e5, the intercept b = y0 - m*x0 is ~6e7, and
+     * the float sum (m*x) + b cancels away every digit of the result.  All eleven
+     * samples then landed off the axis and the gradient degenerated to one flat
+     * colour -- the opera mask's white upper lip in shadding-2-3-6.pdf.
+     */
+    @Test
+    public void nearVerticalAxisStillProducesAGradient() {
+        ShadingType2Pattern pattern = newPattern(new AffineTransform());
+        pattern.colorSpace = PColorSpace.getColorSpace(new Library(), new Name("DeviceGray"));
+        pattern.extend = Arrays.asList(false, false);
+        pattern.function = new Function[]{rampFunction()};
+        // the opera mask's upper-lip axis: 20 units tall, 9.2e-5 units wide.
+        Point2D.Float start = new Point2D.Float(293.48584f, 366.00098f);
+        Point2D.Float end = new Point2D.Float(293.48575f, 346.00128f);
+
+        Color[] colors = pattern.calculateColorPoints(10, start, end, 0f, 1f);
+
+        assertEquals(11, colors.length);
+        assertEquals(0, colors[0].getRed(), "t=0 end of the ramp is black");
+        assertEquals(255, colors[10].getRed(), "t=1 end of the ramp is white");
+        for (int i = 1; i < colors.length; i++) {
+            assertTrue(colors[i].getRed() > colors[i - 1].getRed(),
+                    "sample " + i + " must advance along the axis, got " + colors[i - 1] + " -> " + colors[i]);
+        }
+    }
+
+    /** 1-in 1-out identity ramp, so a sample's colour reports its parametric value. */
+    private static Function rampFunction() {
+        DictionaryEntries entries = new DictionaryEntries();
+        entries.put(new Name("Domain"), Arrays.asList(0, 1));
+        return new Function(new Dictionary(new Library(), entries)) {
+            @Override
+            public float[] calculate(float[] m) {
+                return new float[]{m[0]};
+            }
+        };
     }
 }
