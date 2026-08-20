@@ -1,0 +1,44 @@
+package org.icepdf.fx.ri.viewer;
+
+import javafx.application.Application;
+import javafx.stage.Stage;
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.fx.ri.util.FontPropertiesManager;
+
+import java.util.logging.Logger;
+
+public class Launcher extends Application {
+
+    private static final Logger logger = Logger.getLogger(Launcher.class.toString());
+
+
+    public static void main(String[] args) throws Exception {
+        FontPropertiesManager fontPropertiesManager = FontPropertiesManager.getInstance();
+
+        if (fontPropertiesManager.isPropertiesEmpty()) {
+            fontPropertiesManager.readDefaultProperties();
+            fontPropertiesManager.updateProperties();
+        } else {
+            fontPropertiesManager.loadProperties();
+        }
+        Application.launch(args);
+    }
+
+
+    @Override
+    public void start(final Stage primaryStage) throws Exception {
+
+        String filePath = System.getenv().get("-loadfile");
+        Document document = null;
+        if (filePath != null) {
+            document = new Document();
+            document.setFile(filePath);
+        }
+
+        // create first viewer window
+        ViewerStageManager stageManager = ViewerStageManager.getInstance();
+        stageManager.createViewer(primaryStage, document);
+        stageManager.setTitleAndIcons(primaryStage);
+        primaryStage.show();
+    }
+}

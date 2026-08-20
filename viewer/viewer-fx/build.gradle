@@ -1,72 +1,48 @@
 plugins {
-    id 'java'
     id 'application'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
-description = 'ICEpdf AWT viewer reference implementation project'
-
-application {
-    mainClass = "org.icepdf.ri.viewer.Launcher"
-    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
-}
-
-/**
- * Property prefixes forwarded from the Gradle JVM to a forked task JVM.
- *
- * This is deliberately an allowlist rather than a blanket copy of System.properties: the Gradle
- * daemon carries its own java.home, user.dir, file.encoding and friends, and pushing those into
- * the forked JVM would override values that JVM set correctly for itself.
- *
- *   org.icepdf.  - the library's own tuning/behaviour flags
- *   sun.java2d.  - Java2D pipeline selection (opengl, d3d, noddraw, translaccel, accthreshold...)
- *   sun.awt.     - AWT toolkit internals (e.g. sun.awt.noerasebackground)
- *   awt.         - e.g. awt.useSystemAAFontSettings
- *   swing.       - e.g. swing.aatext
- *   javax.swing. - Swing look-and-feel and related settings
- */
-ext.forwardedPropertyPrefixes = [
-        'org.icepdf.', 'sun.java2d.', 'sun.awt.', 'awt.', 'swing.', 'javax.swing.'
-]
-
-/**
- * Forwards allowlisted -D properties from the Gradle JVM to a forked task JVM.
- * Both `run` and `test` launch a separate JVM that does NOT inherit the daemon's system
- * properties, so without this a `./gradlew run -Dorg.icepdf.foo=bar` is silently ignored.
- *
- * Note that graphics-pipeline properties must be present at JVM launch: they are read when the
- * Java2D pipeline initialises, so setting them later from application code has no effect.
- */
-def forwardProperties(task) {
-    def prefixes = project.ext.forwardedPropertyPrefixes
-    System.properties.each { k, v ->
-        if (prefixes.any { k.toString().startsWith(it) }) {
-            task.systemProperty(k.toString(), v.toString())
-        }
+// JavaFX 21 requires Java 17+, override parent toolchain for this module
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
     }
 }
-
-def sectionName = 'org/icepdf/ri/'
-def baseJarName = 'icepdf'
-def baseAppendixName  = 'viewer'
 
 repositories {
     mavenCentral()
 }
 
+description = 'ICEpdf FX viewer reference implementation project'
+
+application {
+    mainClass = "org.icepdf.fx.ri.viewer.Launcher"
+    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
+
+def sectionName = 'org/icepdf/fx/ri/viewer'
+def baseJarName = 'icepdf'
+def baseAppendixName  = 'viewer-fx'
+def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
+
+
+javafx {
+    version = "21.0.5"
+    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics', 'javafx.swing' ]
+}
+
+
 dependencies {
     implementation project(':core:core-awt')
-    implementation project(':core:core-fonts')
     // signature validation.
     implementation 'org.bouncycastle:bcprov-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
+    // drawing tests
+    implementation 'org.jfree:org.jfree.fxgraphics2d:2.1'
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
-    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-    testImplementation('org.mockito:mockito-core:5.14.2')
-    testImplementation('org.mockito:mockito-junit-jupiter:5.14.2')
-    // VeraPDF for PDF/A validation
-    testImplementation('org.verapdf:validation-model:1.28.1')
 }
 
 // generatePomFileForViewerJarPublication
@@ -76,10 +52,10 @@ publishing {
             from components.java
             afterEvaluate {
                 groupId = 'org.icepdf.os'
-                artifactId = 'icepdf-viewer'
+                artifactId = 'icepdf-viewer-fx'
                 version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
                 pom.withXml {
-                    asNode().appendNode('description', 'ICEpdf AWT viewer reference implementation.')
+                    asNode().appendNode('description', 'ICEpdf JX Viewer reference implementation.')
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
                     asNode().appendNode('scm')
                             .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
@@ -102,24 +78,11 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
     }
-    // forward opt-in characterization/golden flags to the test JVM
-    // e.g. ./gradlew ... -Dupdate.reading.order.golden=true
-    ['update.reading.order.golden', 'update.reading.order.xycut.golden',
-     'update.word.segmentation.golden'].each { k ->
-        if (System.getProperty(k) != null) {
-            systemProperty(k, System.getProperty(k))
-        }
-    }
-    forwardProperties(delegate)
-}
-
-run {
-    forwardProperties(delegate)
 }
 
 jar {
     archiveBaseName.set('icepdf')
-    archiveAppendix.set("viewer")
+    archiveAppendix.set("viewer-fx")
     archiveVersion.set("${VERSION}")
     archiveClassifier.set("${RELEASE_TYPE}")
 
@@ -129,8 +92,7 @@ jar {
             // executable jar
             attributes("Main-Class": 'org.icepdf.ri.viewer.Launcher')
             if (!configurations.runtimeClasspath.isEmpty()) {
-                attributes('Class-Path':
-                        configurations.runtimeClasspath.files.collect{it.name}.join(' '))
+                attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }
         }
     }
@@ -143,8 +105,7 @@ jar {
     }
 }
 
-tasks.register('sourcesJar', Jar) {
-    dependsOn classes
+task sourcesJar(type: Jar, dependsOn: classes) {
     description = 'Assembles a jar archive containing the main classes source code.'
     group = 'Documentation'
     archiveBaseName.set("${baseJarName}")
@@ -159,8 +120,7 @@ tasks.register('sourcesJar', Jar) {
     from sourceSets.main.allSource
 }
 
-tasks.register('javadocJar', Jar) {
-    dependsOn javadoc
+task javadocJar(type: Jar, dependsOn: 'javadoc') {
     from javadoc
     archiveClassifier.set("javadoc")
 }
