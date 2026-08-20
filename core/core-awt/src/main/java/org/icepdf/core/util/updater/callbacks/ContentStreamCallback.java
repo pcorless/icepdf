@@ -27,6 +27,7 @@ import java.awt.geom.AffineTransform;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,6 +54,9 @@ public abstract class ContentStreamCallback {
     protected final AffineTransform transform;
     protected boolean modifiedStream;
     protected StringObjectWriter stringObjectWriter;
+    // Bytes from the end of the previous content stream that no operator has claimed yet - see
+    // endContentStream(boolean).
+    private byte[] carriedBytes;
 
     public ContentStreamCallback(Library library, StringObjectWriter stringObjectWriter) {
         this.library = library;
@@ -92,12 +96,41 @@ public abstract class ContentStreamCallback {
     }
 
     public void endContentStream() throws IOException {
+        endContentStream(false);
+    }
+
+    /**
+     * Closes the current content stream.
+     *
+     * @param moreStreamsFollow true when this is one of several streams making up a page and another
+     *                          follows. Bytes left over at the end of such a stream are not
+     *                          necessarily trailing content: a page's content streams are
+     *                          concatenated, so an operator's operands can sit at the end of one and
+     *                          the operator itself at the start of the next. Those bytes are held
+     *                          back and dealt with by whatever operator claims them, rather than
+     *                          written out here where a rewrite could no longer remove them.
+     * @throws IOException if the stream cannot be written
+     */
+    public void endContentStream(boolean moreStreamsFollow) throws IOException {
         if (currentStream != null) {
+            // Anything held back from an earlier stream that no operator claimed is genuinely
+            // content; write it before this stream's own bytes, which is where it sat.
+            writeCarriedBytes();
             int contentStreamLength = originalContentStreamBytes.length;
             // make sure we don't miss any bytes.
             if (lastTokenPosition < originalContentStreamBytes.length) {
-                burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
-                        (contentStreamLength - lastTokenPosition));
+                if (moreStreamsFollow && !isWhitespace(originalContentStreamBytes, lastTokenPosition,
+                        contentStreamLength)) {
+                    carriedBytes = Arrays.copyOfRange(originalContentStreamBytes, lastTokenPosition,
+                            contentStreamLength);
+                    // Holding bytes back is itself a change to this stream: it no longer contains
+                    // them.  Without saying so the stream is written out as it arrived, operand and
+                    // all, and the replacement written into the next stream simply joins it.
+                    modifiedStream = true;
+                } else {
+                    burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                            (contentStreamLength - lastTokenPosition));
+                }
             }
 
             // assign accumulated byte[] to the stream
@@ -118,7 +151,38 @@ public abstract class ContentStreamCallback {
         }
     }
 
+    /**
+     * Writes out bytes held back from the previous stream. They belong ahead of whatever is written
+     * next, which is where they were.
+     */
+    private void writeCarriedBytes() throws IOException {
+        if (carriedBytes != null) {
+            burnedContentOutputStream.write(carriedBytes);
+            carriedBytes = null;
+            // This stream now carries bytes it did not arrive with.
+            modifiedStream = true;
+        }
+    }
+
+    /**
+     * @return true when a range holds nothing but whitespace, which is not worth relocating across a
+     * stream boundary and would mark every multi-stream page as modified
+     */
+    private static boolean isWhitespace(byte[] bytes, int from, int to) {
+        for (int i = from; i < to; i++) {
+            if (!Character.isWhitespace(bytes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void setLastTokenPosition(int position, Integer token) throws IOException {
+        // A show operator decides for itself what to do with them, since it may be replacing the
+        // very string they hold; anything else simply needs them written first.
+        if (!isShowTextToken(token)) {
+            writeCarriedBytes();
+        }
         // skip text writing operators as they will be handled by the StringObjectWriter implementation
         // other layout operators like ' and " are still handle by the TJ/Tj operators
         if (!isTextLayoutToken(token)) {
@@ -136,6 +200,13 @@ public abstract class ContentStreamCallback {
         lastTextPosition = position;
     }
 
+
+    /**
+     * @return true for the operators that show text, whose operands a redaction may be rewriting
+     */
+    private boolean isShowTextToken(int token) {
+        return token == Tj || token == TJ || token == SINGLE_QUOTE || token == DOUBLE_QUOTE;
+    }
 
     private boolean isTextLayoutToken(int token) {
         // ' and " show text just as Tj does, so their bytes belong to the StringObjectWriter too.
@@ -165,6 +236,9 @@ public abstract class ContentStreamCallback {
     public void writeModifiedStringObject(ArrayList<TextSprite> textOperators, String showPrefix)
             throws IOException {
         if (StringObjectWriter.containsFlaggedText(textOperators)) {
+            // The string being replaced may be the bytes held back from the previous stream, so
+            // dropping them is how the original stops being written out alongside its replacement.
+            carriedBytes = null;
             if (showPrefix != null) {
                 // The bytes between the previous operator and this one are part of the range being
                 // replaced, so the whitespace that separated them goes with it. Without a separator
@@ -176,7 +250,9 @@ public abstract class ContentStreamCallback {
             stringObjectWriter.writeShownText(burnedContentOutputStream, textOperators);
             modifiedStream = true;
         } else {
-            // copy not flagged StringObjects verbatim
+            // copy not flagged StringObjects verbatim, including any operand bytes that were left
+            // at the end of the previous stream
+            writeCarriedBytes();
             int length = lastTextPosition - lastTokenPosition;
             burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition, length);
         }

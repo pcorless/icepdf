@@ -25,7 +25,6 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.updater.WriteMode;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,9 +55,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * the resulting decompressed content stream is compared to a checked-in golden, so any change to
  * the writer shows up as a reviewable diff rather than a pass/fail.
  * <p>
- * Re-bless with {@code -Dredaction.bless=true} after <em>reading</em> the diff. Goldens were first
- * captured against the pre-fix writer, so some encode known defects; those are called out in the
- * golden's own header line and in REDACTION-REVIEW-PLAN.md.
+ * Re-bless with {@code -Dredaction.bless=true} after <em>reading</em> the diff.
  * <p>
  * Alongside the golden, every case asserts the two things that must hold whatever the syntax:
  * the redacted word is gone from the extracted text, and every surviving glyph is still within
@@ -89,6 +86,11 @@ public class RedactionGoldenTest {
             // that catches normalizeToUserSpace being applied once per annotation instead of once
             // per glyph.
             "form_xobject.pdf, alpha|charlie",
+            "multi_stream.pdf, charlie",
+            // The other half of a split show operator: redacting a word in the first stream leaves
+            // the operand that spans the boundary untouched, so the bytes held back have to be put
+            // back rather than dropped.
+            "multi_stream.pdf, alpha",
             "form_drawn_twice.pdf, repeated",
             "quote_operators.pdf, charlie",
             "text_state.pdf, bravo",
@@ -97,25 +99,6 @@ public class RedactionGoldenTest {
         assertRedactionMatchesGolden(fixture, term);
     }
 
-    /**
-     * Fixtures the current writer gets wrong. Each was run and its failure recorded, so this is a
-     * checklist rather than a suspicion - see REDACTION-REVIEW-PLAN.md for the findings:
-     * <ul>
-     * <li>{@code multi_stream} - the original string stays in the file. Its operand is in one
-     *     content stream and its Tj in the next, so the first stream is copied out verbatim and the
-     *     replacement appended after it. The orphaned string has no operator so it is never shown,
-     *     which is why only the byte-level assertion catches it.</li>
-     * </ul>
-     */
-    @DisplayName("known-failing fixtures (GH-525)")
-    @Disabled("GH-525: a show operator split across two content streams leaks its string")
-    @ParameterizedTest(name = "{0} redacting \"{1}\"")
-    @CsvSource({
-            "multi_stream.pdf, charlie",
-    })
-    public void knownFailingFixtures(String fixture, String term) throws Exception {
-        assertRedactionMatchesGolden(fixture, term);
-    }
 
     /**
      * A redaction rectangle drawn snugly over a word - the realistic case when a user drags a box,
@@ -243,8 +226,11 @@ public class RedactionGoldenTest {
         }
         assertOnlyTheRedactedTermMoved(originsBefore, glyphOrigins(redacted), term, fixture);
 
-        Path golden = GOLDENS.resolve(fixture.replace(".pdf", "") +
-                (term.contains("|") ? "_" + term.replace("|", "_") : "") + ".txt");
+        // Always named for both the fixture and the term: the same fixture is redacted more than
+        // one way, and a name that only distinguished some of those cases let two of them share a
+        // golden and quietly compare against each other's output.
+        Path golden = GOLDENS.resolve(
+                fixture.replace(".pdf", "") + "_" + term.replace("|", "_") + ".txt");
         if (BLESS || !Files.exists(golden)) {
             Files.createDirectories(GOLDENS);
             Files.write(golden, actual.getBytes(StandardCharsets.ISO_8859_1));
