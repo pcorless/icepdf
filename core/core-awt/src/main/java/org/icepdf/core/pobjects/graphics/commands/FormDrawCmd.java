@@ -118,6 +118,56 @@ public class FormDrawCmd extends AbstractDrawCmd {
     }
 
     /**
+     * The area clamp {@code createBufferXObject} applies, as a routing predicate:
+     * a group this size can be rasterised into a buffer rather than collapsing a
+     * sentinel bbox into it.
+     */
+    private static boolean withinBufferBudget(double formWidth, double formHeight) {
+        if (formWidth >= MAX_SCALED_FORM_SIZE || formHeight >= MAX_SCALED_FORM_SIZE) {
+            return false;
+        }
+        long area = (long) formWidth * (long) formHeight;
+        return area <= (long) MAX_IMAGE_SIZE * MAX_IMAGE_SIZE;
+    }
+
+    /**
+     * True when a knockout group's own contents can actually render differently
+     * knocked out -- i.e. it holds at least one element that is not fully opaque.
+     * <p>
+     * Knocking out replaces the elements underneath instead of compositing over
+     * them, and for an <b>opaque</b> element those are the same thing, so a group
+     * of opaque elements is unaffected.  Buffering it anyway would not be free:
+     * a non-isolated group rendered into its own (transparent) buffer loses the
+     * page backdrop that its content blends against, which lightens content that
+     * used to blend with the page (opera-mask hair, shadding-2-3-6.pdf).  So the
+     * buffer is taken only where knockout can change the result -- the stacked
+     * semi-transparent blends knockout exists for.
+     */
+    private static boolean knockoutChangesResult(Form form) {
+        Shapes shapes = form.getShapes();
+        if (shapes == null) {
+            return false;
+        }
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof FormDrawCmd) {
+                ExtGState elementState = ((FormDrawCmd) cmd).xForm.getExtGState();
+                if (elementState != null && isPartial(elementState.getNonStrokingAlphConstant())) {
+                    return true;
+                }
+            } else if (cmd instanceof AlphaDrawCmd) {
+                if (isPartial(((AlphaDrawCmd) cmd).getAlphaComposite().getAlpha())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean isPartial(float alpha) {
+        return alpha > 0f && alpha < 1f;
+    }
+
+    /**
      * Decides whether a transparency-group form must be rasterised into an
      * offscreen buffer ({@link FormDrawCmd}) or can be painted inline as plain
      * shapes ({@link ShapesDrawCmd}).
@@ -152,14 +202,19 @@ public class FormDrawCmd extends AbstractDrawCmd {
      */
     public static boolean requiresOffscreenBuffer(Form form) {
         ExtGState extGState = form.getExtGState();
-        if (extGState == null) {
-            return false;
-        }
         double formWidth = form.getBBox().getWidth();
         double formHeight = form.getBBox().getHeight();
         // degenerate / sub-pixel groups: nothing meaningful to buffer.
         if (formWidth <= 1 || formHeight <= 1) {
             return false;
+        }
+        // A knockout group's effect comes from its OWN contents, not from the
+        // graphics state at the `Do` -- the PDF 32000-1 figure's groups are
+        // placed with a bare `Do` and no `gs` at all -- so this is decided before
+        // the ExtGState is consulted.
+        boolean isKnockout = form.isKnockOut() && knockoutChangesResult(form);
+        if (extGState == null) {
+            return isKnockout && withinBufferBudget(formWidth, formHeight);
         }
         boolean hasSoftMask = extGState.getSMask() != null;
         Name blendingMode = extGState.getBlendingMode();
@@ -176,9 +231,14 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // transparency).
         boolean needsIsolation = isolationAwareRouting
                 && (form.isIsolated() || form.isKnockOut());
+        // isKnockout (decided above): a knockout group needs a surface of its own,
+        // since its elements composite against the group's INITIAL backdrop and so
+        // must be able to replace one another there.  Painted inline they compose
+        // against each other instead and a stack of semi-transparent siblings
+        // accumulates to opaque (Duke's nose, Java Magazine p3/p61).
         // No group effect -> inline; painting the shapes SRC_OVER onto the page
         // is identical to compositing them to a buffer first.
-        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation)) {
+        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation || isKnockout)) {
             return false;
         }
         // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if
@@ -274,6 +334,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
+        // Whether THIS form is an element of a knockout group.  Read before the
+        // buffer build below, which re-scopes the flag for this form's own
+        // children.
+        boolean knockedOutElement = paintingKnockoutGroup.get();
         if (optionalContentState.isVisible() && !xFormBufferBuilt) {
             synchronized (this) {
                 if (!xFormBufferBuilt) {
@@ -297,7 +361,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
                     SoftMask formSoftMask = null;
                     SoftMask softMask = null;
 
-                    if (xForm.getGraphicsState().getExtGState().getSMask() != null) {
+                    if (xForm.getGraphicsState().getExtGState() != null
+                            && xForm.getGraphicsState().getExtGState().getSMask() != null) {
                         softMask = xForm.getGraphicsState().getExtGState().getSMask();
                         // A luminosity/alpha mask group form often carries an empty
                         // /Resources and resolves its XObjects (e.g. a pre-rendered
@@ -316,7 +381,10 @@ public class FormDrawCmd extends AbstractDrawCmd {
                             y = (int) softMask.getG().getBBox().getY();
                         }
                     }
-                    if (xForm.getExtGState().getSMask() != null) {
+                    // A knockout group can be placed by a bare `Do` with no `gs`
+                    // at all, so the form's ExtGState may be absent here -- it is
+                    // no longer a precondition of reaching this path.
+                    if (xForm.getExtGState() != null && xForm.getExtGState().getSMask() != null) {
                         formSoftMask = xForm.getExtGState().getSMask();
                         formSoftMask.setParentResources(xForm.getLeafResources());
                         boolean isShading = formSoftMask.getG().getResources().isShading();
@@ -495,6 +563,42 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 }
             }
         }
+        // A group placed by a bare `Do` has no constant alpha of its own (there is
+        // no `gs`), so its buffer is blitted straight.  Without this it inherits
+        // whatever composite the previously painted form happened to leave on the
+        // Graphics2D -- a form's inner `gs` is not restored at its end, and the
+        // page's own alpha bookkeeping (setAlpha's de-dup) never sees it, so a
+        // preceding group ending on `ca 0` made this one vanish entirely
+        // (transparent_groups.pdf, bottom-left panel).  Inline groups always
+        // re-assert alpha before each fill, which is why only a buffered group's
+        // single draw-back is exposed to the leak.
+        if (xForm.getExtGState() == null && xFormBuffer != null && savedComposite == null) {
+            savedComposite = g.getComposite();
+            g.setComposite(java.awt.AlphaComposite.SrcOver);
+        }
+        // An element of a knockout group composites against the group's initial
+        // backdrop, not against the siblings already in the group buffer, so it
+        // REPLACES them where it has coverage instead of composing over them
+        // (§11.4.5.5).  The buffer's peak alpha is the element's own constant
+        // alpha, which KnockoutComposite divides back out to recover anti-aliased
+        // edge coverage; any draw-back alpha still outstanding (i.e. one the ca
+        // heuristic above did not fold away) is carried as the extra alpha.
+        if (knockedOutElement && xFormBuffer != null) {
+            float extra = 1f;
+            java.awt.Composite current = g.getComposite();
+            if (current instanceof java.awt.AlphaComposite
+                    && ((java.awt.AlphaComposite) current).getRule() == java.awt.AlphaComposite.SRC_OVER) {
+                extra = ((java.awt.AlphaComposite) current).getAlpha();
+            } else if (current instanceof KnockoutComposite) {
+                // an element-level alpha already converted to a knockout by
+                // AlphaDrawCmd; keep its constant alpha for this group's blit.
+                extra = ((KnockoutComposite) current).getExtraAlpha();
+            }
+            if (savedComposite == null) {
+                savedComposite = current;
+            }
+            g.setComposite(new KnockoutComposite(bufferPeakAlpha(xFormBuffer) / 255f, extra));
+        }
         if (formScale != 1.0) {
             // buffer was rasterised at a reduced size; scale it back up to the
             // group's full footprint so the blend composites over the page at
@@ -528,6 +632,44 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
         }
         return peak;
+    }
+
+    // Set while the shapes of a KNOCKOUT transparency group are being painted into
+    // that group's buffer, so each element drawn there knows to replace its
+    // siblings rather than compose over them (§11.4.5.5).  Scoped by
+    // createBufferXObject, which sets it to the group's own /K for the duration of
+    // the paint and restores it after -- so the flag always describes the immediate
+    // parent group, never an ancestor.
+    private static final ThreadLocal<Boolean> paintingKnockoutGroup =
+            ThreadLocal.withInitial(() -> Boolean.FALSE);
+
+    /**
+     * True while the contents of a knockout transparency group are being painted
+     * into that group's buffer, i.e. while the caller is one of the group's
+     * elements.
+     */
+    static boolean isPaintingKnockoutGroup() {
+        return paintingKnockoutGroup.get();
+    }
+
+    /**
+     * Leaves the current knockout-group scope, returning the previous value for
+     * {@link #restoreKnockoutScope}.  Used where a nested group paints its own
+     * contents onto the same surface (an inline {@link ShapesDrawCmd}): those
+     * contents are not elements of the enclosing knockout group and must not
+     * knock each other out.
+     */
+    static boolean suspendKnockoutScope() {
+        boolean previous = paintingKnockoutGroup.get();
+        paintingKnockoutGroup.set(Boolean.FALSE);
+        return previous;
+    }
+
+    /**
+     * Restores the scope captured by {@link #suspendKnockoutScope}.
+     */
+    static void restoreKnockoutScope(boolean previous) {
+        paintingKnockoutGroup.set(previous);
     }
 
     // guard so replaying the stack to build a backdrop doesn't recursively try
@@ -1150,11 +1292,20 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 if (captureCmykInk) {
                     ImageUtility.beginCmykInkCapture(bufferWidth, bufferHeight);
                 }
+                // Elements of a knockout group composite against the group's
+                // initial backdrop, i.e. they replace earlier siblings rather than
+                // compose over them (§11.4.5.5).  Flag the scope so each nested
+                // group's draw-back (below) uses KnockoutComposite; the flag is
+                // set unconditionally, so a non-knockout group also clears it for
+                // its own children instead of inheriting an ancestor's.
+                boolean previousKnockout = paintingKnockoutGroup.get();
+                paintingKnockoutGroup.set(xForm.isKnockOut());
                 try {
                     // parent page and any sentinel fill override passed as call-local
                     // parameters, no shared-state mutation.
                     xFormShapes.paint(canvas, parentPage, nullShapeFill);
                 } finally {
+                    paintingKnockoutGroup.set(previousKnockout);
                     if (captureCmykInk) {
                         capturedInk = ImageUtility.endCmykInkCapture();
                     }

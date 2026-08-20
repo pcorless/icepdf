@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.KnockoutComposite;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 
@@ -41,7 +42,20 @@ public class AlphaDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) {
 
         if (paintAlpha) {
-            g.setComposite(alphaComposite);
+            // Inside a knockout group every element composites with the group's
+            // INITIAL backdrop, so a painting operation replaces what earlier
+            // elements left rather than compositing over it (§11.4.5.5).  The
+            // constant alpha still applies -- it becomes the replacing element's
+            // own alpha -- so the alpha travels as KnockoutComposite's extra
+            // alpha and the source's own coverage (anti-aliased edges) is what
+            // decides how much is replaced.  Outside a knockout group this is
+            // just the AlphaComposite it has always been.
+            if (FormDrawCmd.isPaintingKnockoutGroup()
+                    && alphaComposite.getRule() == AlphaComposite.SRC_OVER) {
+                g.setComposite(new KnockoutComposite(1f, alphaComposite.getAlpha()));
+            } else {
+                g.setComposite(alphaComposite);
+            }
         }
 
         return currentShape;
