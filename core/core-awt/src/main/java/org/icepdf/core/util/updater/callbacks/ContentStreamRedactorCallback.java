@@ -59,9 +59,14 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         this.report = report != null ? report : new RedactionReport();
     }
 
-    protected ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
-                                            RedactionOptions options, RedactionReport report,
-                                            AffineTransform transform) {
+    /**
+     * @param transform maps the coordinates of the stream about to be parsed into page space, which
+     *                  is where the redaction areas are. Used for a form XObject, and for an
+     *                  annotation's appearance stream, both of which draw in their own space.
+     */
+    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
+                                         RedactionOptions options, RedactionReport report,
+                                         AffineTransform transform) {
         super(library, new RedactedStringObjectWriter(), transform);
         this.redactionAnnotations = redactionAnnotations;
         this.options = options;

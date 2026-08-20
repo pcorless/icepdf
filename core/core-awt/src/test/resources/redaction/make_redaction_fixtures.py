@@ -361,7 +361,46 @@ def hidden_copies():
     return bytes(out)
 
 
+def annotation_appearance():
+    """A FreeText annotation whose appearance stream draws text under a redaction.
+
+    An appearance stream is drawn on the page but is not part of the page's content, and its text
+    never enters the page's text either - so search cannot find it and a redaction driven by search
+    will not have covered it.  Only descending into the stream by geometry reaches it.
+
+    The annotation sits at 20,140 to 200,180 and its appearance draws "secret annotation text"
+    there; the page itself says something else entirely, so a leak is unambiguous.
+    """
+    ap = b"BT\n/F1 12 Tf\n5 10 Td\n(secret annotation text) Tj\nET\n"
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Annots [7 0 R] /Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(b"BT\n/F1 12 Tf\n20 60 Td\n(page says alpha) Tj\nET\n"),
+        5: helvetica(),
+        7: (b"<< /Type /Annot /Subtype /FreeText /Rect [20 140 200 180] /F 4 "
+            b"/Contents (comment) /AP << /N 8 0 R >> >>"),
+        8: (b"<< /Type /XObject /Subtype /Form /BBox [0 0 180 40] "
+            b"/Resources << /Font << /F1 5 0 R >> >> /Length %d >>\nstream\n" % len(ap)
+            + ap + b"\nendstream"),
+    }
+    out = bytearray(b"%PDF-1.7\n%\xe2\xe3\xcf\xd3\n")
+    offsets = {}
+    for num in sorted(objs):
+        offsets[num] = len(out)
+        out += b"%d 0 obj\n" % num + objs[num] + b"\nendobj\n"
+    xref = len(out)
+    top = max(objs) + 1
+    out += b"xref\n0 %d\n" % top + b"0000000000 65535 f \n"
+    for num in range(1, top):
+        out += (b"%010d 00000 n \n" % offsets[num]) if num in offsets else b"0000000000 65535 f \n"
+    out += b"trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n" % (top, xref)
+    return bytes(out)
+
+
 FIXTURES = {
+    "annotation_appearance.pdf": annotation_appearance,
     "hidden_copies.pdf": hidden_copies,
     "form_and_destinations.pdf": form_and_destinations,
     "positionless_text.pdf": positionless_text,

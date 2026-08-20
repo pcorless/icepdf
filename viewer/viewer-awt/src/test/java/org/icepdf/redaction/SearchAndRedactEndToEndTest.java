@@ -37,6 +37,7 @@ import javax.swing.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -99,9 +100,13 @@ public class SearchAndRedactEndToEndTest {
         }
 
         assertNotNull(report, "the export should leave a report");
+        // An annotation that draws no stream of its own - the fixture's sticky note - must not be
+        // reported as content the redaction could not reach, or every document carrying a comment
+        // comes back flagged.
+        assertEquals(List.of(), report.getWarnings(), "no content was left unredacted");
         assertEquals(RedactionConfidence.VERIFIED, report.getConfidence(),
                 "nothing should still be findable: " + report.getHitsAfterByTerm()
-                        + " " + report.getUnverifiableRegions());
+                        + " " + report.getUnverifiableRegions() + " warnings=" + report.getWarnings());
         assertTrue(report.getGlyphsRemoved() > 0, "glyphs came out of the page");
         assertTrue(report.getStringsRewritten() > 0, "and strings out of everything else");
     }
