@@ -16,6 +16,7 @@
 package org.icepdf.core.util.updater.callbacks;
 
 import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
@@ -75,6 +76,20 @@ public abstract class ContentStreamCallback {
     public abstract ContentStreamCallback createChildInstance(AffineTransform transform);
 
     /**
+     * Whether the parser should descend into the content stream of a form XObject and rewrite it
+     * too.
+     * <p>
+     * True for everything except a redaction that has been asked to leave forms alone. A caller
+     * excluding them is taking the trade knowingly: a form's stream is shared by every placement of
+     * it, so a redaction over one placement removes the content from all of them.
+     *
+     * @return true to rewrite forms as well as the page's own content
+     */
+    public boolean descendsIntoForms() {
+        return true;
+    }
+
+    /**
      * Marks any glyphText that intersect a flagged content bound.
      *
      * @param glyphText text to test for intersection with flagged content bounds
@@ -85,6 +100,23 @@ public abstract class ContentStreamCallback {
             IOException;
 
     public abstract void checkAndModifyImageXObject(ImageReference imageReference) throws InterruptedException;
+
+    /**
+     * Writes a {@code BDC} marked-content operator and its property list.
+     * <p>
+     * Whatever this does not rewrite it must still write: the operator's bytes were held back rather
+     * than copied through, so returning without writing them drops the operator and unbalances the
+     * {@code BDC}/{@code EMC} pairing. This default writes them exactly as they arrived.
+     *
+     * @param tag        the marked-content tag
+     * @param properties the property list - an inline dictionary, or a name into {@code /Properties}
+     * @param pos        offset just past the {@code BDC} operator
+     */
+    public void checkAndModifyMarkedContent(Name tag, Object properties, int pos) throws IOException {
+        burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                pos - lastTokenPosition);
+        lastTokenPosition = pos;
+    }
 
     public void startContentStream(Stream stream) throws IOException {
         if (currentStream != null) {
@@ -182,6 +214,14 @@ public abstract class ContentStreamCallback {
         // very string they hold; anything else simply needs them written first.
         if (!isShowTextToken(token)) {
             writeCarriedBytes();
+        }
+        // A marked-content sequence carries its property list as this operator's operands, and a
+        // redaction may be rewriting a string inside it, so those bytes are written by
+        // checkAndModifyMarkedContent rather than copied through here - the same treatment a show
+        // operator's operands get, and for the same reason.
+        if (token == BDC) {
+            lastTextPosition = position;
+            return;
         }
         // skip text writing operators as they will be handled by the StringObjectWriter implementation
         // other layout operators like ' and " are still handle by the TJ/Tj operators

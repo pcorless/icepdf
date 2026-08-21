@@ -16,6 +16,14 @@
 package org.icepdf.core.util.updater.callbacks;
 
 import org.icepdf.core.io.CountingOutputStream;
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.util.Utils;
+import org.icepdf.core.util.redaction.TermMasker;
+import org.icepdf.core.util.updater.writeables.BaseWriter;
+import org.icepdf.core.util.updater.writeables.DictionaryWriter;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
@@ -33,6 +41,7 @@ import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -49,14 +58,30 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     private final List<RedactionAnnotation> redactionAnnotations;
     private final RedactionOptions options;
     private final RedactionReport report;
+    private static final DictionaryWriter dictionaryWriter = new DictionaryWriter();
+    private static final byte[] BDC_OPERATOR = "BDC".getBytes(StandardCharsets.ISO_8859_1);
+    /** Marked-content entries that carry text a redaction has to reach. */
+    private static final Name[] MARKED_CONTENT_TEXT_KEYS = {
+            new Name("ActualText"), new Name("Alt"), new Name("E")};
+
     private final StringBuilder removedRun = new StringBuilder();
+    // Null when the redaction was not given any terms, which is what an annotation-driven redaction
+    // looks like; there is then nothing to match a marked-content string against.
+    private final TermMasker masker;
 
     public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
                                          RedactionOptions options, RedactionReport report) {
+        this(library, redactionAnnotations, options, report, (TermMasker) null);
+    }
+
+    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
+                                         RedactionOptions options, RedactionReport report,
+                                         TermMasker masker) {
         super(library, new RedactedStringObjectWriter());
         this.redactionAnnotations = redactionAnnotations;
         this.options = options != null ? options : RedactionOptions.defaults();
         this.report = report != null ? report : new RedactionReport();
+        this.masker = masker;
     }
 
     /**
@@ -67,10 +92,17 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
                                          RedactionOptions options, RedactionReport report,
                                          AffineTransform transform) {
+        this(library, redactionAnnotations, options, report, transform, null);
+    }
+
+    public ContentStreamRedactorCallback(Library library, List<RedactionAnnotation> redactionAnnotations,
+                                         RedactionOptions options, RedactionReport report,
+                                         AffineTransform transform, TermMasker masker) {
         super(library, new RedactedStringObjectWriter(), transform);
         this.redactionAnnotations = redactionAnnotations;
         this.options = options;
         this.report = report;
+        this.masker = masker;
     }
 
     /**
@@ -79,7 +111,12 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
      */
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
         return new ContentStreamRedactorCallback(this.library, this.redactionAnnotations,
-                this.options, this.report, transform);
+                this.options, this.report, transform, this.masker);
+    }
+
+    @Override
+    public boolean descendsIntoForms() {
+        return options.redacts(RedactionTarget.FORM_XOBJECTS);
     }
 
     /**
@@ -165,6 +202,57 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         Rectangle2D coveredBounds = covered.getBounds2D();
         double coveredArea = coveredBounds.getWidth() * coveredBounds.getHeight();
         return coveredArea / glyphArea >= threshold;
+    }
+
+
+    /**
+     * Masks a term out of a marked-content property list.
+     * <p>
+     * A tagged PDF keeps a second copy of its words outside the glyphs: {@code /ActualText} and
+     * {@code /Alt} say what a span really reads, which is exactly what "copy text" and a screen
+     * reader use. Burning the glyphs leaves that copy sitting in the content stream, so a redaction
+     * that stopped at the page's visible text would still hand over the sentence it removed.
+     * <p>
+     * Term-driven, like everything else without a position: a redaction driven only by rectangles was
+     * never told what the words were, so there is nothing here to match against and the property list
+     * is copied through unchanged.
+     */
+    @Override
+    public void checkAndModifyMarkedContent(Name tag, Object properties, int pos) throws IOException {
+        if (masker == null || !options.redacts(RedactionTarget.TAGGED_TEXT)
+                || !(properties instanceof DictionaryEntries)) {
+            super.checkAndModifyMarkedContent(tag, properties, pos);
+            return;
+        }
+        DictionaryEntries entries = (DictionaryEntries) properties;
+        boolean masked = false;
+        for (Name key : MARKED_CONTENT_TEXT_KEYS) {
+            Object value = library.getObject(entries, key);
+            if (!(value instanceof StringObject)) {
+                continue;
+            }
+            String text = Utils.convertStringObject(library, (StringObject) value);
+            String replacement = masker.mask(text);
+            if (!replacement.equals(text)) {
+                entries.put(key, new LiteralStringObject(replacement));
+                report.recordStringRewritten(RedactionTarget.TAGGED_TEXT);
+                masked = true;
+            }
+        }
+        if (!masked) {
+            super.checkAndModifyMarkedContent(tag, properties, pos);
+            return;
+        }
+        // Re-emitted rather than patched in place, using the writer the inline-image path already
+        // uses, so the dictionary comes out well-formed whatever was in it.
+        CountingOutputStream out = new CountingOutputStream(burnedContentOutputStream);
+        out.write(("/" + tag.getName()).getBytes(StandardCharsets.ISO_8859_1));
+        out.write(BaseWriter.SPACE);
+        dictionaryWriter.writeInline(entries, out);
+        out.write(BaseWriter.SPACE);
+        out.write(BDC_OPERATOR);
+        lastTokenPosition = pos;
+        modifiedStream = true;
     }
 
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,

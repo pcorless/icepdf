@@ -57,15 +57,26 @@ public class RedactionContentBurner {
     public static void burn(Page page, List<RedactionAnnotation> redactionAnnotations,
                             RedactionOptions options, RedactionReport report)
             throws InterruptedException, IOException {
+        burn(page, redactionAnnotations, options, report, null);
+    }
+
+    /**
+     * @param masker masks the request's terms out of text a rectangle cannot reach but that lives in
+     *               a content stream - a marked-content property list. Null when the redaction was
+     *               given no terms.
+     */
+    public static void burn(Page page, List<RedactionAnnotation> redactionAnnotations,
+                            RedactionOptions options, RedactionReport report, TermMasker masker)
+            throws InterruptedException, IOException {
         Library library = page.getLibrary();
         ContentStreamRedactorCallback contentStreamRedactorCallback =
-                new ContentStreamRedactorCallback(library, redactionAnnotations, options, report);
+                new ContentStreamRedactorCallback(library, redactionAnnotations, options, report, masker);
         page.init(contentStreamRedactorCallback);
         // wrap up, ends the last or only content stream being processed and store the bytes
         contentStreamRedactorCallback.endContentStream();
 
         if (options.redacts(RedactionTarget.ANNOTATION_APPEARANCES)) {
-            burnAppearanceStreams(page, redactionAnnotations, options, report);
+            burnAppearanceStreams(page, redactionAnnotations, options, report, masker);
         }
     }
 
@@ -87,7 +98,8 @@ public class RedactionContentBurner {
      * @param report               collects what was removed
      */
     private static void burnAppearanceStreams(Page page, List<RedactionAnnotation> redactionAnnotations,
-                                              RedactionOptions options, RedactionReport report)
+                                              RedactionOptions options, RedactionReport report,
+                                              TermMasker masker)
             throws InterruptedException, IOException {
         List<Annotation> annotations = page.getAnnotations();
         if (annotations == null) {
@@ -102,7 +114,7 @@ public class RedactionContentBurner {
             if (!intersectsRedaction(annotation, redactionAnnotations)) {
                 continue;
             }
-            burnAppearance(page, annotation, redactionAnnotations, options, report);
+            burnAppearance(page, annotation, redactionAnnotations, options, report, masker);
         }
     }
 
@@ -123,7 +135,8 @@ public class RedactionContentBurner {
 
     private static void burnAppearance(Page page, Annotation annotation,
                                        List<RedactionAnnotation> redactionAnnotations,
-                                       RedactionOptions options, RedactionReport report)
+                                       RedactionOptions options, RedactionReport report,
+                                       TermMasker masker)
             throws InterruptedException, IOException {
         Appearance appearance = annotation.getAppearances().get(annotation.getCurrentAppearance());
         if (appearance == null) {
@@ -151,7 +164,7 @@ public class RedactionContentBurner {
         // out to page space to know which of them a redaction covers.
         ContentStreamRedactorCallback callback = new ContentStreamRedactorCallback(
                 page.getLibrary(), redactionAnnotations, options, report,
-                annotation.getAppearanceToPageSpace(appearanceState));
+                annotation.getAppearanceToPageSpace(appearanceState), masker);
         form.init(callback);
         callback.endContentStream();
     }

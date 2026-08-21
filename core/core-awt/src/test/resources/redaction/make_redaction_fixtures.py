@@ -432,7 +432,35 @@ def hidden_layer():
     })
 
 
+def tagged_text():
+    """A tagged page whose structure tree repeats the page's words.
+
+    /Alt and /ActualText exist so a reader can say or copy something other than the glyphs, which
+    means burning the glyphs off the page leaves the sentence sitting in the structure tree for
+    assistive technology and "copy text" to find.  /E (an abbreviation's expansion) and /T (the
+    element's title) carry it too.
+    """
+    # The span also carries /ActualText inline in the content stream, which is the other place a
+    # tagged PDF keeps a second copy of its words.
+    content = (b"/Span << /ActualText (bravo) >> BDC\n"
+               b"BT\n/F1 12 Tf\n20 150 Td\n(alpha bravo charlie) Tj\nET\nEMC\n")
+    return build({
+        1: b"<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 6 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(content),
+        5: helvetica(),
+        6: b"<< /Type /StructTreeRoot /K [7 0 R] >>",
+        7: (b"<< /Type /StructElem /S /P /P 6 0 R /T (bravo section) "
+            b"/Alt (a paragraph about bravo) /K [8 0 R] >>"),
+        8: (b"<< /Type /StructElem /S /Span /P 7 0 R /ActualText (bravo) "
+            b"/E (bravo expanded) /K 0 >>"),
+    })
+
+
 FIXTURES = {
+    "tagged_text.pdf": tagged_text,
     "hidden_layer.pdf": hidden_layer,
     "annotation_appearance.pdf": annotation_appearance,
     "hidden_copies.pdf": hidden_copies,

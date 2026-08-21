@@ -59,6 +59,12 @@ public class RedactedStringRewriter {
     private final RedactionReport report;
     private final TermMasker masker;
 
+    private static final Name STRUCT_TREE_ROOT_KEY = new Name("StructTreeRoot");
+    private static final Name KIDS_KEY = new Name("K");
+    /** The structure-tree entries that carry text a redaction has to reach. */
+    private static final Name[] STRUCTURE_TEXT_KEYS = {
+            new Name("ActualText"), new Name("Alt"), new Name("E"), new Name("T")};
+
     public RedactedStringRewriter(Document document, RedactionRequest request, RedactionReport report) {
         this.document = document;
         this.options = request.getOptions();
@@ -82,11 +88,109 @@ public class RedactedStringRewriter {
         if (options.redacts(RedactionTarget.DESTINATIONS)) {
             rewriteDestinations();
         }
+        if (options.redacts(RedactionTarget.TAGGED_TEXT)) {
+            rewriteTaggedText();
+        }
         if (options.redacts(RedactionTarget.METADATA)) {
             rewriteMetadata();
         }
         if (options.redacts(RedactionTarget.ATTACHMENTS)) {
             handleAttachments();
+        }
+    }
+
+
+    /**
+     * The structure tree's text: {@code /ActualText}, {@code /Alt}, {@code /E} and {@code /T}.
+     * <p>
+     * A tagged PDF carries a second copy of its own words outside the content streams. {@code /Alt}
+     * and {@code /ActualText} exist precisely so a reader can say or copy something other than the
+     * glyphs - which means burning the glyphs off the page leaves the sentence intact in the
+     * structure tree, where assistive technology and "copy text" will still find it. {@code /E} is
+     * the expansion of an abbreviation and {@code /T} the element's title, both of which routinely
+     * repeat the heading they belong to.
+     * <p>
+     * The tree is walked as raw dictionaries because the core has no structure-tree model to walk.
+     * Only elements carrying one of these strings are touched; the tree's shape is left alone, so
+     * the tagging still describes the document.
+     */
+    private void rewriteTaggedText() {
+        Library library = document.getCatalog().getLibrary();
+        Object root = library.getObject(document.getCatalog().getEntries(), STRUCT_TREE_ROOT_KEY);
+        Reference owner = null;
+        if (root instanceof Reference) {
+            owner = (Reference) root;
+            root = library.getObject(owner);
+        }
+        if (root instanceof DictionaryEntries) {
+            rewriteStructureElement((DictionaryEntries) root, owner, library, new HashSet<>());
+        }
+    }
+
+    /**
+     * @param element the structure element, or the tree root, being visited
+     * @param owner   the reference of the object the element's bytes live in, which is what a change
+     *                has to be registered against - an element written inline in its parent has no
+     *                reference of its own, so the parent's carries it
+     * @param visited references already seen; a malformed tree can name the same element twice, and
+     *                {@code /K} is not guaranteed to be acyclic
+     */
+    private void rewriteStructureElement(DictionaryEntries element, Reference owner, Library library,
+                                         Set<Reference> visited) {
+        boolean rewritten = false;
+        for (Name key : STRUCTURE_TEXT_KEYS) {
+            Object value = library.getObject(element, key);
+            if (!(value instanceof StringObject)) {
+                continue;
+            }
+            String text = Utils.convertStringObject(library, (StringObject) value);
+            String masked = masker.mask(text);
+            if (!masked.equals(text)) {
+                element.put(key, new LiteralStringObject(masked, owner));
+                report.recordStringRewritten(RedactionTarget.TAGGED_TEXT);
+                rewritten = true;
+            }
+        }
+        if (rewritten) {
+            if (owner != null) {
+                library.getStateManager().addChange(
+                        new PObject(new Dictionary(library, element), owner));
+            } else {
+                report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                        "Tagged text was masked in a structure element with no object reference, " +
+                                "so the change could not be written");
+            }
+        }
+        Object kids = library.getObject(element, KIDS_KEY);
+        if (kids instanceof List) {
+            for (Object kid : (List<?>) kids) {
+                rewriteStructureKid(kid, owner, library, visited);
+            }
+        } else {
+            rewriteStructureKid(element.get(KIDS_KEY), owner, library, visited);
+        }
+    }
+
+    /**
+     * A {@code /K} entry is a mixed bag: a child element, a reference to one, a marked-content
+     * identifier (an integer, which is a pointer into a content stream and holds no text), or an
+     * object reference dictionary. Only the first two are worth following.
+     */
+    private void rewriteStructureKid(Object kid, Reference owner, Library library, Set<Reference> visited) {
+        if (kid instanceof Reference) {
+            Reference reference = (Reference) kid;
+            if (!visited.add(reference)) {
+                return;
+            }
+            Object resolved = library.getObject(reference);
+            if (resolved instanceof DictionaryEntries) {
+                rewriteStructureElement((DictionaryEntries) resolved, reference, library, visited);
+            } else if (resolved instanceof Dictionary) {
+                rewriteStructureElement(((Dictionary) resolved).getEntries(), reference, library, visited);
+            }
+        } else if (kid instanceof DictionaryEntries) {
+            // Written inline, so it has no reference of its own and belongs to whatever object does.
+            rewriteStructureElement((DictionaryEntries) kid, owner, library, visited);
         }
     }
 

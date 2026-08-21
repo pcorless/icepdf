@@ -103,6 +103,10 @@ public class Redactor {
     private static void burnAnnotations(Document document, RedactionRequest request,
                                         RedactionReport report, StateManager stateManager)
             throws InterruptedException, IOException {
+        // Only when terms were given: a marked-content property list has no position, so it is
+        // reached by matching words rather than by a rectangle.
+        TermMasker masker = request.hasTerms()
+                ? new TermMasker(request.getTerms(), request.getOptions().getMaskString()) : null;
         int pageCount = document.getNumberOfPages();
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             Page page = document.getPageTree().getPage(pageIndex);
@@ -110,7 +114,7 @@ public class Redactor {
             if (redactionAnnotations == null || redactionAnnotations.isEmpty()) {
                 continue;
             }
-            RedactionContentBurner.burn(page, redactionAnnotations, request.getOptions(), report);
+            RedactionContentBurner.burn(page, redactionAnnotations, request.getOptions(), report, masker);
             discardThumbnail(page, stateManager, report);
             // Convert to a square annotation so the exported document shows where the redaction was
             // without still claiming to be a pending redaction.

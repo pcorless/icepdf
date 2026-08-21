@@ -516,7 +516,7 @@ public abstract class AbstractContentParser {
                     // So a rewrite still descends into the form; it is only the painting that the
                     // visibility decides.  Note the CTM is copied rather than concatenated into:
                     // getCTM() hands out the live transform.
-                    if (contentStreamCallback != null) {
+                    if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
                         formXObject.setParentResources(resources);
                         AffineTransform hiddenTransform = new AffineTransform(graphicState.getCTM());
                         hiddenTransform.concatenate(formXObject.getMatrix());
@@ -546,7 +546,7 @@ public abstract class AbstractContentParser {
             formXObject.setParentResources(resources);
             // need a new instance, so we don't corrupt the stream offset.
             ContentStreamCallback formContentStreamRedactorCallback = null;
-            if (contentStreamCallback != null) {
+            if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
                 AffineTransform xObjectTransform = graphicState.getCTM();
                 xObjectTransform.concatenate(formXObject.getMatrix());
                 formContentStreamRedactorCallback = contentStreamCallback.createChildInstance(xObjectTransform);
@@ -664,7 +664,7 @@ public abstract class AbstractContentParser {
                 }
             }
             // Some Do object will have images, and we need to make sure we account for localized space.
-            if (contentStreamCallback != null &&
+            if (formContentStreamRedactorCallback != null &&
                     formXObject.getShapes() != null) {
                 formContentStreamRedactorCallback.endContentStream();
                 Shapes pageShapes = formXObject.getShapes();
@@ -1219,9 +1219,17 @@ public abstract class AbstractContentParser {
     protected static void consume_BDC(Stack<Object> stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
-                                      Resources resources) throws InterruptedException {
+                                      Resources resources,
+                                      ContentStreamCallback contentStreamCallback,
+                                      int pos) throws InterruptedException, IOException {
         Object properties = stack.pop();// properties
         Name tag = (Name) stack.pop();// tag
+        // The operator's bytes were held back for this - a property list can carry text of its own,
+        // and a rewrite has to get at it before it is copied through.  Whatever happens here, the
+        // callback writes the operator out.
+        if (contentStreamCallback != null) {
+            contentStreamCallback.checkAndModifyMarkedContent(tag, properties, pos);
+        }
         OptionalContents optionalContents = null;
         // try and process the Optional content.
         if (tag.equals(OptionalContent.OC_KEY)) {
