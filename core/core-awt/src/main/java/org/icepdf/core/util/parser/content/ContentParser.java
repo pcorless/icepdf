@@ -236,7 +236,8 @@ public class ContentParser extends AbstractContentParser {
                         // property list or a name object associated with it in the
                         // Properties sub dictionary of the current resource dictionary
                         case Operands.BDC:
-                            consume_BDC(stack, shapes, oCGs, resources);
+                            consume_BDC(stack, shapes, oCGs, resources, contentStreamCallback,
+                                    lexer.getPos());
                             break;
 
                         // End a marked-content sequence begun by a BMC or BDC operator.
@@ -811,8 +812,8 @@ public class ContentParser extends AbstractContentParser {
                         consume_T_star(graphicState, textMetrics, pageText, oCGs);
                         break;
                     case Operands.BDC:
-                        consume_BDC(stack, shapes,
-                                oCGs, resources);
+                        consume_BDC(stack, shapes, oCGs, resources, contentStreamCallback,
+                                lexer.getPos());
                         break;
                     case Operands.EMC:
                         consume_EMC(shapes, oCGs);

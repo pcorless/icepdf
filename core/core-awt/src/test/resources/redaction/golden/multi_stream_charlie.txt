@@ -1,0 +1,7 @@
+BT
+/F1 12 Tf
+20 100 Td
+(alpha bravo) Tj
+20 -20 Td
+[ -3500 ( delta)] TJ
+ET

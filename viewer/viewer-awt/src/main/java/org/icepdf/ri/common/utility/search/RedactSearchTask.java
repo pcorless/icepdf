@@ -21,6 +21,9 @@ import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.redaction.RedactionRequest;
+import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -39,6 +42,11 @@ import java.util.List;
  * RedactSearchTask creates redaction annotation based on text search results highlight bounds.  The created
  * annotations can be previewed in the viewer.  This very IMPORTANT,  content is not removed until the document
  * is exported.
+ * <p>
+ * It also records the search terms on the document.  An annotation can only cover what is drawn on a
+ * page, and the same words a search finds there are usually also in the bookmark that points at the
+ * page, in comments, in field values and in the document title.  Those are removed by term when the
+ * document is exported.
  *
  * @since 7.2.0
  */
@@ -142,9 +150,31 @@ public class RedactSearchTask extends SwingWorker<Void, RedactSearchTask.RedactR
                 }
             }
         }
+        // The annotations above cover what is drawn on the pages.  The same words routinely also sit
+        // in the bookmark pointing at the page, the comment somebody left on it, a field value and
+        // the document title - none of which are drawn anywhere, so no annotation can reach them.
+        // Handing the terms to the redaction lets it remove those too when the document is exported.
+        configureTermRedaction(document, searchController);
+
         // update the dialog and end the task
         setDialogMessage();
         return null;
+    }
+
+    /**
+     * Records the search terms on the document so that exporting removes them from content that has
+     * no position on a page as well as from the pages themselves.
+     * <p>
+     * Nothing is removed here. As with the annotations this task creates, the document is only
+     * marked; the content goes when it is exported, and the export leaves a
+     * {@link org.icepdf.core.util.redaction.RedactionReport} behind saying what went.
+     */
+    private void configureTermRedaction(Document document, DocumentSearchController searchController) {
+        List<SearchTerm> terms = searchController.getSearchTerms();
+        if (terms == null || terms.isEmpty()) {
+            return;
+        }
+        Redactor.configure(document, RedactionRequest.ofAnnotationsAndTerms(terms));
     }
 
     private void setDialogMessage() {

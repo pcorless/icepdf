@@ -120,6 +120,12 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
     }
+    // The test JVM is forked and does not inherit the daemon's -D flags, so re-blessing a golden
+    // with ./gradlew ... -Dredaction.bless=true would otherwise be silently ignored and leave the
+    // goldens untouched.
+    if (System.getProperty('redaction.bless') != null) {
+        systemProperty('redaction.bless', System.getProperty('redaction.bless'))
+    }
 }
 
 // Phase 0 parsing performance baseline harness.  Not part of the test task.

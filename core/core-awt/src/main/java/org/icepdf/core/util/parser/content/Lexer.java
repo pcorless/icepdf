@@ -463,7 +463,6 @@ public class Lexer {
     }
 
     private void nextContentStream() throws IOException {
-        markContentStreamEnd();
         streamCount++;
         // Decode robustly, mirroring setContentStream(): getDecodedStreamBytes()
         // re-inflates from the still-compressed rawBytes when the decompressed
@@ -487,6 +486,10 @@ public class Lexer {
             }
             next = streamCount < streams.length ? streams[streamCount].getDecodedStreamBytes() : null;
         }
+        // Close the previous stream only once it is known whether another follows: bytes left at
+        // the end of a stream that has a successor may be the operands of an operator that starts
+        // in it, and the callback has to hold them back rather than write them out.
+        markContentStreamEnd(next != null);
         streamBytes = next;
         markContentStreamStart();
         // reset the  pointers.
@@ -500,9 +503,9 @@ public class Lexer {
         }
     }
 
-    private void markContentStreamEnd() throws IOException {
+    private void markContentStreamEnd(boolean moreStreamsFollow) throws IOException {
         if (contentStreamCallbackCallback != null) {
-            contentStreamCallbackCallback.endContentStream();
+            contentStreamCallbackCallback.endContentStream(moreStreamsFollow);
         }
     }
 

@@ -1,0 +1,11 @@
+BT
+/F1 12 Tf
+20 40 Td
+(page level text) Tj
+ET
+/Fm0 Do
+% form 6 0 R
+BT
+/F1 12 Tf
+0 0 Td [ (alpha ) -2500 ( charlie)] TJ
+ET

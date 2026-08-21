@@ -27,31 +27,118 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Redactor iterates over a document pages looking for redaction annotations and applies the content and
- * image stream burning.
+ * Applies a document's redactions.
+ * <p>
+ * Redaction happens as part of writing the document, not before it: removing content means rewriting
+ * every stream that carried it, which an incremental update cannot do by definition. So a caller
+ * states what they want, saves, and reads what happened:
+ * <pre>
+ *     Redactor.configure(document, RedactionRequest.ofAnnotations()
+ *             .with(RedactionOptions.defaults().maskString("[removed]")));
+ *
+ *     document.saveToOutputStream(outputStream, WriteMode.FULL_UPDATE);
+ *
+ *     RedactionReport report = document.getRedactionReport();
+ * </pre>
+ * Configuring is optional. A document saved with redaction annotations on it is redacted with
+ * {@link RedactionOptions#defaults()} either way, which is what every release before this one did.
  *
  * @since 7.2.0
  */
 public class Redactor {
 
-    public static void burnRedactions(Document document) throws InterruptedException, IOException {
-        int pageCount = document.getNumberOfPages();
+    /**
+     * States how the next write should redact this document. Optional - without it the write uses
+     * {@link RedactionOptions#defaults()}.
+     *
+     * @param document document about to be written
+     * @param request  what to redact and how
+     */
+    public static void configure(Document document, RedactionRequest request) {
+        document.setRedactionRequest(request);
+    }
+
+    /**
+     * Burns the redaction annotations on every page into the content and image streams.
+     * <p>
+     * Called by the writer once the document has been flattened, not by application code; a caller
+     * who wants to redact saves the document. See the class javadoc.
+     *
+     * @param document document being written
+     * @param request  what to redact and how
+     * @return what was removed
+     * @throws InterruptedException if page initialisation is interrupted
+     * @throws IOException          if a content stream cannot be rewritten
+     */
+    public static RedactionReport redact(Document document, RedactionRequest request)
+            throws InterruptedException, IOException {
+        RedactionRequest effective = request != null ? request : RedactionRequest.ofAnnotations();
+        RedactionReport report = new RedactionReport();
         StateManager stateManager = document.getCatalog().getLibrary().getStateManager();
 
-        // work though each page
+        // Which of page content and images actually get removed is decided per glyph and per image
+        // by the callback; this only asks whether there is any point walking the pages at all.
+        if (effective.getOptions().redacts(RedactionTarget.PAGE_CONTENT)
+                || effective.getOptions().redacts(RedactionTarget.IMAGES)) {
+            burnAnnotations(document, effective, report, stateManager);
+        }
+        // The same words the annotations covered on the page usually also sit in a bookmark, a
+        // comment or the document title, where no rectangle reaches them.
+        if (effective.hasTerms()) {
+            new RedactedStringRewriter(document, effective, report).rewrite();
+        }
+        return report;
+    }
+
+    /**
+     * @deprecated since 7.5.0, use {@link #redact(Document, RedactionRequest)}, or simply save a
+     * document that has redaction annotations on it. Retained because it is the entry point every
+     * release before 7.5.0 exposed.
+     */
+    @Deprecated
+    public static void burnRedactions(Document document) throws InterruptedException, IOException {
+        redact(document, RedactionRequest.ofAnnotations());
+    }
+
+    private static void burnAnnotations(Document document, RedactionRequest request,
+                                        RedactionReport report, StateManager stateManager)
+            throws InterruptedException, IOException {
+        // Only when terms were given: a marked-content property list has no position, so it is
+        // reached by matching words rather than by a rectangle.
+        TermMasker masker = request.hasTerms()
+                ? new TermMasker(request.getTerms(), request.getOptions().getMaskString()) : null;
+        int pageCount = document.getNumberOfPages();
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             Page page = document.getPageTree().getPage(pageIndex);
-            // check for any redaction annotation
             List<RedactionAnnotation> redactionAnnotations = page.getRedactionAnnotations();
-            if (redactionAnnotations != null && !redactionAnnotations.isEmpty()) {
-                RedactionContentBurner.burn(page, redactionAnnotations);
+            if (redactionAnnotations == null || redactionAnnotations.isEmpty()) {
+                continue;
             }
-            // convert the redaction to Annotation.SUBTYPE_SQUARE.  This avoids any confusion in the exported document
-            // and makes sure we show where the redaction took place.
-            if (redactionAnnotations != null && !redactionAnnotations.isEmpty()) {
-                convertRedactionToSquareAnnotation(stateManager, redactionAnnotations);
-            }
+            RedactionContentBurner.burn(page, redactionAnnotations, request.getOptions(), report, masker);
+            discardThumbnail(page, stateManager, report);
+            // Convert to a square annotation so the exported document shows where the redaction was
+            // without still claiming to be a pending redaction.
+            convertRedactionToSquareAnnotation(stateManager, redactionAnnotations);
         }
+    }
+
+    /**
+     * Drops a redacted page's thumbnail.
+     * <p>
+     * A thumbnail is a picture of the page as it was, stored beside it - so redacting the page
+     * leaves a small copy of exactly what was removed. There is no text in it to find and nothing to
+     * mask, so the only honest thing to do with one is get rid of it. Viewers that want a thumbnail
+     * render their own.
+     */
+    private static void discardThumbnail(Page page, StateManager stateManager, RedactionReport report) {
+        if (page.getEntries().get(Page.THUMB_KEY) == null) {
+            return;
+        }
+        page.getEntries().remove(Page.THUMB_KEY);
+        stateManager.addChange(new PObject(page, page.getPObjectReference()));
+        report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                "Removed the thumbnail of page " + page.getPObjectReference() + ": it is an image of "
+                        + "the page before redaction and cannot be redacted itself");
     }
 
     private static void convertRedactionToSquareAnnotation(StateManager stateManager,
