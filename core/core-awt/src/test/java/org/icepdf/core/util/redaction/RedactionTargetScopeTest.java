@@ -160,21 +160,25 @@ public class RedactionTargetScopeTest {
 
 
     /**
-     * KNOWN GAP, disabled because it fails - deliberately kept so the gap is written down where it
-     * will be found, rather than living in someone's memory.
+     * ACCEPTED LIMITATION, disabled because it fails by design. Kept as executable documentation of
+     * the boundary described in {@link RedactionConfidence#VERIFIED}.
      * <p>
-     * Marked-content text is reached by matching words, like everything else with no position on the
-     * page, so a redaction driven only by rectangles cannot mask it. That much is by design. What is
-     * not by design is that the document still comes back {@code VERIFIED}: the verification pass
-     * searches the written bytes for the runs the burn removed, and here that run is the whole line
-     * "alpha bravo charlie", which does not appear in {@code /ActualText (bravo)}. A copy of *part*
-     * of a removed run is therefore invisible to the check.
+     * The verification pass searches for the whole runs the burn removed. Here the rectangle covered
+     * the entire line, so the run is "alpha bravo charlie", which does not appear in
+     * {@code /ActualText (bravo)} - and the document comes back {@code VERIFIED} with the word still
+     * in it.
      * <p>
-     * Fixing it means scanning for the words of a removed run as well as the whole run, which makes
-     * the pass much more sensitive and would flag a document whenever a redacted word legitimately
-     * appears elsewhere. That is a decision about what the confidence score means, not a bug fix.
+     * Judged improbable in practice (2026-08-20) and left alone: someone marking text as they read
+     * covers phrases in context, and someone searching redacts short specific terms, where the run
+     * and the term are the same thing. Widening the scan to the individual words of a removed run
+     * would flag a document whenever a redacted word legitimately appears elsewhere - a letterhead,
+     * a recurring surname - and {@code FAILED} holds a document from release, so the cure would cost
+     * more than the disease.
+     * <p>
+     * The contract that covers it: to require that a word exist nowhere in the document, drive the
+     * redaction with terms rather than rectangles alone.
      */
-    @Disabled("known gap: the byte scan looks for whole removed runs, so a partial copy is missed")
+    @Disabled("accepted limitation: the byte scan looks for whole removed runs - see RedactionConfidence.VERIFIED")
     @DisplayName("an annotation-only redaction does not silently pass tagged text it cannot reach")
     @Test
     public void annotationOnlyRedactionOfTaggedTextIsNotSilent() throws Exception {

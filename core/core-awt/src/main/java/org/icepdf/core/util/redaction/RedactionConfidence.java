@@ -53,6 +53,29 @@ public enum RedactionConfidence {
 
     /**
      * Nothing was found, everything could be checked, and nothing degraded.
+     * <p>
+     * <b>What this does and does not promise.</b> The pass searches the written file for two things:
+     * the terms the caller gave, and the whole runs of text the burn removed. It does not search for
+     * arbitrary fragments of those runs. So:
+     * <ul>
+     *     <li><b>Term-driven redaction</b> - "remove every occurrence of this name" - is checked
+     *     exactly as asked. {@code VERIFIED} means that term is not in the file, in the text or in
+     *     the bytes.</li>
+     *     <li><b>Annotation-driven redaction</b> - a rectangle drawn over part of a page - is checked
+     *     against the run that rectangle covered. If that run was a whole line, {@code VERIFIED}
+     *     means the line does not reappear; it does not mean that no <em>word</em> from inside it
+     *     appears anywhere else in the document.</li>
+     * </ul>
+     * The two coincide when a redaction covers a specific short phrase, which is the normal case:
+     * a rectangle drawn over a name is checked for that name. They diverge when a rectangle covers
+     * a long span and a fragment of it is repeated somewhere a rectangle cannot reach - an
+     * {@code /ActualText} entry, a bookmark.
+     * <p>
+     * The rule that follows from this: <b>when the requirement is "this word must not exist anywhere
+     * in the document", drive the redaction with terms</b> - {@link RedactionRequest#ofTerms} or
+     * {@link RedactionRequest#ofAnnotationsAndTerms} - rather than with rectangles alone. Terms are
+     * what both the removal and the check are able to follow into content that has no position on a
+     * page.
      */
     VERIFIED
 }

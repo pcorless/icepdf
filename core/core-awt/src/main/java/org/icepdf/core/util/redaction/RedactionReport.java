@@ -35,6 +35,10 @@ import java.util.Set;
  * <b>Do not write it into the redacted PDF.</b> It names what was removed, so putting it in
  * {@code /Info}, XMP or an embedded file puts the content straight back into the document that is
  * supposed to be rid of it.
+ * <p>
+ * Read {@link RedactionConfidence#VERIFIED} before treating a confidence as a guarantee: it sets out
+ * precisely what the verification pass checked, and the one case - a rectangle over a long span
+ * whose individual words recur elsewhere - where a clean result is narrower than it looks.
  *
  * @since 7.5.0
  */
