@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.OptionalContents;
 import org.icepdf.core.util.Defs;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Rectangle2D;
 import java.util.*;
 import java.util.logging.Logger;
@@ -145,7 +144,6 @@ public class PageText implements TextSelect {
     private TextSequence textSequence;
 
     private AffineTransform previousTextTransform;
-    private AffineTransform previousXObjectTransform;
 
     private LinkedHashMap<OptionalContents, PageText> optionalPageLines;
 
@@ -346,33 +344,36 @@ public class PageText implements TextSelect {
      *
      * @param transform do matrix transform
      */
-    public void applyXObjectTransform(AffineTransform transform) {
-        if (previousXObjectTransform != null) {
-            // back out transform in the less common case a xObject is reused.
-            try {
-                AffineTransform inverse = previousXObjectTransform.createInverse();
-                applyTextTransform(inverse);
-            } catch (NoninvertibleTransformException e) {
-                // intentionally left blank
-            }
-        }
-        previousXObjectTransform = transform;
-        applyTextTransform(transform);
-    }
-
     /**
-     * Utility to apply specified transform to all glyphs in the pageLine array
+     * A copy of this text, mapped into page space by {@code transform}, leaving this instance alone.
+     * <p>
+     * This is how a form XObject's text reaches the page it is drawn on. The form is parsed once and
+     * its text describes the form's own space, but the form may be drawn several times and each
+     * placement puts that space somewhere different. Handing the page the form's own lines makes
+     * every placement share one set of glyphs, so whichever placement was transformed last is the
+     * position all of them report - a header drawn on a repeated logo reports its coordinates from
+     * the bottom of the page.
+     * <p>
+     * Copying first means the form's text stays in form space, ready for the next placement, and
+     * each placement owns the glyphs it maps.
+     *
+     * @param transform form space to page space, for one placement
+     * @return lines belonging to that placement
      */
-    private void applyTextTransform(AffineTransform transform) {
+    public ArrayList<LineText> transformedCopy(AffineTransform transform) {
+        ArrayList<LineText> placement = new ArrayList<>(pageLines.size());
         for (LineText lineText : pageLines) {
-            lineText.clearBounds();
-            for (WordText wordText : lineText.getWords()) {
+            LineText copy = lineText.copy();
+            copy.clearBounds();
+            for (WordText wordText : copy.getWords()) {
                 wordText.clearBounds();
                 for (GlyphText glyph : wordText.getGlyphs()) {
                     glyph.normalizeToUserSpace(transform, null);
                 }
             }
+            placement.add(copy);
         }
+        return placement;
     }
 
     public void clearSelected() {

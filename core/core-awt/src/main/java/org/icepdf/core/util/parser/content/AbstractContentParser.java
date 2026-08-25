@@ -640,9 +640,9 @@ public abstract class AbstractContentParser {
                     formXObject.getShapes().getPageText() != null) {
                 // The form XObject is a shared, cached object (one instance per
                 // reference via Library.getObject), so its PageText is shared by
-                // every page that draws the form.  applyXObjectTransform() and
-                // getPageLines() both mutate that PageText in place (transforming
-                // glyph bounds, clearing/re-sorting the line list); two pages
+                // every page that draws the form.  transformedCopy() reads it and
+                // getPageLines() mutates it in place (clearing/re-sorting the line
+                // list); two pages
                 // drawing the same form concurrently corrupt each other's state
                 // and throw mid-parse (NPE in sortAndFormatText/LineText.getBounds),
                 // which aborts the page's content stream and drops all content
@@ -651,15 +651,16 @@ public abstract class AbstractContentParser {
                 // the same form can't interleave; different forms still parallelize.
                 PageText pageText = formXObject.getShapes().getPageText();
                 synchronized (pageText) {
-                    // normalize each sprite.
-                    AffineTransform pageSpace = graphicState.getCTM();
+                    // The form's text describes the form's own space and the form may be drawn more
+                    // than once, so each placement takes a copy mapped into page space rather than
+                    // transforming the shared tree.  Sharing it meant every placement reported the
+                    // position of whichever was transformed last - a repeated header or logo gave
+                    // the wrong coordinates for all but one of its appearances, and text selection
+                    // with it.
+                    AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
                     pageSpace.concatenate(formXObject.getMatrix());
-                    pageText.applyXObjectTransform(pageSpace);
-                    // add the text to the current shapes for extraction and
-                    // selection purposes.
                     if (pageText.getPageLines() != null) {
-                        shapes.getPageText().addPageLines(
-                                pageText.getPageLines());
+                        shapes.getPageText().addPageLines(pageText.transformedCopy(pageSpace));
                     }
                 }
             }
