@@ -44,7 +44,6 @@ public class RedactionOptions {
     private float glyphCoverageThreshold = ANY_INTERSECTION;
     private String maskString = "****";
     private Color redactionColor = Color.BLACK;
-    private boolean copyOnBurn = true;
     private Set<RedactionTarget> targets = EnumSet.allOf(RedactionTarget.class);
     private boolean verify = true;
     private boolean hashTermsInReport;
@@ -122,26 +121,6 @@ public class RedactionOptions {
         return redactionColor;
     }
 
-    /**
-     * Whether a shared object that is redacted with geometry not applying to all of its uses is
-     * copied first.
-     * <p>
-     * Applies to image XObjects and to content streams shared between pages. It deliberately does
-     * <em>not</em> apply to form XObjects: a redaction on a form applies to every placement by
-     * design, which is both what a reader intuitively expects and what the search-and-redact
-     * workflow wants, since search finds every occurrence anyway.
-     *
-     * @param copyOnBurn true to copy before burning, the default
-     * @return this
-     */
-    public RedactionOptions copyOnBurn(boolean copyOnBurn) {
-        this.copyOnBurn = copyOnBurn;
-        return this;
-    }
-
-    public boolean isCopyOnBurn() {
-        return copyOnBurn;
-    }
 
     /**
      * Which kinds of content to redact. All of them by default; narrowing this is how a caller opts

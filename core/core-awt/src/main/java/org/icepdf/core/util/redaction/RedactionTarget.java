@@ -35,6 +35,14 @@ public enum RedactionTarget {
 
     /**
      * Images drawn by a page, whether an XObject or inline.
+     * <p>
+     * An image XObject is a shared object: one instance serves every placement of it, anywhere in
+     * the document. A redaction over one placement therefore applies to all of them - redact a logo
+     * on page one and it is redacted on every page that draws it. That is deliberate, and it errs
+     * towards removing too much rather than too little, which is the right direction for a
+     * redaction: the alternative silently leaves the same content visible everywhere else it
+     * appears. It is usually what was wanted anyway, since the same image carrying the same content
+     * is the same disclosure.
      */
     IMAGES,
 
