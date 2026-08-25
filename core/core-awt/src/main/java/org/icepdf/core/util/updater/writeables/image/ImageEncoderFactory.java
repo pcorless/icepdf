@@ -37,6 +37,11 @@ import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.*;
 public class ImageEncoderFactory {
 
     public static ImageEncoder createEncodedImage(ImageStream imageStream) {
+        // A stencil mask is one bit per pixel and has no colour space; it has to stay that way,
+        // whatever it was filtered with, or the dictionary stops describing the samples.
+        if (imageStream.getImageParams().isImageMask()) {
+            return new StencilEncoder(imageStream);
+        }
         if (containsFilter(imageStream, CCITTFAX_DECODE_FILTERS) ||
                 containsFilter(imageStream, JBIG2_DECODE_FILTERS)) {
             return new FaxEncoder(imageStream);

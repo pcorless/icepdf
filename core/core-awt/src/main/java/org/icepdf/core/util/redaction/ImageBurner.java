@@ -24,7 +24,12 @@ import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 
 import java.awt.*;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.WritableRaster;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
@@ -66,6 +71,16 @@ public class ImageBurner {
     private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
                                          Color redactionColor, boolean copyImage) {
         ImageParams imageParams = imageStream.getImageParams();
+        if (imageParams.isImageMask()) {
+            // A stencil says paint or do not paint, one bit per pixel, and takes its colour from
+            // whatever fill colour is in force - so there is nothing here to fill with the redaction
+            // colour.  Converting it to RGB like any other image threw away the one bit that
+            // mattered and produced an image still declared /ImageMask true but carrying eight-bit
+            // RGB samples, which no reader can make sense of.  Redacting one means setting its
+            // samples to paint, so the region comes out solid instead of showing what was drawn.
+            burnStencil(imageStream, image, redactionPath);
+            return imageStream;
+        }
         // try a new image to get around index colour space issue.
         if (copyImage && !imageParams.isColorKeyMask()) {
             image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
@@ -91,6 +106,66 @@ public class ImageBurner {
             ImageUtility.encodeColorKeyMask(imageStream);
         }
         return imageStream;
+    }
+
+
+    /**
+     * Sets every sample a redaction covers to "paint", leaving a solid block of whatever colour the
+     * stencil is drawn in.
+     * <p>
+     * The alternative - setting them to "do not paint" - erases just as much, but a redaction that
+     * leaves a hole is easily read as an image that never had anything there. A solid block says
+     * something was removed, which is what a redaction is for.
+     *
+     * @param imageStream   stencil being burned
+     * @param image         its decoded one-bit raster
+     * @param redactionPath area to remove, in user space
+     */
+    private static void burnStencil(ImageStream imageStream, BufferedImage image,
+                                    GeneralPath redactionPath) {
+        Shape area = userSpaceToImageSpace(imageStream, image).createTransformedShape(redactionPath);
+        Rectangle bounds = area.getBounds().intersection(
+                new Rectangle(0, 0, image.getWidth(), image.getHeight()));
+        // Written through the raster rather than through Graphics2D: the paint value is a sample,
+        // not a colour, and going via a colour would have it matched back to an index by whatever
+        // the image's palette happens to be.
+        WritableRaster raster = image.getRaster();
+        int paintSample = paintSample(image);
+        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                // Pixel centres, so a pixel counts as covered when the area actually crosses it.
+                if (area.contains(x + 0.5, y + 0.5)) {
+                    raster.setSample(x, y, 0, paintSample);
+                }
+            }
+        }
+        imageStream.setDecodedImage(image);
+        if (imageStream.getPObjectReference() != null) {
+            imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
+                    imageStream.getPObjectReference()));
+        }
+    }
+
+    /**
+     * Which raster sample means "paint" in this decoded stencil.
+     * <p>
+     * A decoder resolves a stencil into an image whose painting samples are opaque and whose
+     * remaining samples are transparent, so the palette says which is which. The mapping is not
+     * fixed: it follows the image's {@code /Decode}, which is exactly the entry a redaction must not
+     * assume.
+     */
+    private static int paintSample(BufferedImage image) {
+        ColorModel colorModel = image.getColorModel();
+        if (colorModel instanceof IndexColorModel) {
+            IndexColorModel indexed = (IndexColorModel) colorModel;
+            for (int index = 0, max = indexed.getMapSize(); index < max; index++) {
+                if (indexed.getAlpha(index) != 0) {
+                    return index;
+                }
+            }
+        }
+        // No palette to read it off, so fall back to the default reading, where 0 paints.
+        return 0;
     }
 
     /**

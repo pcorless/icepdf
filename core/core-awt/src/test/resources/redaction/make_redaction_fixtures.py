@@ -459,7 +459,32 @@ def tagged_text():
     })
 
 
+def stencil_mask():
+    """An /ImageMask true stencil, drawn in red.
+
+    A stencil carries no colour at all: each sample selects "paint the current fill colour here" or
+    "leave this pixel alone", and which sample means which is decided by /Decode.  So there is no
+    black in the image to overwrite, and a redaction that fills black pixels into the decoded raster
+    is relying on an encoder to turn them back into the right samples.
+
+    Top half of the image paints, bottom half does not, so a redaction can be checked against a
+    region whose two halves started out different.  The fill colour is red rather than black, so
+    anything that quietly assumes black shows up.
+    """
+    # 8x8, one byte per row.  0 bits paint under the default /Decode [0 1].
+    rows = bytes([0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 8 /Height 8 /ImageMask true "
+             b"/BitsPerComponent 1 /Decode [0 1] /Length %d >>\nstream\n" % len(rows)
+             + rows + b"\nendstream")
+    content = (b"q 1 0 0 rg\n100 0 0 50 20 100 cm\n/Im0 Do\nQ\n"
+               b"BT\n/F1 12 Tf\n20 40 Td\n(page says alpha) Tj\nET\n")
+    return simple_page(content,
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "stencil_mask.pdf": stencil_mask,
     "tagged_text.pdf": tagged_text,
     "hidden_layer.pdf": hidden_layer,
     "annotation_appearance.pdf": annotation_appearance,
