@@ -262,7 +262,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         // non-intersecting redaction emitted the burned image AND the untouched original, which is
         // both corrupt and a leak. It also skipped the image entirely when the list was empty.
         ImageStream imageStream = imageReference.getImageStream();
-        Rectangle2D imageBounds = imageStream.getNormalizedBounds();
+        Rectangle2D imageBounds = imageReference.getNormalizedBounds();
         boolean burned = false;
         for (RedactionAnnotation annotation : options.redacts(RedactionTarget.IMAGES)
                 ? redactionAnnotations : Collections.<RedactionAnnotation>emptyList()) {
@@ -292,10 +292,18 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         if (!options.redacts(RedactionTarget.IMAGES)) {
             return;
         }
+        // Bounds come from the reference, which is created per Do, not from the image stream, which
+        // one instance of serves every placement of the image in the document.  Read off the stream
+        // they described whichever placement was drawn first, so a redaction over a second placement
+        // matched nothing and silently left it - and a redaction over the first matched a placement
+        // it did not cover.
+        Rectangle2D imageBounds = imageReference.getNormalizedBounds();
+        if (imageBounds == null) {
+            return;
+        }
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
             ImageStream imageStream = imageReference.getImageStream();
-            Rectangle2D imageBounds = imageStream.getNormalizedBounds();
             if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());

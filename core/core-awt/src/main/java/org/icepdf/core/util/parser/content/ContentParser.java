@@ -1102,6 +1102,7 @@ public class ContentParser extends AbstractContentParser {
             graphicState.translate(0, -1);
 
             imageStream.setGraphicsTransformMatrix(af);
+            imageStreamReference.setPlacement(af);
             if (contentStreamCallback != null) {
                 contentStreamCallback.checkAndModifyInlineImage(imageStreamReference, lexer.getPos());
             }

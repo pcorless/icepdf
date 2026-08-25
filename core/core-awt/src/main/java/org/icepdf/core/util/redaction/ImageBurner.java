@@ -51,24 +51,28 @@ public class ImageBurner {
         if (image == null) {
             image = imageReference.getBaseImage();
         }
+        // Where this drawing of the image sits.  Taken from the reference, which belongs to one Do,
+        // rather than from the image stream, which is shared by every placement of the image.
+        AffineTransform placement = imageReference.getPlacement();
         // update any mask as they can have a content for some scanned documents.
-        checkAndBurnMasks(imageStream, redactionPath, redactionColor);
+        checkAndBurnMasks(imageStream, placement, redactionPath, redactionColor);
 
-        return burnImage(imageStream, image, redactionPath, redactionColor, true);
+        return burnImage(imageStream, placement, image, redactionPath, redactionColor, true);
     }
 
-    private static void checkAndBurnMasks(ImageStream imageStream, GeneralPath redactionPath,
-                                          Color redactionColor) {
+    private static void checkAndBurnMasks(ImageStream imageStream, AffineTransform placement,
+                                          GeneralPath redactionPath, Color redactionColor) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
         ImageDecoder imageMaskDecoder = imageStream.getImageParams().getMask(null);
         if (imageMaskDecoder != null) {
-            maskImageStream.setGraphicsTransformMatrix(imageStream.getGraphicsTransformMatrix());
+            // The mask covers the same area of the page as the image it masks.
             BufferedImage imageMask = imageMaskDecoder.decode();
-            burnImage(maskImageStream, imageMask, redactionPath, redactionColor, false);
+            burnImage(maskImageStream, placement, imageMask, redactionPath, redactionColor, false);
         }
     }
 
-    private static ImageStream burnImage(ImageStream imageStream, BufferedImage image, GeneralPath redactionPath,
+    private static ImageStream burnImage(ImageStream imageStream, AffineTransform placement,
+                                         BufferedImage image, GeneralPath redactionPath,
                                          Color redactionColor, boolean copyImage) {
         ImageParams imageParams = imageStream.getImageParams();
         if (imageParams.isImageMask()) {
@@ -78,7 +82,7 @@ public class ImageBurner {
             // mattered and produced an image still declared /ImageMask true but carrying eight-bit
             // RGB samples, which no reader can make sense of.  Redacting one means setting its
             // samples to paint, so the region comes out solid instead of showing what was drawn.
-            burnStencil(imageStream, image, redactionPath);
+            burnStencil(imageStream, placement, image, redactionPath);
             return imageStream;
         }
         // try a new image to get around index colour space issue.
@@ -92,7 +96,7 @@ public class ImageBurner {
         // Edge pixels must be fully painted; an antialiased edge keeps a fraction of what was
         // underneath, which is exactly what a redaction is removing.
         imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        imageGraphics.transform(userSpaceToImageSpace(imageStream, image));
+        imageGraphics.transform(userSpaceToImageSpace(placement, image));
         imageGraphics.fill(redactionPath);
         imageGraphics.dispose();
         // update the imageReference BufferedImage, as we may have multiple burns to apply
@@ -121,9 +125,9 @@ public class ImageBurner {
      * @param image         its decoded one-bit raster
      * @param redactionPath area to remove, in user space
      */
-    private static void burnStencil(ImageStream imageStream, BufferedImage image,
-                                    GeneralPath redactionPath) {
-        Shape area = userSpaceToImageSpace(imageStream, image).createTransformedShape(redactionPath);
+    private static void burnStencil(ImageStream imageStream, AffineTransform placement,
+                                    BufferedImage image, GeneralPath redactionPath) {
+        Shape area = userSpaceToImageSpace(placement, image).createTransformedShape(redactionPath);
         Rectangle bounds = area.getBounds().intersection(
                 new Rectangle(0, 0, image.getWidth(), image.getHeight()));
         // Written through the raster rather than through Graphics2D: the paint value is a sample,
@@ -195,16 +199,15 @@ public class ImageBurner {
      * never asked for. These are precondition checks against a future caller, not a case with a
      * test behind it.
      *
-     * @param imageStream image being burned
-     * @param image       decoded raster, whose dimensions give the pixel grid
+     * @param placement CTM in force at this drawing of the image
+     * @param image     decoded raster, whose dimensions give the pixel grid
      * @return transform from user space to image space
      * @throws IllegalStateException if the placement cannot be used to locate the redaction
      */
-    private static AffineTransform userSpaceToImageSpace(ImageStream imageStream, BufferedImage image) {
-        AffineTransform placement = imageStream.getGraphicsTransformMatrix();
+    private static AffineTransform userSpaceToImageSpace(AffineTransform placement, BufferedImage image) {
         if (placement == null) {
             throw new IllegalStateException("Image has no placement matrix, so the area to redact " +
-                    "cannot be located within it: " + imageStream.getPObjectReference());
+                    "cannot be located within it");
         }
         AffineTransform userToImage = new AffineTransform(
                 image.getWidth(), 0, 0, -image.getHeight(), 0, image.getHeight());

@@ -148,10 +148,13 @@ public class RedactionAnnotationHandler extends HighLightAnnotationHandler {
     private boolean isCursorOverImage(Point2D.Float pageSpaceMousePoint, ArrayList<DrawCmd> shapes) {
         for (DrawCmd object : shapes) {
             if (object instanceof ImageDrawCmd) {
+                // Per placement: one image stream serves every drawing of the image, so bounds read
+                // off it are whichever placement was drawn last and the cursor only responds over
+                // one of them.
                 ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                ImageStream imageStream = imageDrawCmd.getImageStream();
-                Rectangle2D bounds = imageStream.getNormalizedBounds();
-                if (bounds.contains(pageSpaceMousePoint)) {
+                Rectangle2D bounds = imageDrawCmd.getImageReference() != null
+                        ? imageDrawCmd.getImageReference().getNormalizedBounds() : null;
+                if (bounds != null && bounds.contains(pageSpaceMousePoint)) {
                     documentViewController.setViewCursor(DocumentViewController.CURSOR_CROSSHAIR);
                     return true;
                 }

@@ -86,6 +86,14 @@ public class ImageDrawCmd extends AbstractDrawCmd {
         return image.getImage();
     }
 
+    /**
+     * @return the reference this command paints, which carries the placement of this particular
+     * drawing of the image
+     */
+    public ImageReference getImageReference() {
+        return image;
+    }
+
     public ImageStream getImageStream() {
         if (image != null) {
             return image.getImageStream();

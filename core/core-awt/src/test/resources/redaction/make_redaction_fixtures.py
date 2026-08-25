@@ -483,7 +483,26 @@ def stencil_mask():
                        extra_objs={6: image})
 
 
+def image_drawn_twice():
+    """One image XObject drawn at two positions.
+
+    An image XObject is shared - a single object serves every placement of it, anywhere in the
+    document - so where it is drawn belongs to the Do, not to the image.  A redaction over the second
+    placement has to be tested against the second placement's position.
+    """
+    # 2x2 RGB, four distinct pixels so a burn is obvious.
+    pixels = bytes([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(pixels) + pixels + b"\nendstream")
+    content = (b"q 60 0 0 40 20 140 cm /Im0 Do Q\n"
+               b"q 60 0 0 40 20 40 cm /Im0 Do Q\n")
+    return simple_page(content,
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "image_drawn_twice.pdf": image_drawn_twice,
     "stencil_mask.pdf": stencil_mask,
     "tagged_text.pdf": tagged_text,
     "hidden_layer.pdf": hidden_layer,

@@ -672,11 +672,13 @@ public abstract class AbstractContentParser {
                 ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
                 for (DrawCmd object : xObjectShapes) {
                     if (object instanceof ImageDrawCmd) {
+                        // af is already CTM x the form's Matrix, which is where the form's images
+                        // land on the page.
                         ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                        ImageStream imageStream = imageDrawCmd.getImageStream();
-                        AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
-                        pageSpace.concatenate(formXObject.getMatrix());
-                        imageStream.setGraphicsTransformMatrix(af);
+                        imageDrawCmd.getImageStream().setGraphicsTransformMatrix(af);
+                        if (imageDrawCmd.getImageReference() != null) {
+                            imageDrawCmd.getImageReference().setPlacement(af);
+                        }
                     }
                 }
             }
@@ -708,6 +710,10 @@ public abstract class AbstractContentParser {
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, xobjectName, resources, graphicState,
                         imageIndex.get(), page);
+                // Where this placement sits.  Recorded on the reference, which is created per Do,
+                // rather than only on the image stream, which is shared by every placement of the
+                // image across the whole document.
+                imageReference.setPlacement(af);
                 imageIndex.incrementAndGet();
 
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
