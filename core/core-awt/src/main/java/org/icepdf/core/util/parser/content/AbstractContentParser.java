@@ -547,7 +547,10 @@ public abstract class AbstractContentParser {
             // need a new instance, so we don't corrupt the stream offset.
             ContentStreamCallback formContentStreamRedactorCallback = null;
             if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
-                AffineTransform xObjectTransform = graphicState.getCTM();
+                // Copied, not taken: getCTM() hands out the live transform, so concatenating into
+                // it leaves the form's /Matrix applied to the graphics state itself - and the af
+                // built two lines below then applies the same matrix a second time.
+                AffineTransform xObjectTransform = new AffineTransform(graphicState.getCTM());
                 xObjectTransform.concatenate(formXObject.getMatrix());
                 formContentStreamRedactorCallback = contentStreamCallback.createChildInstance(xObjectTransform);
             }
