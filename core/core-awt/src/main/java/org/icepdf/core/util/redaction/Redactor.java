@@ -107,6 +107,10 @@ public class Redactor {
         // reached by matching words rather than by a rectangle.
         TermMasker masker = request.hasTerms()
                 ? new TermMasker(request.getTerms(), request.getOptions().getMaskString()) : null;
+        // Two pages can point at one content stream, in which case burning it redacts both.  That
+        // is the intended behaviour - the same content is the same disclosure - but not when the
+        // pages draw the stream differently, and then the caller should hear about it.
+        SharedContentStreams sharedContentStreams = new SharedContentStreams(document);
         int pageCount = document.getNumberOfPages();
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             Page page = document.getPageTree().getPage(pageIndex);
@@ -114,6 +118,7 @@ public class Redactor {
             if (redactionAnnotations == null || redactionAnnotations.isEmpty()) {
                 continue;
             }
+            sharedContentStreams.reportSharing(pageIndex, report);
             RedactionContentBurner.burn(page, redactionAnnotations, request.getOptions(), report, masker);
             discardThumbnail(page, stateManager, report);
             // Convert to a square annotation so the exported document shows where the redaction was

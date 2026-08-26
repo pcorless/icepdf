@@ -501,7 +501,42 @@ def image_drawn_twice():
                        extra_objs={6: image})
 
 
+def shared_content_alike():
+    """Two pages pointing at one content stream, drawing it the same way.
+
+    Redacting either page burns the shared stream, so both are redacted.  That is intended - they
+    draw the same content, and the same content is the same disclosure - so nothing is reported.
+    """
+    return _shared_content(second_page_extra=b"")
+
+
+def shared_content_rotated():
+    """The same sharing, but the second page carries /Rotate 90.
+
+    Same operators, different orientation, so a rectangle covering a word on one page covers
+    something else on the other.  The redaction still propagates, and the report says so.
+    """
+    return _shared_content(second_page_extra=b"/Rotate 90 ")
+
+
+def _shared_content(second_page_extra):
+    content = b"BT\n/F1 12 Tf\n20 150 Td\n(alpha bravo charlie) Tj\nET\n"
+    return build({
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R 7 0 R] /Count 2 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(content),
+        5: helvetica(),
+        # Second page, same /Contents object and the same resources.
+        7: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> " + second_page_extra + b">>"),
+    })
+
+
 FIXTURES = {
+    "shared_content_alike.pdf": shared_content_alike,
+    "shared_content_rotated.pdf": shared_content_rotated,
     "image_drawn_twice.pdf": image_drawn_twice,
     "stencil_mask.pdf": stencil_mask,
     "tagged_text.pdf": tagged_text,
