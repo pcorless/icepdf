@@ -551,7 +551,46 @@ def flate_image():
                        extra_objs={6: image})
 
 
+def soft_masked_image():
+    """An image with an /SMask, the greyscale image that supplies its alpha.
+
+    White is opaque and black is transparent, so the soft mask decides whether the block burned into
+    the base image can be seen at all - and, even once the pixels are replaced, its alpha channel
+    still carries the shape of what was removed.  The mask here is 4x1 running dark to light, so a
+    redaction over part of it can be checked against samples that started at different values.
+    """
+    # 4x1 base, four distinct colours.
+    pixels = bytes([255, 0, 0,  0, 255, 0,  0, 0, 255,  255, 255, 0])
+    smask = bytes([0, 80, 160, 255])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /SMask 7 0 R /Length %d >>\nstream\n" % len(pixels)
+             + pixels + b"\nendstream")
+    mask = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceGray "
+            b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(smask) + smask + b"\nendstream")
+    return simple_page(b"q 80 0 0 40 20 140 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image, 7: mask})
+
+
+def colour_key_masked_image():
+    """An image whose /Mask is a colour-key range covering black.
+
+    A colour-key mask names colours to drop rather than paint.  The redaction colour is black by
+    default, and this mask drops near-black, so the block burned into the image is dropped with it:
+    the pixels are gone but the page shows through, which looks like a redaction that never ran.
+    """
+    pixels = bytes([255, 0, 0,  0, 255, 0,  0, 0, 255,  255, 255, 0])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /Mask [0 20 0 20 0 20] /Length %d >>\nstream\n" % len(pixels)
+             + pixels + b"\nendstream")
+    return simple_page(b"q 80 0 0 40 20 140 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "colour_key_masked_image.pdf": colour_key_masked_image,
+    "soft_masked_image.pdf": soft_masked_image,
     "flate_image.pdf": flate_image,
     "shared_content_alike.pdf": shared_content_alike,
     "shared_content_rotated.pdf": shared_content_rotated,

@@ -25,6 +25,8 @@ import org.icepdf.core.util.redaction.TermMasker;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 import org.icepdf.core.util.updater.writeables.DictionaryWriter;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.graphics.images.ColorKeyMask;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -33,10 +35,12 @@ import org.icepdf.core.util.redaction.ImageBurner;
 import org.icepdf.core.util.redaction.RedactionOptions;
 import org.icepdf.core.util.redaction.RedactionReport;
 import org.icepdf.core.util.redaction.RedactionTarget;
+import org.icepdf.core.util.redaction.RedactionWarning;
 import org.icepdf.core.util.redaction.InlineImageWriter;
 import org.icepdf.core.util.redaction.RedactedStringObjectWriter;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 
+import java.awt.Color;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
 import java.awt.geom.GeneralPath;
@@ -175,6 +179,46 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             report.recordRemovedText(removedRun.toString());
             removedRun.setLength(0);
         }
+    }
+
+    /**
+     * Warns when a colour-key mask would render the redaction invisible.
+     * <p>
+     * A colour-key {@code /Mask} names a range of colours to drop, so anything inside that range is
+     * not painted. Burning fills the covered area with the redaction colour, and if that colour falls
+     * inside the range the block is dropped along with everything else in it: the pixels really are
+     * gone, but what the reader sees is the page behind the image, which looks exactly like a
+     * redaction that was never applied.
+     * <p>
+     * Reported rather than worked around. Nudging the redaction colour would quietly change what the
+     * caller asked for, and dropping the mask would make every other masked-out part of the image
+     * opaque - a bigger change to the document than the redaction itself.
+     */
+    private void warnIfColourKeyMaskHidesRedaction(ImageStream imageStream) {
+        ImageParams imageParams = imageStream.getImageParams();
+        if (!imageParams.isColorKeyMask()) {
+            return;
+        }
+        ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
+        if (colorKeyMask == null) {
+            return;
+        }
+        int[] min = colorKeyMask.getMaskMinRGB();
+        int[] max = colorKeyMask.getMaskMaxRGB();
+        Color colour = options.getRedactionColor();
+        if (min == null || max == null || min.length < 3 || max.length < 3 || colour == null) {
+            return;
+        }
+        int[] rgb = {colour.getRed(), colour.getGreen(), colour.getBlue()};
+        for (int band = 0; band < 3; band++) {
+            if (rgb[band] < min[band] || rgb[band] > max[band]) {
+                return;
+            }
+        }
+        report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                "Image " + imageStream.getPObjectReference() + " has a colour-key /Mask covering the "
+                        + "redaction colour, so the burned area is masked out and the redaction will "
+                        + "not be visible; the content is removed either way");
     }
 
     /**
@@ -322,6 +366,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
                 logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
                 recordReEncoding(imageStream);
+                warnIfColourKeyMaskHidesRedaction(imageStream);
                 ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
                 report.recordImageBurned(RedactionTarget.IMAGES);
             }

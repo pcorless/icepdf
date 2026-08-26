@@ -69,6 +69,54 @@ public class ImageBurner {
             BufferedImage imageMask = imageMaskDecoder.decode();
             burnImage(maskImageStream, placement, imageMask, redactionPath, redactionColor, false);
         }
+        burnSoftMask(imageStream, placement, redactionPath);
+    }
+
+    /**
+     * Makes the redacted area of a soft-masked image opaque.
+     * <p>
+     * An {@code /SMask} is a greyscale image whose samples are the base image's alpha - white is
+     * opaque, black is transparent (PDF 32000-1 §11.6.5.3). Two things follow for a redaction.
+     * <p>
+     * The block burned into the base image is only visible where the soft mask lets it show, so a
+     * redaction over a transparent part of the image paints a block nobody can see and the page
+     * underneath shows through instead. The data is gone either way, but a redaction that appears to
+     * have done nothing is not one anybody should ship.
+     * <p>
+     * The mask also outlines what was there. Even with the pixels replaced, the alpha channel still
+     * carries the shape of the removed content - a cut-out signature or logo is recognisable from
+     * its silhouette alone.
+     * <p>
+     * Both are answered by setting the covered samples to fully opaque. Note this is the opposite of
+     * what filling the redaction colour would do: black in a soft mask means <em>transparent</em>, so
+     * treating it like any other image would erase the redaction rather than apply it.
+     */
+    private static void burnSoftMask(ImageStream imageStream, AffineTransform placement,
+                                     GeneralPath redactionPath) {
+        ImageStream softMask = imageStream.getImageParams().getSMaskImageStream();
+        ImageDecoder softMaskDecoder = imageStream.getImageParams().getSMask(null);
+        if (softMask == null || softMaskDecoder == null) {
+            return;
+        }
+        BufferedImage decoded = softMaskDecoder.decode();
+        if (decoded == null) {
+            return;
+        }
+        // A soft mask is greyscale by definition, and has to be written back that way.  Handed the
+        // decoder's colour image, the raster encoder writes DeviceRGB - three bytes a pixel for a
+        // one-channel image, and an /SMask that no longer says what §11.6.5.3 requires it to.
+        BufferedImage mask = toGrayscale(decoded);
+        Graphics2D graphics = mask.createGraphics();
+        graphics.setColor(Color.WHITE);
+        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        graphics.transform(userSpaceToImageSpace(placement, mask));
+        graphics.fill(redactionPath);
+        graphics.dispose();
+        softMask.setDecodedImage(mask);
+        if (softMask.getPObjectReference() != null) {
+            softMask.getLibrary().getStateManager().addChange(new PObject(softMask,
+                    softMask.getPObjectReference()));
+        }
     }
 
     private static ImageStream burnImage(ImageStream imageStream, AffineTransform placement,
@@ -148,6 +196,28 @@ public class ImageBurner {
             imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
                     imageStream.getPObjectReference()));
         }
+    }
+
+    /**
+     * Copies a decoded soft mask into a single-channel greyscale raster.
+     * <p>
+     * Sample by sample rather than by drawing it: painting an sRGB image into a greyscale one runs a
+     * colour-space conversion, and a soft mask's samples are alpha values, not colours - 80 has to
+     * come out as 80. The channels of a decoded mask are equal, so any of them is the sample.
+     */
+    private static BufferedImage toGrayscale(BufferedImage image) {
+        if (image.getType() == BufferedImage.TYPE_BYTE_GRAY) {
+            return image;
+        }
+        BufferedImage gray = new BufferedImage(image.getWidth(), image.getHeight(),
+                BufferedImage.TYPE_BYTE_GRAY);
+        WritableRaster raster = gray.getRaster();
+        for (int y = 0; y < image.getHeight(); y++) {
+            for (int x = 0; x < image.getWidth(); x++) {
+                raster.setSample(x, y, 0, image.getRGB(x, y) & 0xFF);
+            }
+        }
+        return gray;
     }
 
     /**
