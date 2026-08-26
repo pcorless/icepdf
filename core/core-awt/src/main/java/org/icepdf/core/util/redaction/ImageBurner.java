@@ -27,15 +27,13 @@ import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 
 import java.awt.*;
-import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.image.ColorModel;
-import java.awt.image.IndexColorModel;
-import java.awt.image.WritableRaster;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.WritableRaster;
 import java.util.logging.Logger;
 
 /**
@@ -47,6 +45,10 @@ import java.util.logging.Logger;
 public class ImageBurner {
 
     private static final Logger logger = Logger.getLogger(ImageBurner.class.getName());
+
+    /** A fully opaque eight-bit sample - white in a soft mask, alpha in a colour raster. */
+    private static final int OPAQUE = 255;
+
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath,
                                    Color redactionColor) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
@@ -57,22 +59,35 @@ public class ImageBurner {
         // Where this drawing of the image sits.  Taken from the reference, which belongs to one Do,
         // rather than from the image stream, which is shared by every placement of the image.
         AffineTransform placement = imageReference.getPlacement();
-        // update any mask as they can have a content for some scanned documents.
-        checkAndBurnMasks(imageStream, placement, redactionPath, redactionColor);
-
-        return burnImage(imageStream, placement, image, redactionPath, redactionColor, true);
+        // An image can be drawn through as many as three surfaces, and a redaction has to reach all
+        // of them: the samples themselves, the stencil deciding which of them are painted, and the
+        // soft mask deciding how opaque they are.  Leaving any one alone leaves either content or the
+        // shape of it behind.
+        burnMaskStream(imageStream, placement, redactionPath);
+        burnSoftMask(imageStream, placement, redactionPath);
+        return burnBaseImage(imageStream, placement, image, redactionPath, redactionColor);
     }
 
-    private static void checkAndBurnMasks(ImageStream imageStream, AffineTransform placement,
-                                          GeneralPath redactionPath, Color redactionColor) {
+    /**
+     * Burns the stencil an image is masked by, when {@code /Mask} is a stream.
+     * <p>
+     * The mask says which of the image's pixels are painted at all, so the covered area is set to
+     * paint: the block burned into the image below is then visible rather than masked away. Scanned
+     * documents in particular carry content in the mask rather than the image.
+     */
+    private static void burnMaskStream(ImageStream imageStream, AffineTransform placement,
+                                       GeneralPath redactionPath) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
-        ImageDecoder imageMaskDecoder = imageStream.getImageParams().getMask(null);
-        if (imageMaskDecoder != null) {
-            // The mask covers the same area of the page as the image it masks.
-            BufferedImage imageMask = imageMaskDecoder.decode();
-            burnImage(maskImageStream, placement, imageMask, redactionPath, redactionColor, false);
+        ImageDecoder maskDecoder = imageStream.getImageParams().getMask(null);
+        if (maskImageStream == null || maskDecoder == null) {
+            return;
         }
-        burnSoftMask(imageStream, placement, redactionPath);
+        BufferedImage mask = maskDecoder.decode();
+        if (mask == null) {
+            return;
+        }
+        burnArea(mask, placement, redactionPath, sample(paintSample(mask)));
+        publish(maskImageStream, mask);
     }
 
     /**
@@ -109,105 +124,126 @@ public class ImageBurner {
         // decoder's colour image, the raster encoder writes DeviceRGB - three bytes a pixel for a
         // one-channel image, and an /SMask that no longer says what §11.6.5.3 requires it to.
         BufferedImage mask = toGrayscale(decoded);
-        Graphics2D graphics = mask.createGraphics();
-        graphics.setColor(Color.WHITE);
-        graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        graphics.transform(userSpaceToImageSpace(placement, mask));
-        graphics.fill(redactionPath);
-        graphics.dispose();
-        softMask.setDecodedImage(mask);
-        if (softMask.getPObjectReference() != null) {
-            softMask.getLibrary().getStateManager().addChange(new PObject(softMask,
-                    softMask.getPObjectReference()));
-        }
+        burnArea(mask, placement, redactionPath, sample(OPAQUE));
+        publish(softMask, mask);
     }
 
-    private static ImageStream burnImage(ImageStream imageStream, AffineTransform placement,
-                                         BufferedImage image, GeneralPath redactionPath,
-                                         Color redactionColor, boolean copyImage) {
+    /**
+     * Burns the image's own samples.
+     * <p>
+     * What gets written depends on what the samples mean, which is the one thing that varies between
+     * image kinds: a stencil's samples say paint or do not paint, a greyscale image's are one
+     * channel, everything else is colour. The area covered is worked out once, the same way, for all
+     * of them.
+     */
+    private static ImageStream burnBaseImage(ImageStream imageStream, AffineTransform placement,
+                                             BufferedImage image, GeneralPath redactionPath,
+                                             Color redactionColor) {
         ImageParams imageParams = imageStream.getImageParams();
+        BufferedImage target;
+        PixelWriter writer;
         if (imageParams.isImageMask()) {
             // A stencil says paint or do not paint, one bit per pixel, and takes its colour from
             // whatever fill colour is in force - so there is nothing here to fill with the redaction
             // colour.  Converting it to RGB like any other image threw away the one bit that
             // mattered and produced an image still declared /ImageMask true but carrying eight-bit
-            // RGB samples, which no reader can make sense of.  Redacting one means setting its
-            // samples to paint, so the region comes out solid instead of showing what was drawn.
-            burnStencil(imageStream, placement, image, redactionPath);
-            return imageStream;
-        }
-        if (copyImage && isGrayscale(imageParams)) {
+            // RGB samples, which no reader can make sense of.  Setting its samples to paint leaves
+            // the region solid instead of showing what was drawn.
+            target = image;
+            writer = sample(paintSample(image));
+        } else if (isGrayscale(imageParams)) {
             // A greyscale image stays greyscale.  Converting it to RGB the way everything else is
             // converted triples its data for no visible difference, which on a scanned page - the
             // common thing to redact - is most of the file.
-            burnGrayscale(imageStream, placement, image, redactionPath, redactionColor);
-            return imageStream;
-        }
-        // try a new image to get around index colour space issue.
-        if (copyImage && !imageParams.isColorKeyMask()) {
-            image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+            target = toGrayscale(image);
+            writer = sample(luminance(redactionColor));
         } else if (imageParams.isColorKeyMask()) {
-            image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_ARGB);
+            // Needs the alpha channel: encodeColorKeyMask reads it back to work out which pixels
+            // were masked out, so the burned pixels have to be explicitly opaque.
+            target = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_ARGB);
+            writer = colour(redactionColor, true);
+        } else {
+            // A new image to get around the indexed colour space issue.
+            target = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+            writer = colour(redactionColor, false);
         }
-        Graphics2D imageGraphics = image.createGraphics();
-        imageGraphics.setColor(redactionColor);
-        // Edge pixels must be fully painted; an antialiased edge keeps a fraction of what was
-        // underneath, which is exactly what a redaction is removing.
-        imageGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-        imageGraphics.transform(userSpaceToImageSpace(placement, image));
-        imageGraphics.fill(redactionPath);
-        imageGraphics.dispose();
-        // update the imageReference BufferedImage, as we may have multiple burns to apply
-        imageStream.setDecodedImage(image);
-        if (imageStream.getPObjectReference() != null) {
-            imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
-                    imageStream.getPObjectReference()));
-        }
-        // check if we need to update the colorKeyMask.
+        burnArea(target, placement, redactionPath, writer);
+        publish(imageStream, target);
         if (imageParams.isColorKeyMask()) {
             ImageUtility.encodeColorKeyMask(imageStream);
         }
         return imageStream;
     }
 
+    /**
+     * What a redaction writes into one pixel of one surface.
+     * <p>
+     * The only thing that differs between an image, its stencil and its soft mask - everything about
+     * <em>which</em> pixels is common, and lives in {@link #burnArea}.
+     */
+    @FunctionalInterface
+    private interface PixelWriter {
+        void write(WritableRaster raster, int x, int y);
+    }
+
+    /** Writes one sample into band zero: a stencil's paint value, or a single greyscale channel. */
+    private static PixelWriter sample(int value) {
+        return (raster, x, y) -> raster.setSample(x, y, 0, value);
+    }
 
     /**
-     * Sets every sample a redaction covers to "paint", leaving a solid block of whatever colour the
-     * stencil is drawn in.
+     * Writes a colour across the raster's bands.
      * <p>
-     * The alternative - setting them to "do not paint" - erases just as much, but a redaction that
-     * leaves a hole is easily read as an image that never had anything there. A solid block says
-     * something was removed, which is what a redaction is for.
-     *
-     * @param imageStream   stencil being burned
-     * @param image         its decoded one-bit raster
-     * @param redactionPath area to remove, in user space
+     * Written band by band rather than painted, because painting runs a colour-space conversion and
+     * the sample that lands is not the one asked for - the trap that had a soft mask's 160 written
+     * back as 208.
      */
-    private static void burnStencil(ImageStream imageStream, AffineTransform placement,
-                                    BufferedImage image, GeneralPath redactionPath) {
+    private static PixelWriter colour(Color redactionColor, boolean opaque) {
+        Color safe = redactionColor != null ? redactionColor : Color.BLACK;
+        return (raster, x, y) -> {
+            raster.setSample(x, y, 0, safe.getRed());
+            raster.setSample(x, y, 1, safe.getGreen());
+            raster.setSample(x, y, 2, safe.getBlue());
+            if (opaque && raster.getNumBands() > 3) {
+                raster.setSample(x, y, 3, OPAQUE);
+            }
+        };
+    }
+
+    /**
+     * Every pixel a redaction covers, once.
+     * <p>
+     * Pixel centres decide coverage rather than an antialiased fill: a partly-covered edge pixel
+     * blended with what was underneath keeps a fraction of the very thing being removed.
+     */
+    private static void burnArea(BufferedImage image, AffineTransform placement,
+                                 GeneralPath redactionPath, PixelWriter writer) {
         Shape area = userSpaceToImageSpace(placement, image).createTransformedShape(redactionPath);
         Rectangle bounds = area.getBounds().intersection(
                 new Rectangle(0, 0, image.getWidth(), image.getHeight()));
-        // Written through the raster rather than through Graphics2D: the paint value is a sample,
-        // not a colour, and going via a colour would have it matched back to an index by whatever
-        // the image's palette happens to be.
         WritableRaster raster = image.getRaster();
-        int paintSample = paintSample(image);
         for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
             for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
-                // Pixel centres, so a pixel counts as covered when the area actually crosses it.
                 if (area.contains(x + 0.5, y + 0.5)) {
-                    raster.setSample(x, y, 0, paintSample);
+                    writer.write(raster, x, y);
                 }
             }
         }
+    }
+
+    /**
+     * Hands the burned raster back to the stream and tells the writer the object changed.
+     * <p>
+     * The decoded image is kept rather than discarded because a page can hold more than one
+     * redaction over the same image, and the second has to burn what the first left.
+     */
+    private static void publish(ImageStream imageStream, BufferedImage image) {
         imageStream.setDecodedImage(image);
         if (imageStream.getPObjectReference() != null) {
             imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
                     imageStream.getPObjectReference()));
         }
     }
-
 
     /**
      * Whether this image is a single greyscale channel that can be written back as one.
@@ -222,39 +258,6 @@ public class ImageBurner {
         PColorSpace colourSpace = imageParams.getColourSpace();
         return (colourSpace instanceof DeviceGray || colourSpace instanceof CalGray)
                 && imageParams.getBitsPerComponent() <= 8;
-    }
-
-    /**
-     * Burns a greyscale image without turning it into a colour one.
-     * <p>
-     * The decoders hand back every image as RGB, so keeping an image greyscale means rebuilding a
-     * single channel from what they return rather than merely declining to convert it.
-     * <p>
-     * Samples are written through the raster rather than filled with Graphics2D: painting a colour
-     * into a greyscale image runs a colour-space conversion, and the sample that comes out is not the
-     * one that went in - the same trap that had a soft mask's 160 written as 208.
-     */
-    private static void burnGrayscale(ImageStream imageStream, AffineTransform placement,
-                                      BufferedImage image, GeneralPath redactionPath,
-                                      Color redactionColor) {
-        BufferedImage gray = toGrayscale(image);
-        Shape area = userSpaceToImageSpace(placement, gray).createTransformedShape(redactionPath);
-        Rectangle bounds = area.getBounds().intersection(
-                new Rectangle(0, 0, gray.getWidth(), gray.getHeight()));
-        WritableRaster raster = gray.getRaster();
-        int sample = luminance(redactionColor);
-        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
-            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
-                if (area.contains(x + 0.5, y + 0.5)) {
-                    raster.setSample(x, y, 0, sample);
-                }
-            }
-        }
-        imageStream.setDecodedImage(gray);
-        if (imageStream.getPObjectReference() != null) {
-            imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
-                    imageStream.getPObjectReference()));
-        }
     }
 
     /**
