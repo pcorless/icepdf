@@ -621,7 +621,31 @@ def soft_masked_drawn_twice():
                        extra_objs={6: image, 7: mask})
 
 
+def fax_page():
+    """A page that is one CCITT Group 4 image, which is what a scanned or faxed document is.
+
+    64x32 bilevel: the left half black, the right half white, and a black band across the middle, so
+    a redaction can be checked against areas that started both black and white.  The G4 data was
+    produced by Pillow and is embedded rather than generated, so this script keeps needing nothing
+    but the standard library.
+
+    This is the one image kind the redaction writes back through FaxEncoder, and nothing exercised
+    that path.
+    """
+    g4 = bytes([0x23, 0x60, 0xD5, 0xFF, 0xFF, 0xF9, 0xD9, 0xA8, 0x6F,
+                0xFC, 0x8D, 0x83, 0x57, 0xFF, 0xFF, 0xE0, 0x02, 0x00, 0x20])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 64 /Height 32 /ColorSpace /DeviceGray "
+             b"/BitsPerComponent 1 /Filter /CCITTFaxDecode "
+             b"/DecodeParms << /K -1 /Columns 64 /Rows 32 /BlackIs1 false >> "
+             b"/Length %d >>\nstream\n" % len(g4) + g4 + b"\nendstream")
+    # Drawn across most of the page: 128 wide, 64 high, at 20,80.
+    return simple_page(b"q 128 0 0 64 20 80 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "fax_page.pdf": fax_page,
     "soft_masked_drawn_twice.pdf": soft_masked_drawn_twice,
     "gray_image.pdf": gray_image,
     "colour_key_masked_image.pdf": colour_key_masked_image,
