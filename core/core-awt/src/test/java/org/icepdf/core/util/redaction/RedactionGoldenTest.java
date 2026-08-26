@@ -37,6 +37,7 @@ import java.awt.geom.Rectangle2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Pattern;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -204,6 +205,20 @@ public class RedactionGoldenTest {
                 "expected exactly one inline image terminator in:\n" + streams);
         assertFalse(streams.contains("alpha") || streams.contains("over"),
                 "the redacted words should be gone in:\n" + streams);
+
+        // Table 91 types /Width and /Height as integers. The values reach the writer as floats, and
+        // a reader handed "/Width 4.0" is entitled to reject the image; readers vary in how forgiving
+        // they are, which is the worst kind of bug to ship. Asserted on the rewritten dictionary,
+        // since an inline image the redactor copies through untouched proves nothing about how it
+        // writes one.
+        // Matched to the end of the number - "contains(/Width 4)" is also true of "/Width 4.0",
+        // which is the very thing being ruled out.
+        assertTrue(Pattern.compile("/(?:Width|W)\\s+4(?![\\d.])").matcher(streams).find(),
+                "width should be written as an integer in:\n" + streams);
+        assertTrue(Pattern.compile("/(?:Height|H)\\s+4(?![\\d.])").matcher(streams).find(),
+                "height should be written as an integer in:\n" + streams);
+        assertTrue(Pattern.compile("/(?:BitsPerComponent|BPC)\\s+8(?![\\d.])").matcher(streams).find(),
+                "bits per component is an integer too, in:\n" + streams);
     }
 
 
