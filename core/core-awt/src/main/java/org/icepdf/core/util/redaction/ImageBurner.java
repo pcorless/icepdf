@@ -34,6 +34,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.WritableRaster;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -51,10 +54,37 @@ public class ImageBurner {
 
     public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath,
                                    Color redactionColor) throws InterruptedException {
+        return burn(imageReference, Collections.singletonList(redactionPath), redactionColor);
+    }
+
+    /**
+     * Burns every area covering this image, in one pass.
+     * <p>
+     * A scanned page is one large image with as many redactions over it as the operator drew, so
+     * taking the areas together rather than one at a time is the normal case. Doing them one at a
+     * time meant decoding, converting and re-publishing the whole image once per annotation - on a
+     * full-page scan, a full-size allocation and copy each time - and re-decoding its masks from the
+     * stream on every pass, which threw away what the previous one had burned into them.
+     *
+     * @param imageReference image and the placement being redacted
+     * @param redactionPaths areas to remove, in user space
+     * @param redactionColor colour to leave behind, where the image kind has a colour to leave
+     */
+    public static ImageStream burn(ImageReference imageReference, List<GeneralPath> redactionPaths,
+                                   Color redactionColor) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
         BufferedImage image = imageStream.getDecodedImage();
         if (image == null) {
             image = imageReference.getBaseImage();
+        }
+        List<GeneralPath> areas = new ArrayList<>(redactionPaths.size());
+        for (GeneralPath redactionPath : redactionPaths) {
+            if (redactionPath != null) {
+                areas.add(redactionPath);
+            }
+        }
+        if (areas.isEmpty()) {
+            return imageStream;
         }
         // Where this drawing of the image sits.  Taken from the reference, which belongs to one Do,
         // rather than from the image stream, which is shared by every placement of the image.
@@ -63,9 +93,9 @@ public class ImageBurner {
         // of them: the samples themselves, the stencil deciding which of them are painted, and the
         // soft mask deciding how opaque they are.  Leaving any one alone leaves either content or the
         // shape of it behind.
-        burnMaskStream(imageStream, placement, redactionPath);
-        burnSoftMask(imageStream, placement, redactionPath);
-        return burnBaseImage(imageStream, placement, image, redactionPath, redactionColor);
+        burnMaskStream(imageStream, placement, areas);
+        burnSoftMask(imageStream, placement, areas);
+        return burnBaseImage(imageStream, placement, image, areas, redactionColor);
     }
 
     /**
@@ -76,17 +106,22 @@ public class ImageBurner {
      * documents in particular carry content in the mask rather than the image.
      */
     private static void burnMaskStream(ImageStream imageStream, AffineTransform placement,
-                                       GeneralPath redactionPath) {
+                                       List<GeneralPath> redactionPaths) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
         ImageDecoder maskDecoder = imageStream.getImageParams().getMask(null);
         if (maskImageStream == null || maskDecoder == null) {
             return;
         }
-        BufferedImage mask = maskDecoder.decode();
+        // Whatever a previous burn on this image left, if there was one. Decoding afresh would
+        // start from the original and discard it, leaving only the last of several redactions.
+        BufferedImage mask = maskImageStream.getDecodedImage();
+        if (mask == null) {
+            mask = maskDecoder.decode();
+        }
         if (mask == null) {
             return;
         }
-        burnArea(mask, placement, redactionPath, sample(paintSample(mask)));
+        burnArea(mask, placement, redactionPaths, sample(paintSample(mask)));
         publish(maskImageStream, mask);
     }
 
@@ -110,13 +145,17 @@ public class ImageBurner {
      * treating it like any other image would erase the redaction rather than apply it.
      */
     private static void burnSoftMask(ImageStream imageStream, AffineTransform placement,
-                                     GeneralPath redactionPath) {
+                                     List<GeneralPath> redactionPaths) {
         ImageStream softMask = imageStream.getImageParams().getSMaskImageStream();
         ImageDecoder softMaskDecoder = imageStream.getImageParams().getSMask(null);
         if (softMask == null || softMaskDecoder == null) {
             return;
         }
-        BufferedImage decoded = softMaskDecoder.decode();
+        // As above: pick up where the last burn left off rather than decoding the original again.
+        BufferedImage decoded = softMask.getDecodedImage();
+        if (decoded == null) {
+            decoded = softMaskDecoder.decode();
+        }
         if (decoded == null) {
             return;
         }
@@ -124,7 +163,7 @@ public class ImageBurner {
         // decoder's colour image, the raster encoder writes DeviceRGB - three bytes a pixel for a
         // one-channel image, and an /SMask that no longer says what §11.6.5.3 requires it to.
         BufferedImage mask = toGrayscale(decoded);
-        burnArea(mask, placement, redactionPath, sample(OPAQUE));
+        burnArea(mask, placement, redactionPaths, sample(OPAQUE));
         publish(softMask, mask);
     }
 
@@ -137,7 +176,7 @@ public class ImageBurner {
      * of them.
      */
     private static ImageStream burnBaseImage(ImageStream imageStream, AffineTransform placement,
-                                             BufferedImage image, GeneralPath redactionPath,
+                                             BufferedImage image, List<GeneralPath> redactionPaths,
                                              Color redactionColor) {
         ImageParams imageParams = imageStream.getImageParams();
         BufferedImage target;
@@ -160,19 +199,30 @@ public class ImageBurner {
         } else if (imageParams.isColorKeyMask()) {
             // Needs the alpha channel: encodeColorKeyMask reads it back to work out which pixels
             // were masked out, so the burned pixels have to be explicitly opaque.
-            target = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_ARGB);
+            target = asType(image, BufferedImage.TYPE_INT_ARGB);
             writer = colour(redactionColor, true);
         } else {
             // A new image to get around the indexed colour space issue.
-            target = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
+            target = asType(image, BufferedImage.TYPE_INT_RGB);
             writer = colour(redactionColor, false);
         }
-        burnArea(target, placement, redactionPath, writer);
+        burnArea(target, placement, redactionPaths, writer);
         publish(imageStream, target);
         if (imageParams.isColorKeyMask()) {
             ImageUtility.encodeColorKeyMask(imageStream);
         }
         return imageStream;
+    }
+
+    /**
+     * The image in the type wanted, converting only when it is not already that type.
+     * <p>
+     * {@code ImageUtility.createBufferedImage} allocates and redraws unconditionally, which on a
+     * full-page scan is a copy of the whole page for no change at all - and once per redaction, since
+     * a burn hands its result back for the next one to build on.
+     */
+    private static BufferedImage asType(BufferedImage image, int type) {
+        return image.getType() == type ? image : ImageUtility.createBufferedImage(image, type);
     }
 
     /**
@@ -217,15 +267,22 @@ public class ImageBurner {
      * blended with what was underneath keeps a fraction of the very thing being removed.
      */
     private static void burnArea(BufferedImage image, AffineTransform placement,
-                                 GeneralPath redactionPath, PixelWriter writer) {
-        Shape area = userSpaceToImageSpace(placement, image).createTransformedShape(redactionPath);
-        Rectangle bounds = area.getBounds().intersection(
-                new Rectangle(0, 0, image.getWidth(), image.getHeight()));
-        WritableRaster raster = image.getRaster();
-        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
-            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
-                if (area.contains(x + 0.5, y + 0.5)) {
-                    writer.write(raster, x, y);
+                                 List<GeneralPath> redactionPaths, PixelWriter writer) {
+        AffineTransform toImage = userSpaceToImageSpace(placement, image);
+        Rectangle raster = new Rectangle(0, 0, image.getWidth(), image.getHeight());
+        WritableRaster samples = image.getRaster();
+        // Each area walks its own pixels.  Merging them into one shape and walking that instead
+        // sounds tidier and is much worse: a dozen redactions scattered down a page have a combined
+        // bounding box of most of the page, so it tests every pixel on it against a shape made of a
+        // dozen rectangles.  Overlapping areas write the same pixel twice, which costs nothing.
+        for (GeneralPath redactionPath : redactionPaths) {
+            Shape area = toImage.createTransformedShape(redactionPath);
+            Rectangle bounds = area.getBounds().intersection(raster);
+            for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+                for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                    if (area.contains(x + 0.5, y + 0.5)) {
+                        writer.write(samples, x, y);
+                    }
                 }
             }
         }

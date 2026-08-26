@@ -47,6 +47,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -179,6 +180,20 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             report.recordRemovedText(removedRun.toString());
             removedRun.setLength(0);
         }
+    }
+
+    /**
+     * The redaction areas that cover this image, in the order they were drawn.
+     */
+    private List<GeneralPath> coveringPaths(Rectangle2D imageBounds) {
+        List<GeneralPath> covering = new ArrayList<>(redactionAnnotations.size());
+        for (RedactionAnnotation annotation : redactionAnnotations) {
+            GeneralPath redactionPath = annotation.getMarkupPath();
+            if (redactionPath != null && redactionPath.intersects(imageBounds)) {
+                covering.add(redactionPath);
+            }
+        }
+        return covering;
     }
 
     /**
@@ -320,17 +335,13 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         // both corrupt and a leak. It also skipped the image entirely when the list was empty.
         ImageStream imageStream = imageReference.getImageStream();
         Rectangle2D imageBounds = imageReference.getNormalizedBounds();
-        boolean burned = false;
-        for (RedactionAnnotation annotation : options.redacts(RedactionTarget.IMAGES)
-                ? redactionAnnotations : Collections.<RedactionAnnotation>emptyList()) {
-            GeneralPath redactionPath = annotation.getMarkupPath();
-            if (redactionPath != null && redactionPath.intersects(imageBounds)) {
-                logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
-                // Successive burns accumulate on the stream's decoded image, so every intersecting
-                // annotation is applied before the result is written once.
-                ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
-                burned = true;
-            }
+        List<GeneralPath> covering = options.redacts(RedactionTarget.IMAGES)
+                ? coveringPaths(imageBounds) : Collections.<GeneralPath>emptyList();
+        boolean burned = !covering.isEmpty();
+        if (burned) {
+            logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
+            // Every area that covers the image is applied before the result is written once.
+            ImageBurner.burn(imageReference, covering, options.getRedactionColor());
         }
         if (burned) {
             CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
@@ -359,17 +370,19 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         if (imageBounds == null) {
             return;
         }
-        for (RedactionAnnotation annotation : redactionAnnotations) {
-            GeneralPath redactionPath = annotation.getMarkupPath();
-            ImageStream imageStream = imageReference.getImageStream();
-            if (redactionPath != null && redactionPath.intersects(imageBounds)) {
-                logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
-                        imageStream.getWidth() + "x" + imageStream.getHeight());
-                recordReEncoding(imageStream);
-                warnIfColourKeyMaskHidesRedaction(imageStream);
-                ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
-                report.recordImageBurned(RedactionTarget.IMAGES);
-            }
+        // One image, one burn, however many annotations cover it. A page that is a single scan with
+        // a dozen redactions drawn on it used to decode, convert and re-publish the whole image a
+        // dozen times over - and count itself redacted a dozen times in the report.
+        ImageStream imageStream = imageReference.getImageStream();
+        List<GeneralPath> covering = coveringPaths(imageBounds);
+        if (covering.isEmpty()) {
+            return;
         }
+        logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
+                imageStream.getWidth() + "x" + imageStream.getHeight());
+        recordReEncoding(imageStream);
+        warnIfColourKeyMaskHidesRedaction(imageStream);
+        ImageBurner.burn(imageReference, covering, options.getRedactionColor());
+        report.recordImageBurned(RedactionTarget.IMAGES);
     }
 }

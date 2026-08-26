@@ -125,16 +125,83 @@ public class SoftMaskRedactionTest {
         }
     }
 
+
+    /**
+     * A scanned page is one large image with as many redactions drawn over it as the operator needed,
+     * so two annotations covering different parts of one image is the ordinary case, not an edge one.
+     * <p>
+     * The mask has to carry both. Each burn decodes the mask afresh from the stream, so unless the
+     * result of the previous one is what the next starts from, only the last redaction survives in
+     * the mask - and the first is left with a transparent hole in the shape of what was removed.
+     */
+    @DisplayName("two redactions over one image both reach the soft mask")
+    @Test
+    public void twoRedactionsBothReachTheSoftMask() throws Exception {
+        // Samples sit at x 20..40, 40..60, 60..80, 80..100. Cover the middle two, separately.
+        assertEquals("00 ff ff ff", softMaskSamples(
+                        new Rectangle(42, 145, 15, 20), new Rectangle(62, 145, 15, 20)),
+                "both covered samples should be opaque");
+    }
+
+
+    /**
+     * The other way a mask gets burned more than once: one image drawn at two places, each with its
+     * own redaction. The image and its mask are a single shared object, but each placement is a
+     * separate pass, so a pass that decodes the mask from the stream starts from the original and
+     * throws away what the previous placement burned into it.
+     */
+    @DisplayName("a soft mask carries redactions from every placement of its image")
+    @Test
+    public void softMaskCarriesEveryPlacement() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/soft_masked_drawn_twice.pdf").toString());
+        byte[] redacted;
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            // Second sample of the upper placement (y 140..180), third of the lower (y 40..80).
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 45, 15, 20)), true);
+            Redactor.configure(document, RedactionRequest.ofAnnotations());
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            redacted = out.toByteArray();
+        } finally {
+            document.dispose();
+        }
+
+        Document written = new Document();
+        written.setByteArray(redacted, 0, redacted.length, "redacted");
+        try {
+            Page page = written.getPageTree().getPage(0);
+            page.init();
+            ImageStream image = (ImageStream) page.getResources().getXObject(new Name("Im0"));
+            StringBuilder out = new StringBuilder();
+            for (byte sample : image.getImageParams().getSMaskImageStream().getDecodedStreamBytes()) {
+                if (out.length() > 0) {
+                    out.append(' ');
+                }
+                out.append(String.format("%02x", sample));
+            }
+            assertEquals("00 ff ff ff", out.toString(),
+                    "both placements' redactions should be in the shared mask");
+        } finally {
+            written.dispose();
+        }
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
-    private String softMaskSamples(Rectangle area) throws Exception {
+    private String softMaskSamples(Rectangle... areas) throws Exception {
         Document document = new Document();
         document.setFile(Paths.get("src/test/resources/redaction/" + FIXTURE).toString());
         byte[] redacted;
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+            for (Rectangle area : areas) {
+                page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+            }
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -71,16 +71,62 @@ public class GrayscaleRedactionTest {
         assertEquals("00 50 a0 ff", samples(redacted), "the image should be exactly as it started");
     }
 
-    // -- helpers ---------------------------------------------------------------------------------
 
-    private ImageStream redact(Rectangle area) throws Exception {
+    /**
+     * The scanned-page case: one large image with several redactions drawn over it.
+     * <p>
+     * All of them have to land, and the image should be burned once rather than decoded, converted
+     * and re-published once per annotation - which on a full-page scan is a copy of the whole page
+     * each time. The report should say one image too, since that is what "images burned" means.
+     */
+    @DisplayName("several redactions over one image all land, and burn it once")
+    @Test
+    public void severalRedactionsBurnTheImageOnce() throws Exception {
         Document document = new Document();
         document.setFile(Paths.get("src/test/resources/redaction/" + FIXTURE).toString());
         byte[] redacted;
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+            // The four samples sit at x 20..40, 40..60, 60..80, 80..100. Cover the middle two, apart.
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 145, 15, 20)), true);
+            Redactor.configure(document, RedactionRequest.ofAnnotations());
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            redacted = out.toByteArray();
+
+            assertEquals(1, document.getRedactionReport().getImagesBurned(),
+                    "one image was burned, however many annotations covered it");
+        } finally {
+            document.dispose();
+        }
+
+        Document written = new Document();
+        written.setByteArray(redacted, 0, redacted.length, "redacted");
+        try {
+            Page page = written.getPageTree().getPage(0);
+            page.init();
+            ImageStream image = (ImageStream) page.getResources().getXObject(new Name("Im0"));
+            assertEquals("00 00 00 ff", samples(image), "both covered samples black, the rest as they were");
+        } finally {
+            written.dispose();
+        }
+    }
+
+    // -- helpers ---------------------------------------------------------------------------------
+
+    private ImageStream redact(Rectangle... areas) throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/" + FIXTURE).toString());
+        byte[] redacted;
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            for (Rectangle area : areas) {
+                page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+            }
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

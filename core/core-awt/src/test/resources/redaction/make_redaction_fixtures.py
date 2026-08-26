@@ -603,7 +603,26 @@ def gray_image():
                        extra_objs={6: image})
 
 
+def soft_masked_drawn_twice():
+    """A soft-masked image drawn at two positions, redacted in both.
+
+    The image and its /SMask are one shared object, so each placement is burned in its own pass.  The
+    mask has to carry what both passes did: decoded afresh each pass, only the last one survives.
+    """
+    pixels = bytes([255, 0, 0,  0, 255, 0,  0, 0, 255,  255, 255, 0])
+    smask = bytes([0, 80, 160, 255])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /SMask 7 0 R /Length %d >>\nstream\n" % len(pixels)
+             + pixels + b"\nendstream")
+    mask = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceGray "
+            b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(smask) + smask + b"\nendstream")
+    return simple_page(b"q 80 0 0 40 20 140 cm /Im0 Do Q\nq 80 0 0 40 20 40 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image, 7: mask})
+
+
 FIXTURES = {
+    "soft_masked_drawn_twice.pdf": soft_masked_drawn_twice,
     "gray_image.pdf": gray_image,
     "colour_key_masked_image.pdf": colour_key_masked_image,
     "soft_masked_image.pdf": soft_masked_image,
