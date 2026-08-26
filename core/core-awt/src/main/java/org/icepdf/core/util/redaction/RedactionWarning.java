@@ -37,10 +37,6 @@ public class RedactionWarning {
          */
         SHARED_OBJECT_BURNED_IN_PLACE,
         /**
-         * An image had to be re-encoded with a different filter than it arrived with.
-         */
-        IMAGE_RE_ENCODED,
-        /**
          * A content stream could not be parsed, so nothing in it was examined.
          */
         STREAM_NOT_PARSED,

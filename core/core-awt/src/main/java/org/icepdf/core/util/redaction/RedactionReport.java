@@ -46,6 +46,7 @@ public class RedactionReport {
 
     private int glyphsRemoved;
     private int imagesBurned;
+    private int imagesReEncoded;
     private int stringsRewritten;
     private final Map<RedactionTarget, Integer> countsByTarget = new EnumMap<>(RedactionTarget.class);
     private final List<RedactionWarning> warnings = new ArrayList<>();
@@ -75,6 +76,25 @@ public class RedactionReport {
      */
     public int getImagesBurned() {
         return imagesBurned;
+    }
+
+    /**
+     * How many burned images came back out with a different filter than they arrived with.
+     * <p>
+     * A burn re-encodes whatever it touches and the encoder follows the original filter rather than
+     * preserving it, so a JPEG returns as Flate RGB and a JBIG2 as CCITT. The redaction is unaffected
+     * - the removed area is gone and the rest of the image is intact - which is why this is a count
+     * and not a warning: it does not lower the confidence, and it should not, or a document could
+     * never come back {@code VERIFIED} for redacting a photograph.
+     * <p>
+     * It is reported because it explains a real change to the document. An image arriving as JPEG
+     * and leaving several times larger is a surprise worth having accounted for when someone
+     * compares the file before and after.
+     *
+     * @return burned images whose filter changed, of {@link #getImagesBurned()}
+     */
+    public int getImagesReEncoded() {
+        return imagesReEncoded;
     }
 
     /**
@@ -183,6 +203,7 @@ public class RedactionReport {
         json.append("{\n");
         json.append("  \"glyphsRemoved\": ").append(glyphsRemoved).append(",\n");
         json.append("  \"imagesBurned\": ").append(imagesBurned).append(",\n");
+        json.append("  \"imagesReEncoded\": ").append(imagesReEncoded).append(",\n");
         json.append("  \"stringsRewritten\": ").append(stringsRewritten).append(",\n");
         json.append("  \"countsByTarget\": {");
         boolean first = true;
@@ -250,6 +271,14 @@ public class RedactionReport {
     public void recordImageBurned(RedactionTarget target) {
         imagesBurned++;
         countsByTarget.merge(target, 1, Integer::sum);
+    }
+
+    /**
+     * Records a burned image whose filter changed on the way out. Called by the redaction
+     * implementation.
+     */
+    public void recordImageReEncoded() {
+        imagesReEncoded++;
     }
 
     /**

@@ -35,6 +35,7 @@ import org.icepdf.core.util.redaction.RedactionReport;
 import org.icepdf.core.util.redaction.RedactionTarget;
 import org.icepdf.core.util.redaction.InlineImageWriter;
 import org.icepdf.core.util.redaction.RedactedStringObjectWriter;
+import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -177,6 +178,18 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     }
 
     /**
+     * Notes an image whose filter will change on the way out.
+     * <p>
+     * Asked before the burn rather than after, because the encoders rewrite the dictionary as they
+     * go - by the time an image has been written it no longer says what it arrived as.
+     */
+    private void recordReEncoding(ImageStream imageStream) {
+        if (ImageEncoderFactory.changesFilter(imageStream)) {
+            report.recordImageReEncoded();
+        }
+    }
+
+    /**
      * Whether a redaction removes this glyph.
      * <p>
      * Any overlap counts by default. A redaction drawn snugly over a word does not contain the glyph
@@ -277,6 +290,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         }
         if (burned) {
             CountingOutputStream countingOutputStream = new CountingOutputStream(burnedContentOutputStream);
+            recordReEncoding(imageStream);
             InlineImageWriter.write(countingOutputStream, imageStream);
             report.recordImageBurned(RedactionTarget.IMAGES);
             modifiedStream = true;
@@ -307,6 +321,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             if (redactionPath != null && redactionPath.intersects(imageBounds)) {
                 logger.finer(() -> "Redacting Image: " + imageStream.getPObjectReference() + " " +
                         imageStream.getWidth() + "x" + imageStream.getHeight());
+                recordReEncoding(imageStream);
                 ImageBurner.burn(imageReference, redactionPath, options.getRedactionColor());
                 report.recordImageBurned(RedactionTarget.IMAGES);
             }

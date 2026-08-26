@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Paths;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -75,11 +76,49 @@ public class ImagePlacementRedactionTest {
                 "nothing covers either placement");
     }
 
+
+    // -- re-encoding ------------------------------------------------------------------------------
+
+    /**
+     * A burn re-encodes whatever it touches, and the encoder follows the filter the image arrived
+     * with rather than preserving it. This image arrives uncompressed and leaves Flate, which is a
+     * real change to the document even though the redaction itself is unaffected - so it is counted,
+     * not warned about. Warning would put every image redaction below VERIFIED.
+     */
+    @DisplayName("an image whose filter changes on the way out is counted")
+    @Test
+    public void reEncodingIsCounted() throws Exception {
+        RedactionReport report = redact(FIXTURE, new Rectangle(20, 140, 60, 40));
+
+        assertEquals(1, report.getImagesBurned(), "the image was burned");
+        assertEquals(1, report.getImagesReEncoded(), "and came out with a different filter");
+        assertEquals(List.of(), report.getWarnings(),
+                "re-encoding is not a redaction failure, so it must not lower the confidence");
+    }
+
+    /**
+     * The control. The same image arriving Flate-compressed is written back as Flate, so nothing
+     * changed and nothing is counted - which is what stops the count being "every image burned"
+     * wearing a more interesting name.
+     */
+    @DisplayName("an image already in the filter it leaves with is not counted")
+    @Test
+    public void unchangedFilterIsNotCounted() throws Exception {
+        RedactionReport report = redact("flate_image.pdf", new Rectangle(20, 140, 60, 40));
+
+        assertEquals(1, report.getImagesBurned(), "the image was burned");
+        assertEquals(0, report.getImagesReEncoded(), "its filter did not change");
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private int imagesBurned(Rectangle area) throws Exception {
+        return redact(FIXTURE, area).getImagesBurned();
+    }
+
+    private RedactionReport redact(String fixture, Rectangle area) throws Exception {
         Document document = new Document();
-        document.setFile(Paths.get("src/test/resources/redaction/" + FIXTURE).toString());
+        document.setFile(Paths.get("src/test/resources/redaction/" + fixture).toString());
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
@@ -87,7 +126,7 @@ public class ImagePlacementRedactionTest {
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             document.saveToOutputStream(new ByteArrayOutputStream(), WriteMode.FULL_UPDATE);
-            return document.getRedactionReport().getImagesBurned();
+            return document.getRedactionReport();
         } finally {
             document.dispose();
         }

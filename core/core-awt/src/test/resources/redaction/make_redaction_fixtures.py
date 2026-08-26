@@ -534,7 +534,25 @@ def _shared_content(second_page_extra):
     })
 
 
+def flate_image():
+    """The same 2x2 image as image_drawn_twice, but arriving Flate-compressed.
+
+    The burn re-encodes whatever it touches, and the raster encoder writes Flate - which this already
+    is.  So this one is burned without its filter changing, and is the control for the re-encode
+    count.
+    """
+    import zlib
+    pixels = zlib.compress(bytes([255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 0]), 9)
+    image = (b"<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceRGB "
+             b"/BitsPerComponent 8 /Filter /FlateDecode /Length %d >>\nstream\n" % len(pixels)
+             + pixels + b"\nendstream")
+    return simple_page(b"q 60 0 0 40 20 140 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "flate_image.pdf": flate_image,
     "shared_content_alike.pdf": shared_content_alike,
     "shared_content_rotated.pdf": shared_content_rotated,
     "image_drawn_twice.pdf": image_drawn_twice,
