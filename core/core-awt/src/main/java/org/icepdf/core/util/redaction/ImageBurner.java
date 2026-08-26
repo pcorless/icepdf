@@ -17,6 +17,9 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.graphics.CalGray;
+import org.icepdf.core.pobjects.graphics.DeviceGray;
+import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.pobjects.graphics.images.ImageDecoder;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
@@ -133,6 +136,13 @@ public class ImageBurner {
             burnStencil(imageStream, placement, image, redactionPath);
             return imageStream;
         }
+        if (copyImage && isGrayscale(imageParams)) {
+            // A greyscale image stays greyscale.  Converting it to RGB the way everything else is
+            // converted triples its data for no visible difference, which on a scanned page - the
+            // common thing to redact - is most of the file.
+            burnGrayscale(imageStream, placement, image, redactionPath, redactionColor);
+            return imageStream;
+        }
         // try a new image to get around index colour space issue.
         if (copyImage && !imageParams.isColorKeyMask()) {
             image = ImageUtility.createBufferedImage(image, BufferedImage.TYPE_INT_RGB);
@@ -196,6 +206,68 @@ public class ImageBurner {
             imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
                     imageStream.getPObjectReference()));
         }
+    }
+
+
+    /**
+     * Whether this image is a single greyscale channel that can be written back as one.
+     * <p>
+     * A colour-key mask is excluded: it needs the alpha channel of an RGB raster to carry which
+     * pixels are masked out, which a single-channel image cannot hold.
+     */
+    private static boolean isGrayscale(ImageParams imageParams) {
+        if (imageParams.isColorKeyMask() || imageParams.isImageMask()) {
+            return false;
+        }
+        PColorSpace colourSpace = imageParams.getColourSpace();
+        return (colourSpace instanceof DeviceGray || colourSpace instanceof CalGray)
+                && imageParams.getBitsPerComponent() <= 8;
+    }
+
+    /**
+     * Burns a greyscale image without turning it into a colour one.
+     * <p>
+     * The decoders hand back every image as RGB, so keeping an image greyscale means rebuilding a
+     * single channel from what they return rather than merely declining to convert it.
+     * <p>
+     * Samples are written through the raster rather than filled with Graphics2D: painting a colour
+     * into a greyscale image runs a colour-space conversion, and the sample that comes out is not the
+     * one that went in - the same trap that had a soft mask's 160 written as 208.
+     */
+    private static void burnGrayscale(ImageStream imageStream, AffineTransform placement,
+                                      BufferedImage image, GeneralPath redactionPath,
+                                      Color redactionColor) {
+        BufferedImage gray = toGrayscale(image);
+        Shape area = userSpaceToImageSpace(placement, gray).createTransformedShape(redactionPath);
+        Rectangle bounds = area.getBounds().intersection(
+                new Rectangle(0, 0, gray.getWidth(), gray.getHeight()));
+        WritableRaster raster = gray.getRaster();
+        int sample = luminance(redactionColor);
+        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                if (area.contains(x + 0.5, y + 0.5)) {
+                    raster.setSample(x, y, 0, sample);
+                }
+            }
+        }
+        imageStream.setDecodedImage(gray);
+        if (imageStream.getPObjectReference() != null) {
+            imageStream.getLibrary().getStateManager().addChange(new PObject(imageStream,
+                    imageStream.getPObjectReference()));
+        }
+    }
+
+    /**
+     * The redaction colour as a single greyscale sample. Black stays 0, which is what a redaction
+     * uses by default; a colour is taken at its perceived brightness so the block reads the way the
+     * caller meant it to.
+     */
+    private static int luminance(Color colour) {
+        if (colour == null) {
+            return 0;
+        }
+        return Math.min(255, Math.round(0.299f * colour.getRed()
+                + 0.587f * colour.getGreen() + 0.114f * colour.getBlue()));
     }
 
     /**

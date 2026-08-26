@@ -588,7 +588,23 @@ def colour_key_masked_image():
                        extra_objs={6: image})
 
 
+def gray_image():
+    """A DeviceGray image XObject, 4x1, running dark to light.
+
+    Burning it used to convert it to DeviceRGB - three bytes a pixel for a one-channel image, which
+    on a scanned page is most of the file.  The samples are distinct so a redaction over part of it
+    can be checked against values that started out different.
+    """
+    samples = bytes([0, 80, 160, 255])
+    image = (b"<< /Type /XObject /Subtype /Image /Width 4 /Height 1 /ColorSpace /DeviceGray "
+             b"/BitsPerComponent 8 /Length %d >>\nstream\n" % len(samples) + samples + b"\nendstream")
+    return simple_page(b"q 80 0 0 40 20 140 cm /Im0 Do Q\n",
+                       extra_resources=b"/XObject << /Im0 6 0 R >>",
+                       extra_objs={6: image})
+
+
 FIXTURES = {
+    "gray_image.pdf": gray_image,
     "colour_key_masked_image.pdf": colour_key_masked_image,
     "soft_masked_image.pdf": soft_masked_image,
     "flate_image.pdf": flate_image,
