@@ -20,6 +20,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
 import org.icepdf.core.pobjects.fonts.FontFile;
+import org.apache.fontbox.ttf.CmapLookup;
+import org.icepdf.core.pobjects.fonts.builders.SimpleFontFactory;
 import org.icepdf.core.pobjects.fonts.builders.TrueTypeFontEmbedder;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
@@ -36,9 +38,15 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.Stream.FILTER_KEY;
+import static org.icepdf.core.pobjects.fonts.Font.CID_FORMAT;
 import static org.icepdf.core.pobjects.fonts.Font.SIMPLE_FORMAT;
 import static org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2;
 
@@ -99,9 +107,17 @@ public class ContentWriterUtils {
                                                        Color fontColor,
                                                        String content) {
         FontFile fontFile = trueTypeeFontSubSetter.getFontFile();
+        // Which kind of font this text needs is decided here and again when the font dictionary is
+        // built, from the same set of characters, because the codes written into the content stream
+        // have to be the ones that dictionary describes.  A composite font addresses glyphs by CID,
+        // two bytes wide; a simple font by one-byte WinAnsi code.
+        List<Integer> codePoints = content.codePoints().boxed().collect(Collectors.toList());
+        boolean composite = SimpleFontFactory.requiresCompositeFont(codePoints);
+        CmapLookup cmapLookup = composite ? unicodeCmapLookup(trueTypeeFontSubSetter) : null;
+
         TextSprite textSprites =
                 new TextSprite(fontFile,
-                        SIMPLE_FORMAT,
+                        composite ? CID_FORMAT : SIMPLE_FORMAT,
                         content.length(),
                         new AffineTransform(), null);
         textSprites.setRMode(TextState.MODE_FILL);
@@ -129,8 +145,12 @@ public class ContentWriterUtils {
             lastx += newAdvanceX;
             trueTypeeFontSubSetter.addToSubset(currentChar);
             if (!(currentChar == '\n' || currentChar == '\r')) {
+                // Under Identity-H the code in the content stream is the CID, and the CID is the
+                // glyph's index in the original font - not its Unicode value.
+                char code = cmapLookup != null
+                        ? (char) cmapLookup.getGlyphId(currentChar) : currentChar;
                 textSprites.addText(
-                        currentChar, // cid
+                        code, // cid
                         EMBEDDED_FONT_NAME,
                         String.valueOf(currentChar), // unicode value
                         currentX, currentY, newAdvanceX, 0, 0);
@@ -149,6 +169,18 @@ public class ContentWriterUtils {
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
 
         return new Point2D.Float(currentX, currentY);
+    }
+
+    /**
+     * @return the font's Unicode character map, which is what a CID is looked up through
+     */
+    private static CmapLookup unicodeCmapLookup(TrueTypeFontEmbedder fontSubSetter) {
+        try {
+            return fontSubSetter.getFontFile().getTrueTypeFont().getUnicodeCmapLookup();
+        } catch (IOException e) {
+            throw new IllegalStateException("Could not read the character map of "
+                    + fontSubSetter.getFontFile().getName(), e);
+        }
     }
 
     public static Shapes createAppearanceShapes(AppearanceState appearanceState, int xInsets, int yInsets) {
@@ -194,26 +226,56 @@ public class ContentWriterUtils {
      * Silently does nothing when the entry is not a reference or is already promoted; a font built
      * from an existing object has nothing temporary to move.
      */
-    private static void promoteTempStream(StateManager stateManager, Object entry) {
+    /**
+     * Moves a newly built object, and everything it refers to, from the temporary cache into the
+     * changes that actually get written.
+     * <p>
+     * A font is not one object. A simple font reaches a descriptor, a font programme and a CMap; a
+     * composite font also reaches a descendant font, a CIDToGIDMap and a CIDSet. Every one of them is
+     * built as a temporary change and every one has to be promoted, because a reference to an object
+     * that was never written is a dangling reference - and a reader following it gets nothing, with
+     * no error to say why. Promoting a hand-written list of keys is how the /ToUnicode CMap came to
+     * be written as a dangling reference once already, so this follows whatever the font actually
+     * refers to instead.
+     */
+    private static void promoteTempObjects(StateManager stateManager, Object entry, Set<Reference> visited) {
         if (entry instanceof Reference) {
-            PObject pObject = stateManager.getTempChange((Reference) entry);
+            Reference reference = (Reference) entry;
+            if (!visited.add(reference)) {
+                return;
+            }
+            PObject pObject = stateManager.getTempChange(reference);
             if (pObject != null) {
                 stateManager.addChange(pObject);
+                promoteTempObjects(stateManager, pObject.getObject(), visited);
+            }
+        } else if (entry instanceof List) {
+            for (Object element : (List<?>) entry) {
+                promoteTempObjects(stateManager, element, visited);
+            }
+        } else if (entry instanceof Dictionary) {
+            promoteTempObjects(stateManager, ((Dictionary) entry).getEntries(), visited);
+        } else if (entry instanceof DictionaryEntries) {
+            for (Object value : ((DictionaryEntries) entry).values()) {
+                promoteTempObjects(stateManager, value, visited);
             }
         }
     }
 
     public static void saveFont(org.icepdf.core.pobjects.fonts.Font font) {
+        StateManager stateManager = font.getLibrary().getStateManager();
+        Set<Reference> visited = new HashSet<>();
+
         FontDescriptor fontDescriptor = font.getFontDescriptor();
         if (fontDescriptor != null && fontDescriptor.getPObjectReference() != null) {
-            StateManager stateManager = font.getLibrary().getStateManager();
             stateManager.addChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
-            promoteTempStream(stateManager, fontDescriptor.getEntries().get(FONT_FILE_2));
-            // The CMap the font's /ToUnicode points at is built the same way and has to be promoted
-            // the same way. Without this the font referred to an object that was never written -
-            // a dangling reference, which is worse than the /Identity name it replaced.
-            promoteTempStream(stateManager, font.getEntries().get(SimpleFont.TO_UNICODE_KEY));
+            visited.add(fontDescriptor.getPObjectReference());
+            promoteTempObjects(stateManager, fontDescriptor.getEntries(), visited);
         }
+        // A composite font has no descriptor of its own - the descendant owns it - so this cannot be
+        // conditional on there being one, which is what used to leave a Type 0 font with nothing
+        // written but the parent dictionary.
+        promoteTempObjects(stateManager, font.getEntries(), visited);
     }
 
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,

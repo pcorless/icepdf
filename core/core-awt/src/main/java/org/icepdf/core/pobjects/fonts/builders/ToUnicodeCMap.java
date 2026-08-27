@@ -84,22 +84,45 @@ public final class ToUnicodeCMap {
     }
 
     /**
+     * A composite font's codes are two bytes wide under Identity-H, and a CMap's codespace range is
+     * what says so - the width of the hex digits in it is the width of a code, not a formatting
+     * choice.  Written one byte wide, a reader splits a two-byte code into two characters.
+     *
+     * @param mappings CID to Unicode code point
+     * @return reference to the CMap stream
+     */
+    public static Reference forCids(Library library, Map<Integer, Integer> mappings) {
+        return create(library, mappings, 2);
+    }
+
+    /**
      * @param mappings character code to Unicode code point
      * @return reference to the CMap stream
      */
     public static Reference create(Library library, Map<Integer, Integer> mappings) {
+        return create(library, mappings, 1);
+    }
+
+    /**
+     * @param codeBytes width of a character code, which the codespace range has to agree with
+     */
+    private static Reference create(Library library, Map<Integer, Integer> mappings, int codeBytes) {
+        String codeFormat = "%0" + (codeBytes * 2) + "X";
+        String low = String.format(codeFormat, 0);
+        String high = String.format(codeFormat, (1 << (codeBytes * 8)) - 1);
         StringBuilder cmap = new StringBuilder();
         cmap.append("/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n")
                 .append("/CIDSystemInfo <</Registry (Adobe) /Ordering (UCS) /Supplement 0>> def\n")
                 .append("/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n")
-                .append("1 begincodespacerange\n<00> <FF>\nendcodespacerange\n");
+                .append("1 begincodespacerange\n<").append(low).append("> <").append(high)
+                .append(">\nendcodespacerange\n");
         Integer[] codes = mappings.keySet().toArray(new Integer[0]);
         // a bfchar section holds at most 100 entries
         for (int start = 0; start < codes.length; start += 100) {
             int end = Math.min(start + 100, codes.length);
             cmap.append(end - start).append(" beginbfchar\n");
             for (int i = start; i < end; i++) {
-                cmap.append(String.format("<%02X> <%04X>%n", codes[i], mappings.get(codes[i])));
+                cmap.append(String.format("<" + codeFormat + "> <%04X>%n", codes[i], mappings.get(codes[i])));
             }
             cmap.append("endbfchar\n");
         }

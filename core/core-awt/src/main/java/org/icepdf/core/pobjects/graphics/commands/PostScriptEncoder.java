@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.builders.WinAnsiEncoding;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -213,6 +214,10 @@ public class PostScriptEncoder {
                                 .append(colors[2]).append(SPACE)
                                 .append(PdfOps.rg_TOKEN).append(NEWLINE);
                         float y = glyphTexts.get(0).getY();
+                        // A composite font's codes are CIDs, two bytes wide, and are written as a hex
+                        // string; a simple font's are one-byte codes in a literal string.  Which one
+                        // this is was decided when the text was laid out, and every glyph carries it.
+                        boolean composite = glyphTexts.get(0).getFontSubTypeFormat() == Font.CID_FORMAT;
                         StringBuilder line = new StringBuilder();
                         GlyphText glyphText;
                         for (int i = 0, max = glyphTexts.size(); i < max; i++) {
@@ -222,13 +227,18 @@ public class PostScriptEncoder {
                             if (y != glyphText.getY() || i == max - 1) {
                                 // make sure we write out the last character.
                                 if (i == max - 1) {
-                                    line.append(glyphText.getUnicode());
+                                    appendCode(line, glyphText, composite);
                                 }
-                                postScript.append(BEGIN_ARRAY).append(BEGIN_STRING)
-                                        // use literal string to make sure string is escaped correctly
-                                        .append(new LiteralStringObject(line.toString()))
-                                        .append(END_STRING)
-                                        .append(END_ARRAY).append(SPACE)
+                                postScript.append(BEGIN_ARRAY);
+                                if (composite) {
+                                    postScript.append('<').append(line).append('>');
+                                } else {
+                                    // use literal string to make sure string is escaped correctly
+                                    postScript.append(BEGIN_STRING)
+                                            .append(new LiteralStringObject(line.toString()))
+                                            .append(END_STRING);
+                                }
+                                postScript.append(END_ARRAY).append(SPACE)
                                         .append(PdfOps.TJ_TOKEN).append(NEWLINE);
                                 // add shift if newline
                                 postScript.append(0).append(SPACE).append(y - glyphText.getY())
@@ -237,7 +247,7 @@ public class PostScriptEncoder {
                                 y = glyphText.getY();
                                 line = new StringBuilder();
                             }
-                            line.append(glyphText.getUnicode());
+                            appendCode(line, glyphText, composite);
                         }
                         postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                     }
@@ -264,6 +274,20 @@ public class PostScriptEncoder {
         // two machines produced different bytes.  Operators are ASCII and encode identically either
         // way; it is only the text that was ever affected.
         return postScript.toString().getBytes(WinAnsiEncoding.CHARSET);
+    }
+
+    /**
+     * Appends one character code: the CID as four hex digits for a composite font, or the character
+     * itself for a simple one, where the code is worked out by the charset the stream is written
+     * with.  Every CID takes the same number of digits, or the string cannot be split back into
+     * codes.
+     */
+    private static void appendCode(StringBuilder line, GlyphText glyphText, boolean composite) {
+        if (composite) {
+            line.append(String.format("%04X", (int) glyphText.getCid()));
+        } else {
+            line.append(glyphText.getUnicode());
+        }
     }
 
     private static double roundCoordinate(double value) {
