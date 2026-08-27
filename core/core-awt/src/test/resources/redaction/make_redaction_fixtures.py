@@ -681,7 +681,31 @@ def cid_subset_text():
     return build(objs)
 
 
+def type3_text():
+    """Text drawn with a Type 3 font, whose glyphs are content streams rather than a font program.
+
+    There is nothing to write a new character *as*: a replacement would need its own glyph procedure
+    built and added to /CharProcs.  The editor refuses these, and this is what it refuses.
+    """
+    glyph = b"750 0 0 0 750 750 d1\n0 0 750 750 re f\n"
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(b"BT\n/F1 12 Tf\n20 150 Td\n(aaa) Tj\nET\n"),
+        5: (b"<< /Type /Font /Subtype /Type3 /FontBBox [0 0 750 750] "
+            b"/FontMatrix [0.001 0 0 0.001 0 0] /CharProcs 6 0 R "
+            b"/Encoding << /Type /Encoding /Differences [97 /square] >> "
+            b"/FirstChar 97 /LastChar 97 /Widths [750] /Resources << >> >>"),
+        6: b"<< /square 7 0 R >>",
+        7: stream_obj(glyph),
+    }
+    return build(objs)
+
+
 FIXTURES = {
+    "type3_text.pdf": type3_text,
     "cid_subset_text.pdf": cid_subset_text,
     "fax_page.pdf": fax_page,
     "soft_masked_drawn_twice.pdf": soft_masked_drawn_twice,

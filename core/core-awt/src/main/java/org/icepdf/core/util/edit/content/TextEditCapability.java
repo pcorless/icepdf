@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.fonts.Font;
+import org.icepdf.core.pobjects.fonts.FontFactory;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
@@ -76,7 +77,8 @@ public class TextEditCapability {
         if (newText == null || newText.isEmpty()) {
             return new ArrayList<>();
         }
-        FontFile font = fontCovering(page, bounds);
+        Font pdfFont = fontAt(page, bounds);
+        FontFile font = pdfFont != null ? pdfFont.getFont() : null;
         List<Character> unsupported = new ArrayList<>();
         if (font == null) {
             // Nothing to check against - no glyph of the selection could be resolved to a font - so
@@ -97,7 +99,53 @@ public class TextEditCapability {
      * @return true when the edit can be written exactly as asked
      */
     public static boolean canEdit(Page page, Rectangle bounds, String newText) throws InterruptedException {
-        return unsupportedCharacters(page, bounds, newText).isEmpty();
+        return unsupportedReason(page, bounds, newText) == null;
+    }
+
+    /**
+     * Why this edit cannot be made, in words a user can act on, or null when it can.
+     * <p>
+     * One call rather than several because the caller's question is singular: can I offer this edit,
+     * and if not, what do I tell them.
+     *
+     * @param page    page being edited
+     * @param bounds  area of the text being replaced, in page space
+     * @param newText the replacement
+     * @return the reason, or null when the edit can be made
+     * @throws InterruptedException if resolving the page's fonts is interrupted
+     */
+    public static String unsupportedReason(Page page, Rectangle bounds, String newText)
+            throws InterruptedException {
+        if (isType3(page, bounds)) {
+            return "text drawn with a Type 3 font cannot be edited: its glyphs are content streams "
+                    + "of their own, drawn by the page rather than supplied by a font program";
+        }
+        List<Character> unsupported = unsupportedCharacters(page, bounds, newText);
+        if (unsupported.isEmpty()) {
+            return null;
+        }
+        StringBuilder characters = new StringBuilder();
+        for (Character character : unsupported) {
+            if (characters.length() > 0) {
+                characters.append(", ");
+            }
+            characters.append('\'').append(character).append('\'');
+        }
+        return "this font has no character for " + characters
+                + " - it holds only the characters the document already uses";
+    }
+
+    /**
+     * Whether the text here is drawn with a Type 3 font.
+     * <p>
+     * A Type 3 glyph is a content stream the page draws, not a character in a font program, so there
+     * is nothing to write a new character <em>as</em>: a replacement would need its own glyph
+     * procedures built and added to the font's {@code /CharProcs}. Out of scope, and better refused
+     * plainly than attempted badly.
+     */
+    private static boolean isType3(Page page, Rectangle bounds) throws InterruptedException {
+        Font font = fontAt(page, bounds);
+        return font != null && FontFactory.FONT_SUBTYPE_TYPE_3.equals(font.getSubType());
     }
 
     /**
@@ -119,7 +167,7 @@ public class TextEditCapability {
      * The font the replacement would be written in: the one belonging to the first glyph of the
      * selection, in the order the page draws them, which is the run the writer replaces.
      */
-    private static FontFile fontCovering(Page page, Rectangle bounds) throws InterruptedException {
+    private static Font fontAt(Page page, Rectangle bounds) throws InterruptedException {
         if (page.getViewText() == null || bounds == null) {
             return null;
         }
@@ -134,8 +182,8 @@ public class TextEditCapability {
                     if (glyphBounds != null && bounds.intersects(glyphBounds)) {
                         Name fontName = glyph.getFontName();
                         Font font = fontName != null ? resources.getFont(fontName) : null;
-                        if (font != null && font.getFont() != null) {
-                            return font.getFont();
+                        if (font != null) {
+                            return font;
                         }
                     }
                 }

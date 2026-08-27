@@ -89,6 +89,32 @@ public class CidFontEditTest {
         }
     }
 
+
+    /**
+     * A Type 3 glyph is a content stream the page draws, not a character in a font program, so there
+     * is nothing to write a new character as. Refused plainly rather than attempted badly.
+     */
+    @DisplayName("text in a Type 3 font is refused, with a reason")
+    @Test
+    public void type3TextIsRefused() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/type3_text.pdf").toString());
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            // The glyphs are drawn from 20,150; cover generously rather than by word, since a Type 3
+            // font need not map its glyphs to anything text search would find.
+            Rectangle bounds = new Rectangle(15, 145, 60, 20);
+
+            String reason = TextEditCapability.unsupportedReason(page, bounds, "abc");
+            assertTrue(reason != null && reason.contains("Type 3"),
+                    "should refuse Type 3 by name, got: " + reason);
+            assertTrue(!TextEditCapability.canEdit(page, bounds, "abc"), "and not offer the edit");
+        } finally {
+            document.dispose();
+        }
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private static void assertFalse(boolean condition, String message) {
