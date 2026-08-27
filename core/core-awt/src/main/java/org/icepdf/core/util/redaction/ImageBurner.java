@@ -17,6 +17,8 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.CalGray;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
@@ -52,9 +54,9 @@ public class ImageBurner {
     /** A fully opaque eight-bit sample - white in a soft mask, alpha in a colour raster. */
     private static final int OPAQUE = 255;
 
-    public static ImageStream burn(ImageReference imageReference, GeneralPath redactionPath,
+    public static ImageStream burn(ImageReference imageReference, RedactionAnnotation annotation,
                                    Color redactionColor) throws InterruptedException {
-        return burn(imageReference, Collections.singletonList(redactionPath), redactionColor);
+        return burn(imageReference, Collections.singletonList(annotation), redactionColor);
     }
 
     /**
@@ -67,20 +69,21 @@ public class ImageBurner {
      * stream on every pass, which threw away what the previous one had burned into them.
      *
      * @param imageReference image and the placement being redacted
-     * @param redactionPaths areas to remove, in user space
-     * @param redactionColor colour to leave behind, where the image kind has a colour to leave
+     * @param annotations    redactions covering it, each carrying its own area and colour
+     * @param redactionColor colour to leave behind for a redaction that does not name one
      */
-    public static ImageStream burn(ImageReference imageReference, List<GeneralPath> redactionPaths,
+    public static ImageStream burn(ImageReference imageReference,
+                                   List<RedactionAnnotation> annotations,
                                    Color redactionColor) throws InterruptedException {
         ImageStream imageStream = imageReference.getImageStream();
         BufferedImage image = imageStream.getDecodedImage();
         if (image == null) {
             image = imageReference.getBaseImage();
         }
-        List<GeneralPath> areas = new ArrayList<>(redactionPaths.size());
-        for (GeneralPath redactionPath : redactionPaths) {
-            if (redactionPath != null) {
-                areas.add(redactionPath);
+        List<RedactionAnnotation> areas = new ArrayList<>(annotations.size());
+        for (RedactionAnnotation annotation : annotations) {
+            if (annotation != null && annotation.getMarkupPath() != null) {
+                areas.add(annotation);
             }
         }
         if (areas.isEmpty()) {
@@ -106,7 +109,7 @@ public class ImageBurner {
      * documents in particular carry content in the mask rather than the image.
      */
     private static void burnMaskStream(ImageStream imageStream, AffineTransform placement,
-                                       List<GeneralPath> redactionPaths) {
+                                       List<RedactionAnnotation> areas) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
         ImageDecoder maskDecoder = imageStream.getImageParams().getMask(null);
         if (maskImageStream == null || maskDecoder == null) {
@@ -121,7 +124,7 @@ public class ImageBurner {
         if (mask == null) {
             return;
         }
-        burnArea(mask, placement, redactionPaths, sample(paintSample(mask)));
+        burnAreas(mask, placement, areas, sample(paintSample(mask)));
         publish(maskImageStream, mask);
     }
 
@@ -145,7 +148,7 @@ public class ImageBurner {
      * treating it like any other image would erase the redaction rather than apply it.
      */
     private static void burnSoftMask(ImageStream imageStream, AffineTransform placement,
-                                     List<GeneralPath> redactionPaths) {
+                                     List<RedactionAnnotation> areas) {
         ImageStream softMask = imageStream.getImageParams().getSMaskImageStream();
         ImageDecoder softMaskDecoder = imageStream.getImageParams().getSMask(null);
         if (softMask == null || softMaskDecoder == null) {
@@ -163,7 +166,7 @@ public class ImageBurner {
         // decoder's colour image, the raster encoder writes DeviceRGB - three bytes a pixel for a
         // one-channel image, and an /SMask that no longer says what §11.6.5.3 requires it to.
         BufferedImage mask = toGrayscale(decoded);
-        burnArea(mask, placement, redactionPaths, sample(OPAQUE));
+        burnAreas(mask, placement, areas, sample(OPAQUE));
         publish(softMask, mask);
     }
 
@@ -176,12 +179,14 @@ public class ImageBurner {
      * of them.
      */
     private static ImageStream burnBaseImage(ImageStream imageStream, AffineTransform placement,
-                                             BufferedImage image, List<GeneralPath> redactionPaths,
+                                             BufferedImage image, List<RedactionAnnotation> areas,
                                              Color redactionColor) {
         ImageParams imageParams = imageStream.getImageParams();
         BufferedImage target;
-        PixelWriter writer;
-        if (imageParams.isImageMask()) {
+        boolean stencil = imageParams.isImageMask();
+        boolean grayscale = !stencil && isGrayscale(imageParams);
+        boolean colourKey = !stencil && !grayscale && imageParams.isColorKeyMask();
+        if (stencil) {
             // A stencil says paint or do not paint, one bit per pixel, and takes its colour from
             // whatever fill colour is in force - so there is nothing here to fill with the redaction
             // colour.  Converting it to RGB like any other image threw away the one bit that
@@ -189,24 +194,31 @@ public class ImageBurner {
             // RGB samples, which no reader can make sense of.  Setting its samples to paint leaves
             // the region solid instead of showing what was drawn.
             target = image;
-            writer = sample(paintSample(image));
-        } else if (isGrayscale(imageParams)) {
+        } else if (grayscale) {
             // A greyscale image stays greyscale.  Converting it to RGB the way everything else is
             // converted triples its data for no visible difference, which on a scanned page - the
             // common thing to redact - is most of the file.
             target = toGrayscale(image);
-            writer = sample(luminance(redactionColor));
-        } else if (imageParams.isColorKeyMask()) {
+        } else if (colourKey) {
             // Needs the alpha channel: encodeColorKeyMask reads it back to work out which pixels
             // were masked out, so the burned pixels have to be explicitly opaque.
             target = asType(image, BufferedImage.TYPE_INT_ARGB);
-            writer = colour(redactionColor, true);
         } else {
             // A new image to get around the indexed colour space issue.
             target = asType(image, BufferedImage.TYPE_INT_RGB);
-            writer = colour(redactionColor, false);
         }
-        burnArea(target, placement, redactionPaths, writer);
+        // Each redaction is burned in its own colour.  A stencil has none to burn - its colour comes
+        // from the content stream - so those are the one kind where the annotations cannot disagree.
+        for (RedactionAnnotation annotation : areas) {
+            PixelWriter writer;
+            if (stencil) {
+                writer = sample(paintSample(target));
+            } else {
+                Color colour = colourOf(annotation, redactionColor);
+                writer = grayscale ? sample(luminance(colour)) : colour(colour, colourKey);
+            }
+            burnArea(target, placement, annotation.getMarkupPath(), writer);
+        }
         publish(imageStream, target);
         if (imageParams.isColorKeyMask()) {
             ImageUtility.encodeColorKeyMask(imageStream);
@@ -267,25 +279,52 @@ public class ImageBurner {
      * blended with what was underneath keeps a fraction of the very thing being removed.
      */
     private static void burnArea(BufferedImage image, AffineTransform placement,
-                                 List<GeneralPath> redactionPaths, PixelWriter writer) {
-        AffineTransform toImage = userSpaceToImageSpace(placement, image);
-        Rectangle raster = new Rectangle(0, 0, image.getWidth(), image.getHeight());
+                                 GeneralPath redactionPath, PixelWriter writer) {
+        Shape area = userSpaceToImageSpace(placement, image).createTransformedShape(redactionPath);
+        Rectangle bounds = area.getBounds().intersection(
+                new Rectangle(0, 0, image.getWidth(), image.getHeight()));
         WritableRaster samples = image.getRaster();
-        // Each area walks its own pixels.  Merging them into one shape and walking that instead
-        // sounds tidier and is much worse: a dozen redactions scattered down a page have a combined
-        // bounding box of most of the page, so it tests every pixel on it against a shape made of a
-        // dozen rectangles.  Overlapping areas write the same pixel twice, which costs nothing.
-        for (GeneralPath redactionPath : redactionPaths) {
-            Shape area = toImage.createTransformedShape(redactionPath);
-            Rectangle bounds = area.getBounds().intersection(raster);
-            for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
-                for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
-                    if (area.contains(x + 0.5, y + 0.5)) {
-                        writer.write(samples, x, y);
-                    }
+        for (int y = bounds.y; y < bounds.y + bounds.height; y++) {
+            for (int x = bounds.x; x < bounds.x + bounds.width; x++) {
+                if (area.contains(x + 0.5, y + 0.5)) {
+                    writer.write(samples, x, y);
                 }
             }
         }
+    }
+
+    /**
+     * The same, for the surfaces where every redaction writes the same thing - a stencil's paint
+     * value, a soft mask's opacity - so the colour a redaction was drawn in does not come into it.
+     */
+    private static void burnAreas(BufferedImage image, AffineTransform placement,
+                                  List<RedactionAnnotation> areas, PixelWriter writer) {
+        for (RedactionAnnotation annotation : areas) {
+            burnArea(image, placement, annotation.getMarkupPath(), writer);
+        }
+    }
+
+    /**
+     * The colour this redaction is to be burned in.
+     * <p>
+     * The annotation's own colour wins. It is what the redaction is drawn in on screen, so burning
+     * something else would leave the marker and the pixels underneath it disagreeing - visible on a
+     * scanned page, where the burn <em>is</em> the result. {@link RedactionOptions#getRedactionColor()}
+     * covers a redaction that names no colour, which is what a headless caller building annotations
+     * from search hits produces.
+     * <p>
+     * Read from the dictionary rather than through {@code getColor()}, which is the resolved colour:
+     * {@code RedactionAnnotation.init} substitutes a default of its own for an annotation with no
+     * {@code /C}, so asking it can never report "no colour" and the option would never be reached -
+     * a setting that exists and does nothing, which is worse than not offering it.
+     */
+    private static Color colourOf(RedactionAnnotation annotation, Color fallback) {
+        boolean saysSo = annotation.getEntries().get(Annotation.COLOR_KEY) != null;
+        Color annotationColour = saysSo ? annotation.getColor() : null;
+        if (annotationColour != null) {
+            return annotationColour;
+        }
+        return fallback != null ? fallback : Color.BLACK;
     }
 
     /**

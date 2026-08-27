@@ -59,6 +59,15 @@ public final class RedactionFixtures {
      * @param bounds   area to redact, in page space
      * @return the annotation, not yet added to a page
      */
+    /**
+     * A redaction in a colour of its own, for the cases where the colour is what is being tested.
+     */
+    public static RedactionAnnotation redactionOver(Document document, Rectangle bounds, Color colour) {
+        RedactionAnnotation annotation = redactionOver(document, bounds);
+        annotation.setColor(colour);
+        return annotation;
+    }
+
     public static RedactionAnnotation redactionOver(Document document, Rectangle bounds) {
         Library library = document.getPageTree().getLibrary();
         RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(

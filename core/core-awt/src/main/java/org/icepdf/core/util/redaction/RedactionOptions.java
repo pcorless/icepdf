@@ -117,6 +117,16 @@ public class RedactionOptions {
         return this;
     }
 
+    /**
+     * The colour to burn where a redaction does not name one of its own.
+     * <p>
+     * A redaction annotation carries a colour, and that colour is what the viewer draws its marker
+     * in; it wins, so the marker and the pixels underneath it cannot disagree. This covers the
+     * annotations that carry no {@code /C} - which is what building them from search hits produces,
+     * and so is the colour a headless workflow actually gets.
+     *
+     * @return the fallback redaction colour
+     */
     public Color getRedactionColor() {
         return redactionColor;
     }

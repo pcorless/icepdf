@@ -183,14 +183,17 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     }
 
     /**
-     * The redaction areas that cover this image, in the order they were drawn.
+     * The redactions covering this image, in the order they were drawn.
+     * <p>
+     * The annotations rather than their areas, because each carries the colour it is to be burned
+     * in - the one it is drawn in on screen.
      */
-    private List<GeneralPath> coveringPaths(Rectangle2D imageBounds) {
-        List<GeneralPath> covering = new ArrayList<>(redactionAnnotations.size());
+    private List<RedactionAnnotation> covering(Rectangle2D imageBounds) {
+        List<RedactionAnnotation> covering = new ArrayList<>(redactionAnnotations.size());
         for (RedactionAnnotation annotation : redactionAnnotations) {
             GeneralPath redactionPath = annotation.getMarkupPath();
             if (redactionPath != null && redactionPath.intersects(imageBounds)) {
-                covering.add(redactionPath);
+                covering.add(annotation);
             }
         }
         return covering;
@@ -335,8 +338,8 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         // both corrupt and a leak. It also skipped the image entirely when the list was empty.
         ImageStream imageStream = imageReference.getImageStream();
         Rectangle2D imageBounds = imageReference.getNormalizedBounds();
-        List<GeneralPath> covering = options.redacts(RedactionTarget.IMAGES)
-                ? coveringPaths(imageBounds) : Collections.<GeneralPath>emptyList();
+        List<RedactionAnnotation> covering = options.redacts(RedactionTarget.IMAGES)
+                ? covering(imageBounds) : Collections.<RedactionAnnotation>emptyList();
         boolean burned = !covering.isEmpty();
         if (burned) {
             logger.finer(() -> "Redacting inline image: " + imageStream.getWidth() + "x" + imageStream.getHeight());
@@ -374,7 +377,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         // a dozen redactions drawn on it used to decode, convert and re-publish the whole image a
         // dozen times over - and count itself redacted a dozen times in the report.
         ImageStream imageStream = imageReference.getImageStream();
-        List<GeneralPath> covering = coveringPaths(imageBounds);
+        List<RedactionAnnotation> covering = covering(imageBounds);
         if (covering.isEmpty()) {
             return;
         }
