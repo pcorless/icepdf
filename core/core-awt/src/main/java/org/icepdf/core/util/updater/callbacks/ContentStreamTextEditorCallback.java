@@ -30,6 +30,14 @@ import java.io.IOException;
  * ContentStreamTextEditorCallback is called when a pages content stream has been set for edited content.  The callback
  * is called as a content parsing starts, tokens are parsed and the content stream ends.   The callback writes
  * the original content stream to a new output, removes the text marked as edited and replaces it with the new text.
+ * <p>
+ * <b>Changed in 7.5.0.</b> The constructors no longer take the text being replaced. It was accepted,
+ * stored, handed to every child callback and read by nothing - what is replaced is decided by the
+ * bounds alone - so a caller passing text that disagreed with the bounds was quietly given the
+ * bounds' answer. No compatibility overload is offered: re-accepting an argument that decides
+ * nothing would keep the misdirection with a deprecation warning attached to it. Callers should be
+ * using {@link org.icepdf.core.util.edit.content.TextContentEditor#updateText(org.icepdf.core.pobjects.Page,
+ * java.awt.Rectangle, String)} rather than building a callback themselves.
  *
  * @since 7.3.0
  */
