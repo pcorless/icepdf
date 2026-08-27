@@ -1,0 +1,4 @@
+BT
+/F1 12 Tf
+20 100 Td [ (alpha ) -2500 ( charlie)] TJ
+ET

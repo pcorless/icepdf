@@ -221,6 +221,17 @@ public class ImageParams extends Dictionary {
         return null;
     }
 
+    /**
+     * @return the soft mask's stream, or null when there is no {@code /SMask} or it is not a stream
+     */
+    public ImageStream getSMaskImageStream() {
+        Object maskObj = library.getObject(entries, SMASK_KEY);
+        if (maskObj instanceof ImageStream) {
+            return (ImageStream) maskObj;
+        }
+        return null;
+    }
+
     public DictionaryEntries getDictionary(Name key) {
         return library.getDictionary(entries, key);
     }

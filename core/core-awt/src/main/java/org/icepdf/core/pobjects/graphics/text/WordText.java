@@ -113,6 +113,21 @@ public class WordText extends AbstractText implements TextSelect {
         this.pageRotation = pageRotation;
     }
 
+    /**
+     * An independent copy, glyphs and all. See {@link GlyphText#copy()} for why a placement needs
+     * one.
+     *
+     * @return a copy holding copies of this word's glyphs
+     */
+    public WordText copy() {
+        WordText copy = new WordText(pageRotation);
+        for (GlyphText glyph : glyphs) {
+            copy.addText(glyph.copy());
+        }
+        copy.isWhiteSpace = isWhiteSpace;
+        return copy;
+    }
+
     public int size(){
         return text.length();
     }

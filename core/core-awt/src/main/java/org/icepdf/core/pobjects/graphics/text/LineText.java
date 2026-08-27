@@ -41,6 +41,22 @@ public class LineText extends AbstractText implements TextSelect {
         this.pageRotation = pageRotation;
     }
 
+    /**
+     * An independent copy, words and glyphs and all. See {@link GlyphText#copy()} for why a
+     * placement needs one.
+     *
+     * @return a copy holding copies of this line's words
+     */
+    public LineText copy() {
+        LineText copy = new LineText(pageRotation);
+        List<WordText> copiedWords = new ArrayList<>(words.size());
+        for (WordText word : words) {
+            copiedWords.add(word.copy());
+        }
+        copy.setWords(copiedWords);
+        return copy;
+    }
+
     public Rectangle2D.Double getBounds() {
         // lazy load the bounds as the calculation is very expensive
         if (bounds == null) {

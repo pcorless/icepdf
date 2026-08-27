@@ -489,7 +489,7 @@ public class ImageUtility {
 
         ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
         int[] maskMinRGB = colorKeyMask.getMaskMinRGB();
-        int[] maskMaxRGB = colorKeyMask.getMaskMinRGB();
+        int[] maskMaxRGB = colorKeyMask.getMaskMaxRGB();
 
         int width = image.getWidth();
         int height = image.getHeight();

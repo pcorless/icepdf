@@ -27,6 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.PdfNumberFormat;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.*;
@@ -509,6 +510,23 @@ public abstract class AbstractContentParser {
                 OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
                 optionalContent.init();
                 if (!optionalContent.isVisible(oc)) {
+                    // Not painting it does not remove it.  The form's content stream is still in the
+                    // file with whatever text it draws, kept out of sight by nothing more than a
+                    // visibility flag - turn the layer on, or run text extraction, and it is back.
+                    // So a rewrite still descends into the form; it is only the painting that the
+                    // visibility decides.  Note the CTM is copied rather than concatenated into:
+                    // getCTM() hands out the live transform.
+                    if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
+                        formXObject.setParentResources(resources);
+                        AffineTransform hiddenTransform = new AffineTransform(graphicState.getCTM());
+                        hiddenTransform.concatenate(formXObject.getMatrix());
+                        ContentStreamCallback hiddenCallback =
+                                contentStreamCallback.createChildInstance(hiddenTransform);
+                        formXObject.init(hiddenCallback);
+                        if (formXObject.getShapes() != null) {
+                            hiddenCallback.endContentStream();
+                        }
+                    }
                     return graphicState;
                 }
             }
@@ -528,8 +546,11 @@ public abstract class AbstractContentParser {
             formXObject.setParentResources(resources);
             // need a new instance, so we don't corrupt the stream offset.
             ContentStreamCallback formContentStreamRedactorCallback = null;
-            if (contentStreamCallback != null) {
-                AffineTransform xObjectTransform = graphicState.getCTM();
+            if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
+                // Copied, not taken: getCTM() hands out the live transform, so concatenating into
+                // it leaves the form's /Matrix applied to the graphics state itself - and the af
+                // built two lines below then applies the same matrix a second time.
+                AffineTransform xObjectTransform = new AffineTransform(graphicState.getCTM());
                 xObjectTransform.concatenate(formXObject.getMatrix());
                 formContentStreamRedactorCallback = contentStreamCallback.createChildInstance(xObjectTransform);
             }
@@ -622,9 +643,9 @@ public abstract class AbstractContentParser {
                     formXObject.getShapes().getPageText() != null) {
                 // The form XObject is a shared, cached object (one instance per
                 // reference via Library.getObject), so its PageText is shared by
-                // every page that draws the form.  applyXObjectTransform() and
-                // getPageLines() both mutate that PageText in place (transforming
-                // glyph bounds, clearing/re-sorting the line list); two pages
+                // every page that draws the form.  transformedCopy() reads it and
+                // getPageLines() mutates it in place (clearing/re-sorting the line
+                // list); two pages
                 // drawing the same form concurrently corrupt each other's state
                 // and throw mid-parse (NPE in sortAndFormatText/LineText.getBounds),
                 // which aborts the page's content stream and drops all content
@@ -633,31 +654,34 @@ public abstract class AbstractContentParser {
                 // the same form can't interleave; different forms still parallelize.
                 PageText pageText = formXObject.getShapes().getPageText();
                 synchronized (pageText) {
-                    // normalize each sprite.
-                    AffineTransform pageSpace = graphicState.getCTM();
+                    // The form's text describes the form's own space and the form may be drawn more
+                    // than once, so each placement takes a copy mapped into page space rather than
+                    // transforming the shared tree.  Sharing it meant every placement reported the
+                    // position of whichever was transformed last - a repeated header or logo gave
+                    // the wrong coordinates for all but one of its appearances, and text selection
+                    // with it.
+                    AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
                     pageSpace.concatenate(formXObject.getMatrix());
-                    pageText.applyXObjectTransform(pageSpace);
-                    // add the text to the current shapes for extraction and
-                    // selection purposes.
                     if (pageText.getPageLines() != null) {
-                        shapes.getPageText().addPageLines(
-                                pageText.getPageLines());
+                        shapes.getPageText().addPageLines(pageText.transformedCopy(pageSpace));
                     }
                 }
             }
             // Some Do object will have images, and we need to make sure we account for localized space.
-            if (contentStreamCallback != null &&
+            if (formContentStreamRedactorCallback != null &&
                     formXObject.getShapes() != null) {
                 formContentStreamRedactorCallback.endContentStream();
                 Shapes pageShapes = formXObject.getShapes();
                 ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
                 for (DrawCmd object : xObjectShapes) {
                     if (object instanceof ImageDrawCmd) {
+                        // af is already CTM x the form's Matrix, which is where the form's images
+                        // land on the page.
                         ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                        ImageStream imageStream = imageDrawCmd.getImageStream();
-                        AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
-                        pageSpace.concatenate(formXObject.getMatrix());
-                        imageStream.setGraphicsTransformMatrix(af);
+                        imageDrawCmd.getImageStream().setGraphicsTransformMatrix(af);
+                        if (imageDrawCmd.getImageReference() != null) {
+                            imageDrawCmd.getImageReference().setPlacement(af);
+                        }
                     }
                 }
             }
@@ -689,6 +713,10 @@ public abstract class AbstractContentParser {
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, xobjectName, resources, graphicState,
                         imageIndex.get(), page);
+                // Where this placement sits.  Recorded on the reference, which is created per Do,
+                // rather than only on the image stream, which is shared by every placement of the
+                // image across the whole document.
+                imageReference.setPlacement(af);
                 imageIndex.incrementAndGet();
 
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
@@ -1013,12 +1041,21 @@ public abstract class AbstractContentParser {
                                                LinkedList<OptionalContents> oCGs,
                                                ContentStreamCallback contentStreamCallback) throws IOException {
         StringObject stringObject = (StringObject) stack.pop();
-        graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
-        graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
+        float characterSpacing = ((Number) stack.pop()).floatValue();
+        float wordSpacing = ((Number) stack.pop()).floatValue();
+        graphicState.getTextState().cspace = characterSpacing;
+        graphicState.getTextState().wspace = wordSpacing;
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        // A rewritten string is shown with TJ, which sets no spacing and advances no line, so both
+        // have to be restated ahead of it. Only worth building when a callback is there to write
+        // it; every other parse of this operator would discard it.
+        String showPrefix = contentStreamCallback == null ? null
+                : PdfNumberFormat.format(wordSpacing) + " Tw " +
+                        PdfNumberFormat.format(characterSpacing) + " Tc T* ";
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, showPrefix);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
@@ -1030,7 +1067,8 @@ public abstract class AbstractContentParser {
             throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, "T* ");
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1191,9 +1229,17 @@ public abstract class AbstractContentParser {
     protected static void consume_BDC(Stack<Object> stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
-                                      Resources resources) throws InterruptedException {
+                                      Resources resources,
+                                      ContentStreamCallback contentStreamCallback,
+                                      int pos) throws InterruptedException, IOException {
         Object properties = stack.pop();// properties
         Name tag = (Name) stack.pop();// tag
+        // The operator's bytes were held back for this - a property list can carry text of its own,
+        // and a rewrite has to get at it before it is copied through.  Whatever happens here, the
+        // callback writes the operator out.
+        if (contentStreamCallback != null) {
+            contentStreamCallback.checkAndModifyMarkedContent(tag, properties, pos);
+        }
         OptionalContents optionalContents = null;
         // try and process the Optional content.
         if (tag.equals(OptionalContent.OC_KEY)) {
@@ -1502,7 +1548,7 @@ public abstract class AbstractContentParser {
         }
         graphicState.set(tmp);
         if (contentStreamCallback != null) {
-            contentStreamCallback.writeModifiedStringObject(textOperators, Operands.TJ);
+            contentStreamCallback.writeModifiedStringObject(textOperators, null);
         }
     }
 
@@ -1512,6 +1558,23 @@ public abstract class AbstractContentParser {
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
                                      ContentStreamCallback contentStreamCallback) throws IOException {
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, null);
+    }
+
+    /**
+     * @param showPrefix content stream text that has to be emitted ahead of a rewritten string to
+     *                   preserve what the original operator did beyond showing text - the line
+     *                   advance of ' and ", and the spacing " also sets. Null for a plain Tj, whose
+     *                   bytes carry no other meaning.
+     */
+    protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
+                                     Shapes shapes,
+                                     TextMetrics textMetrics,
+                                     GlyphOutlineClip glyphOutlineClip,
+                                     LinkedList<OptionalContents> oCGs,
+                                     ContentStreamCallback contentStreamCallback,
+                                     String showPrefix) throws IOException {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1541,7 +1604,7 @@ public abstract class AbstractContentParser {
                 graphicState.set(tmp);
                 // pass them back to the redactor,
                 if (contentStreamCallback != null) {
-                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj);
+                    contentStreamCallback.writeModifiedStringObject(textOperators, showPrefix);
                 }
             }
         }
@@ -1610,6 +1673,13 @@ public abstract class AbstractContentParser {
                         textLength,
                         new AffineTransform(graphicState.getCTM()),
                         new AffineTransform(textState.tmatrix));
+        textSprites.setCharSpacing(characterSpace);
+        textSprites.setWordSpacing(whiteSpace);
+        // Tf size. Without this the sprite reports a font size of zero, and anything converting a
+        // displacement into thousandths of an em - a TJ adjustment, for one - is left dividing by
+        // nothing.
+        textSprites.setFontSize(textState.tsize);
+        textSprites.setVerticalWriting(isVerticalWriting);
 
         // glyph placement params
         float currentX, currentY;

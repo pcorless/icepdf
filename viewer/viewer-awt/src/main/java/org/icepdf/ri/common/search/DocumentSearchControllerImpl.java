@@ -756,6 +756,11 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      *
      * @param searchTerm search term to remove.
      */
+    @Override
+    public List<SearchTerm> getSearchTerms() {
+        return searchModel.getSearchTerms();
+    }
+
     public void removeSearchTerm(SearchTerm searchTerm) {
         searchModel.removeSearchTerm(searchTerm);
     }

@@ -263,7 +263,11 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             char[] chars = line.toCharArray();
             StringBuilder hex = new StringBuilder();
             for (char aChar : chars) {
-                hex.append(Integer.toHexString(aChar));
+                // Four digits each, always, high byte first. A hex string is split back into codes
+                // by position, so an unpadded value such as 0x100 written as "100" shifts every
+                // code after it by a nibble and the string decodes to something else entirely.
+                AbstractStringObject.appendHexByte(hex, aChar >> 8);
+                AbstractStringObject.appendHexByte(hex, aChar);
             }
             content.append('<').append(hex).append(">' ");
         }

@@ -179,5 +179,23 @@ class DocumentSearchControllerImplTest {
     void getComponentsFor_negativePageIndex_returnsEmptySet() {
         assertTrue(controller.getComponentsFor(-1).isEmpty());
     }
-}
 
+    /**
+     * Redaction reads the terms back off the controller to remove the same words from bookmarks,
+     * comments and metadata, so the accessor is part of that contract rather than a convenience.
+     */
+    @Test
+    void getSearchTerms_returnsWhatWasAdded() {
+        controller.addSearchTerm("alpha", false, false);
+        controller.addSearchTerm("bravo", false, false);
+
+        assertEquals(2, controller.getSearchTerms().size());
+        assertTrue(controller.getSearchTerms().stream()
+                .anyMatch(term -> "bravo".equals(term.getTerm())));
+    }
+
+    @Test
+    void getSearchTerms_isEmptyBeforeAnySearch() {
+        assertTrue(controller.getSearchTerms().isEmpty());
+    }
+}

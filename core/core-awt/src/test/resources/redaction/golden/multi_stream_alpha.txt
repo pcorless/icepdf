@@ -1,0 +1,7 @@
+BT
+/F1 12 Tf
+20 100 Td [ -2500 ( bravo)] TJ
+20 -20 Td
+(charlie delta)
+Tj
+ET

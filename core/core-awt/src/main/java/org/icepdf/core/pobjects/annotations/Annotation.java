@@ -1387,6 +1387,66 @@ public abstract class Annotation extends Dictionary {
         return false;
     }
 
+    /**
+     * The transform from an appearance stream's own coordinates to the annotation's rectangle, per
+     * PDF 32000-1 12.5.5.
+     *
+     * @param appearanceState appearance being drawn
+     * @return transform from appearance space to the annotation's space
+     */
+    protected AffineTransform getAppearanceToAnnotationSpace(AppearanceState appearanceState) {
+        AffineTransform matrix = appearanceState.getMatrix();
+        Rectangle2D bbox = appearanceState.getBbox();
+
+        // step 1. appearance bounding box (BBox) is transformed, using
+        // Matrix, to produce a quadrilateral with arbitrary orientation.
+        Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
+
+        // Step 2. matrix is computed that scales and translates the
+        // transformed appearance box (tBbox) to align with the edges of
+        // the annotation's rectangle (Ret).
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform tAs = AffineTransform.getScaleInstance(
+                (rect.getWidth() / tBbox.getWidth()),
+                (rect.getHeight() / tBbox.getHeight()));
+
+        // check for identity transformation
+        // we have to be careful in such as case as the coordinates of the annotation may actually
+        // be in page space.  If the rectangle in page pace is more or less the same location
+        // as the tbbox then we know the annotation coordinate space must also be in page space.
+        // Thus, we shift back to page space.
+        if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -rect.getX(), -rect.getY());
+        } else {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
+        }
+        // Step 3. matrix is concatenated with A to form a matrix AA
+        // that maps from the appearance's coordinate system to the
+        // annotation's rectangle in default user space.
+        tAs.concatenate(matrix);
+        return tAs;
+    }
+
+    /**
+     * The transform from an appearance stream's own coordinates to page space.
+     * <p>
+     * Rendering does not need this: the graphics context is already positioned at the annotation, so
+     * {@link #getAppearanceToAnnotationSpace} leaves off the final step. Anything reasoning about
+     * where the appearance's content actually sits on the page - a redaction deciding whether a
+     * glyph inside it falls under a rectangle - needs the whole way there.
+     *
+     * @param appearanceState appearance to locate
+     * @return transform from appearance space to page space
+     */
+    public AffineTransform getAppearanceToPageSpace(AppearanceState appearanceState) {
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform toPage = AffineTransform.getTranslateInstance(rect.getX(), rect.getY());
+        toPage.concatenate(getAppearanceToAnnotationSpace(appearanceState));
+        return toPage;
+    }
+
     protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
@@ -1399,35 +1459,7 @@ public abstract class Annotation extends Dictionary {
 //            Rectangle2D.Float newRect = deriveDrawingRectangle();
 //            g.draw( newRect );
 
-            // step 1. appearance bounding box (BBox) is transformed, using
-            // Matrix, to produce a quadrilateral with arbitrary orientation.
-            Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
-
-            // Step 2. matrix is computed that scales and translates the
-            // transformed appearance box (tBbox) to align with the edges of
-            // the annotation's rectangle (Ret).
-            Rectangle2D rect = getUserSpaceRectangle();
-            AffineTransform tAs = AffineTransform.getScaleInstance(
-                    (rect.getWidth() / tBbox.getWidth()),
-                    (rect.getHeight() / tBbox.getHeight()));
-
-            // check for identity transformation
-            // we have to be careful in such as case as the coordinates of the annotation may actually
-            // be in page space.  If the rectangle in page pace is more or less the same location
-            // as the tbbox then we know the annotation coordinate space must also be in page space.
-            // Thus, we shift back to page space.
-            if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -rect.getX(), -rect.getY());
-            } else {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
-            }
-            // Step 3. matrix is concatenated with A to form a matrix AA
-            // that maps from the appearance's coordinate system to the
-            // annotation's rectangle in default user space.
-            tAs.concatenate(matrix);
-            g.transform(tAs);
+            g.transform(getAppearanceToAnnotationSpace(appearanceState));
 
             AffineTransform preAf = g.getTransform();
             boolean paintFailed = false;

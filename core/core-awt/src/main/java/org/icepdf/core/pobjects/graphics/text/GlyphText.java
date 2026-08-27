@@ -73,6 +73,38 @@ public class GlyphText extends AbstractText {
     }
 
     /**
+     * An independent copy, in whatever space this glyph currently occupies.
+     * <p>
+     * A form XObject drawn more than once has one parsed text tree and several placements. The tree
+     * describes the glyphs in the form's own space, and each placement maps that space somewhere
+     * different on the page, so a placement needs glyphs of its own to map - sharing them means the
+     * last placement's transform is the one every placement reports.
+     * <p>
+     * Deliberately does not copy selection or highlight state: a copy belongs to a placement that
+     * nobody has interacted with yet.
+     *
+     * @return a copy carrying the same character and geometry, with its own mutable bounds
+     */
+    public GlyphText copy() {
+        GlyphText copy = new GlyphText(x, y, advanceX, advanceY,
+                new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height),
+                pageRotation, cid, unicode, fontName);
+        copy.writeDx = writeDx;
+        copy.writeDy = writeDy;
+        copy.fontSubTypeFormat = fontSubTypeFormat;
+        copy.flagged = flagged;
+        if (textExtractionBounds != null) {
+            copy.textExtractionBounds = new Rectangle2D.Double(textExtractionBounds.x,
+                    textExtractionBounds.y, textExtractionBounds.width, textExtractionBounds.height);
+        }
+        if (textSelectionBounds != null) {
+            copy.textSelectionBounds = new Rectangle2D.Double(textSelectionBounds.x,
+                    textSelectionBounds.y, textSelectionBounds.width, textSelectionBounds.height);
+        }
+        return copy;
+    }
+
+    /**
      * Maps the glyph bounds to user space
      *
      * @param af transform from glyph space to user space
@@ -170,6 +202,16 @@ public class GlyphText extends AbstractText {
 
     public float getAdvanceX() {
         return advanceX;
+    }
+
+    /**
+     * Advance along the vertical axis, the counterpart of {@link #getAdvanceX()} used when the font
+     * writes vertically.
+     *
+     * @return glyph advance in the y direction
+     */
+    public float getAdvanceY() {
+        return advanceY;
     }
 
     public float getY() {

@@ -68,6 +68,9 @@ module org.icepdf.core {
     exports org.icepdf.core.util;
     exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
+    // The redaction API: requests, options and the report a caller reads after saving.  Not exported
+    // before now, so nothing outside core could configure a redaction or see what one did.
+    exports org.icepdf.core.util.redaction;
     exports org.icepdf.core.util.updater;
     exports org.icepdf.core.pobjects.fonts.builders;
 

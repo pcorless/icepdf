@@ -22,8 +22,6 @@ import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -46,10 +44,8 @@ public class ImageStream extends Stream {
     private ImageParams imageParams;
 
     private AffineTransform graphicsTransformMatrix;
-    private Rectangle2D normalizedBounds;
     private BufferedImage decodedImage;
 
-    private static final Rectangle2D baseImageRectangle = new Rectangle2D.Float(0, 0, 1, 1);
 
     public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
@@ -179,20 +175,16 @@ public class ImageStream extends Stream {
         return decodedImage;
     }
 
+    /**
+     * @param af CTM in force at the {@code Do} being parsed
+     * @deprecated an image XObject is shared by every placement of it in the document, so a
+     * transform kept here only ever describes the last one parsed. Where a placement is drawn now
+     * lives on {@link org.icepdf.core.pobjects.graphics.images.references.ImageReference}, which is
+     * created per {@code Do}. Retained because the parser still records it for painting.
+     */
+    @Deprecated
     public void setGraphicsTransformMatrix(AffineTransform af) {
         graphicsTransformMatrix = af;
-    }
-
-    public AffineTransform getGraphicsTransformMatrix() {
-        return graphicsTransformMatrix;
-    }
-
-    public Rectangle2D getNormalizedBounds() {
-        if (normalizedBounds == null) {
-            Path2D.Double generalPath = new Path2D.Double(baseImageRectangle, graphicsTransformMatrix);
-            normalizedBounds = generalPath.getBounds2D();
-        }
-        return normalizedBounds;
     }
 
     public int getWidth() {

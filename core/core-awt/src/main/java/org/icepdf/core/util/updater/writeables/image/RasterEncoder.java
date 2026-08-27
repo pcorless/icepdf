@@ -103,8 +103,13 @@ public class RasterEncoder implements ImageEncoder {
         try (MemoryCacheImageOutputStream memoryCacheImageOutputStream =
                      new MemoryCacheImageOutputStream(byteArrayOutputStream)) {
             for (int y = 0; y < height; y++) {
-                for (int pixel : image.getRGB(0, y, width, 1, lineBuffer, 0, width)) {
-                    memoryCacheImageOutputStream.writeBits(pixel & 0xFF, bitPerComponent);
+                // Read through the raster, not getRGB.  A greyscale image's samples are stored
+                // linearly and getRGB converts them to sRGB on the way out, so a sample of 160 comes
+                // back as 208 and the image written is not the image that was burned.  That matters
+                // most for a soft mask, whose samples are alpha values rather than colours.
+                image.getRaster().getSamples(0, y, width, 1, 0, lineBuffer);
+                for (int sample : lineBuffer) {
+                    memoryCacheImageOutputStream.writeBits(sample, bitPerComponent);
                 }
                 int bitOffset = memoryCacheImageOutputStream.getBitOffset();
                 if (bitOffset != 0) {

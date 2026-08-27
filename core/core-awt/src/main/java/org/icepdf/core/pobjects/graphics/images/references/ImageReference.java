@@ -31,6 +31,7 @@ import org.icepdf.core.util.Library;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -50,6 +51,9 @@ import java.util.logging.Logger;
  * @since 5.0
  */
 public abstract class ImageReference implements Callable<BufferedImage> {
+
+    /** An image occupies the unit square in user space; the CTM puts it where it is drawn. */
+    private static final Rectangle2D UNIT_SQUARE = new Rectangle2D.Float(0, 0, 1, 1);
 
     private static final Logger logger =
             Logger.getLogger(ImageReference.class.getName());
@@ -71,6 +75,12 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     protected Name xobjectName;
 
     protected int imageIndex;
+
+    // The CTM in force at the Do that created this reference: where this particular placement of the
+    // image sits on the page.  Held here rather than on the ImageStream because an image XObject is
+    // shared - one instance serves every placement on every page - so a transform stored there is
+    // only ever the last one set.
+    protected AffineTransform placement;
     protected Page parentPage;
     /**
      * Set when the most recent {@link #createImage()} failed <em>transiently</em>
@@ -127,6 +137,35 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * image is published to the {@link ImagePool} as soon as the decode finishes (closing the window between
      * decode completion and the first {@code getImage()} call), and the in-flight marker is always cleared.
      */
+    /**
+     * Where this placement of the image sits, as the unit square mapped by the CTM in force at its
+     * {@code Do}.
+     * <p>
+     * An image occupies the unit square in user space, so its bounds on the page are that square
+     * transformed. Computed rather than cached: the same image drawn twice has two placements, and a
+     * value remembered against the shared image stream describes only one of them.
+     *
+     * @return bounds in page space, or null when no placement was recorded
+     */
+    public Rectangle2D getNormalizedBounds() {
+        if (placement == null) {
+            return null;
+        }
+        return new Path2D.Double(UNIT_SQUARE, placement).getBounds2D();
+    }
+
+    /**
+     * @param placement CTM in force at this placement's {@code Do}; kept as given, so callers pass a
+     *                  snapshot rather than the live graphics state
+     */
+    public void setPlacement(AffineTransform placement) {
+        this.placement = placement;
+    }
+
+    public AffineTransform getPlacement() {
+        return placement;
+    }
+
     protected void submitDecode() {
         final ImagePool imagePool = imageStream.getLibrary().getImagePool();
         FutureTask<BufferedImage> mine = new FutureTask<BufferedImage>(this) {

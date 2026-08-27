@@ -25,6 +25,9 @@ import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
+import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.redaction.RedactionVerifier;
+import org.icepdf.core.util.redaction.RedactionRequest;
 import org.icepdf.core.util.redaction.Redactor;
 import org.icepdf.core.util.updater.writeables.BaseWriter;
 
@@ -46,6 +49,11 @@ import java.util.logging.Logger;
  * @since 7.2.0
  */
 public class FullUpdater {
+
+    // carried between the outer write, which knows the caller's document, and the inner write, which
+    // is the only place the redaction actually happens
+    private RedactionRequest redactionRequest;
+    private RedactionReport redactionReport;
 
     private static final Logger logger =
             Logger.getLogger(FullUpdater.class.getName());
@@ -77,6 +85,15 @@ public class FullUpdater {
      * @throws java.io.IOException  error writing stream.
      * @throws InterruptedException
      */
+    /**
+     * @return true when the caller asked for words to be removed from content that has no position
+     * on a page, which no redaction annotation can express
+     */
+    private static boolean hasTermRedactions(Document document) {
+        RedactionRequest request = document.getRedactionRequest();
+        return request != null && request.hasTerms();
+    }
+
     public long writeDocument(
             Document document, OutputStream outputStream)
             throws IOException, InterruptedException {
@@ -89,13 +106,22 @@ public class FullUpdater {
         long bytesWritten = writeDocument(document, tmpOutputStream, false);
         tmpOutputStream.close();
 
-        // open the copy and burn the redactions to the specified outputStream
-        if (stateManager.hasRedactions()) {
+        // open the copy and burn the redactions to the specified outputStream.  Terms count as much
+        // as annotations here: a request that only names words to remove has nothing on any page,
+        // but it still has work to do in bookmarks, field values, destinations and metadata.
+        if (stateManager.hasRedactions() || hasTermRedactions(document)) {
+            // The burn runs on the reopened copy below, which knows nothing of the document the
+            // caller configured, so the request travels with the updater instead.
+            // A document saved with redaction annotations and no configuration still redacts, and
+            // still gets verified; the defaults stand in for the request the caller did not make.
+            redactionRequest = document.getRedactionRequest() != null
+                    ? document.getRedactionRequest() : RedactionRequest.ofAnnotations();
             Document tmpDocument = new Document();
             tmpRedactionOutputStream = new FileOutputStream(tmpRedactionFilePath.toFile());
             try {
                 tmpDocument.setFile(tmpFilePath.toString());
                 bytesWritten = writeDocument(tmpDocument, tmpRedactionOutputStream, true);
+                document.setRedactionReport(redactionReport);
             } catch (PDFSecurityException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -119,6 +145,12 @@ public class FullUpdater {
                 File tempFile = currentPath.toFile();
                 DocumentSigner.signDocument(tmpDocument, tempFile,
                         signatureManager.getCurrentSignatureDictionary());
+            }
+            // Verify the bytes that are about to be handed to the caller, not the in-memory
+            // document: re-reading the objects the burn just produced would only confirm what the
+            // burn already believes, which is the thing being checked.
+            if (redactionReport != null && redactionRequest.getOptions().isVerify()) {
+                RedactionVerifier.verify(currentPath, document, redactionRequest, redactionReport);
             }
             Files.copy(currentPath, outputStream);
         } catch (Exception e) {
@@ -154,7 +186,9 @@ public class FullUpdater {
         // burn any redaction annotation into the content and image streams
         // all changes are made to the state manager and will be written out to the new document
         if (redact) {
-            Redactor.burnRedactions(document);
+            // The document being burned here is a reopened copy, so the caller's request has to be
+            // handed across; the report goes back the same way once the burn is done.
+            redactionReport = Redactor.redact(document, redactionRequest);
         }
 
         synchronized (mappedFileByteBufferLock) {
