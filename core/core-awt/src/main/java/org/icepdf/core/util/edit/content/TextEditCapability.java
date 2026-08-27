@@ -167,7 +167,16 @@ public class TextEditCapability {
      * The font the replacement would be written in: the one belonging to the first glyph of the
      * selection, in the order the page draws them, which is the run the writer replaces.
      */
-    private static Font fontAt(Page page, Rectangle bounds) throws InterruptedException {
+    /**
+     * The font the replacement would be written in, which a caller building a substitute needs to
+     * match the style of.
+     *
+     * @param page   page being edited
+     * @param bounds area of the text being replaced
+     * @return the font, or null when no glyph there could be resolved to one
+     * @throws InterruptedException if resolving the page's fonts is interrupted
+     */
+    public static Font fontAt(Page page, Rectangle bounds) throws InterruptedException {
         if (page.getViewText() == null || bounds == null) {
             return null;
         }

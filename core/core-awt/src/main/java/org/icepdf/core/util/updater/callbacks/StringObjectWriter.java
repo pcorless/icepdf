@@ -318,7 +318,15 @@ public abstract class StringObjectWriter {
     }
 
     protected static void writeDelimiterStart(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
-        int fontSubType = glyphText.getFontSubTypeFormat();
+        writeDelimiterStart(glyphText.getFontSubTypeFormat(), contentOutputStream);
+    }
+
+    /**
+     * The delimiter follows the format the codes inside it are written in, which is not always the
+     * format of the run being replaced: text written in a substitute font is single-byte and belongs
+     * in a literal string even when the run it replaces was hex.
+     */
+    protected static void writeDelimiterStart(int fontSubType, ByteArrayOutputStream contentOutputStream) {
         char delimiter = fontSubType == Font.SIMPLE_FORMAT ? '(' : '<';
         contentOutputStream.write(' ');
         contentOutputStream.write(delimiter);
@@ -334,7 +342,12 @@ public abstract class StringObjectWriter {
      */
     protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream)
             throws IOException {
-        char delimiter = glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT ? ')' : '>';
+        writeDelimiterEnd(glyphText.getFontSubTypeFormat(), contentOutputStream);
+    }
+
+    protected static void writeDelimiterEnd(int fontSubType, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
         contentOutputStream.write(delimiter);
     }
 

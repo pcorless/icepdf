@@ -40,8 +40,16 @@ public class TextContentEditor {
     public static void updateText(Page page, String text, Rectangle textBounds, String newText) throws InterruptedException,
             IOException {
         Library library = page.getLibrary();
+        // When the run's own font cannot write the replacement - which is the ordinary case for a
+        // subsetted composite font, since it holds the characters the document already used and no
+        // others - the text is written in a substitute instead. Refusing would be the alternative,
+        // and for the small corrections this exists for it is the worse one.
+        SubstituteFont substitute = null;
+        if (!TextEditCapability.canEdit(page, textBounds, newText)) {
+            substitute = SubstituteFont.forText(page, TextEditCapability.fontAt(page, textBounds), newText);
+        }
         ContentStreamTextEditorCallback contentStreamCallback =
-                new ContentStreamTextEditorCallback(library, text, textBounds, newText);
+                new ContentStreamTextEditorCallback(library, text, textBounds, newText, substitute);
         page.init(contentStreamCallback);
         contentStreamCallback.endContentStream();
     }

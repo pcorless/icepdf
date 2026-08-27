@@ -18,6 +18,7 @@ package org.icepdf.core.util.updater.callbacks;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.edit.content.SubstituteFont;
 import org.icepdf.core.util.edit.content.TextStringObjectWriter;
 
 import java.awt.*;
@@ -40,7 +41,15 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
 
     public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText) {
-        super(library, new TextStringObjectWriter(newText));
+        this(library, text, textBounds, newText, null);
+    }
+
+    /**
+     * @param substitute font to write the replacement in when the run's own cannot express it
+     */
+    public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
+                                           SubstituteFont substitute) {
+        super(library, new TextStringObjectWriter(newText, substitute));
         this.newText = newText;
         this.text = text;
         this.textBounds = textBounds;

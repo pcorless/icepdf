@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -113,6 +114,43 @@ public class CidFontEditTest {
         } finally {
             document.dispose();
         }
+    }
+
+
+    /**
+     * "brave" needs an "e", which the subset has no code for. Rather than refuse the correction -
+     * and correcting a scanning error is the reason to edit at all - the replacement is written in a
+     * substitute font, embedded into the document for the purpose.
+     */
+    @DisplayName("a character the subset lacks is written in a substitute font")
+    @Test
+    public void substitutesWhenTheSubsetCannotWriteIt() throws Exception {
+        byte[] edited = edit("bravo", "brave");
+
+        String text = RedactionFixtures.extractedText(edited);
+        assertTrue(text.contains("brave"), "the correction should be readable, got: " + text);
+        assertTrue(text.contains("alpha"), "and the untouched word left alone, got: " + text);
+
+        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        assertTrue(raw.contains("FontFile2"),
+                "the substitute should be embedded, not merely referenced");
+        String streams = RedactionFixtures.contentStreams(edited, false);
+        assertTrue(streams.contains("Tf"), "the substitute has to be selected:\n" + streams);
+        assertFalse(streams.contains("0000"),
+                "and nothing written as notdef:\n" + streams);
+    }
+
+    /**
+     * The control. Substituting when the font can do the job would change the look of an edit for no
+     * reason, and would add a font to every document edited.
+     */
+    @DisplayName("no substitute is added when the font can write the text itself")
+    @Test
+    public void doesNotSubstituteWhenTheFontSuffices() throws Exception {
+        byte[] edited = edit("bravo", "loop");
+
+        assertFalse(new String(edited, StandardCharsets.ISO_8859_1).contains("FontFile2"),
+                "the subset can write loop, so nothing should have been embedded");
     }
 
     // -- helpers ---------------------------------------------------------------------------------
