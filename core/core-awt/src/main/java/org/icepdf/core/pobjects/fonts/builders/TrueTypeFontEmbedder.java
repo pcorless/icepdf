@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Helper class to create a subset of a TrueType font for embedding in a PDF.  This class is based on
@@ -32,10 +33,16 @@ import java.util.*;
  */
 public class TrueTypeFontEmbedder {
 
+    private static final Logger LOGGER = Logger.getLogger(TrueTypeFontEmbedder.class.toString());
+
     private static final String BASE25 = "BCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private ZFontTrueType fontFile;
     private Set<Integer> subsetCodePoints = new HashSet<>();
+
+    // which kind of font the declared text needs, worked out once - see requiresCompositeFont()
+    private boolean composite;
+    private boolean compositeDecided;
 
     // subset info
     private Map<Integer, Integer> gidToCid;
@@ -54,7 +61,47 @@ public class TrueTypeFontEmbedder {
     }
 
     public void addToSubset(int codePoint) {
+        if (compositeDecided && !composite && !WinAnsiEncoding.canShow(codePoint)) {
+            // Text laid out earlier has already been written with one-byte codes, and the font this
+            // character forces is one where a code is two bytes.  Both cannot be true of one font,
+            // so the earlier text would be read as pairs of the wrong glyphs.  Every caller that
+            // lays out more than one run has to declare all of it before laying out any.
+            LOGGER.warning("U+" + Integer.toHexString(codePoint).toUpperCase()
+                    + " needs a composite font but text has already been laid out for a simple one;"
+                    + " it will not be shown correctly");
+        }
         subsetCodePoints.add(codePoint);
+    }
+
+    /**
+     * Declares text the font will have to show, without laying any of it out.
+     * <p>
+     * Which kind of font gets built is a property of all the text that shares it, so a caller that
+     * lays out several runs has to say what they all are first.  One run of Japanese in the fourth
+     * line of a signature appearance decides the font for the three Latin lines above it.
+     *
+     * @param text text that will be shown in this font
+     */
+    public void addToSubset(String text) {
+        text.codePoints().forEach(this::addToSubset);
+    }
+
+    /**
+     * Whether the text declared so far needs a composite font, which is decided by whether any of it
+     * falls outside what a simple font's one-byte WinAnsiEncoding codes can reach.
+     * <p>
+     * The answer is latched the first time it is asked for.  The question gets asked once while text
+     * is being laid out and again when the font dictionary is built, and an answer that changed in
+     * between would describe the codes with a font that does not match them.
+     *
+     * @return true if a Type 0 font is needed
+     */
+    public boolean requiresCompositeFont() {
+        if (!compositeDecided) {
+            composite = SimpleFontFactory.requiresCompositeFont(subsetCodePoints);
+            compositeDecided = true;
+        }
+        return composite;
     }
 
     public boolean isFontEmbeddable() {

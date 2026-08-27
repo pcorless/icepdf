@@ -64,6 +64,8 @@ public class SigningFixture {
     private String reason = "Certification";
     private boolean appearance;
     private BufferedImage signatureImage;
+    private String signerName;
+    private String appearanceFont;
 
     private SigningFixture(File source) {
         this.source = source;
@@ -95,6 +97,23 @@ public class SigningFixture {
     public SigningFixture withAppearance(BufferedImage signatureImage) {
         this.signatureImage = signatureImage;
         return withAppearance();
+    }
+
+    /**
+     * Overrides the name drawn in the appearance, which is otherwise the certificate's.
+     */
+    public SigningFixture signerName(String signerName) {
+        this.signerName = signerName;
+        return this;
+    }
+
+    /**
+     * The face the appearance is drawn with.  Worth naming when the text needs glyphs the default
+     * face does not have - a font returns glyph 0 for a character it lacks rather than failing.
+     */
+    public SigningFixture appearanceFont(String appearanceFont) {
+        this.appearanceFont = appearanceFont;
+        return this;
     }
 
     /**
@@ -134,7 +153,10 @@ public class SigningFixture {
         if (appearance) {
             SignatureAppearanceModelImpl appearanceModel = new SignatureAppearanceModelImpl(library);
             appearanceModel.setLocale(Locale.ENGLISH);
-            appearanceModel.setName(signatureDictionary.getName());
+            appearanceModel.setName(signerName != null ? signerName : signatureDictionary.getName());
+            if (appearanceFont != null) {
+                appearanceModel.setFontName(appearanceFont);
+            }
             appearanceModel.setContact(signatureDictionary.getContactInfo());
             appearanceModel.setLocation(signatureDictionary.getLocation());
             appearanceModel.setSignatureType(signatureType);

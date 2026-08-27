@@ -107,12 +107,13 @@ public class ContentWriterUtils {
                                                        Color fontColor,
                                                        String content) {
         FontFile fontFile = trueTypeeFontSubSetter.getFontFile();
-        // Which kind of font this text needs is decided here and again when the font dictionary is
-        // built, from the same set of characters, because the codes written into the content stream
-        // have to be the ones that dictionary describes.  A composite font addresses glyphs by CID,
-        // two bytes wide; a simple font by one-byte WinAnsi code.
-        List<Integer> codePoints = content.codePoints().boxed().collect(Collectors.toList());
-        boolean composite = SimpleFontFactory.requiresCompositeFont(codePoints);
+        // The font kind is a property of all the text that shares the font, not of this run, so it is
+        // asked of the subsetter - which every run is declared to - rather than worked out here.  A
+        // signature appearance lays out four separate lines into one font: deciding per run wrote
+        // one-byte codes for the Latin lines and two-byte CIDs for a Japanese one, into a single
+        // font that can only be read one of those ways.
+        trueTypeeFontSubSetter.addToSubset(content);
+        boolean composite = trueTypeeFontSubSetter.requiresCompositeFont();
         CmapLookup cmapLookup = composite ? unicodeCmapLookup(trueTypeeFontSubSetter) : null;
 
         TextSprite textSprites =

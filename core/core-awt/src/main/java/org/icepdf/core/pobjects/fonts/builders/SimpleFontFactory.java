@@ -34,7 +34,7 @@ public class SimpleFontFactory {
         FontFile fontFile = fontFileSubSetter.getFontFile();
         // if embedding is support use TrueType font
         if (fontFile instanceof ZFontTrueType && FontFactory.useEmbeddedFonts && fontFileSubSetter.isFontEmbeddable()) {
-            if (requiresCompositeFont(fontFileSubSetter.getSubsetCodePoints())) {
+            if (fontFileSubSetter.requiresCompositeFont()) {
                 return new TrueTypeCIDFontBuilder(library, fontFileSubSetter).build();
             }
             return new TrueTypeFontBuilder(library, fontFileSubSetter).build();

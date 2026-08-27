@@ -79,10 +79,10 @@ public class CompositeFontAppearanceTest {
     private static final String CJK = "\u65E5\u672C\u8A9E";
 
     /**
-     * Ships in fonts-droid-fallback and is a plain TrueType rather than a collection, which is what
-     * the Noto CJK fonts on a Debian-family machine are.
+     * Ships in fonts-wqy-zenhei, and covers Latin as well as CJK. Droid Sans Fallback also has the
+     * CJK glyphs but no ASCII at all, so anything Latin drawn with it becomes notdef.
      */
-    private static final String CJK_FONT = "Droid Sans Fallback";
+    private static final String CJK_FONT = "WenQuanYi Zen Hei";
 
     @BeforeAll
     public static void init() {
