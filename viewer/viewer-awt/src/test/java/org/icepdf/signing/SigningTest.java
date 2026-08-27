@@ -191,6 +191,20 @@ public class SigningTest {
         }
         assertTrue(checked > 0, "the appearance font should carry a /ToUnicode CMap");
 
+        // A certification signature is one the catalog names in /Perms; the signature reference
+        // dictionary alone does not make it one.
+        Matcher perms = Pattern.compile("/Perms\\s*<<\\s*/DocMDP\\s+(\\d+) 0 R").matcher(pdf);
+        assertTrue(perms.find(), "a certification signature should be named in the catalog's /Perms");
+        assertTrue(pdf.contains(perms.group(1) + " 0 obj"),
+                "/Perms /DocMDP should point at the signature dictionary");
+        // DocMDP without TransformParams claims to certify without saying with what permissions.
+        Matcher docMdp = Pattern.compile("/TransformMethod\\s*/DocMDP(.{0,200}?)>>", Pattern.DOTALL)
+                .matcher(pdf);
+        while (docMdp.find()) {
+            assertTrue(docMdp.group(1).contains("/TransformParams"),
+                    "a DocMDP reference must carry its TransformParams: " + docMdp.group(1));
+        }
+
         Matcher flags = Pattern.compile("/FontDescriptor.{0,400}?/Flags\\s+(\\d+)", Pattern.DOTALL)
                 .matcher(pdf);
         while (flags.find()) {
