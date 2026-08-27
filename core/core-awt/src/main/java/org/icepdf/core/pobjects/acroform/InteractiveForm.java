@@ -306,6 +306,11 @@ public class InteractiveForm extends Dictionary {
                     }
                 }
             }
+            // This used to return false here whatever it had just worked out, so the answer it
+            // documents was only ever available as a side effect on each signature's validator -
+            // a caller that trusted the return value was told that a fully covered document was not
+            // covered.
+            return isValidByteRange;
         }
         return false;
     }

@@ -69,8 +69,9 @@ public class IndirectAcroFormSigningTest {
     @DisplayName("signing writes through an indirect /AcroForm and /Perms")
     @Test
     public void indirectAcroFormAndPermsArePersisted() throws Exception {
-        File signed = sign(new File("src/test/resources/signing/indirect_acroform.pdf"),
-                new File("./src/test/out/IndirectAcroFormSigningTest_signed.pdf"));
+        // no appearance: what is under test is which object the entries land in
+        File signed = SigningFixture.of(new File("src/test/resources/signing/indirect_acroform.pdf"))
+                .signTo(new File("./src/test/out/IndirectAcroFormSigningTest_signed.pdf"));
 
         Document document = new Document();
         try (InputStream stream = new java.io.FileInputStream(signed)) {
@@ -96,49 +97,4 @@ public class IndirectAcroFormSigningTest {
         }
     }
 
-    // -- helpers ---------------------------------------------------------------------------------
-
-    /**
-     * The signing flow, without an appearance stream - what is under test is which object the changes
-     * land in, and an appearance would only add font machinery to the fixture.
-     */
-    private File sign(File source, File outputFile) throws Exception {
-        JceProvider.loadProvider();
-        String keystorePath = "src/test/resources/signing/certificate.pfx";
-        PfxGenerator.createPfx(keystorePath, "changeit", "senderKeyPair");
-        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(
-                "http://time.certum.pl", new File(keystorePath), "senderKeyPair",
-                new SimplePasswordCallbackHandler("changeit"));
-
-        Document document = new Document();
-        try (InputStream fileUrl = new java.io.FileInputStream(source)) {
-            document.setInputStream(fileUrl, source.getName());
-        }
-        Library library = document.getCatalog().getLibrary();
-        SignatureManager signatureManager = library.getSignatureDictionaries();
-
-        SignatureWidgetAnnotation signatureAnnotation =
-                (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
-                        library, FieldDictionaryFactory.TYPE_SIGNATURE,
-                        new Rectangle(100, 250, 375, 150));
-        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
-
-        InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
-        interactiveForm.addField(signatureAnnotation);
-
-        SignatureDictionary signatureDictionary =
-                SignatureDictionary.getInstance(signatureAnnotation, SignatureType.CERTIFIER);
-        signatureDictionary.setSignerHandler(signerHandler);
-        signatureDictionary.setReason("Certification");
-        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
-        signatureManager.addSignature(signatureDictionary, signatureAnnotation);
-        SignatureUtilities.updateSignatureDictionary(signatureDictionary, signerHandler.getCertificate());
-
-        outputFile.getParentFile().mkdirs();
-        try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 8192)) {
-            document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
-        }
-        document.dispose();
-        return outputFile;
-    }
 }

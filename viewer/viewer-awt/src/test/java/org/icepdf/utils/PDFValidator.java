@@ -135,11 +135,19 @@ public class PDFValidator {
         Map<PDFAFlavour, ValidationResult> now = validate(after, flavours);
         StringBuilder introduced = new StringBuilder();
         for (PDFAFlavour flavour : flavours) {
-            Set<String> beforeRules = rulesOf(was.get(flavour));
-            for (Map.Entry<RuleId, Integer> failure : now.get(flavour).getFailedChecks().entrySet()) {
-                String rule = ruleName(failure.getKey());
-                if (!beforeRules.contains(rule)) {
+            Map<String, Integer> beforeRules = failureCounts(was.get(flavour));
+            for (Map.Entry<String, Integer> failure : failureCounts(now.get(flavour)).entrySet()) {
+                String rule = failure.getKey();
+                int wasCount = beforeRules.getOrDefault(rule, 0);
+                if (wasCount == 0) {
                     introduced.append(String.format("%n  PDF/A-%s %s", flavour.getId(), rule));
+                } else if (failure.getValue() > wasCount) {
+                    // A rule the document already broke can be broken more times by an edit - a new
+                    // page or annotation carrying the same fault - and comparing only the set of
+                    // rules broken would call that no change.  It is the difference between an edit
+                    // that inherits a problem and one that spreads it.
+                    introduced.append(String.format("%n  PDF/A-%s %s, %d times where there were %d",
+                            flavour.getId(), rule, failure.getValue(), wasCount));
                 }
             }
         }
@@ -149,10 +157,15 @@ public class PDFValidator {
         }
     }
 
-    private static Set<String> rulesOf(ValidationResult result) {
-        Set<String> rules = new LinkedHashSet<>();
-        result.getFailedChecks().keySet().forEach(rule -> rules.add(ruleName(rule)));
-        return rules;
+    /**
+     * How many times each rule was broken, keyed by the rule's clause and test number.  veraPDF keys
+     * its map by RuleId, and two RuleIds naming the same clause do not compare equal.
+     */
+    private static Map<String, Integer> failureCounts(ValidationResult result) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        result.getFailedChecks().forEach(
+                (rule, count) -> counts.merge(ruleName(rule), count, Integer::sum));
+        return counts;
     }
 
     private static String ruleName(RuleId rule) {

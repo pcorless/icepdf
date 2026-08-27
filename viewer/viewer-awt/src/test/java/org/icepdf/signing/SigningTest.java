@@ -61,120 +61,59 @@ public class SigningTest {
         FontPropertiesManager.getInstance().loadOrReadSystemFonts();
     }
 
-    @DisplayName("signatures - should create signed document")
+    @DisplayName("a signed document validates, and says in its structure that it is signed")
     @Test
-    public void testCreateAndValidateSignature() {
+    public void testCreateAndValidateSignature() throws Exception {
+        File source = new File("src/test/resources/annotation/hello_pdfa1.pdf");
+        File outputFile = SigningFixture.of(source)
+                .reason("Approval")
+                .signatureType(SignatureType.CERTIFIER)
+                .withAppearance(createTestSignatureBufferedImage())
+                .signTo(new File("./src/test/out/SigningTest_signed_document.pdf"));
 
+        // signatures can be found off the Catalog as InteractiveForms.
+        Document modifiedDocument = new Document();
+        modifiedDocument.setFile(outputFile.getAbsolutePath());
         try {
-            JceProvider.loadProvider();
+            InteractiveForm interactiveForm = modifiedDocument.getCatalog().getInteractiveForm();
+            assertNotNull(interactiveForm, "a signed document has an /AcroForm");
+            ArrayList<SignatureWidgetAnnotation> signatureFields = interactiveForm.getSignatureFields();
+            assertEquals(1, signatureFields.size(), "one signature was added, so one should be found");
 
-            String keystorePath = "src/test/resources/signing/certificate.pfx";
-            PfxGenerator.createPfx(keystorePath, "changeit", "senderKeyPair");
+            // Asked for its answer, not called for its side effect: this returned false however the
+            // byte ranges came out, and the assertions below only passed because the flag it sets on
+            // the way past happened to be what they read.
+            assertTrue(interactiveForm.isSignaturesCoverDocumentLength(),
+                    "the signature should cover the whole document");
 
-            String password = "changeit";
-            String certAlias = "senderKeyPair";
-            String timeStampAuthorityUrl = "http://time.certum.pl";
+            for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatureFields) {
+                SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
+                signatureValidator.validate();
+                assertTrue(signatureValidator.isSignaturesCoverDocumentLength());
+                assertTrue(signatureValidator.isSelfSigned());
+                assertFalse(signatureValidator.isCertificateChainTrusted());
+                assertFalse(signatureValidator.isDocumentDataModified());
 
-            Pkcs12SignerHandler pkcs12SignerHandler = new Pkcs12SignerHandler(
-                    timeStampAuthorityUrl,
-                    new File(keystorePath),
-                    certAlias,
-                    new SimplePasswordCallbackHandler(password));
-
-            Document document = new Document();
-            InputStream fileUrl = SigningTest.class.getResourceAsStream("/annotation/hello_pdfa1.pdf");
-            document.setInputStream(fileUrl, "test_print.pdf");
-            Library library = document.getCatalog().getLibrary();
-            SignatureManager signatureManager = library.getSignatureDictionaries();
-
-            // Create signature annotation
-            SignatureWidgetAnnotation signatureAnnotation =
-                    (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
-                            document.getPageTree().getLibrary(),
-                            FieldDictionaryFactory.TYPE_SIGNATURE,
-                            new Rectangle(100, 250, 375, 150));
-            document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
-
-            // Add the signatureWidget to catalog
-            InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
-            interactiveForm.addField(signatureAnnotation);
-
-            // set up signer dictionary as the primary certification signer.
-            SignatureDictionary signatureDictionary =
-                    SignatureDictionary.getInstance(signatureAnnotation, SignatureType.CERTIFIER);
-            signatureDictionary.setSignerHandler(pkcs12SignerHandler);
-            signatureDictionary.setReason("Approval"); // Approval or certification but technically can be anything
-            signatureDictionary.setDate(PDate.formatDateTime(new Date()));
-            signatureManager.addSignature(signatureDictionary, signatureAnnotation);
-
-            // assign cert metadata to dictionary
-            SignatureUtilities.updateSignatureDictionary(signatureDictionary, pkcs12SignerHandler.getCertificate());
-
-            // build basic appearance
-            SignatureAppearanceModelImpl signatureAppearanceModel = new SignatureAppearanceModelImpl(library);
-            signatureAppearanceModel.setLocale(Locale.ENGLISH);
-            signatureAppearanceModel.setName(signatureDictionary.getName());
-            signatureAppearanceModel.setContact(signatureDictionary.getContactInfo());
-            signatureAppearanceModel.setLocation(signatureDictionary.getLocation());
-            signatureAppearanceModel.setSignatureType(signatureDictionary.getReason().equals("Approval") ?
-                    SignatureType.SIGNER : SignatureType.CERTIFIER);
-            signatureAppearanceModel.setSignatureImage(createTestSignatureBufferedImage());
-
-            BasicSignatureAppearanceCallback signatureAppearance = new BasicSignatureAppearanceCallback();
-            signatureAppearance.setSignatureAppearanceModel(signatureAppearanceModel);
-            signatureAnnotation.setAppearanceCallback(signatureAppearance);
-            signatureAnnotation.resetAppearanceStream(new AffineTransform());
-            signatureAnnotation.saveAppearanceStream();
-
-            // Most common workflow is to add just one signature as we do here
-            File outputFile = new File("./src/test/out/SigningTest_signed_document.pdf");
-            try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 8192)) {
-                document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+                assertTrue(signatureValidator.isSignerTimeValid());
+                assertTrue(signatureValidator.isEmbeddedTimeStamp());
+                assertFalse(signatureValidator.isSignedDataModified());
             }
-            // open the signed document
-            Document modifiedDocument = new Document();
-            modifiedDocument.setFile(outputFile.getAbsolutePath());
-
-            // signatures can be found off the Catalog as InteractiveForms.
-            interactiveForm = modifiedDocument.getCatalog().getInteractiveForm();
-            if (interactiveForm != null) {
-                ArrayList<SignatureWidgetAnnotation> signatureFields = interactiveForm.getSignatureFields();
-                interactiveForm.isSignaturesCoverDocumentLength();
-                // validate each signature.
-                for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatureFields) {
-                    SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
-                    signatureValidator.validate();
-                    assertTrue(signatureValidator.isSignaturesCoverDocumentLength());
-                    assertTrue(signatureValidator.isSelfSigned());
-                    assertFalse(signatureValidator.isCertificateChainTrusted());
-                    assertFalse(signatureValidator.isDocumentDataModified());
-
-                    assertTrue(signatureValidator.isSignerTimeValid());
-                    assertTrue(signatureValidator.isEmbeddedTimeStamp());
-                    assertFalse(signatureValidator.isSignedDataModified());
-                }
-            }
+        } finally {
             modifiedDocument.dispose();
-
-            // validate PDF/A-1b compliance of the output file.
-            PDFValidator.validatePDFA(new FileInputStream(outputFile));
-
-            assertSignedStructure(outputFile);
-
-            // Signing must not make the document less conformant than it arrived. Checked across
-            // every level rather than just the one it targets: PDF/A-1 says nothing about a
-            // signature's byte range, and PDF/A-2 says a great deal.
-            File source = new File("src/test/resources/annotation/hello_pdfa1.pdf");
-            PDFValidator.assertNoNewFailures(source, outputFile,
-                    PDFAFlavour.PDFA_1_A, PDFAFlavour.PDFA_1_B,
-                    PDFAFlavour.PDFA_2_A, PDFAFlavour.PDFA_2_B, PDFAFlavour.PDFA_2_U,
-                    PDFAFlavour.PDFA_3_B);
-
-        } catch (Exception e) {
-            // make sure we have no io errors.
-            e.printStackTrace();
-            fail("should not be any exceptions");
         }
+
+        // validate PDF/A-1b compliance of the output file.
+        PDFValidator.validatePDFA(new FileInputStream(outputFile));
+
+        assertSignedStructure(outputFile);
+
+        // Signing must not make the document less conformant than it arrived. Checked across
+        // every level rather than just the one it targets: PDF/A-1 says nothing about a
+        // signature's byte range, and PDF/A-2 says a great deal.
+        PDFValidator.assertNoNewFailures(source, outputFile,
+                PDFAFlavour.PDFA_1_A, PDFAFlavour.PDFA_1_B,
+                PDFAFlavour.PDFA_2_A, PDFAFlavour.PDFA_2_B, PDFAFlavour.PDFA_2_U,
+                PDFAFlavour.PDFA_3_B);
     }
 
     /**

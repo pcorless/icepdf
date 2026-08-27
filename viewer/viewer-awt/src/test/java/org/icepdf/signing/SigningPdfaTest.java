@@ -78,7 +78,8 @@ public class SigningPdfaTest {
         // the fixture is the ground truth for this test, so say so plainly if it ever stops being 1a
         PDFValidator.assertConformsTo(source, PDFAFlavour.PDFA_1_A, PDFAFlavour.PDFA_1_B);
 
-        File signed = sign(source, new File("./src/test/out/SigningPdfaTest_signed_1a.pdf"));
+        File signed = SigningFixture.of(source).withAppearance()
+                .signTo(new File("./src/test/out/SigningPdfaTest_signed_1a.pdf"));
 
         PDFValidator.assertNoNewFailures(source, signed, LEVELS);
         // Stated outright as well: the point of the test is that a Level A document survives signing,
@@ -86,55 +87,4 @@ public class SigningPdfaTest {
         PDFValidator.assertConformsTo(signed, PDFAFlavour.PDFA_1_A, PDFAFlavour.PDFA_1_B);
     }
 
-    // -- helpers ---------------------------------------------------------------------------------
-
-    private File sign(File source, File outputFile) throws Exception {
-        JceProvider.loadProvider();
-        String keystorePath = "src/test/resources/signing/certificate.pfx";
-        PfxGenerator.createPfx(keystorePath, "changeit", "senderKeyPair");
-        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(
-                "http://time.certum.pl", new File(keystorePath), "senderKeyPair",
-                new SimplePasswordCallbackHandler("changeit"));
-
-        Document document = new Document();
-        try (InputStream fileUrl = new java.io.FileInputStream(source)) {
-            document.setInputStream(fileUrl, source.getName());
-        }
-        Library library = document.getCatalog().getLibrary();
-        SignatureManager signatureManager = library.getSignatureDictionaries();
-
-        SignatureWidgetAnnotation signatureAnnotation =
-                (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
-                        library, FieldDictionaryFactory.TYPE_SIGNATURE,
-                        new Rectangle(100, 250, 375, 150));
-        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
-
-        InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
-        interactiveForm.addField(signatureAnnotation);
-
-        SignatureDictionary signatureDictionary =
-                SignatureDictionary.getInstance(signatureAnnotation, SignatureType.CERTIFIER);
-        signatureDictionary.setSignerHandler(signerHandler);
-        signatureDictionary.setReason("Certification");
-        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
-        signatureManager.addSignature(signatureDictionary, signatureAnnotation);
-        SignatureUtilities.updateSignatureDictionary(signatureDictionary, signerHandler.getCertificate());
-
-        SignatureAppearanceModelImpl appearanceModel = new SignatureAppearanceModelImpl(library);
-        appearanceModel.setLocale(Locale.ENGLISH);
-        appearanceModel.setName(signatureDictionary.getName());
-        appearanceModel.setSignatureType(SignatureType.CERTIFIER);
-
-        BasicSignatureAppearanceCallback appearance = new BasicSignatureAppearanceCallback();
-        appearance.setSignatureAppearanceModel(appearanceModel);
-        signatureAnnotation.setAppearanceCallback(appearance);
-        signatureAnnotation.resetAppearanceStream(new AffineTransform());
-        signatureAnnotation.saveAppearanceStream();
-
-        try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 8192)) {
-            document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
-        }
-        document.dispose();
-        return outputFile;
-    }
 }
