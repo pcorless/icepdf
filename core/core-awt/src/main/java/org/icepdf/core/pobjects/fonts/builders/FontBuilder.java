@@ -25,6 +25,9 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.GeneralPath;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.fonts.Font.*;
@@ -66,7 +69,7 @@ public class FontBuilder {
 
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, FONT_SUBTYPE_TRUE_TYPE);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
-        fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
+        fontDictionary.put(TO_UNICODE_KEY, createToUnicodeStream());
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
 
         // build font descriptor
@@ -128,11 +131,13 @@ public class FontBuilder {
             default:
                 break;
         }
-        // PDF/A-2.0 requires that the symbolic and non-symbolic bits be mutually exclusive, so we set the non-symbolic
-        // bit if the font has a Unicode cmap, otherwise we set the symbolic bit.  Can build out later for CID fonts
-        // if needed.
-//        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, true);
-        flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, false);
+        // Exactly one of Symbolic and Nonsymbolic shall be set (PDF 32000-1, Table 123), and they
+        // are mutually exclusive.  This font is written with /WinAnsiEncoding and draws text, so it
+        // is nonsymbolic.  Setting the nonsymbolic bit to false and leaving symbolic commented out
+        // left /Flags 0, declaring neither - invalid, and rejected by validators stricter than
+        // veraPDF at 1b.
+        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, false);
+        flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, true);
         fontDescriptorDictionary.put(FLAGS, flags);
 
         // FontBBox
@@ -186,6 +191,47 @@ public class FontBuilder {
         fontDescriptor = new FontDescriptor(library, fontDescriptorDictionary);
         fontDescriptor.setPObjectReference(fontDescriptorReference);
         stateManager.addTempChange(new PObject(fontDescriptor, fontDescriptorReference));
+    }
+
+    /**
+     * Builds the {@code /ToUnicode} CMap for the subset, as a stream.
+     * <p>
+     * It used to write the <em>name</em> {@code /Identity}, which is not what the entry takes:
+     * {@code /ToUnicode} is a stream containing a CMap (PDF 32000-1 9.10.3). Nothing at PDF/A-1b
+     * checks it, but every "a" conformance level requires text to be extractable, and text drawn in
+     * this font could not be extracted at all.
+     * <p>
+     * The codes are the ones the {@code /Widths} array is indexed by, so the map is built from the
+     * same subset the widths came from.
+     *
+     * @return reference to the CMap stream
+     */
+    protected Reference createToUnicodeStream() {
+        List<Integer> codePoints = new ArrayList<>(fontFileSubSetter.getSubsetCodePoints());
+        Collections.sort(codePoints);
+        StringBuilder cmap = new StringBuilder();
+        cmap.append("/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n")
+                .append("/CIDSystemInfo <</Registry (Adobe) /Ordering (UCS) /Supplement 0>> def\n")
+                .append("/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n")
+                .append("1 begincodespacerange\n<00> <FF>\nendcodespacerange\n");
+        // bfchar sections are capped at 100 entries by the CMap syntax.
+        for (int start = 0; start < codePoints.size(); start += 100) {
+            List<Integer> chunk = codePoints.subList(start, Math.min(start + 100, codePoints.size()));
+            cmap.append(chunk.size()).append(" beginbfchar\n");
+            for (int codePoint : chunk) {
+                cmap.append(String.format("<%02X> <%04X>%n", codePoint & 0xFF, codePoint));
+            }
+            cmap.append("endbfchar\n");
+        }
+        cmap.append("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend");
+
+        StateManager stateManager = library.getStateManager();
+        Reference reference = stateManager.getNewReferenceNumber();
+        Stream toUnicode = Stream.createStream(library,
+                cmap.toString().getBytes(StandardCharsets.ISO_8859_1));
+        toUnicode.setPObjectReference(reference);
+        stateManager.addTempChange(new PObject(toUnicode, reference));
+        return reference;
     }
 
     private int setFlagBit(int flags, int bit, boolean value) {

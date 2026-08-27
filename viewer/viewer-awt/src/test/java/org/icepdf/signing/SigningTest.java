@@ -43,6 +43,10 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
@@ -154,10 +158,47 @@ public class SigningTest {
             // validate PDF/A-1b compliance of the output file.
             PDFValidator.validatePDFA(new FileInputStream(outputFile));
 
+            assertSignedStructure(outputFile);
+
         } catch (Exception e) {
             // make sure we have no io errors.
             e.printStackTrace();
             fail("should not be any exceptions");
+        }
+    }
+
+    /**
+     * Structural checks a PDF/A-1b pass does not make, each of which was wrong at some point.
+     * <p>
+     * A signed document has to declare that it is signed, and any font added for the signature's
+     * appearance has to be complete - a /ToUnicode pointing at an object that was never written is a
+     * dangling reference, and veraPDF at 1b does not object to one.
+     */
+    private void assertSignedStructure(File outputFile) throws Exception {
+        String pdf = new String(Files.readAllBytes(outputFile.toPath()), StandardCharsets.ISO_8859_1);
+
+        assertTrue(pdf.matches("(?s).*/SigFlags\\s+3.*"),
+                "a document with a signature field should declare /SigFlags 3");
+
+        Matcher toUnicode = Pattern.compile("/ToUnicode\\s+(\\d+) 0 R").matcher(pdf);
+        int checked = 0;
+        while (toUnicode.find()) {
+            String object = toUnicode.group(1);
+            assertTrue(Pattern.compile("(?m)^" + object + " 0 obj").matcher(pdf).find()
+                            || pdf.contains("\n" + object + " 0 obj"),
+                    "/ToUnicode " + object + " 0 R points at an object that was never written");
+            checked++;
+        }
+        assertTrue(checked > 0, "the appearance font should carry a /ToUnicode CMap");
+
+        Matcher flags = Pattern.compile("/FontDescriptor.{0,400}?/Flags\\s+(\\d+)", Pattern.DOTALL)
+                .matcher(pdf);
+        while (flags.find()) {
+            int value = Integer.parseInt(flags.group(1));
+            boolean symbolic = (value & 4) != 0;
+            boolean nonSymbolic = (value & 32) != 0;
+            assertTrue(symbolic ^ nonSymbolic,
+                    "a font descriptor must declare exactly one of Symbolic and Nonsymbolic, got " + value);
         }
     }
 

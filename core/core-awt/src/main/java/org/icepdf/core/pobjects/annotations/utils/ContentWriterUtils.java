@@ -188,19 +188,31 @@ public class ContentWriterUtils {
      *
      * @param font font object to persist to main state manager.
      */
+    /**
+     * Moves an object the font depends on out of temporary storage, so it is written with the font.
+     * <p>
+     * Silently does nothing when the entry is not a reference or is already promoted; a font built
+     * from an existing object has nothing temporary to move.
+     */
+    private static void promoteTempStream(StateManager stateManager, Object entry) {
+        if (entry instanceof Reference) {
+            PObject pObject = stateManager.getTempChange((Reference) entry);
+            if (pObject != null) {
+                stateManager.addChange(pObject);
+            }
+        }
+    }
+
     public static void saveFont(org.icepdf.core.pobjects.fonts.Font font) {
         FontDescriptor fontDescriptor = font.getFontDescriptor();
         if (fontDescriptor != null && fontDescriptor.getPObjectReference() != null) {
             StateManager stateManager = font.getLibrary().getStateManager();
             stateManager.addChange(new PObject(fontDescriptor, fontDescriptor.getPObjectReference()));
-            if (fontDescriptor.getEntries().containsKey(FONT_FILE_2)) {
-                Object obj = fontDescriptor.getEntries().get(FONT_FILE_2);
-                if (obj instanceof Reference) {
-                    Reference ref = (Reference) obj;
-                    PObject fontFile = stateManager.getTempChange(ref);
-                    stateManager.addChange(fontFile);
-                }
-            }
+            promoteTempStream(stateManager, fontDescriptor.getEntries().get(FONT_FILE_2));
+            // The CMap the font's /ToUnicode points at is built the same way and has to be promoted
+            // the same way. Without this the font referred to an object that was never written -
+            // a dangling reference, which is worse than the /Identity name it replaced.
+            promoteTempStream(stateManager, font.getEntries().get(SimpleFont.TO_UNICODE_KEY));
         }
     }
 

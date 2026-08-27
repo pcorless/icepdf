@@ -152,20 +152,15 @@ public class InteractiveForm extends Dictionary {
         // load the resources
         needAppearances = library.getBoolean(entries, NEEDS_APPEARANCES_KEY);
 
-        // sig flags.
+        // sig flags, an integer - it was tested for being a dictionary, which it never is, so the
+        // value was never read and signatureExists() answered false for every signed document.
         Object tmp = library.getObject(entries, SIG_FLAGS_KEY);
-        if (tmp instanceof DictionaryEntries) {
-            sigFlags = library.getInt(entries, SIG_FLAGS_KEY);
+        if (tmp instanceof Number) {
+            sigFlags = ((Number) tmp).intValue();
         }
 
         // load the resources
         tmp = library.getObject(entries, DR_KEY);
-        if (tmp instanceof DictionaryEntries) {
-            resources = library.getResources(entries, DR_KEY);
-        }
-
-        // load the resources,  useful for rebuilding form elements.
-        tmp = library.getObject(entries, SIG_FLAGS_KEY);
         if (tmp instanceof DictionaryEntries) {
             resources = library.getResources(entries, DR_KEY);
         }
@@ -221,6 +216,13 @@ public class InteractiveForm extends Dictionary {
             fields.add(field);
             List<Reference> fieldReferences = (List<Reference>) library.getObject(entries, FIELDS_KEY);
             fieldReferences.add(((AbstractWidgetAnnotation) field).getPObjectReference());
+        }
+        // A document that contains a signature field has to say so.  /SigFlags tells a reader that
+        // signatures exist and that the file must be updated by appending rather than rewritten -
+        // rewriting is what silently invalidates a signature (PDF 32000-1 12.7.2, Table 218).
+        if (field instanceof SignatureWidgetAnnotation) {
+            sigFlags |= SIG_FLAGS_SIGNATURES_EXIST | SIG_FLAGS_APPEND_ONLY;
+            entries.put(SIG_FLAGS_KEY, sigFlags);
         }
         // mark the catalog as changed, this object is always contained in the catalog as a dictionary, it
         // should never be an indirect reference.
