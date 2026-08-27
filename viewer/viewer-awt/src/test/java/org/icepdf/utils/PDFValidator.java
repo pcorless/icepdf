@@ -15,9 +15,6 @@
  */
 package org.icepdf.utils;
 
-import org.verapdf.core.EncryptedPdfException;
-import org.verapdf.core.ModelParsingException;
-import org.verapdf.core.ValidationException;
 import org.verapdf.gf.foundry.VeraGreenfieldFoundryProvider;
 import org.verapdf.pdfa.Foundries;
 import org.verapdf.pdfa.PDFAParser;
@@ -27,38 +24,64 @@ import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.verapdf.pdfa.results.ValidationResult;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
+/**
+ * Checks a written document against a PDF/A conformance level with veraPDF.
+ */
 public class PDFValidator {
 
+    /**
+     * Validates against PDF/A-1b, the level most of these tests target.
+     */
     public static void validatePDFA(FileInputStream fileStream) {
-        VeraGreenfieldFoundryProvider.initialise();
+        validatePDFA(fileStream, PDFAFlavour.PDFA_1_B);
+    }
 
-        PDFAFlavour flavour = PDFAFlavour.PDFA_1_B;
-        try (VeraPDFFoundry foundry = Foundries.defaultInstance()) {
-            PDFAParser parser = foundry.createParser(fileStream, flavour);
+    /**
+     * Validates against a given conformance level.
+     * <p>
+     * A validator that cannot read the document fails the test rather than passing it. It used to
+     * catch the parse and validation exceptions, print them and return, which made "could not be
+     * checked" and "checked and found compliant" the same outcome to a caller - the one distinction a
+     * validator exists to make.
+     *
+     * @param fileStream document to check, which this closes
+     * @param flavour    conformance level to check against
+     */
+    public static void validatePDFA(FileInputStream fileStream, PDFAFlavour flavour) {
+        VeraGreenfieldFoundryProvider.initialise();
+        try (VeraPDFFoundry foundry = Foundries.defaultInstance();
+             FileInputStream stream = fileStream) {
+            PDFAParser parser = foundry.createParser(stream, flavour);
             PDFAValidator validator = foundry.createValidator(flavour, false);
             ValidationResult result = validator.validate(parser);
-            if (result.isCompliant()) {
-                // File is a valid PDF/A 1b
-                System.out.println("The document is a valid PDF/A-1b" + flavour.getLevel());
-            } else {
-                // it isn't
-                System.out.println("The document is NOT a valid PDF/A-1b" + flavour.getLevel());
-                result.getFailedChecks().forEach((check, line) -> {
-                    System.out.printf("Failed check: %s, details: %s %s \n",
-                            check.getClause(),
-                            check.getSpecification().getDescription(),
-                            check.getSpecification().getPdfSpecification().toString());
-                });
+            if (!result.isCompliant()) {
+                StringBuilder failures = new StringBuilder();
+                result.getFailedChecks().forEach((check, count) ->
+                        failures.append(String.format("%n  %s (x%s): %s", check.getClause(), count,
+                                check.getSpecification().getDescription())));
+                fail("Not valid PDF/A-" + flavour.getId() + failures);
             }
-            assertTrue(result.isCompliant(), "The document is NOT a valid PDF/A-1b" + flavour.getLevel());
-        } catch (IOException | ValidationException | ModelParsingException | EncryptedPdfException exception) {
-            // Exception during validation
-            System.out.printf("Exception during validation: %s%n", exception.getMessage());
-            exception.printStackTrace();
+        } catch (Exception exception) {
+            fail("PDF/A-" + flavour.getId() + " validation could not be run: " + exception, exception);
+        }
+    }
+
+    /**
+     * @return true when the document conforms, without failing the test either way - for a check that
+     * is being characterised rather than asserted
+     */
+    public static boolean isCompliant(FileInputStream fileStream, PDFAFlavour flavour) {
+        VeraGreenfieldFoundryProvider.initialise();
+        try (VeraPDFFoundry foundry = Foundries.defaultInstance();
+             FileInputStream stream = fileStream) {
+            PDFAParser parser = foundry.createParser(stream, flavour);
+            return foundry.createValidator(flavour, false).validate(parser).isCompliant();
+        } catch (Exception exception) {
+            throw new IllegalStateException("PDF/A validation could not be run", exception);
         }
     }
 }
