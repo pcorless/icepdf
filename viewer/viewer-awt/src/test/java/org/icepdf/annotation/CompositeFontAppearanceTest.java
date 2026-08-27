@@ -24,6 +24,8 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.Library;
@@ -46,8 +48,10 @@ import java.util.Date;
 
 import static org.icepdf.core.pobjects.annotations.FreeTextAnnotation.INSETS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Annotation text that a simple font cannot show.
@@ -68,6 +72,17 @@ public class CompositeFontAppearanceTest {
      * running this has, and none of the three is in Windows-1252.
      */
     private static final String OUTSIDE_WIN_ANSI = "\u03B1\u0416\u0141";
+
+    /**
+     * "Japanese", in Japanese. Escaped rather than written as itself, as above.
+     */
+    private static final String CJK = "\u65E5\u672C\u8A9E";
+
+    /**
+     * Ships in fonts-droid-fallback and is a plain TrueType rather than a collection, which is what
+     * the Noto CJK fonts on a Debian-family machine are.
+     */
+    private static final String CJK_FONT = "Droid Sans Fallback";
 
     @BeforeAll
     public static void init() {
@@ -178,7 +193,65 @@ public class CompositeFontAppearanceTest {
                 PDFAFlavour.PDFA_3_B);
     }
 
+    /**
+     * The case the composite path exists for. CJK is the reason a one-byte code is not enough: a
+     * simple font has 256 codes and Japanese needs thousands, so there is no arrangement of a simple
+     * font that shows this text at all.
+     * <p>
+     * The font has to be named explicitly. The default face has no CJK glyphs, and asking for a
+     * character a font does not have returns glyph 0 - so a test that let the default stand would
+     * write three notdefs and, since /ToUnicode is built from the same lookup, still read them back
+     * as the right characters. It would pass while drawing empty boxes.
+     */
+    @DisplayName("CJK text survives a save and reopen")
+    @Test
+    public void cjkTextRoundTrips() throws Exception {
+        assumeTrue(isInstalled(CJK_FONT),
+                CJK_FONT + " is not installed, so there is nothing to draw this with");
+
+        File written = freeTextDocument(CJK, CJK_FONT,
+                new File("./src/test/out/CompositeFontAppearanceTest_cjk.pdf"));
+
+        Document document = new Document();
+        document.setFile(written.getAbsolutePath());
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            assertEquals(CJK, annotationText(page), "the Japanese should read back as it was written");
+
+            // A font without the glyph returns glyph 0 for it, and /ToUnicode is built from the same
+            // lookup - so notdefs would still read back as the right characters while drawing empty
+            // boxes.  The codes themselves are what says real glyphs were used.
+            String contentStream = appearanceStream(page);
+            assertFalse(contentStream.contains("0000"),
+                    "no CID should be notdef:\n" + contentStream);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    /**
+     * Guards the test above against passing on notdefs, and is the reason it is a skip rather than a
+     * failure on a machine without the font.
+     */
+    private boolean isInstalled(String fontName) {
+        FontFile fontFile = FontManager.getInstance().getInstance(fontName, 0);
+        // FontManager always returns something - a substitute when it has no match - so the question
+        // is whether it returned the face that was asked for.
+        return fontFile != null
+                && fontFile.getName().replace(" ", "").equalsIgnoreCase(fontName.replace(" ", ""));
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
+
+    /**
+     * @return the raw content stream of the page's first annotation's appearance
+     */
+    private String appearanceStream(Page page) throws Exception {
+        Form appearance = (Form) page.getAnnotations().get(0).getAppearanceStream();
+        appearance.init();
+        return new String(appearance.getDecodedStreamBytes(), java.nio.charset.StandardCharsets.ISO_8859_1);
+    }
 
     /**
      * @return the text of the page's first annotation, as extracted from its appearance stream
@@ -214,6 +287,10 @@ public class CompositeFontAppearanceTest {
      * Writes a document with one FreeText annotation carrying the given text.
      */
     private File freeTextDocument(String content, File outputFile) throws Exception {
+        return freeTextDocument(content, null, outputFile);
+    }
+
+    private File freeTextDocument(String content, String fontName, File outputFile) throws Exception {
         Document document = new Document();
         try (InputStream source = getClass().getResourceAsStream("/annotation/hello_pdfa1.pdf")) {
             document.setInputStream(source, "hello_pdfa1.pdf");
@@ -230,6 +307,9 @@ public class CompositeFontAppearanceTest {
         annotation.setCreationDate(PDate.formatDateTime(new Date()));
         annotation.setTitleText(SystemProperties.USER_NAME);
         annotation.setContents(content);
+        if (fontName != null) {
+            annotation.setFontName(fontName);
+        }
 
         annotation.resetAppearanceStream(page.getToPageSpaceTransform(Page.BOUNDARY_CROPBOX, 0f, 1.0f));
         page.addAnnotation(annotation, true);
