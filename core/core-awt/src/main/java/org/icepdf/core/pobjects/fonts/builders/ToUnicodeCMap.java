@@ -64,9 +64,12 @@ public final class ToUnicodeCMap {
                 continue;
             }
             String unicode = new String(new byte[]{(byte) code}, WIN_ANSI);
-            // undefined positions in the encoding decode to the replacement character; a mapping to
-            // it says the code means nothing, which is worse than saying nothing at all
-            if (unicode.length() == 1 && unicode.charAt(0) != '�') {
+            // Undefined positions in the encoding decode to the replacement character; a mapping to
+            // it asserts the code means nothing, which is worse than saying nothing at all.  Written
+            // as an escape rather than the character itself: the build does not pin a source
+            // encoding, so a literal here compiles differently on a machine whose default is not
+            // UTF-8.
+            if (unicode.length() == 1 && unicode.charAt(0) != '\uFFFD') {
                 mappings.put(code, (int) unicode.charAt(0));
             }
         }

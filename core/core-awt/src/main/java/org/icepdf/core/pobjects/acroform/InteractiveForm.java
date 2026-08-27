@@ -224,11 +224,18 @@ public class InteractiveForm extends Dictionary {
             sigFlags |= SIG_FLAGS_SIGNATURES_EXIST | SIG_FLAGS_APPEND_ONLY;
             entries.put(SIG_FLAGS_KEY, sigFlags);
         }
-        // mark the catalog as changed, this object is always contained in the catalog as a dictionary, it
-        // should never be an indirect reference.
+        // Register whichever object actually holds these entries.  /AcroForm is usually written
+        // inline in the catalog, but it is allowed to be an indirect object and existing documents
+        // do it - and then the catalog is unchanged, so registering the catalog alone writes neither
+        // the new field nor the flags.
         Catalog catalog = library.getCatalog();
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        Reference acroFormReference = library.getObjectReference(catalog.getEntries(), Catalog.ACRO_FORM_KEY);
+        if (acroFormReference != null) {
+            stateManager.addChange(new PObject(this, acroFormReference));
+        } else {
+            stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        }
     }
 
     public void removeField(AbstractWidgetAnnotation field) {
