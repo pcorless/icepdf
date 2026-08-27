@@ -45,7 +45,7 @@ public class TextContentEditor {
         // others - the text is written in a substitute instead. Refusing would be the alternative,
         // and for the small corrections this exists for it is the worse one.
         SubstituteFont substitute = null;
-        if (!TextEditCapability.canEdit(page, textBounds, newText)) {
+        if (TextEditCapability.requiresSubstitution(page, textBounds, newText)) {
             substitute = SubstituteFont.forText(page, TextEditCapability.fontAt(page, textBounds), newText);
         }
         ContentStreamTextEditorCallback contentStreamCallback =

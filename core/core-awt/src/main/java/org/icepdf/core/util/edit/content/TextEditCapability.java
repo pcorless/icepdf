@@ -96,43 +96,56 @@ public class TextEditCapability {
     }
 
     /**
-     * @return true when the edit can be written exactly as asked
+     * Whether the text here can be edited at all.
+     * <p>
+     * Almost always yes. A character the run's own font cannot write is not a refusal - it is written
+     * in a substitute font instead - so the only text that cannot be edited is text whose glyphs are
+     * not characters in a font to begin with.
+     *
+     * @param page   page being edited
+     * @param bounds area of the text in question, in page space
+     * @return true when an edit can be offered
+     * @throws InterruptedException if resolving the page's fonts is interrupted
      */
-    public static boolean canEdit(Page page, Rectangle bounds, String newText) throws InterruptedException {
-        return unsupportedReason(page, bounds, newText) == null;
+    public static boolean canEdit(Page page, Rectangle bounds) throws InterruptedException {
+        return unsupportedReason(page, bounds) == null;
     }
 
     /**
-     * Why this edit cannot be made, in words a user can act on, or null when it can.
+     * Whether making this edit means writing it in a font other than the one the text is drawn in.
      * <p>
-     * One call rather than several because the caller's question is singular: can I offer this edit,
-     * and if not, what do I tell them.
+     * Not a problem, but a visible change: the correction will read as part of its line without being
+     * the same typeface. Worth telling whoever asked for it, since they are looking at the document.
      *
      * @param page    page being edited
      * @param bounds  area of the text being replaced, in page space
      * @param newText the replacement
-     * @return the reason, or null when the edit can be made
+     * @return true when a substitute font will be used
      * @throws InterruptedException if resolving the page's fonts is interrupted
      */
-    public static String unsupportedReason(Page page, Rectangle bounds, String newText)
+    public static boolean requiresSubstitution(Page page, Rectangle bounds, String newText)
             throws InterruptedException {
+        return !unsupportedCharacters(page, bounds, newText).isEmpty();
+    }
+
+    /**
+     * Why this text cannot be edited, as a key a caller can turn into a message, or null when it
+     * can be.
+     * <p>
+     * A key rather than a sentence because the caller is a user interface with its own translations;
+     * core has no business deciding what language to apologise in. The only value today is
+     * {@code "type3"}.
+     *
+     * @param page   page being edited
+     * @param bounds area of the text in question, in page space
+     * @return the reason key, or null when the text can be edited
+     * @throws InterruptedException if resolving the page's fonts is interrupted
+     */
+    public static String unsupportedReason(Page page, Rectangle bounds) throws InterruptedException {
         if (isType3(page, bounds)) {
-            return "text drawn with a Type 3 font cannot be edited: its glyphs are content streams "
-                    + "of their own, drawn by the page rather than supplied by a font program";
+            return "type3";
         }
-        List<Character> unsupported = unsupportedCharacters(page, bounds, newText);
-        if (unsupported.isEmpty()) {
-            return null;
-        }
-        StringBuilder characters = new StringBuilder();
-        for (Character character : unsupported) {
-            if (characters.length() > 0) {
-                characters.append(", ");
-            }
-            characters.append('\'').append(character).append('\'');
-        }
-        return "this font has no character for " + characters
-                + " - it holds only the characters the document already uses";
+        return null;
     }
 
     /**

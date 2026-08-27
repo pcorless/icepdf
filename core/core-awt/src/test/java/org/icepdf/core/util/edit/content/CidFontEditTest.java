@@ -84,7 +84,8 @@ public class CidFontEditTest {
                     "the subset has no e");
             assertEquals(List.of(), TextEditCapability.unsupportedCharacters(page, bounds, "loop"),
                     "but it has every letter of loop");
-            assertTrue(TextEditCapability.canEdit(page, bounds, "oral"), "and of oral");
+            assertTrue(!TextEditCapability.requiresSubstitution(page, bounds, "oral"),
+                    "and of oral, so no substitute is needed");
         } finally {
             document.dispose();
         }
@@ -107,10 +108,9 @@ public class CidFontEditTest {
             // font need not map its glyphs to anything text search would find.
             Rectangle bounds = new Rectangle(15, 145, 60, 20);
 
-            String reason = TextEditCapability.unsupportedReason(page, bounds, "abc");
-            assertTrue(reason != null && reason.contains("Type 3"),
-                    "should refuse Type 3 by name, got: " + reason);
-            assertTrue(!TextEditCapability.canEdit(page, bounds, "abc"), "and not offer the edit");
+            assertEquals("type3", TextEditCapability.unsupportedReason(page, bounds),
+                    "should refuse Type 3, and say which reason it is");
+            assertTrue(!TextEditCapability.canEdit(page, bounds), "and not offer the edit");
         } finally {
             document.dispose();
         }

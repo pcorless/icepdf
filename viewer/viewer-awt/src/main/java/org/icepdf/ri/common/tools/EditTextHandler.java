@@ -15,10 +15,9 @@
  */
 package org.icepdf.ri.common.tools;
 
-import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.graphics.text.WordText;
 import org.icepdf.core.util.edit.content.TextContentEditor;
+import org.icepdf.core.util.edit.content.TextEditCapability;
 import org.icepdf.ri.common.EscapeJDialog;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -97,38 +96,42 @@ public class EditTextHandler extends TextSelection
             Page currentPage = pageViewComponent.getPage();
             String selectedText = currentPage.getViewText().getSelected().toString().trim();
 
+            // Refused outright only when the text is not made of characters in a font at all - a
+            // Type 3 glyph is a content stream the page draws, and there is nothing to write a
+            // replacement as.  Everything else can be edited: where the document's own font has no
+            // character for what was typed, the text is written in a substitute.
+            String unsupported = TextEditCapability.unsupportedReason(currentPage, textBounds);
+            if (unsupported != null) {
+                JOptionPane.showMessageDialog(controller.getViewerFrame(),
+                        controller.getMessageBundle().getString(
+                                "viewer.dialog.textEdit.unsupported." + unsupported + ".msg"),
+                        controller.getMessageBundle().getString("viewer.dialog.textEdit.unsupported.title"),
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
             TextEditDialog textEditDialog = new TextEditDialog(controller,
-                    controller.getMessageBundle(),
-                    selectedText, isEditingSupported(currentPage));
+                    controller.getMessageBundle(), selectedText);
             textEditDialog.setVisible(true);
             if (!textEditDialog.isCancelled()) {
                 String newText = textEditDialog.getText();
+                // The document's font cannot write some of what was typed, so it will be written in
+                // a similar one instead.  A visible change to the page, so it is offered rather than
+                // done quietly.
+                if (TextEditCapability.requiresSubstitution(currentPage, textBounds, newText)
+                        && JOptionPane.showConfirmDialog(controller.getViewerFrame(),
+                        controller.getMessageBundle().getString("viewer.dialog.textEdit.substitute.msg"),
+                        controller.getMessageBundle().getString("viewer.dialog.textEdit.substitute.title"),
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.WARNING_MESSAGE) != JOptionPane.OK_OPTION) {
+                    return;
+                }
                 // update the text in the content stream
                 TextContentEditor.updateText(pageViewComponent.getPage(), selectedText, textBounds, newText);
             }
         }
     }
 
-    /**
-     * Check if the font supports editing.  Very basic check ot count number of glphs define and if a ToUnicode map
-     * exists.
-     *
-     * @param currentPage page being edited.
-     * @return true if page can be edited with the current font.
-     * @throws InterruptedException if page parse is interrupted.
-     */
-    private boolean isEditingSupported(Page currentPage) throws InterruptedException {
-        ArrayList<WordText> selectedLineText = currentPage.getViewText().getSelectedWordText();
-        if (selectedLineText != null && !selectedLineText.isEmpty()) {
-            if (selectedLineText.get(0).getGlyphs() != null && !selectedLineText.get(0).getGlyphs().isEmpty()) {
-                Name fontName = selectedLineText.get(0).getGlyphs().get(0).getFontName();
-                org.icepdf.core.pobjects.fonts.Font font = currentPage.getResources().getFont(fontName);
-                int glyphCount = font.getCharacterCount();
-                return font.hasUnicodeCMap() || glyphCount > 94;
-            }
-        }
-        return false;
-    }
 
     @Override
     public void paintTool(Graphics g) {
@@ -188,16 +191,14 @@ public class EditTextHandler extends TextSelection
 
         private GridBagConstraints constraints;
         private boolean cancelled;
-        private boolean showEditWarning;
         private JTextField editTextField;
 
         protected ResourceBundle messageBundle;
 
         public TextEditDialog(Controller controller, ResourceBundle messageBundle,
-                              String selectedText, boolean isEditingSupported) {
+                              String selectedText) {
             super(controller.getViewerFrame(), true);
             this.messageBundle = messageBundle;
-            this.showEditWarning = !isEditingSupported;
             buildUI(selectedText);
         }
 
@@ -216,11 +217,6 @@ public class EditTextHandler extends TextSelection
             editTextField = new JTextField(50);
             editTextField.setText(selectedText);
             addGB(layout, editTextField, 0, 0, 1, 2);
-
-            if (showEditWarning) {
-                JLabel warningLabel = new JLabel(messageBundle.getString("viewer.dialog.textEdit.warning.label"));
-                addGB(layout, warningLabel, 0, 1, 1, 2);
-            }
 
             JButton cancelButton = new JButton(messageBundle.getString("viewer.dialog.textEdit.cancel.label"));
             cancelButton.addActionListener(e -> {
