@@ -121,7 +121,7 @@ public class WordAndLineEditTest {
             OffsetRange range = wordNotLine ? sequence.wordRange(offset) : sequence.lineRange(offset);
             String selected = sequence.text(range).trim();
 
-            TextContentEditor.updateText(page, selected, boundsOf(sequence, range), newText);
+            TextContentEditor.updateText(page, boundsOf(sequence, range), newText);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);

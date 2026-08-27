@@ -31,13 +31,38 @@ public class TextContentEditor {
      * Updates the text content of a PDF page.
      *
      * @param page       the PDF page to update
-     * @param text       text to be replaced
+     * @param text       ignored; what is replaced is decided by {@code textBounds} alone
      * @param textBounds the bounds of the text to be replaced
      * @param newText    the new text to replace the old text
      * @throws InterruptedException page init can be interrupted
      * @throws IOException          if an error occurs while writing the content stream
+     * @deprecated since 7.5.0, use {@link #updateText(Page, Rectangle, String)}. The {@code text}
+     * argument was never read: the glyphs replaced are the ones inside {@code textBounds}, and a
+     * caller passing text that disagreed with the bounds was quietly given the bounds' answer.
      */
+    @Deprecated
     public static void updateText(Page page, String text, Rectangle textBounds, String newText) throws InterruptedException,
+            IOException {
+        updateText(page, textBounds, newText);
+    }
+
+    /**
+     * Replaces the text within {@code textBounds}.
+     * <p>
+     * Where the font the text is drawn in cannot write the replacement - the ordinary case for a
+     * subsetted composite font, which holds the characters the document already uses and no others -
+     * the replacement is written in a substitute font embedded for the purpose. Text whose glyphs are
+     * not characters in a font at all cannot be edited; see
+     * {@link TextEditCapability#unsupportedReason(Page, Rectangle)}.
+     *
+     * @param page       the PDF page to update
+     * @param textBounds the bounds of the text to be replaced
+     * @param newText    the new text to replace the old text
+     * @throws InterruptedException page init can be interrupted
+     * @throws IOException          if an error occurs while writing the content stream
+     * @since 7.5.0
+     */
+    public static void updateText(Page page, Rectangle textBounds, String newText) throws InterruptedException,
             IOException {
         Library library = page.getLibrary();
         // When the run's own font cannot write the replacement - which is the ordinary case for a
@@ -49,7 +74,7 @@ public class TextContentEditor {
             substitute = SubstituteFont.forText(page, TextEditCapability.fontAt(page, textBounds), newText);
         }
         ContentStreamTextEditorCallback contentStreamCallback =
-                new ContentStreamTextEditorCallback(library, text, textBounds, newText, substitute);
+                new ContentStreamTextEditorCallback(library, textBounds, newText, substitute);
         page.init(contentStreamCallback);
         contentStreamCallback.endContentStream();
     }

@@ -97,7 +97,7 @@ public class TextContentEditorTest {
             page.init();
             // The whole page: "page level text" is in the page stream, "alpha bravo charlie" in the
             // form's, so both callbacks see flagged glyphs.
-            TextContentEditor.updateText(page, "text", new Rectangle(0, 0, 300, 200), "ZZZ");
+            TextContentEditor.updateText(page, new Rectangle(0, 0, 300, 200), "ZZZ");
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
             edited = out.toByteArray();
@@ -134,7 +134,7 @@ public class TextContentEditorTest {
             // "alpha" is on the upper line; the image sits lower down and is not being edited.
             List<Rectangle> bounds = RedactionFixtures.wordBounds(page, Collections.singletonList("alpha"));
             assertEquals(1, bounds.size(), "fixture should contain 'alpha' exactly once");
-            TextContentEditor.updateText(page, "alpha", bounds.get(0), "ZZZZZ");
+            TextContentEditor.updateText(page, bounds.get(0), "ZZZZZ");
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
@@ -176,7 +176,7 @@ public class TextContentEditorTest {
                     Collections.singletonList(target));
             assertEquals(1, bounds.size(), "fixture should contain '" + target + "' exactly once");
 
-            TextContentEditor.updateText(page, target, bounds.get(0), replacement);
+            TextContentEditor.updateText(page, bounds.get(0), replacement);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);

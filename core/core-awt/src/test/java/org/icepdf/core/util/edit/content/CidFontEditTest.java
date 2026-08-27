@@ -171,7 +171,7 @@ public class CidFontEditTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            TextContentEditor.updateText(page, target, wordBounds(page, target), replacement);
+            TextContentEditor.updateText(page, wordBounds(page, target), replacement);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);

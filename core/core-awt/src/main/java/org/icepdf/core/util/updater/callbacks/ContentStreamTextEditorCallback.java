@@ -36,22 +36,20 @@ import java.io.IOException;
 public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
     private final Rectangle textBounds;
-    private String text;
     private String newText;
 
 
-    public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText) {
-        this(library, text, textBounds, newText, null);
+    public ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText) {
+        this(library, textBounds, newText, null);
     }
 
     /**
      * @param substitute font to write the replacement in when the run's own cannot express it
      */
-    public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
+    public ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText,
                                            SubstituteFont substitute) {
         super(library, new TextStringObjectWriter(newText, substitute));
         this.newText = newText;
-        this.text = text;
         this.textBounds = textBounds;
     }
 
@@ -60,12 +58,11 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
      *                           replacement text is written once for the edit rather than once per
      *                           content stream the selection happens to span
      */
-    protected ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
+    protected ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText,
                                               StringObjectWriter stringObjectWriter, AffineTransform transform) {
         super(library, stringObjectWriter, transform);
         this.textBounds = textBounds;
         this.newText = newText;
-        this.text = text;
     }
 
     /**
@@ -75,7 +72,7 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
      * stream the selection reaches into.
      */
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
-        return new ContentStreamTextEditorCallback(this.library, this.text, this.textBounds,
+        return new ContentStreamTextEditorCallback(this.library, this.textBounds,
                 this.newText, this.stringObjectWriter, transform);
     }
 

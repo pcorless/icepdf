@@ -127,7 +127,7 @@ public class EditTextHandler extends TextSelection
                     return;
                 }
                 // update the text in the content stream
-                TextContentEditor.updateText(pageViewComponent.getPage(), selectedText, textBounds, newText);
+                TextContentEditor.updateText(pageViewComponent.getPage(), textBounds, newText);
             }
         }
     }
