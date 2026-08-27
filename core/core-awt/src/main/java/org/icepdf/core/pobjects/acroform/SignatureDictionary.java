@@ -282,10 +282,12 @@ public class SignatureDictionary extends Dictionary {
     private static SignatureReferenceDictionary buildReferenceDictionary(Library library, int permissionValue) {
         DictionaryEntries referenceEntries = new DictionaryEntries();
         referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
-        // SHA1 has been unacceptable for signing for years; readers that reject it reject the
-        // certification along with it.
-        referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA256"));
         referenceEntries.put(TRANSFORM_METHOD_KEY, DOC_MDP_KEY);
+        // No /DigestMethod.  It used to say SHA1, which no reader should accept for signing, and the
+        // obvious repair - SHA256 - is also wrong: PDF/A-2 6.1.12 forbids /DigestMethod,
+        // /DigestLocation and /DigestValue in a signature reference dictionary that uses DocMDP, and
+        // ISO 32000-2 deprecated them outright. The digest that matters is the one over the byte
+        // range, which the signature itself carries.
 
         DictionaryEntries transformParams = new DictionaryEntries();
         transformParams.put(TYPE_KEY, TransformParams.TRANSFORM_PARAMS_TYPE_VALUE);

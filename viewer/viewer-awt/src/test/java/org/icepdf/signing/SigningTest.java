@@ -35,6 +35,7 @@ import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCa
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 import org.icepdf.ri.util.FontPropertiesManager;
 import org.icepdf.utils.PDFValidator;
+import org.verapdf.pdfa.flavours.PDFAFlavour;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -160,6 +161,15 @@ public class SigningTest {
 
             assertSignedStructure(outputFile);
 
+            // Signing must not make the document less conformant than it arrived. Checked across
+            // every level rather than just the one it targets: PDF/A-1 says nothing about a
+            // signature's byte range, and PDF/A-2 says a great deal.
+            File source = new File("src/test/resources/annotation/hello_pdfa1.pdf");
+            PDFValidator.assertNoNewFailures(source, outputFile,
+                    PDFAFlavour.PDFA_1_A, PDFAFlavour.PDFA_1_B,
+                    PDFAFlavour.PDFA_2_A, PDFAFlavour.PDFA_2_B, PDFAFlavour.PDFA_2_U,
+                    PDFAFlavour.PDFA_3_B);
+
         } catch (Exception e) {
             // make sure we have no io errors.
             e.printStackTrace();
@@ -193,6 +203,25 @@ public class SigningTest {
 
         // A certification signature is one the catalog names in /Perms; the signature reference
         // dictionary alone does not make it one.
+        // The digest covers everything but the signature, and the signature is the hex string with
+        // its brackets - not the digits inside them.
+        Matcher byteRange = Pattern.compile("/ByteRange\\s*\\[\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)")
+                .matcher(pdf);
+        assertTrue(byteRange.find(), "the signature should carry a /ByteRange");
+        // anchored on the signature dictionary: the page has a /Contents of its own, and it comes
+        // first in the file.
+        int signature = pdf.indexOf("/Type /Sig");
+        assertTrue(signature > 0, "the document should contain a signature dictionary");
+        int openAngle = pdf.indexOf('<', pdf.indexOf("/Contents", signature));
+        int afterClose = pdf.indexOf('>', openAngle) + 1;
+        assertEquals(0, Integer.parseInt(byteRange.group(1)), "the first range starts at the file start");
+        assertEquals(openAngle, Integer.parseInt(byteRange.group(2)),
+                "the first range should end at the signature's opening bracket");
+        assertEquals(afterClose, Integer.parseInt(byteRange.group(3)),
+                "the second range should start just past the closing bracket");
+        assertEquals(pdf.length() - afterClose, Integer.parseInt(byteRange.group(4)),
+                "and run to the end of the file");
+
         Matcher perms = Pattern.compile("/Perms\\s*<<\\s*/DocMDP\\s+(\\d+) 0 R").matcher(pdf);
         assertTrue(perms.find(), "a certification signature should be named in the catalog's /Perms");
         assertTrue(pdf.contains(perms.group(1) + " 0 obj"),
@@ -203,6 +232,9 @@ public class SigningTest {
         while (docMdp.find()) {
             assertTrue(docMdp.group(1).contains("/TransformParams"),
                     "a DocMDP reference must carry its TransformParams: " + docMdp.group(1));
+            // PDF/A-2 6.1.12 forbids these alongside DocMDP, and ISO 32000-2 deprecated them.
+            assertTrue(!docMdp.group(1).contains("/Digest"),
+                    "a DocMDP reference must not carry digest entries: " + docMdp.group(1));
         }
 
         Matcher flags = Pattern.compile("/FontDescriptor.{0,400}?/Flags\\s+(\\d+)", Pattern.DOTALL)
