@@ -107,9 +107,33 @@ public class TrueTypeFontEmbedder {
     public boolean isFontEmbeddable() {
         try {
             return this.fontFile != null &&
+                    hasGlyfOutlines(this.fontFile.getTrueTypeFont()) &&
                     isEmbeddingPermitted(this.fontFile.getTrueTypeFont()) &&
                     isSubsettingPermitted(this.fontFile.getTrueTypeFont());
         } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether the font keeps its outlines in a {@code glyf} table, which is what the subsetter reads.
+     * <p>
+     * An OpenType font with PostScript outlines keeps them in {@code CFF } instead, and subsetting one
+     * fails with {@code UnsupportedOperationException: OTF fonts do not have a glyf table} - from
+     * inside the subsetter, well after this method has said the font can be embedded. Answering
+     * honestly here sends such a font down the non-embedded fallback instead, which draws it.
+     * <p>
+     * This is the one thing standing between the CJK fonts every Linux distribution ships as
+     * OpenType collections and being usable: they are excluded from the font scan altogether, partly
+     * because including them turns a substitution that quietly picks another face into a failure in
+     * the middle of writing an appearance stream. Embedding them properly needs a CFF subsetter,
+     * which is a separate piece of work.
+     */
+    private static boolean hasGlyfOutlines(TrueTypeFont font) {
+        try {
+            return font != null && font.getGlyph() != null;
+        } catch (Exception e) {
+            // OpenTypeFont.getGlyph() throws rather than returning null when the outlines are CFF
             return false;
         }
     }

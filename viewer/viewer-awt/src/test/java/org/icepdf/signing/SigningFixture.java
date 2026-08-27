@@ -152,6 +152,10 @@ public class SigningFixture {
 
         if (appearance) {
             SignatureAppearanceModelImpl appearanceModel = new SignatureAppearanceModelImpl(library);
+            // The model keeps its settings in java.util.prefs, so anything not set here is whatever
+            // the machine happens to hold.  A test that asks for an appearance with text in it should
+            // say so rather than hope.
+            appearanceModel.setSignatureTextVisible(true);
             appearanceModel.setLocale(Locale.ENGLISH);
             appearanceModel.setName(signerName != null ? signerName : signatureDictionary.getName());
             if (appearanceFont != null) {
