@@ -194,44 +194,11 @@ public class FontBuilder {
     }
 
     /**
-     * Builds the {@code /ToUnicode} CMap for the subset, as a stream.
-     * <p>
-     * It used to write the <em>name</em> {@code /Identity}, which is not what the entry takes:
-     * {@code /ToUnicode} is a stream containing a CMap (PDF 32000-1 9.10.3). Nothing at PDF/A-1b
-     * checks it, but every "a" conformance level requires text to be extractable, and text drawn in
-     * this font could not be extracted at all.
-     * <p>
-     * The codes are the ones the {@code /Widths} array is indexed by, so the map is built from the
-     * same subset the widths came from.
-     *
-     * @return reference to the CMap stream
+     * The {@code /ToUnicode} CMap for the subset. The codes are the ones the {@code /Widths} array is
+     * indexed by, and the font declares WinAnsiEncoding, so the mapping is that encoding's.
      */
     protected Reference createToUnicodeStream() {
-        List<Integer> codePoints = new ArrayList<>(fontFileSubSetter.getSubsetCodePoints());
-        Collections.sort(codePoints);
-        StringBuilder cmap = new StringBuilder();
-        cmap.append("/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n")
-                .append("/CIDSystemInfo <</Registry (Adobe) /Ordering (UCS) /Supplement 0>> def\n")
-                .append("/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n")
-                .append("1 begincodespacerange\n<00> <FF>\nendcodespacerange\n");
-        // bfchar sections are capped at 100 entries by the CMap syntax.
-        for (int start = 0; start < codePoints.size(); start += 100) {
-            List<Integer> chunk = codePoints.subList(start, Math.min(start + 100, codePoints.size()));
-            cmap.append(chunk.size()).append(" beginbfchar\n");
-            for (int codePoint : chunk) {
-                cmap.append(String.format("<%02X> <%04X>%n", codePoint & 0xFF, codePoint));
-            }
-            cmap.append("endbfchar\n");
-        }
-        cmap.append("endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend");
-
-        StateManager stateManager = library.getStateManager();
-        Reference reference = stateManager.getNewReferenceNumber();
-        Stream toUnicode = Stream.createStream(library,
-                cmap.toString().getBytes(StandardCharsets.ISO_8859_1));
-        toUnicode.setPObjectReference(reference);
-        stateManager.addTempChange(new PObject(toUnicode, reference));
-        return reference;
+        return ToUnicodeCMap.createWinAnsi(library, fontFileSubSetter.getSubsetCodePoints());
     }
 
     private int setFlagBit(int flags, int bit, boolean value) {
