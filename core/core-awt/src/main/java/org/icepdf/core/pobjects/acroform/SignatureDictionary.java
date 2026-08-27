@@ -326,7 +326,15 @@ public class SignatureDictionary extends Dictionary {
             return;
         }
         perms.put(DOC_MDP_KEY, signatureDictionary.getPObjectReference());
-        stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        // /Perms may be an object in its own right, and then the catalog still holds the same
+        // reference and is not itself changed - so registering the catalog would write nothing and
+        // the certification would silently not happen.
+        Reference permsReference = library.getObjectReference(catalog.getEntries(), Catalog.PERMS_KEY);
+        if (permsReference != null) {
+            stateManager.addChange(new PObject(perms, permsReference));
+        } else {
+            stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        }
     }
 
     public void setSignerHandler(SignerHandler signerHandler) {
