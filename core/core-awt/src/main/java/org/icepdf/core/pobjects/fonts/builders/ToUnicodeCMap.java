@@ -21,12 +21,10 @@ import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.TreeMap;
 
 /**
  * Builds the {@code /ToUnicode} CMap for a generated font.
@@ -42,13 +40,6 @@ import java.util.TreeSet;
  */
 public final class ToUnicodeCMap {
 
-    /**
-     * WinAnsiEncoding is Windows-1252, which is what both builders declare, so the Unicode a code
-     * maps to is whatever that charset decodes it to. Deriving it beats a hand-written table: the
-     * range 0x80-0x9F is where WinAnsi and Latin-1 disagree and where a table would be wrong.
-     */
-    private static final Charset WIN_ANSI = Charset.forName("windows-1252");
-
     private ToUnicodeCMap() {
     }
 
@@ -57,20 +48,36 @@ public final class ToUnicodeCMap {
      * @param codes   character codes the font can show
      * @return reference to a CMap stream mapping each code to its Unicode value
      */
-    public static Reference createWinAnsi(Library library, Collection<Integer> codes) {
-        Map<Integer, Integer> mappings = new LinkedHashMap<>();
-        for (int code : new TreeSet<>(codes)) {
-            if (code < 0 || code > 0xFF) {
-                continue;
+    public static Reference forCodes(Library library, Collection<Integer> codes) {
+        Map<Integer, Integer> mappings = new TreeMap<>();
+        for (int code : codes) {
+            int unicode = WinAnsiEncoding.unicodeOf(code);
+            // A code the encoding defines nothing at means nothing; saying so with a mapping to the
+            // replacement character is worse than saying nothing at all.
+            if (unicode >= 0) {
+                mappings.put(code, unicode);
             }
-            String unicode = new String(new byte[]{(byte) code}, WIN_ANSI);
-            // Undefined positions in the encoding decode to the replacement character; a mapping to
-            // it asserts the code means nothing, which is worse than saying nothing at all.  Written
-            // as an escape rather than the character itself: the build does not pin a source
-            // encoding, so a literal here compiles differently on a machine whose default is not
-            // UTF-8.
-            if (unicode.length() == 1 && unicode.charAt(0) != '\uFFFD') {
-                mappings.put(code, (int) unicode.charAt(0));
+        }
+        return create(library, mappings);
+    }
+
+    /**
+     * The subset path.  A font subset is collected as Unicode - that is what the font's own cmap is
+     * keyed by - and a CMap is keyed by character code, which under WinAnsiEncoding is not the same
+     * number above 0x7F.  Treating one as the other agreed with the truth for ASCII and nowhere else,
+     * so the characters that actually needed a {@code /ToUnicode} entry were exactly the ones that
+     * lost it.
+     *
+     * @param library    the document to add the stream to
+     * @param codePoints Unicode code points the font can show
+     * @return reference to the CMap stream
+     */
+    public static Reference forUnicode(Library library, Collection<Integer> codePoints) {
+        Map<Integer, Integer> mappings = new TreeMap<>();
+        for (int codePoint : codePoints) {
+            int code = WinAnsiEncoding.codeOf(codePoint);
+            if (code >= 0) {
+                mappings.put(code, codePoint);
             }
         }
         return create(library, mappings);

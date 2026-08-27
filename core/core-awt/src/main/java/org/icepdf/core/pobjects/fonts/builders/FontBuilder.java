@@ -198,7 +198,7 @@ public class FontBuilder {
      * indexed by, and the font declares WinAnsiEncoding, so the mapping is that encoding's.
      */
     protected Reference createToUnicodeStream() {
-        return ToUnicodeCMap.createWinAnsi(library, fontFileSubSetter.getSubsetCodePoints());
+        return ToUnicodeCMap.forUnicode(library, fontFileSubSetter.getSubsetCodePoints());
     }
 
     private int setFlagBit(int flags, int bit, boolean value) {

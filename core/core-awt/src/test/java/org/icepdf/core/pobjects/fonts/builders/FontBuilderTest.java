@@ -16,6 +16,8 @@
 package org.icepdf.core.pobjects.fonts.builders;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.Font;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -65,6 +68,69 @@ public class FontBuilderTest {
         } finally {
             document.dispose();
         }
+    }
+
+    /**
+     * WinAnsiEncoding is Windows-1252, so a character code is a byte and it is not the Unicode value:
+     * U+201C is code 0x93.  The subset is collected as Unicode, and every consumer of it treated
+     * those numbers as codes.  For ASCII the two agree, which is the whole reason this survived.
+     */
+    @DisplayName("a character code is not its Unicode value")
+    @Test
+    public void winAnsiCodesAreNotUnicode() {
+        assertEquals(0x93, WinAnsiEncoding.codeOf(0x201C), "left double quote is code 0x93");
+        assertEquals(0x201C, WinAnsiEncoding.unicodeOf(0x93), "and back again");
+        assertEquals(0xE9, WinAnsiEncoding.codeOf(0xE9), "Latin-1 range agrees with Unicode");
+        assertEquals(0x41, WinAnsiEncoding.codeOf(0x41), "as does ASCII");
+        // 0x81 0x8D 0x8F 0x90 0x9D are undefined in Windows-1252
+        assertEquals(-1, WinAnsiEncoding.unicodeOf(0x81), "an undefined position means nothing");
+        assertEquals(-1, WinAnsiEncoding.codeOf(0x4E2D),
+                "a character the encoding cannot show has no code");
+    }
+
+    /**
+     * A simple font's codes run 0 to 255, so /FirstChar, /LastChar and the length of /Widths are
+     * bounded by that.  Indexed by Unicode instead, a subset containing a left double quote produced
+     * /LastChar 8220 and an 8156-entry array - a font dictionary no reader can use.
+     */
+    @DisplayName("/Widths is indexed by character code, so it fits in a simple font")
+    @Test
+    public void widthsAreIndexedByCharacterCode() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/simple_tj.pdf").toString());
+        try {
+            Library library = document.getCatalog().getLibrary();
+            // "A" and a left double quote: one in the range where code and Unicode agree, one not
+            SimpleFont font = embeddedSubset(library, "A\u201C");
+
+            int firstChar = ((Number) font.getEntries().get(new Name("FirstChar"))).intValue();
+            int lastChar = ((Number) font.getEntries().get(new Name("LastChar"))).intValue();
+            List<?> widths = (List<?>) font.getEntries().get(new Name("Widths"));
+
+            assertEquals(0x41, firstChar, "A is code 0x41");
+            assertEquals(0x93, lastChar, "the left double quote is code 0x93, not 8220");
+            assertEquals(lastChar - firstChar + 1, widths.size(),
+                    "/Widths runs FirstChar to LastChar");
+            assertTrue(widths.size() <= 256, "a simple font cannot have more than 256 codes");
+            assertTrue(((Number) widths.get(0)).intValue() > 0, "A should have a width");
+            assertTrue(((Number) widths.get(widths.size() - 1)).intValue() > 0,
+                    "and so should the quote, at the code it is actually shown by");
+
+            String cmap = cmapText(library, (Reference) font.getEntries().get(SimpleFont.TO_UNICODE_KEY));
+            assertTrue(cmap.contains("<93> <201C>"),
+                    "the subset's /ToUnicode should map the code, not the Unicode value:\n" + cmap);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    private SimpleFont embeddedSubset(Library library, String text) throws Exception {
+        TrueTypeFontEmbedder embedder = new TrueTypeFontEmbedder(
+                FontManager.getInstance().initialize().getInstance("Helvetica", 0));
+        for (int i = 0; i < text.length(); i++) {
+            embedder.addToSubset(text.charAt(i));
+        }
+        return new TrueTypeFontBuilder(library, embedder).build();
     }
 
     private String cmapText(Library library, Reference reference) throws Exception {

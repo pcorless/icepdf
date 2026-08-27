@@ -68,7 +68,7 @@ public class Type1FontBuilder {
         for (int code = FIRST_CHAR; code <= LAST_CHAR; code++) {
             codes.add(code);
         }
-        fontDictionary.put(TO_UNICODE_KEY, ToUnicodeCMap.createWinAnsi(library, codes));
+        fontDictionary.put(TO_UNICODE_KEY, ToUnicodeCMap.forCodes(library, codes));
 
         // build out min core14 properties.
         Type1Font font = new Type1Font(library, fontDictionary);

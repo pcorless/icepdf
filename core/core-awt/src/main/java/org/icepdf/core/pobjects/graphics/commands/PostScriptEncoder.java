@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.builders.WinAnsiEncoding;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
@@ -256,7 +257,13 @@ public class PostScriptEncoder {
         if (logger.isLoggable(Level.FINER)) {
             logger.finer("PostEncoding: " + postScript);
         }
-        return postScript.toString().getBytes();
+        // A content stream is bytes, and a show operator's bytes are character codes in the font's
+        // encoding - here WinAnsiEncoding, which is Windows-1252.  getBytes() used the platform
+        // default instead: on a UTF-8 machine every character above 0x7F became two codes, so an
+        // accent or a smart quote was drawn as two wrong glyphs, and the same document written on
+        // two machines produced different bytes.  Operators are ASCII and encode identically either
+        // way; it is only the text that was ever affected.
+        return postScript.toString().getBytes(WinAnsiEncoding.CHARSET);
     }
 
     private static double roundCoordinate(double value) {
