@@ -83,9 +83,18 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
         }
     }
 
+    /**
+     * An edit has nothing to say about an image, but the image's bytes still have to be written.
+     * <p>
+     * Advancing {@code lastTokenPosition} past them without writing tells the copy-through machinery
+     * they have been dealt with, when they have been skipped: what came out was not a page missing an
+     * image but a {@code BI} with no {@code ID} and no {@code EI}, which is a content stream a strict
+     * reader is entitled to reject. "Nothing to do" is true of the decision and false of the bytes.
+     */
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
             IOException {
-        // nothing to do
+        burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                pos - lastTokenPosition);
         lastTokenPosition = pos;
     }
 
