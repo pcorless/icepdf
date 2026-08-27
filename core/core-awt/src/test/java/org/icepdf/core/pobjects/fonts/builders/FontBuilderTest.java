@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.fonts.builders;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
@@ -31,6 +32,8 @@ import java.util.List;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -131,6 +134,60 @@ public class FontBuilderTest {
             embedder.addToSubset(text.charAt(i));
         }
         return new TrueTypeFontBuilder(library, embedder).build();
+    }
+
+    /**
+     * A simple font dictionary must carry /Widths, /FirstChar, /LastChar and a /FontDescriptor unless
+     * it is one of the standard 14, which every reader knows the metrics of (PDF 32000-1, 9.6.2.1).
+     * Helvetica is one of the fourteen, so the right thing is to write none of them.
+     */
+    @DisplayName("a standard 14 font is written without widths, because the reader has them")
+    @Test
+    public void core14FontOmitsMetrics() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/simple_tj.pdf").toString());
+        try {
+            Library library = document.getCatalog().getLibrary();
+            SimpleFont font = new Type1FontBuilder(library, "Helvetica").Build();
+
+            // /FirstChar 32 and /LastChar 255 used to be written with no /Widths at all, telling a
+            // reader the font covers 224 codes and giving it the metrics of none of them.
+            assertNull(font.getEntries().get(new Name("FirstChar")), "no /FirstChar without /Widths");
+            assertNull(font.getEntries().get(new Name("LastChar")), "nor /LastChar");
+            assertNull(font.getEntries().get(new Name("Widths")), "the reader has the metrics");
+            assertNull(font.getEntries().get(new Name("FontDescriptor")), "and the descriptor");
+        } finally {
+            document.dispose();
+        }
+    }
+
+    /**
+     * Anything outside the fourteen has to bring its own metrics, measured from whichever face will
+     * actually draw the text.
+     */
+    @DisplayName("a font outside the standard 14 brings its own widths and descriptor")
+    @Test
+    public void nonCore14FontCarriesMetrics() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/simple_tj.pdf").toString());
+        try {
+            Library library = document.getCatalog().getLibrary();
+            FontFile face = FontManager.getInstance().initialize().getInstance("Arial", 0);
+            SimpleFont font = new Type1FontBuilder(library, "Arial-Not-A-Core-Font", face).Build();
+
+            assertEquals(32, ((Number) font.getEntries().get(new Name("FirstChar"))).intValue());
+            assertEquals(255, ((Number) font.getEntries().get(new Name("LastChar"))).intValue());
+            List<?> widths = (List<?>) font.getEntries().get(new Name("Widths"));
+            assertEquals(224, widths.size(), "one width per code from /FirstChar to /LastChar");
+
+            // Space is code 0x20, the first entry, and no face makes it zero-width.  Checking a real
+            // number rather than only the array's length: an array of 224 zeros is the same size.
+            assertTrue(((Number) widths.get(0)).intValue() > 0, "space should have a width");
+            assertNotNull(font.getEntries().get(new Name("FontDescriptor")),
+                    "a font outside the fourteen needs a descriptor");
+        } finally {
+            document.dispose();
+        }
     }
 
     private String cmapText(Library library, Reference reference) throws Exception {

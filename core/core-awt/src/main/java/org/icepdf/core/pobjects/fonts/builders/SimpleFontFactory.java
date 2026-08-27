@@ -36,7 +36,7 @@ public class SimpleFontFactory {
         }
         // fall back on simple Type1 font, if embedding is not available
         else {
-            return new Type1FontBuilder(library, fontName).Build();
+            return new Type1FontBuilder(library, fontName, fontFile).Build();
         }
     }
 }
