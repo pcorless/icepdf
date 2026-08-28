@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.fonts.Font;
+import org.icepdf.core.pobjects.fonts.FontTextEncoder;
 import org.icepdf.core.pobjects.fonts.builders.WinAnsiEncoding;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -218,7 +219,11 @@ public class PostScriptEncoder {
                         // string; a simple font's are one-byte codes in a literal string.  Which one
                         // this is was decided when the text was laid out, and every glyph carries it.
                         boolean composite = glyphTexts.get(0).getFontSubTypeFormat() == Font.CID_FORMAT;
-                        StringBuilder line = new StringBuilder();
+                        // Both kinds of show string are written by the same encoder the widget
+                        // annotations use, so the escaping and the hex padding have one implementation
+                        // rather than one per writer.
+                        FontTextEncoder encoder = FontTextEncoder.forCodeWidth(composite);
+                        java.util.List<Integer> line = new ArrayList<>();
                         GlyphText glyphText;
                         for (int i = 0, max = glyphTexts.size(); i < max; i++) {
                             glyphText = glyphTexts.get(i);
@@ -230,14 +235,7 @@ public class PostScriptEncoder {
                                     appendCode(line, glyphText, composite);
                                 }
                                 postScript.append(BEGIN_ARRAY);
-                                if (composite) {
-                                    postScript.append('<').append(line).append('>');
-                                } else {
-                                    // use literal string to make sure string is escaped correctly
-                                    postScript.append(BEGIN_STRING)
-                                            .append(new LiteralStringObject(line.toString()))
-                                            .append(END_STRING);
-                                }
+                                encoder.appendShowStringForCodes(postScript, line);
                                 postScript.append(END_ARRAY).append(SPACE)
                                         .append(PdfOps.TJ_TOKEN).append(NEWLINE);
                                 // add shift if newline
@@ -245,7 +243,7 @@ public class PostScriptEncoder {
                                         .append(SPACE).append(PdfOps.Td_TOKEN).append(NEWLINE);
                                 // update the current.
                                 y = glyphText.getY();
-                                line = new StringBuilder();
+                                line = new ArrayList<>();
                             }
                             appendCode(line, glyphText, composite);
                         }
@@ -282,11 +280,21 @@ public class PostScriptEncoder {
      * with.  Every CID takes the same number of digits, or the string cannot be split back into
      * codes.
      */
-    private static void appendCode(StringBuilder line, GlyphText glyphText, boolean composite) {
+    /**
+     * The character code this glyph is shown by: the CID for a composite font, and for a simple one
+     * the code its WinAnsiEncoding gives - which is not the Unicode value above 0x7F.
+     */
+    private static void appendCode(java.util.List<Integer> line, GlyphText glyphText, boolean composite) {
         if (composite) {
-            line.append(String.format("%04X", (int) glyphText.getCid()));
-        } else {
-            line.append(glyphText.getUnicode());
+            line.add((int) glyphText.getCid());
+            return;
+        }
+        String unicode = glyphText.getUnicode();
+        for (int i = 0; i < unicode.length(); i++) {
+            int code = WinAnsiEncoding.codeOf(unicode.charAt(i));
+            if (code >= 0) {
+                line.add(code);
+            }
         }
     }
 

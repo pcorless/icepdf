@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import java.nio.charset.StandardCharsets;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
@@ -119,7 +120,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         }
         // finally create the shapes from the altered stream.
         if (currentContentStream != null) {
-            appearanceState.setContentStream(currentContentStream.getBytes());
+            appearanceState.setContentStream(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
         }
 
         // some widgets don't have AP dictionaries in such a case we need to create the form object
@@ -128,7 +129,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
 
         if (appearanceStream != null) {
             // update the content stream with the new stream data.
-            appearanceStream.setRawBytes(currentContentStream.getBytes());
+            appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
             // add the appearance stream
             StateManager stateManager = library.getStateManager();
             stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()), isNew);
@@ -236,7 +237,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         // apply the text offset, 4 is just a generic padding.
         content.append(4).append(' ').append(4).append(" Td ");
         // hex encode the text so that we better handle character codes > 127
-        content = encodeHexString(content, selectedField).append(" Tj ");
+        content = encodeString(content, selectedField);
         // build the final content stream.
         if (btStart >= 0) {
             currentContentStream = preBmc + "\n" + content + "\n" + postEmc;

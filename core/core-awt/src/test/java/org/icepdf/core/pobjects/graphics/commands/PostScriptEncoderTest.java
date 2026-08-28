@@ -52,11 +52,19 @@ public class PostScriptEncoderTest {
     @Test
     public void textIsWrittenAsWinAnsiCharacterCodes() throws Exception {
         byte[] contentStream = appearanceFor("A\u201CB");
+        String text = new String(contentStream, java.nio.charset.StandardCharsets.ISO_8859_1);
 
-        assertTrue(indexOf(contentStream, new byte[]{(byte) 0x93}) >= 0,
-                "the left double quote should be the single code 0x93");
+        // 0x93 under WinAnsiEncoding, written as an octal escape.  A literal string may carry the
+        // byte itself, but escaping it keeps the whole content stream seven-bit, so it survives
+        // being handled as text by anything downstream - which is how it came to be written as
+        // UTF-8 in the first place.
+        assertTrue(text.contains("\\223"),
+                "the left double quote should be the single code 0x93:\n" + text);
         assertFalse(indexOf(contentStream, new byte[]{(byte) 0xE2, (byte) 0x80, (byte) 0x9C}) >= 0,
                 "and must not be its UTF-8 encoding, which is three character codes");
+        for (byte b : contentStream) {
+            assertTrue(b >= 0, "the content stream should be seven-bit:\n" + text);
+        }
     }
 
     /**
