@@ -64,6 +64,12 @@ public abstract class StringObjectWriter {
      * neighbours need no adjustment and a gap is the difference between where the reader lands and
      * where the next survivor sits. A {@code TJ} element is in thousandths of an em and subtracts,
      * hence {@code -1000 * gap / fontSize}.
+     * <p>
+     * Those recorded positions are the targets a survivor is adjusted back to, which holds the rest
+     * of the operation exactly where it was. A writer that {@linkplain #reflowsFollowingText reflows}
+     * instead carries a running shift - the replacement's advance less the removed run's - and adds
+     * it to every later target, so the line closes up behind a shorter replacement and opens ahead of
+     * a longer one.
      *
      * @param contentOutputStream stream to write the replacement to
      * @param textOperators       sprites of the show operation being rewritten
@@ -82,26 +88,38 @@ public abstract class StringObjectWriter {
         // Where a reader will be once everything emitted so far has been shown, seeded with the
         // start of the operation.
         float readerPosition = glyphs.get(0).position();
+        // How far the text still to come has been displaced from where the parser recorded it.
+        // Zero unless the writer reflows; see reflowsFollowingText.
+        float shift = 0;
 
         for (int i = 0; i < glyphs.size(); ) {
             Placed placed = glyphs.get(i);
             if (!placed.glyphText.isFlagged()) {
-                readerPosition = writeSurvivingGlyph(contentOutputStream, placed, readerPosition, openString);
+                readerPosition = writeSurvivingGlyph(contentOutputStream, placed, readerPosition, shift, openString);
                 i++;
                 continue;
             }
+            int runEnd = i;
+            while (runEnd < glyphs.size() && glyphs.get(runEnd).glyphText.isFlagged()) {
+                runEnd++;
+            }
+            Placed lastRemoved = glyphs.get(runEnd - 1);
+            float removedAdvance = lastRemoved.position() + lastRemoved.naturalAdvance() - placed.position();
+            float replacementAdvance = 0;
             // A removed run. Only step to where it began if something is going to be written
             // there; with nothing to put in the gap the next surviving glyph adjusts over the whole
             // run in one element, rather than splitting it into two that a reader must add up.
             if (writesReplacementText()) {
-                readerPosition = writeAdjustment(contentOutputStream, placed.position(), readerPosition,
+                readerPosition = writeAdjustment(contentOutputStream, placed.position() + shift, readerPosition,
                         placed.fontSize(), openString);
                 closeString(contentOutputStream, openString);
-                readerPosition += writeRunReplacement(contentOutputStream, placed.textSprite, placed.glyphText);
+                replacementAdvance = writeRunReplacement(contentOutputStream, placed.textSprite, placed.glyphText);
+                readerPosition += replacementAdvance;
             }
-            while (i < glyphs.size() && glyphs.get(i).glyphText.isFlagged()) {
-                i++;
+            if (reflowsFollowingText()) {
+                shift += replacementAdvance - removedAdvance;
             }
+            i = runEnd;
         }
 
         closeString(contentOutputStream, openString);
@@ -151,16 +169,35 @@ public abstract class StringObjectWriter {
         return false;
     }
 
+    /**
+     * Whether the text after a rewritten run follows it, or stays where it was.
+     * <p>
+     * A redaction holds it: removing text must not move the rest of the page, so a run is replaced by
+     * an adjustment of its own width and everything after keeps its recorded position. An edit is the
+     * other case - the replacement takes the original's place in the line - and holding there prints a
+     * longer replacement over the word after it and leaves a hole behind a shorter one.
+     * <p>
+     * The reflow reaches to the end of the show operation and no further. Text placed by a later
+     * operation has its own {@code Td}, which is a position the document states rather than one this
+     * writer computed, and moving it would be rewriting the document's layout rather than the run
+     * that was edited.
+     *
+     * @return true to displace the text after a replaced run by the difference in width
+     */
+    protected boolean reflowsFollowingText() {
+        return false;
+    }
+
     private float writeSurvivingGlyph(ByteArrayOutputStream contentOutputStream, Placed placed,
-                                      float readerPosition, OpenString openString) throws IOException {
-        readerPosition = writeAdjustment(contentOutputStream, placed.position(), readerPosition,
+                                      float readerPosition, float shift, OpenString openString) throws IOException {
+        readerPosition = writeAdjustment(contentOutputStream, placed.position() + shift, readerPosition,
                 placed.fontSize(), openString);
         if (openString.glyphText == null) {
             writeDelimiterStart(placed.glyphText, contentOutputStream);
             openString.glyphText = placed.glyphText;
         }
         writeCharacterCode(placed.glyphText, contentOutputStream);
-        return placed.position() + placed.naturalAdvance();
+        return placed.position() + shift + placed.naturalAdvance();
     }
 
     /**
@@ -318,7 +355,15 @@ public abstract class StringObjectWriter {
     }
 
     protected static void writeDelimiterStart(GlyphText glyphText, ByteArrayOutputStream contentOutputStream) {
-        int fontSubType = glyphText.getFontSubTypeFormat();
+        writeDelimiterStart(glyphText.getFontSubTypeFormat(), contentOutputStream);
+    }
+
+    /**
+     * The delimiter follows the format the codes inside it are written in, which is not always the
+     * format of the run being replaced: text written in a substitute font is single-byte and belongs
+     * in a literal string even when the run it replaces was hex.
+     */
+    protected static void writeDelimiterStart(int fontSubType, ByteArrayOutputStream contentOutputStream) {
         char delimiter = fontSubType == Font.SIMPLE_FORMAT ? '(' : '<';
         contentOutputStream.write(' ');
         contentOutputStream.write(delimiter);
@@ -334,7 +379,12 @@ public abstract class StringObjectWriter {
      */
     protected static void writeDelimiterEnd(GlyphText glyphText, ByteArrayOutputStream contentOutputStream)
             throws IOException {
-        char delimiter = glyphText.getFontSubTypeFormat() == Font.SIMPLE_FORMAT ? ')' : '>';
+        writeDelimiterEnd(glyphText.getFontSubTypeFormat(), contentOutputStream);
+    }
+
+    protected static void writeDelimiterEnd(int fontSubType, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        char delimiter = fontSubType == Font.SIMPLE_FORMAT ? ')' : '>';
         contentOutputStream.write(delimiter);
     }
 

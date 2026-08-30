@@ -644,7 +644,69 @@ def fax_page():
                        extra_objs={6: image})
 
 
+def cid_subset_text():
+    """A composite (CID) font whose /ToUnicode covers only the characters the page draws.
+
+    This is the ordinary shape of a subsetted CID font: the document used "alpha bravo", so the map
+    answers for those letters and nothing else.  Editing works by running that map backwards to find
+    a character code, so a letter the page never drew - "Q", "z" - has no code to write.  Not
+    embedded, since what is being tested is the mapping rather than the glyph program.
+    """
+    used = "alphbrvo "          # the distinct characters of "alpha bravo"
+    codes = {c: i + 1 for i, c in enumerate(used)}
+    text = "alpha bravo"
+    hex_text = "".join("%04X" % codes[c] for c in text)
+
+    ranges = "".join("<%04X> <%04X>\n" % (codes[c], ord(c)) for c in used)
+    cmap = (b"/CIDInit /ProcSet findresource begin 12 dict begin begincmap\n"
+            b"/CMapName /Test-H def /CMapType 2 def\n"
+            b"1 begincodespacerange <0000> <FFFF> endcodespacerange\n"
+            + ("%d beginbfchar\n" % len(used)).encode()
+            + "".join("<%04X> <%04X>\n" % (codes[c], ord(c)) for c in used).encode()
+            + b"endbfchar\nendcmap CMapName currentdict /CMap defineresource pop end end")
+
+    widths = b"[1 [" + b" ".join(b"500" for _ in used) + b"]]"
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(("BT\n/F1 12 Tf\n20 150 Td\n<%s> Tj\nET\n" % hex_text).encode()),
+        5: (b"<< /Type /Font /Subtype /Type0 /BaseFont /Test-Identity /Encoding /Identity-H "
+            b"/DescendantFonts [6 0 R] /ToUnicode 7 0 R >>"),
+        6: (b"<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Test /CIDSystemInfo "
+            b"<< /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /DW 500 /W " + widths + b" >>"),
+        7: stream_obj(cmap),
+    }
+    return build(objs)
+
+
+def type3_text():
+    """Text drawn with a Type 3 font, whose glyphs are content streams rather than a font program.
+
+    There is nothing to write a new character *as*: a replacement would need its own glyph procedure
+    built and added to /CharProcs.  The editor refuses these, and this is what it refuses.
+    """
+    glyph = b"750 0 0 0 750 750 d1\n0 0 750 750 re f\n"
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources << /Font << /F1 5 0 R >> >> >>"),
+        4: stream_obj(b"BT\n/F1 12 Tf\n20 150 Td\n(aaa) Tj\nET\n"),
+        5: (b"<< /Type /Font /Subtype /Type3 /FontBBox [0 0 750 750] "
+            b"/FontMatrix [0.001 0 0 0.001 0 0] /CharProcs 6 0 R "
+            b"/Encoding << /Type /Encoding /Differences [97 /square] >> "
+            b"/FirstChar 97 /LastChar 97 /Widths [750] /Resources << >> >>"),
+        6: b"<< /square 7 0 R >>",
+        7: stream_obj(glyph),
+    }
+    return build(objs)
+
+
 FIXTURES = {
+    "type3_text.pdf": type3_text,
+    "cid_subset_text.pdf": cid_subset_text,
     "fax_page.pdf": fax_page,
     "soft_masked_drawn_twice.pdf": soft_masked_drawn_twice,
     "gray_image.pdf": gray_image,

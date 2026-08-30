@@ -345,8 +345,36 @@ public abstract class ZSimpleFont implements FontFile {
         return String.valueOf(c);
     }
 
+    /**
+     * The character code that draws this character, which is what writing text back into a content
+     * stream needs.
+     * <p>
+     * The map to run backwards is {@code /ToUnicode}, and FontBox keeps the reverse index for it -
+     * {@code getCodesFromUnicode}. This used to ask {@code toCID} instead, which is a different
+     * mapping entirely: it takes a character <em>code</em> and returns a CID, so handing it a Unicode
+     * value returned 0 for everything. Every character written into a composite font came out as CID
+     * 0, notdef, so an edited word rendered as a row of blanks - including characters the page was
+     * already drawing.
+     * <p>
+     * Falls back to the old behaviour when the reverse index has no answer, which is where a simple
+     * font with a guessed {@code /ToUnicode} lands; for those, code and Unicode coincide over ASCII
+     * and the old path happened to work.
+     *
+     * @param unicode character to write
+     * @return the code that selects it, or 0 when this font has none
+     */
     @Override
     public char toSelector(char unicode) {
+        if (toUnicode != null) {
+            byte[] codes = toUnicode.getCodesFromUnicode(String.valueOf(unicode));
+            if (codes != null && codes.length > 0) {
+                int code = 0;
+                for (byte codeByte : codes) {
+                    code = (code << 8) | (codeByte & 0xFF);
+                }
+                return (char) code;
+            }
+        }
         // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
         // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
         // differences.

@@ -97,7 +97,7 @@ public class TextContentEditorTest {
             page.init();
             // The whole page: "page level text" is in the page stream, "alpha bravo charlie" in the
             // form's, so both callbacks see flagged glyphs.
-            TextContentEditor.updateText(page, "text", new Rectangle(0, 0, 300, 200), "ZZZ");
+            TextContentEditor.updateText(page, new Rectangle(0, 0, 300, 200), "ZZZ");
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
             edited = out.toByteArray();
@@ -108,6 +108,59 @@ public class TextContentEditorTest {
         String streams = RedactionFixtures.contentStreams(edited, false);
         assertEquals(1, RedactionFixtures.countOccurrences(streams, "ZZZ"),
                 "the replacement should appear once across all streams, got:\n" + streams);
+    }
+
+
+    /**
+     * Editing text on a page that also carries an inline image must leave the image alone.
+     * <p>
+     * The callback used to advance past an inline image without writing its bytes, which told the
+     * copy-through machinery they had been dealt with when they had been skipped. What came out was
+     * not a page missing an image - it was a {@code BI} with no {@code ID} and no {@code EI}, a
+     * content stream a strict reader is entitled to reject.
+     */
+    @DisplayName("editing a page leaves an inline image on it intact")
+    @Test
+    public void inlineImageSurvivesAnEdit() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/inline_image.pdf").toString());
+        byte[] edited;
+        String before;
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            before = pageStreams(page);
+
+            // "alpha" is on the upper line; the image sits lower down and is not being edited.
+            List<Rectangle> bounds = RedactionFixtures.wordBounds(page, Collections.singletonList("alpha"));
+            assertEquals(1, bounds.size(), "fixture should contain 'alpha' exactly once");
+            TextContentEditor.updateText(page, bounds.get(0), "ZZZZZ");
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            edited = out.toByteArray();
+        } finally {
+            document.dispose();
+        }
+
+        String after = RedactionFixtures.contentStreams(edited, false);
+        assertTrue(after.contains("ZZZZZ"), "the edit should have been applied:\n" + after);
+        assertEquals(RedactionFixtures.countOccurrences(before, "ID "),
+                RedactionFixtures.countOccurrences(after, "ID "),
+                "the inline image's data marker should survive:\n" + after);
+        assertEquals(RedactionFixtures.countOccurrences(before, "EI"),
+                RedactionFixtures.countOccurrences(after, "EI"),
+                "and its terminator:\n" + after);
+    }
+
+    /** The page's content streams as they stand, for a before-and-after comparison. */
+    private String pageStreams(Page page) throws Exception {
+        StringBuilder streams = new StringBuilder();
+        for (org.icepdf.core.pobjects.Stream stream : page.getContentStreams()) {
+            streams.append(new String(stream.getDecodedStreamBytes(),
+                    java.nio.charset.StandardCharsets.ISO_8859_1));
+        }
+        return streams.toString();
     }
 
     // -- helpers ---------------------------------------------------------------------------------
@@ -123,7 +176,7 @@ public class TextContentEditorTest {
                     Collections.singletonList(target));
             assertEquals(1, bounds.size(), "fixture should contain '" + target + "' exactly once");
 
-            TextContentEditor.updateText(page, target, bounds.get(0), replacement);
+            TextContentEditor.updateText(page, bounds.get(0), replacement);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
