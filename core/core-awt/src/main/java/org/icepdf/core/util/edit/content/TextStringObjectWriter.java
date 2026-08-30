@@ -16,7 +16,6 @@
 package org.icepdf.core.util.edit.content;
 
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
@@ -104,7 +103,7 @@ public class TextStringObjectWriter extends StringObjectWriter {
         contentOutputStream.write(ARRAY_END);
         writeFontSelect(substitute.getResourceName(), size, contentOutputStream);
         contentOutputStream.write('[');
-        float advance = writeIn(substitute.getFontFile(), Font.SIMPLE_FORMAT, textSprite,
+        float advance = writeIn(substitute.getFontFile(), substitute.getSubTypeFormat(), textSprite,
                 firstRemoved, contentOutputStream);
         contentOutputStream.write(ARRAY_END);
         // Back to the run's own font, named as the content stream names it - the glyph knows the

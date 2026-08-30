@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Helper class to create a subset of a TrueType font for embedding in a PDF.  This class is based on
@@ -32,10 +33,16 @@ import java.util.*;
  */
 public class TrueTypeFontEmbedder {
 
+    private static final Logger LOGGER = Logger.getLogger(TrueTypeFontEmbedder.class.toString());
+
     private static final String BASE25 = "BCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private ZFontTrueType fontFile;
     private Set<Integer> subsetCodePoints = new HashSet<>();
+
+    // which kind of font the declared text needs, worked out once - see requiresCompositeFont()
+    private boolean composite;
+    private boolean compositeDecided;
 
     // subset info
     private Map<Integer, Integer> gidToCid;
@@ -54,15 +61,79 @@ public class TrueTypeFontEmbedder {
     }
 
     public void addToSubset(int codePoint) {
+        if (compositeDecided && !composite && !WinAnsiEncoding.canShow(codePoint)) {
+            // Text laid out earlier has already been written with one-byte codes, and the font this
+            // character forces is one where a code is two bytes.  Both cannot be true of one font,
+            // so the earlier text would be read as pairs of the wrong glyphs.  Every caller that
+            // lays out more than one run has to declare all of it before laying out any.
+            LOGGER.warning("U+" + Integer.toHexString(codePoint).toUpperCase()
+                    + " needs a composite font but text has already been laid out for a simple one;"
+                    + " it will not be shown correctly");
+        }
         subsetCodePoints.add(codePoint);
+    }
+
+    /**
+     * Declares text the font will have to show, without laying any of it out.
+     * <p>
+     * Which kind of font gets built is a property of all the text that shares it, so a caller that
+     * lays out several runs has to say what they all are first.  One run of Japanese in the fourth
+     * line of a signature appearance decides the font for the three Latin lines above it.
+     *
+     * @param text text that will be shown in this font
+     */
+    public void addToSubset(String text) {
+        text.codePoints().forEach(this::addToSubset);
+    }
+
+    /**
+     * Whether the text declared so far needs a composite font, which is decided by whether any of it
+     * falls outside what a simple font's one-byte WinAnsiEncoding codes can reach.
+     * <p>
+     * The answer is latched the first time it is asked for.  The question gets asked once while text
+     * is being laid out and again when the font dictionary is built, and an answer that changed in
+     * between would describe the codes with a font that does not match them.
+     *
+     * @return true if a Type 0 font is needed
+     */
+    public boolean requiresCompositeFont() {
+        if (!compositeDecided) {
+            composite = SimpleFontFactory.requiresCompositeFont(subsetCodePoints);
+            compositeDecided = true;
+        }
+        return composite;
     }
 
     public boolean isFontEmbeddable() {
         try {
             return this.fontFile != null &&
+                    hasGlyfOutlines(this.fontFile.getTrueTypeFont()) &&
                     isEmbeddingPermitted(this.fontFile.getTrueTypeFont()) &&
                     isSubsettingPermitted(this.fontFile.getTrueTypeFont());
         } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether the font keeps its outlines in a {@code glyf} table, which is what the subsetter reads.
+     * <p>
+     * An OpenType font with PostScript outlines keeps them in {@code CFF } instead, and subsetting one
+     * fails with {@code UnsupportedOperationException: OTF fonts do not have a glyf table} - from
+     * inside the subsetter, well after this method has said the font can be embedded. Answering
+     * honestly here sends such a font down the non-embedded fallback instead, which draws it.
+     * <p>
+     * This is the one thing standing between the CJK fonts every Linux distribution ships as
+     * OpenType collections and being usable: they are excluded from the font scan altogether, partly
+     * because including them turns a substitution that quietly picks another face into a failure in
+     * the middle of writing an appearance stream. Embedding them properly needs a CFF subsetter,
+     * which is a separate piece of work.
+     */
+    private static boolean hasGlyfOutlines(TrueTypeFont font) {
+        try {
+            return font != null && font.getGlyph() != null;
+        } catch (Exception e) {
+            // OpenTypeFont.getGlyph() throws rather than returning null when the outlines are CFF
             return false;
         }
     }

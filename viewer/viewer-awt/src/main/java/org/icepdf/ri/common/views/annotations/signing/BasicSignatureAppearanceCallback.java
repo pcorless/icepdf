@@ -168,6 +168,13 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
                     signatureAppearanceModel.getFontName());
             fontFile = fontFile.deriveFont(signatureAppearanceModel.getFontSize());
             trueTypeFontSubSetter = new TrueTypeFontEmbedder(fontFile);
+            // All four lines share one font, and whether that font is a simple or a composite one is
+            // decided by all of them together - a Japanese signer name settles it for the Latin lines
+            // above.  Declared before any of it is laid out, because the first line laid out is
+            // written in whichever kind was decided by then.
+            for (String text : signatureText) {
+                trueTypeFontSubSetter.addToSubset(text);
+            }
 
             Point2D.Float lastOffset;
             float advanceY = (float) bbox.getMinY() + offsetY;

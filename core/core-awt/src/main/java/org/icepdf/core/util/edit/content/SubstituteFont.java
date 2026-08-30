@@ -55,10 +55,12 @@ public class SubstituteFont {
 
     private final Name resourceName;
     private final FontFile fontFile;
+    private final byte subTypeFormat;
 
-    private SubstituteFont(Name resourceName, FontFile fontFile) {
+    private SubstituteFont(Name resourceName, FontFile fontFile, byte subTypeFormat) {
         this.resourceName = resourceName;
         this.fontFile = fontFile;
+        this.subTypeFormat = subTypeFormat;
     }
 
     /**
@@ -74,6 +76,20 @@ public class SubstituteFont {
      */
     public FontFile getFontFile() {
         return fontFile;
+    }
+
+    /**
+     * How wide a character code in this font is, as {@link Font#SIMPLE_FORMAT} or
+     * {@link Font#CID_FORMAT}.
+     * <p>
+     * Not always simple. The substitute is subsetted to the replacement text, and text outside what
+     * a one-byte WinAnsiEncoding can reach is built as a composite font - which is the ordinary case
+     * here, since a character the document's own font cannot write is often one WinAnsiEncoding
+     * cannot either. Assuming simple wrote a two-byte CID as one byte, so the substitute drew the
+     * wrong glyphs at exactly the characters it was added for.
+     */
+    public byte getSubTypeFormat() {
+        return subTypeFormat;
     }
 
     /**
@@ -105,7 +121,10 @@ public class SubstituteFont {
             Name resourceName = new Name("IcePdfEdit" + substitute.getPObjectReference().getObjectNumber());
             page.addFontResource(resourceName, substitute.getPObjectReference());
             substitute.init();
-            return new SubstituteFont(resourceName, substitute.getFont());
+            // Asked of the embedder rather than the built font: it is the embedder that decided,
+            // from the same subset, which of the two builders ran.
+            byte subTypeFormat = embedder.requiresCompositeFont() ? Font.CID_FORMAT : Font.SIMPLE_FORMAT;
+            return new SubstituteFont(resourceName, substitute.getFont(), subTypeFormat);
         } catch (Exception e) {
             // Deliberately broad: font construction reaches into font parsing, subsetting and the
             // file system, and none of it is worth failing an edit over when refusing is an option.

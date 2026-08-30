@@ -456,6 +456,18 @@ public abstract class Font extends Dictionary {
      * @return true, if font name is a core 14 font; false, otherwise.
      */
     public boolean isCore14(String fontName) {
+        return isCore14Name(fontName);
+    }
+
+    /**
+     * <p>Returns true if the font name is one of the core 14 fonts specified by Adobe.  These are the
+     * fonts a reader is required to have, and the only ones a font dictionary may leave /Widths,
+     * /FirstChar, /LastChar and /FontDescriptor out of (PDF 32000-1, 9.6.2.1).</p>
+     *
+     * @param fontName name to test if a core 14 font.
+     * @return true, if font name is a core 14 font; false, otherwise.
+     */
+    public static boolean isCore14Name(String fontName) {
         for (String aCORE14 : CORE14) {
             if (fontName.startsWith(aCORE14)) {
                 return true;

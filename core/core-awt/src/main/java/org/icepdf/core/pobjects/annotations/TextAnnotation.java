@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import java.nio.charset.StandardCharsets;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
@@ -277,7 +278,7 @@ public class TextAnnotation extends MarkupAnnotation {
         try {
             Resources resources = form.getResources();
             ContentParser cp = new ContentParser(library, resources);
-            shapes = cp.parse(Stream.fromByteArray(iconContentString.getBytes(), this),
+            shapes = cp.parse(Stream.fromByteArray(iconContentString.getBytes(StandardCharsets.ISO_8859_1), this),
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
@@ -286,7 +287,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
-        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(), isNew);
+        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(StandardCharsets.ISO_8859_1), isNew);
 //        generateExternalGraphicsState(form, opacity);
         if (form != null) {
             appearanceState.setShapes(shapes);

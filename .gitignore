@@ -20,3 +20,9 @@ core/core-awt/src/test/resources/benchmark/
 # SigningTest calls PfxGenerator.createPfx to write this before each run, so it is a build artifact
 # with fresh key material every time, not a fixture.
 viewer/viewer-awt/src/test/resources/signing/certificate.pfx
+
+# Flattened poms (exclude)
+# flatten-maven-plugin writes one per module at process-resources, so any mvn build past that phase
+# leaves 31 of them in the tree. Its flatten.clean execution removes them on mvn clean, but they are
+# present for the whole of a build-and-test run.
+**/.flattened-pom.xml

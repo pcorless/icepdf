@@ -16,6 +16,7 @@
 package org.icepdf.core.util.edit.content;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.redaction.RedactionFixtures;
 import org.icepdf.core.util.updater.WriteMode;
@@ -29,8 +30,13 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Editing text drawn with a composite (CID) font.
@@ -46,6 +52,9 @@ public class CidFontEditTest {
 
     private static final String FIXTURE =
             Paths.get("src/test/resources/redaction/cid_subset_text.pdf").toString();
+
+    private static final String INDIRECT_RESOURCES_FIXTURE =
+            Paths.get("src/test/resources/redaction/cid_subset_indirect_resources.pdf").toString();
 
     /**
      * Every letter of the replacement is one the page already draws, so this is an edit the font can
@@ -153,6 +162,68 @@ public class CidFontEditTest {
                 "the subset can write loop, so nothing should have been embedded");
     }
 
+    /**
+     * The substitute is subsetted to the replacement, and a character WinAnsiEncoding cannot reach
+     * makes it a composite font - whose codes are two bytes. Written as one byte each the substitute
+     * drew the wrong glyphs at exactly the characters it was added for, and it is added for nothing
+     * else.
+     */
+    @DisplayName("a substitute that has to be composite is written with two-byte codes")
+    @Test
+    public void compositeSubstituteIsWrittenAsCids() throws Exception {
+        // Greek alpha: outside WinAnsiEncoding, so the substitute cannot be a simple font
+        byte[] edited = edit("bravo", "\u03B1\u03B2");
+
+        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        assumeTrue(raw.contains("FontFile2"),
+                "no host font could be embedded for the substitute; nothing to check");
+        assertTrue(raw.contains("/Type0"),
+                "a substitute for text outside WinAnsiEncoding has to be a composite font");
+        String streams = RedactionFixtures.contentStreams(edited, false);
+        assertTrue(streams.contains("Tf"), "the substitute has to be selected:\n" + streams);
+        // a two-byte code cannot be written in a literal string, so the run has to be hex
+        assertTrue(streams.matches("(?s).*Tf\\s*\\[?\\s*<[0-9A-Fa-f]{4,}>.*"),
+                "the replacement should be shown as hex CIDs:\n" + streams);
+    }
+
+    /**
+     * Most documents keep /Resources as an object of its own rather than writing it into the page,
+     * and a font added for an edit has to end up somewhere the reopened page resolves it from. A
+     * content stream that selects a font the file does not define is one no reader can draw, and
+     * nothing about the bytes says so - the name is in the stream either way.
+     */
+    @DisplayName("a substitute reaches the file when /Resources is an indirect object")
+    @Test
+    public void substituteIsWrittenWhenResourcesAreIndirect() throws Exception {
+        // Saved as an incremental update, which writes only what was registered as changed; a full
+        // rewrite walks the whole document and would carry the addition however it was recorded.
+        byte[] edited = edit(INDIRECT_RESOURCES_FIXTURE, "bravo", "brave", WriteMode.INCREMENT_UPDATE);
+
+        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        assumeTrue(raw.contains("FontFile2"),
+                "no host font could be embedded for the substitute; nothing to check");
+
+        String streams = RedactionFixtures.contentStreams(edited, false);
+        Matcher selected = Pattern.compile("/(IcePdfEdit\\d+)\\s").matcher(streams);
+        assertTrue(selected.find(), "the substitute should be selected by name:\n" + streams);
+
+        // Read back rather than searched for in the bytes: the name appears in the content stream
+        // whether or not the resources that define it were written, so only resolving it through the
+        // reopened page's resources answers the question.
+        Name fontName = new Name(selected.group(1));
+        Document written = new Document();
+        try {
+            written.setByteArray(edited, 0, edited.length, null);
+            Page page = written.getPageTree().getPage(0);
+            page.init();
+            assertNotNull(page.getResources().getFont(fontName),
+                    "the page's resources have to define " + fontName + ", or no reader can draw"
+                            + " the edit");
+        } finally {
+            written.dispose();
+        }
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
 
     private static void assertFalse(boolean condition, String message) {
@@ -166,15 +237,24 @@ public class CidFontEditTest {
     }
 
     private byte[] edit(String target, String replacement) throws Exception {
+        return edit(FIXTURE, target, replacement);
+    }
+
+    private byte[] edit(String fixture, String target, String replacement) throws Exception {
+        return edit(fixture, target, replacement, WriteMode.FULL_UPDATE);
+    }
+
+    private byte[] edit(String fixture, String target, String replacement, WriteMode writeMode)
+            throws Exception {
         Document document = new Document();
-        document.setFile(FIXTURE);
+        document.setFile(fixture);
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
             TextContentEditor.updateText(page, wordBounds(page, target), replacement);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            document.saveToOutputStream(out, writeMode);
             return out.toByteArray();
         } finally {
             document.dispose();

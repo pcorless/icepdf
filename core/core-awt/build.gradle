@@ -120,6 +120,17 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
     }
+    // Keep java.util.prefs out of the developer's real ~/.java/.userPrefs.  Several viewer classes
+    // read their settings from Preferences, and the appearance of a signature is one of them, so a
+    // test both writes to the machine's own preference store and reads back whatever is in it.  Two
+    // test JVMs running at once - core and viewer - then read each other's half-written file and get
+    // another key's value, which failed the signature appearance test about half the time.
+    systemProperty 'java.util.prefs.userRoot', layout.buildDirectory.dir('test-prefs').get().asFile.absolutePath
+    systemProperty 'java.util.prefs.systemRoot', layout.buildDirectory.dir('test-prefs').get().asFile.absolutePath
+    doFirst {
+        layout.buildDirectory.dir('test-prefs').get().asFile.mkdirs()
+    }
+
     // The test JVM is forked and does not inherit the daemon's -D flags, so re-blessing a golden
     // with ./gradlew ... -Dredaction.bless=true would otherwise be silently ignored and leave the
     // goldens untouched.

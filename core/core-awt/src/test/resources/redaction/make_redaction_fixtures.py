@@ -681,6 +681,42 @@ def cid_subset_text():
     return build(objs)
 
 
+def cid_subset_indirect_resources():
+    """The same page, with /Resources as an object in its own right rather than written inline.
+
+    Most real documents do it this way, and it changes which object an edit has to write: adding a
+    substitute font to the page's resources leaves the page dictionary itself untouched, so a writer
+    that registers only the page writes the font nowhere and the content stream selects a font that
+    is not in the file.
+    """
+    used = "alphbrvo "
+    codes = {c: i + 1 for i, c in enumerate(used)}
+    hex_text = "".join("%04X" % codes[c] for c in "alpha bravo")
+
+    cmap = (b"/CIDInit /ProcSet findresource begin 12 dict begin begincmap\n"
+            b"/CMapName /Test-H def /CMapType 2 def\n"
+            b"1 begincodespacerange <0000> <FFFF> endcodespacerange\n"
+            + ("%d beginbfchar\n" % len(used)).encode()
+            + "".join("<%04X> <%04X>\n" % (codes[c], ord(c)) for c in used).encode()
+            + b"endbfchar\nendcmap CMapName currentdict /CMap defineresource pop end end")
+
+    widths = b"[1 [" + b" ".join(b"500" for _ in used) + b"]]"
+    objs = {
+        1: b"<< /Type /Catalog /Pages 2 0 R >>",
+        2: b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        3: (b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R "
+            b"/Resources 8 0 R >>"),
+        4: stream_obj(("BT\n/F1 12 Tf\n20 150 Td\n<%s> Tj\nET\n" % hex_text).encode()),
+        5: (b"<< /Type /Font /Subtype /Type0 /BaseFont /Test-Identity /Encoding /Identity-H "
+            b"/DescendantFonts [6 0 R] /ToUnicode 7 0 R >>"),
+        6: (b"<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Test /CIDSystemInfo "
+            b"<< /Registry (Adobe) /Ordering (Identity) /Supplement 0 >> /DW 500 /W " + widths + b" >>"),
+        7: stream_obj(cmap),
+        8: b"<< /Font << /F1 5 0 R >> >>",
+    }
+    return build(objs)
+
+
 def type3_text():
     """Text drawn with a Type 3 font, whose glyphs are content streams rather than a font program.
 
@@ -707,6 +743,7 @@ def type3_text():
 FIXTURES = {
     "type3_text.pdf": type3_text,
     "cid_subset_text.pdf": cid_subset_text,
+    "cid_subset_indirect_resources.pdf": cid_subset_indirect_resources,
     "fax_page.pdf": fax_page,
     "soft_masked_drawn_twice.pdf": soft_masked_drawn_twice,
     "gray_image.pdf": gray_image,

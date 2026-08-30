@@ -74,8 +74,23 @@ public class TrueTypeFontBuilder extends FontBuilder {
         float scaling = 1000f / trueTypeFontFile.getHeader().getUnitsPerEm();
         HorizontalMetricsTable hmtx = trueTypeFontFile.getHorizontalMetrics();
 
-        int firstChar = codePoints[0];
-        int lastChar = codePoints[codePoints.length - 1];
+        // codePoints are Unicode; /Widths is indexed by character code, and the font declares
+        // WinAnsiEncoding, so the two are only the same below 0x80.  Indexing by the Unicode value
+        // gave a left double quote /LastChar 8220 and an 8156-entry array for a font whose codes
+        // cannot exceed 255 - invalid for a simple font, and wrong for every code above 0x7F.
+        int firstChar = -1;
+        int lastChar = -1;
+        for (int codePoint : codePoints) {
+            int code = WinAnsiEncoding.codeOf(codePoint);
+            if (code < 0) {
+                continue;
+            }
+            firstChar = firstChar < 0 ? code : Math.min(firstChar, code);
+            lastChar = Math.max(lastChar, code);
+        }
+        if (firstChar < 0) {
+            return;
+        }
 
         List<Integer> widths = new ArrayList<>(lastChar - firstChar + 1);
         for (int i = 0; i <= lastChar - firstChar; i++) {
@@ -83,9 +98,14 @@ public class TrueTypeFontBuilder extends FontBuilder {
         }
 
         CmapLookup cmapLookup = trueTypeFontFile.getUnicodeCmapLookup();
-        for (int cid : codePoints) {
-            int gid = cmapLookup.getGlyphId(cid);
-            widths.set(cid - firstChar, Math.round(hmtx.getAdvanceWidth(gid) * scaling));
+        for (int codePoint : codePoints) {
+            int code = WinAnsiEncoding.codeOf(codePoint);
+            if (code < 0) {
+                continue;
+            }
+            // the glyph is still found by Unicode - that is what the font's cmap is keyed by
+            int gid = cmapLookup.getGlyphId(codePoint);
+            widths.set(code - firstChar, Math.round(hmtx.getAdvanceWidth(gid) * scaling));
         }
 
         fontDictionary.put(FIRST_CHAR_KEY, firstChar);
