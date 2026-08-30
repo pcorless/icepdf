@@ -76,6 +76,16 @@ public class TextStringObjectWriter extends StringObjectWriter {
         return !newText.isEmpty() && !written;
     }
 
+    /**
+     * An edit puts the replacement in the original's place in the line, so what follows it on the
+     * line follows the replacement. A redaction, which shares this writer's base, holds that text
+     * where it was instead.
+     */
+    @Override
+    protected boolean reflowsFollowingText() {
+        return true;
+    }
+
     @Override
     protected float writeRunReplacement(ByteArrayOutputStream contentOutputStream,
                                         TextSprite textSprite, GlyphText firstRemoved) throws IOException {

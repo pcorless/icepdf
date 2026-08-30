@@ -24,10 +24,14 @@ import org.icepdf.core.util.redaction.RedactionFixtures;
 import org.icepdf.core.util.updater.WriteMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -45,6 +49,17 @@ public class WordAndLineEditTest {
 
     private static final String FIXTURE =
             Paths.get("src/test/resources/redaction/simple_tj.pdf").toString();
+
+    /**
+     * The fixture's font is uniform by construction - every {@code /Widths} entry is 500, shown at
+     * 12pt with no character spacing - so a character occupies exactly 6pt and what the text after
+     * an edit should do is arithmetic rather than an estimate.
+     */
+    private static final double CHARACTER_ADVANCE = 6.0;
+
+    private static final String EDITED_WORD = "bravo";
+
+    private static final double TOLERANCE = 0.1;
 
     @DisplayName("editing a word replaces that word and leaves its neighbours")
     @Test
@@ -100,7 +115,100 @@ public class WordAndLineEditTest {
         }
     }
 
+    /**
+     * The control, and the part that is not in doubt: nothing ahead of an edit may move, and a
+     * replacement starts where the word it replaced started.
+     */
+    @DisplayName("an edit moves nothing ahead of it")
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"bravissimo", "bo", "brava"})
+    public void editMovesNothingAheadOfIt(String replacement) throws Exception {
+        byte[] before = Files.readAllBytes(Paths.get(FIXTURE));
+        byte[] after = edit(EDITED_WORD, true, replacement);
+
+        assertEquals(leftEdgeOf(before, "alpha"), leftEdgeOf(after, "alpha"), TOLERANCE,
+                "the word before the replacement should not move");
+        assertEquals(leftEdgeOf(before, EDITED_WORD), leftEdgeOf(after, replacement), TOLERANCE,
+                "the replacement should start where the word it replaced started");
+    }
+
+    /**
+     * A replacement of the same length is the case with no repositioning to get wrong, and pins the
+     * measurement itself: if this drifts, the two tests below are measuring something else.
+     */
+    @DisplayName("a same-length replacement leaves the line exactly as it was")
+    @Test
+    public void sameLengthReplacementLeavesTheLineWhereItWas() throws Exception {
+        byte[] before = Files.readAllBytes(Paths.get(FIXTURE));
+        byte[] after = edit(EDITED_WORD, true, "brava");
+
+        assertEquals(leftEdgeOf(before, "charlie"), leftEdgeOf(after, "charlie"), TOLERANCE,
+                "nothing changed width, so nothing should have moved");
+    }
+
+    /**
+     * The case text extraction cannot see. Extraction reads "alpha bravissimo charlie" whether the
+     * words are laid out that way or printed on top of one another, so this measures where the
+     * glyphs are: a replacement wider than what it replaced must push the rest of the line along,
+     * not run underneath it.
+     */
+    @DisplayName("a longer replacement does not overlap the text after it")
+    @Test
+    public void longerReplacementDoesNotOverlapTheTail() throws Exception {
+        byte[] after = edit(EDITED_WORD, true, "bravissimo");
+
+        double replacementEnd = wordBounds(after, "bravissimo").getMaxX();
+        double tailStart = leftEdgeOf(after, "charlie");
+
+        assertTrue(replacementEnd <= tailStart + TOLERANCE,
+                "the replacement ends at " + replacementEnd + " and the next word starts at "
+                        + tailStart + ", so they are printed over each other");
+    }
+
+    /**
+     * The other direction, and a matter of policy rather than of correctness: a shorter replacement
+     * should close the line up behind it rather than leave the hole the original word occupied.
+     * <p>
+     * This is where an edit parts company with a redaction. The writer they share adjusts the text
+     * after a rewritten run back to the position the parser recorded for it, which is exactly right
+     * for a redaction - removing text must not shift the page - and wrong for an edit, where the
+     * replacement is meant to take the original's place in the line.
+     */
+    @DisplayName("a shorter replacement closes the line up behind it")
+    @Test
+    public void shorterReplacementClosesTheLineUp() throws Exception {
+        byte[] before = Files.readAllBytes(Paths.get(FIXTURE));
+        byte[] after = edit(EDITED_WORD, true, "bo");
+
+        double expectedShift = ("bo".length() - EDITED_WORD.length()) * CHARACTER_ADVANCE;
+
+        assertEquals(leftEdgeOf(before, "charlie") + expectedShift, leftEdgeOf(after, "charlie"),
+                TOLERANCE, "the rest of the line should follow the shorter replacement");
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
+
+    private double leftEdgeOf(byte[] pdf, String word) throws Exception {
+        return wordBounds(pdf, word).getMinX();
+    }
+
+    /**
+     * Where a word sits on the page of a saved document, in page space.
+     */
+    private Rectangle2D wordBounds(byte[] pdf, String word) throws Exception {
+        Document document = new Document();
+        document.setInputStream(new ByteArrayInputStream(pdf), "test");
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            TextSequence sequence = page.getViewText().getTextSequence();
+            int offset = sequence.text().toString().indexOf(word);
+            assertTrue(offset >= 0, "'" + word + "' should be on the page, got: " + sequence.text());
+            return union(sequence, sequence.wordRange(offset));
+        } finally {
+            document.dispose();
+        }
+    }
 
     /**
      * Selects a word or its whole line the way the viewer does, and edits it.
@@ -137,6 +245,11 @@ public class WordAndLineEditTest {
      * tighter than the glyphs it came from.
      */
     private Rectangle boundsOf(TextSequence sequence, OffsetRange range) {
+        Rectangle2D union = union(sequence, range);
+        return union != null ? union.getBounds() : null;
+    }
+
+    private Rectangle2D union(TextSequence sequence, OffsetRange range) {
         Rectangle2D union = null;
         for (GlyphText glyph : sequence.glyphsIn(range)) {
             if (union == null) {
@@ -146,6 +259,6 @@ public class WordAndLineEditTest {
                 union.add(glyph.getBounds());
             }
         }
-        return union != null ? union.getBounds() : null;
+        return union;
     }
 }
