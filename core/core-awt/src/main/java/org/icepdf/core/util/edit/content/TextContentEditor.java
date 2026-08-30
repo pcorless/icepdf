@@ -28,25 +28,6 @@ import java.io.IOException;
 public class TextContentEditor {
 
     /**
-     * Updates the text content of a PDF page.
-     *
-     * @param page       the PDF page to update
-     * @param text       ignored; what is replaced is decided by {@code textBounds} alone
-     * @param textBounds the bounds of the text to be replaced
-     * @param newText    the new text to replace the old text
-     * @throws InterruptedException page init can be interrupted
-     * @throws IOException          if an error occurs while writing the content stream
-     * @deprecated since 7.5.0, use {@link #updateText(Page, Rectangle, String)}. The {@code text}
-     * argument was never read: the glyphs replaced are the ones inside {@code textBounds}, and a
-     * caller passing text that disagreed with the bounds was quietly given the bounds' answer.
-     */
-    @Deprecated
-    public static void updateText(Page page, String text, Rectangle textBounds, String newText) throws InterruptedException,
-            IOException {
-        updateText(page, textBounds, newText);
-    }
-
-    /**
      * Replaces the text within {@code textBounds}.
      * <p>
      * Where the font the text is drawn in cannot write the replacement - the ordinary case for a
