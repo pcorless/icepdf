@@ -275,12 +275,6 @@ public class PostScriptEncoder {
     }
 
     /**
-     * Appends one character code: the CID as four hex digits for a composite font, or the character
-     * itself for a simple one, where the code is worked out by the charset the stream is written
-     * with.  Every CID takes the same number of digits, or the string cannot be split back into
-     * codes.
-     */
-    /**
      * The character code this glyph is shown by: the CID for a composite font, and for a simple one
      * the code its WinAnsiEncoding gives - which is not the Unicode value above 0x7F.
      */

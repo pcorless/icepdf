@@ -222,12 +222,6 @@ public class ContentWriterUtils {
      * @param font font object to persist to main state manager.
      */
     /**
-     * Moves an object the font depends on out of temporary storage, so it is written with the font.
-     * <p>
-     * Silently does nothing when the entry is not a reference or is already promoted; a font built
-     * from an existing object has nothing temporary to move.
-     */
-    /**
      * Moves a newly built object, and everything it refers to, from the temporary cache into the
      * changes that actually get written.
      * <p>

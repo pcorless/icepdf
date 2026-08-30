@@ -16,6 +16,8 @@
 package org.icepdf.core.pobjects.fonts.builders;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The one place that turns a Unicode character into the character code a {@code /WinAnsiEncoding}
@@ -46,6 +48,12 @@ public final class WinAnsiEncoding {
      */
     private static final int[] TO_UNICODE = new int[256];
 
+    /**
+     * The same table read backwards, built once. Scanning for a code is a per-character operation on
+     * the content-stream writing path, and the encoding does not change.
+     */
+    private static final Map<Integer, Integer> TO_CODE = new HashMap<>(256);
+
     static {
         for (int code = 0; code < 256; code++) {
             String decoded = new String(new byte[]{(byte) code}, CHARSET);
@@ -54,6 +62,10 @@ public final class WinAnsiEncoding {
             // compile differently on a machine whose default is not UTF-8.
             TO_UNICODE[code] = decoded.length() == 1 && decoded.charAt(0) != '\uFFFD'
                     ? decoded.charAt(0) : -1;
+            if (TO_UNICODE[code] >= 0) {
+                // first code wins, matching the scan this replaced
+                TO_CODE.putIfAbsent(TO_UNICODE[code], code);
+            }
         }
     }
 
@@ -65,12 +77,8 @@ public final class WinAnsiEncoding {
      * @return the character code that shows it, or -1 if this encoding cannot show it at all
      */
     public static int codeOf(int unicode) {
-        for (int code = 0; code < TO_UNICODE.length; code++) {
-            if (TO_UNICODE[code] == unicode) {
-                return code;
-            }
-        }
-        return -1;
+        Integer code = TO_CODE.get(unicode);
+        return code != null ? code : -1;
     }
 
     /**
