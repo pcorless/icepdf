@@ -1866,34 +1866,38 @@ public class Page extends Dictionary {
     /**
      * Adds a font to this page's resources, so content on the page can select it.
      * <p>
-     * A page's {@code /Resources} may be inherited from the page tree, and adding to that dictionary
-     * would add the font to every page inheriting it. So an inheriting page is given a copy of its
-     * own first: the font belongs to this page's content, not to its siblings'.
+     * A page's {@code /Resources} may be inherited from the page tree, and its {@code /Font} may be
+     * an object several pages point at. Adding to either in place would add the font to every page
+     * sharing it, so this page is given its own copy: the font belongs to this page's content, not
+     * to its siblings'.
      *
      * @param fontName      name the content stream will select the font by
      * @param fontReference the font object
      * @since 7.5.0
      */
     public void addFontResource(Name fontName, Reference fontReference) {
-        StateManager stateManager = library.getStateManager();
-        DictionaryEntries pageResources = library.getDictionary(entries, RESOURCES_KEY);
-        if (pageResources == null) {
-            Resources inherited = getResources();
-            pageResources = new DictionaryEntries();
-            if (inherited != null && inherited.getEntries() != null) {
-                pageResources.putAll(inherited.getEntries());
-            }
-            entries.put(RESOURCES_KEY, pageResources);
+        // The page gets its own /Resources, with its own /Font, written into the page dictionary.
+        // Neither is necessarily the page's to change: /Resources may be inherited from the page
+        // tree or be an object several pages point at, and /Font the same, so adding to what is
+        // reached would add the font to every page sharing it. Writing a copy into the page also
+        // settles which object has to be registered as changed - the page, which is the one that
+        // now holds the entries.
+        DictionaryEntries pageResources = new DictionaryEntries();
+        Resources current = getResources();
+        if (current != null && current.getEntries() != null) {
+            pageResources.putAll(current.getEntries());
         }
-        DictionaryEntries fonts = library.getDictionary(pageResources, Resources.FONT_KEY);
-        if (fonts == null) {
-            fonts = new DictionaryEntries();
-            pageResources.put(Resources.FONT_KEY, fonts);
+        DictionaryEntries fonts = new DictionaryEntries();
+        DictionaryEntries currentFonts = library.getDictionary(pageResources, Resources.FONT_KEY);
+        if (currentFonts != null) {
+            fonts.putAll(currentFonts);
         }
         fonts.put(fontName, fontReference);
+        pageResources.put(Resources.FONT_KEY, fonts);
+        entries.put(RESOURCES_KEY, pageResources);
         // the page now resolves its own resources, including the font just added
         resources = new Resources(library, pageResources);
-        stateManager.addChange(new PObject(this, getPObjectReference()));
+        library.getStateManager().addChange(new PObject(this, getPObjectReference()));
     }
 
     public Resources getResources() {

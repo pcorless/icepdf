@@ -122,7 +122,8 @@ public final class ToUnicodeCMap {
             int end = Math.min(start + 100, codes.length);
             cmap.append(end - start).append(" beginbfchar\n");
             for (int i = start; i < end; i++) {
-                cmap.append(String.format("<" + codeFormat + "> <%04X>%n", codes[i], mappings.get(codes[i])));
+                cmap.append(String.format("<" + codeFormat + "> <", codes[i]))
+                        .append(utf16BigEndian(mappings.get(codes[i]))).append(">\n");
             }
             cmap.append("endbfchar\n");
         }
@@ -134,5 +135,19 @@ public final class ToUnicodeCMap {
         stream.setPObjectReference(reference);
         stateManager.addTempChange(new PObject(stream, reference));
         return reference;
+    }
+
+    /**
+     * The destination of a bfchar entry, which is a UTF-16BE string (PDF 32000-1 9.10.3) - so a code
+     * point above the basic plane is a surrogate pair and takes eight hex digits, not four. Written
+     * as four it came out an odd number of digits, which is not a hex string a reader can parse, and
+     * the whole CMap with it.
+     */
+    private static String utf16BigEndian(int codePoint) {
+        StringBuilder hex = new StringBuilder(8);
+        for (char unit : Character.toChars(codePoint)) {
+            hex.append(String.format("%04X", (int) unit));
+        }
+        return hex.toString();
     }
 }

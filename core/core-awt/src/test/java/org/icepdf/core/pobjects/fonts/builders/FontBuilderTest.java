@@ -28,7 +28,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -185,6 +187,31 @@ public class FontBuilderTest {
             assertTrue(((Number) widths.get(0)).intValue() > 0, "space should have a width");
             assertNotNull(font.getEntries().get(new Name("FontDescriptor")),
                     "a font outside the fourteen needs a descriptor");
+        } finally {
+            document.dispose();
+        }
+    }
+
+    /**
+     * A bfchar destination is a UTF-16BE string, so a code point above the basic plane is a surrogate
+     * pair and takes eight hex digits. Written as four it came out an odd number of digits - not a
+     * hex string a reader can parse, which loses the whole CMap rather than the one character.
+     */
+    @DisplayName("a code point outside the basic plane is mapped as a surrogate pair")
+    @Test
+    public void astralCodePointsAreMappedAsSurrogatePairs() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get("src/test/resources/redaction/simple_tj.pdf").toString());
+        try {
+            Library library = document.getCatalog().getLibrary();
+            Map<Integer, Integer> mappings = new LinkedHashMap<>();
+            mappings.put(1, 0x0041);            // A, in the basic plane
+            mappings.put(2, 0x1F600);           // a grinning face, which is not
+            String cmap = cmapText(library, ToUnicodeCMap.forCids(library, mappings));
+
+            assertTrue(cmap.contains("<0001> <0041>"), "a basic-plane character stays four digits:\n" + cmap);
+            assertTrue(cmap.contains("<0002> <D83DDE00>"),
+                    "and an astral one is written as its surrogate pair:\n" + cmap);
         } finally {
             document.dispose();
         }
