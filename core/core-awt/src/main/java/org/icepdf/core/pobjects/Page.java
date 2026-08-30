@@ -1863,6 +1863,39 @@ public class Page extends Dictionary {
         return shapes.getImages();
     }
 
+    /**
+     * Adds a font to this page's resources, so content on the page can select it.
+     * <p>
+     * A page's {@code /Resources} may be inherited from the page tree, and adding to that dictionary
+     * would add the font to every page inheriting it. So an inheriting page is given a copy of its
+     * own first: the font belongs to this page's content, not to its siblings'.
+     *
+     * @param fontName      name the content stream will select the font by
+     * @param fontReference the font object
+     * @since 7.5.0
+     */
+    public void addFontResource(Name fontName, Reference fontReference) {
+        StateManager stateManager = library.getStateManager();
+        DictionaryEntries pageResources = library.getDictionary(entries, RESOURCES_KEY);
+        if (pageResources == null) {
+            Resources inherited = getResources();
+            pageResources = new DictionaryEntries();
+            if (inherited != null && inherited.getEntries() != null) {
+                pageResources.putAll(inherited.getEntries());
+            }
+            entries.put(RESOURCES_KEY, pageResources);
+        }
+        DictionaryEntries fonts = library.getDictionary(pageResources, Resources.FONT_KEY);
+        if (fonts == null) {
+            fonts = new DictionaryEntries();
+            pageResources.put(Resources.FONT_KEY, fonts);
+        }
+        fonts.put(fontName, fontReference);
+        // the page now resolves its own resources, including the font just added
+        resources = new Resources(library, pageResources);
+        stateManager.addChange(new PObject(this, getPObjectReference()));
+    }
+
     public Resources getResources() {
         return resources;
     }

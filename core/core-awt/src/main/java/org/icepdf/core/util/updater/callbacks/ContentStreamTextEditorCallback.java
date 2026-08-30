@@ -18,6 +18,7 @@ package org.icepdf.core.util.updater.callbacks;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.edit.content.SubstituteFont;
 import org.icepdf.core.util.edit.content.TextStringObjectWriter;
 
 import java.awt.*;
@@ -29,20 +30,34 @@ import java.io.IOException;
  * ContentStreamTextEditorCallback is called when a pages content stream has been set for edited content.  The callback
  * is called as a content parsing starts, tokens are parsed and the content stream ends.   The callback writes
  * the original content stream to a new output, removes the text marked as edited and replaces it with the new text.
+ * <p>
+ * <b>Changed in 7.5.0.</b> The constructors no longer take the text being replaced. It was accepted,
+ * stored, handed to every child callback and read by nothing - what is replaced is decided by the
+ * bounds alone - so a caller passing text that disagreed with the bounds was quietly given the
+ * bounds' answer. No compatibility overload is offered: re-accepting an argument that decides
+ * nothing would keep the misdirection with a deprecation warning attached to it. Callers should be
+ * using {@link org.icepdf.core.util.edit.content.TextContentEditor#updateText(org.icepdf.core.pobjects.Page,
+ * java.awt.Rectangle, String)} rather than building a callback themselves.
  *
  * @since 7.3.0
  */
 public class ContentStreamTextEditorCallback extends ContentStreamCallback {
 
     private final Rectangle textBounds;
-    private String text;
     private String newText;
 
 
-    public ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText) {
-        super(library, new TextStringObjectWriter(newText));
+    public ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText) {
+        this(library, textBounds, newText, null);
+    }
+
+    /**
+     * @param substitute font to write the replacement in when the run's own cannot express it
+     */
+    public ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText,
+                                           SubstituteFont substitute) {
+        super(library, new TextStringObjectWriter(newText, substitute));
         this.newText = newText;
-        this.text = text;
         this.textBounds = textBounds;
     }
 
@@ -51,12 +66,11 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
      *                           replacement text is written once for the edit rather than once per
      *                           content stream the selection happens to span
      */
-    protected ContentStreamTextEditorCallback(Library library, String text, Rectangle textBounds, String newText,
+    protected ContentStreamTextEditorCallback(Library library, Rectangle textBounds, String newText,
                                               StringObjectWriter stringObjectWriter, AffineTransform transform) {
         super(library, stringObjectWriter, transform);
         this.textBounds = textBounds;
         this.newText = newText;
-        this.text = text;
     }
 
     /**
@@ -66,7 +80,7 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
      * stream the selection reaches into.
      */
     public ContentStreamCallback createChildInstance(AffineTransform transform) {
-        return new ContentStreamTextEditorCallback(this.library, this.text, this.textBounds,
+        return new ContentStreamTextEditorCallback(this.library, this.textBounds,
                 this.newText, this.stringObjectWriter, transform);
     }
 
@@ -83,9 +97,18 @@ public class ContentStreamTextEditorCallback extends ContentStreamCallback {
         }
     }
 
+    /**
+     * An edit has nothing to say about an image, but the image's bytes still have to be written.
+     * <p>
+     * Advancing {@code lastTokenPosition} past them without writing tells the copy-through machinery
+     * they have been dealt with, when they have been skipped: what came out was not a page missing an
+     * image but a {@code BI} with no {@code ID} and no {@code EI}, which is a content stream a strict
+     * reader is entitled to reject. "Nothing to do" is true of the decision and false of the bytes.
+     */
     public void checkAndModifyInlineImage(ImageReference imageReference, int pos) throws InterruptedException,
             IOException {
-        // nothing to do
+        burnedContentOutputStream.write(originalContentStreamBytes, lastTokenPosition,
+                pos - lastTokenPosition);
         lastTokenPosition = pos;
     }
 
