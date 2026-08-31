@@ -15,8 +15,8 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.core.pobjects.fonts.FontFile;
+import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.util.Utils;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,6 +32,9 @@ public class HexStringObject extends AbstractStringObject {
 
     private static final Logger logger =
             Logger.getLogger(HexStringObject.class.getName());
+
+    /** UTF-16BE byte order marker, as hexadecimal digits: marks 4 digit character codes. */
+    private static final String BYTE_ORDER_MARKER = "FEFF";
 
     /**
      * <p>Creates a new hexadecimal string object so that it represents the same
@@ -62,24 +65,35 @@ public class HexStringObject extends AbstractStringObject {
         stringData.append(normalizeHex(new StringBuilder(string), 2).toString());
     }
 
+    /**
+     * <p>Creates a new hexadecimal string object holding the given text, for strings created after
+     * the document was parsed - an annotation property value, say.  The counterpart of
+     * {@link LiteralStringObject#LiteralStringObject(String, Reference)}, and like it the string is
+     * marked modified so the writers know its contents are plain text that still needs encrypting.
+     * </p>
+     *
+     * @param string    the text to hold, unencrypted
+     * @param reference of parent PObject, needed to encrypt on write
+     */
+    public HexStringObject(String string, Reference reference) {
+        this.reference = reference;
+        this.isModified = true;
+        stringData = encodeHexString(string);
+    }
+
     public static HexStringObject createHexString(String literalstring) {
         StringBuilder hexString = encodeHexString(literalstring);
         return new HexStringObject(hexString.toString());
     }
 
+    /**
+     * Encodes bytes as hexadecimal digits, two per byte.
+     *
+     * @param byteArray bytes to encode
+     * @return hexadecimal digits, upper case
+     */
     public static String encodeHexString(byte[] byteArray) {
-        StringBuffer hexStringBuffer = new StringBuffer();
-        for (int i = 0; i < byteArray.length; i++) {
-            hexStringBuffer.append(byteToHex(byteArray[i]));
-        }
-        return hexStringBuffer.toString();
-    }
-
-    private static String byteToHex(byte num) {
-        char[] hexDigits = new char[2];
-        hexDigits[0] = Character.forDigit((num >> 4) & 0xF, 16);
-        hexDigits[1] = Character.forDigit((num & 0xF), 16);
-        return new String(hexDigits);
+        return toHex(byteArray).toString();
     }
 
     /**
@@ -92,31 +106,27 @@ public class HexStringObject extends AbstractStringObject {
     public static StringBuilder encodeHexString(String contents) {
         StringBuilder hex = new StringBuilder();
         if (contents != null && !contents.isEmpty()) {
-            char[] chars = contents.toCharArray();
-            hex.append("FEFF");
-            String hexCode;
-            for (char aChar : chars) {
-                hexCode = Integer.toHexString(aChar);
-                if (hexCode.length() == 2) {
-                    hexCode = "00" + hexCode;
-                } else if (hexCode.length() == 1) {
-                    hexCode = "000" + hexCode;
-                }
-                hex.append(hexCode);
+            hex.append(BYTE_ORDER_MARKER);
+            for (int i = 0, max = contents.length(); i < max; i++) {
+                // 4 digits per character: the high byte first, so 'A' is 0041 and not 4100
+                char aChar = contents.charAt(i);
+                appendHexByte(hex, aChar >> 8);
+                appendHexByte(hex, aChar);
             }
         }
         return hex;
     }
 
     /**
-     * Gets the integer value of the hexidecimal data specified by the start and
-     * offset parameters.
+     * Reads a run of hexadecimal digits as an unsigned integer.  Private because the only caller
+     * left is {@link #getRawBytes()}; the public form measured its offset in digits while the
+     * literal string's identically named method measured bytes, and nothing used either.
      *
-     * @param start  the begining index, inclusive
-     * @param offset the length of bytes to process
-     * @return unsigned integer value of the specifed data range
+     * @param start  the beginning index, inclusive
+     * @param offset the number of digits to process
+     * @return unsigned integer value of the specified data range, 0 if out of range or unparsable
      */
-    public int getUnsignedInt(int start, int offset) {
+    private int digitsToInt(int start, int offset) {
         if (start < 0 || stringData.length() < (start + offset))
             return 0;
         int unsignedInt = 0;
@@ -126,17 +136,6 @@ public class HexStringObject extends AbstractStringObject {
         } catch (NumberFormatException e) {
             int finalUnsignedInt = unsignedInt;
             logger.log(Level.FINER, () -> "Number Format Exception " + finalUnsignedInt + " " + stringData.substring(start, start + offset));
-        }
-        return unsignedInt;
-    }
-
-    public int getUnsignedInt(String data) {
-        int unsignedInt = 0;
-        try {
-            unsignedInt = Integer.parseInt(data, 16);
-        } catch (NumberFormatException e) {
-            int finalUnsignedInt = unsignedInt;
-            logger.log(Level.FINER, () -> "Number Format Exception " + finalUnsignedInt);
         }
         return unsignedInt;
     }
@@ -162,118 +161,58 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * <p>Gets a hexadecimal StringBuffer representation of this object's data,
-     * which is in fact the raw data contained in this object.</p>
-     *
-     * @return a StringBuffer representation of the objects data in hexadecimal.
-     */
-    public StringBuilder getHexStringBuffer() {
-        return stringData;
-    }
-
-    /**
-     * <p>Gets a literal StringBuffer representation of this object's data.
-     * The hexadecimal data is converted to an equivalent string representation</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    public StringBuilder getLiteralStringBuffer() {
-        return hexToString(stringData);
-    }
-
-    /**
      * <p>Gets a literal String representation of this object's data.
      * The hexadecimal data is converted to an equivalent string representation.</p>
      *
      * @return a String representation of the object's data.
      */
     public String getLiteralString() {
-        return hexToString(stringData).toString();
+        return decodeBytes(getRawBytes());
     }
 
     /**
-     * <p>Gets a literal String representation of this object's data using the
-     * specifed font and format.  The font is used to verify that the
-     * specific character codes can be rendered; if they can not, they may be
-     * removed or combined with the next character code to get a displayable
-     * character code.
+     * Decrypts the bytes the digits encode and only then decodes them.
+     * <p>
+     * Order matters here in a way it does not for a literal string, which is why this overrides the
+     * inherited implementation.  A hexadecimal string's byte order marker belongs to the plain text,
+     * so decoding first - as decrypting {@link #getLiteralString()} does - reads the marker out of
+     * cipher text, where it is not.  A UTF-16 title in an encrypted document came back as its raw
+     * bytes, marker and interleaved nulls included, rather than as its text.
      *
-     * @param fontFormat the type of font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderaable characters for the
-     * given font.
+     * @param securityManager security manager associated with parent document.
      */
-    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-        if (fontFormat == Font.SIMPLE_FORMAT) {
-            stringData = new StringBuilder(normalizeHex(stringData, 2).toString());
-            int charOffset = 2;
-            int length = getLength();
-            StringBuilder tmp = new StringBuilder(length);
-            int lastIndex = 0;
-            int charValue;
-            int offset;
-            for (int i = 0; i < length; i += charOffset) {
-                offset = lastIndex + charOffset;
-                charValue = getUnsignedInt(i - lastIndex, offset);
-                // 0 cid is valid, so we have ot be careful we don't exclude the
-                // cid 00 = 0 or 0000 = 0, not 0000 = 00.
-                // removed font check as it was causing problems with a lot of Latin based hex strings
-                // may need to revisit in the future when getting back to multibyte encodings.
-                if (!(offset < length && charValue == 0)) {
-                    tmp.append((char) charValue);
-                    lastIndex = 0;
-                } else {
-                    lastIndex += charOffset;
-                }
-            }
-            return tmp;
-        } else if (fontFormat == Font.CID_FORMAT) {
-            stringData = new StringBuilder(normalizeHex(stringData, 4).toString());
-            int charOffset = 2;
-            int length = getLength();
-            int charValue;
-            boolean notUCS2 = font.getToUnicode() != null
-                    && font.getToUnicode().getName() != null
-                    && !font.getToUnicode().getName().contains("UCS2");
-            StringBuilder tmp = new StringBuilder(length);
-            // attempt to detect mulibyte encoded strings.
-            for (int i = 0; i < length; i += charOffset) {
-                String first = stringData.substring(i, i + 2);
-                if (first.charAt(0) != '0') {
-                    // check range for possible 2 byte char ie mixed mode.
-                    charValue = getUnsignedInt(first);
-                    if (notUCS2 && font.canDisplay((char) charValue) && font.getSource() != null) {
-                        tmp.append((char) charValue);
-                    } else {
-                        charValue = getUnsignedInt(i, 4);
-                        if (font.canDisplay((char) charValue)) {
-                            tmp.append((char) charValue);
-                            i += 2;
-                        }
-                    }
-                } else {
-                    charValue = getUnsignedInt(i, 4);
-                    // should never have a 4 digit zero value.
-                    if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue);
-                        i += 2;
-                    }
-                }
-            }
-            return tmp;
+    @Override
+    public String getDecryptedLiteralString(SecurityManager securityManager) {
+        return decodeBytes(getDecryptedRawBytes(securityManager));
+    }
+
+    /**
+     * The digits to write for this string when the document is encrypted and the string is not:
+     * the bytes the digits encode, encrypted, back in hexadecimal.
+     * <p>
+     * Encrypting {@link #getHexString()} instead would encrypt the ASCII of the digits rather than
+     * the bytes they stand for.
+     *
+     * @param reference       parent object reference, part of the per object key
+     * @param securityManager security manager associated with parent document.
+     * @return hexadecimal digits of the encrypted bytes
+     */
+    public String getEncryptedHexString(Reference reference, SecurityManager securityManager) {
+        return toHex(getEncryptedRawBytes(reference, securityManager)).toString();
+    }
+
+    /**
+     * The bytes the hex digits encode, two digits per byte.  The constructor has already stripped
+     * whitespace and padded an odd digit count with a trailing zero (PDF 32000-1 7.3.4.3), so the
+     * digits always pair up.
+     */
+    public byte[] getRawBytes() {
+        int digits = stringData.length();
+        byte[] bytes = new byte[digits / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) digitsToInt(i * 2, 2);
         }
-        return null;
-    }
-
-    /**
-     * The length of the underlying objects data.
-     *
-     * @return length of object's data.
-     */
-    public int getLength() {
-        return stringData.length();
+        return bytes;
     }
 
     /**
@@ -324,43 +263,17 @@ public class HexStringObject extends AbstractStringObject {
     }
 
     /**
-     * Utility method for converting a hexadecimal string to a literal string.
-     *
-     * @param hh StringBuffer containing data in hexadecimal form.
-     * @return StringBuffer containing data in literal form.
+     * Turns the bytes the digits encode into text: UTF-16BE when they open with the byte order
+     * marker, one character per byte otherwise.
+     * <p>
+     * Note the second case is a byte string, NOT PDFDocEncoding - unlike a PDF text string proper,
+     * which {@link org.icepdf.core.util.Utils#decodeTextString} handles.  This accessor has always
+     * answered raw bytes for unmarked data and callers depend on it; only the marker rule is shared.
      */
-    private StringBuilder hexToString(StringBuilder hh) {
-
-        // make sure we have a valid hex value to convert to string.
-        // can't decrypt an empty string.
-        if (hh != null && hh.length() == 0) {
-            return new StringBuilder();
-        }
-
-        StringBuilder sb;
-        // special case, test for not a 4 byte character code format
-        if (!((hh.charAt(0) == 'F' | hh.charAt(0) == 'f')
-                && (hh.charAt(1) == 'E' | hh.charAt(1) == 'e')
-                && (hh.charAt(2) == 'F' | hh.charAt(2) == 'f')
-                && (hh.charAt(3) == 'F') | hh.charAt(3) == 'f')) {
-            return getRawHexToString();
-        }
-        // otherwise, assume 4 byte character codes
-        else {
-            int length = hh.length();
-            // check for the need to add padding
-            if (((length - 4) / 4) % 2 != 0) {
-                hh.append("00");
-            }
-            sb = new StringBuilder(length / 4);
-            String subStr;
-            // make sure to skip the marker
-            for (int i = 4; i < length; i = i + 4) {
-                subStr = hh.substring(i, i + 4);
-                sb.append((char) Integer.parseInt(subStr, 16));
-            }
-            return sb;
-        }
+    private static String decodeBytes(byte[] bytes) {
+        return Utils.isUtf16Be(bytes)
+                ? Utils.decodeUtf16Be(bytes)
+                : Utils.convertByteArrayToByteString(bytes);
     }
 
     /**
@@ -370,18 +283,7 @@ public class HexStringObject extends AbstractStringObject {
      * @return two byte hex string converted to plain string.
      */
     public StringBuilder getRawHexToString() {
-
-        StringBuilder sb;
-
-        int length = stringData.length();
-        sb = new StringBuilder(length / 2);
-        String subStr;
-
-        for (int i = 0; i < length; i = i + 2) {
-            subStr = stringData.substring(i, i + 2);
-            sb.append((char) Integer.parseInt(subStr, 16));
-        }
-        return sb;
+        return new StringBuilder(Utils.convertByteArrayToByteString(getRawBytes()));
     }
 
 }

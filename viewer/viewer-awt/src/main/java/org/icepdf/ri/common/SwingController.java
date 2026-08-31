@@ -4821,9 +4821,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                                 havePermissionToExtractContent() &&
                                 !(documentViewController.getDocumentViewModel().isSelectAll() &&
                                         document.getNumberOfPages() > MAX_SELECT_ALL_PAGE_COUNT)) {
-                            // get the text.
+                            // get the text (paragraph-formatted; preserves line/paragraph breaks).
                             StringSelection stringSelection = new StringSelection(
-                                    documentViewController.getFlatSelectedText());
+                                    documentViewController.getSelectedText());
                             Toolkit.getDefaultToolkit().getSystemClipboard()
                                     .setContents(stringSelection, stringSelection);
                         } else {

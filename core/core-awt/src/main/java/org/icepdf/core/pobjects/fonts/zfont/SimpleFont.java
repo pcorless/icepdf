@@ -62,6 +62,14 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
     protected Encoding encoding;
 
     /**
+     * @return the font's encoding, which maps a character code to the glyph it shows; null if the
+     * font has none of its own
+     */
+    public Encoding getFontEncoding() {
+        return encoding;
+    }
+
+    /**
      * Creates a new instance of a PDF Font.
      *
      * @param library library of all objects in PDF

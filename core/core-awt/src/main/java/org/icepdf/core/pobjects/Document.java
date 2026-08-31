@@ -31,6 +31,8 @@ import org.icepdf.core.pobjects.structure.Header;
 import org.icepdf.core.pobjects.structure.Trailer;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.redaction.RedactionRequest;
 import org.icepdf.core.util.updater.DocumentBuilder;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.core.util.updater.modifiers.ModifierFactory;
@@ -118,6 +120,10 @@ public class Document {
     private RandomAccessFile randomAccessFile;
     private ByteBuffer documentByteBuffer;
     private CrossReferenceRoot crossReferenceRoot;
+
+    // what the next write should redact, and what the last one did
+    private RedactionRequest redactionRequest;
+    private RedactionReport redactionReport;
 
     static {
         // sets if file caching is enabled or disabled.
@@ -578,11 +584,16 @@ public class Document {
      * The OutputStream is not flushed or closed, in case this method's
      * caller requires otherwise.
      *
-     * @param out OutputStream to which the PDF file bytes are written.
+     * @param out       OutputStream to which the PDF file bytes are written.
+     * @param writeMode write mode used to update the file with changes.  Redactions are only burned
+     *                  by {@link WriteMode#FULL_UPDATE}; an incremental update can only append, so it
+     *                  cannot remove redacted content.  Saving incrementally with redactions pending
+     *                  logs a warning and leaves the redaction annotations unburned.
      * @return The length of the PDF file copied
      * @throws IOException if there is some problem reading or writing the PDF data
      */
     public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
+        warnIfRedactionsPending(writeMode);
         if (documentFileChannel != null) {
             synchronized (library.getMappedFileByteBufferLock()) {
                 ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
@@ -610,6 +621,26 @@ public class Document {
             }
         } else {
             return 0;
+        }
+    }
+
+    /**
+     * Redactions are burned into the content streams by the full updater; by its nature an
+     * incremental update can only append, so it cannot remove the content being redacted.  Saving
+     * incrementally with redaction annotations still pending is a legitimate operation - the
+     * annotations are unburned markup, and the document is saved as work in progress - so this is a
+     * warning rather than an error, and the caller's chosen write mode is honoured.  Promoting the
+     * write to a full update would rewrite and renumber every object, invalidating any existing
+     * signature the incremental path would have preserved.
+     *
+     * @param writeMode write mode requested by the caller, which is honoured either way
+     */
+    private void warnIfRedactionsPending(WriteMode writeMode) {
+        if (writeMode == WriteMode.INCREMENT_UPDATE && stateManager != null
+                && stateManager.hasRedactions()) {
+            logger.warning("Saving incrementally with redaction annotations still pending; the " +
+                    "redacted content is NOT removed by an incremental update.  Write with " +
+                    "WriteMode.FULL_UPDATE to burn the redactions.");
         }
     }
 
@@ -721,6 +752,47 @@ public class Document {
         }
     }
 
+    /**
+     * States how the next full write should redact this document.  Optional: a document saved with
+     * redaction annotations on it is redacted with the default options either way.
+     *
+     * @param redactionRequest what to redact and how, or null to go back to the defaults
+     * @see org.icepdf.core.util.redaction.Redactor
+     */
+    public void setRedactionRequest(RedactionRequest redactionRequest) {
+        this.redactionRequest = redactionRequest;
+    }
+
+    /**
+     * @return the request set by {@link #setRedactionRequest}, or null
+     */
+    public RedactionRequest getRedactionRequest() {
+        return redactionRequest;
+    }
+
+    /**
+     * What the last write removed from this document.
+     * <p>
+     * Null until the document has been written with {@link WriteMode#FULL_UPDATE}, because that is
+     * when redaction happens - an incremental update only appends, so it cannot remove anything.
+     * Worth reading rather than assuming: it carries warnings for anything that degraded rather than
+     * failing outright.
+     *
+     * @return the report from the last full write, or null if none has happened
+     */
+    public RedactionReport getRedactionReport() {
+        return redactionReport;
+    }
+
+    /**
+     * Records what a write removed.  Called by the writer.
+     *
+     * @param redactionReport report from the write that just happened
+     */
+    public void setRedactionReport(RedactionReport redactionReport) {
+        this.redactionReport = redactionReport;
+    }
+
     public boolean hasRedactions() {
         // check state manager first as this will be a bit cheaper than scanning each page in the document.
         if (stateManager.hasRedactions()) {
@@ -732,7 +804,7 @@ public class Document {
             for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
                 page = pageTree.getPage(i);
                 redactions = page.getRedactionAnnotations();
-                if (redactions != null && redactions.size() > 1) {
+                if (redactions != null && !redactions.isEmpty()) {
                     return true;
                 }
             }

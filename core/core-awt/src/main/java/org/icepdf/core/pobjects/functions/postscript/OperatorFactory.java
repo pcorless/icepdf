@@ -15,7 +15,7 @@
  */
 package org.icepdf.core.pobjects.functions.postscript;
 
-import java.util.Stack;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -52,7 +52,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_ABS:
                 operator = new Operator(OperatorNames.OP_ABS) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Float num = (Float) stack.pop();
                         stack.push(Math.abs(num));
                     }
@@ -65,7 +65,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_ADD:
                 operator = new Operator(OperatorNames.OP_ADD) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Float num2 = (Float) stack.pop();
                         Float num1 = (Float) stack.pop();
                         stack.push(num1 + num2);
@@ -84,7 +84,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_AND:
                 operator = new Operator(OperatorNames.OP_AND) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Object value = stack.pop();
                         if (value instanceof Boolean) {
                             boolean bool2 = (Boolean) value;
@@ -107,7 +107,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_ATAN:
                 operator = new Operator(OperatorNames.OP_ATAN) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float den = (Float) stack.pop();
                         float num = (Float) stack.pop();
                         stack.push(((Number) Math.toDegrees(Math.atan(num / den))).floatValue());
@@ -121,7 +121,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_BITSHIFT:
                 operator = new Operator(OperatorNames.OP_BITSHIFT) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         long shift = (Long) stack.pop();
                         long int1 = (Long) stack.pop();
                         stack.push(int1 << shift);
@@ -136,7 +136,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_CEILING:
                 operator = new Operator(OperatorNames.OP_CEILING) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
                         stack.push(((Number) Math.ceil(num1)).floatValue());
                     }
@@ -149,7 +149,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_COS:
                 operator = new Operator(OperatorNames.OP_COS) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float aAngle = (Float) stack.pop();
                         stack.push(((Number) Math.cos(aAngle)).floatValue());
                     }
@@ -169,7 +169,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_COPY:
                 operator = new Operator(OperatorNames.OP_COPY) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         int n = ((Float) stack.pop()).intValue();
                         int top = stack.size();
                         for (int i = top - n; i < top; i++) {
@@ -188,7 +188,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_CVI:
                 operator = new Operator(OperatorNames.OP_CVI) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // doesn't really convert to int but not a bit deal for
                         // java in general.
                         int number = ((Float) stack.pop()).intValue();
@@ -202,7 +202,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_CVR:
                 operator = new Operator(OperatorNames.OP_CVR) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // doesn't really convert to int but not a bit deal for
                         // java in general.
                         float number = (Float) stack.pop();
@@ -217,7 +217,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_DIV:
                 operator = new Operator(OperatorNames.OP_DIV) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // doesn't really convert to int but not a bit deal for
                         // java in general.
                         float num2 = (Float) stack.pop();
@@ -232,7 +232,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_DUP:
                 operator = new Operator(OperatorNames.OP_DUP) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // peek and push should give us the duplication.
                         stack.push(stack.peek());
                     }
@@ -245,7 +245,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_EQ:
                 operator = new Operator(OperatorNames.OP_EQ) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Object any2 = stack.pop();
                         Object any1 = stack.pop();
                         stack.push(any1.equals(any2));
@@ -259,7 +259,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_EXCH:
                 operator = new Operator(OperatorNames.OP_EXCH) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Object any2 = stack.pop();
                         Object any1 = stack.pop();
                         stack.push(any2);
@@ -274,7 +274,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_EXP:
                 operator = new Operator(OperatorNames.OP_EXP) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float exponent = (Float) stack.pop();
                         float base = (Float) stack.pop();
                         stack.push(((Number) Math.pow(base, exponent)).floatValue());
@@ -289,7 +289,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_FLOOR:
                 operator = new Operator(OperatorNames.OP_FLOOR) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
                         stack.push(((Number) Math.floor(num1)).floatValue());
                     }
@@ -309,7 +309,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_GE:
                 operator = new Operator(OperatorNames.OP_GE) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 >= num2);
@@ -322,7 +322,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_GT:
                 operator = new Operator(OperatorNames.OP_GT) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 > num2);
@@ -342,7 +342,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_IDIV:
                 operator = new Operator(OperatorNames.OP_IDIV) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push((int) (num1 / num2));
@@ -357,7 +357,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_IF:
                 operator = new Operator(OperatorNames.OP_IF) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // pop off the express so we can get at the bool
                         // if we don't have an Expression we can't continue.
                         Procedure proc1 = null;
@@ -381,7 +381,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_IFELSE:
                 operator = new Operator(OperatorNames.OP_IFELSE) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // if we don't have an Expression we can't continue.
                         Procedure proc2 = null, proc1 = null;
                         if (stack.peek() instanceof Procedure) {
@@ -411,7 +411,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_INDEX:
                 operator = new Operator(OperatorNames.OP_INDEX) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float n = (Float) stack.pop();
                         stack.push(stack.get((int) ((stack.size() - 1) - n)));
                     }
@@ -427,7 +427,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_LE:
                 operator = new Operator(OperatorNames.OP_LE) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 <= num2);
@@ -440,7 +440,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_LN:
                 operator = new Operator(OperatorNames.OP_LN) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num = (Float) stack.pop();
                         stack.push(((Number) Math.log(num)).floatValue());
                     }
@@ -452,7 +452,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_LOG:
                 operator = new Operator(OperatorNames.OP_LOG) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num = (Float) stack.pop();
                         stack.push(((Number) Math.log10(num)).floatValue());
                     }
@@ -463,7 +463,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_LT:
                 operator = new Operator(OperatorNames.OP_LT) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 < num2);
@@ -476,7 +476,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_MOD:
                 operator = new Operator(OperatorNames.OP_MOD) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 % num2);
@@ -489,7 +489,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_MUL:
                 operator = new Operator(OperatorNames.OP_MUL) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 * num2);
@@ -503,7 +503,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_NE:
                 operator = new Operator(OperatorNames.OP_NE) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 != num2);
@@ -516,7 +516,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_NEG:
                 operator = new Operator(OperatorNames.OP_NEG) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
                         stack.push(-num1);
                     }
@@ -528,7 +528,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_NOT:
                 operator = new Operator(OperatorNames.OP_NOT) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         boolean num1 = (Boolean) stack.pop();
                         stack.push(!num1);
                     }
@@ -540,7 +540,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_OR:
                 operator = new Operator(OperatorNames.OP_OR) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         boolean bool2 = (Boolean) stack.pop();
                         boolean bool1 = (Boolean) stack.pop();
                         stack.push(bool1 || bool2);
@@ -553,7 +553,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_POP:
                 operator = new Operator(OperatorNames.OP_POP) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         stack.pop();
                     }
                 };
@@ -581,7 +581,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_ROLL:
                 operator = new Operator(OperatorNames.OP_ROLL) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float j = (Float) stack.pop();
                         float n = (Float) stack.pop();
                         // each sift consists of removing an element from the top of the
@@ -610,7 +610,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_ROUND:
                 operator = new Operator(OperatorNames.OP_ROUND) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
                         stack.push(((Number) Math.round(num1)).floatValue());
                     }
@@ -622,7 +622,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_SIN:
                 operator = new Operator(OperatorNames.OP_SIN) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float aAngle = (Float) stack.pop();
                         stack.push(((Number) Math.sin(aAngle)).floatValue());
                     }
@@ -634,7 +634,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_SQRT:
                 operator = new Operator(OperatorNames.OP_SQRT) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num = (Float) stack.pop();
                         stack.push(((Number) Math.sqrt(num)).floatValue());
                     }
@@ -646,7 +646,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_SUB:
                 operator = new Operator(OperatorNames.OP_SUB) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
                         stack.push(num1 - num2);
@@ -659,7 +659,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_TRUNCATE:
                 operator = new Operator(OperatorNames.OP_TRUNCATE) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
                         stack.push(((Number) Math.floor(num1)).floatValue());
                     }
@@ -674,7 +674,7 @@ public class OperatorFactory {
              */
             case OperatorNames.OP_XOR:
                 operator = new Operator(OperatorNames.OP_XOR) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         Object obj2 = stack.pop();
                         if (obj2 instanceof Number) {
                             float num2 = (Float) obj2;
@@ -696,7 +696,7 @@ public class OperatorFactory {
                 break;
             default:
                 operator = new Operator(OperatorNames.NO_OP) {
-                    public void eval(Stack stack) {
+                    public void eval(OperandStack stack) {
                         // throw something?
                         System.out.println(operatorType + " not implemented ");
                     }

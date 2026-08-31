@@ -165,7 +165,7 @@ public class ShadingType3Pattern extends ShadingPattern {
                     colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
-                    matrix);
+                    anchorToDefaultSpace(matrix, graphicsState));
 
             // get type 3 specific data.
             inited = true;

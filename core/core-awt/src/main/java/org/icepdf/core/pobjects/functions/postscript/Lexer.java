@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.Stack;
 
 /**
  * A state machine used to parse valid type 4 functions tokens in a input
@@ -129,7 +128,7 @@ public class Lexer {
      * @return stack containing the output of the type 4 function.  If #parse()
      *         was not called the stack will be empty
      */
-    public Stack getStack() {
+    public OperandStack getStack() {
         return procedures.getProc();
     }
 

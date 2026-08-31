@@ -81,11 +81,20 @@ public class DocumentSigner {
             fc.position(0);
             long fileLength = fc.size();
 
-            // find byte offset of the start of content hex string
+            // The digest covers the whole file except the signature itself, and "the signature
+            // itself" is the hex string *including* its angle brackets - the gap between the two
+            // ranges is <...>, not the digits inside it (PDF 32000-1 12.8.1).  The brackets used to
+            // be signed, which put both boundaries one byte out: the file verified against itself
+            // because the digest was computed from the same offsets, but the byte range did not
+            // describe what the specification says it describes, and PDF/A-2 6.4.3 checks exactly
+            // that by re-deriving the range from the file.
             int firstStart = 0;
             String contents = "/Contents <";
-            int firstOffset = signatureDictionaryOffset + rawSignatureDiciontary.indexOf(contents) + contents.length();
-            int secondStart = firstOffset + PLACEHOLDER_PADDING_LENGTH;
+            int openAngleBracket = signatureDictionaryOffset
+                    + rawSignatureDiciontary.indexOf(contents) + contents.length() - 1;
+            int firstOffset = openAngleBracket;
+            // past the placeholder's digits and its closing bracket
+            int secondStart = openAngleBracket + 1 + PLACEHOLDER_PADDING_LENGTH + 1;
             int secondOffset = (int) fileLength - secondStart;
             List<Integer> byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
             String byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);

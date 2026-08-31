@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 import org.icepdf.core.pobjects.Name;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Logger;
 
@@ -40,6 +40,12 @@ public class GlyphText extends AbstractText {
 
     private final float advanceX;
     private final float advanceY;
+
+    // Page-space writing-direction vector (the glyph-space +x advance mapped through the render transform).
+    // Captured in normalizeToUserSpace; defaults to horizontal until then.  Used to detect rotated/vertical text
+    // so the extraction pipeline can group and order it along the correct axis.
+    private float writeDx = 1f;
+    private float writeDy = 0f;
 
     // character code used to represent glyph, maybe ascii or CID value
     private final char cid;
@@ -67,6 +73,38 @@ public class GlyphText extends AbstractText {
     }
 
     /**
+     * An independent copy, in whatever space this glyph currently occupies.
+     * <p>
+     * A form XObject drawn more than once has one parsed text tree and several placements. The tree
+     * describes the glyphs in the form's own space, and each placement maps that space somewhere
+     * different on the page, so a placement needs glyphs of its own to map - sharing them means the
+     * last placement's transform is the one every placement reports.
+     * <p>
+     * Deliberately does not copy selection or highlight state: a copy belongs to a placement that
+     * nobody has interacted with yet.
+     *
+     * @return a copy carrying the same character and geometry, with its own mutable bounds
+     */
+    public GlyphText copy() {
+        GlyphText copy = new GlyphText(x, y, advanceX, advanceY,
+                new Rectangle2D.Double(bounds.x, bounds.y, bounds.width, bounds.height),
+                pageRotation, cid, unicode, fontName);
+        copy.writeDx = writeDx;
+        copy.writeDy = writeDy;
+        copy.fontSubTypeFormat = fontSubTypeFormat;
+        copy.flagged = flagged;
+        if (textExtractionBounds != null) {
+            copy.textExtractionBounds = new Rectangle2D.Double(textExtractionBounds.x,
+                    textExtractionBounds.y, textExtractionBounds.width, textExtractionBounds.height);
+        }
+        if (textSelectionBounds != null) {
+            copy.textSelectionBounds = new Rectangle2D.Double(textSelectionBounds.x,
+                    textSelectionBounds.y, textSelectionBounds.width, textSelectionBounds.height);
+        }
+        return copy;
+    }
+
+    /**
      * Maps the glyph bounds to user space
      *
      * @param af transform from glyph space to user space
@@ -74,10 +112,64 @@ public class GlyphText extends AbstractText {
      *            extracted bounds are rotated back to the portrait layout.
      */
     public void normalizeToUserSpace(AffineTransform af, AffineTransform af1) {
-        // map the coordinates from glyph space to user space.
-        Path2D.Double generalPath = new Path2D.Double(bounds, af);
-        bounds = (Rectangle2D.Double) generalPath.getBounds2D();
+        // Map the glyph bounds from glyph space to user space.  af may include rotation or shear, so the result is
+        // the bounding box of the four transformed corners.  Computing that directly and updating the bounds in
+        // place avoids allocating a Path2D (and its backing arrays) for every glyph - the previous approach was a
+        // dominant source of GC during text extraction (GH-495).
+        double x0 = bounds.x, y0 = bounds.y;
+        double x1 = x0 + bounds.width, y1 = y0 + bounds.height;
+        double[] pts = {x0, y0, x1, y0, x1, y1, x0, y1};
+        af.transform(pts, 0, pts, 0, 4);
+        double minX = Math.min(Math.min(pts[0], pts[2]), Math.min(pts[4], pts[6]));
+        double maxX = Math.max(Math.max(pts[0], pts[2]), Math.max(pts[4], pts[6]));
+        double minY = Math.min(Math.min(pts[1], pts[3]), Math.min(pts[5], pts[7]));
+        double maxY = Math.max(Math.max(pts[1], pts[3]), Math.max(pts[5], pts[7]));
+        bounds.setRect(minX, minY, maxX - minX, maxY - minY);
         textSelectionBounds = bounds;
+
+        // Capture the page-space writing direction: the glyph-space +x advance mapped through the same transform.
+        // deltaTransform ignores translation, so this is purely the orientation of the baseline advance.  For
+        // horizontal text this is (+,0); for text rotated 90 via Tm (or an upright vertical stack) it points along y.
+        Point2D d = af.deltaTransform(new Point2D.Double(1, 0), null);
+        writeDx = (float) d.getX();
+        writeDy = (float) d.getY();
+    }
+
+    /**
+     * Whether this glyph's baseline advances vertically (rotated/stacked text) rather than horizontally, evaluated
+     * in the same normalized space as {@link #getTextExtractionBounds()} (i.e. with any page rotation applied).
+     *
+     * @return true if the dominant writing axis is vertical.
+     */
+    public boolean isVerticalWriting() {
+        Point2D d = getWriteDirection();
+        return Math.abs(d.getY()) > Math.abs(d.getX());
+    }
+
+    /**
+     * The page-space writing-direction vector in the same normalized space as {@link #getTextExtractionBounds()}
+     * (i.e. with any page rotation applied).  Points in the direction the baseline advances glyph-to-glyph, so
+     * projecting glyph positions onto it yields reading order for both horizontal and rotated/vertical text.
+     *
+     * @return normalized-space writing-direction vector (not unit length).
+     */
+    public Point2D getWriteDirection() {
+        double dx = writeDx, dy = writeDy;
+        if (pageRotation != 0) {
+            double r = Math.toRadians(pageRotation);
+            double cos = Math.cos(r), sin = Math.sin(r);
+            double rx = dx * cos - dy * sin;
+            double ry = dx * sin + dy * cos;
+            dx = rx;
+            dy = ry;
+        }
+        return new Point2D.Double(dx, dy);
+    }
+
+    /** Copies the writing direction from another glyph; used for synthetic spaces that are never normalized. */
+    public void inheritWriteDirection(GlyphText other) {
+        this.writeDx = other.writeDx;
+        this.writeDy = other.writeDy;
     }
 
     public boolean isFlagged() {
@@ -110,6 +202,16 @@ public class GlyphText extends AbstractText {
 
     public float getAdvanceX() {
         return advanceX;
+    }
+
+    /**
+     * Advance along the vertical axis, the counterpart of {@link #getAdvanceX()} used when the font
+     * writes vertically.
+     *
+     * @return glyph advance in the y direction
+     */
+    public float getAdvanceY() {
+        return advanceY;
     }
 
     public float getY() {

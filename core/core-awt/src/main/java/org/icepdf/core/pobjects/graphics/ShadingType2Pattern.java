@@ -152,7 +152,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     startPoint, endPoint, dist, colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
-                    matrix);
+                    anchorToDefaultSpace(matrix, graphicsState));
             inited = true;
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);
@@ -174,37 +174,22 @@ public class ShadingType2Pattern extends ShadingPattern {
                                            Point2D.Float startPoint,
                                            Point2D.Float endPoint,
                                            float t0, float t1) {
-        // calculate the slope
-        float m = (startPoint.y - endPoint.y) / (startPoint.x - endPoint.x);
-        // calculate the y intercept
-        float b = startPoint.y - (m * startPoint.x);
-
-        // let calculate x points between startPoint.x and startPoint.y that
-        // are on the line using y = mx + b.
-        Color[] color;
-        // if we don't have a y-axis line we can uses y=mx + b to get our points.
-        if (!Float.isInfinite(m)) {
-            float xDiff = (endPoint.x - startPoint.x) / numberOfPoints;
-            float xOffset = startPoint.x;
-            color = new Color[numberOfPoints + 1];
-            Point2D.Float point;
-            for (int i = 0, max = color.length; i < max; i++) {
-                point = new Point2D.Float(xOffset, (m * xOffset) + b);
-                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
-                xOffset += xDiff;
-            }
-        }
-        // otherwise we have a infinite m and can just pick y values
-        else {
-            float yDiff = (endPoint.y - startPoint.y) / numberOfPoints;
-            float yOffset = startPoint.y;
-            color = new Color[numberOfPoints + 1];
-            Point2D.Float point;
-            for (int i = 0, max = color.length; i < max; i++) {
-                point = new Point2D.Float(0, yOffset);
-                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
-                yOffset += yDiff;
-            }
+        // Sample the axis by interpolating between the end points.  Solving the
+        // line equation (y = mx + b) for each sample instead loses all precision
+        // on a near-vertical axis: a sub-pixel dx gives a huge slope, so the
+        // y-intercept b = y0 - m*x0 is a large magnitude float and (m*x) + b
+        // cancels catastrophically.  Every sample point then lands off the axis,
+        // the parametric value collapses, and the gradient degenerates to a
+        // single (often white) colour -- e.g. the opera mask's upper lip in
+        // shadding-2-3-6.pdf, a 20 unit tall axis whose ends differ by 9e-5 in x.
+        Color[] color = new Color[numberOfPoints + 1];
+        float xDiff = (endPoint.x - startPoint.x) / numberOfPoints;
+        float yDiff = (endPoint.y - startPoint.y) / numberOfPoints;
+        for (int i = 0, max = color.length; i < max; i++) {
+            Point2D.Float point = new Point2D.Float(
+                    startPoint.x + (xDiff * i),
+                    startPoint.y + (yDiff * i));
+            color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
         }
         return color;
     }

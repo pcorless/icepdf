@@ -160,76 +160,68 @@ public class PredictorDecode extends ChunkingInputStream {
      * @param currPredictor predictor to apply to buffer data.
      */
     protected void applyPredictor(int numRead, int currPredictor) {
-        // loop back over the buffer and update with predicted values.
-        for (int i = 0; i < numRead; i++) {
-            // For current row, PNG predictor to do nothing
-            if (currPredictor == PREDICTOR_PNG_NONE) {
-                break; // We could continue, but we'd do that numRead times
-            }
-            // For current row, derive each byte from byte left-by-bpp
-            else if (currPredictor == PREDICTOR_PNG_SUB) {
-                if ((i - bytesPerPixel) >= 0) {
+        // currPredictor is constant for the whole row, so branch on it once and
+        // run a tight per-case loop rather than re-testing it for every byte.
+        switch (currPredictor) {
+            // For current row, derive each byte from byte left-by-bpp.  The
+            // first bytesPerPixel bytes have no left neighbour, so start past
+            // them rather than testing the bound each iteration.
+            case PREDICTOR_PNG_SUB:
+                for (int i = bytesPerPixel; i < numRead; i++) {
                     buffer[i] += applyLeftPredictor(buffer, bytesPerPixel, i);
                 }
-            }
-            // For current row, derive each byte from byte above
-            else if (currPredictor == PREDICTOR_PNG_UP) {
+                break;
+            // For current row, derive each byte from byte above.
+            case PREDICTOR_PNG_UP:
                 if (aboveBuffer != null) {
-                    buffer[i] += applyAbovePredictor(aboveBuffer, i);
+                    for (int i = 0; i < numRead; i++) {
+                        buffer[i] += applyAbovePredictor(aboveBuffer, i);
+                    }
                 }
-            }
-            // For current row, derive each byte from average of byte left-by-bpp and byte above
-            else if (currPredictor == PREDICTOR_PNG_AVG) {
-                // PNG AVG: output(x) = curr_line(x) + floor((curr_line(x-bpp)+above(x))/2)
-                // From RFC 2083 (PNG), sum with no overflow, using >= 9 bit arithmatic
-                int left = 0;
-                if ((i - bytesPerPixel) >= 0) {
-                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
+                break;
+            // For current row, derive each byte from average of byte left-by-bpp and byte above.
+            // PNG AVG: output(x) = curr_line(x) + floor((curr_line(x-bpp)+above(x))/2)
+            // From RFC 2083 (PNG), sum with no overflow, using >= 9 bit arithmetic.
+            case PREDICTOR_PNG_AVG:
+                for (int i = 0; i < numRead; i++) {
+                    int left = (i - bytesPerPixel) >= 0 ? applyLeftPredictor(buffer, bytesPerPixel, i) : 0;
+                    int above = aboveBuffer != null ? applyAbovePredictor(aboveBuffer, i) : 0;
+                    buffer[i] += (byte) (((left + above) >>> 1) & 0xFF);
                 }
-                int above = 0;
-                if (aboveBuffer != null) {
-                    above = applyAbovePredictor(aboveBuffer, i);
-                }
-                int sum = left + above;
-                byte avg = (byte) ((sum >>> 1) & 0xFF);
-                buffer[i] += avg;
-            }
+                break;
             // For current row, derive each byte from non-linear function of
-            // byte left-by-bpp and byte above and byte left-by-bpp of above
-            else if (currPredictor == PREDICTOR_PNG_PAETH) {
-                // From RFC 2083 (PNG)
-                // PNG PAETH:  output(x) = curr_line(x) + PaethPredictor(curr_line(x-bpp), above(x), above(x-bpp))
-                //   PaethPredictor(left, above, aboveLeft)
-                //     p          = left + above - aboveLeft
-                //     pLeft      = abs(p - left)
-                //     pAbove     = abs(p - above)
-                //     pAboveLeft = abs(p - aboveLeft)
-                //     if( pLeft <= pAbove && pLeft <= pAboveLeft ) return left
-                //     if( pAbove <= pAboveLeft ) return above
-                //     return aboveLeft
-                int left = 0;
-                if ((i - bytesPerPixel) >= 0) {
-                    left = applyLeftPredictor(buffer, bytesPerPixel, i);
+            // byte left-by-bpp and byte above and byte left-by-bpp of above.
+            // From RFC 2083 (PNG)
+            // PNG PAETH:  output(x) = curr_line(x) + PaethPredictor(curr_line(x-bpp), above(x), above(x-bpp))
+            //   PaethPredictor(left, above, aboveLeft)
+            //     p          = left + above - aboveLeft
+            //     pLeft      = abs(p - left)
+            //     pAbove     = abs(p - above)
+            //     pAboveLeft = abs(p - aboveLeft)
+            //     if( pLeft <= pAbove && pLeft <= pAboveLeft ) return left
+            //     if( pAbove <= pAboveLeft ) return above
+            //     return aboveLeft
+            case PREDICTOR_PNG_PAETH:
+                for (int i = 0; i < numRead; i++) {
+                    int left = (i - bytesPerPixel) >= 0 ? applyLeftPredictor(buffer, bytesPerPixel, i) : 0;
+                    int above = aboveBuffer != null ? applyAbovePredictor(aboveBuffer, i) : 0;
+                    int aboveLeft = ((i - bytesPerPixel) >= 0 && aboveBuffer != null)
+                            ? applyAboveLeftPredictor(aboveBuffer, bytesPerPixel, i) : 0;
+                    int p = left + above - aboveLeft;
+                    int pLeft = Math.abs(p - left);
+                    int pAbove = Math.abs(p - above);
+                    int pAboveLeft = Math.abs(p - aboveLeft);
+                    int paeth = ((pLeft <= pAbove && pLeft <= pAboveLeft)
+                            ? left
+                            : ((pAbove <= pAboveLeft)
+                            ? above
+                            : aboveLeft));
+                    buffer[i] += ((byte) (paeth & 0xFF));
                 }
-                int above = 0;
-                if (aboveBuffer != null) {
-                    above = applyAbovePredictor(aboveBuffer, i);
-                }
-                int aboveLeft = 0;
-                if ((i - bytesPerPixel) >= 0 && aboveBuffer != null) {
-                    aboveLeft = applyAboveLeftPredictor(aboveBuffer, bytesPerPixel, i);
-                }
-                int p = left + above - aboveLeft;
-                int pLeft = Math.abs(p - left);
-                int pAbove = Math.abs(p - above);
-                int pAboveLeft = Math.abs(p - aboveLeft);
-                int paeth = ((pLeft <= pAbove && pLeft <= pAboveLeft)
-                        ? left
-                        : ((pAbove <= pAboveLeft)
-                        ? above
-                        : aboveLeft));
-                buffer[i] += ((byte) (paeth & 0xFF));
-            }
+                break;
+            // PREDICTOR_PNG_NONE (and any unknown per-row predictor): nothing to do.
+            default:
+                break;
         }
     }
 

@@ -27,10 +27,8 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.geom.AffineTransform;
 import java.awt.image.*;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +43,271 @@ public class ImageUtility {
 
     static final Logger logger =
             Logger.getLogger(ImageUtility.class.getName());
+
+    // GH-501 Phase 2: a DeviceCMYK transparency group must blend in CMYK, but a
+    // CMYK image is decoded straight to sRGB (via an ICC profile / the convoluted
+    // CMYKRasterOp) and the true 4-channel CMYK is then gone.  When a CMYK group is
+    // being rasterised the compositor sets this flag; convertCmykToRgb then stashes
+    // the post-decode CMYK raster keyed by the sRGB image it produced, so the group
+    // buffer can recover the real CMYK samples instead of the unrecoverable sRGB.
+    // Off by default -> zero cost/behaviour change on the normal path.  Global
+    // (not thread-local): image decoding can run on pooled worker threads, so a
+    // thread-scoped flag set by the rendering thread would never reach the decoder.
+    private static volatile boolean PRESERVE_CMYK = false;
+    private static final java.util.Map<BufferedImage, Raster> CMYK_SAMPLES =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Toggles CMYK-sample preservation; returns the prior value so callers can
+     *  restore it.  Global because decoding may happen off the render thread. */
+    public static boolean setPreserveCmyk(boolean preserve) {
+        boolean previous = PRESERVE_CMYK;
+        PRESERVE_CMYK = preserve;
+        return previous;
+    }
+
+    /** The true CMYK raster a CMYK image decoded from, or null if it wasn't a CMYK
+     *  image or preservation was off when it decoded. */
+    public static Raster getCmykSamples(BufferedImage rgbImage) {
+        return CMYK_SAMPLES.get(rgbImage);
+    }
+
+    /** Number of preserved CMYK rasters currently retained (diagnostic). */
+    public static int cmykSampleCount() {
+        return CMYK_SAMPLES.size();
+    }
+
+    /** Any one preserved CMYK raster (diagnostic / verification). */
+    public static Raster anyPreservedCmyk() {
+        synchronized (CMYK_SAMPLES) {
+            return CMYK_SAMPLES.isEmpty() ? null : CMYK_SAMPLES.values().iterator().next();
+        }
+    }
+
+    /** Drop all preserved CMYK samples (diagnostic: reset between probe runs). */
+    public static void clearCmykSamples() {
+        CMYK_SAMPLES.clear();
+    }
+
+    /**
+     * Diagnostic K-channel (band 3) summary across every currently preserved CMYK
+     * raster: {@code {images, totalPixels, pixelsWithKgt8, maxK}}.  Used to answer
+     * the GH-501 question "does this file carry genuine black ink?" -- a group whose
+     * CMYK content is all K=0 blends identically in CMYK and RGB, so the raster-level
+     * subtractive path can only matter where maxK &gt; 0 / pixelsWithKgt8 &gt; 0.
+     */
+    public static long[] cmykKSummary() {
+        long images = 0, totalPixels = 0, pixelsKgt8 = 0, maxK = 0;
+        synchronized (CMYK_SAMPLES) {
+            for (Raster r : CMYK_SAMPLES.values()) {
+                if (r == null || r.getNumBands() < 4) {
+                    continue;
+                }
+                images++;
+                int w = r.getWidth(), h = r.getHeight();
+                for (int y = 0; y < h; y++) {
+                    for (int x = 0; x < w; x++) {
+                        int k = r.getSample(x, y, 3) & 0xFF;
+                        totalPixels++;
+                        if (k > 8) {
+                            pixelsKgt8++;
+                        }
+                        if (k > maxK) {
+                            maxK = k;
+                        }
+                    }
+                }
+            }
+        }
+        return new long[]{images, totalPixels, pixelsKgt8, maxK};
+    }
+
+    /** A translucent CMYK (C,M,Y,K + alpha) image over the DeviceCMYK ICC colour
+     *  space -- the render target for a DeviceCMYK transparency group, so its
+     *  content stays in CMYK (GH-501 Phase 2).  Java2D rasterises into it; a CMYK
+     *  source ({@link #wrapCmyk}) drawn in shares this colour space so the samples
+     *  are copied, not re-converted through sRGB. */
+    public static BufferedImage createCmykImage(int width, int height) {
+        ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
+        ComponentColorModel cm = new ComponentColorModel(
+                cs, true, false, ColorModel.TRANSLUCENT, DataBuffer.TYPE_BYTE);
+        WritableRaster wr = cm.createCompatibleWritableRaster(width, height);
+        return new BufferedImage(cm, wr, false, null);
+    }
+
+    /** Wraps a preserved 4-band CMYK raster as an opaque CMYK {@link BufferedImage}
+     *  (same ICC colour space as {@link #createCmykImage}) so it can be drawn into
+     *  a CMYK group buffer without an sRGB round-trip. */
+    public static BufferedImage wrapCmyk(Raster cmykRaster) {
+        ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
+        ComponentColorModel cm = new ComponentColorModel(
+                cs, false, false, ColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
+        WritableRaster wr = cmykRaster instanceof WritableRaster
+                ? (WritableRaster) cmykRaster
+                : cmykRaster.createCompatibleWritableRaster();
+        if (!(cmykRaster instanceof WritableRaster)) {
+            ((WritableRaster) wr).setRect(cmykRaster);
+        }
+        return new BufferedImage(cm, wr, false, null);
+    }
+
+    // Preserved CMYK samples keyed by the stable ImageStream (not the produced
+    // BufferedImage, which mask/scale/proxy stages replace downstream).  This is
+    // the key the draw-time ink capture looks up.
+    private static final java.util.Map<Object, Raster> CMYK_BY_STREAM =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
+    /** Associate any CMYK samples preserved for {@code decoderImage} (the decoder
+     *  output) with the stable {@code streamKey}, so the draw-time ink capture can
+     *  find them no matter how many mask/scale stages replace the image. */
+    public static void associateCmykStream(Object streamKey, BufferedImage decoderImage) {
+        if (streamKey == null || decoderImage == null) {
+            return;
+        }
+        Raster r = CMYK_SAMPLES.get(decoderImage);
+        if (r != null) {
+            CMYK_BY_STREAM.put(streamKey, r);
+        }
+    }
+
+    /** Preserved CMYK samples for an image XObject, by its stable stream key. */
+    public static Raster getCmykSamplesForStream(Object streamKey) {
+        return streamKey == null ? null : CMYK_BY_STREAM.get(streamKey);
+    }
+
+    private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
+        if (PRESERVE_CMYK && cmykRaster != null) {
+            // Copy: the decoder may reuse/mutate the source raster after we return.
+            WritableRaster copy = cmykRaster.createCompatibleWritableRaster();
+            copy.setRect(cmykRaster);
+            CMYK_SAMPLES.put(rgbImage, copy);
+        }
+    }
+
+    /** Whether CMYK preservation is currently active (lets a per-pixel decoder such
+     *  as RawDecoder skip building the capture buffer when off). */
+    public static boolean isPreserveCmyk() {
+        return PRESERVE_CMYK;
+    }
+
+    /** Preserve an interleaved C,M,Y,K byte buffer (4 bands, 0..255) a per-pixel
+     *  decoder built alongside the sRGB image -- the raw FlateDecode CMYK path,
+     *  which converts sample-by-sample with no intermediate CMYK raster. */
+    public static void preserveCmykBytes(BufferedImage rgbImage, byte[] interleavedCmyk, int width, int height) {
+        if (!PRESERVE_CMYK || interleavedCmyk == null) {
+            return;
+        }
+        DataBufferByte db = new DataBufferByte(interleavedCmyk, interleavedCmyk.length);
+        WritableRaster wr = Raster.createInterleavedRaster(
+                db, width, height, width * 4, 4, new int[]{0, 1, 2, 3}, null);
+        CMYK_SAMPLES.put(rgbImage, wr);
+    }
+
+    // ----- GH-501 Phase 2 step 2: raster-level CMYK ink capture --------------
+    // A DeviceCMYK transparency group is rasterised to an sRGB buffer by Java2D
+    // (FormDrawCmd.createBufferXObject), which destroys the true CMYK so the group
+    // cannot be blended subtractively.  While that buffer is being painted we also
+    // blit each CMYK image's TRUE preserved samples into a parallel CMYK ink raster
+    // -- aligned for free by reading the canvas transform at the exact draw moment,
+    // so the ink lands pixel-identical to where Java2D placed the sRGB image (the
+    // 3a/n finding: blit the raster, never colour-managed drawImage).  The group
+    // compositor then blends from this ink (real K) instead of the lossy sRGB.
+
+    /** Captures TRUE CMYK ink into a group-buffer-sized raster during a form paint. */
+    public static final class CmykInkSink {
+        final WritableRaster ink;      // 4-band byte C,M,Y,K, group buffer dimensions
+        final WritableRaster coverage; // 1-band byte, 255 where a CMYK image landed
+        final int w, h;
+        boolean captured;
+
+        CmykInkSink(int w, int h) {
+            this.w = w;
+            this.h = h;
+            this.ink = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, w, h, 4, new Point(0, 0));
+            this.coverage = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, w, h, 1, new Point(0, 0));
+        }
+
+        public WritableRaster getInk() {
+            return ink;
+        }
+
+        public WritableRaster getCoverage() {
+            return coverage;
+        }
+
+        public boolean isCaptured() {
+            return captured;
+        }
+    }
+
+    private static final ThreadLocal<CmykInkSink> INK_SINK = new ThreadLocal<>();
+
+    /** True when a {@link CmykInkSink} is active on the current thread, i.e. a CMYK
+     *  group is being rasterized.  Callers that want to trim an image blit to the
+     *  visible clip must skip that optimization while this holds, because
+     *  {@link #captureCmykInk} assumes the full source-&gt;user box was drawn. */
+    public static boolean isCmykInkCapturing() {
+        return INK_SINK.get() != null;
+    }
+
+    /** Begins CMYK ink capture for a {@code w x h} group buffer on this thread. */
+    public static CmykInkSink beginCmykInkCapture(int w, int h) {
+        CmykInkSink sink = new CmykInkSink(w, h);
+        INK_SINK.set(sink);
+        return sink;
+    }
+
+    /** Ends CMYK ink capture and returns the sink (may be empty if no CMYK image
+     *  with preserved samples was drawn). */
+    public static CmykInkSink endCmykInkCapture() {
+        CmykInkSink sink = INK_SINK.get();
+        INK_SINK.remove();
+        return sink;
+    }
+
+    /**
+     * If a {@link CmykInkSink} is active and {@code drawn} has preserved CMYK
+     * samples, blit those true samples into the ink raster under the same
+     * transform Java2D just used to draw the sRGB image -- {@code g.getTransform()}
+     * composed with the {@code drawImage(img, ax, ay, aw, ah)} source->user box --
+     * so the ink is pixel-aligned with the sRGB buffer.  No-op when no sink is
+     * active (the normal render path) or the image isn't a preserved CMYK image.
+     */
+    public static void captureCmykInk(Object streamKey, Graphics2D g,
+                                      int ax, int ay, int aw, int ah) {
+        CmykInkSink sink = INK_SINK.get();
+        if (sink == null) {
+            return;
+        }
+        Raster cmyk = getCmykSamplesForStream(streamKey);
+        if (cmyk == null || cmyk.getNumBands() < 4) {
+            return;
+        }
+        int srcW = cmyk.getWidth(), srcH = cmyk.getHeight();
+        if (srcW <= 0 || srcH <= 0 || aw <= 0 || ah <= 0) {
+            return;
+        }
+        try {
+            // image pixel (px,py) -> user (ax + px*aw/srcW, ay + py*ah/srcH) -> buffer
+            AffineTransform m = new AffineTransform(g.getTransform());
+            m.translate(ax, ay);
+            m.scale(aw / (double) srcW, ah / (double) srcH);
+            AffineTransformOp op = new AffineTransformOp(m, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+            op.filter(cmyk, sink.ink);
+            // mark coverage: blit an all-255 single-band raster through the same map.
+            WritableRaster ones = Raster.createInterleavedRaster(
+                    DataBuffer.TYPE_BYTE, srcW, srcH, 1, new Point(0, 0));
+            byte[] ob = ((DataBufferByte) ones.getDataBuffer()).getData();
+            Arrays.fill(ob, (byte) 0xFF);
+            op.filter(ones, sink.coverage);
+            sink.captured = true;
+        } catch (Exception e) {
+            // a singular/oversized transform just means no subtractive capture for
+            // this image; the compositor falls back to the additive sRGB path.
+            logger.fine("CMYK ink capture skipped: " + e);
+        }
+    }
 
     static final int[] GRAY_1_BIT_INDEX_TO_RGB_REVERSED = new int[]{
             0xFFFFFFFF,
@@ -111,6 +374,75 @@ public class ImageUtility {
 
     }
 
+    // Repack opaque, effectively-grayscale decoded images from 32-bit ARGB to
+    // 8-bit (1/4 the memory).  Content decoded through the sRGB path (DeviceN /
+    // Separation / DeviceGray scans) commonly lands in an INT_ARGB buffer even
+    // though every pixel is opaque grey; caching those at 8-bit cuts the resident
+    // image footprint 4x with no visual change.  Toggle off with
+    // -Dorg.icepdf.core.imageCompact=false.
+    private static final boolean COMPACT_IMAGES =
+            Defs.booleanProperty("org.icepdf.core.imageCompact", true);
+
+    // 256-entry gray palette whose index i maps to the exact sRGB grey
+    // 0xFFiiiiii, so an 8-bit indexed copy reproduces the ARGB grey precisely
+    // (unlike TYPE_BYTE_GRAY, whose CS_GRAY colour space would gamma-shift it).
+    private static final IndexColorModel GRAY_256 = buildGray256();
+
+    private static IndexColorModel buildGray256() {
+        byte[] ramp = new byte[256];
+        for (int i = 0; i < 256; i++) {
+            ramp[i] = (byte) i;
+        }
+        return new IndexColorModel(8, 256, ramp, ramp, ramp);
+    }
+
+    /**
+     * Returns a memory-compact equivalent of {@code image} when its content
+     * allows it: an <em>opaque, effectively-grayscale</em> {@code INT_ARGB}/
+     * {@code INT_RGB} image is repacked as an 8-bit gray-indexed image (1/4 the
+     * memory).  Anything with transparency, real colour, an unsupported type, or
+     * preserved CMYK samples (keyed by the exact image instance) is returned
+     * unchanged.  The single pass bails on the first non-grey/translucent pixel,
+     * so colour images pay only a cheap scan.
+     *
+     * @param image decoded image to (possibly) compact.
+     * @return a compacted copy, or {@code image} unchanged when no gain is safe.
+     */
+    public static BufferedImage compactImage(BufferedImage image) {
+        if (!COMPACT_IMAGES || image == null) {
+            return image;
+        }
+        int type = image.getType();
+        if (type != BufferedImage.TYPE_INT_ARGB
+                && type != BufferedImage.TYPE_INT_ARGB_PRE
+                && type != BufferedImage.TYPE_INT_RGB) {
+            return image;
+        }
+        // preserved CMYK samples are keyed by this exact image; don't swap it out.
+        if (getCmykSamples(image) != null) {
+            return image;
+        }
+        DataBuffer db = image.getRaster().getDataBuffer();
+        if (!(db instanceof DataBufferInt)) {
+            return image;
+        }
+        int[] px = ((DataBufferInt) db).getData();
+        for (int p : px) {
+            int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+            if (((p >>> 24) & 0xFF) != 0xFF || r != g || g != b) {
+                // translucent or coloured -> no safe 8-bit gray repack.
+                return image;
+            }
+        }
+        int w = image.getWidth(), h = image.getHeight();
+        BufferedImage gray = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_INDEXED, GRAY_256);
+        byte[] gp = ((DataBufferByte) gray.getRaster().getDataBuffer()).getData();
+        for (int i = 0; i < px.length; i++) {
+            gp[i] = (byte) (px[i] & 0xFF); // R==G==B, any channel is the grey level
+        }
+        return gray;
+    }
+
     /**
      * Creates a new buffered image using a GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
      * instance.  If not available (headless) we full back to raw buffer creation.
@@ -157,7 +489,7 @@ public class ImageUtility {
 
         ColorKeyMask colorKeyMask = imageParams.getColorKeyMask();
         int[] maskMinRGB = colorKeyMask.getMaskMinRGB();
-        int[] maskMaxRGB = colorKeyMask.getMaskMinRGB();
+        int[] maskMaxRGB = colorKeyMask.getMaskMaxRGB();
 
         int width = image.getWidth();
         int height = image.getHeight();
@@ -216,24 +548,27 @@ public class ImageUtility {
             maskMaxBlue = maskMaxRGB[2];
         }
 
+        // process a row at a time; per-pixel getRGB/setRGB is the slowest
+        // possible raster access and the original also re-read each pixel.
+        int[] band = new int[width];
         for (int y = 0; y < height; y++) {
+            bi.getRGB(0, y, width, 1, band, 0, width);
+            boolean rowChanged = false;
             for (int x = 0; x < width; x++) {
-                int alpha = 0xFF;
-                int argb = bi.getRGB(x, y);
+                int argb = band[x];
                 int red = ((argb >> 16) & 0xFF);
                 int green = ((argb >> 8) & 0xFF);
                 int blue = (argb & 0xFF);
                 if (blue >= maskMinBlue && blue <= maskMaxBlue &&
                         green >= maskMinGreen && green <= maskMaxGreen &&
                         red >= maskMinRed && red <= maskMaxRed) {
-                    alpha = 0x00;
+                    // clear alpha -> fully transparent
+                    band[x] = argb & 0x00FFFFFF;
+                    rowChanged = true;
                 }
-                if (alpha != 0xFF) {
-                    argb = bi.getRGB(x, y);
-                    argb &= 0x00FFFFFF;
-                    argb |= (0);
-                    bi.setRGB(x, y, argb);
-                }
+            }
+            if (rowChanged) {
+                bi.setRGB(0, y, width, 1, band, 0, width);
             }
         }
         return bi;
@@ -657,7 +992,11 @@ public class ImageUtility {
      * @return resultant image.
      */
     public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
-
+        // if either image failed to decode there is nothing to composite; return
+        // whatever base we have rather than NPE inside the scaling step.
+        if (baseImage == null || sMaskImage == null) {
+            return baseImage;
+        }
         // check to make sure the mask and the image are the same size.
         BufferedImage[] images = scaleImagesToSameSize(baseImage, sMaskImage);
         baseImage = images[0];
@@ -880,6 +1219,9 @@ public class ImageUtility {
     }
 
     static BufferedImage applyGrayDecode(BufferedImage rgbImage, ImageParams imageParams) {
+        if (rgbImage == null) {
+            return null;
+        }
         WritableRaster wr = rgbImage.getRaster();
         int[] cmap = null;
         int bitsPerComponent = imageParams.getBitsPerComponent();
@@ -891,6 +1233,10 @@ public class ImageUtility {
             cmap = GRAY_2_BIT_INDEX_TO_RGB;
         } else if (bitsPerComponent == 4) {
             cmap = GRAY_4_BIT_INDEX_TO_RGB;
+        }
+        if (cmap == null) {
+            // unsupported bits-per-component, leave the image unchanged.
+            return rgbImage;
         }
         ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
                 wr.getDataBuffer().getDataType());
@@ -907,6 +1253,11 @@ public class ImageUtility {
         // apply colour space
         PColorSpaceRasterOp pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
         pColorSpaceRasterOp.filter(colourRaster, rgbRaster);
+        // GH-501: raw (FlateDecode) DeviceCMYK images reach RGB through this generic
+        // path, not convertCmykToRgb -- keep their true CMYK samples too.
+        if (colorSpace instanceof DeviceCMYK) {
+            preserveCmyk(rgbImage, colourRaster);
+        }
         return rgbImage;
     }
 
@@ -954,6 +1305,8 @@ public class ImageUtility {
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(cmykRaster, rgbRaster);
         }
+        // GH-501: keep the true CMYK samples (post-decode) for CMYK group blending.
+        preserveCmyk(rgbImage, cmykRaster);
         return rgbImage;
     }
 
@@ -997,6 +1350,8 @@ public class ImageUtility {
             CMYKRasterOp cmykRasterOp = new CMYKRasterOp(null);
             cmykRasterOp.filter(ycckRaster, rgbRaster);
         }
+        // GH-501: keep the true CMYK samples (post-YCCK->CMYK) for CMYK group blending.
+        preserveCmyk(rgbImage, ycckRaster);
         return rgbImage;
     }
 
@@ -1244,59 +1599,37 @@ public class ImageUtility {
     }
 
     private static void copyDecodedStreamBytesIntoRGB(byte[] data, int[] pixels) {
-        byte[] rgb = new byte[3];
-        try {
-            InputStream input = new ByteArrayInputStream(data);
-            for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
-                int argb = 0xFF000000;
-                final int toRead = 3;
-                int haveRead = 0;
-                while (haveRead < toRead) {
-                    int currRead = input.read(rgb, haveRead, toRead - haveRead);
-                    if (currRead < 0)
-                        break;
-                    haveRead += currRead;
-                }
-                if (haveRead >= 1)
-                    argb |= ((((int) rgb[0]) << 16) & 0x00FF0000);
-                if (haveRead >= 2)
-                    argb |= ((((int) rgb[1]) << 8) & 0x0000FF00);
-                if (haveRead >= 3)
-                    argb |= (((int) rgb[2]) & 0x000000FF);
-                pixels[pixelIndex] = argb;
-            }
-            input.close();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
+        // index the three bytes per pixel directly rather than reading them a
+        // few at a time through a (synchronized) ByteArrayInputStream, which was
+        // a per-pixel hotspot for large RGB images (mirrors the gray sibling).
+        // A short final run (inline images can be a byte or two shy) keeps the
+        // components that are present and leaves the rest at zero, matching the
+        // prior behaviour.
+        int dataLength = data.length;
+        for (int pixelIndex = 0, base = 0; pixelIndex < pixels.length; pixelIndex++, base += 3) {
+            int argb = 0xFF000000;
+            if (base < dataLength)
+                argb |= (data[base] & 0xFF) << 16;
+            if (base + 1 < dataLength)
+                argb |= (data[base + 1] & 0xFF) << 8;
+            if (base + 2 < dataLength)
+                argb |= (data[base + 2] & 0xFF);
+            pixels[pixelIndex] = argb;
         }
     }
 
     private static void copyDecodedStreamBytesIntoGray(byte[] data, int[] pixels, float[] decode) {
-        byte[] rgb = new byte[1];
+        // data holds one gray byte per pixel; index it directly rather than reading a byte at a time through a
+        // (synchronized) ByteArrayInputStream, which was a per-pixel hotspot when rendering large gray images.
+        // If data is shorter than pixels the trailing pixels reuse the last byte, matching the prior behaviour.
         boolean defaultDecode = 0.0f == decode[0];
-        int Y;
-        try {
-            InputStream input = new ByteArrayInputStream(data);
-            for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
-                int argb = 0xFF000000;
-                final int toRead = 1;
-                int haveRead = 0;
-                while (haveRead < toRead) {
-                    int currRead = input.read(rgb, haveRead, toRead - haveRead);
-                    if (currRead < 0)
-                        break;
-                    haveRead += currRead;
-                }
-                Y = (int) rgb[0] & 0xff;
-                Y = defaultDecode ? Y : 255 - Y;
-                argb |= (Y << 16) & 0x00FF0000;
-                argb |= (Y << 8) & 0x0000FF00;
-                argb |= (Y & 0x000000FF);
-                pixels[pixelIndex] = argb;
+        int rawY = 0;
+        for (int pixelIndex = 0; pixelIndex < pixels.length; pixelIndex++) {
+            if (pixelIndex < data.length) {
+                rawY = data[pixelIndex] & 0xff;
             }
-            input.close();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Problem copying decoding stream bytes: ", e);
+            int Y = defaultDecode ? rawY : 255 - rawY;
+            pixels[pixelIndex] = 0xFF000000 | (Y << 16) | (Y << 8) | Y;
         }
     }
 

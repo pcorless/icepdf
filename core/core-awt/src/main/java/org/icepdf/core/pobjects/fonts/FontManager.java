@@ -20,6 +20,11 @@ import org.icepdf.core.util.FontUtil;
 import org.icepdf.core.util.SystemProperties;
 
 import java.awt.*;
+import org.apache.fontbox.ttf.TrueTypeCollection;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.apache.fontbox.ttf.TrueTypeFont;
+import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -75,11 +80,13 @@ public class FontManager {
      */
     public static final String DEFAULT_FONT_FILE_ALLOW_LIST_PATTERN = "";
 
-    // stores all font data
-    private static List<Object[]> fontList;
+    // stores all font data.  volatile for safe publication of the list reference; structural
+    // reads/iteration go through snapshotFontList() so a lookup never iterates a list a writer
+    // (readSystemFonts/setFontProperties) is concurrently mutating.
+    private static volatile List<Object[]> fontList;
 
     // stores fonts loaded from jar, these won't be cached
-    private static List<Object[]> fontJarList;
+    private static volatile List<Object[]> fontJarList;
 
     // flags for detecting font decorations
     private static final int PLAIN = 0xF0000001;
@@ -146,6 +153,95 @@ public class FontManager {
                     {"ZapfDingbats", "Dingbats", "Zapf-Dingbats"}
             };
 
+    /*
+     * Substitution candidates per character collection, searched by getAsianInstance.
+     *
+     * NOTE the search runs from the END of each array towards the front, so the LAST entry has the
+     * HIGHEST priority.  The Japanese faces that close the original lists are deliberate last
+     * resorts - Han unification means a Japanese face draws most Chinese and Korean text acceptably -
+     * but they must not outrank a face made for the document's own collection: a Japanese font has no
+     * glyph for the traditional forms (產 U+7522, 內 U+5167) or for Chinese-only characters
+     * (另 U+53E6), which came out as .notdef on a Traditional Chinese page.
+     *
+     * Only families that carry Latin as well as CJK belong here.  A CJK-only face such as Droid Sans
+     * Fallback is not a substitute: it has no ASCII at all, so the Latin runs a CJK document mixes in
+     * (part numbers, URLs) would turn into .notdef instead.
+     */
+    /*
+     * Last-resort substitutes by family class, tried in order.
+     *
+     * The Lucida faces the original lists asked for are what the JDK used to install under
+     * ${java.home}/lib/fonts; JDK 9 dropped them, so on any modern runtime the whole core-font
+     * fallback found nothing and getInstance fell through to "first font in the list", which is
+     * alphabetical and therefore arbitrary - a Tahoma document was being drawn in Andale Mono, a
+     * monospace face.
+     *
+     * ORDER IS BY METRIC COMPATIBILITY, not by how complete the face is.  A substitute is laid out
+     * on the widths the PDF declares, so a face whose own advances are wider than those widths
+     * collides with itself; only the glyph shapes come from the substitute, never the spacing.
+     * Liberation and the msttcorefonts faces are width-for-width clones of Helvetica/Times/Courier
+     * (measured: ratio 1.000, worst glyph within 0%), which is why they lead.  DejaVu is a fine
+     * face with far better coverage, but it runs 6-30% wide against Helvetica and Times metrics,
+     * and it used to be first here: every non-embedded Type1 with a name the lists below do not
+     * recognise was drawn in a face too wide for its own layout.
+     */
+    private static final String[] SERIF_SUBSTITUTES = {
+            "Liberation Serif", "Times New Roman", "Nimbus Roman", "Thorndale AMT",
+            "FreeSerif", "DejaVu Serif", "Serif",
+    };
+
+    private static final String[] SANS_SUBSTITUTES = {
+            "Liberation Sans", "Arial", "Helvetica", "Nimbus Sans", "Albany AMT",
+            "FreeSans", "DejaVu Sans", "SansSerif",
+    };
+
+    private static final String[] MONO_SUBSTITUTES = {
+            "Liberation Mono", "Courier New", "Nimbus Mono PS", "Cumberland AMT",
+            "FreeMono", "DejaVu Sans Mono", "Monospaced",
+    };
+
+    /*
+     * Condensed counterparts, used when the base name declares a narrow width class.
+     *
+     * A condensed face laid out on a full-width substitute is the worst case of all - measured
+     * ratios of 1.3 to 1.9 against the document's own /Widths, i.e. glyphs half again as wide as
+     * the space they are given.  Each list falls back to its full-width equivalent, since a
+     * condensed face is far from universally installed and a normal-width match still beats
+     * nothing.
+     */
+    private static final String[] SERIF_CONDENSED_SUBSTITUTES = {
+            "Liberation Serif Narrow", "Times New Roman Condensed", "DejaVu Serif Condensed",
+    };
+
+    private static final String[] SANS_CONDENSED_SUBSTITUTES = {
+            "Liberation Sans Narrow", "Arial Narrow", "Nimbus Sans Narrow", "DejaVu Sans Condensed",
+    };
+
+    /*
+     * Substitutes for the two symbolic core fonts.  Ranked by GLYPH COVERAGE, the opposite of the
+     * text lists above: a symbolic font that falls back to a text face draws nothing but .notdef
+     * boxes, which is how a bullet or a copyright sign goes missing.
+     *
+     * The URW clones lead because they are the real thing - metric clones that keep Adobe's own
+     * glyph NAMES (a1-a191 for the dingbats, "alpha"/"copyrightserif" for Symbol), so they need no
+     * name-to-Unicode step at all.  They ship as the urw-base35/gsfonts package on Linux and are
+     * commonly present wherever Ghostscript is.  Both the modern names (Standard Symbols PS,
+     * D050000L) and the older ones (StandardSymL, Dingbats) are listed since distributions renamed
+     * them.  After those come Unicode-cmap faces, which work only via the glyph-list lookup in
+     * ZFontTrueType.codeToGID.  DejaVu Sans is last and is the reliable one: measured here, it
+     * covers 100% of the sampled dingbat, Symbol and everyday (bullet, copyright) code points,
+     * where Liberation and the msttcorefonts faces cover none of the dingbats.
+     */
+    private static final String[] DINGBAT_SUBSTITUTES = {
+            "D050000L", "Dingbats", "Zapf Dingbats", "ZapfDingbats", "URW Dingbats L",
+            "OpenSymbol", "Noto Sans Symbols2", "Symbola", "DejaVu Sans",
+    };
+
+    private static final String[] SYMBOL_SUBSTITUTES = {
+            "Standard Symbols PS", "StandardSymL", "Standard Symbols L", "Symbol", "URW Symbol",
+            "OpenSymbol", "Noto Sans Symbols", "Symbola", "DejaVu Sans",
+    };
+
     private static final String[] JAPANESE_FONT_NAMES = {
             // windows
             "Arial Unicode MS", "PMingLiU", "MingLiU",
@@ -153,7 +249,8 @@ public class FontManager {
             "KozMinPro Regular Acro", "HeiseiMin W3 Acro", "Adobe Ming Std Acro",
             // linux
             "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
-
+            // linux, japanese specific (highest priority)
+            "Noto Sans CJK JP", "Noto Serif CJK JP",
     };
 
     private static final String[] CHINESE_SIMPLIFIED_FONT_NAMES = {
@@ -162,6 +259,9 @@ public class FontManager {
             "Adobe Song Std Acro", "stsong",
             // linux
             "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, simplified chinese specific (highest priority)
+            "AR PL UMing CN", "AR PL UKai CN", "WenQuanYi Zen Hei",
+            "Noto Sans CJK SC", "Noto Serif CJK SC",
     };
 
     private static final String[] CHINESE_TRADITIONAL_FONT_NAMES = {
@@ -170,14 +270,27 @@ public class FontManager {
             "Adobe Song Std Acro",
             // linux
             "umingcn", "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, traditional chinese specific (highest priority)
+            "AR PL UKai TW", "AR PL UMing TW",
+            "Noto Sans CJK TC", "Noto Serif CJK TC",
     };
 
+    /*
+     * Korean is the one collection where the Japanese last resort is nearly useless: Han unification
+     * covers the hanja, but a Japanese face carries no Hangul whatsoever, so a Korean page drawn with
+     * one is mostly .notdef.  The Japanese entries therefore sit at the FRONT here - lowest priority,
+     * still better than no font at all - so that any face with Hangul outranks them.  Everywhere else
+     * they stay where they were.
+     */
     private static final String[] KOREAN_FONT_NAMES = {
+            // last resort, hanja only
+            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
             "Arial Unicode MS", "Dotum", "Gulim", "New Gulim", "GulimChe", "Batang",
             "BatangChe", "HYSMyeongJoStd Medium Acro", "Adobe Myungjo Std Acro",
             "AppleGothic", "Malgun Gothic", "UnDotum", "UnShinmun", "Baekmuk Gulim",
-            // linux
-            "ipaexmincho", "Kochi Gothic", "Hiragino Kaku Gothic Pro",
+            // linux, korean specific (highest priority)
+            "WenQuanYi Zen Hei", "WenQuanYi Micro Hei",
+            "NanumGothic", "NanumMyeongjo", "Noto Sans CJK KR", "Noto Serif CJK KR",
     };
 
     /**
@@ -262,8 +375,8 @@ public class FontManager {
         baseFontName = Defs.property("org.icepdf.core.font.basefont", "lucidasans");
     }
 
-    // Singleton instance of class
-    private static FontManager fontManager;
+    // Singleton instance of class.  volatile so double-checked locking in getInstance() publishes safely.
+    private static volatile FontManager fontManager;
 
     /**
      * VisibilityForTesting
@@ -278,11 +391,20 @@ public class FontManager {
      * @return instance of the FontManager.
      */
     public static FontManager getInstance() {
-        // make sure we have initialized the manager
-        if (fontManager == null) {
-            fontManager = new FontManager();
+        // double-checked locking; fontManager is volatile so the constructed instance is
+        // published safely and two threads can't each create their own manager (each build
+        // was compiling the allow-list regex needlessly, and worse, one could win the field).
+        FontManager local = fontManager;
+        if (local == null) {
+            synchronized (FontManager.class) {
+                local = fontManager;
+                if (local == null) {
+                    local = new FontManager();
+                    fontManager = local;
+                }
+            }
         }
-        return fontManager;
+        return local;
     }
 
     /**
@@ -292,11 +414,35 @@ public class FontManager {
      *
      * @return instance of the singleton fontManager.
      */
-    public FontManager initialize() {
-        if (fontList == null || fontList.size() == 0) {
+    public synchronized FontManager initialize() {
+        // synchronized so the check-then-read is atomic with the readSystemFonts writer;
+        // otherwise two first-render threads can both see an empty list and both scan.
+        if (fontList == null || fontList.isEmpty()) {
             readSystemFonts(null);
         }
         return fontManager;
+    }
+
+    /**
+     * Returns a stable snapshot of the system font list for lock-free iteration by the
+     * substitution lookups.  Taken under the FontManager monitor so it blocks until any
+     * in-progress writer (readSystemFonts/setFontProperties) has finished, then hands back
+     * a complete copy the caller can iterate without a ConcurrentModificationException or
+     * observing a half-built list.
+     *
+     * @return copy of the current font list, never null (empty when uninitialised).
+     */
+    private synchronized List<Object[]> snapshotFontList() {
+        return fontList == null ? new ArrayList<>(0) : new ArrayList<>(fontList);
+    }
+
+    /**
+     * Returns a stable snapshot of the jar font list, or null if none is registered.
+     *
+     * @return copy of the current jar font list, or null when uninitialised.
+     */
+    private synchronized List<Object[]> snapshotFontJarList() {
+        return fontJarList == null ? null : new ArrayList<>(fontJarList);
     }
 
     /**
@@ -307,7 +453,7 @@ public class FontManager {
      *
      * @return Properties object containing font data information.
      */
-    public Properties getFontProperties() {
+    public synchronized Properties getFontProperties() {
         Properties fontProperites;
         // make sure we are initialized
         if (fontList == null) {
@@ -345,7 +491,7 @@ public class FontManager {
      *                                  Properties file.  If thrown, the calling application should re-read
      *                                  the system fonts.
      */
-    public void setFontProperties(Preferences fontPreferences)
+    public synchronized void setFontProperties(Preferences fontPreferences)
             throws IllegalArgumentException {
         String errorString = "Error parsing font properties ";
         try {
@@ -386,7 +532,7 @@ public class FontManager {
      * Clears internal font list of items. Used to clean list while constructing
      * a new list.
      */
-    public void clearFontList() {
+    public synchronized void clearFontList() {
         if (fontList != null) {
             fontList.clear();
         }
@@ -504,6 +650,12 @@ public class FontManager {
     }
 
     private void evaluateFontForInsertion(String fontPath) {
+        // a collection holds several faces and has to contribute one entry each, or only the first
+        // would ever be found by name.
+        if (isFontCollection(fontPath)) {
+            evaluateFontCollectionForInsertion(fontPath);
+            return;
+        }
         // try loading the font
         FontFile font = buildFont(fontPath);
         // if a readable font was found
@@ -522,6 +674,49 @@ public class FontManager {
             if (logger.isLoggable(Level.FINER)) {
                 logger.finer("Adding system font: " + font.getName() + " " + fontPath);
             }
+        }
+    }
+
+    /**
+     * Registers every face of a TrueType/OpenType collection, one font-list entry each, all pointing
+     * at the same file.  {@link #buildFont(String, String)} later re-selects the face by the
+     * PostScript name recorded here.
+     * <p>
+     * Only the names are needed at scan time, so the faces are read and dropped; nothing keeps the
+     * collection's buffer alive.
+     */
+    private void evaluateFontCollectionForInsertion(String fontPath) {
+        File file = new File(fontPath);
+        if (!file.canRead()) {
+            return;
+        }
+        try {
+            TrueTypeCollection collection = new TrueTypeCollection(
+                    new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
+            collection.processAllFonts(face -> {
+                String name = face.getName();
+                if (name == null || isPostScriptOutlines(face)) {
+                    // CFF-outline faces (Noto CJK and most OpenType collections) are skipped: the
+                    // renderer only draws glyf outlines for system fonts, so registering them would
+                    // hand the substitution machinery a font that silently draws nothing.
+                    return;
+                }
+                String fontName = name.toLowerCase();
+                Object[] fontProperty = new Object[]{fontName,      // original PS name
+                        FontUtil.normalizeString(face.getNaming() != null
+                                ? face.getNaming().getFontFamily() : name),  // family name
+                        guessFontStyle(fontName),                   // weight and decorations
+                        fontPath};
+                if (!checkExclusionLists(fontProperty)) {
+                    fontList.add(fontProperty);
+                }
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("Adding system font from collection: " + name + " " + fontPath);
+                }
+            });
+            collection.close();
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error reading font collection " + fontPath, e);
         }
     }
 
@@ -548,7 +743,7 @@ public class FontManager {
      *
      * @return font names of all found fonts.
      */
-    public String[] getAvailableNames() {
+    public synchronized String[] getAvailableNames() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -567,7 +762,7 @@ public class FontManager {
      *
      * @return font family names of all found fonts.
      */
-    public String[] getAvailableFamilies() {
+    public synchronized String[] getAvailableFamilies() {
         if (fontList != null) {
             String[] availableNames = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -586,7 +781,7 @@ public class FontManager {
      *
      * @return font style names of all found fonts.
      */
-    public String[] getAvailableStyle() {
+    public synchronized String[] getAvailableStyle() {
         if (fontList != null) {
             String[] availableStyles = new String[fontList.size()];
             Iterator<Object[]> nameIterator = fontList.iterator();
@@ -614,27 +809,24 @@ public class FontManager {
     }
 
     public FontFile getJapaneseInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, JAPANESE_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, JAPANESE_FONT_NAMES, fontFlags);
     }
 
     public FontFile getKoreanInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, KOREAN_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, KOREAN_FONT_NAMES, fontFlags);
     }
 
     public FontFile getChineseTraditionalInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, CHINESE_TRADITIONAL_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, CHINESE_TRADITIONAL_FONT_NAMES, fontFlags);
     }
 
     public FontFile getChineseSimplifiedInstance(String name, int fontFlags) {
-        return getAsianInstance(fontList, name, CHINESE_SIMPLIFIED_FONT_NAMES, fontFlags);
+        return getAsianInstance(snapshotFontList(), name, CHINESE_SIMPLIFIED_FONT_NAMES, fontFlags);
     }
 
     private FontFile getAsianInstance(List<Object[]> fontList, String name, String[] list, int flags) {
 
-        if (fontList == null) {
-            fontList = new ArrayList<>(150);
-        }
-
+        // fontList is a snapshot supplied by the caller (never null, may be empty).
         FontFile font;
         if (list != null) {
             // search for know list of fonts
@@ -681,7 +873,7 @@ public class FontManager {
      * @param fontResourcePackage package to look for the resources in.
      * @param resources           file names of font resources to load.
      */
-    public void readFontPackage(String fontResourcePackage, List<String> resources) {
+    public synchronized void readFontPackage(String fontResourcePackage, List<String> resources) {
         if (fontJarList == null) {
             fontJarList = new ArrayList<>(35);
         }
@@ -720,9 +912,11 @@ public class FontManager {
      */
     public FontFile getInstance(String name, int flags) {
 
-        if (fontList == null) {
-            fontList = new ArrayList<>();
-        }
+        // Iterate stable snapshots rather than the live static lists: the lookups below
+        // (and the slow buildFont disk reads they trigger) then run lock-free while a
+        // concurrent readSystemFonts/setFontProperties can safely rebuild the shared lists.
+        final List<Object[]> fontList = snapshotFontList();
+        final List<Object[]> fontJarList = snapshotFontJarList();
 
         FontFile font;
 
@@ -800,13 +994,13 @@ public class FontManager {
                     found = true;
                 }
                 if (found) {
-                    font = buildFont((String) fontData[3]);
+                    font = buildFont((String) fontData[3], (String) fontData[0]);
                     break;
                 }
             }
             if (!found) {
                 fontData = fontList.get(0);
-                font = buildFont((String) fontData[3]);
+                font = buildFont((String) fontData[3], (String) fontData[0]);
             }
             if (logger.isLoggable(Level.FINE)) {
                 logger.fine("Font Substitution: Found failed " + name + " " + font.getName());
@@ -883,7 +1077,7 @@ public class FontManager {
                             logger.finer("Match Found for: " + fontName + ":" + getFontStyle(style, 0).trim() +
                                     " Substituting " + baseName + ":" + path);
                         }
-                        font = buildFont((String) fontData[3]);
+                        font = buildFont((String) fontData[3], (String) fontData[0]);
                         // make sure the font does indeed exist
                         if (font != null) {
                             break;
@@ -903,6 +1097,15 @@ public class FontManager {
      * @return a valid font if loadable, null otherwise
      */
     private FontFile buildFont(String fontPath) {
+        return buildFont(fontPath, null);
+    }
+
+    /**
+     * @param fontPath       font file to load
+     * @param postScriptName the face wanted, when {@code fontPath} is a TrueType/OpenType collection
+     *                       holding several; ignored for a single-font file
+     */
+    private FontFile buildFont(String fontPath, String postScriptName) {
         FontFile font = null;
         try {
             if (fontPath.startsWith("jar:file")) {
@@ -912,13 +1115,95 @@ public class FontManager {
                 if (!file.canRead()) {
                     return null;
                 }
-                font = buildFont(file);
+                font = isFontCollection(fontPath)
+                        ? buildCollectionFont(file, postScriptName) : buildFont(file);
             }
         } catch (Exception e) {
             // there are a lot of system font that don't ready correctly, so don't get to noisy
             logger.log(Level.FINE, "Error reading font program.", e);
         }
         return font;
+    }
+
+    /**
+     * True for a TrueType or OpenType <em>collection</em>, a single file holding several faces.  The
+     * CJK fonts shipped by most Linux distributions (Noto CJK, AR PL UMing/UKai) come this way, and
+     * FontBox's plain TrueType parser cannot read the {@code ttcf} header they start with.
+     */
+    private static boolean isFontCollection(String fontPath) {
+        String lower = fontPath.toLowerCase();
+        return lower.endsWith(".ttc") || lower.endsWith(".otc");
+    }
+
+    /**
+     * Loads one face out of a collection by its PostScript name, the name the scan recorded for it.
+     *
+     * @return the named face, or the first one if the name is unknown; null if the file won't parse
+     */
+    private FontFile buildCollectionFont(File file, String postScriptName) {
+        try {
+            // Parse from memory: the returned faces read through the collection's buffer, so a
+            // file-backed collection would have to stay open for as long as any face is alive.
+            TrueTypeCollection collection = new TrueTypeCollection(
+                    new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
+            // Not getFontByName: the scan records names lower-cased, and that method matches exactly,
+            // so every lookup would miss and quietly hand back the collection's first face - which on
+            // Noto CJK is the Japanese one, whatever collection was actually asked for.
+            FaceByName wanted = new FaceByName(postScriptName);
+            collection.processAllFonts(wanted);
+            TrueTypeFont face = wanted.match != null ? wanted.match : wanted.first;
+            if (face != null) {
+                return new ZFontTrueType(face, file.toURI().toURL());
+            }
+        } catch (Throwable e) {
+            logger.log(Level.FINE, "Error reading font collection " + file, e);
+        }
+        return null;
+    }
+
+    /**
+     * True when the face carries PostScript/CFF outlines rather than {@code glyf} ones.  ZFontTrueType
+     * and ZFontOpenType both read glyphs out of the {@code glyf} table, so a CFF face parses cleanly
+     * and then draws nothing at all.
+     */
+    private static boolean isPostScriptOutlines(TrueTypeFont face) {
+        try {
+            return face instanceof org.apache.fontbox.ttf.OpenTypeFont
+                    && ((org.apache.fontbox.ttf.OpenTypeFont) face).isPostScript();
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * Finds a collection's face by PostScript name, ignoring case, and remembers the first face as a
+     * fallback.  FontBox only offers a visitor over a collection, hence the accumulator.
+     */
+    private static class FaceByName implements TrueTypeCollection.TrueTypeFontProcessor {
+        private final String wanted;
+        private TrueTypeFont match;
+        private TrueTypeFont first;
+
+        private FaceByName(String postScriptName) {
+            this.wanted = postScriptName != null ? postScriptName.toLowerCase() : null;
+        }
+
+        @Override
+        public void process(TrueTypeFont ttf) {
+            if (first == null) {
+                first = ttf;
+            }
+            if (match == null && wanted != null) {
+                try {
+                    String name = ttf.getName();
+                    if (name != null && wanted.equals(name.toLowerCase())) {
+                        match = ttf;
+                    }
+                } catch (IOException e) {
+                    logger.log(Level.FINE, "Could not read a collection face's name", e);
+                }
+            }
+        }
     }
 
     private FontFile buildFont(File fontFile) {
@@ -979,9 +1264,43 @@ public class FontManager {
      * @param flags    style flags
      * @return a valid FontFile if a match is found, null otherwise.
      */
+    /**
+     * Returns the first of {@code candidates} that is actually installed, styled to match.
+     * <p>
+     * A list rather than a single name because the right answer differs per platform and per decade:
+     * the Lucida faces the original code asked for shipped with the JDK until 9 removed them, and
+     * nothing replaced them, so the lookup silently failed everywhere.
+     */
+    private FontFile findFirstAvailable(List<Object[]> fontList, String[] candidates,
+                                        int decorations, int flags) {
+        String style = getFontStyle(decorations, flags);
+        // an explicitly configured base font wins over the built-in candidates
+        List<String> ordered = new ArrayList<>(candidates.length + 1);
+        if (baseFontName != null && !baseFontName.isEmpty()) {
+            ordered.add(baseFontName);
+        }
+        ordered.addAll(Arrays.asList(candidates));
+        for (String candidate : ordered) {
+            FontFile font = findFont(fontList, FontUtil.normalizeString(candidate) + "-" + style, 0);
+            if (font != null) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine("Font Substitution: core font fallback " + candidate + " -> " + font.getName());
+                }
+                return font;
+            }
+        }
+        return null;
+    }
+
     private FontFile getCoreJavaFont(String fontName, int flags) {
 
+        // iterate a stable snapshot, not the live static list
+        final List<Object[]> fontList = snapshotFontList();
         int decorations = guessFontStyle(fontName);
+        // the width class has to come off the RAW name: normalizeString truncates at the last dash,
+        // so "Futura-CondensedBold" normalizes to "futura" and "Frutiger-Cn" to "frutiger" - the
+        // very part that says the face is narrow is the part that gets thrown away.
+        boolean isCondensed = isCondensedName(fontName);
         fontName = FontUtil.normalizeString(fontName);
         FontFile font;
 
@@ -991,6 +1310,25 @@ public class FontManager {
         boolean isSerif = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SERIF) != 0;
 //        boolean isSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_SYMBOLIC) != 0;
 //        boolean isNotSymbolic = (flags & org.icepdf.core.pobjects.fonts.Font.FONT_FLAG_NON_SYMBOLIC) != 0;
+        // A symbolic font has to be answered with a symbolic face; a text face has none of the
+        // glyphs and every code draws .notdef.  Tested before the text families below because
+        // "Symbol" would otherwise never be reached at all.
+        //
+        // Deliberately keyed on the NAME, never on the descriptor's symbolic flag: that flag is set
+        // on any font with a non-standard encoding, which includes a great many perfectly ordinary
+        // embedded text fonts (a subset Arial in the corpus carries Flags=6), and routing those to a
+        // dingbat face would be far worse than the bug being fixed.
+        if (isDingbatName(fontName)) {
+            font = findFirstAvailable(fontList, DINGBAT_SUBSTITUTES, decorations, flags);
+            if (font != null) {
+                return font;
+            }
+        } else if (isSymbolName(fontName)) {
+            font = findFirstAvailable(fontList, SYMBOL_SUBSTITUTES, decorations, flags);
+            if (font != null) {
+                return font;
+            }
+        }
         // If no name are found then match against the core java font names
         // "Serif", java equivalent is  "Lucida Bright"
         if (fontName.contains("timesnewroman") ||
@@ -1001,7 +1339,7 @@ public class FontManager {
                 fontName.contains("georgia") ||
                 fontName.contains("bitstreamcyberbit")) {
             // important, add style information
-            font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, serifCandidates(isCondensed), decorations, flags);
         }
         // see if we working with a monospaced font, we sub "Sans Serif",
         // java equivalent is "Lucida Sans"
@@ -1018,7 +1356,7 @@ public class FontManager {
                 fontName.contains("frutiger") ||
                 fontName.contains("grotesk")) {
             // important, add style information
-            font = findFont(fontList, baseFontName + "-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, sansCandidates(isCondensed), decorations, flags);
         }
         // see if we working with a mono spaced font "Mono Spaced"
         // java equivalent is "Lucida Sans Typewriter"
@@ -1027,24 +1365,87 @@ public class FontManager {
                 fontName.contains("prestige") ||
                 fontName.contains("eversonmono")) {
             // important, add style information
-            font = findFont(fontList, baseFontName + "typewriter-" + getFontStyle(decorations, flags), 0);
+            font = findFirstAvailable(fontList, MONO_SUBSTITUTES, decorations, flags);
         }
         // first try get the first match based on the style type and finally on failure
         // failure go with the serif as it is the most common font family
         else {
             if (isSerif) {
-                font = findFont(fontList, "lucidabright-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, serifCandidates(isCondensed), decorations, flags);
             } else if (isFixedPitch) {
-                // lucidatypewriter, seems to make the font engine barf, converting to other
-                // common fixed pitch font courier-new.
-                font = findFont(fontList, "couriernew-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, MONO_SUBSTITUTES, decorations, flags);
             } else {
                 // sans serif
-                font = findFont(fontList, "lucidasans-" + getFontStyle(decorations, flags), 0);
+                font = findFirstAvailable(fontList, sansCandidates(isCondensed), decorations, flags);
             }
         }
 
         return font;
+    }
+
+    /**
+     * True when the base name declares a narrow width class.  Must be given the name as the
+     * document wrote it, before {@link FontUtil#normalizeString} strips everything after the last
+     * dash.
+     * <p>
+     * "Cn", "Cnd" and "Scn" are Adobe's abbreviations (Frutiger-Cn, Introspect-BldCnd,
+     * AdobeCorpID-MyriadRgScn).  They are matched only as a suffix of the whole name: two letters
+     * are common enough inside real family names that a substring test would misfire.
+     */
+    private static boolean isCondensedName(String fontName) {
+        if (fontName == null) return false;
+        String name = FontUtil.removeBaseFontSubset(fontName).toLowerCase();
+        return name.contains("cond")            // condensed, -Cond, CondensedBold
+                || name.contains("compressed")
+                || name.contains("narrow")
+                || name.endsWith("cn") || name.endsWith("scn") || name.endsWith("cnd");
+    }
+
+    /**
+     * True for the dingbat families: ZapfDingbats and the Microsoft equivalents, whose codes map to
+     * pictographs rather than letters.  Takes an already normalized (lower case, unspaced) name.
+     * <p>
+     * NOTE, unfinished business: Wingdings and Webdings are lumped in with ZapfDingbats, but they do
+     * not share its code layout.  The geometric bullets happen to agree - the codes for the filled
+     * circle and square land on the same shapes - while the checkmarks and arrows do not, so those
+     * documents get a plausible wrong glyph where they used to get an empty box.  That trade is
+     * deliberate and matches what other viewers do, but it is a guess, not a mapping.  Doing it
+     * properly means a real Wingdings-to-Unicode table (the glyphs are in Unicode 7.0 and later, at
+     * U+1F5xx among others) and a substitute that actually carries them; revisit if a document turns
+     * up where the wrong glyph is worse than nothing.
+     */
+    private static boolean isDingbatName(String normalizedName) {
+        return normalizedName.contains("dingbat")           // ZapfDingbats, Dingbats, URW Dingbats
+                || normalizedName.contains("wingding")      // Wingdings, Wingdings2, Wingdings3
+                || normalizedName.contains("webding")
+                || normalizedName.startsWith("d050000l");   // the URW ZapfDingbats clone by its own name
+    }
+
+    /**
+     * True for the Symbol family: Greek and mathematical glyphs.  "Symbol" has to be matched
+     * tightly - it turns up inside plenty of unrelated names (NotoSansSymbols is itself a
+     * substitute, not a request for one) - so this looks for the family, not the substring.
+     */
+    private static boolean isSymbolName(String normalizedName) {
+        return normalizedName.equals("symbol")              // also "Symbol,Bold": guessFamily cuts at the comma
+                || normalizedName.startsWith("symbolmt")
+                || normalizedName.startsWith("standardsym"); // StandardSymL, Standard Symbols PS
+    }
+
+    /** Substitute list for a sans face, condensed candidates first when the name asks for them. */
+    private static String[] sansCandidates(boolean isCondensed) {
+        return isCondensed ? concat(SANS_CONDENSED_SUBSTITUTES, SANS_SUBSTITUTES) : SANS_SUBSTITUTES;
+    }
+
+    /** Substitute list for a serif face, condensed candidates first when the name asks for them. */
+    private static String[] serifCandidates(boolean isCondensed) {
+        return isCondensed ? concat(SERIF_CONDENSED_SUBSTITUTES, SERIF_SUBSTITUTES) : SERIF_SUBSTITUTES;
+    }
+
+    private static String[] concat(String[] first, String[] second) {
+        String[] all = Arrays.copyOf(first, first.length + second.length);
+        System.arraycopy(second, 0, all, first.length, second.length);
+        return all;
     }
 
     /**

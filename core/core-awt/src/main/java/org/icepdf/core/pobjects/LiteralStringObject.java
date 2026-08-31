@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.Font;
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.util.Utils;
 
 /**
@@ -27,10 +25,6 @@ import org.icepdf.core.util.Utils;
  * @since 2.0
  */
 public class LiteralStringObject extends AbstractStringObject {
-
-    private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6',
-            '7', '8', '9', 'a', 'b', 'c', 'd',
-            'e', 'f'};
 
     /**
      * <p>Creates a new literal string object so that it represents the same
@@ -86,34 +80,6 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * Gets the integer value of the hexidecimal data specified by the start and
-     * offset parameters.
-     *
-     * @param start  the begining index, inclusive
-     * @param offset the length of bytes to process
-     * @return unsigned integer value of the specifed data range
-     */
-    public int getUnsignedInt(int start, int offset) {
-        if (start < 0 || stringData.length() < (start + offset))
-            return stringData.charAt(0);
-
-        if (offset == 1) {
-            return stringData.charAt(start);
-        }
-        if (offset == 2) {
-            return ((stringData.charAt(start) & 0xFF) << 8) |
-                    ((stringData.charAt(start + 1)) & 0xFF);
-        } else if (offset == 4) {
-            return ((stringData.charAt(start) & 0xFF) << 24) |
-                    ((stringData.charAt(start + 1) & 0xFF) << 16) |
-                    ((stringData.charAt(start + 2) & 0xFF) << 8) |
-                    ((stringData.charAt(start + 3)) & 0xFF);
-        } else {
-            return 0;
-        }
-    }
-
-    /**
      * <p>Returns a string representation of the object.</p>
      *
      * @return a string representing the object.
@@ -133,27 +99,6 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * <p>Gets a hexadecimal StringBuffer representation of this object's data,
-     * which is converted to hexadecimal form.</p>
-     *
-     * @return a StringBufffer representation of the object's data in hexadecimal
-     *         notation.
-     */
-    public StringBuilder getHexStringBuffer() {
-        return stringToHex(stringData);
-    }
-
-    /**
-     * <p>Gets a literal StringBuffer representation of this object's data
-     * which is in fact, the raw data contained in this object.</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    public StringBuilder getLiteralStringBuffer() {
-        return stringData;
-    }
-
-    /**
      * <p>Gets a literal String representation of this object's data,
      * which is in fact, the raw data contained in this object.</p>
      *
@@ -164,68 +109,28 @@ public class LiteralStringObject extends AbstractStringObject {
     }
 
     /**
-     * <p>Gets a literal String representation of this object's data using the
-     * specified font and format.  The font is used to verify that the
-     * specific character codes can be rendered; if they cannot, they may be
-     * removed or combined with the next character code to get a displayable
-     * character code.
-     *
-     * @param fontFormat the type of pdf font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderable characters for the
-     *         given font.
+     * The string's bytes.  A literal string's data is stored one byte per char, so this is a
+     * straight narrowing.
      */
-    public StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font) {
-
-        if (fontFormat == Font.SIMPLE_FORMAT
-                || (font.getByteEncoding() == FontFile.ByteEncoding.ONE_BYTE)) {
-            return stringData;
-        } else if (fontFormat == Font.CID_FORMAT) {
-            int length = getLength();
-            int charValue;
-            StringBuilder tmp = new StringBuilder(length);
-            for (int i = 0; i < length; i += 1) {
-                // check range for possible 2 byte char.
-                charValue = getUnsignedInt(i, 2);
-                if (font.canDisplay((char) charValue)) {
-                    tmp.append((char) charValue);
-                    i += 1;
-                } else {
-                    charValue = getUnsignedInt(i, 1);
-                    if (font.canDisplay((char) charValue)) {
-                        tmp.append((char) charValue);
-                    }
-                }
-            }
-            return tmp;
+    public byte[] getRawBytes() {
+        int length = stringData.length();
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = (byte) stringData.charAt(i);
         }
-        return null;
-    }
-
-    /**
-     * The length of the underlying object's data.
-     *
-     * @return length of objcts data.
-     */
-    public int getLength() {
-        return stringData.length();
+        return bytes;
     }
 
     /**
      * Utility method for converting literal strings to hexadecimal.
      *
      * @param string StringBuffer in literal form
-     * @return StringBuffer in hexadecial form
+     * @return StringBuffer in hexadecimal form
      */
-    private StringBuilder stringToHex(StringBuilder string) {
+    private static StringBuilder stringToHex(StringBuilder string) {
         StringBuilder hh = new StringBuilder(string.length() * 2);
-        int charCode;
         for (int i = 0, max = string.length(); i < max; i++) {
-            charCode = string.charAt(i);
-            hh.append(hexChar[(charCode & 0xf0) >>> 4]);
-            hh.append(hexChar[charCode & 0x0f]);
+            appendHexByte(hh, string.charAt(i));
         }
         return hh;
     }

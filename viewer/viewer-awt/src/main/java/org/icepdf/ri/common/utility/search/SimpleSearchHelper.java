@@ -43,6 +43,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
     private final boolean commentsEnabled;
     private final boolean wholeWord;
     private final boolean caseSensitive;
+    private final boolean foldDiacritics;
 
     private SimpleSearchHelper(Builder builder) {
         controller = builder.controller;
@@ -50,6 +51,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
         pattern = builder.pattern;
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
+        foldDiacritics = builder.foldDiacritics;
         commentsEnabled = builder.comments;
 
         currentPage = controller.getCurrentPageNumber();
@@ -132,7 +134,8 @@ public class SimpleSearchHelper implements PropertyChangeListener {
             }
             wordIndex = 0;
             currentPage = nextPage;
-            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord);
+            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord,
+                    foldDiacritics);
             if (wordHits > 0) {
                 controller.getDocumentViewController().getViewContainer().repaint();
                 return;
@@ -151,7 +154,8 @@ public class SimpleSearchHelper implements PropertyChangeListener {
                 // search comments and update indexes
             }
             currentPage = nextPage;
-            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord);
+            wordHits = searchController.searchHighlightPage(currentPage, pattern, caseSensitive, wholeWord,
+                    foldDiacritics);
             wordIndex = wordHits;
             if (wordHits > 0) {
                 controller.getDocumentViewController().getViewContainer().repaint();
@@ -194,6 +198,7 @@ public class SimpleSearchHelper implements PropertyChangeListener {
         private boolean wholePage;
         private boolean wholeWord;
         private boolean caseSensitive;
+        private boolean foldDiacritics;
         private boolean comments;
 
         public Builder(Controller controller, String pattern) {
@@ -213,6 +218,11 @@ public class SimpleSearchHelper implements PropertyChangeListener {
 
         public Builder setCaseSensitive(boolean caseSensitive) {
             this.caseSensitive = caseSensitive;
+            return this;
+        }
+
+        public Builder setFoldDiacritics(boolean foldDiacritics) {
+            this.foldDiacritics = foldDiacritics;
             return this;
         }
 

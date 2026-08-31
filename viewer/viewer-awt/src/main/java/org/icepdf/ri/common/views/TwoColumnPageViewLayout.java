@@ -41,6 +41,14 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
                 .filter(component -> component instanceof PageViewDecorator && component.isVisible())
                 .toArray(PageViewDecorator[]::new);
 
+        // When the full spread fits within the view, center it vertically once;
+        // rows then stack downward from this offset.  Overwriting yCord per row
+        // (the old behaviour) collapsed every row onto the same y and hid trailing
+        // pages behind the first.
+        if (preferredHeight < maxHeight) {
+            yCord = (maxHeight - preferredHeight) / 2;
+        }
+
         int count = 0;
         Dimension previousDimension = new Dimension();
         for (PageViewDecorator pageViewDecorator : pages) {
@@ -58,11 +66,9 @@ public class TwoColumnPageViewLayout extends TwoPageViewLayout{
             } else if (count == 0) {
                 xCord = (maxWidth - preferredWidth) / 2;
                 xCord += insets.left;
+                // advance to the next row; the initial vertical-centering offset is
+                // applied once before the loop so successive rows stack correctly.
                 yCord += previousDimension.height + PAGE_SPACING_VERTICAL;
-                if (preferredHeight < maxHeight) {
-                    yCord = (maxHeight - preferredHeight) / 2;
-                    yCord += PAGE_SPACING_VERTICAL;
-                }
                 count++;
             } else {
                 count = 0;

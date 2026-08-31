@@ -101,16 +101,13 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
-        int gid = ech;
-        try {
-            if (cid2gid == null) {
-                gid = getCharToGid(ech);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (widths != null && gid < widths.length) {
-            advance = widths[gid];
+        // /W is indexed by CID, never by glyph index and never by the raw code: for anything but an
+        // identity CMap those are different numbers, and looking a width up by the wrong one misses,
+        // falls back to /DW and advances a full em.  In a CJK font that makes every Latin run - which
+        // is half width - come out spaced like full-width text.
+        int cid = toCid(ech);
+        if (widths != null && cid >= 0 && cid < widths.length) {
+            advance = widths[cid];
         }
         if (advance == 0) {
             if (defaultWidth > 0.0f) {
@@ -129,7 +126,10 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         // CID glyphs are addressed directly by glyph id; the outline is in raw font units and is
         // scaled by the 1/unitsPerEm fontMatrix at paint time
         int gid = getCharToGid(estr);
-        GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
+        // fontbox has no glyf table for OTF/CFF-backed fonts; treat as an empty outline rather
+        // than letting the NPE abort the whole text run / page
+        GlyphData glyphData = trueTypeFont.getGlyph() != null
+                ? trueTypeFont.getGlyph().getGlyph(gid) : null;
         if (glyphData == null) {
             return new GeneralPath();
         }
@@ -199,6 +199,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         ZFontType2 font = new ZFontType2(this);
         font.encoding = encoding;
         font.cmapEncoding = cmapEncoding != null ? cmapEncoding : this.toUnicode;
+        font.setCidEncoding(cmapEncoding);
         font.toUnicode = deriveToUnicode(encoding, toUnicode != null ? toUnicode : cmapEncoding);
         return font;
     }
@@ -294,6 +295,11 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             String eString = ucs2Cmap.toUnicode(echar);
             // finally we can get a usable glyph;
             CmapLookup cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            // a substituted CID font may have no unicode cmap, or the UCS2 map may not cover this code; either way
+            // we can't resolve a glyph, so fall back to the raw code rather than NPE (GH-495).
+            if (cmapLookup == null || eString == null || eString.isEmpty()) {
+                return code;
+            }
             echar = cmapLookup.getGlyphId(eString.codePointAt(0));
             return echar;
         } else {

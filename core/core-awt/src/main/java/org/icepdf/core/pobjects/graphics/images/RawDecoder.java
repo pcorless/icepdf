@@ -66,12 +66,29 @@ public class RawDecoder extends AbstractImageDecoder {
         int[] f = new int[colorSpaceCompCount];
         float[] ff = new float[colorSpaceCompCount];
 
+        // last-sample cache for the colorSpace.getColor() paths below; getColor
+        // (plus its Color allocation) is the per-pixel cost, and flat runs repeat
+        // the same sample.  -1 is an impossible bit-stream value so the first
+        // pixel always misses.
+        int[] lastF = new int[colorSpaceCompCount];
+        java.util.Arrays.fill(lastF, -1);
+        int[] lastRgb = new int[1];
+
         // image mask from
         float imageMaskValue = decode[0];
 
         // Create the memory hole where where the buffered image will be written
         // too, bit by painful bit.
         BufferedImage bim = ImageUtility.createTranslucentCompatibleImage(width, height);
+
+        // GH-501: when a CMYK group is being rasterised, capture the true CMYK
+        // samples alongside the sRGB image so the group can blend in CMYK.  This
+        // per-pixel decoder is the raw FlateDecode path (no intermediate CMYK
+        // raster); cmykCapture is null (no cost) unless preservation is on for an
+        // 8-bit DeviceCMYK image.
+        byte[] cmykCapture = (ImageUtility.isPreserveCmyk() && bitsPerComponent == 8
+                && colorSpaceCompCount == 4 && colorSpace instanceof DeviceCMYK)
+                ? new byte[width * height * 4] : null;
 
         // create the buffer and get the first series of bytes from the cached
         // stream
@@ -128,10 +145,7 @@ public class RawDecoder extends AbstractImageDecoder {
                                 imageBits[x] = bit;
                             } else {
                                 f[0] = bit;
-                                colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
-
-                                Color color = colorSpace.getColor(ff);
-                                imageBits[x] = color.getRGB();
+                                imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb);
                             }
                         }
                         // normal RGB colour
@@ -153,9 +167,7 @@ public class RawDecoder extends AbstractImageDecoder {
                                 for (int i = 0; i < colorSpaceCompCount; i++) {
                                     f[i] = in.getBits(bitsPerComponent);
                                 }
-                                colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
-                                Color color = colorSpace.getColor(ff);
-                                imageBits[x] = color.getRGB();
+                                imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb);
                             }
                         }
                         // normal aRGB colour,  this could use some more
@@ -168,9 +180,16 @@ public class RawDecoder extends AbstractImageDecoder {
                                     f[i] = maxColourValue - f[i];
                                 }
                             }
-                            colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
-                            Color color = colorSpace.getColor(ff);
-                            imageBits[x] = color.getRGB();
+                            if (cmykCapture != null) {
+                                // f holds the decoded C,M,Y,K samples (0..255) -- the
+                                // true CMYK, before colorSpace.getColor() flattens to sRGB.
+                                int idx = (y * width + x) * 4;
+                                cmykCapture[idx] = (byte) f[0];
+                                cmykCapture[idx + 1] = (byte) f[1];
+                                cmykCapture[idx + 2] = (byte) f[2];
+                                cmykCapture[idx + 3] = (byte) f[3];
+                            }
+                            imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb);
                         }
                         // else just set pixel with the default values
                         else {
@@ -189,7 +208,41 @@ public class RawDecoder extends AbstractImageDecoder {
             logger.log(Level.FINE, "Error parsing image.", e);
         }
 
+        if (cmykCapture != null) {
+            ImageUtility.preserveCmykBytes(bim, cmykCapture, width, height);
+        }
+
         return bim;
 
+    }
+
+    /**
+     * Normalises and converts a colour sample to an ARGB int, reusing the last
+     * result when the raw components are unchanged.  Avoids the per-pixel
+     * normalise/getColor/Color-allocation cost across flat runs.
+     *
+     * @param colorSpace     colour space used to resolve the colour.
+     * @param f              raw sample components for this pixel.
+     * @param ff             scratch buffer for normalised components.
+     * @param maxColourValue maximum raw component value.
+     * @param lastF          previous sample components (mutated); seed with -1.
+     * @param lastRgb        single-element holder for the previous ARGB result.
+     * @return ARGB value for the sample.
+     */
+    private static int convertSample(PColorSpace colorSpace, int[] f, float[] ff, int maxColourValue,
+                                     int[] lastF, int[] lastRgb) {
+        boolean same = true;
+        for (int i = 0; i < f.length; i++) {
+            if (f[i] != lastF[i]) {
+                same = false;
+                lastF[i] = f[i];
+            }
+        }
+        if (same) {
+            return lastRgb[0];
+        }
+        colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
+        lastRgb[0] = colorSpace.getColor(ff).getRGB();
+        return lastRgb[0];
     }
 }

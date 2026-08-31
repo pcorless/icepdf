@@ -23,6 +23,10 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.BlendCompositeDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -1351,6 +1355,98 @@ public abstract class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
+    /**
+     * Tests whether the current appearance stream carries a non-Normal blend
+     * mode (e.g. a Multiply text-highlight).  Such an annotation must blend
+     * against the real page content beneath it; on a Swing/X11 canvas the
+     * {@code BlendComposite} path throws and falls back to a flat alpha, so the
+     * caller can instead rasterise the annotation over a page-backdrop buffer
+     * (where the blend composites correctly) and blit the result.
+     *
+     * @return true if the selected appearance contains a blend composite.
+     */
+    public boolean appearanceHasBlendMode() {
+        Appearance appearance = appearances.get(currentAppearance);
+        if (appearance == null) return false;
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        if (appearanceState == null || appearanceState.getShapes() == null) return false;
+        return containsBlendComposite(appearanceState.getShapes());
+    }
+
+    private static boolean containsBlendComposite(Shapes shapes) {
+        if (shapes == null) return false;
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof BlendCompositeDrawCmd) {
+                return true;
+            }
+            if (cmd instanceof ShapesDrawCmd
+                    && containsBlendComposite(((ShapesDrawCmd) cmd).getShapes())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The transform from an appearance stream's own coordinates to the annotation's rectangle, per
+     * PDF 32000-1 12.5.5.
+     *
+     * @param appearanceState appearance being drawn
+     * @return transform from appearance space to the annotation's space
+     */
+    protected AffineTransform getAppearanceToAnnotationSpace(AppearanceState appearanceState) {
+        AffineTransform matrix = appearanceState.getMatrix();
+        Rectangle2D bbox = appearanceState.getBbox();
+
+        // step 1. appearance bounding box (BBox) is transformed, using
+        // Matrix, to produce a quadrilateral with arbitrary orientation.
+        Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
+
+        // Step 2. matrix is computed that scales and translates the
+        // transformed appearance box (tBbox) to align with the edges of
+        // the annotation's rectangle (Ret).
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform tAs = AffineTransform.getScaleInstance(
+                (rect.getWidth() / tBbox.getWidth()),
+                (rect.getHeight() / tBbox.getHeight()));
+
+        // check for identity transformation
+        // we have to be careful in such as case as the coordinates of the annotation may actually
+        // be in page space.  If the rectangle in page pace is more or less the same location
+        // as the tbbox then we know the annotation coordinate space must also be in page space.
+        // Thus, we shift back to page space.
+        if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -rect.getX(), -rect.getY());
+        } else {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
+        }
+        // Step 3. matrix is concatenated with A to form a matrix AA
+        // that maps from the appearance's coordinate system to the
+        // annotation's rectangle in default user space.
+        tAs.concatenate(matrix);
+        return tAs;
+    }
+
+    /**
+     * The transform from an appearance stream's own coordinates to page space.
+     * <p>
+     * Rendering does not need this: the graphics context is already positioned at the annotation, so
+     * {@link #getAppearanceToAnnotationSpace} leaves off the final step. Anything reasoning about
+     * where the appearance's content actually sits on the page - a redaction deciding whether a
+     * glyph inside it falls under a rectangle - needs the whole way there.
+     *
+     * @param appearanceState appearance to locate
+     * @return transform from appearance space to page space
+     */
+    public AffineTransform getAppearanceToPageSpace(AppearanceState appearanceState) {
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform toPage = AffineTransform.getTranslateInstance(rect.getX(), rect.getY());
+        toPage.concatenate(getAppearanceToAnnotationSpace(appearanceState));
+        return toPage;
+    }
+
     protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
@@ -1363,38 +1459,16 @@ public abstract class Annotation extends Dictionary {
 //            Rectangle2D.Float newRect = deriveDrawingRectangle();
 //            g.draw( newRect );
 
-            // step 1. appearance bounding box (BBox) is transformed, using
-            // Matrix, to produce a quadrilateral with arbitrary orientation.
-            Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
-
-            // Step 2. matrix is computed that scales and translates the
-            // transformed appearance box (tBbox) to align with the edges of
-            // the annotation's rectangle (Ret).
-            Rectangle2D rect = getUserSpaceRectangle();
-            AffineTransform tAs = AffineTransform.getScaleInstance(
-                    (rect.getWidth() / tBbox.getWidth()),
-                    (rect.getHeight() / tBbox.getHeight()));
-
-            // check for identity transformation
-            // we have to be careful in such as case as the coordinates of the annotation may actually
-            // be in page space.  If the rectangle in page pace is more or less the same location
-            // as the tbbox then we know the annotation coordinate space must also be in page space.
-            // Thus, we shift back to page space.
-            if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -rect.getX(), -rect.getY());
-            } else {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
-            }
-            // Step 3. matrix is concatenated with A to form a matrix AA
-            // that maps from the appearance's coordinate system to the
-            // annotation's rectangle in default user space.
-            tAs.concatenate(matrix);
-            g.transform(tAs);
+            g.transform(getAppearanceToAnnotationSpace(appearanceState));
 
             AffineTransform preAf = g.getTransform();
             boolean paintFailed = false;
+            // An annotation paints over the already-rendered page, so a blended
+            // group in its appearance stream (e.g. a Multiply text highlight) must
+            // blend against the real page pixels in g, not the replay-reconstructed
+            // backdrop (which is blank for an appearance stream).  Flag the paint so
+            // FormDrawCmd takes the direct-composite path.
+            FormDrawCmd.setAnnotationAppearance(true);
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
@@ -1416,6 +1490,7 @@ public abstract class Annotation extends Dictionary {
                     logger.fine("Page Annotation Painting interrupted.");
                 }
             }
+            FormDrawCmd.setAnnotationAppearance(false);
 
             g.setTransform(preAf);
         }
@@ -1847,7 +1922,7 @@ public abstract class Annotation extends Dictionary {
                 // build out an appearance stream, corner case iText 2.1
                 // didn't correctly set type = form on the appearance stream obj.
                 try {
-                    form = new Form(library, stream.getEntries(), null);
+                    form = new Form(library, stream.getEntries(), (byte[]) null);
                     form.setPObjectReference(stream.getPObjectReference());
                     form.setRawBytes(stream.getDecodedStreamBytes());
                     form.init();
@@ -1861,7 +1936,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
@@ -1891,7 +1966,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }

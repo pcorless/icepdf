@@ -15,7 +15,7 @@
  */
 package org.icepdf.qa.viewer.project;
 
-import javafx.application.Platform;
+import javafx.animation.AnimationTimer;
 import javafx.geometry.Side;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -26,13 +26,26 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 /**
- * Contains a simple console view that take System.out as a source.  The TextArea has proven to be a little slow as
- * it get busy.  Sor the current work around is to do a little ascii art.
+ * Contains a simple console view that takes System.out as a source.  Writes are buffered off the writing thread and
+ * drained to the TextArea in batches on the JavaFX application thread, and the TextArea is capped to a rolling window
+ * of the most recent output.  This keeps a busy test run from flooding the FX event queue or growing the console
+ * without bound.
  */
 public class ProjectUtilityPane extends TabPane {
 
+    /**
+     * Maximum number of characters retained in the console.  Older text is trimmed from the front once this is
+     * exceeded, giving a rolling window of recent output.
+     */
+    private static final int MAX_CONSOLE_CHARS = 200_000;
+
+    /**
+     * Minimum time between TextArea updates, in nanoseconds.  Buffered output is coalesced into a single append per
+     * interval rather than one update per byte.
+     */
+    private static final long FLUSH_INTERVAL_NANOS = 100_000_000L; // 100ms
+
     private final TextArea consoleTextArea;
-    private int count;
 
     public ProjectUtilityPane(Mediator mediator) {
         super();
@@ -42,7 +55,7 @@ public class ProjectUtilityPane extends TabPane {
         consoleTab.setClosable(false);
 
         consoleTextArea = new TextArea();
-        PrintStream printStream = new PrintStream(new Console(consoleTextArea));
+        PrintStream printStream = new PrintStream(new Console(consoleTextArea), true);
 
         System.setOut(printStream);
 //        System.setErr(printStream);
@@ -54,30 +67,61 @@ public class ProjectUtilityPane extends TabPane {
 
     public void clearConsole() {
         consoleTextArea.clear();
-        count = 0;
     }
 
-    public class Console extends OutputStream {
+    /**
+     * OutputStream that buffers writes from any thread and periodically flushes them to a TextArea on the FX
+     * application thread, capping the total length to {@link #MAX_CONSOLE_CHARS}.
+     */
+    public static class Console extends OutputStream {
         private final TextArea console;
+        private final StringBuilder buffer = new StringBuilder();
+        private long lastFlush;
 
         public Console(TextArea console) {
             this.console = console;
+            // AnimationTimer.handle() runs on the FX application thread, so the drain can touch the TextArea directly.
+            new AnimationTimer() {
+                @Override
+                public void handle(long now) {
+                    if (now - lastFlush < FLUSH_INTERVAL_NANOS) {
+                        return;
+                    }
+                    lastFlush = now;
+                    flushToConsole();
+                }
+            }.start();
         }
 
-        public void appendText(String valueOf) {
-            Platform.runLater(() -> console.appendText(valueOf));
-        }
-
+        @Override
         public void write(int b) {
-            if (count % 80 == 0) {
-                appendText(String.valueOf('\n'));
+            synchronized (buffer) {
+                buffer.append((char) (b & 0xFF));
             }
-            appendText(String.valueOf((char) b));
-            // line break our ascii art at 80.
-            if (b == '=' || b == '|' || b == '~') {
-                count++;
-            } else {
-                count = 1;
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) {
+            synchronized (buffer) {
+                for (int i = 0; i < len; i++) {
+                    buffer.append((char) (b[off + i] & 0xFF));
+                }
+            }
+        }
+
+        private void flushToConsole() {
+            String pending;
+            synchronized (buffer) {
+                if (buffer.length() == 0) {
+                    return;
+                }
+                pending = buffer.toString();
+                buffer.setLength(0);
+            }
+            console.appendText(pending);
+            int overflow = console.getLength() - MAX_CONSOLE_CHARS;
+            if (overflow > 0) {
+                console.deleteText(0, overflow);
             }
         }
     }

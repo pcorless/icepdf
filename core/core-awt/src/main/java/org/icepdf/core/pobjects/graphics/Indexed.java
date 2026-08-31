@@ -34,7 +34,6 @@ public class Indexed extends PColorSpace {
     byte[] colors = {
             -1, -1, -1, 0, 0, 0
     };
-    private boolean inited = false;
     private Color[] cols;
 
     /**
@@ -55,36 +54,30 @@ public class Indexed extends PColorSpace {
         colorSpace = getColorSpace(library, dictionary.get(1));
         // get the hival
         hival = (((Number) (dictionary.get(2))).intValue());
-        // check for an instance of a lookup table.
-        if (dictionary.get(3) instanceof StringObject) {
-            // peel and decrypt the literal string
-            StringObject tmpText = (StringObject) dictionary.get(3);
-            String tmp = tmpText.getDecryptedLiteralString(library.getSecurityManager());
-            // build the colour lookup table.
-            byte[] textBytes = new byte[colorSpace.getNumComponents() * (hival + 1)]; // m * (hival + 1)
-            for (int i = 0; i < textBytes.length; i++) {
-                textBytes[i] = (byte) tmp.charAt(i);
+        // The lookup table may be written inline or behind a reference, and either way it may be a
+        // stream or a string.  Those used to be two separate code paths that disagreed with each
+        // other: the inline one decrypted its string, the referenced one was commented "treating as
+        // raw unencrypted string" and did not.  A lookup table is an ordinary string object, so it
+        // is encrypted like any other and both must decrypt.
+        Object lookupEntry = dictionary.get(3);
+        if (lookupEntry instanceof Reference || lookupEntry instanceof StringObject) {
+            Object lookup = lookupEntry instanceof Reference
+                    ? library.getObject((Reference) lookupEntry) : lookupEntry;
+            byte[] lookupBytes = null;
+            if (lookup instanceof Stream) {
+                lookupBytes = ((Stream) lookup).getDecodedStreamBytes(0);
+            } else if (lookup instanceof StringObject) {
+                // the bytes, not the text: a colour table is binary, so it must not go through any
+                // character or byte order marker interpretation on its way out of the string
+                lookupBytes = ((StringObject) lookup).getDecryptedRawBytes(library.getSecurityManager());
             }
-            colors = textBytes;
-        } else if (dictionary.get(3) instanceof Reference) {
+            // m * (hival + 1), always allocated at full size so init() can index the whole range
             colors = new byte[colorSpace.getNumComponents() * (hival + 1)];
-            Object tmp = (library.getObject((Reference) (dictionary.get(3))));
-            // copy over the colour data, can be a stream or string
-            if (tmp instanceof Stream) {
-                Stream lookup = (Stream) tmp;
-                byte[] colorStream = lookup.getDecodedStreamBytes(0);
-                int length = Math.min(colors.length, colorStream.length);
-                System.arraycopy(colorStream, 0, colors, 0, length);
-            } else if (tmp instanceof StringObject) {
-                // treating as raw unencrypted string
-                StringBuilder stringData = ((StringObject) tmp).getHexStringBuffer();
-                int colorStreamLength = stringData.length();
-                byte[] colorStream = new byte[colorStreamLength / 2];
-                int length = Math.min(colors.length, colorStream.length);
-                for (int i = 0, j = 0, max = colorStreamLength / 2; i < max; i++, j += 2) {
-                    colorStream[i] = (byte) Integer.parseInt(stringData.substring(j, j + 2), 16);
-                }
-                System.arraycopy(colorStream, 0, colors, 0, length);
+            if (lookupBytes != null) {
+                // copy what is there rather than what should be there: a truncated table used to
+                // throw out of the inline branch, which indexed the string to the full table length
+                // regardless of how long the string actually was
+                System.arraycopy(lookupBytes, 0, colors, 0, Math.min(colors.length, lookupBytes.length));
             }
         }
     }

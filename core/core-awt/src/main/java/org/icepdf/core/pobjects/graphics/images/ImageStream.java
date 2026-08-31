@@ -22,9 +22,8 @@ import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Path2D;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -45,13 +44,16 @@ public class ImageStream extends Stream {
     private ImageParams imageParams;
 
     private AffineTransform graphicsTransformMatrix;
-    private Rectangle2D normalizedBounds;
     private BufferedImage decodedImage;
 
-    private static final Rectangle2D baseImageRectangle = new Rectangle2D.Float(0, 0, 1, 1);
 
     public ImageStream(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
+        imageParams = new ImageParams(library, entries, null);
+    }
+
+    public ImageStream(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
+        super(l, h, streamDataView);
         imageParams = new ImageParams(library, entries, null);
     }
 
@@ -69,7 +71,7 @@ public class ImageStream extends Stream {
         if (useMask && bufferedImage.getColorModel().hasAlpha()) {
             imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
         }
-        ImageStream imageStream = new ImageStream(library, imageDictionary, null);
+        ImageStream imageStream = new ImageStream(library, imageDictionary, (byte[]) null);
         imageStream.setDecodedImage(bufferedImage);
         // This is pretty rough, will mask any alpha value, but it is a start for now.
         // We can add more complex mask processing later if needed.
@@ -127,6 +129,11 @@ public class ImageStream extends Stream {
         if (decodedImage == null) {
             decodedImage = new RawDecoder(this, graphicsState).decode();
         }
+        // GH-501 step 2: the decoder output may carry preserved TRUE CMYK samples
+        // (keyed by this object); mask processing below replaces decodedImage with a
+        // new BufferedImage, so remember the decoder output to re-key the samples to
+        // the final image that actually gets drawn.
+        BufferedImage rawDecoded = decodedImage;
         if (decodedImage != null) {
             if (imageParams.isImageMask()) {
                 decodedImage = ImageUtility.applyExplicitMask(decodedImage, graphicsState.getFillColor());
@@ -149,6 +156,14 @@ public class ImageStream extends Stream {
 //            if (maskDecoder != null || smaskDecoder != null)
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
         }
+        // associate any preserved CMYK samples with this stable stream key so the
+        // draw-time ink capture finds them regardless of downstream mask/scale.
+        ImageUtility.associateCmykStream(this, rawDecoded);
+        // Trim the resident footprint: an opaque, effectively-grayscale result
+        // (common for DeviceN / Separation / DeviceGray scans that decode through
+        // the sRGB ARGB path) is repacked to 8-bit, 1/4 the memory, no visual
+        // change.  No-op for coloured/translucent/CMYK-preserving images.
+        decodedImage = ImageUtility.compactImage(decodedImage);
         return decodedImage;
     }
 
@@ -160,20 +175,16 @@ public class ImageStream extends Stream {
         return decodedImage;
     }
 
+    /**
+     * @param af CTM in force at the {@code Do} being parsed
+     * @deprecated an image XObject is shared by every placement of it in the document, so a
+     * transform kept here only ever describes the last one parsed. Where a placement is drawn now
+     * lives on {@link org.icepdf.core.pobjects.graphics.images.references.ImageReference}, which is
+     * created per {@code Do}. Retained because the parser still records it for painting.
+     */
+    @Deprecated
     public void setGraphicsTransformMatrix(AffineTransform af) {
         graphicsTransformMatrix = af;
-    }
-
-    public AffineTransform getGraphicsTransformMatrix() {
-        return graphicsTransformMatrix;
-    }
-
-    public Rectangle2D getNormalizedBounds() {
-        if (normalizedBounds == null) {
-            Path2D.Double generalPath = new Path2D.Double(baseImageRectangle, graphicsTransformMatrix);
-            normalizedBounds = generalPath.getBounds2D();
-        }
-        return normalizedBounds;
     }
 
     public int getWidth() {

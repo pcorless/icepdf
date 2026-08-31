@@ -41,7 +41,7 @@ public class ObjectLoader {
         parser = new Parser(library);
     }
 
-    public synchronized PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
+    public PObject loadObject(CrossReference crossReference, Reference reference, Name hint)
             throws ObjectStateException, CrossReferenceStateException, IOException {
 
         CrossReferenceEntry entry = crossReference.getEntry(reference);
@@ -51,9 +51,9 @@ public class ObjectLoader {
             // parse the object
             int offset = crossReferenceEntry.getFilePositionOfObject();
             if (offset > 0) {
-                synchronized (library.getMappedFileByteBufferLock()) {
-                    return parser.getPObject(library.getMappedFileByteBuffer(), offset);
-                }
+                // Parse on a duplicate of the shared file buffer; the backing bytes are read-only so any number
+                // of threads can read concurrently without a lock, each with its own position/limit (GH-495).
+                return parser.getPObject(library.getMappedFileByteBuffer().duplicate(), offset);
             }
         } else if (entry instanceof CrossReferenceCompressedEntry) {
             CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;

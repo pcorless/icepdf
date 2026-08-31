@@ -44,6 +44,8 @@ public class SearchTerm {
     private final boolean wholeWord;
     // allow for regex compare
     private final boolean regex;
+    // accent-insensitive (Unicode-normalized) matching for literal terms; opt-in, default off.
+    private boolean foldDiacritics;
     private Pattern searchPattern;
 
     /**
@@ -74,10 +76,14 @@ public class SearchTerm {
     }
 
     /**
-     * Gets individual strings that make up the search term,
+     * Gets the individual word/space/punctuation tokens that make up the search term.
      *
-     * @return list of strings that contain searchable words.
+     * @return list of tokens that make up the search term.
+     * @deprecated Since 7.5 the search matcher operates on the whole term ({@link #getTerm()})
+     * against a reading-order text corpus and no longer uses these tokens.  Retained for API
+     * compatibility; scheduled for removal in a future major release.
      */
+    @Deprecated
     public ArrayList<String> getTerms() {
         return terms;
     }
@@ -111,6 +117,25 @@ public class SearchTerm {
 
     public boolean isRegex() {
         return regex;
+    }
+
+    /**
+     * Whether literal matching should be accent-insensitive (Unicode-normalized).  Opt-in; has no
+     * effect on regex terms.
+     *
+     * @return true if diacritics should be folded when matching.
+     */
+    public boolean isFoldDiacritics() {
+        return foldDiacritics;
+    }
+
+    /**
+     * Enables accent-insensitive (Unicode-normalized) matching for this literal term.
+     *
+     * @param foldDiacritics true to fold diacritics when matching.
+     */
+    public void setFoldDiacritics(boolean foldDiacritics) {
+        this.foldDiacritics = foldDiacritics;
     }
 
     public Pattern getRegexPattern() {

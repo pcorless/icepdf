@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.security;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.util.List;
 
@@ -295,7 +296,13 @@ public class EncryptionDictionary extends Dictionary {
     // encryption algorithms
     private final List fileID;
 
-    private CryptFilter cryptFilter;
+    // volatile + double-checked build in getCryptFilter(): concurrent stream
+    // decodes first-touch this to resolve the stream's crypt-filter method.  A
+    // racy lazy build let a caller see cryptFilter == null (or a half-published
+    // instance) and fall back to the default V2/RC4 algorithm for an AES stream,
+    // producing a wrong per-object key -> garbage plaintext -> 0-byte inflate ->
+    // silently dropped page content (GH-495).
+    private volatile CryptFilter cryptFilter;
 
     // Revision 5 authentication holders as they are passwords
     // are validate when the key is calculated.
@@ -446,14 +453,20 @@ public class EncryptionDictionary extends Dictionary {
      * @return crypt filter object if found, null otherwise.
      */
     public CryptFilter getCryptFilter() {
-        if (cryptFilter == null) {
-            DictionaryEntries tmp = (DictionaryEntries) library.getObject(entries, CF_KEY);
-            if (tmp != null) {
-                cryptFilter = new CryptFilter(library, tmp);
-                return cryptFilter;
+        CryptFilter cf = cryptFilter;
+        if (cf == null) {
+            synchronized (this) {
+                cf = cryptFilter;
+                if (cf == null) {
+                    DictionaryEntries tmp = (DictionaryEntries) library.getObject(entries, CF_KEY);
+                    if (tmp != null) {
+                        cf = new CryptFilter(library, tmp);
+                        cryptFilter = cf;
+                    }
+                }
             }
         }
-        return cryptFilter;
+        return cf;
     }
 
     /**
@@ -557,14 +570,24 @@ public class EncryptionDictionary extends Dictionary {
         return getLiteralString(tmp);
     }
 
+    /**
+     * The bytes of a security handler entry (/O, /U, /OE, /UE, /Perms), as a byte string: one
+     * character per byte, no character set and no text interpretation.  These entries are fixed
+     * length binary values, never text.
+     * <p>
+     * This used to switch on the string's type, calling getLiteralString for one and
+     * getRawHexToString for the other, because those two accessors mean different things -
+     * stored data for a literal string, decoded text for a hexadecimal one.  getRawBytes means
+     * the same thing for both, so the switch is gone.
+     *
+     * @param value the dictionary entry, a string object of either flavour
+     * @return the entry's bytes as a byte string, null if the entry is not a string
+     */
     public String getLiteralString(Object value) {
-        if (value instanceof LiteralStringObject) {
-            return ((StringObject) value).getLiteralString();
-        } else if (value instanceof HexStringObject) {
-            return ((HexStringObject) value).getRawHexToString().toString();
-        } else {
-            return null;
+        if (value instanceof StringObject) {
+            return Utils.convertByteArrayToByteString(((StringObject) value).getRawBytes());
         }
+        return null;
     }
 
     /**

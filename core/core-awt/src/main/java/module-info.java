@@ -18,6 +18,9 @@ module org.icepdf.core {
     requires java.desktop;
     requires java.net.http;
     requires java.naming;
+    // compile-time only: used by the ParsingBenchmark test harness for JFR
+    // profiling; not a runtime dependency of the library.
+    requires static jdk.jfr;
 
     requires org.bouncycastle.pkix;
     requires org.bouncycastle.provider;
@@ -65,6 +68,9 @@ module org.icepdf.core {
     exports org.icepdf.core.util;
     exports org.icepdf.core.util.edit.content;
     exports org.icepdf.core.util.loggers;
+    // The redaction API: requests, options and the report a caller reads after saving.  Not exported
+    // before now, so nothing outside core could configure a redaction or see what one did.
+    exports org.icepdf.core.util.redaction;
     exports org.icepdf.core.util.updater;
     exports org.icepdf.core.pobjects.fonts.builders;
 

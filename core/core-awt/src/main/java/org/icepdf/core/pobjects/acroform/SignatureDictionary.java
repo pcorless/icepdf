@@ -54,6 +54,9 @@ import static org.icepdf.core.pobjects.acroform.signature.DigitalSignatureFactor
  */
 public class SignatureDictionary extends Dictionary {
 
+    private static final java.util.logging.Logger LOGGER =
+            java.util.logging.Logger.getLogger(SignatureDictionary.class.toString());
+
     public static final int BYTE_RANGE_PADDING_LENGTH = 49;
 
     /**
@@ -250,9 +253,15 @@ public class SignatureDictionary extends Dictionary {
         List<Integer> byteRangePlaceholder = new ArrayList<>(Collections.nCopies(25, 0));
         signatureDictionaryEntries.put(BYTE_RANGE_KEY, byteRangePlaceholder);
 
-        // reference dictionary
-        signatureDictionaryEntries.put(REFERENCE_KEY,
-                List.of(buildReferenceDictionary(library, signatureType, permissionValue)));
+        // A signature reference dictionary describes what the signature certifies, which only a
+        // certification signature does.  An approval signature used to get /TransformMethod /DocMDP
+        // with no /TransformParams, which DocMDP requires - it claimed to certify the document and
+        // did not say with what permissions.
+        boolean certifying = SignatureType.CERTIFIER.equals(signatureType);
+        if (certifying) {
+            signatureDictionaryEntries.put(REFERENCE_KEY,
+                    List.of(buildReferenceDictionary(library, permissionValue)));
+        }
 
         // flag updater that signatureDictionary needs to be updated.
         SignatureDictionary signatureDictionary = new SignatureDictionary(library, signatureDictionaryEntries);
@@ -260,27 +269,72 @@ public class SignatureDictionary extends Dictionary {
         signatureDictionary.setPObjectReference(stateManager.getNewReferenceNumber());
         stateManager.addChange(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
 
+        if (certifying) {
+            certifyDocument(library, signatureDictionary, stateManager);
+        }
+
         // attach the dictionary to the annotation
         signatureWidgetAnnotation.setSignatureDictionary(signatureDictionary);
 
         return signatureDictionary;
     }
 
-    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, SignatureType signatureType,
-                                                                         int permissionValue) {
+    private static SignatureReferenceDictionary buildReferenceDictionary(Library library, int permissionValue) {
         DictionaryEntries referenceEntries = new DictionaryEntries();
         referenceEntries.put(TYPE_KEY, SIG_REF_TYPE_VALUE);
-        referenceEntries.put(DIGEST_METHOD_KEY, new Name("SHA1"));
         referenceEntries.put(TRANSFORM_METHOD_KEY, DOC_MDP_KEY);
+        // No /DigestMethod.  It used to say SHA1, which no reader should accept for signing, and the
+        // obvious repair - SHA256 - is also wrong: PDF/A-2 6.1.12 forbids /DigestMethod,
+        // /DigestLocation and /DigestValue in a signature reference dictionary that uses DocMDP, and
+        // ISO 32000-2 deprecated them outright. The digest that matters is the one over the byte
+        // range, which the signature itself carries.
 
-        if (signatureType.equals(SignatureType.CERTIFIER)) {
-            DictionaryEntries transformParams = new DictionaryEntries();
-            transformParams.put(PERMISSION_KEY, permissionValue);
-            transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
-            referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
-        }
+        DictionaryEntries transformParams = new DictionaryEntries();
+        transformParams.put(TYPE_KEY, TransformParams.TRANSFORM_PARAMS_TYPE_VALUE);
+        transformParams.put(PERMISSION_KEY, permissionValue);
+        transformParams.put(V_KEY, DocMDPTransferParam.getDocMDPVersion());
+        referenceEntries.put(TRANSFORM_PARAMS_KEY, new DocMDPTransferParam(library, transformParams));
 
         return new SignatureReferenceDictionary(library, referenceEntries);
+    }
+
+    /**
+     * Records the signature as the one that certifies the document.
+     * <p>
+     * A signature reference dictionary saying {@code /TransformMethod /DocMDP} is not what makes a
+     * certification; {@code /Perms <</DocMDP ...>>} on the catalog is (PDF 32000-1 12.8.2.2). Without
+     * it a reader treats the signature as an ordinary approval, whatever the reference says - so
+     * asking for {@link SignatureType#CERTIFIER} produced an approval signature that claimed
+     * otherwise.
+     * <p>
+     * A document may carry only one such signature, and it must be the first. An existing one is left
+     * alone rather than overwritten: the first certification is the one that set the rules every
+     * later signature was made under.
+     */
+    private static void certifyDocument(Library library, SignatureDictionary signatureDictionary,
+                                        StateManager stateManager) {
+        Catalog catalog = library.getCatalog();
+        if (catalog == null) {
+            return;
+        }
+        DictionaryEntries perms = library.getDictionary(catalog.getEntries(), Catalog.PERMS_KEY);
+        if (perms == null) {
+            perms = new DictionaryEntries();
+            catalog.getEntries().put(Catalog.PERMS_KEY, perms);
+        } else if (perms.get(DOC_MDP_KEY) != null) {
+            LOGGER.warning("Document is already certified; leaving the existing /Perms /DocMDP in place");
+            return;
+        }
+        perms.put(DOC_MDP_KEY, signatureDictionary.getPObjectReference());
+        // /Perms may be an object in its own right, and then the catalog still holds the same
+        // reference and is not itself changed - so registering the catalog would write nothing and
+        // the certification would silently not happen.
+        Reference permsReference = library.getObjectReference(catalog.getEntries(), Catalog.PERMS_KEY);
+        if (permsReference != null) {
+            stateManager.addChange(new PObject(perms, permsReference));
+        } else {
+            stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        }
     }
 
     public void setSignerHandler(SignerHandler signerHandler) {

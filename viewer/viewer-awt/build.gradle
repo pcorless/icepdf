@@ -10,6 +10,41 @@ application {
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 
+/**
+ * Property prefixes forwarded from the Gradle JVM to a forked task JVM.
+ *
+ * This is deliberately an allowlist rather than a blanket copy of System.properties: the Gradle
+ * daemon carries its own java.home, user.dir, file.encoding and friends, and pushing those into
+ * the forked JVM would override values that JVM set correctly for itself.
+ *
+ *   org.icepdf.  - the library's own tuning/behaviour flags
+ *   sun.java2d.  - Java2D pipeline selection (opengl, d3d, noddraw, translaccel, accthreshold...)
+ *   sun.awt.     - AWT toolkit internals (e.g. sun.awt.noerasebackground)
+ *   awt.         - e.g. awt.useSystemAAFontSettings
+ *   swing.       - e.g. swing.aatext
+ *   javax.swing. - Swing look-and-feel and related settings
+ */
+ext.forwardedPropertyPrefixes = [
+        'org.icepdf.', 'sun.java2d.', 'sun.awt.', 'awt.', 'swing.', 'javax.swing.'
+]
+
+/**
+ * Forwards allowlisted -D properties from the Gradle JVM to a forked task JVM.
+ * Both `run` and `test` launch a separate JVM that does NOT inherit the daemon's system
+ * properties, so without this a `./gradlew run -Dorg.icepdf.foo=bar` is silently ignored.
+ *
+ * Note that graphics-pipeline properties must be present at JVM launch: they are read when the
+ * Java2D pipeline initialises, so setting them later from application code has no effect.
+ */
+def forwardProperties(task) {
+    def prefixes = project.ext.forwardedPropertyPrefixes
+    System.properties.each { k, v ->
+        if (prefixes.any { k.toString().startsWith(it) }) {
+            task.systemProperty(k.toString(), v.toString())
+        }
+    }
+}
+
 def sectionName = 'org/icepdf/ri/'
 def baseJarName = 'icepdf'
 def baseAppendixName  = 'viewer'
@@ -67,6 +102,30 @@ test {
     testLogging {
         events "passed", "skipped", "failed"
     }
+    // forward opt-in characterization/golden flags to the test JVM
+    // e.g. ./gradlew ... -Dupdate.reading.order.golden=true
+    // Keep java.util.prefs out of the developer's real ~/.java/.userPrefs.  Several viewer classes
+    // read their settings from Preferences, and the appearance of a signature is one of them, so a
+    // test both writes to the machine's own preference store and reads back whatever is in it.  Two
+    // test JVMs running at once - core and viewer - then read each other's half-written file and get
+    // another key's value, which failed the signature appearance test about half the time.
+    systemProperty 'java.util.prefs.userRoot', layout.buildDirectory.dir('test-prefs').get().asFile.absolutePath
+    systemProperty 'java.util.prefs.systemRoot', layout.buildDirectory.dir('test-prefs').get().asFile.absolutePath
+    doFirst {
+        layout.buildDirectory.dir('test-prefs').get().asFile.mkdirs()
+    }
+
+    ['update.reading.order.golden', 'update.reading.order.xycut.golden',
+     'update.word.segmentation.golden'].each { k ->
+        if (System.getProperty(k) != null) {
+            systemProperty(k, System.getProperty(k))
+        }
+    }
+    forwardProperties(delegate)
+}
+
+run {
+    forwardProperties(delegate)
 }
 
 jar {
@@ -118,4 +177,3 @@ tasks.register('javadocJar', Jar) {
 }
 
 // Archives are now automatically included via publishing plugin
-

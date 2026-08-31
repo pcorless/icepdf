@@ -355,45 +355,68 @@ public class Utils {
      * @return converted string.
      */
     public static String convertStringObject(Library library, StringObject stringObject) {
-        String convertedStringObject = null;
-        String titleText = stringObject.getDecryptedLiteralString(library.getSecurityManager());
-        // If the title begins with 254 and 255 we are working with
-        // Octal encoded strings. Check first to make sure that the
-        // title string is not null, or is at least of length 2.
-        if (titleText != null && titleText.length() >= 2 &&
-                ((int) titleText.charAt(0)) == 254 &&
-                ((int) titleText.charAt(1)) == 255) {
+        // the bytes, not the text: the marker belongs to the decrypted plain text, and asking for
+        // text would mean a hexadecimal string had already applied its own marker handling
+        return decodeTextString(stringObject.getDecryptedRawBytes(library.getSecurityManager()));
+    }
 
-            StringBuilder sb1 = new StringBuilder();
-
-            // convert teh unicode to characters.
-            for (int i = 2; i < titleText.length(); i += 2) {
-                try {
-                    int b1 = ((((int) titleText.charAt(i)) & 0xFF) << 8) |
-                            ((int) titleText.charAt(i + 1)) & 0xFF;
-                    //System.err.println(b1 + " " + b2);
-                    sb1.append((char) (b1));
-                } catch (Exception ex) {
-                    // intentionally left blank.
-                }
-            }
-            convertedStringObject = sb1.toString();
-        } else if (titleText != null) {
-            StringBuilder sb = new StringBuilder();
-            Encoding enc = Encoding.getPDFDoc();
-            for (int i = 0; i < titleText.length(); i++) {
-//                sb.append(titleText.charAt(i));
-                // pdf encoding maps char < 24 to '?' or 63. so we'll skip this map.
-                char character = titleText.charAt(i);
-                if (character > 23) {
-                    sb.append(enc.get(character));
-                } else {
-                    sb.append(titleText.charAt(i));
-                }
-            }
-            convertedStringObject = sb.toString();
+    /**
+     * Decodes a PDF text string, per PDF 32000-1 7.9.2.2: UTF-16BE when the bytes open with the
+     * byte order marker FE FF, and PDFDocEncoding otherwise.
+     * <p>
+     * The rule was written out three times in two packages - here, and twice inside
+     * HexStringObject - each on a different representation of the same bytes.  This is the one
+     * copy; the others defer to {@link #isUtf16Be} and {@link #decodeUtf16Be}.
+     *
+     * @param bytes the string's bytes, already decrypted
+     * @return the decoded text, null if bytes is null
+     */
+    public static String decodeTextString(byte[] bytes) {
+        if (bytes == null) {
+            return null;
         }
-        return convertedStringObject;
+        if (isUtf16Be(bytes)) {
+            return decodeUtf16Be(bytes);
+        }
+        StringBuilder sb = new StringBuilder(bytes.length);
+        Encoding enc = Encoding.getPDFDoc();
+        for (byte b : bytes) {
+            char character = (char) (b & 0xFF);
+            // pdf encoding maps char < 24 to '?' or 63. so we'll skip this map.
+            sb.append(character > 23 ? enc.get(character) : character);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * True when the bytes open with the UTF-16BE byte order marker, FE FF.
+     *
+     * @param bytes bytes to test, may be null
+     * @return true if the bytes are marked as UTF-16BE
+     */
+    public static boolean isUtf16Be(byte[] bytes) {
+        return bytes != null && bytes.length >= 2
+                && (bytes[0] & 0xFF) == 0xFE && (bytes[1] & 0xFF) == 0xFF;
+    }
+
+    /**
+     * Decodes UTF-16BE bytes, skipping the leading byte order marker.  A trailing byte too short to
+     * complete a code unit is kept as a character rather than dropped; the input is malformed either
+     * way, and keeping it loses less.
+     *
+     * @param bytes bytes opening with the FE FF marker
+     * @return the decoded text
+     */
+    public static String decodeUtf16Be(byte[] bytes) {
+        StringBuilder sb = new StringBuilder((bytes.length - 2) / 2);
+        int i = 2;
+        for (; i + 1 < bytes.length; i += 2) {
+            sb.append((char) (((bytes[i] & 0xFF) << 8) | (bytes[i + 1] & 0xFF)));
+        }
+        if (i < bytes.length) {
+            sb.append((char) (bytes[i] & 0xFF));
+        }
+        return sb.toString();
     }
 
     /**

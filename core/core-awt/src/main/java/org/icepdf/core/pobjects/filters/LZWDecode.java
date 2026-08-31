@@ -21,7 +21,6 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.util.Library;
 
 import java.io.IOException;
-import java.util.Stack;
 
 /**
  * @author Mark Collette
@@ -81,40 +80,22 @@ public class LZWDecode extends ChunkingInputStream {
                 break;
             } else {
                 if (codes[code] != null) {
-                    Stack stack = new Stack();
-                    codes[code].getString(stack);
-                    Code c = (Code) stack.pop();
-                    addToBuffer(c.c, numRead);
-                    numRead++;
-                    //System.err.println((char)c.c);
-                    byte first = c.c;
-                    while (!stack.empty()) {
-                        c = (Code) stack.pop();
-                        addToBuffer(c.c, numRead);
-                        numRead++;
-                        //System.err.println((char)c.c);
-                    }
-                    //							while (codes[last_code]!=null) last_code++;
-                    codes[last_code++] = new Code(codes[old_code], first);
+                    // code is in the table: emit its string and add a new entry
+                    // (previous string + first byte of the current string).
+                    Code entry = codes[code];
+                    numRead += writeString(entry, numRead);
+                    codes[last_code++] = new Code(codes[old_code], entry.first);
                 } else {
-                    //System.err.println("MISS: "+last_code+" "+code);
+                    // KwKwK case: code is not yet defined, it must be the next
+                    // entry, whose string is the previous string plus its own
+                    // first byte.
                     if (code != last_code)
                         throw new RuntimeException("LZWDecode failure");
-                    Stack stack = new Stack();
-                    codes[old_code].getString(stack);
-                    Code c = (Code) stack.pop();
-                    addToBuffer(c.c, numRead);
-                    numRead++;
-                    //System.err.println((char)c.c);
-                    byte first = c.c;
-                    while (!stack.empty()) {
-                        c = (Code) stack.pop();
-                        addToBuffer(c.c, numRead);
-                        numRead++;
-                        //System.err.println((char)c.c);
-                    }
-                    addToBuffer(first, numRead);
-                    numRead++;
+                    Code prev = codes[old_code];
+                    byte first = prev.first;
+                    numRead += writeString(prev, numRead);
+                    ensureCapacity(numRead + 1);
+                    buffer[numRead++] = first;
                     codes[code] = new Code(codes[old_code], first);
                     last_code++;
                 }
@@ -141,13 +122,39 @@ public class LZWDecode extends ChunkingInputStream {
             codes[i] = new Code(null, (byte) i);
     }
 
-    private void addToBuffer(byte b, int offset) {
-        if (offset >= buffer.length) { // Should never happen
-            byte[] bufferNew = new byte[buffer.length * 2];
+    /**
+     * Writes the byte string represented by {@code code} into the buffer at
+     * {@code offset}, in forward order.  The string is reconstructed by walking
+     * the prefix chain (which yields bytes back-to-front) and filling the buffer
+     * from the end of the range towards {@code offset}, avoiding the per-code
+     * stack/allocation the old reverse-then-emit approach used.
+     *
+     * @param code   code whose string to emit.
+     * @param offset position in the buffer to write the first byte.
+     * @return the number of bytes written (the code's string length).
+     */
+    private int writeString(Code code, int offset) {
+        int len = code.length;
+        ensureCapacity(offset + len);
+        int p = offset + len;
+        Code c = code;
+        while (c != null) {
+            buffer[--p] = c.c;
+            c = c.prefix;
+        }
+        return len;
+    }
+
+    private void ensureCapacity(int needed) {
+        if (needed > buffer.length) {
+            int newLength = buffer.length * 2;
+            while (newLength < needed) {
+                newLength *= 2;
+            }
+            byte[] bufferNew = new byte[newLength];
             System.arraycopy(buffer, 0, bufferNew, 0, buffer.length);
             buffer = bufferNew;
         }
-        buffer[offset] = b;
     }
 
 
@@ -162,22 +169,26 @@ public class LZWDecode extends ChunkingInputStream {
 
 
     /**
-     * Utility class for decode methods.
+     * Utility class for decode methods.  Each Code caches the length of its byte
+     * string and its first byte so the decoder can emit and extend strings
+     * without walking the prefix chain twice or allocating a stack per code.
      */
     private static class Code {
         final Code prefix;
         final byte c;
+        final byte first;
+        final int length;
 
         Code(Code p, byte cc) {
             prefix = p;
             c = cc;
-        }
-
-        @SuppressWarnings("unchecked")
-        void getString(Stack s) {
-            s.push(this);
-            if (prefix != null)
-                prefix.getString(s);
+            if (p == null) {
+                first = cc;
+                length = 1;
+            } else {
+                first = p.first;
+                length = p.length + 1;
+            }
         }
     }
 }

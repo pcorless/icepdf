@@ -113,6 +113,11 @@ public class FaxDecoder extends AbstractImageDecoder {
                         imageStream.getEntries(), graphicsState.getFillColor());
             }
         }
+        // bound ludicrously large fax images before they reach Java2D, where the
+        // transformed paint would otherwise pop the heap.
+        if (decodedImage != null && isImageReallyBig(decodedImage.getWidth(), decodedImage.getHeight())) {
+            decodedImage = scaleReallyBigImage(decodedImage);
+        }
         return decodedImage;
     }
 

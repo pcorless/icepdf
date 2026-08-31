@@ -43,7 +43,6 @@ import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -69,33 +68,66 @@ public class Library {
     public static int imagePoolThreads;
     private static final long KEEP_ALIVE_TIME = 90;
 
-    static {
-        try {
-            commonPoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.threadPoolSize", 4);
-            if (commonPoolThreads < 1) {
-                commonPoolThreads = 2;
-            }
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading buffered scale factor");
-        }
+    // Thread pool sizing.  When the size properties below are not set explicitly, both pools are
+    // auto-sized from the host's CPU count: one thread per core less one (leaving a core for the
+    // Swing/AWT event dispatch thread during a busy thumbnail or page sweep), floored at
+    // MIN_POOL_THREADS and capped at the value of THREAD_POOL_CAP_PROPERTY (default
+    // DEFAULT_THREAD_POOL_CAP).  The cap is deliberately conservative: each in-flight page render
+    // and image decode holds a full BufferedImage, so raising it past 8 warrants heap measurement
+    // first.  An explicitly set size property is always honoured as-is (only floored at 1).
+    public static final String COMMON_POOL_SIZE_PROPERTY = "org.icepdf.core.library.threadPoolSize";
+    public static final String IMAGE_POOL_SIZE_PROPERTY = "org.icepdf.core.library.imageThreadPoolSize";
+    public static final String THREAD_POOL_CAP_PROPERTY = "org.icepdf.core.library.threadPoolCap";
+    private static final int DEFAULT_THREAD_POOL_CAP = 8;
+    private static final int MIN_POOL_THREADS = 2;
 
-        try {
-            // todo make ImageReference call interruptible and then we can get rid of this pool.
-            imagePoolThreads =
-                    Defs.intProperty("org.icepdf.core.library.imageThreadPoolSize", 2);
-            if (imagePoolThreads < 1) {
-                imagePoolThreads = 2;
-            }
-        } catch (NumberFormatException e) {
-            logger.warning("Error reading buffered scale factor");
-        }
+    static {
+        commonPoolThreads = resolvePoolSize(COMMON_POOL_SIZE_PROPERTY);
+        imagePoolThreads = resolvePoolSize(IMAGE_POOL_SIZE_PROPERTY);
         JceProvider.loadProvider();
+    }
+
+    /**
+     * Resolves a thread-pool size.  If the given system property is set it is honoured verbatim
+     * (floored at 1); otherwise the size is derived from {@link Runtime#availableProcessors()} as
+     * {@code cores - 1}, clamped to {@code [MIN_POOL_THREADS, cap]} where {@code cap} comes from
+     * {@link #THREAD_POOL_CAP_PROPERTY} (default {@link #DEFAULT_THREAD_POOL_CAP}).
+     *
+     * @param sizeProperty name of the explicit-size system property.
+     * @return resolved thread count, always &gt;= 1.
+     */
+    private static int resolvePoolSize(String sizeProperty) {
+        String override = Defs.sysProperty(sizeProperty);
+        if (override != null) {
+            try {
+                int value = Integer.parseInt(override.trim());
+                return value < 1 ? MIN_POOL_THREADS : value;
+            } catch (NumberFormatException e) {
+                logger.warning("Invalid thread pool size for " + sizeProperty + ": '" + override
+                        + "', falling back to CPU-based sizing.");
+            }
+        }
+        int cap = Defs.intProperty(THREAD_POOL_CAP_PROPERTY, DEFAULT_THREAD_POOL_CAP);
+        if (cap < MIN_POOL_THREADS) {
+            cap = MIN_POOL_THREADS;
+        }
+        // leave a core for the event dispatch thread during large render/thumbnail sweeps.
+        int derived = Runtime.getRuntime().availableProcessors() - 1;
+        if (derived < MIN_POOL_THREADS) {
+            derived = MIN_POOL_THREADS;
+        }
+        if (derived > cap) {
+            derived = cap;
+        }
+        return derived;
     }
 
     private final ConcurrentHashMap<Reference, java.lang.ref.Reference<Object>> objectStore =
             new ConcurrentHashMap<>(1024);
-    private final ConcurrentHashMap<Reference, WeakReference<ICCBased>> lookupReference2ICCBased =
+    // Soft (not weak): an ICCBased colour space is expensive to build (parses an
+    // ICC_Profile), so keep it across normal GC and only reclaim under real memory
+    // pressure, rather than re-parsing on the next GC as a weak reference would.
+    private final ConcurrentHashMap<Reference, SoftReference<ICCBased>> lookupReference2ICCBased =
             new ConcurrentHashMap<>(256);
 
     private Header fileHeader;
@@ -146,11 +178,8 @@ public class Library {
      * object reference can not be found.
      */
     public Object getObject(Reference reference) {
-        Object obj = getObject(reference, null, true);
-        if (obj != null) {
-            return Objects.requireNonNull(getObject(reference, null, true)).getObject();
-        }
-        return null;
+        PObject pObject = getObject(reference, null, true);
+        return pObject != null ? pObject.getObject() : null;
     }
 
     public PObject getPObject(Reference reference) {
@@ -211,12 +240,44 @@ public class Library {
             if (obj == null) return null;
             // keep expensive like fonts, images, page tree
             PObject object = ((PObject) obj);
-            if (isSoftReferenceAble(object)) {
-                objectStore.put(reference, new SoftReference<>(obj));
-            } else {
-                objectStore.put(reference, new WeakReference<>(obj));
+            // Atomic publish + converge on a single instance per reference.  The
+            // get()/load()/put() above is not atomic, so two threads that both
+            // miss the cache each load a fresh copy of the same object.  Handing
+            // both copies out let, e.g., two Page instances for one reference run
+            // their synchronized init() concurrently (different monitors) and
+            // corrupt shared state -- a ConcurrentModificationException on the
+            // shared /Annots list, or missing content when one duplicate disposes
+            // a content stream another is still parsing.  Here the loser discards
+            // its copy and returns the instance the winner published, so callers
+            // always observe exactly one instance of a given reference.  No lock
+            // is held across load() (object loading re-enters getObject for object
+            // streams and malformed files can contain reference cycles, so a
+            // load-time lock could deadlock); the rare double-load is only wasted
+            // parsing, never a duplicate live instance.
+            java.lang.ref.Reference<Object> newRef = isSoftReferenceAble(object)
+                    ? new SoftReference<>(obj) : new WeakReference<>(obj);
+            if (!useCache) {
+                objectStore.put(reference, newRef);
+                return object;
             }
-            return object;
+            while (true) {
+                java.lang.ref.Reference<Object> prevRef = objectStore.putIfAbsent(reference, newRef);
+                if (prevRef == null) {
+                    // we won: ours is the published instance.
+                    return object;
+                }
+                Object published = prevRef.get();
+                if (published != null) {
+                    // another thread already published; use it, discard ours.
+                    return published instanceof PObject
+                            ? (PObject) published : new PObject(published, reference);
+                }
+                // prevRef referent was GC'd; atomically replace the stale entry.
+                if (objectStore.replace(reference, prevRef, newRef)) {
+                    return object;
+                }
+                // lost the replace race; retry.
+            }
         }
         if (obj instanceof PObject) {
             return (PObject) obj;
@@ -236,7 +297,6 @@ public class Library {
             if (type != null) {
                 return type.equals(Font.TYPE) ||
                         type.equals(PageTree.TYPE) ||
-                        type.equals(Font.TYPE) ||
                         type.equals(Annotation.TYPE) ||
                         type.equals(ImageStream.TYPE_VALUE) ||
                         type.equals(Catalog.TYPE);
@@ -370,6 +430,19 @@ public class Library {
         setEncrypted(true);
     }
 
+    /**
+     * The whole document loaded into a single {@link ByteBuffer}.
+     * <p>
+     * <b>Concurrency invariant:</b> object parsing reads this buffer lock-free from many threads at once, which is
+     * only safe because the backing bytes are read-only and <em>no reader mutates the shared buffer's
+     * position/limit</em>.  Any code that reads from it on a worker thread MUST work on its own
+     * {@code getMappedFileByteBuffer().duplicate()} (a duplicate shares the read-only bytes but has an independent
+     * position/limit) - never reposition/slice the shared instance directly.  Code that actually replaces or
+     * mutates the buffer (incremental save, signing, cross-reference rebuild) must hold
+     * {@link #getMappedFileByteBufferLock()} and must not run concurrently with rendering.
+     *
+     * @return the shared, read-only document buffer; duplicate it before reading off-thread.
+     */
     public ByteBuffer getMappedFileByteBuffer() {
         return mappedFileByteBuffer;
     }
@@ -382,6 +455,11 @@ public class Library {
         this.fileOrigin = fileOrigin;
     }
 
+    /**
+     * Lock guarding <em>writes</em> to the document buffer (replacing it, or repositioning/slicing the shared
+     * instance) - e.g. incremental save, signing, cross-reference rebuild.  Lock-free readers rely on no such
+     * mutation happening concurrently; see {@link #getMappedFileByteBuffer()}.
+     */
     public Object getMappedFileByteBufferLock() {
         return mappedFileByteBufferLock;
     }
@@ -762,7 +840,7 @@ public class Library {
     public ICCBased getICCBased(Reference ref) {
         ICCBased cs = null;
 
-        WeakReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
+        SoftReference<ICCBased> csRef = lookupReference2ICCBased.get(ref);
         if (csRef != null) {
             cs = csRef.get();
         }
@@ -772,7 +850,7 @@ public class Library {
             if (obj instanceof Stream) {
                 Stream stream = (Stream) obj;
                 cs = new ICCBased(this, stream);
-                lookupReference2ICCBased.put(ref, new WeakReference<>(cs));
+                lookupReference2ICCBased.put(ref, new SoftReference<>(cs));
             }
         }
         return cs;
@@ -1035,6 +1113,40 @@ public class Library {
         commonThreadPool.shutdownNow();
         imageThreadPool.purge();
         imageThreadPool.shutdownNow();
+    }
+
+    /**
+     * Resizes the common (page/thumbnail render) and image-decode thread pools at runtime, updating
+     * both the recorded sizes and, if the pools have already been created, the live executors.
+     * Intended for embedding applications that want to tune concurrency to their hardware or heap
+     * without a JVM restart.  Sizes are floored at 1; there is no upper cap here as an explicit
+     * runtime request is treated like an explicit override.
+     *
+     * @param common number of threads for the common render pool.
+     * @param image  number of threads for the image-decode pool.
+     */
+    public static synchronized void setThreadPoolSizes(int common, int image) {
+        commonPoolThreads = Math.max(1, common);
+        imagePoolThreads = Math.max(1, image);
+        resizePool(commonThreadPool, commonPoolThreads);
+        resizePool(imageThreadPool, imagePoolThreads);
+        logger.log(Level.FINE, () -> "Resized ICEpdf thread pools: common=" + commonPoolThreads
+                + ", image=" + imagePoolThreads);
+    }
+
+    private static void resizePool(ThreadPoolExecutor pool, int size) {
+        if (pool == null || pool.isShutdown()) {
+            return;
+        }
+        // Core and max must stay consistent, and ThreadPoolExecutor rejects a transition where core
+        // would exceed max (or max drop below core), so order the two calls by growth direction.
+        if (size >= pool.getCorePoolSize()) {
+            pool.setMaximumPoolSize(size);
+            pool.setCorePoolSize(size);
+        } else {
+            pool.setCorePoolSize(size);
+            pool.setMaximumPoolSize(size);
+        }
     }
 
     public static void execute(Runnable runnable) {

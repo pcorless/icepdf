@@ -26,6 +26,7 @@ import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -67,11 +68,39 @@ public class Form extends Stream {
     private boolean isolated;
     private boolean knockOut;
     private boolean shading;
-    private boolean inited = false;
 
     public Form(Library l, DictionaryEntries h, byte[] rawBytes) {
         super(l, h, rawBytes);
+        initMatrix();
+        initGroup();
+    }
 
+    public Form(Library l, DictionaryEntries h, ByteBuffer streamDataView) {
+        super(l, h, streamDataView);
+        initMatrix();
+        initGroup();
+    }
+
+    /**
+     * Reads the form's /Matrix.
+     * <p>
+     * This is done at construction rather than in {@link #init(ContentStreamCallback)} because
+     * callers legitimately need the matrix <em>before</em> the form is initialised - notably
+     * {@code consume_Do}, which has to build a content stream callback's transform from
+     * {@code CTM x Matrix} and then pass that callback into {@code init}. Parsing it lazily left
+     * those callers holding the default identity, which silently mislocated everything they
+     * derived from it.
+     */
+    private void initMatrix() {
+        Object v = library.getObject(entries, MATRIX_KEY);
+        if (v instanceof List) {
+            matrix = getAffineTransform((List) v);
+        } else if (v instanceof AffineTransform) {
+            matrix = (AffineTransform) v;
+        }
+    }
+
+    private void initGroup() {
         // check for grouping flags so we can do special handling during the
         // xform content stream parsing.
         DictionaryEntries group = library.getDictionary(entries, GROUP_KEY);
@@ -165,15 +194,19 @@ public class Form extends Stream {
      */
     public synchronized void init(ContentStreamCallback contentStreamRedactorCallback)
             throws InterruptedException {
+        // A callback means the caller is rewriting this form's content stream, not just rendering
+        // it, and the rewrite has to happen even though the form has been parsed before - otherwise
+        // a form that any earlier render already initialised is silently skipped, and the text
+        // inside it survives a redaction or an edit.  Page.init has always done this; Form.init did
+        // not, which is why a form drawn twice was only ever visited for its first placement.
+        if (contentStreamRedactorCallback != null) {
+            inited = false;
+        }
         if (inited) {
             return;
         }
-        Object v = library.getObject(entries, MATRIX_KEY);
-        if (v instanceof List) {
-            matrix = getAffineTransform((List) v);
-        } else if (v instanceof AffineTransform) {
-            matrix = (AffineTransform) v;
-        }
+        // /Matrix is read in the constructor - see initMatrix() for why. Re-reading it here would
+        // also clobber a matrix supplied through setAppearance().
         bbox = library.getRectangle(entries, BBOX_KEY);
         // try and find the form's resources dictionary.
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
@@ -210,6 +243,24 @@ public class Form extends Stream {
         Resources leafResources = library.getResources(entries, RESOURCES_KEY);
         if (leafResources == null) {
             leafResources = new Resources(library, new DictionaryEntries());
+        }
+        return leafResources;
+    }
+
+    /**
+     * Gets the resources actually used to parse this form's content stream:
+     * the form's own /Resources if present, otherwise the parent resources
+     * supplied via {@link #setParentResources(Resources)} (a form XObject may
+     * inherit its parent's resources, PDF 32000-1 §7.8.3).  Unlike
+     * {@link #getResources()} this returns {@code null} rather than an empty
+     * dictionary when neither is available, and never fabricates an empty one.
+     *
+     * @return effective resources for this form, or {@code null}.
+     */
+    public Resources getLeafResources() {
+        Resources leafResources = library.getResources(entries, RESOURCES_KEY);
+        if (leafResources == null) {
+            leafResources = parentResource;
         }
         return leafResources;
     }

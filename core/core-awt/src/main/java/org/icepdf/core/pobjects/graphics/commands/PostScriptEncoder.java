@@ -17,6 +17,9 @@ package org.icepdf.core.pobjects.graphics.commands;
 
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.Font;
+import org.icepdf.core.pobjects.fonts.FontTextEncoder;
+import org.icepdf.core.pobjects.fonts.builders.WinAnsiEncoding;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.PdfOps;
@@ -212,7 +215,15 @@ public class PostScriptEncoder {
                                 .append(colors[2]).append(SPACE)
                                 .append(PdfOps.rg_TOKEN).append(NEWLINE);
                         float y = glyphTexts.get(0).getY();
-                        StringBuilder line = new StringBuilder();
+                        // A composite font's codes are CIDs, two bytes wide, and are written as a hex
+                        // string; a simple font's are one-byte codes in a literal string.  Which one
+                        // this is was decided when the text was laid out, and every glyph carries it.
+                        boolean composite = glyphTexts.get(0).getFontSubTypeFormat() == Font.CID_FORMAT;
+                        // Both kinds of show string are written by the same encoder the widget
+                        // annotations use, so the escaping and the hex padding have one implementation
+                        // rather than one per writer.
+                        FontTextEncoder encoder = FontTextEncoder.forCodeWidth(composite);
+                        java.util.List<Integer> line = new ArrayList<>();
                         GlyphText glyphText;
                         for (int i = 0, max = glyphTexts.size(); i < max; i++) {
                             glyphText = glyphTexts.get(i);
@@ -221,22 +232,20 @@ public class PostScriptEncoder {
                             if (y != glyphText.getY() || i == max - 1) {
                                 // make sure we write out the last character.
                                 if (i == max - 1) {
-                                    line.append(glyphText.getUnicode());
+                                    appendCode(line, glyphText, composite);
                                 }
-                                postScript.append(BEGIN_ARRAY).append(BEGIN_STRING)
-                                        // use literal string to make sure string is escaped correctly
-                                        .append(new LiteralStringObject(line.toString()))
-                                        .append(END_STRING)
-                                        .append(END_ARRAY).append(SPACE)
+                                postScript.append(BEGIN_ARRAY);
+                                encoder.appendShowStringForCodes(postScript, line);
+                                postScript.append(END_ARRAY).append(SPACE)
                                         .append(PdfOps.TJ_TOKEN).append(NEWLINE);
                                 // add shift if newline
                                 postScript.append(0).append(SPACE).append(y - glyphText.getY())
                                         .append(SPACE).append(PdfOps.Td_TOKEN).append(NEWLINE);
                                 // update the current.
                                 y = glyphText.getY();
-                                line = new StringBuilder();
+                                line = new ArrayList<>();
                             }
-                            line.append(glyphText.getUnicode());
+                            appendCode(line, glyphText, composite);
                         }
                         postScript.append(PdfOps.ET_TOKEN).append(NEWLINE);
                     }
@@ -256,7 +265,31 @@ public class PostScriptEncoder {
         if (logger.isLoggable(Level.FINER)) {
             logger.finer("PostEncoding: " + postScript);
         }
-        return postScript.toString().getBytes();
+        // A content stream is bytes, and a show operator's bytes are character codes in the font's
+        // encoding - here WinAnsiEncoding, which is Windows-1252.  getBytes() used the platform
+        // default instead: on a UTF-8 machine every character above 0x7F became two codes, so an
+        // accent or a smart quote was drawn as two wrong glyphs, and the same document written on
+        // two machines produced different bytes.  Operators are ASCII and encode identically either
+        // way; it is only the text that was ever affected.
+        return postScript.toString().getBytes(WinAnsiEncoding.CHARSET);
+    }
+
+    /**
+     * The character code this glyph is shown by: the CID for a composite font, and for a simple one
+     * the code its WinAnsiEncoding gives - which is not the Unicode value above 0x7F.
+     */
+    private static void appendCode(java.util.List<Integer> line, GlyphText glyphText, boolean composite) {
+        if (composite) {
+            line.add((int) glyphText.getCid());
+            return;
+        }
+        String unicode = glyphText.getUnicode();
+        for (int i = 0; i < unicode.length(); i++) {
+            int code = WinAnsiEncoding.codeOf(unicode.charAt(i));
+            if (code >= 0) {
+                line.add(code);
+            }
+        }
     }
 
     private static double roundCoordinate(double value) {

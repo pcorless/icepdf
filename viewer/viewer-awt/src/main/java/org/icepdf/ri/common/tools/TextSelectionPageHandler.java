@@ -15,12 +15,21 @@
  */
 package org.icepdf.ri.common.tools;
 
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.Bias;
+import org.icepdf.core.pobjects.graphics.text.Caret;
+import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
+import org.icepdf.ri.common.views.DocumentTextSelection;
 import org.icepdf.ri.common.views.DocumentViewController;
+import org.icepdf.ri.common.views.DocumentViewModel;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 
 /**
  * Handles Paint and mouse/keyboard logic around text selection and search
@@ -72,7 +81,7 @@ public class TextSelectionPageHandler extends TextSelection
      */
     public void mousePressed(MouseEvent e) {
         isClearSelection = false;
-        this.pageViewComponent.requestFocus();
+        this.pageViewComponent.requestFocusInWindow();
         lastMousePressedLocation = e.getPoint();
 
         selectionStart(e.getPoint(), pageViewComponent, true);
@@ -157,14 +166,29 @@ public class TextSelectionPageHandler extends TextSelection
     }
 
     public void paintTool(Graphics g) {
-        if (enableMarginExclusionBorder && topMarginExclusion != null && bottomMarginExclusion != null) {
-            AffineTransform at = getPageTransform();
-            ((Graphics2D)g).transform(at);
-            g.setColor(Color.RED);
-            paintSelectionBox(g, topMarginExclusion.getBounds());
-            g.setColor(Color.BLUE);
-            paintSelectionBox(g, bottomMarginExclusion.getBounds());
+        // paint the keyboard caret bar when the document focus caret is on this page.
+        DocumentViewModel model = documentViewController.getDocumentViewModel();
+        DocumentTextSelection selection = model.getTextSelection();
+        if (selection.isEmpty() || selection.getFocusPage() != pageViewComponent.getPageIndex()
+                || !CaretBlink.isVisible()) {
+            return;
         }
+        PageText pageText = TextSelectionSupport.loadedPageText(pageViewComponent);
+        if (pageText == null) return;
+        Page page = pageViewComponent.getPage();
+        TextSequence sequence = pageText.getTextSequence();
+        AffineTransform transform = page.getPageTransform(
+                model.getPageBoundary(), model.getViewRotation(), model.getViewZoom());
+        Rectangle2D.Double caret = sequence.caretRect(new Caret(selection.getFocusOffset(), Bias.FORWARD));
+        Rectangle2D bounds = transform.createTransformedShape(caret).getBounds2D();
+        Graphics2D g2 = (Graphics2D) g;
+        Color oldColor = g2.getColor();
+        Stroke oldStroke = g2.getStroke();
+        g2.setColor(Color.BLACK);
+        g2.setStroke(new BasicStroke(1f));
+        g2.draw(new Line2D.Double(bounds.getX(), bounds.getMinY(), bounds.getX(), bounds.getMaxY()));
+        g2.setColor(oldColor);
+        g2.setStroke(oldStroke);
     }
 
 

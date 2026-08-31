@@ -15,175 +15,125 @@
  */
 package org.icepdf.core.util.edit.content;
 
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.graphics.TextSprite;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.util.updater.callbacks.StringObjectWriter;
 
+import org.icepdf.core.util.PdfNumberFormat;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.charset.StandardCharsets;
 
 /**
- * TextStringObjectWriter is a utility class that provides methods to update text in a content stream
+ * Replaces the text marked for editing with new text.
+ * <p>
+ * This is the shared writer plus one hook: where a redaction leaves the gap empty, an edit fills it
+ * with the replacement. Everything else - walking the runs, deciding where a {@code TJ} adjustment is
+ * needed and how large it is - is the base class, which previously carried a near-duplicate of that
+ * logic in each subclass with the two quietly disagreeing about which glyph to measure from.
+ * <p>
+ * The replacement is written once, at the first removed run. Any further removed runs in the same
+ * show operation are simply stepped over, so a selection spanning several strings does not repeat the
+ * text.
  */
 public class TextStringObjectWriter extends StringObjectWriter {
 
     private final String newText;
-    private int replacedCount;
+    private static final byte[] ARRAY_END = "] TJ ".getBytes(StandardCharsets.ISO_8859_1);
+
+    private final SubstituteFont substitute;
+    private boolean written;
 
     public TextStringObjectWriter(String newText) {
-        this.replacedCount = newText.length() - 1;
-        this.newText = newText;
+        this(newText, null);
     }
 
-    public float writeTj(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
-                         float lastTdOffset) throws IOException {
-        int operatorCount = 0;
-        GlyphText glyphText = null;
-        GlyphText previousGlyphText = null;
-        for (TextSprite textSprite : textOperators) {
-            ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-            if (fullyFlagged(glyphTexts)) {
-                if (replacedCount > 0) {
-                    writeNewText(contentOutputStream, glyphTexts.get(0), textSprite);
-                }
-                continue;
-            }
+    /**
+     * @param substitute font to write the replacement in when the run's own font cannot express it,
+     *                   already embedded and present in the page's resources; null to use the run's
+     *                   font, which is the ordinary case
+     */
+    public TextStringObjectWriter(String newText, SubstituteFont substitute) {
+        this.newText = newText != null ? newText : "";
+        this.substitute = substitute;
+    }
 
-            float editStartOffset = -1;
+    /**
+     * A {@code Tf} inside the text object, which is where a font may be changed.
+     */
+    private void writeFontSelect(Name fontName, float size, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        contentOutputStream.write(('/' + fontName.getName() + ' '
+                + PdfNumberFormat.format(size) + " Tf ").getBytes(StandardCharsets.ISO_8859_1));
+    }
 
-            for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
-                glyphText = glyphTexts.get(i);
-                if (glyphText.isFlagged()) {
-                    if (editStartOffset < 0) {
-                        editStartOffset = glyphText.getX();
-                    }
-                    if (operatorCount > 0) {
-                        operatorCount = 0;
-                        // close off the current string object
-                        writeDelimiterEnd(glyphText, contentOutputStream);
-                    }
-                    if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
-                        // write offset to start off the new text
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, previousGlyphText);
-                        // write the new text
-                        if (replacedCount > 0) {
-                            writeNewText(contentOutputStream, glyphText, textSprite);
-                        }
-                    }
-                } else {
-                    if (operatorCount == 0) {
-                        writeDelimiterStart(glyphText, contentOutputStream);
-                    }
-                    operatorCount++;
-                    writeCharacterCode(glyphText, contentOutputStream);
-                    previousGlyphText = glyphText;
-                }
-            }
-            if (operatorCount > 0) {
-                writeDelimiterEnd(glyphText, contentOutputStream);
-            }
+    @Override
+    protected boolean writesReplacementText() {
+        return !newText.isEmpty() && !written;
+    }
+
+    /**
+     * An edit puts the replacement in the original's place in the line, so what follows it on the
+     * line follows the replacement. A redaction, which shares this writer's base, holds that text
+     * where it was instead.
+     */
+    @Override
+    protected boolean reflowsFollowingText() {
+        return true;
+    }
+
+    @Override
+    protected float writeRunReplacement(ByteArrayOutputStream contentOutputStream,
+                                        TextSprite textSprite, GlyphText firstRemoved) throws IOException {
+        // The base class only calls this while writesReplacementText() holds, so there is no need
+        // to re-check it here.
+        written = true;
+        if (substitute == null) {
+            return writeIn(textSprite.getFont(), textSprite.getSubTypeFormat(), textSprite,
+                    firstRemoved, contentOutputStream);
         }
-        return lastTdOffset;
+        // A font can only be changed between show operations, never inside a TJ array - the array
+        // holds strings and numbers and nothing else - so the array in progress is closed, the
+        // replacement shown in the substitute, and a fresh array opened for the base class to carry
+        // on appending to. The brackets stay balanced because the base opened one and closes one.
+        float size = textSprite.getFontSize();
+        contentOutputStream.write(ARRAY_END);
+        writeFontSelect(substitute.getResourceName(), size, contentOutputStream);
+        contentOutputStream.write('[');
+        float advance = writeIn(substitute.getFontFile(), substitute.getSubTypeFormat(), textSprite,
+                firstRemoved, contentOutputStream);
+        contentOutputStream.write(ARRAY_END);
+        // Back to the run's own font, named as the content stream names it - the glyph knows the
+        // resource name; the sprite does not always carry one.
+        writeFontSelect(firstRemoved.getFontName(), size, contentOutputStream);
+        contentOutputStream.write('[');
+        return advance;
     }
 
-    private float writeEditedText(ByteArrayOutputStream contentOutputStream,
-                                  TextSprite textSprite) throws IOException {
-        float newTextOffset = 0;
+    /**
+     * Shows the replacement in one font, and reports how far the reader moved.
+     * <p>
+     * The advance has to be measured in the font the text is written in: a substitute's glyphs are
+     * not the original's widths, and measuring the wrong one puts everything after the replacement in
+     * the wrong place.
+     */
+    private float writeIn(FontFile font, byte subTypeFormat, TextSprite textSprite,
+                          GlyphText firstRemoved, ByteArrayOutputStream contentOutputStream)
+            throws IOException {
+        writeDelimiterStart(subTypeFormat, contentOutputStream);
+        float advance = 0;
         for (int i = 0, max = newText.length(); i < max; i++) {
-            char c = newText.charAt(i);
-            newTextOffset += (float) textSprite.getFont().getAdvance(c).getX();
-            char selector = textSprite.getFont().toSelector(c);
-            writeCharacterCode(selector, textSprite.getSubTypeFormat(), contentOutputStream);
-            replacedCount -= 1;
+            char character = newText.charAt(i);
+            advance += (float) font.getAdvance(character).getX();
+            writeCharacterCode(font.toSelector(character), subTypeFormat, contentOutputStream);
         }
-        return newTextOffset;
+        writeDelimiterEnd(subTypeFormat, contentOutputStream);
+        // The reader has advanced by the width of what was just shown, plus the character spacing it
+        // applies after each glyph.
+        return advance + newText.length() * textSprite.getCharSpacing();
     }
 
-    public void writeNewText(ByteArrayOutputStream contentOutputStream,
-                             GlyphText glyphText, TextSprite textSprite) throws IOException {
-        writeDelimiterStart(glyphText, contentOutputStream);
-        writeEditedText(contentOutputStream, textSprite);
-        writeDelimiterEnd(glyphText, contentOutputStream);
-    }
-
-    public float writeTJ(ByteArrayOutputStream contentOutputStream, ArrayList<TextSprite> textOperators,
-                         float lastTdOffset) throws IOException {
-        int operatorCount = 0;
-
-        GlyphText glyphText = null;
-        GlyphText previousGlyphText = null;
-        GlyphText lastUnflaggedGlyphText = null;
-
-        for (TextSprite textSprite : textOperators) {
-            ArrayList<GlyphText> glyphTexts = textSprite.getGlyphSprites();
-            operatorCount++;
-
-            // can skip it completely
-            if (fullyFlagged(glyphTexts)) {
-                if (replacedCount > 0) {
-                    writeNewText(contentOutputStream, glyphTexts.get(0), textSprite);
-                }
-                continue;
-            }
-
-            int glyphWrittenCount = 0;
-            for (int i = 0, glyphTextMax = glyphTexts.size(); i < glyphTextMax; i++) {
-                glyphText = glyphTexts.get(i);
-                if (glyphText.isFlagged()) {
-                    if (glyphWrittenCount > 0) {
-                        glyphWrittenCount = 0;
-                        // close off the current string object
-                        writeDelimiterEnd(glyphText, contentOutputStream);
-                    }
-                    if (i + 1 < glyphTextMax && !glyphTexts.get(i + 1).isFlagged()) {
-                        // write offset to start off the new text
-                        lastTdOffset = writeLastTdOffset(contentOutputStream, lastTdOffset, lastUnflaggedGlyphText);
-
-                        // write the new text
-                        if (replacedCount > 0) {
-                            writeNewText(contentOutputStream, glyphText, textSprite);
-                        }
-                    }
-                } else {
-                    if (i == 0 && operatorCount > 1) {
-                        if (previousGlyphText != null && previousGlyphText.isFlagged()) {
-                            // write offset to start off the new text
-                            float charOffset = lastTdOffset > 0 ?
-                                    (float) textSprite.getFont().getAdvance(newText.charAt(0)).getX() : 0;
-                            float advance = lastTdOffset + charOffset;
-
-                            lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
-
-                            // write the new text
-                            if (replacedCount > 0) {
-                                writeDelimiterStart(glyphText, contentOutputStream);
-                                float textAdvance = writeEditedText(contentOutputStream, textSprite);
-                                writeDelimiterEnd(glyphText, contentOutputStream);
-
-                                // write offset to push or contract next text
-                                advance = glyphText.getX();
-                                float textAdvanceOffset = textAdvance - (advance - lastTdOffset);
-                                lastTdOffset -= textAdvanceOffset;
-                                lastTdOffset = writeTdOffset(contentOutputStream, advance, lastTdOffset);
-                            }
-                        } else {
-                            lastTdOffset = writeStartTdOffset(contentOutputStream, lastTdOffset, glyphText);
-                        }
-                    }
-                    if (glyphWrittenCount == 0) {
-                        writeDelimiterStart(glyphText, contentOutputStream);
-                    }
-                    glyphWrittenCount++;
-                    writeCharacterCode(glyphText, contentOutputStream);
-                    lastUnflaggedGlyphText = glyphText;
-                }
-                previousGlyphText = glyphText;
-            }
-            if (glyphWrittenCount > 0) {
-                writeDelimiterEnd(glyphText, contentOutputStream);
-            }
-        }
-        return lastTdOffset;
-    }
 }

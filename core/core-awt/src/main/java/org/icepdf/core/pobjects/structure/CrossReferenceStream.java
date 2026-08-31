@@ -44,6 +44,10 @@ public class CrossReferenceStream extends CrossReferenceBase<Stream> implements 
         super(new Stream(library, dictionaryEntries, rawBytes), 0);
     }
 
+    public CrossReferenceStream(Library library, DictionaryEntries dictionaryEntries, ByteBuffer streamDataView) {
+        super(new Stream(library, dictionaryEntries, streamDataView), 0);
+    }
+
     public void initialize() {
         int size = crossReference.getInt(SIZE_KEY);
         List<Number> objNumAndEntriesCountPairs = crossReference.getList(INDEX_KEY);

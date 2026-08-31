@@ -27,6 +27,7 @@ import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.PdfNumberFormat;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
 import java.awt.*;
@@ -91,6 +92,9 @@ public abstract class AbstractContentParser {
     private static final float OVERPAINT_ALPHA = 0.4f;
 
     private static final ClipDrawCmd clipDrawCmd = new ClipDrawCmd();
+
+    // transparency group colour-space key (/CS), for group-boundary markers.
+    private static final Name GROUP_CS_KEY = new Name("CS");
     private static final NoClipDrawCmd noClipDrawCmd = new NoClipDrawCmd();
 
     protected GraphicsState graphicState;
@@ -506,6 +510,23 @@ public abstract class AbstractContentParser {
                 OptionalContent optionalContent = resources.getLibrary().getCatalog().getOptionalContent();
                 optionalContent.init();
                 if (!optionalContent.isVisible(oc)) {
+                    // Not painting it does not remove it.  The form's content stream is still in the
+                    // file with whatever text it draws, kept out of sight by nothing more than a
+                    // visibility flag - turn the layer on, or run text extraction, and it is back.
+                    // So a rewrite still descends into the form; it is only the painting that the
+                    // visibility decides.  Note the CTM is copied rather than concatenated into:
+                    // getCTM() hands out the live transform.
+                    if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
+                        formXObject.setParentResources(resources);
+                        AffineTransform hiddenTransform = new AffineTransform(graphicState.getCTM());
+                        hiddenTransform.concatenate(formXObject.getMatrix());
+                        ContentStreamCallback hiddenCallback =
+                                contentStreamCallback.createChildInstance(hiddenTransform);
+                        formXObject.init(hiddenCallback);
+                        if (formXObject.getShapes() != null) {
+                            hiddenCallback.endContentStream();
+                        }
+                    }
                     return graphicState;
                 }
             }
@@ -525,8 +546,11 @@ public abstract class AbstractContentParser {
             formXObject.setParentResources(resources);
             // need a new instance, so we don't corrupt the stream offset.
             ContentStreamCallback formContentStreamRedactorCallback = null;
-            if (contentStreamCallback != null) {
-                AffineTransform xObjectTransform = graphicState.getCTM();
+            if (contentStreamCallback != null && contentStreamCallback.descendsIntoForms()) {
+                // Copied, not taken: getCTM() hands out the live transform, so concatenating into
+                // it leaves the form's /Matrix applied to the graphics state itself - and the af
+                // built two lines below then applies the same matrix a second time.
+                AffineTransform xObjectTransform = new AffineTransform(graphicState.getCTM());
                 xObjectTransform.concatenate(formXObject.getMatrix());
                 formContentStreamRedactorCallback = contentStreamCallback.createChildInstance(xObjectTransform);
             }
@@ -539,7 +563,7 @@ public abstract class AbstractContentParser {
             if (graphicState.getClip() != null) {
                 AffineTransform matrix = formXObject.getMatrix();
                 Area bbox = new Area(formXObject.getBBox());
-                Area clip = graphicState.getClip();
+                Shape clip = graphicState.getClip();
                 // create inverse of matrix, so we can transform
                 // the clip to form space.
                 try {
@@ -557,68 +581,107 @@ public abstract class AbstractContentParser {
             }
             shapes.add(clipDrawCmd);
             // 4. Paint the graphics objects in font stream.
-            // still some work to do here regarding BM vs. alpha comp.
+            // A transparency group's constant alpha (ca) applies to the group as
+            // a unit, once, at its composite -- PDF 32000-1 §11.6.6/§7.6.3.  The
+            // group ca is applied here on the OUTER shapes (the boundary): for a
+            // buffered group it becomes the composite the draw-back runs under
+            // (FormDrawCmd), for an inline group it wraps the inner ShapesDrawCmd.
+            // The inner form content keeps its OWN element-level alphas -- it must
+            // NOT have the group ca baked into it as well, or the ca is applied
+            // twice (0.30^2 washes soft sheens; GH-501).  Step 1 of the
+            // transparency-group state rework removed that inner-content bake.
             if ((formXObject.getExtGState() != null &&
                     (formXObject.getExtGState().getBlendingMode() == null ||
                             formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE)))) {
-                setAlpha(formXObject.getShapes(), graphicState, graphicState.getAlphaRule(),
-                        graphicState.getFillAlpha());
                 setAlpha(shapes, graphicState, graphicState.getAlphaRule(),
                         graphicState.getFillAlpha());
             }
-            // If we have a transparency group we paint it
-            // slightly different from a regular xObject as we
-            // need to capture the alpha which is only possible
-            // by paint the xObject to an image.
-            if (!disableTransparencyGroups &&
-                    ((formXObject.getBBox().getWidth() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getWidth() > 1) &&
-                            (formXObject.getBBox().getHeight() < FormDrawCmd.MAX_IMAGE_SIZE && formXObject.getBBox().getHeight() > 1)
-                            && (formXObject.getExtGState() != null &&
-                            (formXObject.getExtGState().getSMask() != null ||
-                                    (formXObject.getExtGState().getBlendingMode() != null &&
-                                            !formXObject.getExtGState().getBlendingMode().equals(BlendComposite.NORMAL_VALUE))
-                                    || (formXObject.getExtGState().getNonStrokingAlphConstant() < 1
-                                    && formXObject.getExtGState().getNonStrokingAlphConstant() > 0)))
-                    )) {
-                // add the hold form for further processing.
-                shapes.add(new FormDrawCmd(formXObject));
+            // Decide how the transparency group is composited.  A group is
+            // rasterised to an offscreen buffer (FormDrawCmd) only when it
+            // carries an effect that cannot be reproduced by painting its
+            // shapes straight onto the page; otherwise it is painted inline
+            // (ShapesDrawCmd), which also avoids the quality loss of buffering
+            // through an affine transform.  See classifyTransparencyGroup.
+            // Inert group-boundary markers delimit the group's emission on the
+            // stack, carrying its attributes for a compositor (page-group buffer /
+            // scoped-run buffer).  GroupDrawCmd paints nothing, so the default
+            // paint loop is unaffected.
+            boolean emitGroupMarkers = formXObject.isTransparencyGroup();
+            if (emitGroupMarkers) {
+                Object groupCs = formXObject.getLibrary().getObject(formXObject.getGroup(), GROUP_CS_KEY);
+                Name groupBlend = formXObject.getExtGState() != null
+                        ? formXObject.getExtGState().getBlendingMode() : null;
+                shapes.add(new GroupDrawCmd(true, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        groupCs instanceof Name ? (Name) groupCs : null, groupBlend, formXObject.getBBox()));
             }
-            // the downside of painting to an image is that we
-            // lose quality if there is an affine transform, so
-            // if it isn't a group transparency we paint old way
-            // by just adding the objects to the shapes stack.
-            else {
+            if (!disableTransparencyGroups && FormDrawCmd.requiresOffscreenBuffer(formXObject)) {
+                // add the hold form for further processing.
+                FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
+                shapes.add(formDrawCmd);
+                // Remember position so the group can reconstruct its backdrop by
+                // replaying the prior commands (§10 backdrop-aware compositing) --
+                // but ONLY for a page-level Do (page != null).  When the Do is
+                // inside another form (page == null) the prior commands are local
+                // to that form, so the replay misses the page content painted
+                // behind the form (e.g. black_or_red.pdf's Multiply banner over the
+                // page's blue gradient) and the blend composites against a blank
+                // backdrop.  Without a backdrop source the group falls back to the
+                // direct path and is drawn with the active blend composite over the
+                // real destination, which sees the true backdrop.
+                if (page != null) {
+                    formDrawCmd.setBackdropSource(shapes, shapes.getShapes().size() - 1);
+                }
+            } else {
                 shapes.add(new ShapesDrawCmd(formXObject.getShapes()));
+            }
+            if (emitGroupMarkers) {
+                shapes.add(new GroupDrawCmd(false, formXObject.isIsolated(), formXObject.isKnockOut(),
+                        null, null, formXObject.getBBox()));
             }
             // update text sprites with geometric path state
             if (formXObject.getShapes() != null &&
                     formXObject.getShapes().getPageText() != null) {
-                // normalize each sprite.
-                AffineTransform pageSpace = graphicState.getCTM();
-                pageSpace.concatenate(formXObject.getMatrix());
-                formXObject.getShapes().getPageText()
-                        .applyXObjectTransform(pageSpace);
-                // add the text to the current shapes for extraction and
-                // selection purposes.
+                // The form XObject is a shared, cached object (one instance per
+                // reference via Library.getObject), so its PageText is shared by
+                // every page that draws the form.  transformedCopy() reads it and
+                // getPageLines() mutates it in place (clearing/re-sorting the line
+                // list); two pages
+                // drawing the same form concurrently corrupt each other's state
+                // and throw mid-parse (NPE in sortAndFormatText/LineText.getBounds),
+                // which aborts the page's content stream and drops all content
+                // after the Do -> "text doesn't render, background lines fine".
+                // Serialize the merge on the shared PageText so concurrent Do of
+                // the same form can't interleave; different forms still parallelize.
                 PageText pageText = formXObject.getShapes().getPageText();
-                if (pageText != null && pageText.getPageLines() != null) {
-                    shapes.getPageText().addPageLines(
-                            pageText.getPageLines());
+                synchronized (pageText) {
+                    // The form's text describes the form's own space and the form may be drawn more
+                    // than once, so each placement takes a copy mapped into page space rather than
+                    // transforming the shared tree.  Sharing it meant every placement reported the
+                    // position of whichever was transformed last - a repeated header or logo gave
+                    // the wrong coordinates for all but one of its appearances, and text selection
+                    // with it.
+                    AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
+                    pageSpace.concatenate(formXObject.getMatrix());
+                    if (pageText.getPageLines() != null) {
+                        shapes.getPageText().addPageLines(pageText.transformedCopy(pageSpace));
+                    }
                 }
             }
             // Some Do object will have images, and we need to make sure we account for localized space.
-            if (contentStreamCallback != null &&
+            if (formContentStreamRedactorCallback != null &&
                     formXObject.getShapes() != null) {
                 formContentStreamRedactorCallback.endContentStream();
                 Shapes pageShapes = formXObject.getShapes();
                 ArrayList<DrawCmd> xObjectShapes = pageShapes.getShapes();
                 for (DrawCmd object : xObjectShapes) {
                     if (object instanceof ImageDrawCmd) {
+                        // af is already CTM x the form's Matrix, which is where the form's images
+                        // land on the page.
                         ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                        ImageStream imageStream = imageDrawCmd.getImageStream();
-                        AffineTransform pageSpace = new AffineTransform(graphicState.getCTM());
-                        pageSpace.concatenate(formXObject.getMatrix());
-                        imageStream.setGraphicsTransformMatrix(af);
+                        imageDrawCmd.getImageStream().setGraphicsTransformMatrix(af);
+                        if (imageDrawCmd.getImageReference() != null) {
+                            imageDrawCmd.getImageReference().setPlacement(af);
+                        }
                     }
                 }
             }
@@ -650,6 +713,10 @@ public abstract class AbstractContentParser {
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(
                         imageStream, xobjectName, resources, graphicState,
                         imageIndex.get(), page);
+                // Where this placement sits.  Recorded on the reference, which is created per Do,
+                // rather than only on the image stream, which is shared by every placement of the
+                // image across the whole document.
+                imageReference.setPlacement(af);
                 imageIndex.incrementAndGet();
 
                 // GH-243,  there is a weird duality between cm and Do inside text blocks that this adjusts for.
@@ -812,8 +879,16 @@ public abstract class AbstractContentParser {
     }
 
     protected static void consume_Tf(GraphicsState graphicState, Stack<Object> stack, Resources resources) {
-        float size = ((Number) stack.pop()).floatValue();
-        Name name2 = (Name) stack.pop();
+        // Tf expects "/FontName size Tf" with the size on top of the stack.
+        // Malformed streams can supply non-numeric operands or too few of them;
+        // guard so a single bad Tf doesn't abort the whole text block.
+        Object sizeObj = stack.isEmpty() ? null : stack.pop();
+        Object nameObj = stack.isEmpty() ? null : stack.pop();
+        if (!(sizeObj instanceof Number) || !(nameObj instanceof Name)) {
+            return;
+        }
+        float size = ((Number) sizeObj).floatValue();
+        Name name2 = (Name) nameObj;
         // build the new font and initialize it.
         graphicState.getTextState().tsize = size;
         graphicState.getTextState().fontName = name2;
@@ -852,9 +927,12 @@ public abstract class AbstractContentParser {
         }
         if (graphicState.getTextState().font != null) {
             FontFile font = graphicState.getTextState().font.getFont();
-            font.deriveFont(size);
-            graphicState.getTextState().currentfont =
-                    graphicState.getTextState().font.getFont().deriveFont(size);
+            if (font != null) {
+                // deriveFont allocates a new sized font instance; only derive once (an earlier discarded
+                // deriveFont call here was pure allocation churn on every Tf operator) (GH-495).
+                graphicState.getTextState().currentfont =
+                        graphicState.getTextState().font.getFont().deriveFont(size);
+            }
         } else {
             // not font found which is a problem,  so we need to check for interactive form dictionary
             graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
@@ -862,6 +940,18 @@ public abstract class AbstractContentParser {
                 graphicState.getTextState().currentfont = graphicState.getTextState().font.getFont();
                 graphicState.getTextState().currentfont =
                         graphicState.getTextState().font.getFont().deriveFont(size);
+            }
+        }
+        // Last resort: a font resource that yields no font program at all - a malformed font
+        // dictionary whose init() threw, say - would otherwise leave currentfont null, and every
+        // show-text operator that follows throws, taking the whole text block off the page.  Text
+        // in an approximate face beats no text, so fall back to the standard sans substitute.
+        if (graphicState.getTextState().currentfont == null) {
+            FontFile fallback = FontManager.getInstance().initialize().getInstance("Helvetica", 0);
+            if (fallback != null) {
+                graphicState.getTextState().currentfont = fallback.deriveFont(size);
+                logger.warning("Font " + name2 + " supplied no font program, falling back to "
+                        + fallback.getName());
             }
         }
     }
@@ -951,12 +1041,21 @@ public abstract class AbstractContentParser {
                                                LinkedList<OptionalContents> oCGs,
                                                ContentStreamCallback contentStreamCallback) throws IOException {
         StringObject stringObject = (StringObject) stack.pop();
-        graphicState.getTextState().cspace = ((Number) stack.pop()).floatValue();
-        graphicState.getTextState().wspace = ((Number) stack.pop()).floatValue();
+        float characterSpacing = ((Number) stack.pop()).floatValue();
+        float wordSpacing = ((Number) stack.pop()).floatValue();
+        graphicState.getTextState().cspace = characterSpacing;
+        graphicState.getTextState().wspace = wordSpacing;
         // push the string back on, so we can reuse the single quote layout code
         stack.push(stringObject);
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        // A rewritten string is shown with TJ, which sets no spacing and advances no line, so both
+        // have to be restated ahead of it. Only worth building when a callback is there to write
+        // it; every other parse of this operator would discard it.
+        String showPrefix = contentStreamCallback == null ? null
+                : PdfNumberFormat.format(wordSpacing) + " Tw " +
+                        PdfNumberFormat.format(characterSpacing) + " Tc T* ";
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, showPrefix);
     }
 
     protected static void consume_single_quote(GraphicsState graphicState, Stack<Object> stack,
@@ -968,7 +1067,8 @@ public abstract class AbstractContentParser {
             throws IOException {
         // ' = T* + Tj,  who knew?
         consume_T_star(graphicState, textMetrics, shapes.getPageText(), oCGs);
-        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs, contentStreamCallback);
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, "T* ");
     }
 
     protected static void consume_Td(GraphicsState graphicState, Stack<Object> stack,
@@ -1088,15 +1188,30 @@ public abstract class AbstractContentParser {
         return null;
     }
 
+    /**
+     * Pops the top operand as a float, returning 0 when the stack is empty or
+     * the operand is not numeric. Malformed content streams can leave Name or
+     * String operands where a number is expected.
+     */
+    private static float popFloat(Stack<Object> stack) {
+        Object o = stack.isEmpty() ? null : stack.pop();
+        return o instanceof Number ? ((Number) o).floatValue() : 0f;
+    }
+
     protected static GeneralPath consume_re(Stack<Object> stack,
                                             GeneralPath geometricPath) {
         if (geometricPath == null) {
             geometricPath = new GeneralPath();
         }
-        float h = ((Number) stack.pop()).floatValue();
-        float w = ((Number) stack.pop()).floatValue();
-        float y = ((Number) stack.pop()).floatValue();
-        float x = ((Number) stack.pop()).floatValue();
+        // re expects four numbers; malformed streams can supply too few or
+        // non-numeric operands, so pop defensively rather than abort the stream.
+        if (stack.size() < 4) {
+            return geometricPath;
+        }
+        float h = popFloat(stack);
+        float w = popFloat(stack);
+        float y = popFloat(stack);
+        float x = popFloat(stack);
         geometricPath.moveTo(x, y);
         geometricPath.lineTo(x + w, y);
         geometricPath.lineTo(x + w, y + h);
@@ -1114,9 +1229,17 @@ public abstract class AbstractContentParser {
     protected static void consume_BDC(Stack<Object> stack,
                                       Shapes shapes,
                                       LinkedList<OptionalContents> oCGs,
-                                      Resources resources) throws InterruptedException {
+                                      Resources resources,
+                                      ContentStreamCallback contentStreamCallback,
+                                      int pos) throws InterruptedException, IOException {
         Object properties = stack.pop();// properties
         Name tag = (Name) stack.pop();// tag
+        // The operator's bytes were held back for this - a property list can carry text of its own,
+        // and a rewrite has to get at it before it is copied through.  Whatever happens here, the
+        // callback writes the operator out.
+        if (contentStreamCallback != null) {
+            contentStreamCallback.checkAndModifyMarkedContent(tag, properties, pos);
+        }
         OptionalContents optionalContents = null;
         // try and process the Optional content.
         if (tag.equals(OptionalContent.OC_KEY)) {
@@ -1335,19 +1458,36 @@ public abstract class AbstractContentParser {
 
     protected static void consume_sh(GraphicsState graphicState, Stack<Object> stack,
                                      Shapes shapes,
-                                     Resources resources) throws InterruptedException {
+                                     Resources resources, boolean pageLevel) throws InterruptedException {
         Object o = stack.peek();
         // if a name then we are dealing with a pattern.
         if (o instanceof Name) {
             Name patternName = (Name) stack.pop();
             Pattern pattern = resources.getShading(patternName);
+            SoftMask shSoftMask = graphicState.getExtGState() != null
+                    ? graphicState.getExtGState().getSMask() : null;
+            // Only apply the soft mask to the shading here for a page-level `sh`.
+            // A shading `sh` inside a form is part of that form's own compositing
+            // (the form may be a transparency group masked at the group level), and
+            // applying the mask again on the inner shading over-darkens it
+            // (af400e35).  Form-level `sh` keeps the legacy approximation.
+            boolean luminosityMask = pageLevel && shSoftMask != null && shSoftMask.getS() != null
+                    && shSoftMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY);
+            if (pattern != null && luminosityMask) {
+                // A luminosity soft mask modulates the shading per-pixel; render
+                // the shading and the mask to buffers and composite, instead of
+                // dropping the mask for a flat alpha (faded.pdf white-fade bug).
+                pattern.init(graphicState);
+                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(), shSoftMask,
+                        graphicState.getFillAlpha()));
+                return;
+            }
             if (pattern != null) {
                 pattern.init(graphicState);
                 // we paint the shape and color shading as defined
                 // by the pattern dictionary and respect the current clip
                 // TODO further work is needed here to build out the pattern fill.
-                if (graphicState.getExtGState() != null &&
-                        graphicState.getExtGState().getSMask() != null) {
+                if (shSoftMask != null) {
                     setAlpha(shapes, graphicState,
                             graphicState.getAlphaRule(),
                             0.50f);
@@ -1392,9 +1532,8 @@ public abstract class AbstractContentParser {
                 textState = graphicState.getTextState();
                 // draw string takes care of PageText extraction
                 if (stringObject.getLength() > 0) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             graphicState.getTextState(), shapes, glyphOutlineClip,
                             graphicState, oCGs, contentStreamCallback);
@@ -1409,7 +1548,7 @@ public abstract class AbstractContentParser {
         }
         graphicState.set(tmp);
         if (contentStreamCallback != null) {
-            contentStreamCallback.writeModifiedStringObject(textOperators, Operands.TJ);
+            contentStreamCallback.writeModifiedStringObject(textOperators, null);
         }
     }
 
@@ -1419,6 +1558,23 @@ public abstract class AbstractContentParser {
                                      GlyphOutlineClip glyphOutlineClip,
                                      LinkedList<OptionalContents> oCGs,
                                      ContentStreamCallback contentStreamCallback) throws IOException {
+        consume_Tj(graphicState, stack, shapes, textMetrics, glyphOutlineClip, oCGs,
+                contentStreamCallback, null);
+    }
+
+    /**
+     * @param showPrefix content stream text that has to be emitted ahead of a rewritten string to
+     *                   preserve what the original operator did beyond showing text - the line
+     *                   advance of ' and ", and the spacing " also sets. Null for a plain Tj, whose
+     *                   bytes carry no other meaning.
+     */
+    protected static void consume_Tj(GraphicsState graphicState, Stack<Object> stack,
+                                     Shapes shapes,
+                                     TextMetrics textMetrics,
+                                     GlyphOutlineClip glyphOutlineClip,
+                                     LinkedList<OptionalContents> oCGs,
+                                     ContentStreamCallback contentStreamCallback,
+                                     String showPrefix) throws IOException {
         if (stack.size() != 0) {
             Object tjValue = stack.pop();
             StringObject stringObject;
@@ -1432,10 +1588,12 @@ public abstract class AbstractContentParser {
                 // apply transparency
                 setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
                 // draw string will take care of text pageText construction
-                if (stringObject.getLength() > 0) {
-                    TextSprite textSprite = drawString(stringObject.getLiteralStringBuffer(
-                                    textState.font.getSubTypeFormat(),
-                                    textState.font.getFont()),
+                // (skip when no usable font is in the text state, e.g. a Tj
+                // before a valid Tf or an unresolved font resource).
+                if (stringObject.getLength() > 0 && textState.font != null
+                        && textState.font.getFont() != null) {
+                    TextSprite textSprite = drawString(
+                            textState.font.toCodes(stringObject.getRawBytes()),
                             textMetrics,
                             textState,
                             shapes,
@@ -1446,7 +1604,7 @@ public abstract class AbstractContentParser {
                 graphicState.set(tmp);
                 // pass them back to the redactor,
                 if (contentStreamCallback != null) {
-                    contentStreamCallback.writeModifiedStringObject(textOperators, Operands.Tj);
+                    contentStreamCallback.writeModifiedStringObject(textOperators, showPrefix);
                 }
             }
         }
@@ -1515,6 +1673,13 @@ public abstract class AbstractContentParser {
                         textLength,
                         new AffineTransform(graphicState.getCTM()),
                         new AffineTransform(textState.tmatrix));
+        textSprites.setCharSpacing(characterSpace);
+        textSprites.setWordSpacing(whiteSpace);
+        // Tf size. Without this the sprite reports a font size of zero, and anything converting a
+        // displacement into thousandths of an em - a TJ adjustment, for one - is left dividing by
+        // nothing.
+        textSprites.setFontSize(textState.tsize);
+        textSprites.setVerticalWriting(isVerticalWriting);
 
         // glyph placement params
         float currentX, currentY;
@@ -1743,12 +1908,8 @@ public abstract class AbstractContentParser {
                     commonOverPrintAlpha(graphicState.getStrokeAlpha(),
                             graphicState.getStrokeColorSpace()));
         }
-        // The knockout effect can only be achieved by changing the alpha
-        // composite to source.  I don't have a test case for this for stroke
-        // but what we do for stroke is usually what we do for fill...
-        else if (graphicState.isKnockOut()) {
-            setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getStrokeAlpha());
-        }
+        // Knockout is applied when the group is painted (see commonFill), not
+        // baked into a SRC composite here.
 
         // found a PatternColor
         if (graphicState.getStrokeColorSpace() instanceof PatternColor) {
@@ -1841,17 +2002,49 @@ public abstract class AbstractContentParser {
                     commonOverPrintAlpha(graphicState.getFillAlpha(),
                             graphicState.getFillColorSpace()));
         }
-        // avoid doing fill, as we likely have  blending mode that will obfuscate the underlying
-        // content.
+        // A fill with a luminosity soft mask: render the fill modulated by the
+        // mask (and the active blend composite) instead of dropping it.  This is
+        // what makes 90s-style bevels appear -- a white Screen rect and a black
+        // Multiply rect, each masked to a bevel edge (trans.pdf, Lesson Plans.pdf).
+        // The legacy behaviour skipped any soft-masked fill entirely (so the
+        // bevels never rendered); other mask types keep that skip.
         if (graphicState.getExtGState() != null &&
                 graphicState.getExtGState().getSMask() != null) {
+            SoftMask sMask = graphicState.getExtGState().getSMask();
+            if (sMask.getS() != null
+                    && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
+                    && graphicState.getFillColor() != null
+                    && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                // If a cm was applied between the `gs` that set the mask and this
+                // fill, the fill CTM no longer matches the mask group's own
+                // coordinate system (§11.6.5.2).  Pass the correction fillCTM^-1 .
+                // gsCTM so the mask group renders in its gs-time space; identity
+                // (null) when there is no intervening cm (the common bevel case).
+                AffineTransform maskCtmFix = null;
+                AffineTransform gsCtm = graphicState.getSoftMaskCtm();
+                if (gsCtm != null) {
+                    try {
+                        maskCtmFix = graphicState.getCTM().createInverse();
+                        maskCtmFix.concatenate(gsCtm);
+                        if (maskCtmFix.isIdentity()) {
+                            maskCtmFix = null;
+                        }
+                    } catch (NoninvertibleTransformException e) {
+                        maskCtmFix = null;
+                    }
+                }
+                shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
+                        (GeneralPath) geometricPath.clone(), sMask, maskCtmFix));
+            }
             return;
         }
-        // The knockout effect can only be achieved by changing the alpha
-        // composite to source.
-        else if (graphicState.isKnockOut()) {
-            setAlpha(shapes, graphicState, AlphaComposite.SRC, graphicState.getFillAlpha());
-        } else if (graphicState.getExtGState() == null || graphicState.getExtGState().getBlendingMode() == null) {
+        // Knockout is applied when the group is painted, not baked in here: a
+        // SRC composite discards the destination's alpha as well as its colour,
+        // which flattened translucent fills in a knockout group to opaque and
+        // turned a ca=0 circle into a black disc (the PDF 32000-1 figure in
+        // transparent_groups.pdf).  The group is rasterised to its own buffer and
+        // its elements replace one another there -- see KnockoutComposite.
+        else if (graphicState.getExtGState() == null || graphicState.getExtGState().getBlendingMode() == null) {
             setAlpha(shapes, graphicState, graphicState.getAlphaRule(), graphicState.getFillAlpha());
         }
 
@@ -1967,20 +2160,21 @@ public abstract class AbstractContentParser {
      * @return new text scaling AffineTransform.
      */
     private static AffineTransform applyTextScaling(GraphicsState graphicState) {
-        // get the current CTM
-        AffineTransform af = new AffineTransform(graphicState.getCTM());
+        // the current CTM; read its components directly rather than allocating an extra copy to read from.
+        AffineTransform ctm = graphicState.getCTM();
         // the mystery continues,  it appears that only the negative or positive
         // value of tz is actually used.  If the original non 1 number is used the
         // layout will be messed up.
-        AffineTransform oldHScaling = new AffineTransform(graphicState.getCTM());
+        // snapshot of the CTM to restore after the text block is drawn.
+        AffineTransform oldHScaling = new AffineTransform(ctm);
         float hScaling = graphicState.getTextState().hScalling;
         AffineTransform horizontalScalingTransform =
                 new AffineTransform(
-                        af.getScaleX() * hScaling,
-                        af.getShearY() * hScaling,
-                        af.getShearX(),
-                        af.getScaleY(),
-                        af.getTranslateX(), af.getTranslateY());
+                        ctm.getScaleX() * hScaling,
+                        ctm.getShearY() * hScaling,
+                        ctm.getShearX(),
+                        ctm.getScaleY(),
+                        ctm.getTranslateX(), ctm.getTranslateY());
         // add the transformation to the graphics state
         graphicState.set(horizontalScalingTransform);
 

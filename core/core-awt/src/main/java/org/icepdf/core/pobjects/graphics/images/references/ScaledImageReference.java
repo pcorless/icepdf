@@ -21,11 +21,9 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
-import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
@@ -55,8 +53,7 @@ public class ScaledImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            futureTask = new FutureTask<>(this);
-            Library.executeImage(futureTask);
+            submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {
             image = call();
         }
@@ -78,8 +75,7 @@ public class ScaledImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            futureTask = new FutureTask<>(this);
-            Library.executeImage(futureTask);
+            submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {
             image = call();
         }

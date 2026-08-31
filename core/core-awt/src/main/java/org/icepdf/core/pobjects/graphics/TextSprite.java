@@ -69,7 +69,17 @@ public class TextSprite {
     private FontFile font;
     // font's resource name and size, used by PS writer.
     private String fontName;
-    private int fontSize;
+    private float fontSize;
+    // Text-state values already folded into the glyph positions below, kept so a writer that
+    // rebuilds a show operation can work out how far the reader advances between two glyphs on its
+    // own.  Both carry the horizontal scaling, matching how drawString accumulates them.
+    private float charSpacing;
+    private float wordSpacing;
+    // The font's writing mode, i.e. whether the text advances down the page in text space.  Not the
+    // same question as GlyphText.isVerticalWriting(), which answers it in page space with any page
+    // rotation applied: on a /Rotate 90 page a horizontally written font is vertical there and
+    // horizontal here.  Anything reasoning about text-space geometry wants this one.
+    private boolean verticalWriting;
 
     private static final String TYPE_3 = "Type3";
 
@@ -135,6 +145,22 @@ public class TextSprite {
         }
         // can't have Rectangle2D with negative w or h, api will zero the bounds.
         w = Math.abs(w);
+
+        // a zero width culls the glyph for the same reason a zero height does: Rectangle2D
+        // treats an empty rectangle as intersecting nothing, so TextSpriteDrawCmd's clip test
+        // fails and the sprite is never painted.  A Type3 glyph that the producer positions
+        // individually with Tm legitimately advances by nothing at all -- Ghostscript writes
+        // `0 0 0 0 51 48 d1` and matching zero /Widths -- so the advance cannot be relied on to
+        // give the glyph a width here.
+        if (w == 0.0f) {
+            Rectangle2D glyphBounds = font.getBounds(cid, 0, 1);
+            if (glyphBounds != null && glyphBounds.getWidth() > 0) {
+                w = (float) glyphBounds.getWidth();
+            } else {
+                // match the height, mirroring what the zero-height case does with the width.
+                w = Math.abs(font.getSize());
+            }
+        }
         // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
         // figure out the geometry for the corner cases.
         Rectangle2D.Double glyphBounds;
@@ -294,11 +320,45 @@ public class TextSprite {
         this.fontName = fontName;
     }
 
-    public int getFontSize() {
+    /**
+     * @return true when the font writes vertically, in text space
+     */
+    public boolean isVerticalWriting() {
+        return verticalWriting;
+    }
+
+    public void setVerticalWriting(boolean verticalWriting) {
+        this.verticalWriting = verticalWriting;
+    }
+
+    /**
+     * @return character spacing (Tc), scaled the way glyph positions were accumulated
+     */
+    public float getCharSpacing() {
+        return charSpacing;
+    }
+
+    public void setCharSpacing(float charSpacing) {
+        this.charSpacing = charSpacing;
+    }
+
+    /**
+     * @return word spacing (Tw), scaled the way glyph positions were accumulated. Applies only to
+     * the single byte code 32.
+     */
+    public float getWordSpacing() {
+        return wordSpacing;
+    }
+
+    public void setWordSpacing(float wordSpacing) {
+        this.wordSpacing = wordSpacing;
+    }
+
+    public float getFontSize() {
         return fontSize;
     }
 
-    public void setFontSize(int fontSize) {
+    public void setFontSize(float fontSize) {
         this.fontSize = fontSize;
     }
 

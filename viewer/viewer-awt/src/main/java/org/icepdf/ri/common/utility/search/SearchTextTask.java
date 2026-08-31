@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.DocumentSearchController;
 import org.icepdf.core.search.SearchMode;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.ri.common.views.Controller;
 
 import javax.swing.*;
@@ -58,6 +59,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
     private Pattern searchPattern;
     private final boolean wholeWord;
     private final boolean caseSensitive;
+    private final boolean foldDiacritics;
     private final boolean cumulative;
     private final boolean showPages;
     private final boolean regex;
@@ -87,6 +89,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         searchMode = builder.wholePage ? SearchMode.PAGE : SearchMode.WORD;
         wholeWord = builder.wholeWord;
         caseSensitive = builder.caseSensitive;
+        foldDiacritics = builder.foldDiacritics;
         cumulative = builder.cumulative;
         regex = builder.regex;
         showPages = builder.showPages;
@@ -135,7 +138,10 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
             searchController.clearAllSearchHighlight();
         }
         searchController.setSearchMode(searchMode);
-        searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
+        SearchTerm searchTerm = searchController.addSearchTerm(pattern, caseSensitive, wholeWord, regex);
+        // accent-insensitive (Unicode-normalized) matching is controlled by the search filter menu;
+        // its default is seeded from -Dorg.icepdf.core.search.foldDiacritics (true).
+        searchTerm.setFoldDiacritics(foldDiacritics);
 
         Document document = controller.getDocument();
         // iterate over each page in the document
@@ -288,6 +294,10 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         return caseSensitive;
     }
 
+    public boolean isFoldDiacritics() {
+        return foldDiacritics;
+    }
+
     public boolean isCumulative() {
         return cumulative;
     }
@@ -433,6 +443,7 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
         private boolean wholePage;
         private boolean wholeWord;
         private boolean caseSensitive;
+        private boolean foldDiacritics;
         private boolean cumulative;
         private boolean showPages;
         private boolean r2L;
@@ -465,6 +476,11 @@ public class SearchTextTask extends SwingWorker<Void, SearchTextTask.SearchResul
 
         public Builder setCaseSensitive(boolean caseSensitive) {
             this.caseSensitive = caseSensitive;
+            return this;
+        }
+
+        public Builder setFoldDiacritics(boolean foldDiacritics) {
+            this.foldDiacritics = foldDiacritics;
             return this;
         }
 

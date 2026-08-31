@@ -22,17 +22,24 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.icepdf.qa.config.Result;
+import org.icepdf.qa.utilities.CompareMetrics;
+import org.icepdf.qa.utilities.ImageCompare;
 import org.icepdf.qa.viewer.common.Mediator;
 import org.icepdf.qa.viewer.common.PreferencesController;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * Image compare pane allows the easy identification of changed
@@ -46,6 +53,11 @@ public class ImageComparePane extends ComparatorPane {
     public static final String DIFFERENCE_BLENDING_MODE = "Difference";
     public static final String GREEN_BLENDING_MODE = "Green Subtraction";
     public static final String MULTIPLY_BLENDING_MODE = "Multiply";
+    // computed diff mask honouring the live fuzz slider; not a JavaFX BlendMode.
+    public static final String DIFF_MASK_MODE = "Diff Mask (fuzz)";
+
+    // semi-opaque red highlight for differing pixels in the computed mask.
+    private static final int MASK_HIGHLIGHT_ARGB = 0x90ff0000;
 
     // toggle value for enabling/disabling the compare effect.
     private boolean enableBlendingMode;
@@ -55,12 +67,23 @@ public class ImageComparePane extends ComparatorPane {
     private ImageView imageViewA2;
     private ImageView imageViewB1;
     private ImageView imageViewB2;
+    // computed difference-mask overlay (used by DIFF_MASK_MODE).
+    private ImageView maskView;
+
+    // source captures kept in awt form so the mask can be recomputed live as the fuzz slider moves.
+    private BufferedImage bufferedA;
+    private BufferedImage bufferedB;
+    // SSIM is fuzz-independent, so compute it once per opened result and reuse it across slider ticks.
+    private double cachedStructuralSimilarity;
 
     // view type,  side-by-side, blending mode etc.
     private ChoiceBox<String> viewTypesChoiceBox;
     // effects that can be applied to show differences.
     private ChoiceBox<String> blendingModeChoiceBox;
     private ToggleButton blendingToggleButton;
+    // live per-channel colour tolerance for the computed diff mask.
+    private Slider fuzzSlider;
+    private Label metricsLabel;
 
     private ScrollPane scrollPane;
 
@@ -71,6 +94,7 @@ public class ImageComparePane extends ComparatorPane {
             imageViewB1 = new ImageView();
             imageViewA2 = new ImageView();
             imageViewB2 = new ImageView();
+            maskView = new ImageView();
 
             ToolBar viewTools = new ToolBar();
             // view type
@@ -87,7 +111,7 @@ public class ImageComparePane extends ComparatorPane {
             Label modeLabel = new Label("Mode:");
             blendingModeChoiceBox = new ChoiceBox<>();
             blendingModeChoiceBox.getItems().addAll(
-                    DIFFERENCE_BLENDING_MODE, GREEN_BLENDING_MODE);//, MULTIPLY_BLENDING_MODE);
+                    DIFFERENCE_BLENDING_MODE, GREEN_BLENDING_MODE, DIFF_MASK_MODE);//, MULTIPLY_BLENDING_MODE);
             blendingModeChoiceBox.getSelectionModel().select(PreferencesController.getLastUsedImageCompareBlendingMode());
             blendingModeChoiceBox.getSelectionModel().selectedItemProperty().addListener((
                     observable, oldValue, newValue) -> {
@@ -99,7 +123,26 @@ public class ImageComparePane extends ComparatorPane {
             blendingToggleButton.setSelected(enableBlendingMode);
             blendingToggleButton.setOnAction(event -> enableBlendingMode());
 
-            viewTools.getItems().addAll(viewLabel, viewTypesChoiceBox, modeLabel, blendingModeChoiceBox, blendingToggleButton);
+            // Live fuzz tolerance for the computed diff mask. Dragging it re-runs
+            // the same compare engine the batch task uses and repaints the mask,
+            // so you can watch anti-aliasing noise drop out (and real content
+            // stay highlighted) as the tolerance rises.
+            Label fuzzLabel = new Label("Fuzz:");
+            fuzzSlider = new Slider(0, 64, PreferencesController.getImageCompareFuzz());
+            fuzzSlider.setShowTickMarks(true);
+            fuzzSlider.setMajorTickUnit(16);
+            fuzzSlider.setMinorTickCount(3);
+            fuzzSlider.setPrefWidth(160);
+            metricsLabel = new Label();
+            fuzzSlider.valueProperty().addListener((observable, oldValue, newValue) -> recomputeMask());
+            fuzzSlider.valueChangingProperty().addListener((observable, wasChanging, changing) -> {
+                if (!changing) {
+                    PreferencesController.saveImageCompareFuzz((int) Math.round(fuzzSlider.getValue()));
+                }
+            });
+
+            viewTools.getItems().addAll(viewLabel, viewTypesChoiceBox, modeLabel, blendingModeChoiceBox,
+                    blendingToggleButton, new Separator(), fuzzLabel, fuzzSlider, metricsLabel);
             setTop(new VBox(20, viewTools));
             scrollPane = new ScrollPane();
             setCenter(scrollPane);
@@ -166,7 +209,16 @@ public class ImageComparePane extends ComparatorPane {
                 imageViewB1.setImage(image2);
                 imageViewA2.setImage(image1);
                 imageViewB2.setImage(image2);
+                // keep an awt copy so the diff mask can be recomputed live.
+                bufferedA = ImageIO.read(file);
+                bufferedB = ImageIO.read(file2);
+                // SSIM doesn't depend on fuzz, so compute it once here rather than on every slider tick.
+                cachedStructuralSimilarity = (bufferedA != null && bufferedB != null)
+                        ? ImageCompare.structuralSimilarity(bufferedA, bufferedB) : 0d;
+                recomputeMask();
             } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         } else {
@@ -174,7 +226,50 @@ public class ImageComparePane extends ComparatorPane {
             imageViewB1.setImage(null);
             imageViewA2.setImage(null);
             imageViewB2.setImage(null);
+            maskView.setImage(null);
+            bufferedA = null;
+            bufferedB = null;
+            metricsLabel.setText("");
         }
+    }
+
+    /**
+     * Re-runs the shared compare engine on the currently open pair at the slider's
+     * fuzz value, repaints the overlay, and updates the live metrics readout. Cheap
+     * enough to call on every slider tick for page-sized images.
+     */
+    private void recomputeMask() {
+        if (bufferedA == null || bufferedB == null) {
+            maskView.setImage(null);
+            if (metricsLabel != null) {
+                metricsLabel.setText("");
+            }
+            return;
+        }
+        int fuzz = (int) Math.round(fuzzSlider.getValue());
+        // Reuse the SSIM computed once in openResult; only the fuzz-dependent
+        // AE/ink metrics are recalculated as the slider moves.
+        CompareMetrics metrics = ImageCompare.compare(bufferedA, bufferedB, fuzz, cachedStructuralSimilarity);
+        metricsLabel.setText(String.format("ink %.2f%%  |  ae %.2f%%  |  ssim %.2f%%",
+                metrics.getInkSimilarity(), metrics.getAeSimilarity(), metrics.getStructuralSimilarity()));
+        if (DIFF_MASK_MODE.equals(blendingModeChoiceBox.getSelectionModel().getSelectedItem())) {
+            BufferedImage mask = ImageCompare.differenceMask(bufferedA, bufferedB, fuzz, MASK_HIGHLIGHT_ARGB);
+            // maskView is already in the displayed pane (built by refreshView when
+            // the mode is selected); swapping its image repaints in place. Do NOT
+            // rebuild the scene graph here - doing so on every slider tick drops the
+            // in-progress drag gesture.
+            maskView.setImage(toFxImage(mask));
+        }
+    }
+
+    /** Converts an ARGB {@link BufferedImage} to a JavaFX image without the javafx.swing module. */
+    private static Image toFxImage(BufferedImage source) {
+        int w = source.getWidth();
+        int h = source.getHeight();
+        WritableImage target = new WritableImage(w, h);
+        int[] pixels = source.getRGB(0, 0, w, h, null, 0, w);
+        target.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), pixels, 0, w);
+        return target;
     }
 
     public void refreshView() {
@@ -183,6 +278,21 @@ public class ImageComparePane extends ComparatorPane {
         String blendingMode = blendingModeChoiceBox.getSelectionModel().getSelectedItem();
         scrollPane.setContent(null);
         clearBlending(imageViewA1, imageViewA2, imageViewB1, imageViewB2);
+
+        // Computed diff mask: draw the base capture with the red highlight overlay
+        // on top, rather than relying on a JavaFX BlendMode. Honours the fuzz slider.
+        if (enableBlendingMode && DIFF_MASK_MODE.equals(blendingMode)) {
+            if (maskView.getImage() == null) {
+                recomputeMask();
+            }
+            StackPane maskPane = new StackPane();
+            maskPane.setPadding(new Insets(25, 25, 25, 25));
+            maskPane.setEffect(new DropShadow());
+            maskPane.getChildren().addAll(imageViewA1, maskView);
+            scrollPane.setContent(maskPane);
+            return;
+        }
+
         if (SINGLE_COMPARE_VIEW.equals(viewType)) {
             applyBlending(imageViewB1, blendingMode);
             StackPane singleViewPane = new StackPane();

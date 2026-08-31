@@ -65,14 +65,30 @@ public class PColorSpaceRasterOp implements RasterOp {
         } else {
             int bands = src.getNumBands();
             float[] values = new float[3];
+            // getColor() can be costly (colour-space conversion plus a Color
+            // allocation); reuse the previous result when the raw samples for a
+            // pixel are unchanged, which covers the flat runs typical of these
+            // images even when the colour space caches internally.
+            int[] lastSamples = new int[bands];
+            java.util.Arrays.fill(lastSamples, -1);
+            int lastRgb = 0;
+            boolean haveLast = false;
             for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
+                boolean same = haveLast;
                 for (int i = 0; i < bands; i++) {
-                    values[i] = (srcPixels[pixel + i] & 0xff) / 255.0f;
+                    int sample = srcPixels[pixel + i] & 0xff;
+                    if (sample != lastSamples[i]) {
+                        same = false;
+                        lastSamples[i] = sample;
+                    }
+                    values[i] = sample / 255.0f;
                 }
-                // color space caching should help with the number of colors
-                // objects created.
-                destPixels[intPixels] = colorSpace.getColor(values).getRGB();
+                if (!same) {
+                    lastRgb = colorSpace.getColor(values).getRGB();
+                    haveLast = true;
+                }
+                destPixels[intPixels] = lastRgb;
             }
         }
 

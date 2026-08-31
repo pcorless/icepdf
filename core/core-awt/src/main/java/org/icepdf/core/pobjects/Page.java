@@ -18,8 +18,8 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.events.*;
 import org.icepdf.core.io.SeekableInput;
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.WatermarkCallback;
+import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
 import org.icepdf.core.pobjects.graphics.text.GlyphText;
 import org.icepdf.core.pobjects.graphics.text.LineText;
 import org.icepdf.core.pobjects.graphics.text.PageText;
@@ -32,6 +32,7 @@ import org.icepdf.core.util.updater.modifiers.ModifierFactory;
 
 import java.awt.*;
 import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -122,6 +123,14 @@ public class Page extends Dictionary {
         }
     }
 
+    // When enabled, a page's image XObjects start decoding in parallel at init time rather than each waiting for
+    // the content parser to reach its Do operator.  Off by default: it adds a small upfront cost (resolving every
+    // image XObject and queueing decodes) that text/vector documents - the common case - don't recoup, while the
+    // upside is marginal and only materializes for single pages with several large, non-reused images rendered
+    // with spare CPU.  Opt in for image-heavy workloads.
+    private static final boolean EAGER_IMAGE_DECODE =
+            Defs.booleanProperty("org.icepdf.core.imageReference.eagerDecode", false);
+
     public static final Name TYPE = new Name("Page");
     public static final Name ANNOTS_KEY = new Name("Annots");
     public static final Name CONTENTS_KEY = new Name("Contents");
@@ -134,6 +143,10 @@ public class Page extends Dictionary {
     public static final Name ARTBOX_KEY = new Name("ArtBox");
     public static final Name BLEEDBOX_KEY = new Name("BleedBox");
     public static final Name TRIMBOX_KEY = new Name("TrimBox");
+    // page-level transparency group (/Group) attribute keys (PDF §11.6.6).
+    public static final Name SUBTYPE_KEY = new Name("S");
+    public static final Name TRANSPARENCY_VALUE = new Name("Transparency");
+    public static final Name GROUP_CS_KEY = new Name("CS");
     /**
      * Defines the boundaries of the physical medium on which the page is
      * intended to be displayed or printed.
@@ -238,8 +251,8 @@ public class Page extends Dictionary {
                 Object tmp = library.getObject(cont);
                 if (tmp instanceof Stream) {
                     Stream tmpStream = (Stream) tmp;
-                    // prune any zero length streams,
-                    if (tmpStream.getRawBytes().length > 0) {
+                    // prune any zero length streams (length without forcing a view-mode stream to materialize),
+                    if (tmpStream.getRawBytesLength() > 0) {
                         tmpStream.setPObjectReference((Reference) cont);
                         contents.add(tmpStream);
                     }
@@ -400,6 +413,11 @@ public class Page extends Dictionary {
             // get pages resources
             initPageResources();
 
+            // start decoding the page's images in parallel while the rest of init and content parsing run.
+            if (EAGER_IMAGE_DECODE && resources != null) {
+                resources.preLoadImages();
+            }
+
             // annotations
             initPageAnnotations();
 
@@ -442,6 +460,19 @@ public class Page extends Dictionary {
                     // pass in option group references into parse.
                     if (streams.length > 0) {
                         shapes = cp.parse(streams, this).getShapes();
+                        // record the page-level transparency group (/Group on the
+                        // page dict), normally discarded.  A page that is itself a
+                        // transparency group can be rendered into a shared group
+                        // buffer so its inner groups blend against each other before
+                        // reaching the page backdrop (see Shapes#getPageGroup).
+                        initPageGroup();
+                    }
+                    // content streams are only needed for parsing; the Shapes built above are what painting uses.
+                    // Release each stream's decompressed cache (re-derivable from the still-compressed rawBytes) so
+                    // the inflated buffers aren't retained for the life of the Page. Edited streams (compressed ==
+                    // false, e.g. redaction) are skipped by disposeDecompressed() so their changes aren't lost.
+                    for (Stream content : contents) {
+                        content.disposeDecompressed();
                     }
                     // set the initiated flag, first as there are couple corner
                     // cases where the content parsing can call page.init() again
@@ -451,8 +482,11 @@ public class Page extends Dictionary {
                 } catch (InterruptedException e) {
                     throw new InterruptedException(e.getMessage());
                 } catch (Exception e) {
+                    // Page-level init fault discards ALL content for the page;
+                    // record for the race-audit tripwire before we drop it.
+                    RenderExceptionMonitor.record("Page.init", e);
                     shapes = new Shapes();
-                    logger.log(Level.WARNING, "Error initializing Page.", e);
+                    logger.log(Level.WARNING, "Error initializing Page; all page content discarded.", e);
                 }
             }
             // empty page, nothing to do.
@@ -468,6 +502,32 @@ public class Page extends Dictionary {
             throw new InterruptedException(e.getMessage());
         }
         notifyPageInitializationEnded(inited);
+    }
+
+    /**
+     * Reads the page dictionary's {@code /Group} entry (PDF §11.6.6) and, when it
+     * is a transparency group, records its attributes on the page shapes via
+     * {@link Shapes#setPageGroup}.  Mirrors {@code Form.initGroup}.  No-op when the
+     * page is not a transparency group.
+     */
+    private void initPageGroup() {
+        if (shapes == null) {
+            return;
+        }
+        DictionaryEntries group = library.getDictionary(entries, Form.GROUP_KEY);
+        if (group == null) {
+            return;
+        }
+        Name subtype = library.getName(group, SUBTYPE_KEY);
+        if (subtype != null && !TRANSPARENCY_VALUE.equals(subtype)) {
+            return;
+        }
+        Boolean isolated = library.getBoolean(group, Form.I_KEY);
+        Boolean knockout = library.getBoolean(group, Form.K_KEY);
+        Object cs = library.getObject(group, GROUP_CS_KEY);
+        Name csName = cs instanceof Name ? (Name) cs : null;
+        shapes.setPageGroup(new TransparencyGroup(
+                Boolean.TRUE.equals(isolated), Boolean.TRUE.equals(knockout), csName));
     }
 
     public List<Stream> getContentStreams() {
@@ -586,7 +646,11 @@ public class Page extends Dictionary {
             g2.setClip(rect);
         }
 
-        paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight);
+        // oldClip is the original (viewport) clip before it was union'd with the
+        // full page box above; a buffered page group uses it to size it's offscreen
+        // to the visible region instead of the whole zoomed page.
+        paintPageContent(g2, renderHintType, userRotation, userZoom, paintAnnotations, paintSearchHighlight,
+                oldClip);
 
         // one last repaint, just to be sure
         notifyPaintPageListeners();
@@ -628,11 +692,12 @@ public class Page extends Dictionary {
         }
 
         paintPageContent(((Graphics2D) g), renderHintType, userRotation, userZoom, paintAnnotations,
-                paintSearchHighlight);
+                paintSearchHighlight, g.getClip());
     }
 
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
-                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
+                                  boolean paintAnnotations, boolean paintSearchHighlight,
+                                  Shape viewportClip) throws InterruptedException {
         // draw page content
         if (shapes != null) {
             pagePainted = false;
@@ -640,9 +705,16 @@ public class Page extends Dictionary {
             AffineTransform pageTransform = g2.getTransform();
             Shape pageClip = g2.getClip();
 
-            shapes.setPageParent(this);
-            shapes.paint(g2);
-            shapes.setPageParent(null);
+            // Pass this page through paint() as a call-local parameter rather than
+            // writing it into the shared Shapes and resetting to null afterwards:
+            // several threads can paint this same cached display list concurrently,
+            // and the reset-to-null raced (nulling the parent mid-paint of another
+            // thread dropped form content -- missing content on the page).
+            if (isPageGroupBufferCandidate()) {
+                paintPageGroupBuffered(g2, viewportClip);
+            } else {
+                shapes.paint(g2, this);
+            }
 
             g2.setTransform(pageTransform);
             g2.setClip(pageClip);
@@ -703,6 +775,102 @@ public class Page extends Dictionary {
         if (imageCount == 0 || (pageInitialized && pagePainted)) {
             notifyPageLoadingEnded();
         }
+    }
+
+    /**
+     * GH-501 option (b): paint the page content into a shared transparency-group
+     * buffer rather than straight onto {@code g2}, then composite that buffer back.
+     * <br>
+     * The page is itself a transparency group (page dict {@code /Group}); its inner
+     * groups must blend against each other (and against a transparent seed) inside
+     * one buffer, otherwise a darkening fill (e.g. a ColorBurn layer) composites
+     * against the white paper and washes out instead of darkening the accumulated
+     * content.  The buffer is built at device resolution under the current page CTM
+     * (so orientation/position/scale follow the CTM exactly -- no hand-rolled blit),
+     * then drawn back over the already-filled (white) paper with SRC_OVER.
+     * <br>
+     * While painting into the buffer, {@link FormDrawCmd}'s §10 backdrop-composite
+     * and its decline gate are bypassed (the buffer IS the backdrop), so each inner
+     * group takes the direct blended path against the live accumulating pixels.
+     */
+    /**
+     * Whether the page should be rendered through the shared transparency-group
+     * buffer.  Scoped to a <b>DeviceCMYK</b> page group: those are the subtractive
+     * CMYK stacks (e.g. 978-9-7315-0059-9_1.pdf) that build a dark field from ink
+     * and need isolated-style accumulation.  A DeviceRGB/DeviceGray page group is
+     * decorative content composited over the white paper -- buffering it as
+     * isolated makes its translucent groups interact with each other instead of
+     * the paper (dark halos), so it stays on the existing direct path.
+     */
+    private boolean isPageGroupBufferCandidate() {
+        TransparencyGroup pageGroup = shapes != null ? shapes.getPageGroup() : null;
+        return pageGroup != null && DeviceCMYK.DEVICECMYK_KEY.equals(pageGroup.getColorSpace());
+    }
+
+    private void paintPageGroupBuffered(Graphics2D g2, Shape viewportClip) throws InterruptedException {
+        AffineTransform savedTx = g2.getTransform();
+        Shape savedClip = g2.getClip();
+        // device-space pixel bounds of the current clip (the page footprint).
+        Rectangle devBounds = savedClip != null
+                ? savedTx.createTransformedShape(savedClip).getBounds()
+                : savedTx.createTransformedShape(g2.getClipBounds()).getBounds();
+        // The page clip was union'd with the full page box in paint() (so print
+        // popups outside the page still render), which erases the viewport bound.
+        // Re-apply the original viewport clip here so the group offscreen covers
+        // only the visible region -- otherwise it is the whole page x zoom, which
+        // grows ~zoom^2 into a multi-GB single allocation at high zoom.
+        if (viewportClip != null) {
+            Rectangle vp = savedTx.createTransformedShape(viewportClip).getBounds();
+            devBounds = devBounds.intersection(vp);
+        }
+        if (devBounds.width <= 0 || devBounds.height <= 0) {
+            // nothing to buffer; fall back to the direct paint.
+            shapes.paint(g2, this);
+            return;
+        }
+        BufferedImage buffer = new BufferedImage(devBounds.width, devBounds.height,
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics2D bg = buffer.createGraphics();
+        try {
+            bg.setRenderingHints(g2.getRenderingHints());
+            // map page user space -> buffer pixels: translate the device origin to
+            // (0,0), then apply the page CTM.  Painting the shapes through this is a
+            // 1:1 device-resolution render (sharp), and the clip carries over in the
+            // same user space.
+            AffineTransform bt = new AffineTransform();
+            bt.translate(-devBounds.x, -devBounds.y);
+            bt.concatenate(savedTx);
+            bg.setTransform(bt);
+            if (savedClip != null) {
+                bg.setClip(savedClip);
+            }
+            // The buffer is seeded transparent, so a separable blend over an
+            // empty pixel must reduce to the source colour, not multiply against
+            // 0 and go black.  TRANSPARENT_BACKDROP makes BlendComposite reweight
+            // by backdrop alpha (Cs' = (1-ab)Cs + ab*B(Cb,Cs)); without it a
+            // Multiply group (e.g. 9919.pdf's watch image, pattern_and_CYMK's
+            // shadows) blackens.  978's opaque fills are unaffected (ab=1 -> full
+            // blend, today's behaviour).
+            FormDrawCmd.setRenderingIntoPageGroup(true);
+            boolean prevTransparent = BlendComposite.setTransparentBackdrop(true);
+            try {
+                shapes.paint(bg, this);
+            } finally {
+                BlendComposite.setTransparentBackdrop(prevTransparent);
+                FormDrawCmd.setRenderingIntoPageGroup(false);
+            }
+        } finally {
+            bg.dispose();
+        }
+        // composite the accumulated group buffer over the (white) paper in device
+        // space; opaque accumulated content covers the paper, residual transparent
+        // gaps reveal it.
+        g2.setTransform(new AffineTransform());
+        g2.setClip(null);
+        g2.drawImage(buffer, devBounds.x, devBounds.y, null);
+        g2.setTransform(savedTx);
+        g2.setClip(savedClip);
+        buffer.flush();
     }
 
     /**
@@ -1263,19 +1431,25 @@ public class Page extends Dictionary {
     }
 
     public float getPageRotation() {
+        // Compute in a local: this method is called from getPageTransform on every
+        // paint, and several threads can paint the same Page concurrently.  The
+        // previous code mutated the shared pageRotation field in place and, worse,
+        // non-idempotently (pageRotation = 360 - pageRotation): two concurrent
+        // calls could double-apply the 360-minus normalisation, turning a /Rotate 90
+        // page's 270 into 90 (a 180 degree difference) and flipping the whole page.
+        float rotation = 0;
         // Get the pages default orientation if available, if not defined
         // then it is zero.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
         if (tmpRotation != null) {
-            pageRotation = ((Number) tmpRotation).floatValue();
-//            System.out.println("Page Rotation  " + pageRotation);
+            rotation = ((Number) tmpRotation).floatValue();
         }
         // check parent to see if value has been set
         else {
             PageTree pageTree = getParent();
             while (pageTree != null) {
                 if (pageTree.isRotationFactor) {
-                    pageRotation = pageTree.rotationFactor;
+                    rotation = pageTree.rotationFactor;
                     break;
                 }
                 pageTree = pageTree.getParent();
@@ -1283,10 +1457,12 @@ public class Page extends Dictionary {
         }
         // PDF specifies rotation as clockwise, but Java2D does it
         //  counter-clockwise, so normalise it to Java2D
-        pageRotation = 360 - pageRotation;
-        pageRotation %= 360;
-//        System.out.println("New Page Rotation " + pageRotation);
-        return pageRotation;
+        rotation = 360 - rotation;
+        rotation %= 360;
+        // publish the normalised value (idempotent: every call computes the same
+        // result, so a concurrent write is harmless).
+        pageRotation = rotation;
+        return rotation;
     }
 
     /**
@@ -1376,26 +1552,31 @@ public class Page extends Dictionary {
         if (mediaBox != null) {
             return mediaBox;
         }
+        // Compute into a local and publish the shared mediaBox field ONCE so a
+        // concurrent caller never observes it mid-resolution (parent-walk /
+        // default fallback), which would yield an inconsistent page dimension.
+        PRectangle box = null;
         // add all of the pages media box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, MEDIABOX_KEY));
         if (boxDimensions != null) {
-            mediaBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If mediaBox is null check with the parent pages, as media box is inheritable
-        if (mediaBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && mediaBox == null) {
-                mediaBox = pageTree.getMediaBox();
-                if (mediaBox == null) {
+            while (pageTree != null && box == null) {
+                box = (PRectangle) pageTree.getMediaBox();
+                if (box == null) {
                     pageTree = pageTree.getParent();
                 }
             }
         }
         // last resort
-        if (mediaBox == null) {
-            mediaBox = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
+        if (box == null) {
+            box = new PRectangle(new Point.Float(0, 0), new Point.Float(612, 792));
         }
-        return mediaBox;
+        mediaBox = box;
+        return box;
     }
 
     /**
@@ -1408,21 +1589,28 @@ public class Page extends Dictionary {
         if (cropBox != null) {
             return cropBox;
         }
+        // Compute into a local and publish the shared cropBox field ONCE, fully
+        // resolved.  This method assigned cropBox to the RAW box first and then
+        // replaced it with the media-box intersection, so a concurrent caller
+        // could see the field in that intermediate (un-intersected) state and
+        // return a different-sized box -- yielding a different page dimension
+        // than a serial render (same lazy-init publication bug as getPageRotation).
+        PRectangle box = null;
         // add all the pages crop box dimensions to a vector and process
         List boxDimensions = (List) (library.getObject(entries, CROPBOX_KEY));
         if (boxDimensions != null) {
-            cropBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // If cropbox is null check with the parent pages, as media box is inheritable
         boolean isParentCropBox = false;
-        if (cropBox == null) {
+        if (box == null) {
             PageTree pageTree = getParent();
-            while (pageTree != null && cropBox == null) {
+            while (pageTree != null && box == null) {
                 if (pageTree.getCropBox() == null) {
                     break;
                 }
-                cropBox = pageTree.getCropBox();
-                if (cropBox != null) {
+                box = (PRectangle) pageTree.getCropBox();
+                if (box != null) {
                     isParentCropBox = true;
                 }
                 pageTree = pageTree.getParent();
@@ -1430,15 +1618,16 @@ public class Page extends Dictionary {
         }
         // Default value of the cropBox is the MediaBox if not set implicitly
         PRectangle mediaBox = (PRectangle) getMediaBox();
-        if ((cropBox == null || isParentCropBox) && mediaBox != null) {
-            cropBox = (PRectangle) mediaBox.clone();
-        } else if (cropBox != null && mediaBox != null) {
+        if ((box == null || isParentCropBox) && mediaBox != null) {
+            box = (PRectangle) mediaBox.clone();
+        } else if (box != null && mediaBox != null) {
             // PDF 1.5 spec states that the media box should be intersected with the
             // crop box to get the new box. But we only want to do this if the
             // cropBox is not the same as the mediaBox
-            cropBox = mediaBox.createCartesianIntersection(cropBox);
+            box = mediaBox.createCartesianIntersection(box);
         }
-        return cropBox;
+        cropBox = box;
+        return box;
     }
 
     /**
@@ -1451,16 +1640,19 @@ public class Page extends Dictionary {
         if (artBox != null) {
             return artBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, ARTBOX_KEY));
         if (boxDimensions != null) {
-            artBox = new PRectangle(boxDimensions);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the artBox is the bleed if not set implicitly
-        if (artBox == null) {
-            artBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return artBox;
+        artBox = box;
+        return box;
     }
 
     /**
@@ -1473,17 +1665,19 @@ public class Page extends Dictionary {
         if (bleedBox != null) {
             return bleedBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, BLEEDBOX_KEY));
         if (boxDimensions != null) {
-            bleedBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - BleedBox " + bleedBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the bleedBox is the bleed if not set implicitly
-        if (bleedBox == null) {
-            bleedBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return bleedBox;
+        bleedBox = box;
+        return box;
     }
 
     /**
@@ -1496,17 +1690,19 @@ public class Page extends Dictionary {
         if (trimBox != null) {
             return trimBox;
         }
+        // compute into a local and publish once (see getCropBox).
+        PRectangle box = null;
         // get the art box vector value
         List boxDimensions = (List) (library.getObject(entries, TRIMBOX_KEY));
         if (boxDimensions != null) {
-            trimBox = new PRectangle(boxDimensions);
-//            System.out.println("Page - TrimBox " + trimBox);
+            box = new PRectangle(boxDimensions);
         }
         // Default value of the trimBox is the bleed if not set implicitly
-        if (trimBox == null) {
-            trimBox = (PRectangle) getCropBox();
+        if (box == null) {
+            box = (PRectangle) getCropBox();
         }
-        return trimBox;
+        trimBox = box;
+        return box;
     }
 
     /**
@@ -1591,6 +1787,7 @@ public class Page extends Dictionary {
                     }
                 }
             } catch (Exception e) {
+                RenderExceptionMonitor.record("Page.getText", e);
                 logger.log(Level.WARNING, "Error getting page text.", e);
             }
         }
@@ -1664,6 +1861,43 @@ public class Page extends Dictionary {
             init();
         }
         return shapes.getImages();
+    }
+
+    /**
+     * Adds a font to this page's resources, so content on the page can select it.
+     * <p>
+     * A page's {@code /Resources} may be inherited from the page tree, and its {@code /Font} may be
+     * an object several pages point at. Adding to either in place would add the font to every page
+     * sharing it, so this page is given its own copy: the font belongs to this page's content, not
+     * to its siblings'.
+     *
+     * @param fontName      name the content stream will select the font by
+     * @param fontReference the font object
+     * @since 7.5.0
+     */
+    public void addFontResource(Name fontName, Reference fontReference) {
+        // The page gets its own /Resources, with its own /Font, written into the page dictionary.
+        // Neither is necessarily the page's to change: /Resources may be inherited from the page
+        // tree or be an object several pages point at, and /Font the same, so adding to what is
+        // reached would add the font to every page sharing it. Writing a copy into the page also
+        // settles which object has to be registered as changed - the page, which is the one that
+        // now holds the entries.
+        DictionaryEntries pageResources = new DictionaryEntries();
+        Resources current = getResources();
+        if (current != null && current.getEntries() != null) {
+            pageResources.putAll(current.getEntries());
+        }
+        DictionaryEntries fonts = new DictionaryEntries();
+        DictionaryEntries currentFonts = library.getDictionary(pageResources, Resources.FONT_KEY);
+        if (currentFonts != null) {
+            fonts.putAll(currentFonts);
+        }
+        fonts.put(fontName, fontReference);
+        pageResources.put(Resources.FONT_KEY, fonts);
+        entries.put(RESOURCES_KEY, pageResources);
+        // the page now resolves its own resources, including the font just added
+        resources = new Resources(library, pageResources);
+        library.getStateManager().addChange(new PObject(this, getPObjectReference()));
     }
 
     public Resources getResources() {
