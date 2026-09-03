@@ -17,12 +17,12 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
 import org.apache.fontbox.cmap.CMap;
+import org.apache.fontbox.ttf.TrueTypeFont;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.graphics.TextState;
-import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -44,16 +44,6 @@ public abstract class ZSimpleFont implements FontFile {
 
     private static final Logger logger =
             Logger.getLogger(ZSimpleFont.class.getName());
-
-    /**
-     * Whether to grid-fit (TrueType-hint) embedded TrueType glyphs at render time. Off by default
-     * (preserves existing unhinted output); enable with
-     * {@code -Dorg.icepdf.core.font.hinting=true}. Only TrueType outline fonts
-     * ({@link ZFontTrueType}, {@link ZFontType2}) carry executable hinting; all other font types
-     * ignore this flag.
-     */
-    protected static final boolean HINTING_ENABLED =
-            Defs.booleanProperty("org.icepdf.core.font.hinting", true);
 
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
@@ -207,6 +197,9 @@ public abstract class ZSimpleFont implements FontFile {
     /**
      * Resolves the glyph outline to paint for the given character code: the grid-fitted (hinted)
      * outline when hinting is enabled and the glyph/ppem is hintable, otherwise the unhinted outline.
+     * Hinting is switched on and off by FontBox, see {@link TrueTypeFont#isHintingEnabled()} and
+     * {@code -Dorg.apache.fontbox.ttf.hinting=true}; only TrueType outline fonts
+     * ({@link ZFontTrueType}, {@link ZFontType2}) carry executable hinting.
      * Results are cached.
      *
      * @param estr              character code to paint.
@@ -216,7 +209,7 @@ public abstract class ZSimpleFont implements FontFile {
      */
     protected Shape resolveGlyphShape(char estr, AffineTransform graphicsTransform) {
         GlyphCache cache = getGlyphCache();
-        if (HINTING_ENABLED) {
+        if (TrueTypeFont.isHintingEnabled()) {
             int ppem = hintingPpem(graphicsTransform);
             if (ppem > 0) {
                 return cache.getPathForCharacterCode(estr, ppem);

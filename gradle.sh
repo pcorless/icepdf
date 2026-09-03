@@ -5,7 +5,7 @@
 #   application JVM launched by run/test (JavaExec) tasks. Gradle itself rejects bare -X
 #   options, so this script splits them out instead. Example:
 #     ./gradle.sh :qa:viewer-jfx:run -Dsun.awt.disablegrab=true -Xmx4g \
-#         -Dorg.icepdf.core.font.hinting=true -Dorg.apache.pdfbox.rendering.hinting=true
+#         -Dorg.apache.fontbox.ttf.hinting=true
 
 # Check if Java 17+ is available
 if command -v java >/dev/null 2>&1; then
