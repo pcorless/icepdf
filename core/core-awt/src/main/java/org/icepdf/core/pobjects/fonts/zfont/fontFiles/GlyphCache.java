@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
+import org.icepdf.core.pobjects.fonts.FontFile;
+
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.io.IOException;
@@ -29,11 +31,31 @@ import java.util.logging.Logger;
  * separately at paint time.  This makes the outlines safe to cache and reuse for the lifetime of a
  * (derived) font instance.
  * <br>
+ * FontBox caches the char string of a Type1/CFF glyph but rebuilds a TrueType {@code glyf} outline
+ * from its contours on every call, so an outline that is painted once per repaint is re-rendered
+ * once per repaint.  Caching here removes that work from every repaint, zoom and scroll after the
+ * first.
+ * <br>
  * Two outlines are cached: the unhinted outline keyed by character code, and the grid-fitted
- * (TrueType-hinted) outline keyed by {@code (code, ppem)} since the hinted result depends on the
- * pixels-per-em the glyph is rendered at.  Ported from Apache PDFBox's {@code GlyphCache}.
+ * (TrueType-hinted) outline keyed by {@code (code, ppem)}, since the grid-fitted result depends on
+ * the pixels-per-em the glyph is rendered at.
  *
- * @see ZSimpleFont#getHintedGlphyShape(char, int)
+ * @author John Hewson
+ * <p>
+ * Derived from {@code org.apache.pdfbox.rendering.GlyphCache} of Apache PDFBox 3.0.6, used under
+ * the Apache License, Version 2.0.  Changes for ICEpdf:
+ * - keyed on the ICEpdf {@link ZSimpleFont} / {@link FontFile} model rather than PDFBox's
+ *   {@code PDVectorFont}, so lookups take a {@code char} code and yield a {@link Shape}
+ * - {@link java.util.concurrent.ConcurrentHashMap} rather than {@code HashMap}, as a font instance
+ *   is shared by the page-rendering threads
+ * - {@code java.util.logging} rather than commons-logging
+ * - dropped the {@code hasGlyph} diagnostics, the Type0 CID warning and the PDFBOX-4001 standard-14
+ *   line-feed special case, none of which apply here
+ * - {@code RuntimeException} is caught as well as {@code IOException}, and the empty fallback
+ *   outline is cached rather than returned uncached, so a bad glyph costs one throw and not one
+ *   per paint
+ * - a second, grid-fitted outline is cached alongside the unhinted one; PDFBox has no equivalent
+ * @see ZSimpleFont#getGlphyShape(char)
  */
 final class GlyphCache {
 
@@ -66,8 +88,10 @@ final class GlyphCache {
         Shape path = null;
         try {
             path = font.getHintedGlphyShape(code, ppem);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Hinting failed for code " + (int) code + " in font " + font.getName(), e);
+        } catch (IOException | RuntimeException e) {
+            // a failed grid-fit is recoverable - the unhinted outline below is still correct, just
+            // not snapped to the pixel grid - so log quietly and cache the fallback
+            logger.log(Level.FINE, "Hinting failed for code " + (int) code + " in font " + font.getName(), e);
         }
         // fall back to the unhinted outline (itself cached by code); cache the decision per (code, ppem)
         Shape result = path != null ? path : getPathForCharacterCode(code);
@@ -88,8 +112,11 @@ final class GlyphCache {
         }
         try {
             path = font.getGlphyShape(code);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Glyph rendering failed for code " + (int) code + " in font " + font.getName(),
+        } catch (IOException | RuntimeException e) {
+            // RuntimeException covers fontbox throwing for unsupported tables
+            // (e.g. "OTF fonts do not have a glyf table"); cache the empty outline so the
+            // throw isn't repeated for every paint of the glyph.
+            logger.log(Level.FINE, "Glyph rendering failed for code " + (int) code + " in font " + font.getName(),
                     e);
         }
         if (path == null) {

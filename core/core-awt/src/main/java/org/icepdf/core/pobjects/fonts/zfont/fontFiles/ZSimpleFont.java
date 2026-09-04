@@ -48,8 +48,10 @@ public abstract class ZSimpleFont implements FontFile {
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
 
-    // lazily created per-font outline cache (unhinted by code, hinted by code+ppem). Not shared
-    // across derived fonts as encoding/gid mappings may differ between derivations.
+    // lazily created per-font outline cache, keyed by character code (and by code+ppem for the
+    // grid-fitted outline).  Not shared with derived fonts as their encoding/gid mappings may
+    // differ; a derived instance is however retained by the TextSprite that draws with it, so its
+    // cache lives as long as the page's shapes do.
     private GlyphCache glyphCache;
 
     // copied over from font descriptor

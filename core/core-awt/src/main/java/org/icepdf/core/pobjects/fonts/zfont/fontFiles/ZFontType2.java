@@ -124,10 +124,11 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public Shape getGlphyShape(char estr) throws IOException {
         // CID glyphs are addressed directly by glyph id; the outline is in raw font units and is
-        // scaled by the 1/unitsPerEm fontMatrix at paint time
+        // scaled by the 1/unitsPerEm fontMatrix at paint time.  Painting and outline geometry both
+        // route through here so they share the cached outline (see ZSimpleFont#getGlyphCache).
         int gid = getCharToGid(estr);
         // fontbox has no glyf table for OTF/CFF-backed fonts; treat as an empty outline rather
-        // than letting the NPE abort the whole text run / page
+        // than letting the exception abort the whole text run / page
         GlyphData glyphData = trueTypeFont.getGlyph() != null
                 ? trueTypeFont.getGlyph().getGlyph(gid) : null;
         if (glyphData == null) {
