@@ -174,7 +174,7 @@ public class ZFontTrueType extends ZSimpleFont {
     }
 
     @Override
-    protected Shape getHintedGlphyShape(char estr, int ppem) throws IOException {
+    protected Shape getGridFitGlyphShape(char estr, int ppem) throws IOException {
         // only embedded glyf outlines carry executable hinting; CFF/OTF PostScript outlines don't
         if (trueTypeFont instanceof OpenTypeFont && ((OpenTypeFont) trueTypeFont).isPostScript()) {
             return null;
@@ -183,7 +183,7 @@ public class ZFontTrueType extends ZSimpleFont {
         if (gid == 0) {
             return null;
         }
-        // getHintedPath returns the grid-fit outline already in font units (null when not hintable);
+        // getHintedPath returns the grid-fit outline already in font units (null when it cannot);
         // ICEpdf applies the 1/unitsPerEm fontMatrix at paint time, so no 1000-normalization is needed
         return trueTypeFont.getHintedPath(gid, ppem);
     }
