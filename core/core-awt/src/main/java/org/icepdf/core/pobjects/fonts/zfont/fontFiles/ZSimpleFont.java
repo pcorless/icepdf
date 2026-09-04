@@ -47,6 +47,11 @@ public abstract class ZSimpleFont implements FontFile {
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
 
+    // lazily created per-font outline cache, keyed by character code.  Not shared with derived
+    // fonts as their encoding/gid mappings may differ; a derived instance is however retained by
+    // the TextSprite that draws with it, so its cache lives as long as the page's shapes do.
+    private GlyphCache glyphCache;
+
     // copied over from font descriptor
     protected float missingWidth;
 
@@ -176,6 +181,19 @@ public abstract class ZSimpleFont implements FontFile {
         return outline;
     }
 
+    /**
+     * Returns the outline cache for this font, creating it lazily.
+     *
+     * @return this font's glyph outline cache.
+     */
+    protected GlyphCache getGlyphCache() {
+        // benign race: at worst two caches are created, the loser is discarded
+        if (glyphCache == null) {
+            glyphCache = new GlyphCache(this);
+        }
+        return glyphCache;
+    }
+
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
@@ -183,7 +201,7 @@ public abstract class ZSimpleFont implements FontFile {
                 return;
             }
             AffineTransform af = g.getTransform();
-            Shape outline = getGlphyShape(estr);
+            Shape outline = getGlyphCache().getPathForCharacterCode(estr);
 
             g.translate(x, y);
             g.transform(this.fontTransform);
@@ -197,7 +215,7 @@ public abstract class ZSimpleFont implements FontFile {
                 g.draw(outline);
             }
             g.setTransform(af);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             logger.log(Level.FINE, "Error painting SimpleFont", e);
         }
     }
@@ -208,14 +226,14 @@ public abstract class ZSimpleFont implements FontFile {
             if (isSubstitutedNotdef(estr)) {
                 return new Area();
             }
-            Shape glyph = getGlphyShape(estr);
+            Shape glyph = getGlyphCache().getPathForCharacterCode(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();
             transform.translate(x, y);
             transform.concatenate(fontTransform);
             outline = outline.createTransformedArea(transform);
             return outline;
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             logger.log(Level.FINE, "Error painting font outline", e);
         }
         return null;

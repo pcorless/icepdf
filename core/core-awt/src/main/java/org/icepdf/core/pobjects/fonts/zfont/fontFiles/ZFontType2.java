@@ -21,7 +21,6 @@ import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -123,42 +122,19 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            if (isSubstitutedNotdef(estr)) {
-                return;
-            }
-            AffineTransform af = g.getTransform();
-            int gid = getCharToGid(estr);
-            GlyphData glyphData = trueTypeFont.getGlyph() != null
-                    ? trueTypeFont.getGlyph().getGlyph(gid) : null;
-            Shape outline;
-            if (glyphData == null) {
-                outline = new GeneralPath();
-            } else {
-                // must be scaled by caller using FontMatrix
-                outline = glyphData.getPath();
-            }
-
-            // clean up,  not very efficient
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException | RuntimeException e) {
-            // RuntimeException covers fontbox throwing for unsupported tables
-            // (e.g. "OTF fonts do not have a glyf table"); skip the glyph rather
-            // than abort the whole text run / page.
-            logger.log(Level.FINE, "Error painting FontType2 font", e);
+    public Shape getGlphyShape(char estr) throws IOException {
+        // CID glyphs are addressed directly by glyph id; the outline is in raw font units and is
+        // scaled by the 1/unitsPerEm fontMatrix at paint time.  Painting and outline geometry both
+        // route through here so they share the cached outline (see ZSimpleFont#getGlyphCache).
+        int gid = getCharToGid(estr);
+        // fontbox has no glyf table for OTF/CFF-backed fonts; treat as an empty outline rather
+        // than letting the exception abort the whole text run / page
+        GlyphData glyphData = trueTypeFont.getGlyph() != null
+                ? trueTypeFont.getGlyph().getGlyph(gid) : null;
+        if (glyphData == null) {
+            return new GeneralPath();
         }
+        return glyphData.getPath();
     }
 
     @Override
