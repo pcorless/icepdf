@@ -332,7 +332,7 @@ public class Form extends Stream {
         entries.put(RESOURCES_KEY, formResources.entries);
         xObjectsDictionary.put(imageName, imageStream.getPObjectReference());
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(this, getPObjectReference()));
     }
 
     /**

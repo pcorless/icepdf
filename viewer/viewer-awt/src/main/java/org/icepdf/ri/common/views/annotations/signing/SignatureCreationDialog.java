@@ -298,7 +298,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
     }
 
     private void cancelOrCloseSignatureCleanup() {
-        signatureAppearanceCallback.removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform(), true);
+        signatureAppearanceCallback.removeAppearanceStream(signatureWidgetAnnotation, new AffineTransform());
         signatureWidgetAnnotation.setAppearanceCallback(null);
     }
 

@@ -58,7 +58,7 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
      * @param dy        current location of the annotation
      * @param pageSpace current page space.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
         // update the appearanceState in the state manager so the change will persist.
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance != null) {
@@ -66,7 +66,7 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         }
         // add this annotation to the state manager.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
         Name selectedName = appearance.getSelectedName();
         // check boxes will have a V entry which
@@ -81,7 +81,7 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
             //getFieldDictionary().getParent().getEntries().put(FieldDictionary.V_KEY, selectedName);
             // add to state manager.
             stateManager.addChange(new PObject(getFieldDictionary().getParent(),
-                    getFieldDictionary().getParent().getPObjectReference()), isNew);
+                    getFieldDictionary().getParent().getPObjectReference()));
         }
 
         if (originalAppearance == null){

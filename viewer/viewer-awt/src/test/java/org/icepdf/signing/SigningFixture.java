@@ -137,7 +137,7 @@ public class SigningFixture {
                 (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                         library, FieldDictionaryFactory.TYPE_SIGNATURE,
                         new Rectangle(100, 250, 375, 150));
-        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
+        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation);
 
         InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
         interactiveForm.addField(signatureAnnotation);

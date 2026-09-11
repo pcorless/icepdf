@@ -141,7 +141,7 @@ public class RedactionTargetScopeTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 200, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 200, 20)));
             ArrayList<String> words = new ArrayList<>(List.of("bravo"));
             Redactor.configure(document, RedactionRequest.ofAnnotationsAndTerms(
                     List.of(new SearchTerm("bravo", words, false, false, false))));
@@ -187,7 +187,7 @@ public class RedactionTargetScopeTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 200, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 200, 20)));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             document.saveToOutputStream(new ByteArrayOutputStream(), WriteMode.FULL_UPDATE);
@@ -211,7 +211,7 @@ public class RedactionTargetScopeTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 120, 280, 50)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 120, 280, 50)));
             Redactor.configure(document, RedactionRequest.ofAnnotations().with(options));
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

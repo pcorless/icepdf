@@ -68,7 +68,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
 
     @Override
     public void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation,
-                                       AffineTransform pageSpace, boolean isNew) {
+                                       AffineTransform pageSpace) {
         if (signatureAppearanceModel == null) {
             throw new IllegalStateException("SignatureAppearanceModel must be set before calling this method.");
         }
@@ -87,13 +87,13 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
         Rectangle2D bbox = appearanceState.getBbox();
         AffineTransform matrix = appearanceState.getMatrix();
-        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
+        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript);
         xObject.getEntries().remove(RESOURCES_KEY);
     }
 
     @Override
     public void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation,
-                                       AffineTransform pageSpace, boolean isNew) {
+                                       AffineTransform pageSpace) {
         if (signatureAppearanceModel == null) {
             throw new IllegalStateException("SignatureAppearanceModel must be set before calling this method.");
         }
@@ -195,7 +195,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         AffineTransform matrix = appearanceState.getMatrix();
 
         byte[] postScript = PostScriptEncoder.generatePostScript(shapes.getShapes());
-        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript, isNew);
+        Form xObject = signatureWidgetAnnotation.updateAppearanceStream(shapes, bbox, matrix, postScript);
 
         if (signatureAppearanceModel.isSignatureTextVisible() && trueTypeFontSubSetter != null) {
             Dictionary pdfFont = SimpleFontFactory.createFont(
@@ -215,7 +215,7 @@ public class BasicSignatureAppearanceCallback implements SignatureAppearanceCall
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager, isNew);
+        ContentWriterUtils.setAppearance(signatureWidgetAnnotation, xObject, appearanceState, stateManager);
 
     }
 

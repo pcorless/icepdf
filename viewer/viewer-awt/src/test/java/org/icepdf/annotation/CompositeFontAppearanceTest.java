@@ -312,7 +312,7 @@ public class CompositeFontAppearanceTest {
         }
 
         annotation.resetAppearanceStream(page.getToPageSpaceTransform(Page.BOUNDARY_CROPBOX, 0f, 1.0f));
-        page.addAnnotation(annotation, true);
+        page.addAnnotation(annotation);
         annotation.saveAppearanceStream();
 
         outputFile.getParentFile().mkdirs();
