@@ -138,9 +138,9 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
         if (signatureAppearanceCallback != null) {
-            signatureAppearanceCallback.createAppearanceStream(this, pageSpace, isNew);
+            signatureAppearanceCallback.createAppearanceStream(this, pageSpace);
         }
     }
 

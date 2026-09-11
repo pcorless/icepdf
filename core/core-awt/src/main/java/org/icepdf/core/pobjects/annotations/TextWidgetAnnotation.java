@@ -58,7 +58,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         }
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // we won't touch password fields, we'll used the original display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
@@ -88,7 +88,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                 appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
                 // add the appearance stream
                 StateManager stateManager = library.getStateManager();
-                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()), isNew);
+                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
                 // add an AP entry for the
                 DictionaryEntries appearanceRefs = new DictionaryEntries();
                 appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
@@ -109,7 +109,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                     }
                 }
                 // add the annotation as changed as T entry has also been updated to reflect teh changed content.
-                stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+                stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
                 // compress the form object stream.
                 if (compressAppearanceStream) {

@@ -38,10 +38,8 @@ public interface SignatureAppearanceCallback<T extends SignatureAppearanceModel>
      *
      * @param signatureWidgetAnnotation annotation that created appearance stream will be associated with
      * @param pageSpace                page space transform for the annotation
-     * @param isNew                    true if annotation is considered new and should be added to state manager
      */
-    void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
-                                boolean isNew);
+    void createAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace);
 
     /**
      * Remove appearance stream for the given SignatureWidgetAnnotation.  Clean up any resources or StateManager state
@@ -49,8 +47,6 @@ public interface SignatureAppearanceCallback<T extends SignatureAppearanceModel>
      *
      * @param signatureWidgetAnnotation
      * @param pageSpace
-     * @param isNew
      */
-    void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace,
-                                boolean isNew);
+    void removeAppearanceStream(SignatureWidgetAnnotation signatureWidgetAnnotation, AffineTransform pageSpace);
 }

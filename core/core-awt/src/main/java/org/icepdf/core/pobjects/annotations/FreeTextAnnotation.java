@@ -369,7 +369,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -436,9 +436,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity);
-        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
+        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager);
 
         // form is fresh
         SimpleFont pdfFont = SimpleFontFactory.createFont(library, fontName, trueTypeeFontSubSetter);

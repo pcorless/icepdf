@@ -78,14 +78,14 @@ public class ContentWriterUtils {
     }
 
     public static void setAppearance(Annotation annotation, Form form, AppearanceState appearanceState,
-                                     StateManager stateManager, boolean isNew) {
+                                     StateManager stateManager) {
         AffineTransform matrix = appearanceState.getMatrix();
         Shapes shapes = appearanceState.getShapes();
         Rectangle2D bbox = appearanceState.getBbox();
         Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
                 (float) bbox.getWidth(), (float) bbox.getHeight());
         form.setAppearance(shapes, matrix, formBbox);
-        stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(form, form.getPObjectReference()));
         DictionaryEntries appearanceRefs = new DictionaryEntries();
         appearanceRefs.put(Annotation.APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
         annotation.getEntries().put(Annotation.APPEARANCE_STREAM_KEY, appearanceRefs);

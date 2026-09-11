@@ -62,7 +62,7 @@ public class IncrementalUpdater {
         SignatureManager signatureManager = library.getSignatureDictionaries();
         StateManager stateManager = document.getStateManager();
         CrossReferenceRoot crossReferenceRoot = stateManager.getCrossReferenceRoot();
-        if (stateManager.isNoChange() && !signatureManager.hasSignatureDictionary()) {
+        if (!stateManager.hasWritableChanges() && !signatureManager.hasSignatureDictionary()) {
             // write the document to the output stream, as we still need a copy of the document, even if there are no
             // change.
             try {

@@ -109,7 +109,7 @@ public class AppearanceStreamRedactionTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, area));
             Redactor.configure(document, RedactionRequest.ofAnnotations().with(options));
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

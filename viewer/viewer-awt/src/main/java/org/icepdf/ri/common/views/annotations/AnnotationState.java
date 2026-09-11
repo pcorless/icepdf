@@ -111,7 +111,7 @@ public class AnnotationState implements Memento {
             // mark it as not deleted
             annotation.setDeleted(false);
             // re-add it to the page
-            page.addAnnotation(annotation, true);
+            page.addAnnotation(annotation);
             // re-add to the page view if needed
             final PageViewComponentImpl pageViewComponent = (PageViewComponentImpl) annotationComponent.getPageViewComponent();
             if (!pageViewComponent.getAnnotationComponents().contains(annotationComponent)) {

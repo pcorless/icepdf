@@ -204,7 +204,7 @@ public class TextAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         // setup the context
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -272,7 +272,7 @@ public class TextAnnotation extends MarkupAnnotation {
         MessageFormat formatter = new MessageFormat(iconContentString);
         iconContentString = formatter.format(colorArgument);
 
-        Form form = updateAppearanceStream(null, bbox, matrix, null, isNew);
+        Form form = updateAppearanceStream(null, bbox, matrix, null);
         generateExternalGraphicsState(form, opacity);
         // parse the shapes and assign to this instance
         try {
@@ -287,7 +287,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
-        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(StandardCharsets.ISO_8859_1), isNew);
+        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(StandardCharsets.ISO_8859_1));
 //        generateExternalGraphicsState(form, opacity);
         if (form != null) {
             appearanceState.setShapes(shapes);

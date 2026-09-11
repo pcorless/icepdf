@@ -85,7 +85,7 @@ public class ImageStream extends Stream {
             reference = stateManager.getNewReferenceNumber();
         }
         imageStream.setPObjectReference(reference);
-        stateManager.addChange(new PObject(imageStream, reference), true);
+        stateManager.addChange(new PObject(imageStream, reference));
         return imageStream;
 
     }

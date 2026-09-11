@@ -999,15 +999,15 @@ public class Page extends Dictionary {
      * is commonly used with the undo/redo state manager in the RI.  Use
      * the method @link{#createAnnotation} for creating new annotations.
      *
+     * <br>
+     * This records a user edit.  To add an annotation the library manufactured for itself - a popup the file never
+     * had, say - run it inside {@link StateManager#repairing(Runnable)}.
+     *
      * @param newAnnotation annotation object to add
-     * @param isNew         annotation is new and should be added to stateManager, otherwise change will be part of
-     *                      the document
-     *                      but not yet added to the stateManager as the change was likely a missing content stream
-     *                      or popup.
      * @return reference to annotation that was added.
      */
     @SuppressWarnings("unchecked")
-    public Annotation addAnnotation(Annotation newAnnotation, boolean isNew) {
+    public Annotation addAnnotation(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
         if (annotations == null) {
@@ -1031,13 +1031,13 @@ public class Page extends Dictionary {
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the page as state change
-            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
         } else if (isAnnotAReference && annotations != null) {
             // get annots array from page
             // update annots dictionary with new annotations reference,
             annotations.add(newAnnotation.getPObjectReference());
             // add the annotations reference dictionary as state has changed
-            stateManager.addChange(new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)), isNew);
+            stateManager.addChange(new PObject(annotations, library.getObjectReference(entries, ANNOTS_KEY)));
         }
         // we need to add the a new annots reference
         else {
@@ -1053,8 +1053,8 @@ public class Page extends Dictionary {
             library.addObject(annotsVector, annotsPObject.getReference());
 
             // add the page and the new dictionary to the state change
-            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
-            stateManager.addChange(annotsPObject, isNew);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
+            stateManager.addChange(annotsPObject);
 
             this.annotations = new ArrayList<>();
         }
@@ -1072,7 +1072,7 @@ public class Page extends Dictionary {
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
 
         // finally add the new annotations to the state manager
-        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(newAnnotation, newAnnotation.getPObjectReference()));
 
         // return to caller for further manipulations.
         return newAnnotation;

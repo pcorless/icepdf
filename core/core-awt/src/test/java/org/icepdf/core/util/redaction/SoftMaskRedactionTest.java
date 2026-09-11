@@ -114,7 +114,7 @@ public class SoftMaskRedactionTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 140, 40, 40)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 140, 40, 40)));
             Redactor.configure(document, RedactionRequest.ofAnnotations()
                     .with(RedactionOptions.defaults().redactionColor(colour)));
 
@@ -160,8 +160,8 @@ public class SoftMaskRedactionTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
             // Second sample of the upper placement (y 140..180), third of the lower (y 40..80).
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)), true);
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 45, 15, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)));
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 45, 15, 20)));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
@@ -200,7 +200,7 @@ public class SoftMaskRedactionTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
             for (Rectangle area : areas) {
-                page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+                page.addAnnotation(RedactionFixtures.redactionOver(document, area));
             }
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 

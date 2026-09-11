@@ -98,7 +98,7 @@ public class Pkcs12SignatureCreation {
                             document.getPageTree().getLibrary(),
                             FieldDictionaryFactory.TYPE_SIGNATURE,
                             new Rectangle(100, 250, 100, 50));
-            document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
+            document.getPageTree().getPage(0).addAnnotation(signatureAnnotation);
 
             // Add the signatureWidget to catalog
             InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();

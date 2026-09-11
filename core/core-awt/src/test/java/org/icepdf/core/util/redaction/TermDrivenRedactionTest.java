@@ -399,7 +399,7 @@ public class TermDrivenRedactionTest {
         page.init();
         List<Rectangle> bounds = RedactionFixtures.wordBounds(page, Collections.singletonList("bravo"));
         assertEquals(1, bounds.size(), "fixture should contain 'bravo' on the page");
-        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)), true);
+        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)));
     }
 
     private byte[] save(Document document) throws Exception {

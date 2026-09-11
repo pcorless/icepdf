@@ -54,9 +54,9 @@ public class RedactionColourTest {
             page.init();
             // The first placement covers x 20..80, y 140..180; its two columns split at x 50.
             page.addAnnotation(RedactionFixtures.redactionOver(document,
-                    new Rectangle(20, 140, 29, 40), Color.RED), true);
+                    new Rectangle(20, 140, 29, 40), Color.RED));
             page.addAnnotation(RedactionFixtures.redactionOver(document,
-                    new Rectangle(51, 140, 29, 40), Color.BLUE), true);
+                    new Rectangle(51, 140, 29, 40), Color.BLUE));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -84,7 +84,7 @@ public class RedactionColourTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-                page.addAnnotation(colourlessRedaction(document), true);
+                page.addAnnotation(colourlessRedaction(document));
             Redactor.configure(document, RedactionRequest.ofAnnotations()
                     .with(RedactionOptions.defaults().redactionColor(Color.GREEN)));
 

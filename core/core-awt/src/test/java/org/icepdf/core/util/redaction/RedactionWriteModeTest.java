@@ -97,7 +97,7 @@ public class RedactionWriteModeTest {
         Document reopened = new Document();
         reopened.setInputStream(new ByteArrayInputStream(saved), "redacted");
         try {
-            assertTrue(reopened.getCatalog().getLibrary().getStateManager().isNoChange(),
+            assertFalse(reopened.getCatalog().getLibrary().getStateManager().hasWritableChanges(),
                     "a freshly reopened document should have no pending state changes, so " +
                             "hasRedactions must fall through to the page scan");
             assertTrue(reopened.hasRedactions(),
@@ -143,7 +143,7 @@ public class RedactionWriteModeTest {
         assertEquals(TARGET_TERM, target.getText().trim(),
                 "fixture's first long word changed; the assertions below name it explicitly");
         page.addAnnotation(RedactionFixtures.redactionOver(document,
-                target.getBounds().getBounds()), true);
+                target.getBounds().getBounds()));
     }
 
 }

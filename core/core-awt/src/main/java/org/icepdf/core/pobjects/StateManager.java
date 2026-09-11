@@ -51,6 +51,9 @@ public class StateManager {
     // snapshot of currently saved changes
     private Map<Reference, StateManager.Change> savedChangesSnapshot = new HashMap<>();
 
+    // per thread nesting depth of the repair scope; null means the thread is recording user edits.
+    private final ThreadLocal<Integer> repairDepth = new ThreadLocal<>();
+
     /**
      * Creates a new instance of the state manager.
      *
@@ -94,12 +97,54 @@ public class StateManager {
     }
 
     /**
-     * Add a new PObject containing changed data to the cache.
+     * Runs a repair, recording every change it makes as {@link Type#REPAIR} rather than as a user edit.
+     * <br>
+     * A repair is a change the library makes to a deficient file so that it can be rendered - generating a missing
+     * appearance stream, manufacturing a popup the file never had, honouring /NeedAppearances.  The user did not ask
+     * for it, so on its own it must not make the document look modified.
+     * <br>
+     * The scope, rather than a flag on each call, is what makes this reliable: a repair reaches well past the method
+     * that started it - into the appearance form, its font, the font descriptor, the font programme and the
+     * /ToUnicode CMap - and none of those have any way of knowing why they were called.  Everything reached inside
+     * the scope is a repair, however deep, and everything outside it is a user edit.  Scopes nest, and the depth is
+     * per thread, so a page initialising on a worker thread cannot mark an edit made on the event thread as a repair.
+     *
+     * @param repair work to carry out with repair recording in effect.
+     */
+    public void repairing(Runnable repair) {
+        Integer depth = repairDepth.get();
+        repairDepth.set(depth == null ? 1 : depth + 1);
+        try {
+            repair.run();
+        } finally {
+            Integer current = repairDepth.get();
+            if (current == null || current <= 1) {
+                repairDepth.remove();
+            } else {
+                repairDepth.set(current - 1);
+            }
+        }
+    }
+
+    /**
+     * Deliberately not public.  This is the read side of {@link #repairing(Runnable)}, not a check for callers to
+     * make: the moment a call site can ask, it can also decide the type for itself, which is the boolean parameter
+     * this scope replaced.  {@link #addChange(PObject)} is the only caller.
+     *
+     * @return true if the calling thread is inside a {@link #repairing(Runnable)} scope.
+     */
+    boolean isRepairing() {
+        return repairDepth.get() != null;
+    }
+
+    /**
+     * Add a new PObject containing changed data to the cache.  The change is recorded as a user edit unless the
+     * calling thread is inside a {@link #repairing(Runnable)} scope, in which case it is recorded as a repair.
      *
      * @param pObject object to add to cache.
      */
     public void addChange(PObject pObject) {
-        addChange(pObject, true);
+        addChange(pObject, isRepairing() ? Type.REPAIR : Type.CHANGE);
     }
 
     /**
@@ -111,15 +156,8 @@ public class StateManager {
         tempChanges.put(pObject.getReference(), pObject);
     }
 
-    /**
-     * Add a new PObject containing changed data to the cache.
-     *
-     * @param pObject object to add to cache.
-     * @param isNew   new indicates a new object that should be saved when isChanged() is called.  If false the object
-     *                was added but because the object wasn't present for rendering and was created by the core library.
-     */
-    public void addChange(PObject pObject, boolean isNew) {
-        changes.put(pObject.getReference(), new Change(pObject, isNew ? Type.CHANGE : Type.SYNTHETIC));
+    private void addChange(PObject pObject, Type type) {
+        changes.merge(pObject.getReference(), new Change(pObject, type), StateManager::strongest);
         int objectNumber = pObject.getReference().getObjectNumber();
         // check the reference numbers
         synchronized (this) {
@@ -127,6 +165,28 @@ public class StateManager {
                 nextReferenceNumber.set(objectNumber + 1);
             }
         }
+    }
+
+    /**
+     * Resolves two changes to the same reference.  A repair must never quietly undo a user edit, which is what a
+     * plain put allowed: an edit followed by a zoom-triggered appearance regeneration used to leave the reference
+     * looking like something the library invented, and the document then closed without offering to save.  The
+     * newest content always wins; the strongest reason for writing it out wins with it.
+     */
+    private static Change strongest(Change existing, Change incoming) {
+        if (incoming.getType() != Type.REPAIR) {
+            // a user edit, or a deletion, always takes precedence.
+            return incoming;
+        }
+        if (existing.getType() == Type.DELETE) {
+            // a repair must not resurrect an object the user deleted.
+            return existing;
+        }
+        if (existing.getType() == Type.CHANGE) {
+            // keep the repaired content, but the object is still here because the user changed it.
+            return new Change(incoming.getPObject(), Type.CHANGE);
+        }
+        return incoming;
     }
 
     public void addDeletion(Reference reference) {
@@ -198,23 +258,61 @@ public class StateManager {
     }
 
     /**
-     * @return If there are any changes from objects that were manipulated by user interaction
+     * Whether the document holds edits the user made and has not saved.  This is the question behind "do you want to
+     * save your changes?" and behind enabling the save action, and it is the only query that filters out repairs.
+     * <br>
+     * Comparison is against the last {@link #setChangesSnapshot()}, so saving and then closing does not ask again.
+     *
+     * @return true if the user's edits differ from the ones last written out.
      */
+    public boolean hasUnsavedUserChanges() {
+        return !userChanges(changes).equals(userChanges(savedChangesSnapshot));
+    }
+
+    /**
+     * Whether there is anything at all to write.  Deliberately blind to {@link Type}: once a save is happening for
+     * any reason, the repaired appearance streams go out with everything else, because the file on disk should
+     * match what the user was looking at.
+     *
+     * @return true if the state manager holds any change, repair or deletion.
+     */
+    public boolean hasWritableChanges() {
+        return !changes.isEmpty();
+    }
+
+    private static Map<Reference, Change> userChanges(Map<Reference, Change> source) {
+        Map<Reference, Change> userChanges = new HashMap<>(source.size());
+        for (Map.Entry<Reference, Change> entry : source.entrySet()) {
+            if (entry.getValue().getType() != Type.REPAIR) {
+                userChanges.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return userChanges;
+    }
+
+    /**
+     * @return If there are any changes from objects that were manipulated by user interaction
+     * @deprecated use {@link #hasUnsavedUserChanges()}, which also accounts for what has already been saved.
+     */
+    @Deprecated
     public boolean isChange() {
-        return changes.values().stream().anyMatch(c -> c.type != Type.SYNTHETIC);
+        return changes.values().stream().anyMatch(c -> c.type != Type.REPAIR);
     }
 
     /**
      * @return If there are any changes that end up in the state manager form user interactions or annotations
      * needing to create missing content streams or popups.
+     * @deprecated use {@link #hasWritableChanges()}, which reads the same way round as it is used.
      */
+    @Deprecated
     public boolean isNoChange() {
-        return changes.isEmpty();
+        return !hasWritableChanges();
     }
 
 
     /**
-     * Sets a snapshot of the current changes.
+     * Sets a snapshot of the current changes.  Call this once the document has been opened, and again after every
+     * successful write, so that "since the last snapshot" always means "since the state the file on disk is in".
      */
     public void setChangesSnapshot() {
         savedChangesSnapshot = Map.copyOf(changes);
@@ -224,7 +322,10 @@ public class StateManager {
      * Checks that the last changesSnapshot and the current list of changes are the same or not
      *
      * @return true if the changes are different, false otherwise
+     * @deprecated use {@link #hasUnsavedUserChanges()}.  This method counts repairs as changes, so a document that
+     * merely needed an appearance stream generated to be rendered looks modified.
      */
+    @Deprecated
     public boolean hasChangedSinceLastSnapshot() {
         if (savedChangesSnapshot.size() == changes.size()) {
             return savedChangesSnapshot.entrySet().stream()
@@ -303,15 +404,24 @@ public class StateManager {
         }
     }
 
+    /**
+     * Why an object is in the change set.
+     * <ul>
+     * <li>{@link #CHANGE} - the user edited it.</li>
+     * <li>{@link #REPAIR} - the library wrote it so a deficient file could be rendered; the user never asked for it,
+     * and on its own it must not make the document look modified.  See {@link StateManager#repairing(Runnable)}.</li>
+     * <li>{@link #DELETE} - the user removed it.</li>
+     * </ul>
+     */
     public enum Type {
-        SYNTHETIC,
+        REPAIR,
         CHANGE,
         DELETE
     }
 
     /**
-     * Wrapper class of a pObject and how it was created.  The newFlag differentiates if the object was created
-     * by a user action vs the core library creating an object that isn't in the source file but needed for rendering.
+     * Wrapper class of a pObject and why it is in the change set.  The type differentiates an object the user edited
+     * from one the core library had to write itself because the source file was missing it.
      */
     public static class Change {
 

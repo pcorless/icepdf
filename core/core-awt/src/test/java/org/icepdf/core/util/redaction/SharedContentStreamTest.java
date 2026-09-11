@@ -111,7 +111,7 @@ public class SharedContentStreamTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

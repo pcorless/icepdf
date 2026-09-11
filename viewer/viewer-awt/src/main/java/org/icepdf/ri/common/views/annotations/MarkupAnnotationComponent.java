@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.Defs;
+import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SystemProperties;
 import org.icepdf.ri.common.tools.TextAnnotationHandler;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -144,10 +145,18 @@ public abstract class MarkupAnnotationComponent<T extends MarkupAnnotation> exte
         }
         PopupAnnotation popupAnnotation = null;
         if (annotation != null && annotation.getPopupAnnotation() == null) {
-
-            popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
-                    documentViewController.getDocument().getPageTree().getLibrary(),
-                    tBbox, annotation, getToPageSpaceTransform(), isNew);
+            Library library = documentViewController.getDocument().getPageTree().getLibrary();
+            if (isNew) {
+                popupAnnotation = TextAnnotationHandler.createPopupAnnotation(
+                        library, tBbox, annotation, getToPageSpaceTransform());
+            } else {
+                // the file never had a popup for this markup annotation; we are manufacturing one so its contents
+                // have somewhere to show, which is not something the user asked for.
+                PopupAnnotation[] repaired = new PopupAnnotation[1];
+                library.getStateManager().repairing(() -> repaired[0] = TextAnnotationHandler.createPopupAnnotation(
+                        library, tBbox, annotation, getToPageSpaceTransform()));
+                popupAnnotation = repaired[0];
+            }
             annotation.setPopupAnnotation(popupAnnotation);
         } else if (annotation != null) {
             popupAnnotation = annotation.getPopupAnnotation();

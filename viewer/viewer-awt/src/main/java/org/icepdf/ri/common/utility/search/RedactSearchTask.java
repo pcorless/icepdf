@@ -144,7 +144,7 @@ public class RedactSearchTask extends SwingWorker<Void, RedactSearchTask.RedactR
                                 pageViewComponent.repaint();
                             });
                         } else {
-                            pageViewComponent.getPage().addAnnotation(redactionAnnotation, true);
+                            pageViewComponent.getPage().addAnnotation(redactionAnnotation);
                         }
                     }
                 }
