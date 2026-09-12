@@ -23,6 +23,10 @@ import java.io.InputStream;
  * @since 2.0
  */
 public class RunLengthDecode extends ChunkingInputStream {
+
+    // set once the end-of-data marker is seen, so a later chunk does not resume past it
+    private boolean eof = false;
+
     public RunLengthDecode(InputStream input) {
         super();
 
@@ -31,12 +35,24 @@ public class RunLengthDecode extends ChunkingInputStream {
     }
 
     protected int fillInternalBuffer() throws IOException {
+        if (eof) {
+            return -1;
+        }
         int numRead = 0;
 
         while (numRead < (buffer.length - 260)) { // && i != 128) {
             int i = in.read();
             if (i < 0)
                 break;
+            if (i == 128) {
+                // 128 is the end-of-data marker (7.4.5).  Falling through to the run branch reads
+                // it as a repeat of 129 copies, and the byte it then repeats is the -1 of a spent
+                // stream, so every run-length stream ended with 129 bytes of 0xFF.  The flag is
+                // what makes the end stick: this method is called again for the next chunk, and
+                // would otherwise carry on decoding whatever follows the marker.
+                eof = true;
+                break;
+            }
             if (i < 128) {
                 numRead += fillBufferFromInputStream(numRead, i + 1);
             } else {

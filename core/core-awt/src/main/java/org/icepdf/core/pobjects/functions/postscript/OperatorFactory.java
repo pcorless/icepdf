@@ -91,9 +91,11 @@ public class OperatorFactory {
                             boolean bool1 = (Boolean) stack.pop();
                             stack.push(bool1 && bool2);
                         } else {
-                            int val1 = ((Float) value).intValue();
-                            int val2 = ((Float) stack.pop()).intValue();
-                            stack.push(val1 & val2);
+                            int val1 = ((Number) value).intValue();
+                            int val2 = ((Number) stack.pop()).intValue();
+                            // pushed as a float: every other operator pops with a (Float) cast,
+                            // so an int here fails the next operator rather than this one
+                            stack.push((float) (val1 & val2));
                         }
                     }
                 };
@@ -110,7 +112,14 @@ public class OperatorFactory {
                     public void eval(OperandStack stack) {
                         float den = (Float) stack.pop();
                         float num = (Float) stack.pop();
-                        stack.push(((Number) Math.toDegrees(Math.atan(num / den))).floatValue());
+                        // atan2 keeps the quadrant (atan of the ratio cannot: it loses the sign of
+                        // the denominator, and divides by zero when it is zero), and the result is
+                        // shifted into the 0..360 the operator is defined over.
+                        double angle = Math.toDegrees(Math.atan2(num, den));
+                        if (angle < 0) {
+                            angle += 360;
+                        }
+                        stack.push((float) angle);
                     }
                 };
                 break;
@@ -122,9 +131,10 @@ public class OperatorFactory {
             case OperatorNames.OP_BITSHIFT:
                 operator = new Operator(OperatorNames.OP_BITSHIFT) {
                     public void eval(OperandStack stack) {
-                        long shift = (Long) stack.pop();
-                        long int1 = (Long) stack.pop();
-                        stack.push(int1 << shift);
+                        // the stack holds floats, so casting to Long here threw on every use
+                        int shift = ((Number) stack.pop()).intValue();
+                        int int1 = ((Number) stack.pop()).intValue();
+                        stack.push((float) (shift >= 0 ? int1 << shift : int1 >> -shift));
                     }
                 };
                 break;
@@ -151,7 +161,8 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_COS) {
                     public void eval(OperandStack stack) {
                         float aAngle = (Float) stack.pop();
-                        stack.push(((Number) Math.cos(aAngle)).floatValue());
+                        // the operator's angles are degrees; Math.cos takes radians
+                        stack.push((float) Math.cos(Math.toRadians(aAngle)));
                     }
                 };
                 break;
@@ -191,7 +202,9 @@ public class OperatorFactory {
                     public void eval(OperandStack stack) {
                         // doesn't really convert to int but not a bit deal for
                         // java in general.
-                        int number = ((Float) stack.pop()).intValue();
+                        // truncated toward zero, but left on the stack as a float so the next
+                        // operator's (Float) pop still works
+                        float number = ((Float) stack.pop()).intValue();
                         stack.push(number);
                     }
                 };
@@ -345,7 +358,7 @@ public class OperatorFactory {
                     public void eval(OperandStack stack) {
                         float num2 = (Float) stack.pop();
                         float num1 = (Float) stack.pop();
-                        stack.push((int) (num1 / num2));
+                        stack.push((float) (int) (num1 / num2));
                     }
                 };
                 break;
@@ -541,9 +554,16 @@ public class OperatorFactory {
             case OperatorNames.OP_OR:
                 operator = new Operator(OperatorNames.OP_OR) {
                     public void eval(OperandStack stack) {
-                        boolean bool2 = (Boolean) stack.pop();
-                        boolean bool1 = (Boolean) stack.pop();
-                        stack.push(bool1 || bool2);
+                        Object value = stack.pop();
+                        // like and and xor, or is bitwise when handed numbers
+                        if (value instanceof Boolean) {
+                            boolean bool1 = (Boolean) stack.pop();
+                            stack.push(bool1 || (Boolean) value);
+                        } else {
+                            int val1 = ((Number) value).intValue();
+                            int val2 = ((Number) stack.pop()).intValue();
+                            stack.push((float) (val1 | val2));
+                        }
                     }
                 };
                 break;
@@ -624,7 +644,8 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_SIN) {
                     public void eval(OperandStack stack) {
                         float aAngle = (Float) stack.pop();
-                        stack.push(((Number) Math.sin(aAngle)).floatValue());
+                        // the operator's angles are degrees; Math.sin takes radians
+                        stack.push((float) Math.sin(Math.toRadians(aAngle)));
                     }
                 };
                 break;
@@ -661,7 +682,8 @@ public class OperatorFactory {
                 operator = new Operator(OperatorNames.OP_TRUNCATE) {
                     public void eval(OperandStack stack) {
                         float num1 = (Float) stack.pop();
-                        stack.push(((Number) Math.floor(num1)).floatValue());
+                        // toward zero: flooring sends a negative number away from it instead
+                        stack.push((float) (long) num1);
                     }
                 };
                 break;
@@ -677,9 +699,9 @@ public class OperatorFactory {
                     public void eval(OperandStack stack) {
                         Object obj2 = stack.pop();
                         if (obj2 instanceof Number) {
-                            float num2 = (Float) obj2;
-                            float num1 = (Float) stack.pop();
-                            stack.push((int) num1 ^ (int) num2);
+                            float num2 = ((Number) obj2).floatValue();
+                            float num1 = ((Number) stack.pop()).floatValue();
+                            stack.push((float) ((int) num1 ^ (int) num2));
                         } else if (obj2 instanceof Boolean) {
                             boolean bool2 = (Boolean) obj2;
                             boolean bool1 = (Boolean) stack.pop();
