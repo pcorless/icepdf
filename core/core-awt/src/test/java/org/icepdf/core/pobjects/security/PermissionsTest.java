@@ -30,10 +30,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests the document permission flags: what a reader is allowed to do with an encrypted document.
  * <p>
  * The flags live in the two's complement integer {@code /P}, counted from bit 1, with whole ranges
- * of bits reserved and required to be set.  This class reads each permission as a mask holding both
- * the bit in question and the reserved bits, so a permission is granted only when the reserved bits
- * are as the specification requires - which is worth pinning, because it means a file that writes
- * them differently is treated as granting nothing rather than as granting everything.
+ * of bits reserved and required to be set.  A permission depends only on its own bit: the reserved
+ * bits are required to be 1 but producers do get them wrong, and gating a permission on them means
+ * a document its author left unrestricted cannot be printed or copied from.
+ * <p>
+ * Confusing two of these bits grants something the author withheld, which is the whole point of the
+ * flag word, so each one is asserted on its own against a baseline that allows nothing.
  */
 public class PermissionsTest {
 
@@ -158,15 +160,51 @@ public class PermissionsTest {
     // reserved bits and bounds
     // ------------------------------------------------------------------
 
-    @DisplayName("a permission bit set while the reserved bits are not grants nothing")
+    @DisplayName("a permission is granted on its own bit, whatever the reserved bits say")
     @Test
-    public void reservedBitsAreRequired() {
-        // Each permission is read as a mask holding the reserved bits as well as its own, so a /P
-        // that does not set the reserved bits reads as granting nothing at all.  That is the safe
-        // direction to be wrong in, but it does mean a producer that writes /P as a small positive
-        // number has its permissions ignored rather than honoured.
+    public void reservedBitsDoNotGateAPermission() {
+        // The reserved bits are required to be 1, but producers do get them wrong - a /P written
+        // as a small positive number is the usual case.  Requiring them alongside the permission
+        // bit made such a document read as granting nothing at all, so a file its author had left
+        // unrestricted could not be printed or copied from.
         Permissions permissions = permissions(3, PRINT_BIT);
+        assertTrue(permissions.getPermissions(Permissions.PRINT_DOCUMENT));
+        assertFalse(permissions.getPermissions(Permissions.MODIFY_DOCUMENT),
+                "and still only the bit that was set");
+    }
+
+    @DisplayName("a /P written as a small positive number grants what it names")
+    @Test
+    public void permissionsWithoutReservedBits() {
+        // 2052 is bits 3 and 12: print, at full quality, and nothing else.
+        Permissions permissions = permissions(3, PRINT_BIT | PRINT_QUALITY_BIT);
+        assertTrue(permissions.getPermissions(Permissions.PRINT_DOCUMENT));
+        assertTrue(permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY));
+        assertFalse(permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
+        assertFalse(permissions.getPermissions(Permissions.MODIFY_DOCUMENT));
+        assertFalse(permissions.getPermissions(Permissions.DOCUMENT_ASSEMBLY));
+    }
+
+    @DisplayName("the reserved bits on their own grant nothing")
+    @Test
+    public void reservedBitsAloneGrantNothing() {
+        // The mirror of the above: setting every reserved bit and no permission bit must not be
+        // read as granting anything, which is what a mask-based test would have done had the
+        // comparison gone the other way.
+        Permissions permissions = permissions(3, NOTHING_ALLOWED);
         assertFalse(permissions.getPermissions(Permissions.PRINT_DOCUMENT));
+        assertFalse(permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
+    }
+
+    @DisplayName("the reference value from the specification reads as the specification says")
+    @Test
+    public void specificationExample() {
+        // Table 22's own note: "assuming revision 2 of the security handler, the value -44 allows
+        // printing and copying but disallows modifying the contents and annotations".
+        Permissions permissions = permissions(2, -44);
+        assertTrue(permissions.getPermissions(Permissions.PRINT_DOCUMENT));
+        assertTrue(permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
+        assertFalse(permissions.getPermissions(Permissions.MODIFY_DOCUMENT));
     }
 
     @DisplayName("an index outside the permission set answers false rather than throwing")

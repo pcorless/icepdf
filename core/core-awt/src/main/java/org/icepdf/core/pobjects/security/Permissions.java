@@ -113,23 +113,32 @@ import java.util.Arrays;
  */
 public class Permissions {
 
-    // constants for parsing bits from P value
-    // bit 3, 11111111111111111111000011000100
-    private static final int PRINT_DOCUMENT_BIT_3 = 0xFFFFF0C4;
-    // bit 4, 11111111111111111111000011001000
-    private static final int MODIFY_DOCUMENT_BIT_4 = 0xFFFFF0C8;
-    // bit 5, 11111111111111111111000011010000
-    private static final int DATA_EXTRACTION_BIT_5 = 0xFFFFF0D0;
-    // bit 6, 11111111111111111111000011100000
-    private static final int MODIFY_TEXT_BIT_6 = 0xFFFFF0E0;
-    // bit 9, 11111111111111111111000111000000
-    private static final int MODIFY_FORMS_BIT_9 = 0xFFFFF1C0;
-    // bit 10, 11111111111111111111001011000000
-    private static final int ACCESSIBILITY_BIT_10 = 0xFFFFF2C0;
-    // bit 11, 11111111111111111111010011000000
-    private static final int ASSEMBLE_DOCUMENT_BIT_11 = 0xFFFFF4C0;
-    // bit 12 11111111111111111111100011000000
-    private static final int PRINT_QUALITY_BIT_12 = 0xFFFFF8C0;
+    // Constants for parsing bits from the P value.  Bits are numbered from 1 in Table 22, so bit n
+    // is the value 1 << (n - 1).
+    //
+    // These are the permission bits alone.  They were previously written as masks that also held
+    // every reserved bit, and tested with (flags & mask) == mask, which granted a permission only
+    // when all of the reserved bits were set as well.  The reserved bits are required to be 1, but
+    // producers do get them wrong - a /P written as a small positive number is the usual case - and
+    // the effect was that such a document was read as granting nothing at all, so a file its author
+    // had left unrestricted could not be printed or copied from.  A permission now depends only on
+    // its own bit.
+    // bit 3
+    private static final int PRINT_DOCUMENT_BIT_3 = 0x00000004;
+    // bit 4
+    private static final int MODIFY_DOCUMENT_BIT_4 = 0x00000008;
+    // bit 5
+    private static final int DATA_EXTRACTION_BIT_5 = 0x00000010;
+    // bit 6
+    private static final int MODIFY_TEXT_BIT_6 = 0x00000020;
+    // bit 9
+    private static final int MODIFY_FORMS_BIT_9 = 0x00000100;
+    // bit 10
+    private static final int ACCESSIBILITY_BIT_10 = 0x00000200;
+    // bit 11
+    private static final int ASSEMBLE_DOCUMENT_BIT_11 = 0x00000400;
+    // bit 12
+    private static final int PRINT_QUALITY_BIT_12 = 0x00000800;
 
     // Constants for retrieving permission values
 
