@@ -29,6 +29,7 @@
         <commons-logging.version>1.3.5</commons-logging.version>
         <junit.bom.version>5.14.3</junit.bom.version>
         <mockito.version>5.23.0</mockito.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <licenses>
@@ -159,6 +160,28 @@
                     <source>11</source>
                     <target>11</target>
                 </configuration>
+            </plugin>
+            <!-- Test coverage.  `mvn test` writes target/site/jacoco/index.html (and jacoco.xml)
+                 for every module, matching the Gradle build's jacocoTestReport. -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>jacoco-report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

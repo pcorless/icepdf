@@ -3,6 +3,18 @@ apply plugin: 'project-report'
 
 allprojects {
     apply plugin: 'java'
+    // Test coverage.  Run e.g.
+    //   ./gradlew :core:core-awt:test :core:core-awt:jacocoTestReport
+    // HTML lands in <module>/build/reports/jacoco/test/html/index.html, XML beside it for CI.
+    apply plugin: 'jacoco'
+
+    tasks.withType(JacocoReport).configureEach {
+        dependsOn tasks.withType(Test)
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
 
     java {
         toolchain {

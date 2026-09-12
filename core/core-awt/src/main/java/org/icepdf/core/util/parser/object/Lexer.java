@@ -731,11 +731,13 @@ public class Lexer {
         float decimal = 0;
         boolean isDigit;
         boolean isDecimal = false;
-        boolean signed = streamBytes.get(startTokenPos) == '-' ||
-                streamBytes.get(startTokenPos) == '+';
+        // a '+' marks a number as explicitly positive (7.3.3); only a '-' makes it negative.
+        boolean negative = streamBytes.get(startTokenPos) == '-';
+        boolean signed = negative || streamBytes.get(startTokenPos) == '+';
         startTokenPos = signed ? startTokenPos + 1 : startTokenPos;
         // check for  double sign, thanks oracle forms!
         if (signed && streamBytes.get(startTokenPos) == '-') {
+            negative = true;
             startTokenPos++;
         }
         int current;
@@ -758,7 +760,7 @@ public class Lexer {
             }
         }
         streamBytes.position(pos);
-        if (signed) {
+        if (negative) {
             if (isDecimal) {
                 return -(digit + decimal);
             } else {
