@@ -238,10 +238,14 @@ public class Destination extends Dictionary {
         if (ob instanceof Reference) {
             ref = (Reference) ob;
         } else if (ob instanceof Integer) {
-            //Dest could be a page number instead of a reference
-            final PageTree pt = library.getCatalog().getPageTree();
+            // Dest could be a page number instead of a reference.  A remote destination (GoToR)
+            // names a page in another document and is normally written this way, and there may be
+            // no catalog here to resolve it against, so the index is simply left unresolved rather
+            // than dereferenced through a null catalog.
+            final Catalog catalog = library.getCatalog();
+            final PageTree pt = catalog != null ? catalog.getPageTree() : null;
             final int idx = (int) ob;
-            if (idx >= 0 && idx < pt.getNumberOfPages()) {
+            if (pt != null && idx >= 0 && idx < pt.getNumberOfPages()) {
                 ref = pt.getPageReference(idx);
             }
         }
@@ -273,6 +277,13 @@ public class Destination extends Dictionary {
             ob = getDestValue(2, v);
             if (ob != null && !ob.equals("null")) {
                 top = ((Number) ob).floatValue();
+            }
+        }
+        // [page /FitV left]
+        else if (TYPE_FITV.equals(type)) {
+            ob = getDestValue(2, v);
+            if (ob != null && !ob.equals("null")) {
+                left = ((Number) ob).floatValue();
             }
         }
         // [page /FitR left bottom right top]
@@ -353,6 +364,11 @@ public class Destination extends Dictionary {
 
     public void clearNamedDestination() {
         namedDestination = null;
+        // The name is also what init() reads to find the destination, so it has to go from the raw
+        // value as well: leaving it there means the reparse below simply finds the name again and
+        // puts it back, and the destination is still named.  What is left is the explicit array
+        // the name resolved to, if it resolved to one.
+        rawDest = entries.get(D_KEY);
         // reparse as object should point to a new destination.
         inited = false;
         init();

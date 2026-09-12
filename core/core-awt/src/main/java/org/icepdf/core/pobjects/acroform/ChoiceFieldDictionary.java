@@ -129,8 +129,12 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         org.icepdf.core.pobjects.security.SecurityManager securityManager = library.getSecurityManager();
         Object value = library.getArray(entries, OPT_KEY);
         if (value == null) {
+            // the options may be inherited; a top level field with neither its own /Opt nor a
+            // parent is legal - the control simply has nothing to offer - and must not fail here
             FieldDictionary parent = getParent();
-            value = library.getArray(parent.getEntries(), OPT_KEY);
+            if (parent != null) {
+                value = library.getArray(parent.getEntries(), OPT_KEY);
+            }
         }
         if (value != null) {
             ArrayList opts = (ArrayList) value;
@@ -141,12 +145,16 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
                     String tmpString = tmp.getDecryptedLiteralString(securityManager);
                     options.add(new ChoiceOption(tmpString, tmpString));
                 } else if (opt instanceof List) {
+                    // [exportValue displayText] (12.7.4.4): the first string is what the field
+                    // exports and the second is what the user sees.  They were read the other way
+                    // round, so a list built from pairs showed its export codes and submitted the
+                    // text that was meant to be on screen.
                     List tmp = (List) opt;
-                    StringObject tmp1StingObject = (StringObject) tmp.get(0);
-                    String tmpString1 = tmp1StingObject.getDecryptedLiteralString(securityManager);
-                    StringObject tmp2StingObject = (StringObject) tmp.get(1);
-                    String tmpString2 = tmp2StingObject.getDecryptedLiteralString(securityManager);
-                    options.add(new ChoiceOption(tmpString1, tmpString2));
+                    StringObject exportObject = (StringObject) tmp.get(0);
+                    String exportValue = exportObject.getDecryptedLiteralString(securityManager);
+                    StringObject displayObject = (StringObject) tmp.get(1);
+                    String displayText = displayObject.getDecryptedLiteralString(securityManager);
+                    options.add(new ChoiceOption(displayText, exportValue));
                 }
             }
         } else {
@@ -193,7 +201,8 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
             indexes = new ArrayList<>(1);
             for (int i = 0, j = 0, max = options.size(); i < max; i++) {
                 if (options.get(i).getLabel().equals(value)) {
-                    indexes.set(j, i);
+                    // the list starts empty, so setting an index that does not exist yet threw
+                    indexes.add(i);
                     j++;
                 }
             }
