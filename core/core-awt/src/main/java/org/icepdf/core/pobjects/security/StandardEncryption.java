@@ -599,7 +599,22 @@ class StandardEncryption {
         }
     }
 
+    /**
+     * Number of bytes a revision 5 or 6 /U or /O entry must hold: a 32 byte hash, an 8 byte
+     * validation salt and an 8 byte key salt (7.6.4.3.3).
+     */
+    private static final int REV56_ENTRY_LENGTH = 48;
+
     private static boolean isRev56User(final byte[] password, final byte[] user, final byte[] userKey, final int revision) {
+
+        // A damaged or hostile file can carry a short entry.  Reading past it threw an
+        // ArrayIndexOutOfBoundsException out of the authentication path, where the caller is
+        // expecting to be told whether the password was right.
+        if (user == null || user.length < REV56_ENTRY_LENGTH) {
+            logger.warning("Encryption entry is too short to authenticate against: " +
+                    (user == null ? "absent" : user.length + " bytes"));
+            return false;
+        }
 
         final byte[] uHash = new byte[32];
         final byte[] uValidationSalt = new byte[8];
