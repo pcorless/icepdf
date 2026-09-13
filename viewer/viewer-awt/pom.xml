@@ -8,6 +8,10 @@
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <jacoco.coverage.minimum>0.22</jacoco.coverage.minimum>
+    </properties>
     <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
         ICEpdf Java Swing/AWT reference implementation.
