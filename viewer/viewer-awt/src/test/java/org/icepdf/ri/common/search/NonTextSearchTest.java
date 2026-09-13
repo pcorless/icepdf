@@ -17,6 +17,8 @@ package org.icepdf.ri.common.search;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.OutlineItem;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.search.DestinationResult;
 import org.icepdf.core.search.SearchMode;
 import org.icepdf.ri.util.FontPropertiesManager;
@@ -47,6 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class NonTextSearchTest {
 
     private static final String FIXTURE = "/redact/pdf_reference_addendum_redaction.pdf";
+    /** A page with two filled form fields and three comments, one of them empty. */
+    private static final String FORMS_FIXTURE = "/search/form_fields_and_comments.pdf";
 
     /** A bookmark with no children of its own. */
     private static final String LEAF_TITLE = "Introduction";
@@ -54,6 +58,7 @@ public class NonTextSearchTest {
     private static final String PARENT_TITLE = "Additions to the PDF Reference";
 
     private Document document;
+    private Document formsDocument;
     private DocumentSearchControllerImpl controller;
 
     @BeforeAll
@@ -73,6 +78,9 @@ public class NonTextSearchTest {
     public void tearDown() {
         if (document != null) {
             document.dispose();
+        }
+        if (formsDocument != null) {
+            formsDocument.dispose();
         }
     }
 
@@ -209,20 +217,119 @@ public class NonTextSearchTest {
     }
 
     // ------------------------------------------------------------------
-    // form fields
+    // form fields and comments
+    // ------------------------------------------------------------------
+
+    /**
+     * A page carrying two filled text fields and three comments, one of which has no text.
+     * <p>
+     * Its words are deliberately distinct - the field values, the comment texts and the printed
+     * page text share none - so a test can say which of the searches found a thing rather than
+     * only that something was found.
+     */
+    private DocumentSearchControllerImpl searchingFormsAndComments(String term) throws Exception {
+        formsDocument = new Document();
+        formsDocument.setFile(NonTextSearchTest.class.getResource(FORMS_FIXTURE).getFile());
+        DocumentSearchControllerImpl fresh = new DocumentSearchControllerImpl(formsDocument);
+        fresh.setSearchMode(SearchMode.PAGE);
+        fresh.addSearchTerm(term, false, false);
+        return fresh;
+    }
+
+    @DisplayName("a form field is found by the value typed into it")
+    @Test
+    public void formFieldValueIsFound() throws Exception {
+        // What a field holds is not page text and is not in the content stream at all, so nothing
+        // that searches the page can find it.
+        List<TextWidgetAnnotation> found = searchingFormsAndComments("badger").searchForms(0);
+        assertEquals(1, found.size(), "the field holding the term should have been found");
+    }
+
+    @DisplayName("a form field search is case insensitive unless asked otherwise")
+    @Test
+    public void formFieldCaseInsensitive() throws Exception {
+        assertEquals(1, searchingFormsAndComments("BADGER").searchForms(0).size());
+    }
+
+    @DisplayName("a form field value containing a bracket is searched as text")
+    @Test
+    public void formFieldWithRegexPunctuation() throws Exception {
+        // The form search matches with contains rather than a pattern, so punctuation in either
+        // the term or the value is just punctuation.
+        assertEquals(1, searchingFormsAndComments("(rear)").searchForms(0).size());
+    }
+
+    @DisplayName("a term in no field finds no field")
+    @Test
+    public void formFieldNoMatch() throws Exception {
+        assertTrue(searchingFormsAndComments("aardvark").searchForms(0).isEmpty(),
+                "a word that is only in the page text is not a form hit");
+    }
+
+    @DisplayName("a comment is found by its text")
+    @Test
+    public void commentIsFound() throws Exception {
+        List<MarkupAnnotation> found = searchingFormsAndComments("capybara").searchComments(0);
+        assertEquals(1, found.size());
+        assertTrue(found.get(0).getContents().contains("capybara"));
+    }
+
+    @DisplayName("a term in more than one comment finds all of them")
+    @Test
+    public void severalCommentsMatch() throws Exception {
+        assertEquals(1, searchingFormsAndComments("badger").searchComments(0).size(),
+                "the word is in one comment and one field; only the comment is a comment hit");
+    }
+
+    @DisplayName("a comment carrying no text is passed over rather than matched or thrown on")
+    @Test
+    public void commentWithoutContents() throws Exception {
+        // A stamp or a plain highlight has no /Contents.  Both matching branches have to walk past
+        // it: the page holds one, and the searches below still find the comments either side.
+        assertEquals(1, searchingFormsAndComments("capybara").searchComments(0).size(),
+                "the plain branch walks past the empty comment");
+
+        formsDocument = new Document();
+        formsDocument.setFile(NonTextSearchTest.class.getResource(FORMS_FIXTURE).getFile());
+        DocumentSearchControllerImpl regex = new DocumentSearchControllerImpl(formsDocument);
+        regex.setSearchMode(SearchMode.PAGE);
+        regex.addSearchTerm("capy.*", false, false, true);
+        assertEquals(1, regex.searchComments(0).size(),
+                "and so does the regex branch");
+    }
+
+    @DisplayName("a term in no comment finds no comment")
+    @Test
+    public void commentNoMatch() throws Exception {
+        assertTrue(searchingFormsAndComments("aardvark").searchComments(0).isEmpty(),
+                "a word that is only in the page text is not a comment hit");
+    }
+
+    @DisplayName("the four searches do not find each other's text")
+    @Test
+    public void theSearchesAreSeparate() throws Exception {
+        // The fixture gives each place its own word, so this says the searches read what they are
+        // supposed to read and nothing else.
+        DocumentSearchControllerImpl pageWord = searchingFormsAndComments("aardvark");
+        assertTrue(pageWord.searchForms(0).isEmpty());
+        assertTrue(pageWord.searchComments(0).isEmpty());
+
+        DocumentSearchControllerImpl commentWord = searchingFormsAndComments("capybara");
+        assertTrue(commentWord.searchForms(0).isEmpty());
+        assertFalse(commentWord.searchComments(0).isEmpty());
+    }
+
+    // ------------------------------------------------------------------
+    // pages holding neither
     // ------------------------------------------------------------------
 
     @DisplayName("searching forms on a page with none finds none")
     @Test
     public void formsOnAPageWithoutAny() {
         controller.addSearchTerm("anything", false, false);
-        List<?> found = controller.searchForms(0);
-        assertNotNull(found, "the result should be a list rather than null");
+        assertNotNull(controller.searchForms(0), "the result should be a list rather than null");
+        assertTrue(controller.searchForms(0).isEmpty());
     }
-
-    // ------------------------------------------------------------------
-    // comments
-    // ------------------------------------------------------------------
 
     @DisplayName("searching comments on a page with none finds none")
     @Test
@@ -230,16 +337,5 @@ public class NonTextSearchTest {
         controller.addSearchTerm("anything", false, false);
         assertNotNull(controller.searchComments(0));
         assertTrue(controller.searchComments(0).isEmpty());
-    }
-
-    @DisplayName("a regex comment search survives a comment with no contents")
-    @Test
-    public void commentsWithoutContents() {
-        // The non-regex branch checks for null contents and the regex branch did not, so a comment
-        // that carries none - a stamp or a plain highlight - threw the whole search.
-        controller.addSearchTerm("any.*", false, false, true);
-        for (int page = 0; page < document.getNumberOfPages(); page++) {
-            assertNotNull(controller.searchComments(page));
-        }
     }
 }
