@@ -407,9 +407,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         boolean found = false;
                         // app search regex
                         if (term.isRegex() && searchPattern != null) {
-                            Matcher matcher = searchPattern.matcher(
-                                    ((MarkupAnnotation) annotation).getContents());
-                            found = matcher.find();
+                            // a stamp or a plain highlight carries no contents; the branch below
+                            // has always checked for that and this one did not
+                            String annotationText = ((MarkupAnnotation) annotation).getContents();
+                            found = annotationText != null && searchPattern.matcher(annotationText).find();
                         } else if (searchTerm != null) {
                             String annotationText = ((MarkupAnnotation) annotation).getContents();
                             if (term.isCaseSensitive() && annotationText != null) {
@@ -490,10 +491,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     private Pattern resolveSearchPattern(SearchTerm term) {
-        Pattern searchPattern = term.getRegexPattern();
+        Pattern searchPattern = term.isRegex() ? term.getRegexPattern() : null;
         if (searchPattern == null) {
+            // Quoted, because a term the caller did not mark as a regular expression is text.  It
+            // was compiled as a pattern regardless, so a search for something holding a bracket
+            // threw PatternSyntaxException and took the whole search with it, and a dot quietly
+            // matched any character - "G1.1500945" would find "G1x1500945" as well.
             String searchTerm = term.getTerm();
-            searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
+            searchPattern = Pattern.compile(Pattern.quote(
+                    term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase()));
         }
         return searchPattern;
     }
@@ -503,17 +509,18 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int count = item.getSubItemCount();
         for (int i = 0; i < count; i++) {
             OutlineItem child = item.getSubItem(i);
+            // Every item is searched, not only the ones without children.  An item with children
+            // used to be descended into and never matched itself, so a chapter heading could not
+            // be found - which is the most likely thing somebody searching an outline wants.
+            String outlineTitle = child.getTitle();
+            if (outlineTitle != null && !outlineTitle.isEmpty()) {
+                Matcher matcher = searchPattern.matcher(isCaseSensitive ? outlineTitle : outlineTitle.toLowerCase());
+                if (matcher.find()) {
+                    foundOutlines.add(child);
+                }
+            }
             if (child.getSubItemCount() > 0) {
                 recursiveOutlineSearch(searchPattern, isCaseSensitive, foundOutlines, child);
-            } else {
-                // search the item title for a match.
-                String outlineTitle = child.getTitle();
-                if (outlineTitle != null && !outlineTitle.isEmpty()) {
-                    Matcher matcher = searchPattern.matcher(isCaseSensitive ? outlineTitle : outlineTitle.toLowerCase());
-                    if (matcher.find()) {
-                        foundOutlines.add(child);
-                    }
-                }
             }
         }
     }
