@@ -93,7 +93,9 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     // validity checks.
     private boolean isSignedDataModified = true;
     private boolean isDocumentDataModified;
-    private boolean isSignaturesCoverDocumentLength;
+    // null until something answers the question: either InteractiveForm priming it across every
+    // signature, or this validator working it out from its own byte range.  See the getter.
+    private Boolean isSignaturesCoverDocumentLength;
     private boolean isCertificateChainTrusted;
     private boolean isCertificateDateValid = true;
     private boolean isRevocation;
@@ -763,7 +765,26 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         return isDocumentDataModified;
     }
 
+    /**
+     * Whether the signature covers the whole document.
+     * <p>
+     * This was a plain flag defaulting to false that only
+     * {@link org.icepdf.core.pobjects.acroform.InteractiveForm#isSignaturesCoverDocumentLength()}
+     * ever set, as a side effect of its own check.  A caller doing the obvious thing - take a
+     * signature's validator, validate it, then ask - was therefore always told that a fully
+     * covered document was not covered, which reads as a tampered file.
+     * <p>
+     * When nothing has primed the flag the answer now comes from this signature's own byte range.
+     * An explicit {@link #setSignaturesCoverDocumentLength(boolean)} still wins, which is what lets
+     * the form hand an earlier signature the coverage of the one that follows it - that signature
+     * legitimately stops short of the end of the file once another has been added after it.
+     *
+     * @return true if the document's signatures cover its whole length
+     */
     public boolean isSignaturesCoverDocumentLength() {
+        if (isSignaturesCoverDocumentLength == null) {
+            return checkByteRange();
+        }
         return isSignaturesCoverDocumentLength;
     }
 
