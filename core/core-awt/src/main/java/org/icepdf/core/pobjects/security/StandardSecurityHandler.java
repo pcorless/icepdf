@@ -202,6 +202,9 @@ public class StandardSecurityHandler extends SecurityHandler {
 
         // check if crypt filters are being used and find out if V2 or AESV2
         String algorithmType = getAlgorithmType();
+        if (StandardEncryption.ENCRYPTION_TYPE_NONE.equals(algorithmType)) {
+            return data;
+        }
 
         // use the general encryption algorithm for encryption
         return standardEncryption.generalEncryptionAlgorithm(
@@ -214,6 +217,9 @@ public class StandardSecurityHandler extends SecurityHandler {
                           byte[] data) {
         // check if crypt filters are being used and find out if V2 or AESV2
         String algorithmType = getAlgorithmType();
+        if (StandardEncryption.ENCRYPTION_TYPE_NONE.equals(algorithmType)) {
+            return data;
+        }
 
         // use the general encryption algorithm for encryption
         return standardEncryption.generalEncryptionAlgorithm(
@@ -221,20 +227,40 @@ public class StandardSecurityHandler extends SecurityHandler {
     }
 
     /**
-     * Utility to determine encryption type used.
+     * Utility to determine encryption type used for strings, as named by /StrF.
      */
     private String getAlgorithmType() {
-        String algorithmType;
-        if (encryptionDictionary.getCryptFilter() != null) {
-            CryptFilterEntry cryptFilterEntry =
-                    encryptionDictionary.getCryptFilter().getCryptFilterByName(
-                            encryptionDictionary.getStrF());
+        return algorithmTypeFor(encryptionDictionary.getStrF());
+    }
 
-            algorithmType = cryptFilterEntry.getCryptFilterMethod().getName();
-        } else {
-            algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
+    /**
+     * The algorithm a crypt filter name selects.
+     * <p>
+     * Three of these were previously dereferenced without a check, and each one is something a real
+     * file carries: {@code /Identity} is the legal way to say a stream or string is not encrypted
+     * and is never a member of {@code /CF}, so looking it up finds nothing; a damaged file can name
+     * a filter its {@code /CF} does not hold; and a filter entry can be missing its {@code /CFM}.
+     * All three threw out of the decryption path, which is reached simply by opening the document.
+     *
+     * @param cryptFilterName name from /StmF, /StrF or a stream's own decode parameters
+     * @return the /CFM algorithm name, {@link StandardEncryption#ENCRYPTION_TYPE_NONE} when the
+     * data is not encrypted, or the default RC4 when nothing usable is named
+     */
+    private String algorithmTypeFor(final Name cryptFilterName) {
+        if (IDENTITY_KEY.equals(cryptFilterName)) {
+            return StandardEncryption.ENCRYPTION_TYPE_NONE;
         }
-        return algorithmType;
+        final CryptFilter cryptFilter = encryptionDictionary.getCryptFilter();
+        if (cryptFilter == null || cryptFilterName == null) {
+            return StandardEncryption.ENCRYPTION_TYPE_V2;
+        }
+        final CryptFilterEntry cryptFilterEntry = cryptFilter.getCryptFilterByName(cryptFilterName);
+        if (cryptFilterEntry == null || cryptFilterEntry.getCryptFilterMethod() == null) {
+            logger.warning("Crypt filter " + cryptFilterName
+                    + " names no usable method, falling back to " + StandardEncryption.ENCRYPTION_TYPE_V2);
+            return StandardEncryption.ENCRYPTION_TYPE_V2;
+        }
+        return cryptFilterEntry.getCryptFilterMethod().getName();
     }
 
     public InputStream decryptInputStream(
@@ -259,41 +285,22 @@ public class StandardSecurityHandler extends SecurityHandler {
             HashMap decodeParams,
             InputStream input, boolean encrypted) {
 
-        // find the name of the crypt filter used in the CF dictionary
-        CryptFilterEntry cryptFilter = null;
+        // A stream may name a crypt filter of its own in its decode parameters; otherwise the one
+        // named by /StmF applies.  Some image streams carry decode parameters that say nothing
+        // about encryption, which is why an absent name falls back to /StmF rather than to none.
+        Name filterName = encryptionDictionary.getStmF();
         if (decodeParams != null) {
-            Name filterName = (Name) decodeParams.get(NAME_KEY);
-            if (filterName != null) {
-                // identity means don't use the cryprt filter or encryption at all
-                // for the stream.
-                if (filterName.equals(IDENTITY_KEY)) {
-                    return input;
-                } else {
-                    // find the filter name in the encryption dictionary
-                    cryptFilter = encryptionDictionary.
-                            getCryptFilter().getCryptFilterByName(filterName);
-                }
-            } else if (encryptionDictionary.getCryptFilter() != null) {
-                // corner case, some images treams also use the "decodeParams"
-                // dictionary, if it doesn't contain a filter name then we
-                // want to make sure we assign the standard one so the steam
-                // can be unencrypted.
-                cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
-                        encryptionDictionary.getStmF());
+            Name named = (Name) decodeParams.get(NAME_KEY);
+            if (named != null) {
+                filterName = named;
             }
-        }
-        // We default to the method specified in by StrmF in the security dictionary
-        else if (encryptionDictionary.getCryptFilter() != null) {
-            cryptFilter = encryptionDictionary.getCryptFilter().getCryptFilterByName(
-                    encryptionDictionary.getStmF());
         }
 
         // get the method used for the general encryption algorithm
-        String algorithmType;
-        if (cryptFilter != null) {
-            algorithmType = cryptFilter.getCryptFilterMethod().getName();
-        } else {
-            algorithmType = StandardEncryption.ENCRYPTION_TYPE_V2;
+        String algorithmType = algorithmTypeFor(filterName);
+        if (StandardEncryption.ENCRYPTION_TYPE_NONE.equals(algorithmType)) {
+            // the stream says it is not encrypted, so hand it back as it is
+            return input;
         }
 
         return standardEncryption.generalEncryptionInputStream(

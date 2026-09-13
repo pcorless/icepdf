@@ -151,7 +151,7 @@ class StandardEncryption {
             // serialize on this shared instance; computing it per call (a cheap MD5 of ~20 bytes) lets decryption
             // of different objects run in parallel (GH-495).
             // Step 1 to 3, bytes
-            final byte[] step3Bytes = resetObjectReference(objectReference, isRc4);
+            final byte[] step3Bytes = resetObjectReference(objectReference, isRc4, encryptionKey);
             // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5 hash
             final int n = encryptionKey.length;
             final byte[] rc4Key = new byte[Math.min(n + 5, BLOCK_SIZE)];
@@ -313,7 +313,7 @@ class StandardEncryption {
             // Derive the per-object key locally (see generalEncryptionAlgorithm): the former instance-field cache
             // forced all stream decryption to serialize on this shared instance for no real benefit (GH-495).
             // Step 1 to 3, bytes
-            final byte[] step3Bytes = resetObjectReference(objectReference, isRc4);
+            final byte[] step3Bytes = resetObjectReference(objectReference, isRc4, encryptionKey);
             // Step 4: Use the first (n+5) byes, up to a max of 16 from the MD5 hash
             final int n = encryptionKey.length;
             final byte[] rc4Key = new byte[Math.min(n + 5, BLOCK_SIZE)];
@@ -440,6 +440,26 @@ class StandardEncryption {
      * @return Byte [] manipulated as specified.
      */
     public byte[] resetObjectReference(final Reference objectReference, final boolean isRc4) {
+        return resetObjectReference(objectReference, isRc4, encryptionKey);
+    }
+
+    /**
+     * Algorithm 1, computing the key for one object from the document key.
+     * <p>
+     * The key is taken as an argument rather than read from the instance, so that the key a caller
+     * passes to {@link #generalEncryptionAlgorithm} is the key that is actually used.  Reading the
+     * field instead meant those methods ignored half of what they were given: whatever key was
+     * handed in, the per-object key came from whichever password had last been run through
+     * {@link #encryptionKeyAlgorithm} on this shared instance.  The same coupling is what made a
+     * concurrent first touch hand a decrypt a half-set key (GH-495).
+     *
+     * @param objectReference object the key is for
+     * @param isRc4           true for RC4, false for AES, which salts the hash
+     * @param encryptionKey   the document key
+     * @return the key for this object
+     */
+    public byte[] resetObjectReference(final Reference objectReference, final boolean isRc4,
+                                       final byte[] encryptionKey) {
 
         // Step 1: separate object and generation numbers for objectReference
         final int objectNumber = objectReference.getObjectNumber();

@@ -195,6 +195,41 @@ public class StandardEncryptionTest {
                 "the salt has to change the key");
     }
 
+    @DisplayName("the key handed to the algorithm is the key it uses")
+    @Test
+    public void theSuppliedKeyIsTheKeyUsed() {
+        // generalEncryptionAlgorithm takes the document key as an argument, but derived the
+        // per-object key from whatever key had last been computed on this instance instead.  A
+        // caller that supplied its own key was quietly ignored, and an instance that had never
+        // computed one threw.  Two instances given the same key must now agree, and one given a
+        // different key must not.
+        byte[] key = encryption(3, 2, 128).encryptionKeyAlgorithm("", 128);
+        StandardEncryption fresh = encryption(3, 2, 128);
+        Reference reference = new Reference(5, 0);
+
+        byte[] encrypted = fresh.generalEncryptionAlgorithm(reference, key,
+                StandardEncryption.ENCRYPTION_TYPE_V2, PLAINTEXT, true);
+        assertNotNull(encrypted, "an instance that never derived a key still has to use the one given");
+
+        byte[] decrypted = encryption(3, 2, 128).generalEncryptionAlgorithm(reference, key,
+                StandardEncryption.ENCRYPTION_TYPE_V2, encrypted, false);
+        assertArrayEquals(PLAINTEXT, decrypted);
+
+        byte[] otherKey = encryption(3, 2, 128).encryptionKeyAlgorithm("different", 128);
+        byte[] wrongKey = encryption(3, 2, 128).generalEncryptionAlgorithm(reference, otherKey,
+                StandardEncryption.ENCRYPTION_TYPE_V2, encrypted, false);
+        assertFalse(Arrays.equals(PLAINTEXT, wrongKey));
+    }
+
+    @DisplayName("the per-object key can be derived from a key that is passed in")
+    @Test
+    public void perObjectKeyFromASuppliedKey() {
+        byte[] key = encryption(3, 2, 128).encryptionKeyAlgorithm("", 128);
+        StandardEncryption fresh = encryption(3, 2, 128);
+        assertArrayEquals(withKey(3, 2, 128).resetObjectReference(new Reference(1, 0), true),
+                fresh.resetObjectReference(new Reference(1, 0), true, key));
+    }
+
     @DisplayName("an object number beyond three bytes still yields a key")
     @Test
     public void largeObjectNumber() {
