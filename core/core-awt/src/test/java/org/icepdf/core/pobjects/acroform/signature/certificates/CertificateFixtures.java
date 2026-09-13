@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.acroform.signature.certificates;
 
+import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
@@ -22,7 +24,9 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
@@ -172,6 +176,35 @@ public final class CertificateFixtures {
         return new JcaX509CertificateConverter()
                 .setProvider(BouncyCastleProvider.PROVIDER_NAME)
                 .getCertificate(builder.build(signer));
+    }
+
+    /**
+     * A certificate issued by {@code issuer} that is allowed to sign OCSP responses, which is what
+     * the extended key usage of id-kp-OCSPSigning says.
+     *
+     * @param commonName name to issue it under
+     * @param issuer     authority that signs it
+     * @return the responder's certificate and its key
+     */
+    public static Authority ocspResponder(String commonName, Authority issuer) throws Exception {
+        KeyPair keyPair = keyPair();
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                issuer.getCertificate(), BigInteger.valueOf(System.nanoTime()),
+                yesterday(), nextYear(), new X500Name("CN=" + commonName), keyPair.getPublic());
+        builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        builder.addExtension(Extension.extendedKeyUsage, false,
+                new ExtendedKeyUsage(KeyPurposeId.id_kp_OCSPSigning));
+        // a responder trusted for the life of its own certificate needs no revocation check of its
+        // own, which is what this extension says (RFC 6960 4.2.2.2.1)
+        builder.addExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nocheck, false,
+                DERNull.INSTANCE);
+
+        ContentSigner signer = new JcaContentSignerBuilder(SIGNING_ALGORITHM)
+                .build(issuer.getPrivateKey());
+        X509Certificate certificate = new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(builder.build(signer));
+        return new Authority(certificate, keyPair.getPrivate());
     }
 
     /**
