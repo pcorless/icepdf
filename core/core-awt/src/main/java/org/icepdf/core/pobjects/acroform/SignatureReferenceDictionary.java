@@ -113,6 +113,13 @@ public class SignatureReferenceDictionary extends Dictionary {
      */
     public TransformParams getTransformParams() {
         Name tmp = library.getName(entries, TRANSFORM_METHOD_KEY);
+        // /TransformMethod is required, so a reference without one is malformed - but it comes from
+        // a file, and reading the name straight into equals threw on a signature carrying a damaged
+        // reference, which is reached simply by opening the document.  getTransformMethod above has
+        // always guarded this; this method did not.
+        if (tmp == null) {
+            return null;
+        }
         if (tmp.equals(TransformMethods.DocMDP.toString())) {
             transformParams =
                     new DocMDPTransferParam(library, library.getDictionary(entries, TRANSFORM_PARAMS_KEY));
