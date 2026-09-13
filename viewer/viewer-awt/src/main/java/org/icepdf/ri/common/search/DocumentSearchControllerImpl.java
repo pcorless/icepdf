@@ -556,8 +556,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
 
         if (searchPageCursor < pageCount) {
             WordText word;
-            // move to the next hit, start at -1 after a search clear
-            searchWordCursor++;
+            // Step off the hit the cursor is on.  The cursor is stored on the first word of a hit,
+            // and a hit can be a run of consecutive words, so the whole run has to be passed -
+            // stepping one word would read the second word of a run as a hit of its own.
+            searchWordCursor = indexAfterRun(searchPageCursor, searchLineCursor, searchWordCursor);
             for (int i = searchPageCursor; i < pageCount; i++) {
                 if (searchModel.isPageSearchHit(i)) {
                     if (searchModel.getPageTextHit(i) == null) {
@@ -574,6 +576,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 word = words.get(j);
                                 if (word.isHighlighted()) {
                                     // highlight the rest of the words in the run
+                                    final int hitStart = j;
                                     WordText lastHit = word;
                                     for (; j < maxJ; j++) {
                                         if (!words.get(j).isHighlighted()) {
@@ -584,7 +587,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                     }
                                     searchModel.setSearchPageCursor(i);
                                     searchModel.setSearchLineCursor(k);
-                                    searchModel.setSearchWordCursor(j);
+                                    // on the hit, not past it: stepping back from here has to find
+                                    // the hit before this one rather than this one again
+                                    searchModel.setSearchWordCursor(hitStart);
                                     selectSearchHit(i, pageText, word, lastHit);
                                     showWord(i, word);
                                     return word;
@@ -603,6 +608,39 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             return nextSearchHit();
         }
         return null;
+    }
+
+    /**
+     * The word index just past the hit the cursor is sitting on.
+     * <p>
+     * A hit is a run of consecutive highlighted words, since a search phrase can match more than
+     * one.  The cursor is stored on the run's first word so that stepping back from it finds the
+     * hit before, which means stepping forward has to pass the whole run rather than one word.
+     *
+     * @param pageIndex  page the cursor is on
+     * @param lineCursor line the cursor is on
+     * @param wordCursor word the cursor is on, negative before the first hit
+     * @return the index to resume scanning forward from
+     */
+    private int indexAfterRun(int pageIndex, int lineCursor, int wordCursor) {
+        if (wordCursor < 0) {
+            return wordCursor + 1;
+        }
+        PageText pageText = searchModel.getPageTextHit(pageIndex);
+        if (pageText == null) {
+            return wordCursor + 1;
+        }
+        ArrayList<LineText> pageLines = pageText.getPageLines();
+        if (lineCursor < 0 || lineCursor >= pageLines.size()) {
+            return wordCursor + 1;
+        }
+        List<WordText> words = pageLines.get(lineCursor).getWords();
+        int index = wordCursor;
+        while (index < words.size() && words.get(index).isHighlighted()) {
+            index++;
+        }
+        // not on a hit at all, so one step is enough
+        return index == wordCursor ? wordCursor + 1 : index;
     }
 
     /**
@@ -692,7 +730,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                         }
                                         searchModel.setSearchPageCursor(i);
                                         searchModel.setSearchLineCursor(k);
-                                        searchModel.setSearchWordCursor(j);
+                                        // j has walked to the word before the run; the cursor is
+                                        // stored on the run's first word, the same as going forward
+                                        searchModel.setSearchWordCursor(j + 1);
                                         selectSearchHit(i, pageText, firstHit, word);
                                         showWord(i, word);
                                         return word;

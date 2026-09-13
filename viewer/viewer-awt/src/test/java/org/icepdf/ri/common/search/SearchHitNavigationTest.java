@@ -175,25 +175,54 @@ public class SearchHitNavigationTest {
         assertNotNull(controller.previousSearchHit());
     }
 
-    @DisplayName("stepping back straight after stepping forward returns the same hit")
+    @DisplayName("stepping back undoes a step forward")
     @Test
-    public void backAfterForwardStaysPut() {
-        // Recorded as observed rather than asserted as correct, because it is a choice about what
-        // the cursor means rather than a miscount.  Stepping forward leaves the cursor just past
-        // the hit it landed on, and stepping back moves it one position - which lands on that same
-        // hit again.  So Next, Next, Next, Previous is the third hit, not the second, and the
-        // first press of Previous appears to the user to do nothing.
-        //
-        // Both directions do visit every hit exactly once on their own (see the tests above); this
-        // is only about what happens when the direction changes.
+    public void backAfterForwardReturns() {
+        // The cursor is stored on the hit rather than just past it, so changing direction moves by
+        // one hit like every other step.  It used to be left past the hit, which made the first
+        // press of Previous land on the hit just visited and so appear to do nothing.
         search();
         controller.nextSearchHit();
-        controller.nextSearchHit();
+        WordText second = controller.nextSearchHit();
         WordText third = controller.nextSearchHit();
         assertNotNull(third);
 
-        assertEquals(third, controller.previousSearchHit(),
-                "the first step back after a step forward lands on the hit just visited");
+        assertEquals(second, controller.previousSearchHit(),
+                "stepping back from the third hit should land on the second");
+    }
+
+    @DisplayName("changing direction repeatedly walks one hit at a time")
+    @Test
+    public void directionCanBeChangedRepeatedly() {
+        // The cursor has to mean the same thing whichever way it was last moved, or the two
+        // buttons disagree about where the user is as soon as they are alternated.
+        search();
+        WordText first = controller.nextSearchHit();
+        WordText second = controller.nextSearchHit();
+
+        assertEquals(first, controller.previousSearchHit(), "back to the first");
+        assertEquals(second, controller.nextSearchHit(), "forward to the second again");
+        assertEquals(first, controller.previousSearchHit(), "and back to the first again");
+    }
+
+    @DisplayName("a hit spanning several words is one stop, not one per word")
+    @Test
+    public void aMultipleWordHitIsASingleStop() {
+        // A phrase match highlights a run of consecutive words.  Stepping forward has to pass the
+        // whole run: stepping a single word would read the run's second word as a hit of its own,
+        // which is the trap in storing the cursor on the hit rather than past it.
+        DocumentSearchControllerImpl phrase = new DocumentSearchControllerImpl(document);
+        phrase.setSearchMode(SearchMode.PAGE);
+        phrase.addSearchTerm("Un vagabundo", false, false);
+        int hits = phrase.searchHighlightPage(0);
+        assertEquals(1, hits, "the fixture should hold the phrase once");
+
+        WordText firstStop = phrase.nextSearchHit();
+        assertNotNull(firstStop);
+        // the only hit on the page, so stepping again has to wrap back to it rather than land on
+        // the second word of the same run
+        assertEquals(firstStop, phrase.nextSearchHit(),
+                "a run of words should be one stop, so the next step wraps back to it");
     }
 
     @DisplayName("stepping back visits every hit once before repeating any")
