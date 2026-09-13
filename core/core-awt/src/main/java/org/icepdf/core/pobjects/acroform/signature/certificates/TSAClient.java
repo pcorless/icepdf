@@ -132,13 +132,15 @@ public class TSAClient {
         logger.log(Level.FINER, "Established connection to TSA server");
 
         if (username != null && password != null && !username.isEmpty() && !password.isEmpty()) {
-            String contentEncoding = connection.getContentEncoding();
-            if (contentEncoding == null) {
-                contentEncoding = StandardCharsets.UTF_8.name();
-            }
+            // Encoded as UTF-8 rather than as whatever the response declares.  Asking the
+            // connection for its content encoding here opened it, and a request property cannot be
+            // set on a connection that is already open - so every authenticated request to a
+            // timestamp authority threw IllegalStateException instead of sending its credentials.
+            // The response's charset was the wrong thing to ask in any case: these are request
+            // credentials, and RFC 7617 defines them over UTF-8.
             connection.setRequestProperty("Authorization",
-                    "Basic " + new String(Base64.getEncoder().encode((username + ":" + password).
-                            getBytes(contentEncoding))));
+                    "Basic " + Base64.getEncoder().encodeToString(
+                            (username + ":" + password).getBytes(StandardCharsets.UTF_8)));
         }
 
         // read response

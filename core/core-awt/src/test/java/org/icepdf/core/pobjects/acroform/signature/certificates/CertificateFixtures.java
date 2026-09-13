@@ -208,6 +208,34 @@ public final class CertificateFixtures {
     }
 
     /**
+     * A certificate issued by {@code issuer} that is allowed to sign timestamps.
+     * <p>
+     * RFC 3161 requires the timestamping purpose to be the only extended key usage and to be marked
+     * critical, and BouncyCastle refuses to build a token with a certificate that says otherwise.
+     *
+     * @param commonName name to issue it under
+     * @param issuer     authority that signs it
+     * @return the authority's certificate and its key
+     */
+    public static Authority timeStampAuthority(String commonName, Authority issuer)
+            throws Exception {
+        KeyPair keyPair = keyPair();
+        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+                issuer.getCertificate(), BigInteger.valueOf(System.nanoTime()),
+                yesterday(), nextYear(), new X500Name("CN=" + commonName), keyPair.getPublic());
+        builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        builder.addExtension(Extension.extendedKeyUsage, true,
+                new ExtendedKeyUsage(KeyPurposeId.id_kp_timeStamping));
+
+        ContentSigner signer = new JcaContentSignerBuilder(SIGNING_ALGORITHM)
+                .build(issuer.getPrivateKey());
+        X509Certificate certificate = new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(builder.build(signer));
+        return new Authority(certificate, keyPair.getPrivate());
+    }
+
+    /**
      * A revocation list from {@code issuer} naming the given serial numbers as revoked.
      *
      * @param issuer          authority that signs the list
