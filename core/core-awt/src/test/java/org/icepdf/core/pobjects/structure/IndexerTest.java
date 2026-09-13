@@ -1,4 +1,6 @@
 /*
+ * Copyright 2026 Patrick Corless
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,64 +15,158 @@
  */
 package org.icepdf.core.pobjects.structure;
 
-import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.util.updater.FullUpdater;
-import org.icepdf.core.util.updater.ObjectUpdateTests;
+import org.icepdf.core.pobjects.Page;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.io.InputStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Tests rebuilding a document whose cross-reference table cannot be trusted.
+ * <p>
+ * The index is the map from object number to file offset.  When it is wrong the document is
+ * unreadable even though every object in it may be perfectly intact, and the repair is to ignore
+ * the map and find the objects by scanning for them.
+ * <p>
+ * The three damaged files here are the same document, cut in three different ways, which is what
+ * makes them worth having together: a repair that produced <em>some</em> readable output would pass
+ * a test that only checked for the absence of an exception, so each is asserted to produce the same
+ * text as the others.  Recovering the wrong content is the failure this catches.
+ */
 public class IndexerTest {
-    @DisplayName("should assert exception on bad encoding")
-    @Test
-    public void testIndexerBadEncoding() {
-        assertThrows(IllegalStateException.class, () -> {
-            FullUpdater.compressXrefTable = false;
-            Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/structure/bad_encoding.pdf");
-            document.setInputStream(fileUrl, "bad_encoding.pdf");
-        });
+
+    /** The document all three damaged files are a copy of, as it reads when repaired. */
+    private static final String EXPECTED_OPENING = "Brand new generation frame replaces";
+
+    private static Document open(String fixture) throws Exception {
+        Document document = new Document();
+        InputStream in = IndexerTest.class.getResourceAsStream("/structure/" + fixture);
+        assertNotNull(in, "missing fixture " + fixture);
+        document.setInputStream(in, fixture);
+        return document;
     }
 
-    @DisplayName("should assert exception on partial xref table")
-    @Test
-    public void testIndexerBadXref() {
-        assertThrows(IllegalStateException.class, () -> {
-            FullUpdater.compressXrefTable = false;
-            Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/structure/bad_missing_xref.pdf");
-            document.setInputStream(fileUrl, "bad_missing_xref.pdf");
-        });
+    /**
+     * @return page 0's text, whitespace collapsed
+     */
+    private static String firstPageText(Document document) throws Exception {
+        Page page = document.getPageTree().getPage(0);
+        page.init();
+        return page.getViewText().toString().replaceAll("\\s+", " ").trim();
     }
 
-    @DisplayName("should throw exception on partial xref table")
-    @Test
-    public void testIndexerParcialXref() {
-        assertThrows(IllegalStateException.class, () -> {
-            FullUpdater.compressXrefTable = false;
-            Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/structure/bad_partial_xref.pdf");
-            document.setInputStream(fileUrl, "bad_partial_xref.pdf");
-        });
-    }
+    // ------------------------------------------------------------------
+    // damage the index can be rebuilt around
+    // ------------------------------------------------------------------
 
-    @DisplayName("should open document with bad object offsets")
+    @DisplayName("a file whose xref offsets are all wrong is rebuilt from its objects")
     @Test
-    public void testXrefTableFullUpdate() {
+    public void badObjectOffsets() throws Exception {
+        Document document = open("bad_object_offset.pdf");
         try {
-            FullUpdater.compressXrefTable = false;
-            Document document = new Document();
-            InputStream fileUrl = ObjectUpdateTests.class.getResourceAsStream("/structure/bad_object_offset.pdf");
-            document.setInputStream(fileUrl, "bad_object_offset.pdf");
-        } catch (PDFSecurityException | IOException e) {
-            // make sure we have no io errors.
-            fail("should not be any exceptions");
+            assertEquals(1, document.getNumberOfPages());
+            assertTrue(firstPageText(document).startsWith(EXPECTED_OPENING));
+        } finally {
+            document.dispose();
         }
+    }
+
+    @DisplayName("a file cut off before its trailer is rebuilt from its objects")
+    @Test
+    public void missingTrailerAndStartxref() throws Exception {
+        // Truncation takes the trailer first, being the last thing written, and the repair used to
+        // be gated on finding one - so the commonest damage of all was the one kind that could not
+        // be rebuilt, even with every object intact.  The catalog is now found by reading the
+        // objects and the trailer reconstructed around it.
+        Document document = open("bad_missing_xref.pdf");
+        try {
+            assertEquals(1, document.getNumberOfPages());
+            assertTrue(firstPageText(document).startsWith(EXPECTED_OPENING));
+        } finally {
+            document.dispose();
+        }
+    }
+
+    @DisplayName("a file with a startxref pointing past its end is rebuilt from its objects")
+    @Test
+    public void startxrefPastEndOfFile() throws Exception {
+        // This one still claims an offset for its cross-reference table; the offset is beyond the
+        // end of the file, and there is no trailer to fall back to.
+        Document document = open("bad_partial_xref.pdf");
+        try {
+            assertEquals(1, document.getNumberOfPages());
+            assertTrue(firstPageText(document).startsWith(EXPECTED_OPENING));
+        } finally {
+            document.dispose();
+        }
+    }
+
+    @DisplayName("the three damaged copies all recover the same document")
+    @Test
+    public void allThreeRecoverTheSameText() throws Exception {
+        // The assertion that makes the three above mean something: a repair that recovered the
+        // wrong objects, or stopped part way, would still open a document and still extract text.
+        // What it would not do is agree with the other two.
+        String offsets;
+        String truncated;
+        String pastEnd;
+
+        Document document = open("bad_object_offset.pdf");
+        try {
+            offsets = firstPageText(document);
+        } finally {
+            document.dispose();
+        }
+        document = open("bad_missing_xref.pdf");
+        try {
+            truncated = firstPageText(document);
+        } finally {
+            document.dispose();
+        }
+        document = open("bad_partial_xref.pdf");
+        try {
+            pastEnd = firstPageText(document);
+        } finally {
+            document.dispose();
+        }
+
+        assertTrue(offsets.length() > 200, "the page should hold a paragraph of text, not a word");
+        assertEquals(offsets, truncated, "the truncated copy should recover the same text");
+        assertEquals(offsets, pastEnd, "the copy with a bad startxref should recover the same text");
+    }
+
+    @DisplayName("a rebuilt document finds its catalog and its page tree")
+    @Test
+    public void rebuiltDocumentHasACatalog() throws Exception {
+        // Without a trailer there is no /Root, so the catalog has to be found among the objects;
+        // everything else in the document hangs off it.
+        Document document = open("bad_missing_xref.pdf");
+        try {
+            Catalog catalog = document.getCatalog();
+            assertNotNull(catalog, "the repair should have found a catalog");
+            assertNotNull(catalog.getPageTree(), "and the page tree it points at");
+            assertEquals(1, catalog.getPageTree().getNumberOfPages());
+        } finally {
+            document.dispose();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // damage nothing can be done about
+    // ------------------------------------------------------------------
+
+    @DisplayName("a file that is not a PDF at all is refused")
+    @Test
+    public void notAPdf() {
+        // This fixture is a zip archive, not a damaged PDF: there are no objects to find, so there
+        // is nothing to rebuild from and saying so is the right answer.
+        assertThrows(IllegalStateException.class, () -> open("bad_encoding.pdf"));
     }
 }
