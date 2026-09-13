@@ -22,7 +22,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Extension;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -58,23 +58,34 @@ public class CRLVerifier {
      * @throws CertificateVerificationException if the certificate is revoked
      */
     public static void verifyCRL(X509Certificate cert)
-            throws CertificateVerificationException {
+            throws CertificateVerificationException, RevokedCertificateException {
         try {
             List<String> crlDistPoints = getCrlDistributionPoints(cert);
             for (String crlDP : crlDistPoints) {
                 X509CRL crl = downloadCRL(crlDP);
                 if (crl.isRevoked(cert)) {
-                    throw new RevocationVerificationException(
-                            "The certificate is revoked by CRL: " + crlDP);
+                    // Thrown as the exception the rest of the chain already declares and the
+                    // validator already acts on.  It used to be a RevocationVerificationException,
+                    // which extends plain Exception and so was swallowed by the catch below and
+                    // reported as "can not verify" - the answer for a list that could not be
+                    // reached.  Those mean opposite things: AbstractPkcsValidator sets isRevocation
+                    // from this exception and only clears the chain-trusted flag from the other, so
+                    // a certificate the authority had withdrawn was shown as merely untrusted, and
+                    // the revocation date and reason were lost with the exception.
+                    throw new RevokedCertificateException(
+                            "The certificate is revoked by CRL: " + crlDP,
+                            crl.getRevokedCertificate(cert).getRevocationDate());
                 }
             }
+        } catch (RevokedCertificateException revoked) {
+            throw revoked;
         } catch (Exception ex) {
             if (ex instanceof CertificateVerificationException) {
                 throw (CertificateVerificationException) ex;
             } else {
                 throw new CertificateVerificationException(
                         "Can not verify CRL for certificate: " +
-                                cert.getSubjectX500Principal());
+                                cert.getSubjectX500Principal(), ex);
             }
         }
     }
