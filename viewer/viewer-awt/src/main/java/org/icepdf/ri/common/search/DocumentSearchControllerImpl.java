@@ -547,7 +547,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();
-        int pageCount = viewerController.getDocument().getNumberOfPages();
+        // Resolved the way the rest of the class resolves it.  Reaching straight through the
+        // viewer controller meant that a search run headless - which the Document constructor
+        // exists for, and which searchHighlightPage and the rest support - could find its hits and
+        // then throw on the first attempt to step through them.
+        if (document == null) document = viewerController.getDocument();
+        int pageCount = document.getNumberOfPages();
 
         if (searchPageCursor < pageCount) {
             WordText word;
@@ -607,6 +612,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param word      word that has been marked as a cursor.
      */
     public void showWord(int pageIndex, WordText word) {
+        // Nothing to show without a viewer, the same as selectSearchHit below; the hit is still
+        // returned to the caller, which is all a headless search can act on.
+        if (viewerController == null) return;
         viewerController.showPage(pageIndex);
         // navigate to the location
         Rectangle2D.Double bounds = word.getBounds();
@@ -643,7 +651,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();
-        int pageCount = viewerController.getDocument().getNumberOfPages();
+        // Resolved the way the rest of the class resolves it.  Reaching straight through the
+        // viewer controller meant that a search run headless - which the Document constructor
+        // exists for, and which searchHighlightPage and the rest support - could find its hits and
+        // then throw on the first attempt to step through them.
+        if (document == null) document = viewerController.getDocument();
+        int pageCount = document.getNumberOfPages();
 
         if (searchPageCursor < pageCount) {
             WordText word;
@@ -771,13 +784,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page index to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
-        if (pvc == null) {
-            return;
-        }
-        // clear cache and terms list
+        // The model is cleared whether or not there is a component to repaint, which is the order
+        // clearAllSearchHighlight already uses.  Returning early on a missing component left the
+        // page's hits in the model - so a page that was not laid out, or a search run headless,
+        // kept results that had supposedly been cleared.
         searchModel.clearSearchResults(pageIndex);
-        pvc.clearSearchHighlights();
+        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
+        if (pvc != null) {
+            pvc.clearSearchHighlights();
+        }
     }
 
     /**
@@ -797,6 +812,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     private PageViewComponentImpl getPageViewComponent(int pageIndex) {
+        // There are no page components without a viewer, so a headless caller has nothing to clear
+        // the highlights of.  Clearing the model still has to work, and it is the caller above that
+        // does that before asking for a component.
+        if (viewerController == null) {
+            return null;
+        }
         List<AbstractPageViewComponent> pageComponents = viewerController.getDocumentViewController()
                 .getDocumentViewModel().getPageComponents();
         if (pageIndex < 0 || pageIndex >= pageComponents.size()) {
