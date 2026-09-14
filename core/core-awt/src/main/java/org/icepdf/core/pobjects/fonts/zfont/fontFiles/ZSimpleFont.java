@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
 import org.apache.fontbox.cmap.CMap;
+import org.apache.fontbox.ttf.TrueTypeFont;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
@@ -47,9 +48,10 @@ public abstract class ZSimpleFont implements FontFile {
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
 
-    // lazily created per-font outline cache, keyed by character code.  Not shared with derived
-    // fonts as their encoding/gid mappings may differ; a derived instance is however retained by
-    // the TextSprite that draws with it, so its cache lives as long as the page's shapes do.
+    // lazily created per-font outline cache, keyed by character code (and by code+ppem for the
+    // grid-fitted outline).  Not shared with derived fonts as their encoding/gid mappings may
+    // differ; a derived instance is however retained by the TextSprite that draws with it, so its
+    // cache lives as long as the page's shapes do.
     private GlyphCache glyphCache;
 
     // copied over from font descriptor
@@ -194,6 +196,84 @@ public abstract class ZSimpleFont implements FontFile {
         return glyphCache;
     }
 
+    /**
+     * Resolves the glyph outline to paint for the given character code: the grid-fitted outline when
+     * hinting is enabled and the glyph/ppem can be grid-fit, otherwise the plain outline.
+     * Hinting is switched on and off by FontBox, see {@link TrueTypeFont#isHintingEnabled()} and
+     * {@code -Dorg.apache.fontbox.ttf.hinting=true}; only TrueType outline fonts
+     * ({@link ZFontTrueType}, {@link ZFontType2}) carry executable hinting.
+     * Results are cached.
+     *
+     * @param estr              character code to paint.
+     * @param graphicsTransform the current device transform of the graphics context (the page/zoom
+     *                          transform), used to derive the render ppem for grid-fitting.
+     * @return the glyph outline in glyph space, grid-fitted where possible.
+     */
+    protected Shape resolveGlyphShape(char estr, AffineTransform graphicsTransform) {
+        GlyphCache cache = getGlyphCache();
+        if (TrueTypeFont.isHintingEnabled()) {
+            int ppem = gridFitPpem(graphicsTransform);
+            if (ppem > 0) {
+                return cache.getGridFitPathForCharacterCode(estr, ppem);
+            }
+        }
+        return cache.getPathForCharacterCode(estr);
+    }
+
+    /**
+     * The units-per-em of the underlying font, or 0 when the font cannot be grid-fit.
+     * Only TrueType outline fonts override this with a non-zero value.
+     *
+     * @return units-per-em, or 0 if grid fitting is not supported.
+     */
+    protected int getUnitsPerEm() {
+        return 0;
+    }
+
+    /**
+     * Returns the grid-fitted glyph outline for the given character code at the given ppem, in glyph
+     * (font) units, or {@code null} if grid fitting does not apply (not an embedded TrueType outline
+     * font, a ppem the font's gasp table excludes, no bytecode program, etc.). The caller falls back
+     * to the plain outline when this returns {@code null}. The default implementation returns
+     * {@code null}, i.e. never grid-fits.
+     *
+     * @param estr character code to paint.
+     * @param ppem the pixels-per-em the glyph will be rendered at.
+     * @return the grid-fitted glyph outline in glyph units, or null to use the plain outline.
+     * @throws IOException if the font could not be read.
+     */
+    protected Shape getGridFitGlyphShape(char estr, int ppem) throws IOException {
+        return null;
+    }
+
+    /**
+     * Derives the pixels-per-em for grid-fitting from the glyph-space-to-device transform, or returns
+     * 0 when the glyph is too small / degenerate to grid-fit or the font does not support it. The
+     * ppem is the device height of one em, so it is correct under rotation: the glyph is grid-fit in
+     * its own (upright) coordinate space and the full transform — including any rotation — is then
+     * applied to the grid-fitted outline by the renderer.
+     * <br>
+     * The supplied {@code graphicsTransform} maps device space, while {@link #fontTransform} maps a
+     * raw glyph (font) unit to that device space (it already folds in the {@code 1/unitsPerEm} font
+     * matrix). One em is {@code unitsPerEm} font units, so {@code unitsPerEm} times the length of the
+     * combined transform's vertical basis vector is the device height of one em.
+     *
+     * @param graphicsTransform the current device transform of the graphics context.
+     * @return the ppem to grid-fit at, or 0 to use the plain outline.
+     */
+    protected int gridFitPpem(AffineTransform graphicsTransform) {
+        int unitsPerEm = getUnitsPerEm();
+        if (unitsPerEm <= 0) {
+            return 0;
+        }
+        AffineTransform glyphToDevice = new AffineTransform(graphicsTransform);
+        glyphToDevice.concatenate(fontTransform);
+        // length of the y basis vector = device pixels per glyph unit, rotation-invariant
+        double scaleY = Math.hypot(glyphToDevice.getShearX(), glyphToDevice.getScaleY());
+        int ppem = (int) Math.round(unitsPerEm * scaleY);
+        return ppem > 0 ? ppem : 0;
+    }
+
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
@@ -201,7 +281,7 @@ public abstract class ZSimpleFont implements FontFile {
                 return;
             }
             AffineTransform af = g.getTransform();
-            Shape outline = getGlyphCache().getPathForCharacterCode(estr);
+            Shape outline = resolveGlyphShape(estr, af);
 
             g.translate(x, y);
             g.transform(this.fontTransform);
@@ -226,6 +306,7 @@ public abstract class ZSimpleFont implements FontFile {
             if (isSubstitutedNotdef(estr)) {
                 return new Area();
             }
+            // outline geometry (clipping modes 4-7, text selection) uses the plain, cached outline
             Shape glyph = getGlyphCache().getPathForCharacterCode(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();

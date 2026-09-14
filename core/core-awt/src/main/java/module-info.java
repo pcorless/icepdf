@@ -30,6 +30,9 @@ module org.icepdf.core {
     requires org.apache.fontbox;
     requires org.apache.pdfbox.io;
     requires org.apache.pdfbox.jbig2;
+    // fontbox 4.x logs through log4j-api where 3.x used commons-logging; without this the module
+    // cannot read the log4j classes and every fontbox parser dies in its static initialiser.
+    requires org.apache.logging.log4j;
     requires org.apache.commons.logging;
     requires com.twelvemonkeys.common.image;
     requires com.twelvemonkeys.common.io;

@@ -17,15 +17,17 @@ application {
  * daemon carries its own java.home, user.dir, file.encoding and friends, and pushing those into
  * the forked JVM would override values that JVM set correctly for itself.
  *
- *   org.icepdf.  - the library's own tuning/behaviour flags
- *   sun.java2d.  - Java2D pipeline selection (opengl, d3d, noddraw, translaccel, accthreshold...)
- *   sun.awt.     - AWT toolkit internals (e.g. sun.awt.noerasebackground)
- *   awt.         - e.g. awt.useSystemAAFontSettings
- *   swing.       - e.g. swing.aatext
- *   javax.swing. - Swing look-and-feel and related settings
+ *   org.icepdf.         - the library's own tuning/behaviour flags
+ *   org.apache.fontbox. - font-rendering behaviour (e.g. org.apache.fontbox.ttf.hinting)
+ *   sun.java2d.         - Java2D pipeline selection (opengl, d3d, noddraw, translaccel, accthreshold...)
+ *   sun.awt.            - AWT toolkit internals (e.g. sun.awt.noerasebackground)
+ *   awt.                - e.g. awt.useSystemAAFontSettings
+ *   swing.              - e.g. swing.aatext
+ *   javax.swing.        - Swing look-and-feel and related settings
  */
 ext.forwardedPropertyPrefixes = [
-        'org.icepdf.', 'sun.java2d.', 'sun.awt.', 'awt.', 'swing.', 'javax.swing.'
+        'org.icepdf.', 'org.apache.fontbox.', 'sun.java2d.', 'sun.awt.', 'awt.', 'swing.',
+        'javax.swing.'
 ]
 
 /**
