@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jacoco.coverage.minimum>0.22</jacoco.coverage.minimum>
+        <jacoco.coverage.minimum>0.23</jacoco.coverage.minimum>
     </properties>
     <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
