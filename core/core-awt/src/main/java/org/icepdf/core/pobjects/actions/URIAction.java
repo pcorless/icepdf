@@ -50,8 +50,6 @@ public class URIAction extends Action {
      */
     public URIAction(Library l, DictionaryEntries h) {
         super(l, h);
-        // /IsMap was declared but never read, so an image-map link always reported false and the
-        // click coordinates it is supposed to append to the address were dropped.
         isMap = library.getBoolean(entries, IS_MAP_KEY);
     }
 

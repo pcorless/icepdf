@@ -235,12 +235,6 @@ public class StandardSecurityHandler extends SecurityHandler {
 
     /**
      * The algorithm a crypt filter name selects.
-     * <p>
-     * Three of these were previously dereferenced without a check, and each one is something a real
-     * file carries: {@code /Identity} is the legal way to say a stream or string is not encrypted
-     * and is never a member of {@code /CF}, so looking it up finds nothing; a damaged file can name
-     * a filter its {@code /CF} does not hold; and a filter entry can be missing its {@code /CFM}.
-     * All three threw out of the decryption path, which is reached simply by opening the document.
      *
      * @param cryptFilterName name from /StmF, /StrF or a stream's own decode parameters
      * @return the /CFM algorithm name, {@link StandardEncryption#ENCRYPTION_TYPE_NONE} when the

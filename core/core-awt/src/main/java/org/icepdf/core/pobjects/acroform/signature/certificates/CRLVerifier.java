@@ -64,14 +64,6 @@ public class CRLVerifier {
             for (String crlDP : crlDistPoints) {
                 X509CRL crl = downloadCRL(crlDP);
                 if (crl.isRevoked(cert)) {
-                    // Thrown as the exception the rest of the chain already declares and the
-                    // validator already acts on.  It used to be a RevocationVerificationException,
-                    // which extends plain Exception and so was swallowed by the catch below and
-                    // reported as "can not verify" - the answer for a list that could not be
-                    // reached.  Those mean opposite things: AbstractPkcsValidator sets isRevocation
-                    // from this exception and only clears the chain-trusted flag from the other, so
-                    // a certificate the authority had withdrawn was shown as merely untrusted, and
-                    // the revocation date and reason were lost with the exception.
                     throw new RevokedCertificateException(
                             "The certificate is revoked by CRL: " + crlDP,
                             crl.getRevokedCertificate(cert).getRevocationDate());

@@ -157,10 +157,7 @@ class PredictorEncoder implements ImageEncoder {
                 break;
 
             // Greyscale is one byte or one short per pixel, laid out exactly like the custom
-            // cases above.  It was missing from this switch and so fell through to the default,
-            // where encode returns null - and ImageStreamWriter dereferences that straight away.
-            // A redaction burned over a greyscale JPEG therefore threw on save, which is most of a
-            // scanned document.
+            // cases above.
             case BufferedImage.TYPE_BYTE_GRAY:
             case BufferedImage.TYPE_3BYTE_BGR:
             case BufferedImage.TYPE_4BYTE_ABGR:

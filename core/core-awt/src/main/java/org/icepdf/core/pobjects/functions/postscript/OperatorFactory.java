@@ -93,8 +93,6 @@ public class OperatorFactory {
                         } else {
                             int val1 = ((Number) value).intValue();
                             int val2 = ((Number) stack.pop()).intValue();
-                            // pushed as a float: every other operator pops with a (Float) cast,
-                            // so an int here fails the next operator rather than this one
                             stack.push((float) (val1 & val2));
                         }
                     }
@@ -131,7 +129,8 @@ public class OperatorFactory {
             case OperatorNames.OP_BITSHIFT:
                 operator = new Operator(OperatorNames.OP_BITSHIFT) {
                     public void eval(OperandStack stack) {
-                        // the stack holds floats, so casting to Long here threw on every use
+                        // the stack holds floats, but the bitshift operator is defined over integers, so we convert
+                        // to int and back to float
                         int shift = ((Number) stack.pop()).intValue();
                         int int1 = ((Number) stack.pop()).intValue();
                         stack.push((float) (shift >= 0 ? int1 << shift : int1 >> -shift));

@@ -155,9 +155,7 @@ public class Function_0 extends Function {
                 // ei' = min (max(ei, 0), Sizei-1)
                 e = Math.min(Math.max(e, 0), size[i] - 1);
                 // The output is interpolated between the two samples either side of e, by how far
-                // between them e falls (7.10.2).  Averaging them instead would make every cell of
-                // the table a flat step at its own midpoint, turning a ramp into a staircase and
-                // reporting the wrong value everywhere except the exact middle of each cell.
+                // between them e falls (7.10.2).
                 int e1 = (int) Math.floor(e);
                 int e2 = (int) Math.ceil(e);
                 float fraction = e - e1;

@@ -308,9 +308,7 @@ public class Permissions {
         if (!isInit) {
             init();
         }
-        // return false if the permission index is out of bounds.  The last valid index is one
-        // less than the length, so testing against the length itself let that index through and
-        // then read past the end of the array.
+        // return false if the permission index is out of bounds.
         return !(permissionIndex < 0 || permissionIndex >= permissions.length)
                 && permissions[permissionIndex];
     }

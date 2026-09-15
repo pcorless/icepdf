@@ -47,9 +47,7 @@ public class RunLengthDecode extends ChunkingInputStream {
             if (i == 128) {
                 // 128 is the end-of-data marker (7.4.5).  Falling through to the run branch reads
                 // it as a repeat of 129 copies, and the byte it then repeats is the -1 of a spent
-                // stream, so every run-length stream ended with 129 bytes of 0xFF.  The flag is
-                // what makes the end stick: this method is called again for the next chunk, and
-                // would otherwise carry on decoding whatever follows the marker.
+                // stream, so every run-length stream ended with 129 bytes of 0xFF.
                 eof = true;
                 break;
             }

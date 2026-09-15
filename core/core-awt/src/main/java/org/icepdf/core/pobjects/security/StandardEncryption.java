@@ -447,11 +447,7 @@ class StandardEncryption {
      * Algorithm 1, computing the key for one object from the document key.
      * <p>
      * The key is taken as an argument rather than read from the instance, so that the key a caller
-     * passes to {@link #generalEncryptionAlgorithm} is the key that is actually used.  Reading the
-     * field instead meant those methods ignored half of what they were given: whatever key was
-     * handed in, the per-object key came from whichever password had last been run through
-     * {@link #encryptionKeyAlgorithm} on this shared instance.  The same coupling is what made a
-     * concurrent first touch hand a decrypt a half-set key (GH-495).
+     * passes to {@link #generalEncryptionAlgorithm} is the key that is actually used.
      *
      * @param objectReference object the key is for
      * @param isRc4           true for RC4, false for AES, which salts the hash
@@ -627,9 +623,7 @@ class StandardEncryption {
 
     private static boolean isRev56User(final byte[] password, final byte[] user, final byte[] userKey, final int revision) {
 
-        // A damaged or hostile file can carry a short entry.  Reading past it threw an
-        // ArrayIndexOutOfBoundsException out of the authentication path, where the caller is
-        // expecting to be told whether the password was right.
+        // A damaged or hostile file can carry a short entry.
         if (user == null || user.length < REV56_ENTRY_LENGTH) {
             logger.warning("Encryption entry is too short to authenticate against: " +
                     (user == null ? "absent" : user.length + " bytes"));
