@@ -15,7 +15,7 @@
     </description>
 
     <properties>
-        <jacoco.coverage.minimum>0.58</jacoco.coverage.minimum>
+        <jacoco.coverage.minimum>0.59</jacoco.coverage.minimum>
         <!-- Values stamped into product-info.properties (see ProductInfo). -->
         <company>https://github.com/pcorless/</company>
         <product>ICEpdf</product>
