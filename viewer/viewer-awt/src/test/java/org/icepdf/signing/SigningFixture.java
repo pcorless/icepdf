@@ -66,6 +66,7 @@ public class SigningFixture {
     private BufferedImage signatureImage;
     private String signerName;
     private String appearanceFont;
+    private String timeStampAuthority = TIME_STAMP_AUTHORITY;
 
     private SigningFixture(File source) {
         this.source = source;
@@ -77,6 +78,21 @@ public class SigningFixture {
 
     public SigningFixture signatureType(SignatureType signatureType) {
         this.signatureType = signatureType;
+        return this;
+    }
+
+    /**
+     * Signs without asking a timestamp authority.
+     * <p>
+     * The authority above is a public server on the internet, so a test that uses it only passes
+     * when the machine can reach it and the answer comes back the size it did last time.  A test
+     * about anything other than timestamping should not depend on that; the signer handler treats a
+     * null authority as "do not timestamp".
+     *
+     * @return this fixture
+     */
+    public SigningFixture withoutTimestamp() {
+        this.timeStampAuthority = null;
         return this;
     }
 
@@ -123,7 +139,7 @@ public class SigningFixture {
     public File signTo(File outputFile) throws Exception {
         JceProvider.loadProvider();
         PfxGenerator.createPfx(KEYSTORE, PASSWORD, ALIAS);
-        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(TIME_STAMP_AUTHORITY,
+        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(timeStampAuthority,
                 new File(KEYSTORE), ALIAS, new SimplePasswordCallbackHandler(PASSWORD));
 
         Document document = new Document();
