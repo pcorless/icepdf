@@ -30,6 +30,7 @@ import java.util.zip.DeflaterOutputStream;
 
 import static org.icepdf.core.pobjects.filters.FlateDecode.*;
 import static org.icepdf.core.pobjects.filters.PredictorDecode.PREDICTOR_PNG_OPTIMUM;
+import static org.icepdf.core.pobjects.graphics.DeviceGray.DEVICEGRAY_KEY;
 import static org.icepdf.core.pobjects.graphics.DeviceRGB.DEVICERGB_KEY;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.BITS_PER_COMPONENT_KEY;
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.COLORSPACE_KEY;
@@ -155,11 +156,20 @@ class PredictorEncoder implements ImageEncoder {
                 }
                 break;
 
+            // Greyscale is one byte or one short per pixel, laid out exactly like the custom
+            // cases above.
+            case BufferedImage.TYPE_BYTE_GRAY:
             case BufferedImage.TYPE_3BYTE_BGR:
             case BufferedImage.TYPE_4BYTE_ABGR:
                 elementsInRowPerPixel = componentsPerPixel;
                 prevRow = new byte[width * elementsInRowPerPixel];
                 transferRow = new byte[width * elementsInRowPerPixel];
+                break;
+
+            case BufferedImage.TYPE_USHORT_GRAY:
+                elementsInRowPerPixel = componentsPerPixel;
+                prevRow = new short[width * elementsInRowPerPixel];
+                transferRow = new short[width * elementsInRowPerPixel];
                 break;
 
             case BufferedImage.TYPE_INT_BGR:
@@ -334,7 +344,14 @@ class PredictorEncoder implements ImageEncoder {
         imageStream.setRawBytes(stream.toByteArray());
 
         imageStream.getEntries().put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
-        imageStream.getEntries().put(COLORSPACE_KEY, DEVICERGB_KEY);
+        // The colour space has to agree with the samples that were actually written.  It was
+        // always DeviceRGB, which is right for a three component image and wrong for a greyscale
+        // one - the dictionary would claim three components per pixel where the stream holds one,
+        // and the /Colors below would say so too.  Only reachable for greyscale since the switch
+        // in encode learned to handle it.
+        int colourComponents = image.getColorModel().getNumColorComponents();
+        imageStream.getEntries().put(COLORSPACE_KEY,
+                colourComponents == 1 ? DEVICEGRAY_KEY : DEVICERGB_KEY);
 
         // setup predictor decode params
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) == null) {

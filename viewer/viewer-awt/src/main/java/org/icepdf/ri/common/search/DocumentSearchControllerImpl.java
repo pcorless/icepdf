@@ -407,9 +407,10 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                         boolean found = false;
                         // app search regex
                         if (term.isRegex() && searchPattern != null) {
-                            Matcher matcher = searchPattern.matcher(
-                                    ((MarkupAnnotation) annotation).getContents());
-                            found = matcher.find();
+                            // a stamp or a plain highlight carries no contents; the branch below
+                            // has always checked for that and this one did not
+                            String annotationText = ((MarkupAnnotation) annotation).getContents();
+                            found = annotationText != null && searchPattern.matcher(annotationText).find();
                         } else if (searchTerm != null) {
                             String annotationText = ((MarkupAnnotation) annotation).getContents();
                             if (term.isCaseSensitive() && annotationText != null) {
@@ -490,10 +491,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     private Pattern resolveSearchPattern(SearchTerm term) {
-        Pattern searchPattern = term.getRegexPattern();
+        Pattern searchPattern = term.isRegex() ? term.getRegexPattern() : null;
         if (searchPattern == null) {
+            // Quoted, because a term the caller did not mark as a regular expression is text.  It
+            // was compiled as a pattern regardless, so a search for something holding a bracket
+            // threw PatternSyntaxException and took the whole search with it, and a dot quietly
+            // matched any character - "G1.1500945" would find "G1x1500945" as well.
             String searchTerm = term.getTerm();
-            searchPattern = Pattern.compile(term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase());
+            searchPattern = Pattern.compile(Pattern.quote(
+                    term.isCaseSensitive() ? searchTerm : searchTerm.toLowerCase()));
         }
         return searchPattern;
     }
@@ -503,17 +509,18 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int count = item.getSubItemCount();
         for (int i = 0; i < count; i++) {
             OutlineItem child = item.getSubItem(i);
+            // Every item is searched, not only the ones without children.  An item with children
+            // used to be descended into and never matched itself, so a chapter heading could not
+            // be found - which is the most likely thing somebody searching an outline wants.
+            String outlineTitle = child.getTitle();
+            if (outlineTitle != null && !outlineTitle.isEmpty()) {
+                Matcher matcher = searchPattern.matcher(isCaseSensitive ? outlineTitle : outlineTitle.toLowerCase());
+                if (matcher.find()) {
+                    foundOutlines.add(child);
+                }
+            }
             if (child.getSubItemCount() > 0) {
                 recursiveOutlineSearch(searchPattern, isCaseSensitive, foundOutlines, child);
-            } else {
-                // search the item title for a match.
-                String outlineTitle = child.getTitle();
-                if (outlineTitle != null && !outlineTitle.isEmpty()) {
-                    Matcher matcher = searchPattern.matcher(isCaseSensitive ? outlineTitle : outlineTitle.toLowerCase());
-                    if (matcher.find()) {
-                        foundOutlines.add(child);
-                    }
-                }
             }
         }
     }
@@ -547,12 +554,19 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();
-        int pageCount = viewerController.getDocument().getNumberOfPages();
+        // Resolved the way the rest of the class resolves it.  Reaching straight through the
+        // viewer controller meant that a search run headless - which the Document constructor
+        // exists for, and which searchHighlightPage and the rest support - could find its hits and
+        // then throw on the first attempt to step through them.
+        if (document == null) document = viewerController.getDocument();
+        int pageCount = document.getNumberOfPages();
 
         if (searchPageCursor < pageCount) {
             WordText word;
-            // move to the next hit, start at -1 after a search clear
-            searchWordCursor++;
+            // Step off the hit the cursor is on.  The cursor is stored on the first word of a hit,
+            // and a hit can be a run of consecutive words, so the whole run has to be passed -
+            // stepping one word would read the second word of a run as a hit of its own.
+            searchWordCursor = indexAfterRun(searchPageCursor, searchLineCursor, searchWordCursor);
             for (int i = searchPageCursor; i < pageCount; i++) {
                 if (searchModel.isPageSearchHit(i)) {
                     if (searchModel.getPageTextHit(i) == null) {
@@ -569,6 +583,7 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                 word = words.get(j);
                                 if (word.isHighlighted()) {
                                     // highlight the rest of the words in the run
+                                    final int hitStart = j;
                                     WordText lastHit = word;
                                     for (; j < maxJ; j++) {
                                         if (!words.get(j).isHighlighted()) {
@@ -579,7 +594,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                     }
                                     searchModel.setSearchPageCursor(i);
                                     searchModel.setSearchLineCursor(k);
-                                    searchModel.setSearchWordCursor(j);
+                                    // on the hit, not past it: stepping back from here has to find
+                                    // the hit before this one rather than this one again
+                                    searchModel.setSearchWordCursor(hitStart);
                                     selectSearchHit(i, pageText, word, lastHit);
                                     showWord(i, word);
                                     return word;
@@ -601,12 +618,48 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     /**
+     * The word index just past the hit the cursor is sitting on.
+     * <p>
+     * A hit is a run of consecutive highlighted words, since a search phrase can match more than
+     * one.  The cursor is stored on the run's first word so that stepping back from it finds the
+     * hit before, which means stepping forward has to pass the whole run rather than one word.
+     *
+     * @param pageIndex  page the cursor is on
+     * @param lineCursor line the cursor is on
+     * @param wordCursor word the cursor is on, negative before the first hit
+     * @return the index to resume scanning forward from
+     */
+    private int indexAfterRun(int pageIndex, int lineCursor, int wordCursor) {
+        if (wordCursor < 0) {
+            return wordCursor + 1;
+        }
+        PageText pageText = searchModel.getPageTextHit(pageIndex);
+        if (pageText == null) {
+            return wordCursor + 1;
+        }
+        ArrayList<LineText> pageLines = pageText.getPageLines();
+        if (lineCursor < 0 || lineCursor >= pageLines.size()) {
+            return wordCursor + 1;
+        }
+        List<WordText> words = pageLines.get(lineCursor).getWords();
+        int index = wordCursor;
+        while (index < words.size() && words.get(index).isHighlighted()) {
+            index++;
+        }
+        // not on a hit at all, so one step is enough
+        return index == wordCursor ? wordCursor + 1 : index;
+    }
+
+    /**
      * Navigate to the page that the current word is on.
      *
      * @param pageIndex page number to navigate to
      * @param word      word that has been marked as a cursor.
      */
     public void showWord(int pageIndex, WordText word) {
+        // Nothing to show without a viewer, the same as selectSearchHit below; the hit is still
+        // returned to the caller, which is all a headless search can act on.
+        if (viewerController == null) return;
         viewerController.showPage(pageIndex);
         // navigate to the location
         Rectangle2D.Double bounds = word.getBounds();
@@ -643,7 +696,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
         int searchPageCursor = searchModel.getSearchPageCursor();
         int searchLineCursor = searchModel.getSearchLineCursor();
         int searchWordCursor = searchModel.getSearchWordCursor();
-        int pageCount = viewerController.getDocument().getNumberOfPages();
+        // Resolved the way the rest of the class resolves it.  Reaching straight through the
+        // viewer controller meant that a search run headless - which the Document constructor
+        // exists for, and which searchHighlightPage and the rest support - could find its hits and
+        // then throw on the first attempt to step through them.
+        if (document == null) document = viewerController.getDocument();
+        int pageCount = document.getNumberOfPages();
 
         if (searchPageCursor < pageCount) {
             WordText word;
@@ -679,7 +737,9 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
                                         }
                                         searchModel.setSearchPageCursor(i);
                                         searchModel.setSearchLineCursor(k);
-                                        searchModel.setSearchWordCursor(j);
+                                        // j has walked to the word before the run; the cursor is
+                                        // stored on the run's first word, the same as going forward
+                                        searchModel.setSearchWordCursor(j + 1);
                                         selectSearchHit(i, pageText, firstHit, word);
                                         showWord(i, word);
                                         return word;
@@ -771,13 +831,15 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
      * @param pageIndex page index to clear
      */
     public void clearSearchHighlight(int pageIndex) {
-        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
-        if (pvc == null) {
-            return;
-        }
-        // clear cache and terms list
+        // The model is cleared whether or not there is a component to repaint, which is the order
+        // clearAllSearchHighlight already uses.  Returning early on a missing component left the
+        // page's hits in the model - so a page that was not laid out, or a search run headless,
+        // kept results that had supposedly been cleared.
         searchModel.clearSearchResults(pageIndex);
-        pvc.clearSearchHighlights();
+        PageViewComponentImpl pvc = getPageViewComponent(pageIndex);
+        if (pvc != null) {
+            pvc.clearSearchHighlights();
+        }
     }
 
     /**
@@ -797,6 +859,12 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     private PageViewComponentImpl getPageViewComponent(int pageIndex) {
+        // There are no page components without a viewer, so a headless caller has nothing to clear
+        // the highlights of.  Clearing the model still has to work, and it is the caller above that
+        // does that before asking for a component.
+        if (viewerController == null) {
+            return null;
+        }
         List<AbstractPageViewComponent> pageComponents = viewerController.getDocumentViewController()
                 .getDocumentViewModel().getPageComponents();
         if (pageIndex < 0 || pageIndex >= pageComponents.size()) {

@@ -130,7 +130,9 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
         Object value = library.getArray(entries, OPT_KEY);
         if (value == null) {
             FieldDictionary parent = getParent();
-            value = library.getArray(parent.getEntries(), OPT_KEY);
+            if (parent != null) {
+                value = library.getArray(parent.getEntries(), OPT_KEY);
+            }
         }
         if (value != null) {
             ArrayList opts = (ArrayList) value;
@@ -142,11 +144,11 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
                     options.add(new ChoiceOption(tmpString, tmpString));
                 } else if (opt instanceof List) {
                     List tmp = (List) opt;
-                    StringObject tmp1StingObject = (StringObject) tmp.get(0);
-                    String tmpString1 = tmp1StingObject.getDecryptedLiteralString(securityManager);
-                    StringObject tmp2StingObject = (StringObject) tmp.get(1);
-                    String tmpString2 = tmp2StingObject.getDecryptedLiteralString(securityManager);
-                    options.add(new ChoiceOption(tmpString1, tmpString2));
+                    StringObject exportObject = (StringObject) tmp.get(0);
+                    String exportValue = exportObject.getDecryptedLiteralString(securityManager);
+                    StringObject displayObject = (StringObject) tmp.get(1);
+                    String displayText = displayObject.getDecryptedLiteralString(securityManager);
+                    options.add(new ChoiceOption(displayText, exportValue));
                 }
             }
         } else {
@@ -193,7 +195,7 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
             indexes = new ArrayList<>(1);
             for (int i = 0, j = 0, max = options.size(); i < max; i++) {
                 if (options.get(i).getLabel().equals(value)) {
-                    indexes.set(j, i);
+                    indexes.add(i);
                     j++;
                 }
             }
