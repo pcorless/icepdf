@@ -69,11 +69,6 @@ public class TamperedSignatureTest {
         File out = SigningFixture.of(SOURCE.toFile())
                 .reason("Approval")
                 .signatureType(SignatureType.CERTIFIER)
-                // No timestamp authority: these tests are about detecting a change to a signed
-                // document, which has nothing to do with timestamping, and the authority the
-                // fixture would otherwise ask is a public server on the internet.  Depending on it
-                // makes every one of these pass or fail on whether that server answers.
-                .withoutTimestamp()
                 .signTo(OUT.resolve(name).toFile());
         return Files.readAllBytes(out.toPath());
     }

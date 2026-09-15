@@ -57,7 +57,6 @@ public class SigningFixture {
     private static final String KEYSTORE = "src/test/resources/signing/certificate.pfx";
     private static final String PASSWORD = "changeit";
     private static final String ALIAS = "senderKeyPair";
-    private static final String TIME_STAMP_AUTHORITY = "http://time.certum.pl";
 
     private final File source;
     private SignatureType signatureType = SignatureType.CERTIFIER;
@@ -66,7 +65,7 @@ public class SigningFixture {
     private BufferedImage signatureImage;
     private String signerName;
     private String appearanceFont;
-    private String timeStampAuthority = TIME_STAMP_AUTHORITY;
+    private String timeStampAuthority;
 
     private SigningFixture(File source) {
         this.source = source;
@@ -82,17 +81,20 @@ public class SigningFixture {
     }
 
     /**
-     * Signs without asking a timestamp authority.
+     * Asks the named authority to timestamp the signature.
      * <p>
-     * The authority above is a public server on the internet, so a test that uses it only passes
-     * when the machine can reach it and the answer comes back the size it did last time.  A test
-     * about anything other than timestamping should not depend on that; the signer handler treats a
-     * null authority as "do not timestamp".
+     * Off unless a test asks for it, and the caller supplies the authority.  It used to default to a
+     * public authority on the internet, which meant every signing test passed only while that server
+     * was reachable and answering the size it answered last time - and put a request to somebody
+     * else's server on every build.  A test that is actually about timestamping should start a
+     * {@link LocalTimeStampAuthority} and pass its url; the signer handler treats the null this
+     * holds otherwise as "do not timestamp".
      *
+     * @param url where to ask for a timestamp
      * @return this fixture
      */
-    public SigningFixture withoutTimestamp() {
-        this.timeStampAuthority = null;
+    public SigningFixture timestampWith(String url) {
+        this.timeStampAuthority = url;
         return this;
     }
 
