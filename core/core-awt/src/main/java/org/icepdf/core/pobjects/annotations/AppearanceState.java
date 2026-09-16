@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.geom.AffineTransform;
+import java.nio.charset.StandardCharsets;
 import java.awt.geom.Rectangle2D;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,8 +58,13 @@ public class AppearanceState extends Dictionary {
                 Form form = (Form) streamOrDictionary;
                 form.init();
                 byte[] streamBytes = ((Form) streamOrDictionary).getDecodedStreamBytes();
-                originalContentStream = streamBytes != null ?
-                        new String(((Form) streamOrDictionary).getDecodedStreamBytes()) : "";
+                // ISO-8859-1, because this string is a content stream rather than text: it is handed
+                // back out by getOriginalContentStream, edited, and written again as bytes with that
+                // same charset.  Read with the platform's default instead, every byte above 127 in
+                // it - a literal string with an accented character in it, say - came back as the
+                // replacement character and was written out as a question mark.
+                originalContentStream = streamBytes != null
+                        ? new String(streamBytes, StandardCharsets.ISO_8859_1) : "";
                 resources = form.getResources();
                 shapes = form.getShapes();
                 matrix = form.getMatrix();
@@ -75,7 +81,8 @@ public class AppearanceState extends Dictionary {
                 bbox.setRect(0, 0, bbox.getWidth(), bbox.getHeight());
             }
             matrix = new AffineTransform();
-            originalContentStream = new String(stream.getDecodedStreamBytes());
+            originalContentStream = new String(stream.getDecodedStreamBytes(),
+                    StandardCharsets.ISO_8859_1);
             try {
                 ContentParser cp = new ContentParser(library, resources);
                 shapes = cp.parse(new Stream[]{stream}, null).getShapes();
