@@ -372,6 +372,15 @@ public class SignatureDictionary extends Dictionary {
         }
     }
 
+    /**
+     * Sets the signature itself.
+     * <p>
+     * Deliberately not marked as authored the way the strings around it are, because a signature
+     * dictionary's {@code /Contents} is the one string a PDF does not encrypt (32000-1 7.6.2) - it
+     * is the very bytes the rest of the file was hashed into.
+     *
+     * @param hexString the signature bytes
+     */
     public void setContents(HexStringObject hexString) {
         entries.put(CONTENTS_KEY, hexString);
     }
@@ -442,7 +451,7 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public void setName(String name) {
-        entries.put(NAME_KEY, new LiteralStringObject(name));
+        setString(NAME_KEY, name);
     }
 
     public String getDate() {
@@ -459,7 +468,7 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public void setDate(String date) {
-        entries.put(M_KEY, new LiteralStringObject(date));
+        setString(M_KEY, date);
     }
 
     public String getLocation() {
@@ -472,7 +481,7 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public void setLocation(String location) {
-        entries.put(LOCATION_KEY, new LiteralStringObject(location));
+        setString(LOCATION_KEY, location);
     }
 
     public String getReason() {
@@ -485,7 +494,7 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public void setReason(String reason) {
-        entries.put(REASON_KEY, new LiteralStringObject(reason));
+        setString(REASON_KEY, reason);
     }
 
     public String getContactInfo() {
@@ -498,7 +507,7 @@ public class SignatureDictionary extends Dictionary {
     }
 
     public void setContactInfo(String contactInfo) {
-        entries.put(CONTACT_INFO_KEY, new LiteralStringObject(contactInfo));
+        setString(CONTACT_INFO_KEY, contactInfo);
     }
 
     public int getHandlerVersion() {
