@@ -23,6 +23,7 @@ import org.icepdf.core.util.Utils;
 import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
@@ -114,7 +115,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (tmp instanceof StringObject) {
                 defaultStyle = Utils.convertStringObject(library, (StringObject) tmp);
             } else if (tmp instanceof Stream) {
-                defaultStyle = new String(((Stream) tmp).getDecodedStreamBytes());
+                defaultStyle = new String(((Stream) tmp).getDecodedStreamBytes(),
+                        StandardCharsets.ISO_8859_1);
             }
         }
 
@@ -129,7 +131,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (resources != null) {
                 try {
                     ContentParser cp = new ContentParser(library, resources);
-                    Stream[] possibleContentStream = Stream.fromByteArray(defaultAppearance.getBytes(), this);
+                    Stream[] possibleContentStream = Stream.fromByteArray(defaultAppearance.getBytes(StandardCharsets.ISO_8859_1), this);
                     cp.parseTextBlocks(possibleContentStream);
                     GraphicsState gs = cp.getGraphicsState();
                     if (gs != null) {
@@ -171,7 +173,7 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             }
             ContentParser cp = new ContentParser(library, resources);
             // usefull parser so we parse the font color.
-            Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(), this);
+            Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(StandardCharsets.ISO_8859_1), this);
             cp.parse(possibleContentStream, null);
             GraphicsState gs = cp.getGraphicsState();
             if (gs != null) {

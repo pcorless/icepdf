@@ -19,6 +19,7 @@ import org.icepdf.core.io.CountingOutputStream;
 import org.icepdf.core.pobjects.structure.Header;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Writes out the head of the document.  Nothing fancy uses the overused âãÏÓ marker and the version
@@ -28,13 +29,22 @@ import java.io.IOException;
  */
 public class HeaderWriter extends BaseWriter {
 
-    private static final byte[] commentMarker = "%".getBytes();
+    private static final byte[] commentMarker = "%".getBytes(StandardCharsets.ISO_8859_1);
 
-    private static final byte[] FOUR_BYTES = "âãÏÓ".getBytes();
+    /**
+     * The four bytes above 127 that follow the header, which tell anything transferring the file
+     * that it is binary and must not be translated (PDF 32000-1 7.5.2).
+     * <p>
+     * Written as the byte values rather than as characters of a string literal.  As a literal it
+     * was encoded with whatever charset the platform defaulted to, which made it eight bytes on a
+     * UTF-8 machine and four on a Latin-1 one - the same source producing different files - and it
+     * depended on the compiler being told the right encoding for this file as well.
+     */
+    private static final byte[] FOUR_BYTES = {(byte) 0xE2, (byte) 0xE3, (byte) 0xCF, (byte) 0xD3};
 
     public void write(Header header, CountingOutputStream output) throws IOException {
         output.write(commentMarker);
-        output.write(header.getWriterVersion().getBytes());
+        output.write(header.getWriterVersion().getBytes(StandardCharsets.ISO_8859_1));
         output.write(NEWLINE);
         output.write(commentMarker);
         output.write(FOUR_BYTES);
