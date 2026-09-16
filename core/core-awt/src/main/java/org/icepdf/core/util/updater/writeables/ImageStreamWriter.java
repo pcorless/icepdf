@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoder;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
+import org.icepdf.core.util.updater.writeables.image.RasterEncoder;
 
 import java.io.IOException;
 
@@ -40,7 +41,14 @@ public class ImageStreamWriter extends StreamWriter {
         // decoded image is only set if the image was touch via a redaction burn and will always be unencrypted
         if (imageStream.getDecodedImage() != null) {
             ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);
-            imageStream = imageEncoder.encode();
+            ImageStream encoded = imageEncoder.encode();
+            if (encoded == null) {
+                // The predictor encoder only handles rasters it recognises and returns null for the
+                // rest; the raster encoder reads through getRGB and so handles anything.  Without
+                // this the write failed with a null pointer rather than a larger stream.
+                encoded = new RasterEncoder(imageStream).encode();
+            }
+            imageStream = encoded;
             outputData = imageStream.getRawBytes();
 
             // check if we need to encrypt the stream

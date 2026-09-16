@@ -86,6 +86,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
     private JComboBox<ValueLabelItem> fontNameBox;
     private JComboBox<ValueLabelItem> fontSizeBox;
+    private JComboBox<ValueLabelItem> layoutBox;
     private JCheckBox showTextCheckBox;
     private JCheckBox showSignatureCheckBox;
     private JTextField imagePathTextField;
@@ -230,6 +231,12 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
                 signatureAppearanceModel.setFontSize(fontSize);
                 buildAppearanceStream();
             }
+        } else if (e.getSource() == layoutBox) {
+            ValueLabelItem item = (ValueLabelItem) layoutBox.getSelectedItem();
+            if (item != null) {
+                signatureAppearanceModel.setLayout((SignatureAppearanceLayout) item.getValue());
+                buildAppearanceStream();
+            }
         } else if (e.getSource() == fontNameBox) {
             ValueLabelItem item = (ValueLabelItem) fontNameBox.getSelectedItem();
             if (item != null) {
@@ -312,6 +319,8 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         signatureAppearanceModel.setFontSize((int) ((ValueLabelItem) Objects.requireNonNull(fontSizeBox.getSelectedItem())).getValue());
         signatureAppearanceModel.setSignatureImagePath(imagePathTextField.getText());
         signatureAppearanceModel.setImageScale(imageScaleSlider.getValue());
+        signatureAppearanceModel.setLayout((SignatureAppearanceLayout)
+                ((ValueLabelItem) Objects.requireNonNull(layoutBox.getSelectedItem())).getValue());
         setSignatureImage();
     }
 
@@ -468,12 +477,27 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         int imageScale = signatureAppearanceModel.getImageScale();
         JLabel imageScaleLabel = new JLabel(messageBundle.getString(
                 "viewer.annotation.signature.creation.dialog.signature.imageScale.label"));
-        imageScaleSlider = new JSlider(JSlider.HORIZONTAL, 0, 300, imageScale);
-        imageScaleSlider.setMajorTickSpacing(50);
+        // The scale is a share of the room the image has beside the text, so 100 is as large as it
+        // goes; the range used to run to 300, where everything past the point the image filled its
+        // space did the same thing as the point before it.
+        imageScaleSlider = new JSlider(JSlider.HORIZONTAL, 0, 100, imageScale);
+        imageScaleSlider.setMajorTickSpacing(25);
         imageScaleSlider.setPaintLabels(true);
 
         imageScaleSlider.setPaintTicks(true);
         imageScaleSlider.addChangeListener(this);
+
+        // how the image and the text are arranged
+        SignatureAppearanceLayout layout = signatureAppearanceModel.getLayout();
+        ValueLabelItem[] layoutItems = {
+                new ValueLabelItem(SignatureAppearanceLayout.SIDE_BY_SIDE, messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.signature.appearance.layout.sideBySide.label")),
+                new ValueLabelItem(SignatureAppearanceLayout.OVERLAY, messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.signature.appearance.layout.overlay.label"))};
+        layoutBox = new JComboBox<>(layoutItems);
+        layoutBox.setSelectedItem(Arrays.stream(layoutItems)
+                .filter(item -> item.getValue() == layout).findAny().orElse(layoutItems[0]));
+        layoutBox.addItemListener(this);
 
         // font name and size
         addGB(visibilityPanel, new JLabel(messageBundle.getString(
@@ -486,6 +510,10 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
         addGB(visibilityPanel, fontSizeBox, 3, 0, 1, 1);
         addGB(visibilityPanel, showTextCheckBox, 0, 1, 1, 2);
         addGB(visibilityPanel, showSignatureCheckBox, 2, 1, 1, 2);
+        addGB(visibilityPanel, new JLabel(messageBundle.getString(
+                        "viewer.annotation.signature.creation.dialog.signature.appearance.layout.label")),
+                0, 2, 1, 1);
+        addGB(visibilityPanel, layoutBox, 1, 2, 1, 1);
 
         JPanel signaturePanel = new JPanel(new GridBagLayout());
         signaturePanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
@@ -664,6 +692,7 @@ public class SignatureCreationDialog extends EscapeJDialog implements ActionList
 
         fontNameBox.setEnabled(enable);
         fontSizeBox.setEnabled(enable);
+        layoutBox.setEnabled(enable);
         showTextCheckBox.setEnabled(enable);
         showSignatureCheckBox.setEnabled(enable);
         imagePathTextField.setEnabled(enable);

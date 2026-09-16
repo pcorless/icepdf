@@ -102,6 +102,12 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SIGNATURE_IMAGE_SCALE = "org.icepdf.core.signatures.show.imageScale";
     public static final String PROPERTY_SIGNATURE_FONT_NAME = "org.icepdf.core.signatures.font.name";
     public static final String PROPERTY_SIGNATURE_FONT_SIZE = "org.icepdf.core.signatures.font.size";
+    // how a signature appearance arranges its image and its text
+    public static final String PROPERTY_SIGNATURE_PADDING = "org.icepdf.core.signatures.layout.padding";
+    public static final String PROPERTY_SIGNATURE_IMAGE_WIDTH_MAX =
+            "org.icepdf.core.signatures.layout.imageWidthMax";
+    public static final String PROPERTY_SIGNATURE_LINE_LEADING = "org.icepdf.core.signatures.layout.leading";
+    public static final String PROPERTY_SIGNATURE_LAYOUT = "org.icepdf.core.signatures.layout.mode";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
