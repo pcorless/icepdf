@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.images;
 
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
@@ -24,7 +25,6 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
@@ -57,37 +57,117 @@ public class ImageStream extends Stream {
         imageParams = new ImageParams(library, entries, null);
     }
 
+    /**
+     * @see #getInstance(Library, Reference, Reference, BufferedImage, boolean)
+     */
     public static ImageStream getInstance(Library library, Reference reference, BufferedImage bufferedImage,
-                                          boolean useMask) {
+                                          boolean useAlpha) {
+        return getInstance(library, reference, null, bufferedImage, useAlpha);
+    }
+
+    /**
+     * Builds a new image XObject around a {@code BufferedImage}, ready to be written out, and
+     * registers it - and its soft mask, if it needs one - with the document's state manager.
+     * <p>
+     * Transparency is carried as a soft mask ({@code /SMask}): an eight bit greyscale image of the
+     * alpha channel, which is what lets a partly transparent pixel actually be partly transparent.
+     * The alternative, a colour key {@code /Mask}, can only say paint or do not paint about a
+     * pixel, so every antialiased edge in the image comes out either hard or fringed against
+     * whatever colour was keyed out - which is what a scanned or drawn signature is made almost
+     * entirely of.  An image whose alpha channel turns out to be fully opaque gets no soft mask at
+     * all, so nothing is paid for the check.
+     *
+     * @param library           document library
+     * @param reference         object number to write the image as; a new one is taken when null.
+     *                          Passing the previous one back rebuilds the image in place instead of
+     *                          leaving the old one behind, which matters when an appearance is
+     *                          regenerated each time a setting changes
+     * @param softMaskReference object number to write the soft mask as, on the same terms
+     * @param bufferedImage     image to write
+     * @param useAlpha          whether to carry the image's transparency into the PDF.  When false
+     *                          a transparent image is flattened onto white
+     * @return the registered image stream, whose {@code /SMask} entry names the soft mask when one
+     * was needed
+     */
+    public static ImageStream getInstance(Library library, Reference reference, Reference softMaskReference,
+                                          BufferedImage bufferedImage, boolean useAlpha) {
+        // The encoders read the image back through its raster at write time, so it has to be in a
+        // shape they recognise before anything is measured off it.
+        BufferedImage image = ImageUtility.normalizeForEncoding(bufferedImage, useAlpha);
+
         DictionaryEntries imageDictionary = new DictionaryEntries();
-        // build base dictionary and image params, use jpeg so that we get a png when encoding the stream
-        imageDictionary.put(FILTER_KEY, FILTER_DCT_DECODE);
         imageDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
-        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
         imageDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
-        imageDictionary.put(WIDTH_KEY, bufferedImage.getWidth());
-        imageDictionary.put(HEIGHT_KEY, bufferedImage.getHeight());
-        // mask out white background if alpha is specified in the colour model; this is a manual mask
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            imageDictionary.put(MASK_KEY, Arrays.asList(255, 255, 255, 255, 255, 255));
-        }
+        imageDictionary.put(BITS_PER_COMPONENT_KEY, 8);
+        imageDictionary.put(WIDTH_KEY, image.getWidth());
+        imageDictionary.put(HEIGHT_KEY, image.getHeight());
+        // The encoder writes the samples and sets the filter and colour space it actually used; this
+        // is only what the dictionary says until then.
+        imageDictionary.put(FILTER_KEY, FILTER_FLATE_DECODE);
+
         ImageStream imageStream = new ImageStream(library, imageDictionary, (byte[]) null);
-        imageStream.setDecodedImage(bufferedImage);
-        // This is pretty rough, will mask any alpha value, but it is a start for now.
-        // We can add more complex mask processing later if needed.
-        if (useMask && bufferedImage.getColorModel().hasAlpha()) {
-            // we need s softer mask for the image.
-            ImageUtility.encodeColorKeyMask(imageStream);
-        }
-        // setup object reference and put in state manager
+        imageStream.setDecodedImage(image);
+
         StateManager stateManager = library.getStateManager();
+        ImageStream softMask = useAlpha ? createSoftMask(library, softMaskReference, image) : null;
+        if (softMask != null) {
+            imageDictionary.put(SMASK_KEY, softMask.getPObjectReference());
+        } else if (softMaskReference != null) {
+            // The image no longer has anything to be masked by, so a mask written for a previous
+            // version of it would be an object nothing refers to.
+            stateManager.removeChange(new PObject(null, softMaskReference));
+        }
+
+        // setup object reference and put in state manager
         if (reference == null) {
             reference = stateManager.getNewReferenceNumber();
         }
         imageStream.setPObjectReference(reference);
         stateManager.addChange(new PObject(imageStream, reference));
         return imageStream;
+    }
 
+    /**
+     * Builds the {@code /SMask} image holding {@code image}'s alpha channel and registers it.
+     *
+     * @return the soft mask stream, or null when the image has no alpha channel or is fully opaque
+     */
+    private static ImageStream createSoftMask(Library library, Reference reference, BufferedImage image) {
+        BufferedImage alphaImage = ImageUtility.extractAlpha(image);
+        if (alphaImage == null) {
+            return null;
+        }
+        DictionaryEntries maskDictionary = new DictionaryEntries();
+        maskDictionary.put(TYPE_KEY, Form.TYPE_VALUE);
+        maskDictionary.put(SUBTYPE_KEY, ImageStream.TYPE_VALUE);
+        maskDictionary.put(BITS_PER_COMPONENT_KEY, 8);
+        maskDictionary.put(WIDTH_KEY, alphaImage.getWidth());
+        maskDictionary.put(HEIGHT_KEY, alphaImage.getHeight());
+        maskDictionary.put(COLORSPACE_KEY, DeviceGray.DEVICEGRAY_KEY);
+        maskDictionary.put(FILTER_KEY, FILTER_FLATE_DECODE);
+
+        ImageStream softMask = new ImageStream(library, maskDictionary, (byte[]) null);
+        // Left as a decoded image rather than pre-compressed bytes so that it goes out through the
+        // same writer the colour samples do - which is what compresses it and, in an encrypted
+        // document, encrypts it.  Raw bytes would be written through unencrypted.
+        softMask.setDecodedImage(alphaImage);
+
+        StateManager stateManager = library.getStateManager();
+        if (reference == null) {
+            reference = stateManager.getNewReferenceNumber();
+        }
+        softMask.setPObjectReference(reference);
+        stateManager.addChange(new PObject(softMask, reference));
+        return softMask;
+    }
+
+    /**
+     * @return the object the image's {@code /SMask} names, or null when it has none.  Useful to a
+     * caller that rebuilds an image and wants the mask rewritten in place rather than orphaned
+     */
+    public Reference getSoftMaskReference() {
+        Object softMask = entries.get(SMASK_KEY);
+        return softMask instanceof Reference ? (Reference) softMask : null;
     }
 
     /**

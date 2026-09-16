@@ -31,6 +31,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceLayout;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 
 import java.awt.*;
@@ -65,6 +66,7 @@ public class SigningFixture {
     private BufferedImage signatureImage;
     private String signerName;
     private String appearanceFont;
+    private SignatureAppearanceLayout layout = SignatureAppearanceLayout.SIDE_BY_SIDE;
     private String timeStampAuthority;
 
     private SigningFixture(File source) {
@@ -135,6 +137,15 @@ public class SigningFixture {
     }
 
     /**
+     * How the appearance arranges its image and text.  Stated rather than left to the preference,
+     * for the same reason the rest of the appearance settings are.
+     */
+    public SigningFixture layout(SignatureAppearanceLayout layout) {
+        this.layout = layout;
+        return this;
+    }
+
+    /**
      * @param outputFile where to write the signed document
      * @return the file written, so a caller can go straight on to reading it
      */
@@ -182,8 +193,14 @@ public class SigningFixture {
             appearanceModel.setContact(signatureDictionary.getContactInfo());
             appearanceModel.setLocation(signatureDictionary.getLocation());
             appearanceModel.setSignatureType(signatureType);
+            // Same reason as the text above: whether the image is drawn, and how big, are stored
+            // preferences, so a test that hands one over has to say it wants it drawn rather than
+            // inherit whatever the machine's viewer was last set to.
+            appearanceModel.setLayout(layout);
+            appearanceModel.setSignatureImageVisible(signatureImage != null);
             if (signatureImage != null) {
                 appearanceModel.setSignatureImage(signatureImage);
+                appearanceModel.setImageScale(100);
             }
 
             BasicSignatureAppearanceCallback appearanceCallback = new BasicSignatureAppearanceCallback();

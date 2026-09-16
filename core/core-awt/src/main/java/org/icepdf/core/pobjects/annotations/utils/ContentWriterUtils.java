@@ -273,35 +273,99 @@ public class ContentWriterUtils {
         promoteTempObjects(stateManager, font.getEntries(), visited);
     }
 
+    /**
+     * @see #addImageToShapes(Library, Name, Reference, Reference, BufferedImage, Shapes, Rectangle2D, float)
+     */
     public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
                                                BufferedImage bufferedImage, Shapes shapes,
                                                Rectangle2D bbox, float scale) {
-        scale = scale / 100;
+        return addImageToShapes(library, imageName, reference, null, bufferedImage, shapes, bbox, scale);
+    }
 
-        // create transform for centering image
-        float scaledImageHeight = bufferedImage.getHeight() * scale;
-        float offset = (float) (bbox.getHeight() - scaledImageHeight) / 2;
-        AffineTransform centeringTransform = new AffineTransform(
-                1, 0, 0,
-                1, 0,
-                -offset);
+    /**
+     * Writes an image into an appearance stream's shapes, centred in {@code region} and never
+     * larger than it, and registers the image XObject it draws.
+     * <p>
+     * The image's transparency is carried through as a soft mask, so an image drawn over a coloured
+     * background or over other appearance content shows that content through its transparent and
+     * partly transparent pixels rather than a keyed-out block of colour.
+     *
+     * @param library           document library
+     * @param imageName         resource name the content stream refers to the image by
+     * @param reference         object number for the image, or null for a new one
+     * @param softMaskReference object number for the image's soft mask, or null for a new one
+     * @param bufferedImage     image to draw
+     * @param shapes            appearance shapes to draw it into
+     * @param region            where in the appearance to draw it, in the shapes' own space - which
+     *                          {@link #createAppearanceShapes} sets up with the origin at the top
+     *                          left of the bounding box and y running down.  Pass the whole bounding
+     *                          box to use all of it, or a part of it to leave room for something
+     *                          else, such as the text beside a signature image
+     * @param scale             percentage of the region the image fills.  100 fits the image to the
+     *                          region, keeping its aspect ratio; less leaves it smaller within the
+     *                          same region, centred.  A share of the space rather than of the
+     *                          image's own pixel size, because the pixel size is not something the
+     *                          person choosing the image can see - the same percentage would
+     *                          otherwise give a 200 pixel stamp and a 2000 pixel scan of the same
+     *                          signature wildly different results, and anything above the region's
+     *                          own size would simply be clipped
+     * @return the registered image stream
+     */
+    public static ImageStream addImageToShapes(Library library, Name imageName, Reference reference,
+                                               Reference softMaskReference, BufferedImage bufferedImage,
+                                               Shapes shapes, Rectangle2D region, float scale) {
+        // add image xObject.  Done first: the image that ends up drawn is the normalized one the
+        // stream holds, whose dimensions are what the placement has to be measured against.
+        ImageStream imageStream = ImageStream.getInstance(library, reference, softMaskReference,
+                bufferedImage, true);
+        BufferedImage image = imageStream.getDecodedImage();
 
-        // create transform for image placement
+        float fit = Math.min((float) region.getWidth() / image.getWidth(),
+                (float) region.getHeight() / image.getHeight());
+        scale = fit * Math.max(0, Math.min(100, scale)) / 100;
+        float scaledWidth = image.getWidth() * scale;
+        float scaledHeight = image.getHeight() * scale;
+
+        // Centred in the region.  The y translation is the image's bottom edge rather than its top
+        // because the height is negative: the shapes' space runs y down and a PDF image is drawn up
+        // from its own origin, so the placement is flipped back here.
         AffineTransform imageTransform = new AffineTransform(
-                bufferedImage.getWidth() * scale,
-                0, 0,
-                -bufferedImage.getHeight() * scale,
-                0,
-                bbox.getHeight());
-        // add image xObject
-        ImageStream imageStream = ImageStream.getInstance(library, reference, bufferedImage, true);
+                scaledWidth, 0, 0, -scaledHeight,
+                region.getX() + (region.getWidth() - scaledWidth) / 2,
+                region.getY() + (region.getHeight() + scaledHeight) / 2);
         ImageReference imageReference = new ImageContentWriterReference(imageStream, imageName);
         // stack em up
         shapes.add(new PushDrawCmd());
-        shapes.add(new TransformDrawCmd(centeringTransform));
         shapes.add(new TransformDrawCmd(imageTransform));
         shapes.add(new ImageDrawCmd(imageReference));
         shapes.add(new PopDrawCmd());
         return imageStream;
     }
+
+    /**
+     * How wide {@code text} is when drawn by {@code fontFile}, in the same units the appearance is
+     * laid out in.
+     * <p>
+     * Measured through the font that actually draws it, and character by character the way
+     * {@link #addTextSpritesToShapes} advances.  Measuring with an equivalent {@code java.awt.Font}
+     * instead - which is what the signature appearance used to do to work out its margin - asks a
+     * different font, found by name, for metrics that only happen to be close: the text was laid out
+     * against one set of advances and positioned against another.
+     *
+     * @param fontFile font the text will be drawn with, already derived to its point size
+     * @param text     text to measure
+     * @return the width of the text
+     */
+    public static float measureTextWidth(FontFile fontFile, String text) {
+        float width = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char character = text.charAt(i);
+            if (character == '\n' || character == '\r') {
+                continue;
+            }
+            width += (float) fontFile.getAdvance(character).getX();
+        }
+        return width;
+    }
+
 }

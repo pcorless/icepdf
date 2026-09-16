@@ -31,18 +31,33 @@ import java.util.prefs.Preferences;
 
 
 /**
- * Signature appearance state allows the signature builder to dialog/ui and a SignatureAppearanceCallback
- * implementation to
- * share a common model.  When any of the model property values are changed a
- * SIGNATURE_ANNOTATION_APPEARANCE_PROPERTY_CHANGE
- * even is fired.  The intent is that any properties chane can trigger the SignatureAppearanceCallback to rebuild
- * the signatures appearance stream.
+ * Signature appearance state, shared by the signature creation dialog and the
+ * {@link org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceCallback} that
+ * builds the appearance stream from it.  The dialog writes to the model and then asks the callback
+ * to rebuild the appearance, so a change to any property here is a change to what gets drawn.
+ * <p>
+ * Everything except the signature image itself and the signer's own details is stored in
+ * {@link Preferences}, so the choices a signer makes carry over to the next document they sign.
+ * That includes how the appearance is laid out - the padding, how much of the width the image may
+ * take, the leading between lines - which means the layout can be retuned without subclassing
+ * anything.  Each getter clamps what it reads: a preferences store is a file a user can edit, and a
+ * nonsensical value there should produce a plain appearance rather than a broken one.
  */
 public class SignatureAppearanceModelImpl implements SignatureAppearanceModel {
+
+    /** Points of breathing room between the appearance's edge and anything drawn in it. */
+    public static final int DEFAULT_PADDING = 3;
+    /** How the appearance arranges its image and text when the signer has not chosen. */
+    public static final SignatureAppearanceLayout DEFAULT_LAYOUT = SignatureAppearanceLayout.SIDE_BY_SIDE;
+    /** Percentage of the width the signature image takes at most. */
+    public static final int DEFAULT_IMAGE_WIDTH_MAX = 60;
+    /** Space between lines, as a percentage of the font size. */
+    public static final int DEFAULT_LINE_LEADING = 35;
 
     private BufferedImage signatureImage;
     private Name imageXObjectName;
     private Reference imageXObjectReference;
+    private Reference imageSoftMaskXObjectReference;
 
     private Color fontColor = Color.BLACK;
 
@@ -82,6 +97,19 @@ public class SignatureAppearanceModelImpl implements SignatureAppearanceModel {
 
     public void setImageXObjectReference(Reference imageXObjectReference) {
         this.imageXObjectReference = imageXObjectReference;
+    }
+
+    /**
+     * @return the object number of the signature image's soft mask, which carries its transparency.
+     * Kept alongside the image's own so that regenerating the appearance - which happens on every
+     * settings change - rewrites the mask in place rather than leaving the previous one behind
+     */
+    public Reference getImageSoftMaskXObjectReference() {
+        return imageSoftMaskXObjectReference;
+    }
+
+    public void setImageSoftMaskXObjectReference(Reference imageSoftMaskXObjectReference) {
+        this.imageSoftMaskXObjectReference = imageSoftMaskXObjectReference;
     }
 
     public SignatureType getSignatureType() {
@@ -148,12 +176,77 @@ public class SignatureAppearanceModelImpl implements SignatureAppearanceModel {
         preferences.putBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_SHOW_IMAGE, signatureImageVisible);
     }
 
+    /**
+     * @return how much of the space available to it the signature image fills, as a percentage.
+     * 100 fits the image to its column; less leaves it smaller within the same column.  A
+     * percentage of the space rather than of the image's own pixel size, because the pixel size is
+     * something the signer cannot see - the same slider position would give a 200 pixel stamp and a
+     * 2000 pixel scan wildly different results
+     */
     public int getImageScale() {
-        return preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, 100);
+        return clamp(preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, 100), 0, 100);
     }
 
     public void setImageScale(int imageScale) {
         preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_SCALE, imageScale);
+    }
+
+    /**
+     * @return breathing room between the appearance's edge and anything drawn in it, in points
+     */
+    public int getAppearancePadding() {
+        return clamp(preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_PADDING,
+                DEFAULT_PADDING), 0, 50);
+    }
+
+    public void setAppearancePadding(int padding) {
+        preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_PADDING, padding);
+    }
+
+    /**
+     * @return how the appearance arranges its image and its text
+     */
+    public SignatureAppearanceLayout getLayout() {
+        return SignatureAppearanceLayout.valueOf(
+                preferences.get(ViewerPropertiesManager.PROPERTY_SIGNATURE_LAYOUT, null), DEFAULT_LAYOUT);
+    }
+
+    public void setLayout(SignatureAppearanceLayout layout) {
+        preferences.put(ViewerPropertiesManager.PROPERTY_SIGNATURE_LAYOUT, layout.name());
+    }
+
+    /**
+     * @return the share of the width, as a percentage, that the signature image takes at most, so
+     * that short text is not left in a corner of its own field.  It takes less than this whenever
+     * the text beside it needs the room - the image is what gives way, so that the font size the
+     * signer chose is the font size they get.
+     * <p>
+     * Only {@link SignatureAppearanceLayout#SIDE_BY_SIDE} has a share to limit; under
+     * {@link SignatureAppearanceLayout#OVERLAY} the image has the whole width and this is not read
+     */
+    public int getImageMaxWidthPercentage() {
+        return clamp(preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_WIDTH_MAX,
+                DEFAULT_IMAGE_WIDTH_MAX), 0, 100);
+    }
+
+    public void setImageMaxWidthPercentage(int percentage) {
+        preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_IMAGE_WIDTH_MAX, percentage);
+    }
+
+    /**
+     * @return the space between lines of the signature text, as a percentage of the font size
+     */
+    public int getLineLeadingPercentage() {
+        return clamp(preferences.getInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_LINE_LEADING,
+                DEFAULT_LINE_LEADING), 0, 500);
+    }
+
+    public void setLineLeadingPercentage(int percentage) {
+        preferences.putInt(ViewerPropertiesManager.PROPERTY_SIGNATURE_LINE_LEADING, percentage);
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     public void setSignatureImagePath(String imagePath) {

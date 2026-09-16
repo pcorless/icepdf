@@ -352,6 +352,10 @@ class PredictorEncoder implements ImageEncoder {
         int colourComponents = image.getColorModel().getNumColorComponents();
         imageStream.getEntries().put(COLORSPACE_KEY,
                 colourComponents == 1 ? DEVICEGRAY_KEY : DEVICERGB_KEY);
+        // Sample depth is a property of what was written, not of what the dictionary happened to
+        // say before: a sixteen bit raster encoded under a dictionary still claiming eight would be
+        // read at half width, with every second byte taken for the next sample.
+        imageStream.getEntries().put(BITS_PER_COMPONENT_KEY, bitsPerComponent);
 
         // setup predictor decode params
         if (imageStream.getEntries().get(Stream.DECODEPARAM_KEY) == null) {

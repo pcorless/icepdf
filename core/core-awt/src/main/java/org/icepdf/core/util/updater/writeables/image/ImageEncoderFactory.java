@@ -42,6 +42,12 @@ public class ImageEncoderFactory {
         if (imageStream.getImageParams().isImageMask()) {
             return new StencilEncoder(imageStream);
         }
+        // A newly authored image - an annotation or signature appearance - has no original stream to
+        // match, so there is no filter to route on.  The predictor encoder is the better of the two
+        // lossless encoders for the line art and scans these tend to be.
+        if (imageStream.getRawBytesLength() == 0) {
+            return new PredictorEncoder(imageStream);
+        }
         if (containsFilter(imageStream, CCITTFAX_DECODE_FILTERS) ||
                 containsFilter(imageStream, JBIG2_DECODE_FILTERS)) {
             return new FaxEncoder(imageStream);
