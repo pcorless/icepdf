@@ -114,6 +114,12 @@ public abstract class Function {
         }
 
         if (d != null) {
+            // Every function type is required to carry a /FunctionType and a /Domain (7.10.2).
+            // Without them there is nothing to dispatch on and nothing to evaluate against
+            if (d.getObject(FUNCTIONTYPE_NAME) == null || !(d.getObject(DOMAIN_NAME) instanceof List)) {
+                logger.warning("Function dictionary is missing its type or domain: " + d.getEntries());
+                return null;
+            }
             // find out what time of function type and create the appropriate
             // function object.
             int fType = d.getInt(FUNCTIONTYPE_NAME);

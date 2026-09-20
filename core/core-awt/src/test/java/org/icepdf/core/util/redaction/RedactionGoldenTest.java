@@ -145,7 +145,7 @@ public class RedactionGoldenTest {
             annotation.setMarkupPath(new GeneralPath(snug));
             annotation.setBBox(snug);
             annotation.resetAppearanceStream(new AffineTransform());
-            page.addAnnotation(annotation, true);
+            page.addAnnotation(annotation);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
@@ -282,7 +282,7 @@ public class RedactionGoldenTest {
             }
 
             for (Rectangle bounds : targets) {
-                page.addAnnotation(RedactionFixtures.redactionOver(document, bounds), true);
+                page.addAnnotation(RedactionFixtures.redactionOver(document, bounds));
             }
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

@@ -53,6 +53,9 @@ public class DocumentSigner {
 
     public static int PLACEHOLDER_PADDING_LENGTH = 30000;
 
+    /** How far past the signature dictionary's start to look for its endobj. */
+    private static final int MAX_OBJECT_SCAN = PLACEHOLDER_PADDING_LENGTH + 8192;
+
     /**
      * The given Document instance will be singed using signatureDictionary location and written to the specified
      * output stream.
@@ -99,16 +102,39 @@ public class DocumentSigner {
             List<Integer> byteRangeArray = List.of(firstStart, firstOffset, secondStart, secondOffset);
             String byteRangeDump = writeByteOffsets(crossReferenceRoot, securityManager, byteRangeArray);
 
-            // update /ByteRange and add padding to ensure the byte range entry is the same length as the placeholder
-            int padding = BYTE_RANGE_PADDING_LENGTH - byteRangeDump.length();
-            rawSignatureDiciontary = rawSignatureDiciontary.replaceAll("/ByteRange \\[[ 0]*]",
-                    "/ByteRange " + byteRangeDump + " ".repeat(Math.max(0, padding)));
+            // Replace the placeholder with the real offsets, padded back out to exactly the length
+            // of what was matched.  The dictionary is written over the bytes already in the file,
+            // so the two have to be the same size to the character.  Measured from the placeholder
+            // rather than taken from a constant: the constant was two short of what the placeholder
+            // actually serialises to, which left the last byte of the object it overwrote sitting
+            // in the file as rubbish between two objects.
+            Matcher byteRange = Pattern.compile("/ByteRange \\[[ 0]*]").matcher(rawSignatureDiciontary);
+            if (!byteRange.find()) {
+                throw new IllegalStateException("Signature dictionary has no /ByteRange placeholder");
+            }
+            int placeholderLength = byteRange.group().length();
+            String replacement = "/ByteRange " + byteRangeDump;
+            if (replacement.length() > placeholderLength) {
+                throw new IllegalStateException("Byte range " + byteRangeDump
+                        + " does not fit the space reserved for it");
+            }
+            rawSignatureDiciontary = rawSignatureDiciontary.substring(0, byteRange.start())
+                    + replacement + " ".repeat(placeholderLength - replacement.length())
+                    + rawSignatureDiciontary.substring(byteRange.end());
 
             int signatureDictionaryLength = rawSignatureDiciontary.length();
+            // What the dictionary already occupies in the file.  Writing a different number of bytes
+            // over it either runs into the object that follows or leaves part of the old one behind,
+            // and every offset taken above - the byte range included - is measured against it.
+            int originalLength = objectLengthAt(fc, signatureDictionaryOffset);
+            if (signatureDictionaryLength != originalLength) {
+                throw new IllegalStateException("Signature dictionary length change original "
+                        + originalLength + " new " + signatureDictionaryLength);
+            }
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
+            fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes(StandardCharsets.ISO_8859_1)));
 
             // digest the file creating the content signature
             ByteBuffer preContent = ByteBuffer.allocateDirect(firstOffset);
@@ -128,8 +154,7 @@ public class DocumentSigner {
             String hexContent = HexStringObject.encodeHexString(signature);
             int hexContentLength = hexContent.length();
             if (hexContentLength < PLACEHOLDER_PADDING_LENGTH) {
-                padding = PLACEHOLDER_PADDING_LENGTH - hexContentLength;
-                hexContent = hexContent + "0".repeat(padding);
+                hexContent = hexContent + "0".repeat(PLACEHOLDER_PADDING_LENGTH - hexContentLength);
             } else {
                 throw new IllegalStateException("signature content is larger than placeholder");
             }
@@ -140,15 +165,55 @@ public class DocumentSigner {
 
             // write the altered signature dictionary
             fc.position(signatureDictionaryOffset);
-            int count = fc.write(ByteBuffer.wrap(rawSignatureDiciontary.getBytes()));
+            int count = fc.write(ByteBuffer.wrap(
+                    rawSignatureDiciontary.getBytes(StandardCharsets.ISO_8859_1)));
 
-            // make sure the object length didn't change
+            // The signature went in without changing the size of anything.  Comparable to a byte
+            // count only because the string holds one byte per character.
             if (count != signatureDictionaryLength) {
                 throw new IllegalStateException("Signature dictionary length change original " + count +
                         " new " + signatureDictionaryLength);
             }
 
         }
+    }
+
+    /**
+     * How many bytes the object starting at {@code offset} takes up in the file, up to and
+     * including its {@code endobj} and the newline that follows it.
+     *
+     * @param fc     channel over the document
+     * @param offset where the object starts
+     * @return the object's length in bytes
+     * @throws IOException          if the file cannot be read
+     * @throws IllegalStateException if the object has no endobj
+     */
+    private static int objectLengthAt(FileChannel fc, int offset) throws IOException {
+        byte[] endObj = "endobj".getBytes(StandardCharsets.ISO_8859_1);
+        long remaining = fc.size() - offset;
+        ByteBuffer buffer = ByteBuffer.allocate((int) Math.min(remaining, MAX_OBJECT_SCAN));
+        fc.position(offset);
+        fc.read(buffer);
+        byte[] bytes = buffer.array();
+        for (int i = 0; i <= buffer.position() - endObj.length; i++) {
+            boolean match = true;
+            for (int j = 0; j < endObj.length; j++) {
+                if (bytes[i + j] != endObj[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                // Including the newline the writer puts after endobj, so that this measures the same
+                // span as the serialized string it is compared against.
+                int end = i + endObj.length;
+                if (end < buffer.position() && bytes[end] == '\n') {
+                    end++;
+                }
+                return end;
+            }
+        }
+        throw new IllegalStateException("Signature dictionary at " + offset + " has no endobj");
     }
 
     public static String writeSignatureDictionary(CrossReferenceRoot crossReferenceRoot,
@@ -159,7 +224,11 @@ public class DocumentSigner {
         BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0L);
         writer.initializeWriters();
         writer.writePObject(new PObject(signatureDictionary, signatureDictionary.getPObjectReference()));
-        String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
+        // ISO-8859-1 maps the 256 byte values onto the first 256 characters, so the string that
+        // comes back carries the bytes exactly and its length is their count.  Decoded as UTF-8 a
+        // byte that is not valid UTF-8 becomes the replacement character - which is most of an
+        // encrypted string, and any signer name that needed UTF-16 - and the bytes are then gone.
+        String objectDump = byteArrayOutputStream.toString(StandardCharsets.ISO_8859_1);
         objectOutput.close();
         return objectDump;
     }
@@ -171,7 +240,7 @@ public class DocumentSigner {
         BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, objectOutput, 0L);
         writer.initializeWriters();
         writer.writeValue(new PObject(offsets, new Reference(1, 0)), objectOutput);
-        String objectDump = byteArrayOutputStream.toString(StandardCharsets.UTF_8);
+        String objectDump = byteArrayOutputStream.toString(StandardCharsets.ISO_8859_1);
         objectOutput.close();
         return objectDump;
     }

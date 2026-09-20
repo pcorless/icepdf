@@ -89,8 +89,8 @@ public class GrayscaleRedactionTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
             // The four samples sit at x 20..40, 40..60, 60..80, 80..100. Cover the middle two, apart.
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)), true);
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 145, 15, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(42, 145, 15, 20)));
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(62, 145, 15, 20)));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -125,7 +125,7 @@ public class GrayscaleRedactionTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
             for (Rectangle area : areas) {
-                page.addAnnotation(RedactionFixtures.redactionOver(document, area), true);
+                page.addAnnotation(RedactionFixtures.redactionOver(document, area));
             }
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 

@@ -124,7 +124,7 @@ public class SquareAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         // grab the current appearance stream as we'll be updating the shapes.
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -175,7 +175,7 @@ public class SquareAnnotation extends MarkupAnnotation {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity);
     }
 

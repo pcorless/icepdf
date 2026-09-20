@@ -693,11 +693,13 @@ public class Lexer {
         float divisor = 10;
         boolean isDigit;
         boolean isDecimal = false;
-        boolean singed = streamBytes[startTokenPos] == '-' ||
-                streamBytes[startTokenPos] == '+';
-        startTokenPos = singed ? startTokenPos + 1 : startTokenPos;
+        // a '+' marks a number as explicitly positive (7.3.3); only a '-' makes it negative.
+        boolean negative = streamBytes[startTokenPos] == '-';
+        boolean signed = negative || streamBytes[startTokenPos] == '+';
+        startTokenPos = signed ? startTokenPos + 1 : startTokenPos;
         // check for  double neg sign
-        if (singed && streamBytes[startTokenPos] == '-') {
+        if (signed && streamBytes[startTokenPos] == '-') {
+            negative = true;
             startTokenPos++;
         }
         int current;
@@ -719,7 +721,7 @@ public class Lexer {
                 break;
             }
         }
-        if (singed) {
+        if (negative) {
             return -digit;
         } else {
             return digit;

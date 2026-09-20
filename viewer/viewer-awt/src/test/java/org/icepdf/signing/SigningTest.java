@@ -65,11 +65,20 @@ public class SigningTest {
     @Test
     public void testCreateAndValidateSignature() throws Exception {
         File source = new File("src/test/resources/annotation/hello_pdfa1.pdf");
-        File outputFile = SigningFixture.of(source)
-                .reason("Approval")
-                .signatureType(SignatureType.CERTIFIER)
-                .withAppearance(createTestSignatureBufferedImage())
-                .signTo(new File("./src/test/out/SigningTest_signed_document.pdf"));
+        File outputFile;
+        // This is the one signing test that is about the timestamp, so it is the one that needs an
+        // authority to ask.  It runs its own rather than a public one on the internet, which used to
+        // decide whether this test passed.
+        try (LocalTimeStampAuthority authority = new LocalTimeStampAuthority()) {
+            outputFile = SigningFixture.of(source)
+                    .reason("Approval")
+                    .signatureType(SignatureType.CERTIFIER)
+                    .timestampWith(authority.getUrl())
+                    .withAppearance(createTestSignatureBufferedImage())
+                    .signTo(new File("./src/test/out/SigningTest_signed_document.pdf"));
+            assertEquals(1, authority.getRequestCount(),
+                    "signing should have asked the authority for exactly one timestamp");
+        }
 
         // signatures can be found off the Catalog as InteractiveForms.
         Document modifiedDocument = new Document();

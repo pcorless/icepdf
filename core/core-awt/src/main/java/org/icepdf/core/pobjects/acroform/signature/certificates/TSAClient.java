@@ -132,13 +132,9 @@ public class TSAClient {
         logger.log(Level.FINER, "Established connection to TSA server");
 
         if (username != null && password != null && !username.isEmpty() && !password.isEmpty()) {
-            String contentEncoding = connection.getContentEncoding();
-            if (contentEncoding == null) {
-                contentEncoding = StandardCharsets.UTF_8.name();
-            }
             connection.setRequestProperty("Authorization",
-                    "Basic " + new String(Base64.getEncoder().encode((username + ":" + password).
-                            getBytes(contentEncoding))));
+                    "Basic " + Base64.getEncoder().encodeToString(
+                            (username + ":" + password).getBytes(StandardCharsets.UTF_8)));
         }
 
         // read response

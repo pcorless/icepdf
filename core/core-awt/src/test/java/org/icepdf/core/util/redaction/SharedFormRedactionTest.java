@@ -132,8 +132,8 @@ public class SharedFormRedactionTest {
             page.init();
             // "repeated" spans x 20..68 at each placement; " text" follows at 68..98 and must
             // survive. One rectangle per placement, as a search over the rendered page would give.
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)), true);
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 55, 45, 20)), true);
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)));
+            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 55, 45, 20)));
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

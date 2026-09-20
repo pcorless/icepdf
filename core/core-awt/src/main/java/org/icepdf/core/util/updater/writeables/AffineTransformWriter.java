@@ -25,19 +25,27 @@ public class AffineTransformWriter extends BaseWriter {
     private static final byte[] BEGIN_ARRAY = "[".getBytes();
     private static final byte[] END_ARRAY = "]".getBytes();
 
+    /**
+     * Writes the transform as the six-number matrix array of 8.3.3, {@code [a b c d e f]}, which is
+     * {@code {m00, m10, m01, m11, m02, m12}} - the same order {@code AffineTransform(float[])} reads
+     * back, so a matrix written here survives a reopen.  The values are written as reals: a matrix
+     * is routinely a fractional scale, and rounding one to a whole number scales the content it
+     * places by whatever the fraction was.
+     *
+     * @param writeable transform to write
+     * @param output    stream to write to
+     * @throws IOException if the stream cannot be written to
+     */
     public void write(AffineTransform writeable, CountingOutputStream output) throws IOException {
+        double[] matrix = new double[6];
+        writeable.getMatrix(matrix);
         output.write(BEGIN_ARRAY);
-        writeLong((long) writeable.getScaleX(), output);
-        output.write(SPACE);
-        writeLong((long) writeable.getShearX(), output);
-        output.write(SPACE);
-        writeLong((long) writeable.getTranslateX(), output);
-        output.write(SPACE);
-        writeLong((long) writeable.getScaleY(), output);
-        output.write(SPACE);
-        writeLong((long) writeable.getShearY(), output);
-        output.write(SPACE);
-        writeLong((long) writeable.getTranslateY(), output);
+        for (int i = 0; i < matrix.length; i++) {
+            if (i > 0) {
+                output.write(SPACE);
+            }
+            writeFloat((float) matrix[i], output);
+        }
         output.write(END_ARRAY);
     }
 }

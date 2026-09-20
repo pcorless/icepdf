@@ -296,7 +296,14 @@ public class PDate {
         else if (date.contains("/")) {
             parseGhostScriptDate(date);
         }
-        //try adobe format but without D:
+        // the prefix is required by the specification and widely omitted, so a string that opens
+        // with a four digit year is read as an Adobe date anyway - which is what the branch below
+        // has always said it did, while in fact giving up and storing the whole string in every
+        // field.
+        else if (looksLikeAdobeDate(date)) {
+            parseAdobeDate(date);
+        }
+        // not a form we know: every field reports the raw string, and toString gives it back
         else {
             year = date;
             month = date;
@@ -310,6 +317,22 @@ public class PDate {
             notStandardFormat = true;
         }
 
+    }
+
+    /**
+     * @param date candidate date string, with any {@code D:} prefix already removed
+     * @return true when the string opens with the four digits of a year
+     */
+    private static boolean looksLikeAdobeDate(String date) {
+        if (date.length() < 4) {
+            return false;
+        }
+        for (int i = 0; i < 4; i++) {
+            if (!Character.isDigit(date.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

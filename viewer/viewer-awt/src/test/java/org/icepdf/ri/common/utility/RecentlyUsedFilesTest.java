@@ -14,6 +14,7 @@
 package org.icepdf.ri.common.utility;
 
 import org.icepdf.ri.util.ViewerPropertiesManager;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,13 +31,25 @@ class RecentlyUsedFilesTest {
     private Preferences mockPreferences;
     private RecentlyUsedFiles recentlyUsedFiles;
 
+    private ViewerPropertiesManager realViewerPropertiesManager;
+
     @BeforeEach
     void setUp() {
+        realViewerPropertiesManager = ViewerPropertiesManager.getInstance();
         mockViewerPropertiesManager = mock(ViewerPropertiesManager.class);
         mockPreferences = mock(Preferences.class);
         when(mockViewerPropertiesManager.getPreferences()).thenReturn(mockPreferences);
         ViewerPropertiesManager.setInstance(mockViewerPropertiesManager);
         recentlyUsedFiles = new RecentlyUsedFiles();
+    }
+
+    @AfterEach
+    void tearDown() {
+        // The properties manager is a singleton, so a mock left in place is every later test's
+        // preferences too - and a mocked Preferences answers false to every boolean.  That silently
+        // turned off things other tests depend on being on, such as whether a signature appearance
+        // draws its image at all.
+        ViewerPropertiesManager.setInstance(realViewerPropertiesManager);
     }
 
     @Test

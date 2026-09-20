@@ -78,7 +78,7 @@ public class FreeTextAnnotationTest {
             AffineTransform pageTransform = page.getToPageSpaceTransform(Page.BOUNDARY_CROPBOX, 0f, 1.0f);
             annotation.resetAppearanceStream(pageTransform);
 
-            page.addAnnotation(annotation, true);
+            page.addAnnotation(annotation);
             annotation.saveAppearanceStream();
 
             File outputFile = new File("./src/test/out/FreeText_annotation_write.pdf");

@@ -281,7 +281,7 @@ public class PopupAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 

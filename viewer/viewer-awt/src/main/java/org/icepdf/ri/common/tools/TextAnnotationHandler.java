@@ -154,10 +154,21 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
         return textAnnotation;
     }
 
+    /**
+     * Builds a popup for a markup annotation and registers it with the state manager.
+     * <br>
+     * This records a user edit.  A popup manufactured only so that an existing markup annotation has somewhere to
+     * show its contents is a repair, so run it inside {@link StateManager#repairing(Runnable)}.
+     *
+     * @param library   document library
+     * @param bbox      popup bounds in page space
+     * @param parent    markup annotation the popup belongs to
+     * @param pageSpace page space transform
+     * @return the new popup annotation.
+     */
     public static PopupAnnotation createPopupAnnotation(Library library, Rectangle bbox,
                                                         MarkupAnnotation parent,
-                                                        AffineTransform pageSpace,
-                                                        boolean isNew) {
+                                                        AffineTransform pageSpace) {
         // text annotation are special as the annotation has fixed size.
         PopupAnnotation popupAnnotation = (PopupAnnotation)
                 AnnotationFactory.buildAnnotation(
@@ -166,14 +177,14 @@ public class TextAnnotationHandler extends CommonToolHandler implements ToolHand
                         bbox);
         // save the annotation
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(popupAnnotation, popupAnnotation.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(popupAnnotation, popupAnnotation.getPObjectReference()));
         library.addObject(popupAnnotation, popupAnnotation.getPObjectReference());
 
         // setup up some default values
         popupAnnotation.setOpen(true);
         popupAnnotation.setParent(parent);
         parent.setPopupAnnotation(popupAnnotation);
-        popupAnnotation.resetAppearanceStream(0, 0, pageSpace, isNew);
+        popupAnnotation.resetAppearanceStream(0, 0, pageSpace);
         return popupAnnotation;
     }
 

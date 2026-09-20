@@ -166,7 +166,7 @@ public class RedactionHeadless {
                     redactionAnnotation.setMarkupPath(new GeneralPath(bounds));
                     redactionAnnotation.setBBox(bounds);
                     redactionAnnotation.resetAppearanceStream(new AffineTransform());
-                    page.addAnnotation(redactionAnnotation, true);
+                    page.addAnnotation(redactionAnnotation);
                     marked++;
                 }
             }

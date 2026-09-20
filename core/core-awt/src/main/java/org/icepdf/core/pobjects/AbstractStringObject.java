@@ -37,6 +37,13 @@ public abstract class AbstractStringObject implements StringObject {
     protected boolean isModified;
 
     /**
+     * The cipher text this string last produced, and the object number it was produced for.  See
+     * {@link #getEncryptedRawBytes} for why it is remembered rather than computed each time.
+     */
+    private byte[] encryptedBytes;
+    private Reference encryptedReference;
+
+    /**
      * The length of the underlying object's data.  Both implementations measure the data they
      * actually hold: character count for a literal string, hexadecimal digit count for a hex string.
      *
@@ -118,22 +125,43 @@ public abstract class AbstractStringObject implements StringObject {
      * @return the encrypted bytes; never null, may be empty
      */
     public byte[] getEncryptedRawBytes(Reference writeReference, SecurityManager securityManager) {
-        return crypt(getRawBytes(), writeReference, securityManager);
+        if (securityManager == null || writeReference == null) {
+            return getRawBytes();
+        }
+        // Encrypted once per object number and then remembered, so that asking twice gives the same
+        // answer.  AES picks a fresh initialisation vector every time, so it does not otherwise:
+        // the same string encrypts to different bytes, and - once the literal string writer has
+        // escaped whatever parentheses and backslashes happen to fall out of the cipher - to a
+        // different LENGTH.  Signing serializes the signature dictionary once to find its offsets
+        // and again to write it back over itself, and those two have to agree byte for byte.
+        if (encryptedBytes != null && writeReference.equals(encryptedReference)) {
+            return encryptedBytes;
+        }
+        encryptedBytes = securityManager.encrypt(writeReference, securityManager.getEncryptionKey(),
+                getRawBytes());
+        encryptedReference = writeReference;
+        return encryptedBytes;
     }
 
     /**
-     * Runs the document's cipher over some bytes.  The standard security handler's ciphers are
-     * symmetric, so this is both directions; which one it is depends only on what went in.
+     * Runs the document's decipher over some bytes.
+     * <p>
+     * Decryption only, and the encrypting counterpart in {@link #getEncryptedRawBytes} calls the
+     * security manager's own encrypt.  Both directions used to come through here on the grounds
+     * that the standard security handler's ciphers are symmetric, which is true of RC4 and not of
+     * AES: for an AES document that ran the decipher over plain text, which fails its padding check
+     * and comes back null.  So a string authored on an AES encrypted document - an annotation's
+     * contents, a form field's value, a signature's reason - could not be written at all.
      * <p>
      * Byte in, byte out, deliberately.  This was a String based method, which worked only because
      * every character happened to hold one byte - and it made it possible to hand it the wrong
      * thing entirely: the writer used to encrypt getHexString(), the ASCII of the digits, rather
      * than the bytes those digits stand for.
      *
-     * @param bytes           the bytes to run through the cipher
+     * @param bytes           the bytes to decipher
      * @param reference       object reference, part of the per object key
      * @param securityManager security manager for document, null if the document is not encrypted
-     * @return the transformed bytes, or the input unchanged when there is nothing to do
+     * @return the deciphered bytes, or the input unchanged when there is nothing to do
      */
     private static byte[] crypt(byte[] bytes, Reference reference, SecurityManager securityManager) {
         if (securityManager == null || reference == null) {

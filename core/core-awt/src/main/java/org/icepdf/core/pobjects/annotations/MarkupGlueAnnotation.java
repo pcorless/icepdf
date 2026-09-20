@@ -65,7 +65,7 @@ public class MarkupGlueAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
 
     }
 

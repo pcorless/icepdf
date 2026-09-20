@@ -182,7 +182,7 @@ public class RedactionApiTest {
         page.init();
         List<Rectangle> bounds = RedactionFixtures.wordBounds(page, Collections.singletonList(word));
         assertEquals(1, bounds.size(), "fixture should contain '" + word + "'");
-        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)), true);
+        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)));
     }
 
     private void save(Document document, RedactionRequest request) throws Exception {

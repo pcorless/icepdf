@@ -154,19 +154,19 @@ public class Function_0 extends Function {
                 // clip to the size of the sampled table in that dimension:
                 // ei' = min (max(ei, 0), Sizei-1)
                 e = Math.min(Math.max(e, 0), size[i] - 1);
-                // pretty sure that e1 and e2 are used to for a bilinear interpolation?
-                // Output values are are calculated from the nearest surrounding values
-                // in the sample table in the sample table.
+                // The output is interpolated between the two samples either side of e, by how far
+                // between them e falls (7.10.2).
                 int e1 = (int) Math.floor(e);
                 int e2 = (int) Math.ceil(e);
+                float fraction = e - e1;
                 int index;
                 // Calculate the final output values
                 for (int j = 0; j < n; j++) {
                     //  find nearest surrounding values in the sample table
                     int b1 = samples[e1][j];
                     int b2 = samples[e2][j];
-                    // get the average
-                    float r = ((float) b1 + (float) b2) / 2;
+                    // interpolate between them; e1 == e2 on an exact sample, leaving r = b1
+                    float r = b1 + ((float) b2 - (float) b1) * fraction;
                     // interpolate to get output values
                     r = interpolate(r, 0f, (float) Math.pow(2, bitsPerSample) -
                             1, decode[2 * j], decode[2 * j + 1]);

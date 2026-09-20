@@ -15,6 +15,7 @@
     </description>
 
     <properties>
+        <jacoco.coverage.minimum>0.59</jacoco.coverage.minimum>
         <!-- Values stamped into product-info.properties (see ProductInfo). -->
         <company>https://github.com/pcorless/</company>
         <product>ICEpdf</product>
@@ -55,10 +56,31 @@
                     <useDefaultDelimiters>false</useDefaultDelimiters>
                 </configuration>
             </plugin>
+            <!-- The tests are not part of the published module and are compiled and run on the
+                 classpath, which is what the Gradle build already does.  On the module path they
+                 would be patched into org.icepdf.core and could only see what it requires, so a
+                 test needing something the library itself does not - jdk.httpserver, for the local
+                 OCSP, timestamp and CRL servers the revocation tests ask - would force a runtime
+                 requirement into the module descriptor to satisfy a test. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <useModulePath>false</useModulePath>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.0</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
         </plugins>
     </build>

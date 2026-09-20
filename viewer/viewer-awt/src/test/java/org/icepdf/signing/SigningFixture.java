@@ -31,6 +31,7 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceLayout;
 import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
 
 import java.awt.*;
@@ -57,7 +58,6 @@ public class SigningFixture {
     private static final String KEYSTORE = "src/test/resources/signing/certificate.pfx";
     private static final String PASSWORD = "changeit";
     private static final String ALIAS = "senderKeyPair";
-    private static final String TIME_STAMP_AUTHORITY = "http://time.certum.pl";
 
     private final File source;
     private SignatureType signatureType = SignatureType.CERTIFIER;
@@ -66,6 +66,8 @@ public class SigningFixture {
     private BufferedImage signatureImage;
     private String signerName;
     private String appearanceFont;
+    private SignatureAppearanceLayout layout = SignatureAppearanceLayout.SIDE_BY_SIDE;
+    private String timeStampAuthority;
 
     private SigningFixture(File source) {
         this.source = source;
@@ -77,6 +79,24 @@ public class SigningFixture {
 
     public SigningFixture signatureType(SignatureType signatureType) {
         this.signatureType = signatureType;
+        return this;
+    }
+
+    /**
+     * Asks the named authority to timestamp the signature.
+     * <p>
+     * Off unless a test asks for it, and the caller supplies the authority.  It used to default to a
+     * public authority on the internet, which meant every signing test passed only while that server
+     * was reachable and answering the size it answered last time - and put a request to somebody
+     * else's server on every build.  A test that is actually about timestamping should start a
+     * {@link LocalTimeStampAuthority} and pass its url; the signer handler treats the null this
+     * holds otherwise as "do not timestamp".
+     *
+     * @param url where to ask for a timestamp
+     * @return this fixture
+     */
+    public SigningFixture timestampWith(String url) {
+        this.timeStampAuthority = url;
         return this;
     }
 
@@ -117,13 +137,22 @@ public class SigningFixture {
     }
 
     /**
+     * How the appearance arranges its image and text.  Stated rather than left to the preference,
+     * for the same reason the rest of the appearance settings are.
+     */
+    public SigningFixture layout(SignatureAppearanceLayout layout) {
+        this.layout = layout;
+        return this;
+    }
+
+    /**
      * @param outputFile where to write the signed document
      * @return the file written, so a caller can go straight on to reading it
      */
     public File signTo(File outputFile) throws Exception {
         JceProvider.loadProvider();
         PfxGenerator.createPfx(KEYSTORE, PASSWORD, ALIAS);
-        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(TIME_STAMP_AUTHORITY,
+        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(timeStampAuthority,
                 new File(KEYSTORE), ALIAS, new SimplePasswordCallbackHandler(PASSWORD));
 
         Document document = new Document();
@@ -137,7 +166,7 @@ public class SigningFixture {
                 (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                         library, FieldDictionaryFactory.TYPE_SIGNATURE,
                         new Rectangle(100, 250, 375, 150));
-        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation, true);
+        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation);
 
         InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
         interactiveForm.addField(signatureAnnotation);
@@ -164,8 +193,14 @@ public class SigningFixture {
             appearanceModel.setContact(signatureDictionary.getContactInfo());
             appearanceModel.setLocation(signatureDictionary.getLocation());
             appearanceModel.setSignatureType(signatureType);
+            // Same reason as the text above: whether the image is drawn, and how big, are stored
+            // preferences, so a test that hands one over has to say it wants it drawn rather than
+            // inherit whatever the machine's viewer was last set to.
+            appearanceModel.setLayout(layout);
+            appearanceModel.setSignatureImageVisible(signatureImage != null);
             if (signatureImage != null) {
                 appearanceModel.setSignatureImage(signatureImage);
+                appearanceModel.setImageScale(100);
             }
 
             BasicSignatureAppearanceCallback appearanceCallback = new BasicSignatureAppearanceCallback();

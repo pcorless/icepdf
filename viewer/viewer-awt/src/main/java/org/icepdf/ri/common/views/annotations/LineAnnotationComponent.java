@@ -67,7 +67,7 @@ public class LineAnnotationComponent extends MarkupAnnotationComponent<LineAnnot
     public void resetAppearanceShapes() {
         super.resetAppearanceShapes();
         refreshAnnotationRect();
-        annotation.resetAppearanceStream(dx, dy, getToPageSpaceTransform(), true);
+        annotation.resetAppearanceStream(dx, dy, getToPageSpaceTransform());
     }
 
     @Override

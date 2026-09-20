@@ -88,7 +88,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
      * @param dy            y offset of the annotation
      * @param pageTransform current page transform.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         ChoiceFieldType choiceFieldType =
                 fieldDictionary.getChoiceFieldType();
 
@@ -132,7 +132,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
             appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
             // add the appearance stream
             StateManager stateManager = library.getStateManager();
-            stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
             // add an AP entry for the
             DictionaryEntries appearanceRefs = new DictionaryEntries();
             appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
@@ -146,7 +146,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
                         library.getCatalog().getInteractiveForm().getResources().getEntries());
             }
             // add the annotation as changed as T entry has also been updated to reflect teh changed content.
-            stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
             // compress the form object stream.
             if (compressAppearanceStream) {

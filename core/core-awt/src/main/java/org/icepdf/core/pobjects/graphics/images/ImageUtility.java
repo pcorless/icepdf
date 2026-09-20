@@ -479,6 +479,129 @@ public class ImageUtility {
     }
 
     /**
+     * Puts an image into a form the stream encoders can actually write.
+     * <p>
+     * An encoder reads the decoded samples through the image's raster, so the raster has to be one
+     * it recognises.  {@code ImageIO} hands back whatever suits the file it read - an indexed
+     * palette for most small PNGs and GIFs, a premultiplied or {@code TYPE_CUSTOM} raster for
+     * others - and those rasters are not writable as-is: the predictor encoder returns null for
+     * them and the raster encoder would read the wrong bytes.  Rather than teach every encoder
+     * every raster, an authored image is converted once, here, to the two shapes they all handle.
+     *
+     * @param image     image to normalize, may be null
+     * @param keepAlpha whether the image's transparency is going to be carried into the PDF (as a
+     *                  soft mask).  When false any alpha channel is flattened onto white instead of
+     *                  being dropped - dropping it leaves the transparent pixels showing whatever
+     *                  colour they happen to carry, which for most PNGs is black.
+     * @return an image of type {@code TYPE_INT_ARGB}/{@code TYPE_4BYTE_ABGR} when transparency is
+     * being kept, otherwise an opaque image; {@code image} itself when it is already suitable
+     */
+    public static BufferedImage normalizeForEncoding(BufferedImage image, boolean keepAlpha) {
+        if (image == null) {
+            return null;
+        }
+        boolean hasAlpha = image.getColorModel().hasAlpha();
+        if (keepAlpha && hasAlpha) {
+            int type = image.getType();
+            // Both of these carry an eight bit alpha band in a raster the encoders read directly.
+            if (type == BufferedImage.TYPE_INT_ARGB || type == BufferedImage.TYPE_4BYTE_ABGR) {
+                return image;
+            }
+            return asType(image, BufferedImage.TYPE_INT_ARGB);
+        }
+        if (hasAlpha) {
+            BufferedImage flattened = new BufferedImage(image.getWidth(), image.getHeight(),
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics2D g2d = flattened.createGraphics();
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(0, 0, flattened.getWidth(), flattened.getHeight());
+            g2d.drawImage(image, 0, 0, null);
+            g2d.dispose();
+            return flattened;
+        }
+        return isEncodableRaster(image) ? image : asType(image, BufferedImage.TYPE_INT_RGB);
+    }
+
+    /**
+     * @return whether an opaque image's raster is one the stream encoders can read without being
+     * converted first
+     */
+    private static boolean isEncodableRaster(BufferedImage image) {
+        switch (image.getType()) {
+            case BufferedImage.TYPE_BYTE_GRAY:
+            case BufferedImage.TYPE_USHORT_GRAY:
+            case BufferedImage.TYPE_3BYTE_BGR:
+            case BufferedImage.TYPE_INT_RGB:
+            case BufferedImage.TYPE_INT_BGR:
+                return true;
+            case BufferedImage.TYPE_CUSTOM:
+                int transferType = image.getRaster().getTransferType();
+                return transferType == DataBuffer.TYPE_BYTE
+                        || transferType == DataBuffer.TYPE_USHORT
+                        || transferType == DataBuffer.TYPE_SHORT;
+            default:
+                return false;
+        }
+    }
+
+    private static BufferedImage asType(BufferedImage image, int type) {
+        BufferedImage converted = new BufferedImage(image.getWidth(), image.getHeight(), type);
+        Graphics2D g2d = converted.createGraphics();
+        g2d.setComposite(AlphaComposite.Src);
+        g2d.drawImage(image, 0, 0, null);
+        g2d.dispose();
+        return converted;
+    }
+
+    /**
+     * The image's alpha channel as one eight bit grey sample per pixel, which is exactly what a PDF
+     * soft mask holds: 0 is fully transparent, 255 fully opaque.
+     * <p>
+     * Returned as an image rather than a byte[] so it can be handed to the same encoders the colour
+     * samples go through, which is what gets it compressed and, in an encrypted document, encrypted.
+     *
+     * @param image image to read the alpha channel of
+     * @return a {@code TYPE_BYTE_GRAY} image of the alpha channel, or null when the image has no
+     * alpha channel or every pixel in it is fully opaque - in which case a soft mask would only
+     * cost bytes
+     */
+    public static BufferedImage extractAlpha(BufferedImage image) {
+        ColorModel colorModel = image.getColorModel();
+        if (!colorModel.hasAlpha()) {
+            return null;
+        }
+        int width = image.getWidth();
+        int height = image.getHeight();
+        Raster raster = image.getRaster();
+        // The alpha band is the one after the colour bands, for a packed int raster and an
+        // interleaved byte one alike.
+        int alphaBand = colorModel.getNumColorComponents();
+        if (alphaBand >= raster.getNumBands()) {
+            return null;
+        }
+        // A premultiplied raster holds colour * alpha, so the alpha band still reads correctly
+        // here; it is the colour samples that would need dividing out, which normalizeForEncoding
+        // has already done by converting to a non-premultiplied type.
+        int sampleSize = colorModel.getComponentSize(alphaBand);
+        int shift = Math.max(0, sampleSize - 8);
+        BufferedImage alphaImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+        byte[] alphaSamples = ((DataBufferByte) alphaImage.getRaster().getDataBuffer()).getData();
+        int[] row = new int[width];
+        boolean opaque = true;
+        for (int y = 0, i = 0; y < height; y++) {
+            raster.getSamples(0, y, width, 1, alphaBand, row);
+            for (int x = 0; x < width; x++, i++) {
+                int alpha = row[x] >> shift;
+                if (alpha != 0xFF) {
+                    opaque = false;
+                }
+                alphaSamples[i] = (byte) alpha;
+            }
+        }
+        return opaque ? null : alphaImage;
+    }
+
+    /**
      * Reverse encode the color key mask.  Important when re-encoding images after authentication.
      *
      * @param imageStream image data to alter.

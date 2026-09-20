@@ -242,7 +242,7 @@ public class RedactionTest {
                             redactionAnnotation.setBBox(tBbox);
                             redactionAnnotation.resetAppearanceStream(new AffineTransform());
 
-                            page.addAnnotation(redactionAnnotation, true);
+                            page.addAnnotation(redactionAnnotation);
                         }
                     }
                 }

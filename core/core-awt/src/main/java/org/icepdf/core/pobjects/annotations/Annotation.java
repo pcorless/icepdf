@@ -885,6 +885,11 @@ public abstract class Annotation extends Dictionary {
         return null;
     }
 
+    /**
+     * Generates an appearance stream for an annotation whose file did not carry one, so that it can be rendered at
+     * all.  Nothing here was asked for by the user, so it is recorded as a repair and does not make the document
+     * look modified.
+     */
     protected void resetNullAppearanceStream() {
         // try and generate an appearance stream.
         if (!hasAppearanceStream()) {
@@ -896,7 +901,7 @@ public abstract class Annotation extends Dictionary {
             if (rectangle != null) {
                 setBBox(rectangle.getBounds());
             }
-            resetAppearanceStream(new AffineTransform());
+            library.getStateManager().repairing(() -> resetAppearanceStream(new AffineTransform()));
         }
     }
 
@@ -1952,8 +1957,7 @@ public abstract class Annotation extends Dictionary {
      * @param rawBytes raw bytes of string data making up the content stream.
      * @return new Form object with updated appearance stream.
      */
-    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes,
-                                       boolean isNew) {
+    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes) {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
@@ -1976,7 +1980,7 @@ public abstract class Annotation extends Dictionary {
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
 
-            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
             DictionaryEntries appearanceRefs = new DictionaryEntries();
@@ -2112,19 +2116,20 @@ public abstract class Annotation extends Dictionary {
      * @param dx        coord-x
      * @param dy        coord-y
      * @param pageSpace page space transform
-     * @param isNew     marks the reset as happening because of user interaction not created because of a missing content
-     *                  stream.
      */
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
-//    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
-
-    public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
-        resetAppearanceStream(0, 0, pageSpace, isNew);
-    }
-
+    /**
+     * Reset the appearance stream at the annotation's current location.
+     * <br>
+     * This records a user edit.  When the library is regenerating an appearance the file was missing rather than
+     * carrying out something the user asked for, run it inside
+     * {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)} so the document is not left looking modified.
+     *
+     * @param pageSpace page space transform
+     */
     public void resetAppearanceStream(AffineTransform pageSpace) {
-        resetAppearanceStream(0, 0, pageSpace, false);
+        resetAppearanceStream(0, 0, pageSpace);
     }
 
     /**

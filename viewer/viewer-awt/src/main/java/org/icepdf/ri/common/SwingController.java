@@ -2838,6 +2838,9 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
 
     public void commonNewDocumentHandling(String fileDescription) {
 
+        // the file on disk is what we have just opened, so that is the baseline unsaved changes are measured from.
+        document.getStateManager().setChangesSnapshot();
+
         // utility pane visibility
         boolean showUtilityPane = false;
 
@@ -3341,7 +3344,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
                 // continue with saving the document
             }
         }
-        if (document.getStateManager().isChange() &&
+        if (document.getStateManager().hasUnsavedUserChanges() &&
                 saveFilePath != null &&
                 !saveFilePath.isEmpty()) {
             File out = new File(saveFilePath);
@@ -3659,7 +3662,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         // check if document changes have been made, if so ask the user if they
         // want to save the changes.
         if (document != null && !IS_READONLY) {
-            boolean documentChanges = document.getStateManager().hasChangedSinceLastSnapshot();
+            boolean documentChanges = document.getStateManager().hasUnsavedUserChanges();
             if (documentChanges) {
                 MessageFormat formatter = new MessageFormat(
                         messageBundle.getString("viewer.dialog.saveOnClose.noUpdates.msg"));

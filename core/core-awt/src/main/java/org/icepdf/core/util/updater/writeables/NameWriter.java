@@ -27,22 +27,55 @@ public class NameWriter extends BaseWriter {
 
     private static final int POUND = 0x23;
 
+    private static final byte[] HEX_DIGITS = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
+
+    /**
+     * Writes a name as {@code /} followed by its characters, hex escaping everything that is not a
+     * regular character (7.3.5): whitespace, the delimiters, {@code #} itself, and anything outside
+     * printable ASCII.  A delimiter written raw ends the name token early for the next reader, which
+     * turns one name into a name plus whatever the rest of it parsed as.
+     *
+     * @param writeable name to write
+     * @param output    stream to write to
+     * @throws IOException if the stream cannot be written to
+     */
     public void write(Name writeable, CountingOutputStream output) throws IOException {
         output.write(NAME);
         byte[] bytes = writeable.getName().getBytes(StandardCharsets.UTF_8);
         for (int b : bytes) {
             b &= 0xFF;
-            if (b == POUND || b < 0x21 || b > 0x7E) {
-                output.write(POUND);
-                int hexVal = ((b >> 4) & 0x0F);
-                int hexDigit = hexVal + ((hexVal >= 10) ? 'A' : '0');
-                output.write(hexDigit);
-                hexVal = (b & 0x0F);
-                hexDigit = hexVal + ((hexVal >= 10) ? 'A' : '0');
-                output.write(hexDigit);
-            } else {
+            if (isRegularCharacter(b)) {
                 output.write(b);
+            } else {
+                output.write(POUND);
+                output.write(HEX_DIGITS[(b >> 4) & 0x0F]);
+                output.write(HEX_DIGITS[b & 0x0F]);
             }
+        }
+    }
+
+    /**
+     * @param b byte to test
+     * @return true when {@code b} may appear in a name unescaped
+     */
+    private static boolean isRegularCharacter(int b) {
+        if (b < 0x21 || b > 0x7E || b == POUND) {
+            return false;
+        }
+        switch (b) {
+            case '(':
+            case ')':
+            case '<':
+            case '>':
+            case '[':
+            case ']':
+            case '{':
+            case '}':
+            case '/':
+            case '%':
+                return false;
+            default:
+                return true;
         }
     }
 }

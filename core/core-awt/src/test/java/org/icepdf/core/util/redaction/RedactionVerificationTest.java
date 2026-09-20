@@ -144,7 +144,7 @@ public class RedactionVerificationTest {
         try {
             document.getPageTree().getPage(0).init();
             document.getPageTree().getPage(0).addAnnotation(
-                    RedactionFixtures.redactionOver(document, new Rectangle(142, 102, 26, 26)), true);
+                    RedactionFixtures.redactionOver(document, new Rectangle(142, 102, 26, 26)));
             save(document);
             report = document.getRedactionReport();
         } finally {
@@ -235,7 +235,7 @@ public class RedactionVerificationTest {
         page.init();
         List<Rectangle> bounds = RedactionFixtures.wordBounds(page, Collections.singletonList(word));
         assertFalse(bounds.isEmpty(), "fixture should contain '" + word + "'");
-        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)), true);
+        page.addAnnotation(RedactionFixtures.redactionOver(document, bounds.get(0)));
     }
 
     private void save(Document document) throws Exception {
