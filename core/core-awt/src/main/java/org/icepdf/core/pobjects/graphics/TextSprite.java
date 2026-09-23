@@ -428,6 +428,30 @@ public class TextSprite {
      * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
      * otherwise; false.
      */
+    /**
+     * Returns true if this sprite might intersect the clip of {@code g}.  Uses {@link Graphics#hitClip}, which
+     * tests against the already-rasterized clip region, rather than {@code g.getClip()}, which copies and
+     * inverse-transforms the whole clip outline on every call (O(segments) per sprite on a complex clip).
+     *
+     * @param g graphics context whose current transform maps this sprite's bounds.
+     * @return true, if the sprite bounds may intersect the clip of g; otherwise false.
+     */
+    public boolean intersects(Graphics2D g) {
+        return !(optimizedDrawingEnabled) || hitClip(g, bounds);
+    }
+
+    /**
+     * Conservative {@link Graphics#hitClip} for a fractional user-space rectangle: the integer rectangle is widened
+     * to fully cover {@code r}.
+     */
+    public static boolean hitClip(Graphics2D g, Rectangle2D r) {
+        int x = (int) Math.floor(r.getMinX());
+        int y = (int) Math.floor(r.getMinY());
+        int w = (int) Math.ceil(r.getMaxX()) - x;
+        int h = (int) Math.ceil(r.getMaxY()) - y;
+        return g.hitClip(x, y, Math.max(w, 1), Math.max(h, 1));
+    }
+
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
         return !(optimizedDrawingEnabled) ||

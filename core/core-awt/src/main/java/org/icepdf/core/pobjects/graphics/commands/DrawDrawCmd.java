@@ -18,9 +18,11 @@ package org.icepdf.core.pobjects.graphics.commands;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
+import org.icepdf.core.pobjects.graphics.TextSprite;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 
 /**
  * The DrawDrawCmd (no didn't stutter) will call draw and the Graphics2D context
@@ -36,19 +38,13 @@ public class DrawDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        Rectangle currentShapeBounds = currentShape.getBounds();
-        if (g.getClip() != null && optionalContentState.isVisible() &&
-                currentShape.intersects(g.getClip().getBounds()) ||
+        Rectangle2D currentShapeBounds = currentShape.getBounds2D();
+        // hitClip tests the rasterized clip region (and is true when there is no clip); g.getClip() would copy the
+        // whole clip outline per stroke.  Hairline-thin shapes are always drawn, as their bounds can miss the clip
+        // while the stroke still reaches it.
+        if (optionalContentState.isVisible() && TextSprite.hitClip(g, currentShapeBounds) ||
                 (currentShapeBounds.getWidth() < 1.0 ||
                         currentShapeBounds.getHeight() < 1.0)) {
-            g.draw(currentShape);
-            // Send a PaintPage Event to listeners
-            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
-                parentPage.notifyPaintPageListeners();
-            }
-        }
-        // couple corner cases where we want to paint the shape when we don't have a clip.
-        else if (g.getClip() == null) {
             g.draw(currentShape);
             // Send a PaintPage Event to listeners
             if (parentPage != null && paintTimer.shouldTriggerRepaint()) {
