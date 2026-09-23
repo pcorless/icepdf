@@ -688,6 +688,13 @@ public abstract class AbstractContentParser {
             shapes.add(new NoClipDrawCmd());
             //  5. Restore the saved graphics state
             graphicState = graphicState.restore();
+            // The form's BBox clip and the NoClipDrawCmd above changed the paint-time clip without going through
+            // the graphics state, so restore() cannot tell the caller's clip needs putting back; re-apply it.
+            Shape restoredClip = graphicState.getClip();
+            if (restoredClip != null) {
+                shapes.add(new ShapeDrawCmd(restoredClip));
+                shapes.add(clipDrawCmd);
+            }
         }
         // Image XObject
         else if (viewParse) {
