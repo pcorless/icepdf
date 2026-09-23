@@ -295,9 +295,11 @@ public abstract class AbstractContentParser {
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
+            // Install a copy: the current PatternColor usually comes from the shared resources (CS), and
+            // selecting the pattern on it in place let concurrently parsed pages swap each other's patterns.
             if (graphicState.getStrokeColorSpace() instanceof PatternColor) {
                 PatternColor pc = (PatternColor) graphicState.getStrokeColorSpace();
-                pc.setPattern(pattern);
+                graphicState.setStrokeColorSpace(pc.withPattern(pattern));
             } else {
                 PatternColor pc = new PatternColor(null, null);
                 pc.setPattern(pattern);
@@ -350,9 +352,10 @@ public abstract class AbstractContentParser {
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
+            // Install a copy, as for SCN: the current PatternColor usually comes from the shared resources (cs).
             if (graphicState.getFillColorSpace() instanceof PatternColor) {
                 PatternColor pc = (PatternColor) graphicState.getFillColorSpace();
-                pc.setPattern(pattern);
+                graphicState.setFillColorSpace(pc.withPattern(pattern));
             } else {
                 PatternColor pc = new PatternColor(library, null);
                 pc.setPattern(pattern);
