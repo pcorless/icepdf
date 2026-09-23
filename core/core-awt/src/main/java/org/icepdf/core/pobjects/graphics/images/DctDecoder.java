@@ -88,7 +88,9 @@ public class DctDecoder extends AbstractImageDecoder {
         try {
             ImageParams imageParams = imageStream.getImageParams();
             // get the full image data.
-            byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+            // the filter passes this encoding through undecoded, so the result is the compressed data;
+            // presizing it to the decoded raster size would allocate far more than it holds.
+            byte[] data = imageStream.getDecodedStreamBytes(0);
 
             int dataRead = data.length;
             if (dataRead > MAX_BYTES_TO_READ_FOR_ENCODING) {

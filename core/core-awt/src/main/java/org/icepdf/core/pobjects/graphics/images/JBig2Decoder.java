@@ -74,7 +74,9 @@ public class JBig2Decoder extends AbstractImageDecoder {
         // grab the data,
         ImageInputStream imageInputStream = null;
         try {
-            byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+            // the filter passes this encoding through undecoded, so the result is the compressed data;
+            // presizing it to the decoded raster size would allocate far more than it holds.
+            byte[] data = imageStream.getDecodedStreamBytes(0);
             imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(data));
             tmpImage = decodeJbig2(decodeParams, globalsStream, imageInputStream, JBIG2_PDF_BOX);
         } catch (ClassNotFoundException | NoClassDefFoundError e) {
