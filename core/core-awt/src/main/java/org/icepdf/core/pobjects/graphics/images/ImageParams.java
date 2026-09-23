@@ -272,10 +272,15 @@ public class ImageParams extends Dictionary {
         return false;
     }
 
+    /**
+     * @return the size of the decoded sample data in bytes, capped at the largest array the VM allows.  Worked in
+     * long: a large print image (18480 x 16734 CMYK, 8 bpc) overflows int before the divide by 8.
+     */
     public int getDataLength() {
-        return getWidth() * getHeight()
+        long length = (long) getWidth() * getHeight()
                 * getColorSpaceCompCount()
                 * getBitsPerComponent() / 8;
+        return (int) Math.max(0, Math.min(length, Integer.MAX_VALUE - 8));
     }
 
 }
