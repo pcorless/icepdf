@@ -26,14 +26,18 @@ import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateExceptio
 import org.icepdf.core.pobjects.structure.exceptions.ObjectStateException;
 import org.icepdf.core.util.ByteBufferUtil;
 import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class Parser {
+
+    private static final Logger logger = Logger.getLogger(Parser.class.getName());
 
     // legacy xref markers.
     //                                              x    r    e    f
@@ -101,6 +105,16 @@ public class Parser {
             // stream offset
             streamOffsetStart = byteBuffer.position();
             int streamLength = getLength(objectData);
+            // some writers get /Length wrong (or point it past the end of the file); when it doesn't land on
+            // endstream, measure the stream up to the endstream marker instead.
+            if (streamLength > 0 && !endStreamFollows(byteBuffer, streamOffsetStart + streamLength)) {
+                int streamOffsetEnd = findEndStream(byteBuffer, streamOffsetStart);
+                if (streamOffsetEnd >= 0) {
+                    logger.fine(() -> "Stream /Length " + getLength(objectData) + " of object " + objectNumber +
+                            " does not end at endstream, using " + (streamOffsetEnd - streamOffsetStart));
+                    streamLength = streamOffsetEnd - streamOffsetStart;
+                }
+            }
             // create a new buffer to encapsulate the stream data using the length
             streamByteBuffer = ByteBufferUtil.sliceObjectStream(
                     byteBuffer,
@@ -149,6 +163,46 @@ public class Parser {
         }
         // push dictionary through factory to build correct instance.
         return ObjectFactory.getInstance(library, objectNumber, objectGeneration, objectData, streamByteBuffer);
+    }
+
+    /**
+     * @return true if, after optional white space, the endstream keyword starts at {@code position}.
+     */
+    private static boolean endStreamFollows(ByteBuffer byteBuffer, int position) {
+        int limit = byteBuffer.limit();
+        while (position < limit && Utils.isWhitespace((char) byteBuffer.get(position))) {
+            position++;
+        }
+        if (position < 0 || position + END_STREAM_MARKER.length > limit) {
+            return false;
+        }
+        for (int i = 0; i < END_STREAM_MARKER.length; i++) {
+            if (byteBuffer.get(position + i) != END_STREAM_MARKER[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Scans forward from {@code streamOffsetStart} for the endstream keyword.
+     *
+     * @return offset of the end of the stream data, excluding the end-of-line marker that precedes endstream,
+     * or -1 if there is no endstream.
+     */
+    private static int findEndStream(ByteBuffer byteBuffer, int streamOffsetStart) {
+        byteBuffer.position(streamOffsetStart);
+        if (!ByteBufferUtil.findString(byteBuffer, END_STREAM_MARKER)) {
+            return -1;
+        }
+        int end = byteBuffer.position() - END_STREAM_MARKER.length;
+        if (end > streamOffsetStart && byteBuffer.get(end - 1) == '\n') {
+            end--;
+        }
+        if (end > streamOffsetStart && byteBuffer.get(end - 1) == '\r') {
+            end--;
+        }
+        return end;
     }
 
     private int getLength(Object objectData) {

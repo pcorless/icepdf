@@ -108,6 +108,36 @@ public class ObjectParserTest {
                 new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1).trim());
     }
 
+    @DisplayName("object - a /Length that stops short of endstream is measured to endstream instead")
+    @Test
+    public void streamWithShortLength() throws Exception {
+        // Seen on an incrementally-updated cross-reference stream: /Length 25 over 35 bytes of deflate
+        // data, which truncated the xref and sent the whole document into a reindex.
+        String body = "3 0 obj\n<< /Length 4 >>\nstream\nthis data is really here\r\nendstream\nendobj\n";
+        Stream stream = assertInstanceOf(Stream.class, parse(body).getObject());
+        assertEquals("this data is really here",
+                new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
+    }
+
+    @DisplayName("object - a /Length that runs past the end of the buffer is measured to endstream instead")
+    @Test
+    public void streamWithLengthPastEnd() throws Exception {
+        String body = "3 0 obj\n<< /Length 999999 >>\nstream\nhello world\nendstream\nendobj\n";
+        Stream stream = assertInstanceOf(Stream.class, parse(body).getObject());
+        assertEquals("hello world",
+                new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
+    }
+
+    @DisplayName("object - a /Length that is right up to the end-of-line before endstream is trusted")
+    @Test
+    public void streamWithLengthBeforeEol() throws Exception {
+        // the stream data itself ends in white space; the declared length keeps it
+        String body = "3 0 obj\n<< /Length 7 >>\nstream\nhello \n\r\nendstream\nendobj\n";
+        Stream stream = assertInstanceOf(Stream.class, parse(body).getObject());
+        assertEquals("hello \n",
+                new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
+    }
+
     @DisplayName("object - a body that is not an object at all is rejected")
     @Test
     public void malformedObject() {
