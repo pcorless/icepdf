@@ -33,6 +33,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -47,6 +48,7 @@ import java.util.logging.Logger;
 
     private static final byte[] OBJECT_STREAM_MARKER = "/ObjStm".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] STREAM_MARKER = "stream".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] PAGE_MARKER = "/Page".getBytes(StandardCharsets.US_ASCII);
 
     private final Library library;
 
@@ -211,6 +213,63 @@ import java.util.logging.Logger;
                 logger.finer("Skipping unreadable object stream at offset " + entry.getFilePositionOfObject());
             }
         }
+    }
+
+    /**
+     * Lists the objects that may be pages, in file order, for a document whose page tree can't be reached - a
+     * truncated linearized file loses its page tree first, as it is written at the end.  Plain objects are
+     * narrowed to those whose dictionary names /Page; objects inside object streams can't be peeked at, so they
+     * are all listed after the plain ones and the caller keeps only those that load as a page.
+     *
+     * @param crossReferenceRoot cross-reference of the document
+     * @param byteBuffer         whole file
+     * @return candidate page references, in file order
+     */
+    public static List<Reference> findPageCandidates(CrossReferenceRoot crossReferenceRoot, ByteBuffer byteBuffer) {
+        Map<Reference, CrossReferenceEntry> entries = new HashMap<>();
+        for (CrossReference crossReference : crossReferenceRoot.getCrossReferences()) {
+            crossReference.getEntries().forEach(entries::putIfAbsent);
+        }
+        List<Map.Entry<Reference, CrossReferenceEntry>> plain = new ArrayList<>();
+        List<Map.Entry<Reference, CrossReferenceEntry>> compressed = new ArrayList<>();
+        for (Map.Entry<Reference, CrossReferenceEntry> entry : entries.entrySet()) {
+            if (entry.getValue() instanceof CrossReferenceUsedEntry) {
+                if (isPageObject(byteBuffer, ((CrossReferenceUsedEntry) entry.getValue()).getFilePositionOfObject())) {
+                    plain.add(entry);
+                }
+            } else if (entry.getValue() instanceof CrossReferenceCompressedEntry) {
+                compressed.add(entry);
+            }
+        }
+        plain.sort(Comparator.comparingInt(e -> ((CrossReferenceUsedEntry) e.getValue()).getFilePositionOfObject()));
+        compressed.sort(Comparator.comparingInt((Map.Entry<Reference, CrossReferenceEntry> e) ->
+                        ((CrossReferenceCompressedEntry) e.getValue()).getObjectNumberOfContainingObjectStream()
+                                .getObjectNumber())
+                .thenComparingInt(e -> ((CrossReferenceCompressedEntry) e.getValue()).getIndexWithinObjectStream()));
+        List<Reference> candidates = new ArrayList<>(plain.size() + compressed.size());
+        plain.forEach(e -> candidates.add(e.getKey()));
+        compressed.forEach(e -> candidates.add(e.getKey()));
+        return candidates;
+    }
+
+    /**
+     * Cheap pre-check for {@link #findPageCandidates}: looks for the name /Page (not /Pages or /PageLabels) in the
+     * object's dictionary, before its stream or endobj keyword.
+     */
+    private static boolean isPageObject(ByteBuffer byteBuffer, int offset) {
+        int end = Math.min(byteBuffer.limit(), offset + 1024);
+        for (int i = Math.max(offset, 0); i < end; i++) {
+            if (matches(byteBuffer, i, end, STREAM_MARKER) || matches(byteBuffer, i, end, Parser.END_OBJ_MARKER)) {
+                return false;
+            }
+            if (matches(byteBuffer, i, end, PAGE_MARKER)) {
+                int next = i + PAGE_MARKER.length;
+                if (next >= end || !Character.isLetterOrDigit((char) byteBuffer.get(next))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

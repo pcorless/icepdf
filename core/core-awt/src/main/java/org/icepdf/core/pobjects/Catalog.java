@@ -16,8 +16,11 @@
 package org.icepdf.core.pobjects;
 
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.Indexer;
 import org.icepdf.core.util.Library;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -114,6 +117,11 @@ public class Catalog extends Dictionary {
             tmpPages.put(PageTree.COUNT_KEY, 1);
             pageTree = new PageTree(library, tmpPages);
         }
+        // damaged corner case, the page tree is missing (a truncated linearized file loses it first, as it is
+        // written last), so rebuild a flat one from the page objects that survive.
+        if (pageTree == null) {
+            pageTree = recoverPageTree();
+        }
 
         // let any exception bubble up.
         if (pageTree != null) {
@@ -149,6 +157,35 @@ public class Catalog extends Dictionary {
      */
     public PageTree getPageTree() {
         return pageTree;
+    }
+
+    /**
+     * Builds a flat page tree from the page objects found in the file, for a catalog whose /Pages can't be
+     * resolved.
+     *
+     * @return the recovered page tree, or null if the file holds no page objects.
+     */
+    private PageTree recoverPageTree() {
+        CrossReferenceRoot crossReferenceRoot = library.getCrossReferenceRoot();
+        ByteBuffer byteBuffer = library.getMappedFileByteBuffer();
+        if (crossReferenceRoot == null || byteBuffer == null) {
+            return null;
+        }
+        List<Reference> kids = new ArrayList<>();
+        for (Reference candidate : Indexer.findPageCandidates(crossReferenceRoot, byteBuffer.duplicate())) {
+            if (library.getObject(candidate) instanceof Page) {
+                kids.add(candidate);
+            }
+        }
+        if (kids.isEmpty()) {
+            return null;
+        }
+        logger.warning(() -> "Page tree is missing, rebuilt it from " + kids.size() + " page objects.");
+        DictionaryEntries pages = new DictionaryEntries();
+        pages.put(PageTree.TYPE_KEY, PageTree.TYPE);
+        pages.put(PageTree.KIDS_KEY, kids);
+        pages.put(PageTree.COUNT_KEY, kids.size());
+        return new PageTree(library, pages);
     }
 
     /**

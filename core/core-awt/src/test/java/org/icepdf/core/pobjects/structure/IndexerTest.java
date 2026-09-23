@@ -94,6 +94,27 @@ public class IndexerTest {
         assertEquals(200, first.getMediaBox().getWidth(), 0.01);
     }
 
+    @DisplayName("a truncated file whose page tree was cut off is rebuilt from its surviving pages")
+    @Test
+    public void truncatedPageTreeIsRecovered() throws Exception {
+        // A linearized file writes its first page up front and its page tree last, so truncation
+        // keeps the page and loses the tree.  The surviving trailer's /Prev also points past the
+        // end; following it used to throw on every lookup (602695 (2).pdf, a 296MB file cut to 104MB).
+        StringBuilder pdf = new StringBuilder("%PDF-1.4\n");
+        pdf.append("1 0 obj\n<< /Type /Catalog /Pages 9 0 R >>\nendobj\n");
+        pdf.append("2 0 obj\n<< /Type /Page /Parent 9 0 R /MediaBox [0 0 300 200] >>\nendobj\n");
+        pdf.append("3 0 obj\n<< /Type /Page /Parent 9 0 R /MediaBox [0 0 400 200] >>\nendobj\n");
+        pdf.append("trailer\n<< /Root 1 0 R /Size 10 /Prev 99999999 >>\nstartxref\n99999998\n%%EOF\n");
+
+        Document document = new Document();
+        document.setByteArray(pdf.toString().getBytes(StandardCharsets.ISO_8859_1), 0, pdf.length(),
+                "truncated.pdf");
+        assertEquals(2, document.getNumberOfPages());
+        // file order is kept
+        assertEquals(300, document.getPageTree().getPage(0).getMediaBox().getWidth(), 0.01);
+        assertEquals(400, document.getPageTree().getPage(1).getMediaBox().getWidth(), 0.01);
+    }
+
     @DisplayName("a file whose xref offsets are all wrong is rebuilt from its objects")
     @Test
     public void badObjectOffsets() throws Exception {
