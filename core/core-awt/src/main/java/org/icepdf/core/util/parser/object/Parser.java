@@ -230,8 +230,12 @@ public class Parser {
 
     public CrossReference getCrossReference(ByteBuffer byteBuffer, int startXref)
             throws CrossReferenceStateException, ObjectStateException, IOException {
+        // a truncated file's /Prev or startxref can point past the end
+        if (startXref < 0 || startXref >= byteBuffer.limit()) {
+            throw new CrossReferenceStateException();
+        }
         // sometimes the offset is off just by a few bytes
-        byteBuffer.position(startXref - 10);
+        byteBuffer.position(Math.max(0, startXref - 10));
         int xrefPositionStart = byteBuffer.position();
 
         // make sure we have a xref declaration

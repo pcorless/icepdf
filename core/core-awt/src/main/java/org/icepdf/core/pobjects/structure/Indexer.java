@@ -71,6 +71,14 @@ import java.util.logging.Logger;
         int trailerPosition = xRefDictionary != null ? byteBuffer.position() : byteBuffer.limit();
         if (xRefDictionary == null) {
             xRefDictionary = new DictionaryEntries();
+        } else {
+            // The scan below covers the whole file, so the rebuilt table must not fall back to an older
+            // cross-reference section: at best it holds stale offsets, and a truncated file's /Prev (or a
+            // linearized file's first-page trailer) points past the end, failing every lookup the scan misses.
+            DictionaryEntries copy = new DictionaryEntries();
+            copy.putAll(xRefDictionary);
+            copy.remove(PTrailer.PREV_KEY);
+            xRefDictionary = copy;
         }
 
         // The table is handed the dictionary before it is complete; the entries are added below,
