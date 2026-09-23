@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -152,7 +153,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     startPoint, endPoint, dist, colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
-                    anchorToDefaultSpace(matrix, graphicsState));
+                    matrix);
             inited = true;
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);
@@ -306,6 +307,27 @@ public class ShadingType2Pattern extends ShadingPattern {
             logger.fine("ShadingType2Pattern initialization interrupted");
         }
         return linearGradientPaint;
+    }
+
+    /**
+     * The cached gradient carries the raw pattern matrix; each use gets a copy anchored to its own CTM.  Caching
+     * the anchored paint gave every later use the first use's CTM, so a pattern reused under a different
+     * {@code cm} slid off its shape and clamped to one end colour - and under concurrent page rendering, which
+     * use came first varied between runs.
+     */
+    @Override
+    public Paint getPaint(GraphicsState graphicsState) {
+        init(graphicsState);
+        LinearGradientPaint paint = linearGradientPaint;
+        if (paint == null) {
+            return null;
+        }
+        AffineTransform anchored = anchorToDefaultSpace(matrix, graphicsState);
+        if (anchored == matrix) {
+            return paint;
+        }
+        return new LinearGradientPaint(paint.getStartPoint(), paint.getEndPoint(), paint.getFractions(),
+                paint.getColors(), paint.getCycleMethod(), paint.getColorSpace(), anchored);
     }
 
     public String toString() {

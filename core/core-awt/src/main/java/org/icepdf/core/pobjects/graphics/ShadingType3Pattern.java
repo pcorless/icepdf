@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.graphics.batik.ext.awt.RadialGradientPaint;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -165,7 +166,7 @@ public class ShadingType3Pattern extends ShadingPattern {
                     colors,
                     MultipleGradientPaint.NO_CYCLE,
                     MultipleGradientPaint.LINEAR_RGB,
-                    anchorToDefaultSpace(matrix, graphicsState));
+                    matrix);
 
             // get type 3 specific data.
             inited = true;
@@ -213,6 +214,25 @@ public class ShadingType3Pattern extends ShadingPattern {
     public Paint getPaint() throws InterruptedException {
         init();
         return radialGradientPaint;
+    }
+
+    /**
+     * The cached gradient carries the raw pattern matrix; each use gets a copy anchored to its own CTM (see
+     * {@link ShadingType2Pattern#getPaint(GraphicsState)}).
+     */
+    @Override
+    public Paint getPaint(GraphicsState graphicsState) {
+        init(graphicsState);
+        RadialGradientPaint paint = radialGradientPaint;
+        if (paint == null) {
+            return null;
+        }
+        AffineTransform anchored = anchorToDefaultSpace(matrix, graphicsState);
+        if (anchored == matrix) {
+            return paint;
+        }
+        return new RadialGradientPaint(paint.getCenterPoint(), paint.getRadius(), paint.getFocusPoint(),
+                paint.getFractions(), paint.getColors(), paint.getCycleMethod(), paint.getColorSpace(), anchored);
     }
 
     public String toSting() {

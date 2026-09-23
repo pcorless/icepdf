@@ -1488,7 +1488,7 @@ public abstract class AbstractContentParser {
                 // the shading and the mask to buffers and composite, instead of
                 // dropping the mask for a flat alpha (faded.pdf white-fade bug).
                 pattern.init(graphicState);
-                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(), shSoftMask,
+                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(graphicState), shSoftMask,
                         graphicState.getFillAlpha()));
                 return;
             }
@@ -1506,7 +1506,7 @@ public abstract class AbstractContentParser {
                             graphicState.getAlphaRule(),
                             graphicState.getFillAlpha());
                 }
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
             } else {
                 // apply the current fill color along ith a little alpha
                 // to at least try to paint a colour for an unsupported mesh
@@ -1948,7 +1948,7 @@ public abstract class AbstractContentParser {
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init(graphicState);
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
             }
@@ -2085,7 +2085,7 @@ public abstract class AbstractContentParser {
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init(graphicState);
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());
             }
