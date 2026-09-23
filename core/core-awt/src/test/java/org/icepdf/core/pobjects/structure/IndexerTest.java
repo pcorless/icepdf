@@ -22,6 +22,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -65,6 +66,33 @@ public class IndexerTest {
     // ------------------------------------------------------------------
     // damage the index can be rebuilt around
     // ------------------------------------------------------------------
+
+    @DisplayName("objects held in an object stream survive a rebuild")
+    @Test
+    public void objectStreamContentsAreIndexed() throws Exception {
+        // The page tree lives only inside an /ObjStm, as in a linearized or compressed file.  Those
+        // objects have no "n g obj" keyword, so a scan for keywords alone lost them and the rebuilt
+        // document had a catalog with no pages (Editable1.pdf: NPE from getNumberOfPages).
+        String pages = "<< /Type /Pages /Kids [4 0 R] /Count 1 >>";
+        String page = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>";
+        String offsets = "2 0 4 " + pages.length() + " ";
+        String objects = offsets + pages + page;
+        StringBuilder pdf = new StringBuilder("%PDF-1.5\n");
+        pdf.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+        pdf.append("3 0 obj\n<< /Type /ObjStm /N 2 /First ").append(offsets.length())
+                .append(" /Length ").append(objects.length()).append(" >>\nstream\n")
+                .append(objects).append("\nendstream\nendobj\n");
+        // no xref at all, and a startxref that points nowhere
+        pdf.append("trailer\n<< /Root 1 0 R /Size 5 >>\nstartxref\n99999\n%%EOF\n");
+
+        Document document = new Document();
+        document.setByteArray(pdf.toString().getBytes(StandardCharsets.ISO_8859_1), 0, pdf.length(),
+                "objstm.pdf");
+        assertEquals(1, document.getNumberOfPages());
+        Page first = document.getPageTree().getPage(0);
+        assertNotNull(first);
+        assertEquals(200, first.getMediaBox().getWidth(), 0.01);
+    }
 
     @DisplayName("a file whose xref offsets are all wrong is rebuilt from its objects")
     @Test

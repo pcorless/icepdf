@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.structure;
 
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.ObjectStream;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.PTrailer;
 import org.icepdf.core.pobjects.Reference;
@@ -29,6 +30,10 @@ import org.icepdf.core.util.parser.object.Parser;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -39,6 +44,9 @@ import java.util.logging.Logger;
 
     private static final Logger logger =
             Logger.getLogger(Indexer.class.getName());
+
+    private static final byte[] OBJECT_STREAM_MARKER = "/ObjStm".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] STREAM_MARKER = "stream".getBytes(StandardCharsets.US_ASCII);
 
     private final Library library;
 
@@ -89,6 +97,10 @@ import java.util.logging.Logger;
             }
             pos = objectStart;
         }
+
+        // Objects packed into object streams have no "obj" keyword of their own, so the scan above can't see
+        // them; a linearized or compressed file keeps its page tree there, and losing it leaves no pages.
+        indexObjectStreams(byteBuffer, parser, crossReference);
 
         // Without a /Root there is no way into the document, so find the object that holds the
         // catalog and point at it.  This is what lets a file with no trailer at all be opened.
@@ -153,6 +165,73 @@ import java.util.logging.Logger;
             logger.finer("No trailer or cross-reference stream found, rebuilding from objects alone.");
             return null;
         }
+    }
+
+    /**
+     * Adds a compressed entry for every object held in an object stream found by the scan.  An object that was
+     * found as a plain object is left alone, and when several object streams hold the same object the one latest
+     * in the file wins, as the most recent incremental update.
+     *
+     * @param byteBuffer     whole file
+     * @param parser         parser to read each object stream with
+     * @param crossReference table of the objects found by scanning
+     */
+    private void indexObjectStreams(ByteBuffer byteBuffer, Parser parser, CrossReferenceTable crossReference) {
+        List<CrossReferenceUsedEntry> objectStreams = new ArrayList<>();
+        for (CrossReferenceEntry entry : crossReference.getEntries().values()) {
+            if (entry instanceof CrossReferenceUsedEntry &&
+                    isObjectStream(byteBuffer, ((CrossReferenceUsedEntry) entry).getFilePositionOfObject())) {
+                objectStreams.add((CrossReferenceUsedEntry) entry);
+            }
+        }
+        objectStreams.sort(Comparator.comparingInt(CrossReferenceUsedEntry::getFilePositionOfObject).reversed());
+        for (CrossReferenceUsedEntry entry : objectStreams) {
+            try {
+                PObject pObject = parser.getPObject(byteBuffer, entry.getFilePositionOfObject());
+                if (pObject == null || !(pObject.getObject() instanceof ObjectStream)) {
+                    continue;
+                }
+                int[] objectNumbers = ((ObjectStream) pObject.getObject()).getObjectNumbers();
+                for (int i = 0; i < objectNumbers.length; i++) {
+                    if (crossReference.getEntryNoDescendents(new Reference(objectNumbers[i], 0)) == null) {
+                        crossReference.addEntry(new CrossReferenceCompressedEntry(objectNumbers[i],
+                                pObject.getReference().getObjectNumber(), i));
+                    }
+                }
+            } catch (Exception e) {
+                // one damaged object stream shouldn't stop the others being indexed
+                logger.finer("Skipping unreadable object stream at offset " + entry.getFilePositionOfObject());
+            }
+        }
+    }
+
+    /**
+     * Cheap pre-check, so only object streams are parsed: looks for /ObjStm in the object's dictionary, before
+     * its stream keyword.
+     */
+    private static boolean isObjectStream(ByteBuffer byteBuffer, int offset) {
+        int end = Math.min(byteBuffer.limit(), offset + 1024);
+        for (int i = Math.max(offset, 0); i < end; i++) {
+            if (matches(byteBuffer, i, end, STREAM_MARKER)) {
+                return false;
+            }
+            if (matches(byteBuffer, i, end, OBJECT_STREAM_MARKER)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matches(ByteBuffer byteBuffer, int position, int end, byte[] marker) {
+        if (position + marker.length > end) {
+            return false;
+        }
+        for (int i = 0; i < marker.length; i++) {
+            if (byteBuffer.get(position + i) != marker[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -35,6 +35,9 @@ public class CrossReferenceTable extends CrossReferenceBase<Dictionary> {
             generation = ((CrossReferenceUsedEntry) crossReferenceEntry).getGenerationNumber();
             indirectObjectReferences.put(new Reference(crossReferenceEntry.objectNumber, generation),
                     crossReferenceEntry);
+        } else if (crossReferenceEntry instanceof CrossReferenceCompressedEntry) {
+            // a rebuilt index records the objects it found inside object streams; those are always generation 0
+            indirectObjectReferences.put(new Reference(crossReferenceEntry.objectNumber, 0), crossReferenceEntry);
         }
     }
 
