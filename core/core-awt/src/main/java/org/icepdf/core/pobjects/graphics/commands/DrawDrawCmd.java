@@ -40,10 +40,11 @@ public class DrawDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer paintTimer) {
         Rectangle2D currentShapeBounds = currentShape.getBounds2D();
         // hitClip tests the rasterized clip region (and is true when there is no clip); g.getClip() would copy the
-        // whole clip outline per stroke.  Hairline-thin shapes are always drawn, as their bounds can miss the clip
-        // while the stroke still reaches it.
-        if (optionalContentState.isVisible() && TextSprite.hitClip(g, currentShapeBounds) ||
-                (currentShapeBounds.getWidth() < 1.0 ||
+        // whole clip outline per stroke.  Hairline-thin shapes skip the clip test, as their bounds can miss the clip
+        // while the stroke still reaches it, but not the optional content test: a hidden layer stays hidden.
+        if (optionalContentState.isVisible() &&
+                (TextSprite.hitClip(g, currentShapeBounds) ||
+                        currentShapeBounds.getWidth() < 1.0 ||
                         currentShapeBounds.getHeight() < 1.0)) {
             g.draw(currentShape);
             // Send a PaintPage Event to listeners
