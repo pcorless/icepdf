@@ -135,6 +135,10 @@ public class Library {
 
     private ByteBuffer mappedFileByteBuffer;
     private final Object mappedFileByteBufferLock = new Object();
+    // Set while this thread is rebuilding the cross-reference table.  The indexer parses objects as it goes
+    // (an indirect stream /Length, the catalog search) and those lookups still go through the old, broken
+    // table; a failure there must not start another rebuild, or the rebuild recurses until the stack overflows.
+    private final ThreadLocal<Boolean> rebuildingCrossReference = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     private CrossReferenceRoot crossReferenceRoot;
 
@@ -221,15 +225,22 @@ public class Library {
             try {
                 obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
             } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
+                if (rebuildingCrossReference.get()) {
+                    // already rebuilding on this thread; the new table isn't in place yet, so just miss.
+                    logger.log(Level.FINER, e, () -> "Could not load " + reference + " during reindex.");
+                    return null;
+                }
                 // a null object is ok in this case we are looking at likely an incorrectly indexed file.
-                logger.log(Level.WARNING, e,
-                        () -> "Cross reference indexing failed, reindexing file. " + getFileOrigin());
+                logger.warning(() -> "Cross reference indexing failed loading " + reference +
+                        ", reindexing file. " + getFileOrigin());
+                logger.log(Level.FINE, "Cross reference failure", e);
                 try {
                     rebuildCrossReferenceTable();
                     // try one more time
                     obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
                 } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
-                    logger.log(Level.WARNING, "Linear traversal of file failed, can not load file.", e);
+                    logger.log(Level.WARNING, e1, () -> "Linear traversal of file failed, can not load " +
+                            reference + " " + getFileOrigin());
                     return null;
                 }
             } catch (ClassCastException e) {
@@ -311,9 +322,17 @@ public class Library {
     public CrossReferenceRoot rebuildCrossReferenceTable()
             throws IOException, CrossReferenceStateException {
         Indexer indexer = new Indexer(this);
-        synchronized (mappedFileByteBufferLock) {
-            crossReferenceRoot = indexer.indexObjects(mappedFileByteBuffer);
-            setCrossReferenceRoot(crossReferenceRoot);
+        boolean outermost = !rebuildingCrossReference.get();
+        rebuildingCrossReference.set(Boolean.TRUE);
+        try {
+            synchronized (mappedFileByteBufferLock) {
+                crossReferenceRoot = indexer.indexObjects(mappedFileByteBuffer);
+                setCrossReferenceRoot(crossReferenceRoot);
+            }
+        } finally {
+            if (outermost) {
+                rebuildingCrossReference.remove();
+            }
         }
         return crossReferenceRoot;
     }

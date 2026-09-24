@@ -17,13 +17,17 @@ package org.icepdf.core.pobjects.structure;
 
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -113,6 +117,39 @@ public class IndexerTest {
         // file order is kept
         assertEquals(300, document.getPageTree().getPage(0).getMediaBox().getWidth(), 0.01);
         assertEquals(400, document.getPageTree().getPage(1).getMediaBox().getWidth(), 0.01);
+    }
+
+    @DisplayName("an object lookup made while rebuilding does not start another rebuild")
+    @Test
+    public void rebuildDoesNotRecurse() throws Exception {
+        // No trailer, so a rebuild parses objects to find the catalog; the stream's /Length is indirect,
+        // and resolving it goes through the table being replaced.  When that table is stale the lookup
+        // failed, which started another rebuild, which parsed the same stream... until StackOverflowError.
+        StringBuilder pdf = new StringBuilder("%PDF-1.5\n");
+        pdf.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+        pdf.append("2 0 obj\n<< /Type /Pages /Kids [] /Count 0 >>\nendobj\n");
+        pdf.append("3 0 obj\n<< /Length 4 0 R >>\nstream\nBT ET\nendstream\nendobj\n");
+        pdf.append("4 0 obj\n5\nendobj\n");
+        pdf.append("%%EOF\n");
+        String bytes = pdf.toString();
+
+        Document document = new Document();
+        document.setByteArray(bytes.getBytes(StandardCharsets.ISO_8859_1), 0, bytes.length(), "norecurse.pdf");
+        Library library = document.getCatalog().getLibrary();
+
+        // stand in for a stale xref: every offset lands on an "endobj", which is not an object header
+        int garbage = bytes.indexOf("endobj");
+        CrossReferenceTable stale = new CrossReferenceTable(library, new DictionaryEntries(), bytes.length());
+        for (int i = 1; i <= 5; i++) {
+            stale.addEntry(new CrossReferenceUsedEntry(i, 0, garbage));
+        }
+        CrossReferenceRoot staleRoot = new CrossReferenceRoot(library);
+        staleRoot.addCrossReference(stale);
+        library.setCrossReferenceRoot(staleRoot);
+
+        // object 5 does not exist; the lookup fails, rebuilds once, and misses
+        assertDoesNotThrow(() -> library.getObject(new Reference(5, 0)));
+        assertNotNull(library.getObject(new Reference(1, 0)));
     }
 
     @DisplayName("a file whose xref offsets are all wrong is rebuilt from its objects")
