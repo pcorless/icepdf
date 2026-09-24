@@ -299,6 +299,12 @@ public class ShadingType2Pattern extends ShadingPattern {
         }
     }
 
+    /**
+     * @return the gradient in pattern space, not anchored to any use.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint in pattern space, not anchored to any use.
+     */
+    @Deprecated
     public Paint getPaint() {
         try {
             init();

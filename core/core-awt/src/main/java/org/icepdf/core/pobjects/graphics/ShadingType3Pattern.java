@@ -211,6 +211,12 @@ public class ShadingType3Pattern extends ShadingPattern {
         return t0 + ((t1 - t0) * linearMapping);
     }
 
+    /**
+     * @return the gradient in pattern space, not anchored to any use.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint in pattern space, not anchored to any use.
+     */
+    @Deprecated
     public Paint getPaint() throws InterruptedException {
         init();
         return radialGradientPaint;

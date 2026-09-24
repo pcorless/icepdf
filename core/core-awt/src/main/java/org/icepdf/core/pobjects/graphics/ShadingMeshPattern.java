@@ -101,6 +101,12 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         vertexBitStream = new BitStream(meshDataStream.getDecodedByteArrayInputStream());
     }
 
+    /**
+     * @return the paint as positioned for the first use of this pattern only.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint built for whichever use came first.
+     */
+    @Deprecated
     public abstract Paint getPaint();
 
     /**
