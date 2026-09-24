@@ -138,6 +138,15 @@ public class ObjectParserTest {
                 new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
     }
 
+    @DisplayName("object - a negative /Length is measured to endstream instead")
+    @Test
+    public void streamWithNegativeLength() throws Exception {
+        String body = "3 0 obj\n<< /Length -5 >>\nstream\nthis data is really here\nendstream\nendobj\n";
+        Stream stream = assertInstanceOf(Stream.class, parse(body).getObject());
+        assertEquals("this data is really here",
+                new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1).trim());
+    }
+
     @DisplayName("object - a /Length that is right up to the end-of-line before endstream is trusted")
     @Test
     public void streamWithLengthBeforeEol() throws Exception {

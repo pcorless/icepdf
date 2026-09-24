@@ -104,7 +104,8 @@ public class Parser {
             lexer.skipWhiteSpace();
             // stream offset
             streamOffsetStart = byteBuffer.position();
-            int streamLength = getLength(objectData);
+            // a negative /Length is as good as none; the zero-length recovery below measures the stream instead
+            int streamLength = Math.max(0, getLength(objectData));
             // some writers get /Length wrong (or point it past the end of the file); when it doesn't land on
             // endstream, measure the stream up to the endstream marker instead.
             if (streamLength > 0 && !endStreamFollows(byteBuffer, (long) streamOffsetStart + streamLength)) {
