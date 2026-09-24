@@ -45,6 +45,8 @@ public class CrossReferenceRoot {
     private final ArrayList<CrossReference> crossReferences;
 
     private boolean initializationFailed;
+    // a rebuilt index of an encrypted file whose object streams can't be read until the security handler is set up
+    private CrossReferenceTable deferredObjectStreams;
 
     public CrossReferenceRoot(Library library) {
         this.library = library;
@@ -139,6 +141,17 @@ public class CrossReferenceRoot {
 
     public boolean isInitializationFailed() {
         return initializationFailed;
+    }
+
+    /**
+     * @return the rebuilt table still waiting for its object streams to be indexed, or null.
+     */
+    public CrossReferenceTable getDeferredObjectStreams() {
+        return deferredObjectStreams;
+    }
+
+    public void setDeferredObjectStreams(CrossReferenceTable crossReferenceTable) {
+        deferredObjectStreams = crossReferenceTable;
     }
 
     public void addCrossReference(CrossReference crossReferenceTable) {

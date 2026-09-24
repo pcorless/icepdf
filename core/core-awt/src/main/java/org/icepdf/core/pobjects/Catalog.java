@@ -162,6 +162,10 @@ public class Catalog extends Dictionary {
     /**
      * Builds a flat page tree from the page objects found in the file, for a catalog whose /Pages can't be
      * resolved.
+     * <p>
+     * Every page object still in the file is a candidate, whichever revision wrote it, so a page an incremental
+     * update removed (its object left behind, only the tree edited) comes back.  A file in this state has lost the
+     * record of which pages were current; showing a stale page beats showing none, which is the alternative.
      *
      * @return the recovered page tree, or null if the file holds no page objects.
      */

@@ -24,8 +24,12 @@ import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -117,6 +121,103 @@ public class IndexerTest {
         // file order is kept
         assertEquals(300, document.getPageTree().getPage(0).getMediaBox().getWidth(), 0.01);
         assertEquals(400, document.getPageTree().getPage(1).getMediaBox().getWidth(), 0.01);
+    }
+
+    @DisplayName("a file with no trailer and its catalog inside an object stream is rebuilt")
+    @Test
+    public void catalogInObjectStreamIsFound() throws Exception {
+        // A compressed file keeps its trailer in the cross-reference stream at the end, so truncation loses
+        // it, and usually keeps its catalog in an object stream, which the catalog search didn't look in.
+        String catalog = "<< /Type /Catalog /Pages 2 0 R >>";
+        String pages = "<< /Type /Pages /Kids [4 0 R] /Count 1 >>";
+        String offsets = "1 0 2 " + catalog.length() + " ";
+        String objects = offsets + catalog + pages;
+        StringBuilder pdf = new StringBuilder("%PDF-1.5\n");
+        pdf.append("3 0 obj\n<< /Type /ObjStm /N 2 /First ").append(offsets.length())
+                .append(" /Length ").append(objects.length()).append(" >>\nstream\n")
+                .append(objects).append("\nendstream\nendobj\n");
+        pdf.append("4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 250 200] >>\nendobj\n");
+        // truncated: no xref stream, no trailer
+
+        Document document = new Document();
+        document.setByteArray(pdf.toString().getBytes(StandardCharsets.ISO_8859_1), 0, pdf.length(),
+                "objstm-catalog.pdf");
+        assertEquals(1, document.getNumberOfPages());
+        assertEquals(250, document.getPageTree().getPage(0).getMediaBox().getWidth(), 0.01);
+    }
+
+    @DisplayName("an encrypted file's object streams are indexed once they can be decrypted")
+    @Test
+    public void encryptedObjectStreamsAreIndexedAfterDecryption() throws Exception {
+        // The open-time rebuild runs before the security handler exists, so it read the object stream as
+        // ciphertext, indexed nothing from it, and the page tree inside was lost.
+        byte[] id = "0123456789abcdef".getBytes(StandardCharsets.ISO_8859_1);
+        byte[] owner = new byte[32];
+        Arrays.fill(owner, (byte) 0x41);
+        int permissions = -4;
+        byte[] fileKey = rc4FileKey(owner, permissions, id);
+        byte[] user = rc4(fileKey, PASSWORD_PADDING);
+
+        String pages = "<< /Type /Pages /Kids [4 0 R] /Count 1 >>";
+        String page = "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] >>";
+        String offsets = "2 0 4 " + pages.length() + " ";
+        byte[] objects = (offsets + pages + page).getBytes(StandardCharsets.ISO_8859_1);
+        String encrypted = new String(rc4(objectKey(fileKey, 3), objects), StandardCharsets.ISO_8859_1);
+
+        StringBuilder pdf = new StringBuilder("%PDF-1.5\n");
+        pdf.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+        pdf.append("3 0 obj\n<< /Type /ObjStm /N 2 /First ").append(offsets.length())
+                .append(" /Length ").append(encrypted.length()).append(" >>\nstream\n")
+                .append(encrypted).append("\nendstream\nendobj\n");
+        pdf.append("5 0 obj\n<< /Filter /Standard /V 1 /R 2 /P ").append(permissions)
+                .append(" /O <").append(hex(owner)).append("> /U <").append(hex(user)).append("> >>\nendobj\n");
+        // no xref, and a startxref that points nowhere
+        pdf.append("trailer\n<< /Root 1 0 R /Encrypt 5 0 R /Size 6 /ID [<").append(hex(id)).append("><")
+                .append(hex(id)).append(">] >>\nstartxref\n99999\n%%EOF\n");
+
+        Document document = new Document();
+        document.setByteArray(pdf.toString().getBytes(StandardCharsets.ISO_8859_1), 0, pdf.length(),
+                "encrypted-objstm.pdf");
+        assertEquals(1, document.getNumberOfPages());
+        assertEquals(300, document.getPageTree().getPage(0).getMediaBox().getWidth(), 0.01);
+    }
+
+    private static final byte[] PASSWORD_PADDING = {
+            0x28, (byte) 0xBF, 0x4E, 0x5E, 0x4E, 0x75, (byte) 0x8A, 0x41, 0x64, 0x00, 0x4E, 0x56, (byte) 0xFF,
+            (byte) 0xFA, 0x01, 0x08, 0x2E, 0x2E, 0x00, (byte) 0xB6, (byte) 0xD0, 0x68, 0x3E, (byte) 0x80, 0x2F,
+            0x0C, (byte) 0xA9, (byte) 0xFE, 0x64, 0x53, 0x69, 0x7A};
+
+    /** Standard security handler R2 file key for the empty user password (ISO 32000-1 algorithm 2). */
+    private static byte[] rc4FileKey(byte[] owner, int permissions, byte[] id) throws Exception {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        md5.update(PASSWORD_PADDING);
+        md5.update(owner);
+        md5.update(new byte[]{(byte) permissions, (byte) (permissions >> 8), (byte) (permissions >> 16),
+                (byte) (permissions >> 24)});
+        md5.update(id);
+        return Arrays.copyOf(md5.digest(), 5);
+    }
+
+    /** Per-object key (ISO 32000-1 algorithm 1), generation 0. */
+    private static byte[] objectKey(byte[] fileKey, int objectNumber) throws Exception {
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+        md5.update(fileKey);
+        md5.update(new byte[]{(byte) objectNumber, (byte) (objectNumber >> 8), (byte) (objectNumber >> 16), 0, 0});
+        return Arrays.copyOf(md5.digest(), fileKey.length + 5);
+    }
+
+    private static byte[] rc4(byte[] key, byte[] data) throws Exception {
+        Cipher cipher = Cipher.getInstance("ARCFOUR");
+        cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "ARCFOUR"));
+        return cipher.doFinal(data);
+    }
+
+    private static String hex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder();
+        for (byte b : bytes) {
+            hex.append(String.format("%02x", b & 0xff));
+        }
+        return hex.toString();
     }
 
     @DisplayName("an object lookup made while rebuilding does not start another rebuild")

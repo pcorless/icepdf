@@ -337,6 +337,20 @@ public class Library {
         return crossReferenceRoot;
     }
 
+    /**
+     * Indexes the object streams of an encrypted file whose index was rebuilt before its security handler was set
+     * up; see {@link Indexer#indexDeferredObjectStreams}.  Does nothing if no pass is pending.
+     */
+    public void indexDeferredObjectStreams() {
+        CrossReferenceRoot root = crossReferenceRoot;
+        if (root == null || root.getDeferredObjectStreams() == null) {
+            return;
+        }
+        synchronized (mappedFileByteBufferLock) {
+            new Indexer(this).indexDeferredObjectStreams(root, mappedFileByteBuffer);
+        }
+    }
+
     public String getFileOrigin() {
         return fileOrigin;
     }

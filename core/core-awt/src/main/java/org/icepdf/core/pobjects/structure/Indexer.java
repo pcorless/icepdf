@@ -49,6 +49,7 @@ import java.util.logging.Logger;
     private static final byte[] OBJECT_STREAM_MARKER = "/ObjStm".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] STREAM_MARKER = "stream".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] PAGE_MARKER = "/Page".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] CATALOG_MARKER = "/Catalog".getBytes(StandardCharsets.US_ASCII);
 
     private final Library library;
 
@@ -110,11 +111,21 @@ import java.util.logging.Logger;
 
         // Objects packed into object streams have no "obj" keyword of their own, so the scan above can't see
         // them; a linearized or compressed file keeps its page tree there, and losing it leaves no pages.
-        indexObjectStreams(byteBuffer, parser, crossReference);
+        // An encrypted file's object streams can only be read once the security handler exists, which on
+        // opening is after this rebuild; the document runs the pass then (see indexDeferredObjectStreams).
+        if (xRefDictionary.get(PTrailer.ENCRYPT_KEY) != null && library.getSecurityManager() == null) {
+            crossReferenceRoot.setDeferredObjectStreams(crossReference);
+        } else {
+            indexObjectStreams(byteBuffer, parser, crossReference);
+        }
 
         // Without a /Root there is no way into the document, so find the object that holds the
         // catalog and point at it.  This is what lets a file with no trailer at all be opened.
         if (xRefDictionary.get(PTrailer.ROOT_KEY) == null) {
+            // Publish the rebuilt table first.  Reading candidates resolves references (an indirect stream
+            // /Length, the object stream holding a compressed object), and through the table being replaced
+            // those resolve to the wrong offsets or fail outright.
+            library.setCrossReferenceRoot(crossReferenceRoot);
             Reference catalog = findCatalog(byteBuffer, parser, crossReference);
             if (catalog != null) {
                 logger.fine("Rebuilt a missing trailer, catalog found at " + catalog);
@@ -175,6 +186,22 @@ import java.util.logging.Logger;
             logger.finer("No trailer or cross-reference stream found, rebuilding from objects alone.");
             return null;
         }
+    }
+
+    /**
+     * Runs the object stream pass that {@link #indexObjects} put off for an encrypted file, now that the security
+     * handler can decrypt the streams.  Does nothing if no pass is pending.
+     *
+     * @param crossReferenceRoot rebuilt cross-reference
+     * @param byteBuffer         whole file
+     */
+    public void indexDeferredObjectStreams(CrossReferenceRoot crossReferenceRoot, ByteBuffer byteBuffer) {
+        CrossReferenceTable crossReference = crossReferenceRoot.getDeferredObjectStreams();
+        if (crossReference == null) {
+            return;
+        }
+        crossReferenceRoot.setDeferredObjectStreams(null);
+        indexObjectStreams(byteBuffer, new Parser(library), crossReference);
     }
 
     /**
@@ -257,13 +284,28 @@ import java.util.logging.Logger;
      * object's dictionary, before its stream or endobj keyword.
      */
     private static boolean isPageObject(ByteBuffer byteBuffer, int offset) {
+        return namesInDictionary(byteBuffer, offset, PAGE_MARKER);
+    }
+
+    /**
+     * Cheap pre-check for {@link #findCatalog}, as {@link #isPageObject} is for pages.
+     */
+    private static boolean isCatalogObject(ByteBuffer byteBuffer, int offset) {
+        return namesInDictionary(byteBuffer, offset, CATALOG_MARKER);
+    }
+
+    /**
+     * Looks for a whole name (so /Page does not match /Pages) in the first 1KB of an object, stopping at its stream
+     * or endobj keyword.
+     */
+    private static boolean namesInDictionary(ByteBuffer byteBuffer, int offset, byte[] name) {
         int end = Math.min(byteBuffer.limit(), offset + 1024);
         for (int i = Math.max(offset, 0); i < end; i++) {
             if (matches(byteBuffer, i, end, STREAM_MARKER) || matches(byteBuffer, i, end, Parser.END_OBJ_MARKER)) {
                 return false;
             }
-            if (matches(byteBuffer, i, end, PAGE_MARKER)) {
-                int next = i + PAGE_MARKER.length;
+            if (matches(byteBuffer, i, end, name)) {
+                int next = i + name.length;
                 if (next >= end || !Character.isLetterOrDigit((char) byteBuffer.get(next))) {
                     return true;
                 }
@@ -305,7 +347,11 @@ import java.util.logging.Logger;
      * Finds the object holding the document catalog, by reading the objects just indexed.
      * <p>
      * Only used when the file has no usable trailer, so the cost of parsing objects until the
-     * catalog turns up is paid on damaged files alone.
+     * catalog turns up is paid on damaged files alone.  Candidates are tried cheapest and likeliest first: plain
+     * objects that name /Catalog near their start, then objects inside object streams (where a compressed file
+     * usually keeps its catalog), then every other plain object, in case /Type sits deep in a large catalog.
+     * Within each group the latest in the file is tried first, as the most recent incremental update.  The
+     * rebuilt table must already be the library's, as objects in object streams are read through it.
      *
      * @param byteBuffer     whole file
      * @param parser         parser to read each object with
@@ -313,10 +359,45 @@ import java.util.logging.Logger;
      * @return reference to the catalog, or null if no object in the file is one
      */
     private Reference findCatalog(ByteBuffer byteBuffer, Parser parser, CrossReferenceTable crossReference) {
+        List<Map.Entry<Reference, CrossReferenceEntry>> named = new ArrayList<>();
+        List<Map.Entry<Reference, CrossReferenceEntry>> unnamed = new ArrayList<>();
+        List<Map.Entry<Reference, CrossReferenceEntry>> compressed = new ArrayList<>();
         for (Map.Entry<Reference, CrossReferenceEntry> entry : crossReference.getEntries().entrySet()) {
-            if (!(entry.getValue() instanceof CrossReferenceUsedEntry)) {
-                continue;
+            if (entry.getValue() instanceof CrossReferenceUsedEntry) {
+                int offset = ((CrossReferenceUsedEntry) entry.getValue()).getFilePositionOfObject();
+                (isCatalogObject(byteBuffer, offset) ? named : unnamed).add(entry);
+            } else if (entry.getValue() instanceof CrossReferenceCompressedEntry) {
+                compressed.add(entry);
             }
+        }
+        Comparator<Map.Entry<Reference, CrossReferenceEntry>> latestPlainFirst = Comparator.comparingInt(
+                (Map.Entry<Reference, CrossReferenceEntry> e) ->
+                        ((CrossReferenceUsedEntry) e.getValue()).getFilePositionOfObject()).reversed();
+        named.sort(latestPlainFirst);
+        unnamed.sort(latestPlainFirst);
+        compressed.sort(Comparator.comparingInt((Map.Entry<Reference, CrossReferenceEntry> e) ->
+                ((CrossReferenceCompressedEntry) e.getValue()).getObjectNumberOfContainingObjectStream()
+                        .getObjectNumber()).reversed());
+
+        Reference catalog = findCatalog(byteBuffer, parser, named);
+        if (catalog == null) {
+            for (Map.Entry<Reference, CrossReferenceEntry> entry : compressed) {
+                try {
+                    if (library.getObject(entry.getKey()) instanceof Catalog) {
+                        return entry.getKey();
+                    }
+                } catch (Exception e) {
+                    logger.finer("Skipping unreadable object while looking for the catalog: " + entry.getKey());
+                }
+            }
+            catalog = findCatalog(byteBuffer, parser, unnamed);
+        }
+        return catalog;
+    }
+
+    private static Reference findCatalog(ByteBuffer byteBuffer, Parser parser,
+                                         List<Map.Entry<Reference, CrossReferenceEntry>> candidates) {
+        for (Map.Entry<Reference, CrossReferenceEntry> entry : candidates) {
             int offset = ((CrossReferenceUsedEntry) entry.getValue()).getFilePositionOfObject();
             try {
                 PObject pObject = parser.getPObject(byteBuffer, offset);
