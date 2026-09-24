@@ -421,14 +421,6 @@ public class TextSprite {
     }
 
     /**
-     * Tests if the interior of the <code>TextSprite</code> bounds intersects the
-     * interior of a specified <code>shape</code>.
-     *
-     * @param shape shape to calculate intersection against
-     * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
-     * otherwise; false.
-     */
-    /**
      * Returns true if this sprite might intersect the clip of {@code g}.  Uses {@link Graphics#hitClip}, which
      * tests against the already-rasterized clip region, rather than {@code g.getClip()}, which copies and
      * inverse-transforms the whole clip outline on every call (O(segments) per sprite on a complex clip).
@@ -442,15 +434,32 @@ public class TextSprite {
 
     /**
      * Conservative {@link Graphics#hitClip} for a fractional user-space rectangle: the integer rectangle is widened
-     * to fully cover {@code r}.
+     * to fully cover {@code r}.  Bounds that don't fit in an int (a "whole page" fill drawn as a huge rectangle, or
+     * NaN) are reported as hitting: narrowing them would overflow the width and cull the shape.
      */
     public static boolean hitClip(Graphics2D g, Rectangle2D r) {
-        int x = (int) Math.floor(r.getMinX());
-        int y = (int) Math.floor(r.getMinY());
-        int w = (int) Math.ceil(r.getMaxX()) - x;
-        int h = (int) Math.ceil(r.getMaxY()) - y;
-        return g.hitClip(x, y, Math.max(w, 1), Math.max(h, 1));
+        double minX = Math.floor(r.getMinX());
+        double minY = Math.floor(r.getMinY());
+        double maxX = Math.ceil(r.getMaxX());
+        double maxY = Math.ceil(r.getMaxY());
+        if (!(minX >= Integer.MIN_VALUE && minY >= Integer.MIN_VALUE &&
+                maxX - minX <= Integer.MAX_VALUE && maxY - minY <= Integer.MAX_VALUE &&
+                maxX <= Integer.MAX_VALUE && maxY <= Integer.MAX_VALUE)) {
+            return true;
+        }
+        int w = (int) (maxX - minX);
+        int h = (int) (maxY - minY);
+        return g.hitClip((int) minX, (int) minY, Math.max(w, 1), Math.max(h, 1));
     }
+
+    /**
+     * Tests if the interior of the <code>TextSprite</code> bounds intersects the
+     * interior of a specified <code>shape</code>.
+     *
+     * @param shape shape to calculate intersection against
+     * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
+     * otherwise; false.
+     */
 
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());

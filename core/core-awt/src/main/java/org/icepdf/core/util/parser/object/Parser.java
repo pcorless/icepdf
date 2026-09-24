@@ -107,7 +107,7 @@ public class Parser {
             int streamLength = getLength(objectData);
             // some writers get /Length wrong (or point it past the end of the file); when it doesn't land on
             // endstream, measure the stream up to the endstream marker instead.
-            if (streamLength > 0 && !endStreamFollows(byteBuffer, streamOffsetStart + streamLength)) {
+            if (streamLength > 0 && !endStreamFollows(byteBuffer, (long) streamOffsetStart + streamLength)) {
                 int streamOffsetEnd = findEndStream(byteBuffer, streamOffsetStart);
                 if (streamOffsetEnd >= 0) {
                     logger.fine(() -> "Stream /Length " + getLength(objectData) + " of object " + objectNumber +
@@ -168,12 +168,17 @@ public class Parser {
     /**
      * @return true if, after optional white space, the endstream keyword starts at {@code position}.
      */
-    private static boolean endStreamFollows(ByteBuffer byteBuffer, int position) {
+    private static boolean endStreamFollows(ByteBuffer byteBuffer, long end) {
+        // worked in long: a huge /Length overflows int when added to the stream offset
         int limit = byteBuffer.limit();
+        if (end < 0 || end >= limit) {
+            return false;
+        }
+        int position = (int) end;
         while (position < limit && Utils.isWhitespace((char) byteBuffer.get(position))) {
             position++;
         }
-        if (position < 0 || position + END_STREAM_MARKER.length > limit) {
+        if (position + END_STREAM_MARKER.length > limit) {
             return false;
         }
         for (int i = 0; i < END_STREAM_MARKER.length; i++) {

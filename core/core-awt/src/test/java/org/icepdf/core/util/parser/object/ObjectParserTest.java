@@ -128,6 +128,16 @@ public class ObjectParserTest {
                 new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
     }
 
+    @DisplayName("object - a /Length so large the stream end overflows int is measured to endstream instead")
+    @Test
+    public void streamWithOverflowingLength() throws Exception {
+        // offset + /Length wrapped negative and the endstream check read before the start of the buffer
+        String body = "3 0 obj\n<< /Length 2147483640 >>\nstream\nhello world\nendstream\nendobj\n";
+        Stream stream = assertInstanceOf(Stream.class, parse(body).getObject());
+        assertEquals("hello world",
+                new String(stream.getDecodedStreamBytes(), StandardCharsets.ISO_8859_1));
+    }
+
     @DisplayName("object - a /Length that is right up to the end-of-line before endstream is trusted")
     @Test
     public void streamWithLengthBeforeEol() throws Exception {
