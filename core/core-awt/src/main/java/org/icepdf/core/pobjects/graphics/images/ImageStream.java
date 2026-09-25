@@ -205,9 +205,16 @@ public class ImageStream extends Stream {
         ImageDecoder imageDecoder = ImageDecoderFactory.createDecoder(this, graphicsState);
         BufferedImage decodedImage = imageDecoder.decode();
 
-        // Fallback image code that will use pixel primitives to build out the image.
+        // Fallback image code that will use pixel primitives to build out the image.  Only for plain sample
+        // data: when a codec (CCITT, DCT, JBIG2, JPX) fails, the stream still holds compressed bytes, and reading
+        // those as samples paints noise - an image mask comes out as a solid black page.  Better to skip it.
         if (decodedImage == null) {
-            decodedImage = new RawDecoder(this, graphicsState).decode();
+            if (imageDecoder instanceof RasterDecoder) {
+                decodedImage = new RawDecoder(this, graphicsState).decode();
+            } else {
+                logger.fine(() -> "Skipping image that could not be decoded: " + pObjectReference);
+                return null;
+            }
         }
         // GH-501 step 2: the decoder output may carry preserved TRUE CMYK samples
         // (keyed by this object); mask processing below replaces decodedImage with a
