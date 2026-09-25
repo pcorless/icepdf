@@ -104,16 +104,14 @@ public class ImageParams extends Dictionary {
                 (decodeParams.containsKey(K_KEY) || decodeParams.size() > 0)) {
             return decodeParams;
         } else {
-            // malformed pdf where k value is store in an indirect reference.
+            // an array, one entry per filter in a /Filter array: take the first dictionary, inline or indirect.
             Object tmp = library.getObject(entries, ImageParams.DECODE_PARAM_KEY);
             if (tmp instanceof ArrayList) {
                 ArrayList potential = (ArrayList) tmp;
                 for (Object obj : potential) {
-                    if (obj instanceof Reference) {
-                        Object found = library.getObject((Reference) obj);
-                        if (found instanceof DictionaryEntries) {
-                            return (DictionaryEntries) found;
-                        }
+                    Object found = obj instanceof Reference ? library.getObject((Reference) obj) : obj;
+                    if (found instanceof DictionaryEntries) {
+                        return (DictionaryEntries) found;
                     }
                 }
             }
