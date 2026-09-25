@@ -86,6 +86,12 @@ public class JpxDecoder extends AbstractImageDecoder {
             ImageReadParam param = reader.getDefaultReadParam();
             reader.setInput(imageInputStream, true, true);
             try {
+                // subsample a really big image while decoding rather than build the full raster and scale it
+                // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
+                int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
+                if (subsampling > 1) {
+                    param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+                }
                 tmpImage = reader.read(0, param);
             } finally {
                 reader.dispose();

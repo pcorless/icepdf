@@ -33,9 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DctDecoderTest {
 
-    private static BufferedImage decode(int width, int height) throws IOException {
-        // left half black, right half white, so a subsampled read can be checked for content, not just size
-        BufferedImage source = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    /**
+     * Encodes a test image in {@code format} and decodes it through the ICEpdf decoder for {@code filter}: left half
+     * black, right half white, so a subsampled read can be checked for content, not just size.  A gray image is
+     * declared DeviceGray, an RGB one DeviceRGB; the stream has no page resources, so a JPX colour space other
+     * than gray would not resolve.
+     */
+    static BufferedImage decode(int width, int height, String format, String filter, boolean gray)
+            throws IOException {
+        BufferedImage source = new BufferedImage(width, height,
+                gray ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_INT_RGB);
         Graphics2D g = source.createGraphics();
         g.setColor(Color.WHITE);
         g.fillRect(0, 0, width, height);
@@ -43,7 +50,7 @@ public class DctDecoderTest {
         g.fillRect(0, 0, width / 2, height);
         g.dispose();
         ByteArrayOutputStream jpeg = new ByteArrayOutputStream();
-        ImageIO.write(source, "jpeg", jpeg);
+        assertTrue(ImageIO.write(source, format, jpeg), "no ImageIO writer for " + format);
 
         DictionaryEntries entries = new DictionaryEntries();
         entries.put(new Name("Type"), new Name("XObject"));
@@ -51,10 +58,16 @@ public class DctDecoderTest {
         entries.put(new Name("Width"), width);
         entries.put(new Name("Height"), height);
         entries.put(new Name("BitsPerComponent"), 8);
-        entries.put(new Name("ColorSpace"), new Name("DeviceRGB"));
-        entries.put(new Name("Filter"), new Name("DCTDecode"));
+        entries.put(new Name("ColorSpace"), new Name(gray ? "DeviceGray" : "DeviceRGB"));
+        entries.put(new Name("Filter"), new Name(filter));
         ImageStream imageStream = new ImageStream(new Library(), entries, jpeg.toByteArray());
-        return new DctDecoder(imageStream, null).decode();
+        return filter.equals("JPXDecode")
+                ? new JpxDecoder(imageStream, null).decode()
+                : new DctDecoder(imageStream, null).decode();
+    }
+
+    private static BufferedImage decode(int width, int height) throws IOException {
+        return decode(width, height, "jpeg", "DCTDecode", false);
     }
 
     @DisplayName("an image within the size limit is decoded at full size")
