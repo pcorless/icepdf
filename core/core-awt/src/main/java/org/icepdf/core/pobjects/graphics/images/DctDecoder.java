@@ -121,6 +121,13 @@ public class DctDecoder extends AbstractImageDecoder {
             // read the raster data only, as we have our own logic to covert
             // the raster data to RGB colours.
             ImageReadParam param = reader.getDefaultReadParam();
+            // A really big image is scaled down anyway (below), so have the reader subsample it while decoding
+            // rather than build the full raster first: a 12848 x 27733 page scan is 1GB decoded, to end up
+            // about 1500 px on its long edge.
+            int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
+            if (subsampling > 1) {
+                param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+            }
             WritableRaster wr = (WritableRaster) reader.readRaster(0, param);
 
             // quick sanity check to try and scale really large images before we get into heap trouble.
@@ -154,7 +161,7 @@ public class DctDecoder extends AbstractImageDecoder {
             PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
-
+
             if (jpegEncoding == JPEG_ENC_RGB && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
             } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
