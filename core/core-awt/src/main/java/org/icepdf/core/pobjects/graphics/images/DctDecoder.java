@@ -38,12 +38,12 @@ public class DctDecoder extends AbstractImageDecoder {
     private static final Logger logger =
             Logger.getLogger(DctDecoder.class.getName());
 
-    private static final int JPEG_ENC_UNKNOWN_PROBABLY_YCbCr = 0;
-    private static final int JPEG_ENC_RGB = 1;
-    private static final int JPEG_ENC_CMYK = 2;
-    private static final int JPEG_ENC_YCbCr = 3;
-    private static final int JPEG_ENC_YCCK = 4;
-    private static final int JPEG_ENC_GRAY = 5;
+    static final int JPEG_ENC_UNKNOWN_PROBABLY_YCbCr = 0;
+    static final int JPEG_ENC_RGB = 1;
+    static final int JPEG_ENC_CMYK = 2;
+    static final int JPEG_ENC_YCbCr = 3;
+    static final int JPEG_ENC_YCCK = 4;
+    static final int JPEG_ENC_GRAY = 5;
 
     private static final int TRANSFORM_POSITION = 11;
     private static final String ADOBE = "Adobe";
@@ -52,7 +52,7 @@ public class DctDecoder extends AbstractImageDecoder {
     // Set by getJPEGEncoding: true when the encoding came from a definitive Adobe
     // APP14 marker (authoritative), false when it was inferred from the SOS/SOF
     // component count (a heuristic an explicit ColorTransform DecodeParm may override).
-    private boolean encodingFromAdobeMarker;
+    boolean encodingFromAdobeMarker;
 
     DctDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
@@ -92,10 +92,10 @@ public class DctDecoder extends AbstractImageDecoder {
             // presizing it to the decoded raster size would allocate far more than it holds.
             byte[] data = imageStream.getDecodedStreamBytes(0);
 
+            // The marker walk jumps segment to segment and stops at the first scan, so it can cover the whole
+            // header: capping it at 2048 bytes missed the APP14 marker behind a 4KB Photoshop APP13 block, and a
+            // YCCK image was read as plain CMYK (AuftPapier04.pdf).
             int dataRead = data.length;
-            if (dataRead > MAX_BYTES_TO_READ_FOR_ENCODING) {
-                dataRead = MAX_BYTES_TO_READ_FOR_ENCODING;
-            }
 
 
             imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(data));
@@ -249,7 +249,7 @@ public class DctDecoder extends AbstractImageDecoder {
         return -1;
     }
 
-    private int getJPEGEncoding(byte[] data, int dataLength) {
+    int getJPEGEncoding(byte[] data, int dataLength) {
         int jpegEncoding = JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
 
         boolean foundAPP14 = false;
@@ -267,6 +267,8 @@ public class DctDecoder extends AbstractImageDecoder {
                 break;
             if (foundAPP14 && foundSOF)
                 break;
+            if (index + 1 >= dataLength)
+                break;
             byte segmentType = data[index + 1];
             index += 2;
             if (segmentType == ((byte) 0xD8)) {
@@ -275,24 +277,28 @@ public class DctDecoder extends AbstractImageDecoder {
             }
 
             //System.out.println("Segment: " + Integer.toHexString( ((int)segmentType)&0xFF ));
+            if (index + 1 >= dataLength)
+                break;
             int length = (((data[index] << 8)) & 0xFF00) + (((int) data[index + 1]) & 0xFF);
             //System.out.println("   Length: " + length + "    Index: " + index);
 
             // APP14 (Might be Adobe file)
             if (segmentType == ((byte) 0xEE)) {
                 //System.out.println("Found APP14 (0xEE)");
-                if (length >= 14) {
+                if (length >= 14 && index + 13 < dataLength) {
                     foundAPP14 = true;
                     compsTypeFromAPP14 = data[index + 13];
                     //System.out.println("APP14 format: " + compsTypeFromAPP14);
                 }
-            } else if (segmentType == ((byte) 0xC0)) {
-                foundSOF = true;
+            } else if (isStartOfFrame(segmentType)) {
+                // any start of frame, not only baseline: a progressive Photoshop YCCK JPEG (SOF2) otherwise lost
+                // its APP14 transform and was read as plain CMYK, dropping the black plate (AuftPapier04.pdf).
+                foundSOF = index + 7 < dataLength;
                 //System.out.println("Found SOF (0xC0)  Start Of Frame");
                 //int bitsPerSample = ( ((int)data[index+2]) & 0xFF );
                 //int imageHeight = ( ((int)(data[index+3] << 8)) & 0xFF00 ) + ( ((int)data[index+4]) & 0xFF );
                 //int imageWidth = ( ((int)(data[index+5] << 8)) & 0xFF00 ) + ( ((int)data[index+6]) & 0xFF );
-                numCompsFromSOF = (((int) data[index + 7]) & 0xFF);
+                numCompsFromSOF = foundSOF ? (((int) data[index + 7]) & 0xFF) : 0;
                 //System.out.println("   bitsPerSample: " + bitsPerSample + ", imageWidth: " + imageWidth + ", imageHeight: " + imageHeight + ", numComps: " + numCompsFromSOF);
                 //int[] compIds = new int[numCompsFromSOF];
                 //for(int i = 0; i < numCompsFromSOF; i++) {
@@ -300,15 +306,18 @@ public class DctDecoder extends AbstractImageDecoder {
                 //    System.out.println("    compId: " + compIds[i]);
                 //}
             } else if (segmentType == ((byte) 0xDA)) {
-                foundSOS = true;
+                foundSOS = index + 2 < dataLength;
                 //System.out.println("Found SOS (0xDA)  Start Of Scan");
-                numCompsFromSOS = (((int) data[index + 2]) & 0xFF);
+                numCompsFromSOS = foundSOS ? (((int) data[index + 2]) & 0xFF) : 0;
                 //int[] compIds = new int[numCompsFromSOS];
                 //for(int i = 0; i < numCompsFromSOS; i++) {
                 //    compIds[i] = ( ((int)data[index+3+(i*2)]) & 0xff );
                 //    System.out.println("    compId: " + compIds[i]);
                 //}
             }
+            // entropy-coded data follows the scan header, not more markers
+            if (foundSOS)
+                break;
 
             //System.out.println("   Data: " + org.icepdf.core.util.Utils.convertByteArrayToHexString( data, index+2, Math.min(length-2,dataLength-index-2), true, 20, '\n' ));
             index += length;
@@ -340,6 +349,14 @@ public class DctDecoder extends AbstractImageDecoder {
     }
 
     // See AdobeDCT in https://github.com/haraldk/TwelveMonkeys/
+    /**
+     * @return true for a start of frame marker, SOF0 to SOF15: 0xC0 to 0xCF less DHT (0xC4), JPG (0xC8) and DAC (0xCC).
+     */
+    static boolean isStartOfFrame(byte segmentType) {
+        int marker = segmentType & 0xFF;
+        return marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC;
+    }
+
     private int getAdobeTransform(ImageInputStream iis) throws IOException {
         int a = 0;
         iis.seek(0);

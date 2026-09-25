@@ -102,4 +102,127 @@ public class DctDecoderTest {
         assertTrue(27733 / decoder.subsamplingFor(12848, 27733) >= AbstractImageDecoder.preferredSize);
         assertEquals(6, decoder.subsamplingFor(10001, 100));
     }
+
+    // ------------------------------------------------------------------
+    // JPEG header sniffing
+    // ------------------------------------------------------------------
+
+    /** A marker segment: FF, the marker, a two byte length that counts itself, then the body. */
+    private static void segment(java.io.ByteArrayOutputStream out, int marker, byte[] body) {
+        int length = body.length + 2;
+        out.write(0xFF);
+        out.write(marker);
+        out.write(length >> 8);
+        out.write(length);
+        out.write(body, 0, body.length);
+    }
+
+    /** Adobe APP14 body with the given colour transform: 0 none, 1 YCbCr, 2 YCCK. */
+    private static byte[] adobe(int transform) {
+        return new byte[]{'A', 'd', 'o', 'b', 'e', 0, 100, 0, 0, 0, 0, (byte) transform};
+    }
+
+    /** Frame header body: precision, height, width, then an id, sampling and table per component. */
+    private static byte[] frame(int components) {
+        byte[] body = new byte[6 + 3 * components];
+        body[0] = 8;
+        body[2] = 16;
+        body[4] = 16;
+        body[5] = (byte) components;
+        return body;
+    }
+
+    /** Scan header body: component count, a selector pair per component, then spectral/approximation bytes. */
+    private static byte[] scan(int components) {
+        byte[] body = new byte[1 + 2 * components + 3];
+        body[0] = (byte) components;
+        return body;
+    }
+
+    private static byte[] header(int appPadding, int sofMarker, int transform) {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        out.write(0xFF);
+        out.write(0xD8);
+        if (appPadding > 0) {
+            segment(out, 0xED, new byte[appPadding]); // APP13, Photoshop resources
+        }
+        segment(out, 0xEE, adobe(transform));
+        segment(out, sofMarker, frame(4));
+        segment(out, 0xDA, scan(4));
+        out.write(0x12); // entropy-coded data
+        return out.toByteArray();
+    }
+
+    private static int encoding(byte[] header) {
+        return new DctDecoder(null, null).getJPEGEncoding(header, header.length);
+    }
+
+    @DisplayName("an Adobe YCCK marker is found in a baseline JPEG")
+    @Test
+    public void ycckBaseline() {
+        assertEquals(DctDecoder.JPEG_ENC_YCCK, encoding(header(0, 0xC0, 2)));
+    }
+
+    @DisplayName("an Adobe YCCK marker is found in a progressive JPEG")
+    @Test
+    public void ycckProgressive() {
+        // only SOF0 counted as a frame header, so a progressive (SOF2) YCCK image was taken for plain CMYK
+        assertEquals(DctDecoder.JPEG_ENC_YCCK, encoding(header(0, 0xC2, 2)));
+    }
+
+    @DisplayName("an Adobe marker behind a large Photoshop block is still found")
+    @Test
+    public void adobeMarkerBehindPhotoshopBlock() {
+        // AuftPapier04.pdf: a 4KB APP13 put APP14 past the 2048 bytes the sniffing read; the YCCK logo was
+        // read as CMYK, bright green with its black plate gone
+        DctDecoder decoder = new DctDecoder(null, null);
+        byte[] header = header(4232, 0xC2, 2);
+        assertEquals(DctDecoder.JPEG_ENC_YCCK, decoder.getJPEGEncoding(header, header.length));
+        assertTrue(decoder.encodingFromAdobeMarker);
+    }
+
+    @DisplayName("a header cut short doesn't throw")
+    @Test
+    public void truncatedHeader() {
+        byte[] header = header(0, 0xC2, 2);
+        for (int length = 0; length < header.length; length++) {
+            encoding(java.util.Arrays.copyOf(header, length));
+        }
+    }
+
+    @DisplayName("the start of frame markers are SOF0 to SOF15, less DHT, JPG and DAC")
+    @Test
+    public void startOfFrameMarkers() {
+        for (int marker = 0xC0; marker <= 0xCF; marker++) {
+            boolean expected = marker != 0xC4 && marker != 0xC8 && marker != 0xCC;
+            assertEquals(expected, DctDecoder.isStartOfFrame((byte) marker), Integer.toHexString(marker));
+        }
+        assertEquals(false, DctDecoder.isStartOfFrame((byte) 0xDA));
+    }
+
+    @DisplayName("decoding reads an Adobe marker that sits behind a large Photoshop block")
+    @Test
+    public void decodeFindsAdobeMarkerBehindPhotoshopBlock() throws IOException {
+        // a real JPEG with a 4KB APP13 and an Adobe APP14 (transform 1, YCbCr) spliced in after SOI
+        BufferedImage source = new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream plain = new ByteArrayOutputStream();
+        ImageIO.write(source, "jpeg", plain);
+        byte[] jpeg = plain.toByteArray();
+        java.io.ByteArrayOutputStream spliced = new java.io.ByteArrayOutputStream();
+        spliced.write(jpeg, 0, 2);
+        segment(spliced, 0xED, new byte[4232]);
+        segment(spliced, 0xEE, adobe(1));
+        spliced.write(jpeg, 2, jpeg.length - 2);
+
+        DictionaryEntries entries = new DictionaryEntries();
+        entries.put(new Name("Subtype"), new Name("Image"));
+        entries.put(new Name("Width"), 16);
+        entries.put(new Name("Height"), 16);
+        entries.put(new Name("BitsPerComponent"), 8);
+        entries.put(new Name("ColorSpace"), new Name("DeviceRGB"));
+        entries.put(new Name("Filter"), new Name("DCTDecode"));
+        DctDecoder decoder = new DctDecoder(new ImageStream(new Library(), entries, spliced.toByteArray()), null);
+        assertNotNull(decoder.decode());
+        assertTrue(decoder.encodingFromAdobeMarker, "APP14 past the first 2KB was not seen");
+    }
 }
