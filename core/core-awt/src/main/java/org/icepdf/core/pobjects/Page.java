@@ -1008,6 +1008,32 @@ public class Page extends Dictionary {
      */
     @SuppressWarnings("unchecked")
     public Annotation addAnnotation(Annotation newAnnotation) {
+        return addAnnotationInternal(newAnnotation);
+    }
+
+    /**
+     * 7.4.x form of {@link #addAnnotation(Annotation)}, kept so code built against it still compiles and links.
+     *
+     * @param newAnnotation annotation object to add
+     * @param isNew         true for a user edit; false for an annotation the library manufactured, which is now
+     *                      expressed by running {@link #addAnnotation(Annotation)} inside
+     *                      {@link StateManager#repairing(Runnable)}.
+     * @return reference to annotation that was added.
+     * @deprecated since 7.5.0, use {@link #addAnnotation(Annotation)}, inside
+     * {@link StateManager#repairing(Runnable)} where isNew was false.
+     */
+    @Deprecated
+    public Annotation addAnnotation(Annotation newAnnotation, boolean isNew) {
+        if (isNew) {
+            return addAnnotation(newAnnotation);
+        }
+        Annotation[] added = new Annotation[1];
+        library.getStateManager().repairing(() -> added[0] = addAnnotation(newAnnotation));
+        return added[0];
+    }
+
+    @SuppressWarnings("unchecked")
+    private Annotation addAnnotationInternal(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
         if (annotations == null) {

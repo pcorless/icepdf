@@ -263,6 +263,49 @@ public class AnnotationRoundTripTest {
         assertEquals(1, freeText.getQuadding());
     }
 
+    @DisplayName("free text - a fractional font size survives a save (GH-492)")
+    @Test
+    public void freeTextFractionalFontSize() throws Exception {
+        FreeTextAnnotation freeText = roundTrip(Annotation.SUBTYPE_FREE_TEXT,
+                WriteMode.INCREMENT_UPDATE,
+                annotation -> {
+                    annotation.setContents("small print");
+                    annotation.setFontSize(10.5f);
+                }, FreeTextAnnotation.class);
+
+        assertEquals(10.5f, freeText.getFontSize(), 0.01f, "the size used to be truncated to an int");
+    }
+
+    @DisplayName("free text - the /DS font-size is read in the forms other writers use (GH-492)")
+    @Test
+    public void freeTextDefaultStyleFontSize() throws Exception {
+        Document document = openFixture();
+        try {
+            Library library = document.getCatalog().getLibrary();
+            String[][] cases = {
+                    {"font-size:12pt", "12"},
+                    {"font-size: 10.5pt", "10.5"},
+                    {"font-size:9.25", "9.25"},
+                    {"color:#000000; font-size:14pt; font-family:Helvetica", "14"},
+                    {"font-size:0.8em", "0.8"},
+            };
+            for (String[] c : cases) {
+                FreeTextAnnotation freeText = (FreeTextAnnotation) AnnotationFactory.buildAnnotation(
+                        library, Annotation.SUBTYPE_FREE_TEXT, BOUNDS);
+                freeText.setDefaultStylingString(c[0]);
+                assertEquals(Float.parseFloat(c[1]), freeText.getFontSize(), 0.001f, c[0]);
+            }
+            // unparseable: keep the size already set rather than throwing
+            FreeTextAnnotation freeText = (FreeTextAnnotation) AnnotationFactory.buildAnnotation(
+                    library, Annotation.SUBTYPE_FREE_TEXT, BOUNDS);
+            freeText.setFontSize(11f);
+            freeText.setDefaultStylingString("font-size:large");
+            assertEquals(11f, freeText.getFontSize(), 0.001f);
+        } finally {
+            document.dispose();
+        }
+    }
+
     @DisplayName("text - the sticky note's contents and title survive a save")
     @Test
     public void textAnnotation() throws Exception {

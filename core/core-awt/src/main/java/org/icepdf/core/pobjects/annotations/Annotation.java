@@ -2133,6 +2133,25 @@ public abstract class Annotation extends Dictionary {
     }
 
     /**
+     * 7.4.x form of {@link #resetAppearanceStream(AffineTransform)}, kept so code built against it still compiles
+     * and links.
+     *
+     * @param pageSpace page space transform
+     * @param isNew     true for a user edit; false for a library repair (see
+     *                  {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)}).
+     * @deprecated since 7.5.0, use {@link #resetAppearanceStream(AffineTransform)}, inside
+     * {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)} where isNew was false.
+     */
+    @Deprecated
+    public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
+        if (isNew) {
+            resetAppearanceStream(pageSpace);
+        } else {
+            library.getStateManager().repairing(() -> resetAppearanceStream(pageSpace));
+        }
+    }
+
+    /**
      * Saves all resources associated with the appearance stream.  This mainly moves any tmp objects saved to the
      * StateManager to the main object store.  The reason for this is to avoid writing out unneeded objects if they
      * are no longer used, for example if the user changes the font many times while editing a signature.

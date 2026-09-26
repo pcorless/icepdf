@@ -63,10 +63,10 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-    testImplementation('org.mockito:mockito-core:5.14.2')
-    testImplementation('org.mockito:mockito-junit-jupiter:5.14.2')
+    testImplementation('org.mockito:mockito-core:5.24.0')
+    testImplementation('org.mockito:mockito-junit-jupiter:5.24.0')
     // VeraPDF for PDF/A validation
-    testImplementation('org.verapdf:validation-model:1.28.1')
+    testImplementation('org.verapdf:validation-model:1.30.2')
 }
 
 // generatePomFileForViewerJarPublication
