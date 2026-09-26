@@ -24,7 +24,7 @@
         <bouncy.version>1.86</bouncy.version>
         <twelve-monkey.version>3.15.2</twelve-monkey.version>
         <jai-imageio.version>1.4.0</jai-imageio.version>
-        <jbig2.version>3.0.5</jbig2.version>
+        <jbig2.version>3.0.4</jbig2.version>   <!-- 3.0.5 fails some embedded streams ("Page 1 missing", 10578.pdf) -->
         <font-box.version>3.0.8</font-box.version>
         <commons-logging.version>1.4.0</commons-logging.version>
         <junit.bom.version>5.14.4</junit.bom.version>
