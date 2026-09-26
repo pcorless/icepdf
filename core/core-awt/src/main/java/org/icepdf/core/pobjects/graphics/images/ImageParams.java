@@ -104,16 +104,14 @@ public class ImageParams extends Dictionary {
                 (decodeParams.containsKey(K_KEY) || decodeParams.size() > 0)) {
             return decodeParams;
         } else {
-            // malformed pdf where k value is store in an indirect reference.
+            // an array, one entry per filter in a /Filter array: take the first dictionary, inline or indirect.
             Object tmp = library.getObject(entries, ImageParams.DECODE_PARAM_KEY);
             if (tmp instanceof ArrayList) {
                 ArrayList potential = (ArrayList) tmp;
                 for (Object obj : potential) {
-                    if (obj instanceof Reference) {
-                        Object found = library.getObject((Reference) obj);
-                        if (found instanceof DictionaryEntries) {
-                            return (DictionaryEntries) found;
-                        }
+                    Object found = obj instanceof Reference ? library.getObject((Reference) obj) : obj;
+                    if (found instanceof DictionaryEntries) {
+                        return (DictionaryEntries) found;
                     }
                 }
             }
@@ -272,10 +270,15 @@ public class ImageParams extends Dictionary {
         return false;
     }
 
+    /**
+     * @return the size of the decoded sample data in bytes, capped at the largest array the VM allows.  Worked in
+     * long: a large print image (18480 x 16734 CMYK, 8 bpc) overflows int before the divide by 8.
+     */
     public int getDataLength() {
-        return getWidth() * getHeight()
+        long length = (long) getWidth() * getHeight()
                 * getColorSpaceCompCount()
                 * getBitsPerComponent() / 8;
+        return (int) Math.max(0, Math.min(length, Integer.MAX_VALUE - 8));
     }
 
 }

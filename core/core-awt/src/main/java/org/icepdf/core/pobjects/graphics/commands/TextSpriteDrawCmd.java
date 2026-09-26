@@ -45,7 +45,7 @@ public class TextSpriteDrawCmd extends AbstractDrawCmd {
                               boolean paintAlpha, PaintTimer lastPaintTime) {
 
         if (optionalContentState.isVisible() &&
-                textSprite.intersects(g.getClip())) {
+                textSprite.intersects(g)) {
             textSprite.paint(g);
         }
 

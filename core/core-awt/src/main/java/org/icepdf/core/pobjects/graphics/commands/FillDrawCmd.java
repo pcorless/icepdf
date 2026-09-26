@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.commands;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
+import org.icepdf.core.pobjects.graphics.TextSprite;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -36,8 +37,9 @@ public class FillDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
+        // hitClip tests the rasterized clip region; g.getClip() would copy the whole clip outline per fill.
         if (optionalContentState.isVisible() && currentShape != null &&
-                currentShape.intersects(g.getClip().getBounds())) {
+                TextSprite.hitClip(g, currentShape.getBounds2D())) {
             g.fill(currentShape);
             // Send a PaintPage Event to listeners
 //            if (parentPage != null && paintTimer.shouldTriggerRepaint()) {

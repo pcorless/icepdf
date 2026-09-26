@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.filters;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -357,15 +358,90 @@ public class StreamFilterTest {
         }
     }
 
-    @DisplayName("predictor - the TIFF predictor is not claimed, because it is not implemented")
+    @DisplayName("predictor - the TIFF predictor is recognised")
     @Test
-    public void tiffPredictorIsNotClaimed() {
-        // PREDICTOR_TIFF_2 is declared but the decoder has no branch for it.  Answering true here
-        // would route a TIFF-predicted stream through the PNG code, which reads the first byte of
-        // every row as a filter tag and shifts the whole image.  Saying no leaves it undecoded,
-        // which is wrong in a way that is at least visible.
-        assertTrue(!PredictorDecode.isPredictor(new Library(),
+    public void tiffPredictorIsClaimed() {
+        // Flate applied it itself, but nothing did for LZW, so an LZW + /Predictor 2 image kept its
+        // horizontal differences: a black page with bright edges, like an inverted scan.
+        assertTrue(PredictorDecode.isPredictor(new Library(),
                 predictorParams(PredictorDecode.PREDICTOR_TIFF_2, 3, 1, 8)));
+    }
+
+    @DisplayName("predictor - TIFF adds the same component of the pixel to its left, row by row")
+    @Test
+    public void predictorTiff8() throws IOException {
+        // no per-row tag byte, unlike PNG; the running sum restarts on each row and wraps at 256
+        byte[] decoded = unpredict(runLength(10, 10, 10, 200, 100, 0), 2, 3, 1, 8);
+        assertArrayEquals(runLength(10, 20, 30, 200, 44, 44), decoded);
+    }
+
+    @DisplayName("predictor - TIFF with several components steps a whole pixel back")
+    @Test
+    public void predictorTiffComponents() throws IOException {
+        byte[] decoded = unpredict(runLength(10, 20, 30, 1, 2, 3), 2, 2, 3, 8);
+        assertArrayEquals(runLength(10, 20, 30, 11, 22, 33), decoded);
+    }
+
+    @DisplayName("predictor - TIFF with 16 bit components adds whole samples, carrying between bytes")
+    @Test
+    public void predictorTiff16() throws IOException {
+        // 0x00FF + 0x0001 = 0x0100: the carry has to reach the high byte
+        byte[] decoded = unpredict(runLength(0x00, 0xFF, 0x00, 0x01, 0xFF, 0xFF), 2, 3, 1, 16);
+        assertArrayEquals(runLength(0x00, 0xFF, 0x01, 0x00, 0x00, 0xFF), decoded);
+    }
+
+    @DisplayName("predictor - TIFF with sub-byte components adds packed samples modulo their size")
+    @Test
+    public void predictorTiffPacked() throws IOException {
+        // 4 bit: samples 3, 5, 9, 1 decode to 3, 8, 17 & 15 = 1, 2
+        assertArrayEquals(runLength(0x38, 0x12), unpredict(runLength(0x35, 0x91), 2, 4, 1, 4));
+        // 1 bit: a difference of 1 flips the pixel, 0 keeps it; 8 columns = one byte per row
+        assertArrayEquals(runLength(0b11001110, 0b00000000),
+                unpredict(runLength(0b10101001, 0b00000000), 2, 8, 1, 1));
+    }
+
+    @DisplayName("predictor - an LZW image with the TIFF predictor decodes through the stream")
+    @Test
+    public void lzwTiffPredictorStream() {
+        DictionaryEntries entries = predictorParams(PredictorDecode.PREDICTOR_TIFF_2, 4, 1, 8);
+        entries.put(new Name("Filter"), new Name("LZWDecode"));
+        byte[] decoded = new Stream(new Library(), entries, lzwLiterals(10, 10, 10, 10, 50, 1, 1, 1))
+                .getDecodedStreamBytes();
+        assertArrayEquals(runLength(10, 20, 30, 40, 50, 51, 52, 53), decoded);
+    }
+
+    @DisplayName("predictor - a Flate stream with the TIFF predictor is decoded once, not twice")
+    @Test
+    public void flateTiffPredictorStream() throws IOException {
+        // Flate used to apply the predictor itself; now the stream does, for every filter
+        DictionaryEntries entries = predictorParams(PredictorDecode.PREDICTOR_TIFF_2, 4, 1, 8);
+        entries.put(new Name("Filter"), new Name("FlateDecode"));
+        byte[] decoded = new Stream(new Library(), entries, deflate(runLength(10, 10, 10, 10, 50, 1, 1, 1)))
+                .getDecodedStreamBytes();
+        assertArrayEquals(runLength(10, 20, 30, 40, 50, 51, 52, 53), decoded);
+    }
+
+    /**
+     * LZW-encodes {@code values} as 9 bit literal codes only: clear, one code per byte, end of data.  Valid while
+     * the decoder's table stays under 512 entries, which a short input does.
+     */
+    private static byte[] lzwLiterals(int... values) {
+        int[] codes = new int[values.length + 2];
+        codes[0] = 256;
+        for (int i = 0; i < values.length; i++) {
+            codes[i + 1] = values[i];
+        }
+        codes[codes.length - 1] = 257;
+        byte[] out = new byte[(codes.length * 9 + 7) / 8];
+        int bit = 0;
+        for (int code : codes) {
+            for (int b = 8; b >= 0; b--, bit++) {
+                if (((code >> b) & 1) != 0) {
+                    out[bit >> 3] |= (byte) (0x80 >> (bit & 7));
+                }
+            }
+        }
+        return out;
     }
 
     @DisplayName("predictor - a stream with no predictor is not treated as predicted")

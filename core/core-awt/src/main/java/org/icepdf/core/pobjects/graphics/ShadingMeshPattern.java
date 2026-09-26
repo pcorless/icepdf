@@ -70,6 +70,9 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     // converted decode data to simply process later on, taken from our DecodeRasterOp class.
     protected final float[] decode;
 
+    // tessellated mesh, in shading space; independent of where the pattern is used
+    private volatile List<MeshShadingPaint.Triangle> meshTriangles;
+
     public ShadingMeshPattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h);
         this.meshDataStream = meshDataStream;
@@ -98,6 +101,12 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         vertexBitStream = new BitStream(meshDataStream.getDecodedByteArrayInputStream());
     }
 
+    /**
+     * @return the paint as positioned for the first use of this pattern only.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint built for whichever use came first.
+     */
+    @Deprecated
     public abstract Paint getPaint();
 
     /**
@@ -220,6 +229,26 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
      */
     protected MeshShadingPaint buildMeshPaint(List<MeshShadingPaint.Triangle> triangles,
                                               GraphicsState graphicsState) {
+        meshTriangles = triangles;
+        return new MeshShadingPaint(triangles, shadingToUser(graphicsState));
+    }
+
+    /**
+     * The pattern is shared by every use, on every page, but its anchoring depends on each use's CTM, so each use
+     * gets its own paint over the shared triangles; returning the paint built for the first use gave later uses
+     * that use's CTM, and which use came first varied under concurrent page rendering.
+     */
+    @Override
+    public Paint getPaint(GraphicsState graphicsState) throws InterruptedException {
+        init(graphicsState);
+        List<MeshShadingPaint.Triangle> triangles = meshTriangles;
+        if (triangles == null) {
+            return getPaint();
+        }
+        return new MeshShadingPaint(triangles, shadingToUser(graphicsState));
+    }
+
+    private AffineTransform shadingToUser(GraphicsState graphicsState) {
         AffineTransform shadingToUser = matrix;
         if (patternType == Pattern.PATTERN_TYPE_SHADING
                 && graphicsState != null && graphicsState.getCTM() != null) {
@@ -231,7 +260,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
                 // degenerate CTM; fall back to the raw matrix.
             }
         }
-        return new MeshShadingPaint(triangles, shadingToUser);
+        return shadingToUser;
     }
 
     /**

@@ -22,6 +22,7 @@ import org.icepdf.core.util.Defs;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
+import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
@@ -300,6 +301,10 @@ public class GraphicsState {
     // which lets setClip/updateClipCM avoid the expensive java.awt.geom.Area boolean/transform machinery; it is
     // promoted to an Area only when a genuinely non-rectangular clip is involved.
     private Shape clip;
+    // A cm transform not yet applied to a non-rectangular clip.  Transforming a complex clip costs O(segments),
+    // and CAD content issues a cm under every hatch while a page-wide clip of several hundred thousand segments
+    // is active, so the transform is composed here and only applied when the clip is actually read.
+    private AffineTransform pendingClipTransform;
     private boolean clipChange;
 
     // over print mode
@@ -364,6 +369,9 @@ public class GraphicsState {
         shapes = parentGraphicsState.shapes;
         if (parentGraphicsState.clip != null) {
             clip = cloneClip(parentGraphicsState.clip);
+            if (parentGraphicsState.pendingClipTransform != null) {
+                pendingClipTransform = new AffineTransform(parentGraphicsState.pendingClipTransform);
+            }
         }
 
         fillColorSpace = parentGraphicsState.fillColorSpace;
@@ -555,9 +563,10 @@ public class GraphicsState {
             parentGraphicState.set(parentGraphicState.CTM);
             // Add the parents clip to the stack
             if (clipChange) {
-                if (parentGraphicState.clip != null) {
-                    if (!parentGraphicState.clip.equals(clip)) {
-                        parentGraphicState.shapes.add(new ShapeDrawCmd(cloneClip(parentGraphicState.clip)));
+                Shape parentClip = parentGraphicState.resolveClip();
+                if (parentClip != null) {
+                    if (pendingClipTransform != null || !sameClip(parentClip, clip)) {
+                        parentGraphicState.shapes.add(new ShapeDrawCmd(cloneClip(parentClip)));
                         parentGraphicState.shapes.add(clipDrawCmd);
                     }
                 } else {
@@ -605,14 +614,14 @@ public class GraphicsState {
             }
 
             // transform the clip.  An axis-aligned rectangle transformed by a transform without rotation or
-            // shear stays an axis-aligned rectangle, so we can keep the cheap representation; otherwise promote
-            // to an Area and transform that.
-            if (clip instanceof Rectangle2D && isAxisAligned(afInverse)) {
+            // shear stays an axis-aligned rectangle, so we can keep the cheap representation; otherwise defer
+            // the transform until the clip is read (see resolveClip).
+            if (pendingClipTransform == null && clip instanceof Rectangle2D && isAxisAligned(afInverse)) {
                 clip = afInverse.createTransformedShape((Rectangle2D) clip).getBounds2D();
+            } else if (pendingClipTransform == null) {
+                pendingClipTransform = afInverse;
             } else {
-                Area area = toArea(clip);
-                area.transform(afInverse);
-                clip = area;
+                pendingClipTransform.preConcatenate(afInverse);
             }
         }
     }
@@ -625,6 +634,7 @@ public class GraphicsState {
      * @param newClip new clip for graphic state.
      */
     public void setClip(Shape newClip) {
+        Shape clip = resolveClip();
         if (newClip != null) {
             Shape intersected;
             Rectangle2D newRect = asAxisAlignedRectangle(newClip);
@@ -642,18 +652,18 @@ public class GraphicsState {
                 intersected = area;
             }
             // update the clip with the new value if it is new.
-            if (clip == null || !clip.equals(intersected)) {
-                clip = intersected;
+            if (clip == null || !sameClip(clip, intersected)) {
+                this.clip = intersected;
                 shapes.add(new ShapeDrawCmd(cloneClip(intersected)));
                 shapes.add(clipDrawCmd);
                 clipChange = true;
                 if (parentGraphicState != null) parentGraphicState.clipChange = true;
             } else {
-                clip = intersected;
+                this.clip = intersected;
             }
         } else {
             // add a null clip for a null shape, should not normally happen
-            clip = null;
+            this.clip = null;
             shapes.add(noClipDrawCmd);
             clipChange = true;
             if (parentGraphicState != null) parentGraphicState.clipChange = true;
@@ -662,6 +672,23 @@ public class GraphicsState {
     }
 
     public Shape getClip() {
+        return resolveClip();
+    }
+
+    /**
+     * Applies any deferred cm transform to the clip.  Transforming the outline as a path is linear; an
+     * Area.transform would re-run the whole area calculation (O(n^2) edge pruning).  The path is only promoted
+     * back to an Area when setClip has to intersect it.
+     */
+    private Shape resolveClip() {
+        if (pendingClipTransform != null) {
+            if (clip instanceof Rectangle2D && isAxisAligned(pendingClipTransform)) {
+                clip = pendingClipTransform.createTransformedShape(clip).getBounds2D();
+            } else if (clip != null) {
+                clip = new Path2D.Double(clip, pendingClipTransform);
+            }
+            pendingClipTransform = null;
+        }
         return clip;
     }
 
@@ -673,15 +700,27 @@ public class GraphicsState {
         return at.getShearX() == 0 && at.getShearY() == 0;
     }
 
+    /**
+     * Cheap clip equality: identity, or equal rectangles.  Area.equals runs a full XOR area calculation, which on a
+     * complex clip costs far more than the redundant clip command a false "different" answer emits.
+     */
+    private static boolean sameClip(Shape a, Shape b) {
+        return a == b || (a instanceof Rectangle2D && b instanceof Rectangle2D && a.equals(b));
+    }
+
     private static Area toArea(Shape shape) {
         return shape instanceof Area ? (Area) shape : new Area(shape);
     }
 
+    /**
+     * Non-rectangular clips are never modified in place (transforms and intersections always build a new shape),
+     * so they are shared rather than copied; a deep copy of a complex clip on every q/Q is O(segments).
+     */
     private static Shape cloneClip(Shape shape) {
         if (shape instanceof Rectangle2D) {
             return (Rectangle2D) ((Rectangle2D) shape).clone();
         }
-        return (Area) ((Area) shape).clone();
+        return shape;
     }
 
     /**

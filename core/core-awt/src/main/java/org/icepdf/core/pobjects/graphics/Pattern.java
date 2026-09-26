@@ -67,6 +67,19 @@ public interface Pattern {
 
     Paint getPaint() throws InterruptedException;
 
+    /**
+     * Returns the paint for one use of this pattern, under the graphics state in effect at that use.  A pattern is
+     * shared by every use, so a paint that depends on the use (its CTM) must be built per use, not cached.
+     *
+     * @param graphicsState graphics state at the fill or stroke.
+     * @return paint for this use.
+     * @throws InterruptedException interrupted while initializing.
+     */
+    default Paint getPaint(GraphicsState graphicsState) throws InterruptedException {
+        init(graphicsState);
+        return getPaint();
+    }
+
     void setParentGraphicState(GraphicsState graphicsState);
 
 }

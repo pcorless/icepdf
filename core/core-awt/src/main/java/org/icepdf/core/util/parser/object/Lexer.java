@@ -207,7 +207,9 @@ public class Lexer {
             if ((streamBytes.get(pos) & 0xff) == 255 && (streamBytes.get(pos + 1) & 0xff) == 254) {
                 // skip the header bytes.
                 pos += 2;
-                while (!((streamBytes.get(pos) & 0xff) == ')' &&
+                int limit = streamBytes.limit();
+                while (pos + 1 < limit &&
+                        !((streamBytes.get(pos) & 0xff) == ')' &&
                         (isDelimiter((byte) ((streamBytes.get(pos + 1) & 0xff))) ||
                                 isTextDelimiter((byte) ((streamBytes.get(pos + 1) & 0xff)))))) {
                     int b1 = ((((int) streamBytes.get(pos)) & 0xFF) << 8) |
@@ -216,7 +218,7 @@ public class Lexer {
                     pos += 2;
                 }
                 pos++;
-                streamBytes.position(pos);
+                streamBytes.position(Math.min(pos, limit));
                 LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
                 literalStringObject.setReference(reference);
                 return literalStringObject;
@@ -225,7 +227,10 @@ public class Lexer {
 
         int parenthesisCount = 1;
         int current;
-        while (streamBytes.hasRemaining()) {
+        // pos is walked independently of the buffer's position, so the buffer's own hasRemaining()
+        // says nothing about it; an unterminated string in a damaged file has to stop at the limit.
+        int limit = streamBytes.limit();
+        while (pos < limit) {
             current = streamBytes.get(pos) & 0xff;
             if (current != '\\' && current != ')' && current != '(') {
                 captured.append((char) current);
@@ -262,6 +267,10 @@ public class Lexer {
 
                   Note: (\0053) denotes a string containing two characters,
                  */
+                if (pos + 1 >= limit) {
+                    pos++;
+                    break;
+                }
                 lookAhead = streamBytes.get(pos + 1) & 0xff;
                 // capture the horizontal tab (HT), tab character is hard
                 // to find, only appears in files with font substitution and
@@ -292,7 +301,7 @@ public class Lexer {
                     // octals have a max size of 3 digits, we already
                     // have one, so there can be up 2 more digits.
                     int offset = 1;
-                    for (int j = 1; j <= 2; j++) {
+                    for (int j = 1; j <= 2 && pos + j + 1 < limit; j++) {
                         lookAhead = streamBytes.get(pos + j + 1);
                         if (Character.isDigit(lookAhead)) {
                             digit[j] = (byte) lookAhead;
@@ -355,7 +364,7 @@ public class Lexer {
                 }
             }
         }
-        streamBytes.position(pos);
+        streamBytes.position(Math.min(pos, limit));
         LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
         literalStringObject.setReference(reference);
         return literalStringObject;

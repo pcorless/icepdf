@@ -278,6 +278,10 @@ public class Operands {
                     return new int[]{n, 0};
                 } else {
                     c1 = ch[offset + 1];
+                    // offset is the token's byte position on entry; it must be reset before being
+                    // returned as a rewind count or a malformed "nu" token rewinds the lexer to the
+                    // start of the stream and the parser loops forever.
+                    offset = 0;
                     if (c1 == 'u') {
                         if (length > 3) {
                             offset = length - 3;

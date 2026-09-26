@@ -99,4 +99,20 @@ public class PatternColor extends PColorSpace {
     public void setPattern(Pattern pattern) {
         this.pattern = pattern;
     }
+
+    /**
+     * Returns a copy of this pattern colour space selecting the given pattern.  The colour space named by a
+     * content stream's {@code CS}/{@code cs} comes from the (cached, shared) resources, so selecting a pattern on
+     * it with {@link #setPattern} would change the pattern for every page using the same resource, including
+     * pages being parsed concurrently.
+     *
+     * @param pattern pattern to select.
+     * @return a new pattern colour space, with this one's underlying colour space, selecting {@code pattern}.
+     */
+    public PatternColor withPattern(Pattern pattern) {
+        PatternColor copy = new PatternColor(library, entries);
+        copy.PColorSpace = PColorSpace;
+        copy.pattern = pattern;
+        return copy;
+    }
 }
