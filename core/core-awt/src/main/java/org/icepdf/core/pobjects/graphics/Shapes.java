@@ -216,6 +216,9 @@ public class Shapes {
                     previousShape = nullShapeFill;
                     continue;
                 }
+                if (isSupersededClip(i)) {
+                    continue;
+                }
                 previousShape = nextShape.paintOperand(g, parentPage,
                         previousShape, clip, base, optionalContentState, PAINT_ALPHA, paintTimer);
             }
@@ -230,6 +233,40 @@ public class Shapes {
         }
     }
 
+
+    /**
+     * True when the clip command at {@code index} can be skipped because another clip command replaces it before
+     * anything is drawn.  Both {@link ClipDrawCmd} and {@link NoClipDrawCmd} start by resetting the graphics clip
+     * to the page clip, so a clip followed only by state changes (the current shape, colour, stroke, alpha, blend
+     * mode, transform, optional-content markers) and then by another clip reset has no visible effect.
+     * <br>
+     * Skipping it matters because applying a clip is not free: Java2D rebuilds its scanline region from the whole
+     * clip path.  Map-style content commonly sets a page-wide clip with tens of thousands of segments and then,
+     * before drawing, narrows it to a small per-symbol clip - so the page-wide region was built and thrown away
+     * once per symbol.
+     * <br>
+     * Only clips superseded by another clip are skipped; the last clip before the end of the list is always
+     * applied, since a caller (a form XObject's parent) may rely on the clip this list leaves behind.
+     */
+    private boolean isSupersededClip(int index) {
+        DrawCmd cmd = shapes.get(index);
+        if (!(cmd instanceof ClipDrawCmd) && !(cmd instanceof NoClipDrawCmd)) {
+            return false;
+        }
+        for (int i = index + 1, max = shapes.size(); i < max; i++) {
+            DrawCmd next = shapes.get(i);
+            if (next instanceof ClipDrawCmd || next instanceof NoClipDrawCmd) {
+                return true;
+            }
+            if (!(next instanceof ShapeDrawCmd || next instanceof ColorDrawCmd || next instanceof StrokeDrawCmd
+                    || next instanceof AlphaDrawCmd || next instanceof BlendCompositeDrawCmd
+                    || next instanceof TransformDrawCmd || next instanceof OCGStartDrawCmd
+                    || next instanceof OCGEndDrawCmd)) {
+                return false;
+            }
+        }
+        return false;
+    }
 
     /**
      * Replays the draw commands in [0, uptoIndex) into {@code g} -- i.e. paints
@@ -264,6 +301,9 @@ public class Shapes {
         for (int i = 0; i < max; i++) {
             DrawCmd cmd = shapes.get(i);
             if (skipFormGroups && cmd instanceof FormDrawCmd) {
+                continue;
+            }
+            if (isSupersededClip(i)) {
                 continue;
             }
             previousShape = cmd.paintOperand(g, parentPage,
