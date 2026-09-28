@@ -99,7 +99,6 @@ public class Lexer {
         byte nextByte;
         while (pos < streamBytes.limit()) {
             nextByte = streamBytes.get(pos);
-            System.out.print((int) nextByte + " ");
             pos++;
             if (nextByte == 'e' &&
                     streamBytes.get(pos) == 'n' &&

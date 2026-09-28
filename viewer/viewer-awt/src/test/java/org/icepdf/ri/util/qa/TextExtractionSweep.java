@@ -46,13 +46,14 @@ import java.util.concurrent.TimeoutException;
  * magnitude and whether spacing merely changed.  A per-document watchdog ({@code -DperDocMs}, default 20s) skips
  * pathological content streams that spin in the parser so one bad document cannot stall the whole sweep.
  * <p>
- * Usage:
+ * Usage (QA tooling, kept in test sources so it doesn't ship in the viewer jar):
  * <pre>
  *   # signature sweep of a corpus to a file
- *   java ... org.icepdf.ri.util.qa.TextExtractionSweep &lt;corpus-dir&gt; [out.tsv]
+ *   ./gradlew :viewer:viewer-awt:textSweep -Psweep.args="&lt;corpus-dir&gt; [out.tsv]"
  *   # dump the extracted text of a single document (relative path) for eyeballing a diff
- *   java ... -Ddump=path/to/doc.pdf org.icepdf.ri.util.qa.TextExtractionSweep &lt;corpus-dir&gt;
+ *   ./gradlew :viewer:viewer-awt:textSweep -Psweep.args="&lt;corpus-dir&gt;" -Psweep.dump=path/to/doc.pdf
  * </pre>
+ * {@code -Psweep.maxPages} and {@code -Psweep.perDocMs} set the page limit and per-document watchdog.
  */
 public class TextExtractionSweep {
 

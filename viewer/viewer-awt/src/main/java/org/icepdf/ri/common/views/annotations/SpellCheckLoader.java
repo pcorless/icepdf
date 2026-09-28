@@ -89,7 +89,6 @@ public class SpellCheckLoader {
             Method addSpellCheckMethod = spellCheckerClass.getMethod(JORTHO_SET_USER_DICTIONARY_PROVIDER_METHOD, fileUserDictionaryClass);
             addSpellCheckMethod.invoke(null, fileUserDictionary);
         } catch (Exception e) {
-            e.printStackTrace();
             logger.info(JORTHO_SET_USER_DICTIONARY_PROVIDER_METHOD + " could not be found on the class path");
         }
     }

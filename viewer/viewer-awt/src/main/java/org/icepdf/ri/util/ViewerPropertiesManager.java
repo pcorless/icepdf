@@ -374,7 +374,7 @@ public final class ViewerPropertiesManager {
                 logger.fine(key + " -> " + propertiesManager.checkAndStoreStringProperty(key, ""));
             });
         } catch (BackingStoreException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error reading the viewer preferences", e);
         }
     }
 
