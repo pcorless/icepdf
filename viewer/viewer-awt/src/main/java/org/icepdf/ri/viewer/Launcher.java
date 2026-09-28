@@ -191,7 +191,7 @@ public class Launcher {
                         urlAccess.urlLocation
                 };
                 MessageFormat formatter = new MessageFormat(
-                        messageBundle.getString("viewer.launcher.URLError.dialog.message"));
+                        messageBundle.getString("viewer.launcher.URLError.dialog.message").replace("'", "''"));
 
                 JOptionPane.showMessageDialog(
                         null,
@@ -253,7 +253,7 @@ public class Launcher {
                         preferences.get(APPLICATION_LOOK_AND_FEEL, null)
                 };
                 MessageFormat formatter = new MessageFormat(
-                        messageBundle.getString("viewer.launcher.URLError.dialog.message"));
+                        messageBundle.getString("viewer.launcher.URLError.dialog.message").replace("'", "''"));
 
                 // Error - unsupported L&F (probably windows)
                 JOptionPane.showMessageDialog(

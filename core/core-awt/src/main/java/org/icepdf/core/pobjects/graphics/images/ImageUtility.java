@@ -54,6 +54,11 @@ public class ImageUtility {
     // (not thread-local): image decoding can run on pooled worker threads, so a
     // thread-scoped flag set by the rendering thread would never reach the decoder.
     private static volatile boolean PRESERVE_CMYK = false;
+    // Groups rendering concurrently on different page threads each hold a reference; a
+    // save/restore of the single flag would interleave (A on, B on, A restores off while B is
+    // still rasterising; B then restores "on" and leaves it stuck).
+    private static final java.util.concurrent.atomic.AtomicInteger PRESERVE_CMYK_HOLDS =
+            new java.util.concurrent.atomic.AtomicInteger();
     private static final java.util.Map<BufferedImage, Raster> CMYK_SAMPLES =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
 
@@ -175,7 +180,7 @@ public class ImageUtility {
     }
 
     private static void preserveCmyk(BufferedImage rgbImage, Raster cmykRaster) {
-        if (PRESERVE_CMYK && cmykRaster != null) {
+        if (isPreserveCmyk() && cmykRaster != null) {
             // Copy: the decoder may reuse/mutate the source raster after we return.
             WritableRaster copy = cmykRaster.createCompatibleWritableRaster();
             copy.setRect(cmykRaster);
@@ -186,14 +191,25 @@ public class ImageUtility {
     /** Whether CMYK preservation is currently active (lets a per-pixel decoder such
      *  as RawDecoder skip building the capture buffer when off). */
     public static boolean isPreserveCmyk() {
-        return PRESERVE_CMYK;
+        return PRESERVE_CMYK || PRESERVE_CMYK_HOLDS.get() > 0;
+    }
+
+    /** Starts preserving CMYK samples for the caller; pair with {@link #endPreserveCmyk()}
+     *  in a finally.  Safe when several groups render concurrently. */
+    public static void beginPreserveCmyk() {
+        PRESERVE_CMYK_HOLDS.incrementAndGet();
+    }
+
+    /** Releases a hold taken by {@link #beginPreserveCmyk()}. */
+    public static void endPreserveCmyk() {
+        PRESERVE_CMYK_HOLDS.updateAndGet(holds -> Math.max(0, holds - 1));
     }
 
     /** Preserve an interleaved C,M,Y,K byte buffer (4 bands, 0..255) a per-pixel
      *  decoder built alongside the sRGB image -- the raw FlateDecode CMYK path,
      *  which converts sample-by-sample with no intermediate CMYK raster. */
     public static void preserveCmykBytes(BufferedImage rgbImage, byte[] interleavedCmyk, int width, int height) {
-        if (!PRESERVE_CMYK || interleavedCmyk == null) {
+        if (!isPreserveCmyk() || interleavedCmyk == null) {
             return;
         }
         DataBufferByte db = new DataBufferByte(interleavedCmyk, interleavedCmyk.length);
@@ -702,7 +718,7 @@ public class ImageUtility {
             ImageIO.write(bufferedImage, "PNG",
                     new File(baseOutputPath + fileName + ".png"));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error writing image " + fileName, e);
         }
     }
 

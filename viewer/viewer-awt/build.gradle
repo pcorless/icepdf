@@ -63,10 +63,10 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-    testImplementation('org.mockito:mockito-core:5.14.2')
-    testImplementation('org.mockito:mockito-junit-jupiter:5.14.2')
+    testImplementation('org.mockito:mockito-core:5.24.0')
+    testImplementation('org.mockito:mockito-junit-jupiter:5.24.0')
     // VeraPDF for PDF/A validation
-    testImplementation('org.verapdf:validation-model:1.28.1')
+    testImplementation('org.verapdf:validation-model:1.30.2')
 }
 
 // generatePomFileForViewerJarPublication
@@ -177,3 +177,21 @@ tasks.register('javadocJar', Jar) {
 }
 
 // Archives are now automatically included via publishing plugin
+
+// Text-extraction A/B sweep over a PDF corpus (QA tooling; lives in test sources so it doesn't
+// ship in the viewer jar).  Run on each build being compared, then diff the TSVs:
+//   ./gradlew :viewer:viewer-awt:textSweep -Psweep.args="/path/to/corpus /tmp/sweep.tsv"
+tasks.register('textSweep', JavaExec) {
+    group = 'verification'
+    description = 'Text-extraction signature sweep of a PDF corpus (A/B regression check).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.ri.util.qa.TextExtractionSweep'
+    workingDir = rootProject.projectDir
+    maxHeapSize = project.findProperty('sweep.heap') ?: '4g'
+    args((project.findProperty('sweep.args') ?: '').toString().tokenize())
+    ['dump', 'maxPages', 'perDocMs'].each { name ->
+        if (project.hasProperty("sweep.${name}")) {
+            systemProperty(name, project.property("sweep.${name}"))
+        }
+    }
+}

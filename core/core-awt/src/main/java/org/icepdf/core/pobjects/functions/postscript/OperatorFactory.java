@@ -17,6 +17,8 @@ package org.icepdf.core.pobjects.functions.postscript;
 
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Operator factory takes a operand char offset and quickly returns a Operator
@@ -26,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 4.2
  */
 public class OperatorFactory {
+
+    private static final Logger logger = Logger.getLogger(OperatorFactory.class.getName());
 
     private static final ConcurrentHashMap<Integer, Operator> operatorCache =
             new ConcurrentHashMap<>();
@@ -718,8 +722,10 @@ public class OperatorFactory {
             default:
                 operator = new Operator(OperatorNames.NO_OP) {
                     public void eval(OperandStack stack) {
-                        // throw something?
-                        System.out.println(operatorType + " not implemented ");
+                        // unsupported operator: evaluate as a no-op
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("PostScript operator " + operatorType + " not implemented");
+                        }
                     }
                 };
                 break;
