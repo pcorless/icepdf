@@ -59,7 +59,8 @@ public class JpxDecoder extends AbstractImageDecoder {
 
             // the filter passes this encoding through undecoded, so the result is the compressed data;
             // presizing it to the decoded raster size would allocate far more than it holds.
-            byte[] data = imageStream.getDecodedStreamBytes(0);
+            // some encoders under-count tile-parts, which makes the reader drop the last one (see Jpeg2000TileParts)
+            byte[] data = Jpeg2000TileParts.repairTilePartCounts(imageStream.getDecodedStreamBytes(0));
             ImageInputStream imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
 
