@@ -79,8 +79,17 @@ public class CrossReferenceRoot {
             CrossReferenceTable crossReferenceTable = (CrossReferenceTable) crossReference;
             int offset = library.getInt(crossReferenceTable.getDictionaryEntries(), PTrailer.XREF_STRM_KEY);
             if (offset > 0) {
-                CrossReferenceStream xrefStream = (CrossReferenceStream) parser.getCrossReference(byteBuffer, offset);
-                crossReferences.add(xrefStream);
+                // /XRefStm only supplements the table; a bad pointer loses the extra entries, not the document
+                try {
+                    CrossReference xrefStream = parser.getCrossReference(byteBuffer, offset);
+                    if (xrefStream instanceof CrossReferenceStream) {
+                        crossReferences.add(xrefStream);
+                    } else {
+                        log.fine(() -> "Ignoring /XRefStm " + offset + ": not a cross-reference stream");
+                    }
+                } catch (ObjectStateException e) {
+                    log.log(java.util.logging.Level.FINE, e, () -> "Ignoring /XRefStm " + offset);
+                }
             }
         }
         // PTrailer dictionary wrapper to aid in getting the trailer dictionary values.
