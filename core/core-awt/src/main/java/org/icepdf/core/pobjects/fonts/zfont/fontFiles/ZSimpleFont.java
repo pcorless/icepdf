@@ -49,13 +49,11 @@ public abstract class ZSimpleFont implements FontFile {
      * Turns TrueType bytecode hinting (grid fitting of glyph outlines) on, e.g.
      * {@code -Dorg.icepdf.core.fonts.hinting=true}.  Off by default.  FontBox no longer decides this itself -
      * {@code TrueTypeFont.getHintedPath} always grid-fits and leaves the choice to the caller - so the switch
-     * lives here.  The older {@code -Dorg.apache.fontbox.ttf.hinting} is still honoured as an alias.
+     * lives here.
      */
     public static final String HINTING_PROPERTY = "org.icepdf.core.fonts.hinting";
-    private static final String FONTBOX_HINTING_PROPERTY = "org.apache.fontbox.ttf.hinting";
 
-    private static volatile boolean hintingEnabled =
-            Defs.booleanProperty(HINTING_PROPERTY, Defs.booleanProperty(FONTBOX_HINTING_PROPERTY, false));
+    private static volatile boolean hintingEnabled = Defs.booleanProperty(HINTING_PROPERTY, false);
 
     /**
      * @return true when TrueType outline fonts are grid-fitted before painting.
