@@ -295,9 +295,11 @@ public abstract class AbstractContentParser {
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
+            // Install a copy: the current PatternColor usually comes from the shared resources (CS), and
+            // selecting the pattern on it in place let concurrently parsed pages swap each other's patterns.
             if (graphicState.getStrokeColorSpace() instanceof PatternColor) {
                 PatternColor pc = (PatternColor) graphicState.getStrokeColorSpace();
-                pc.setPattern(pattern);
+                graphicState.setStrokeColorSpace(pc.withPattern(pattern));
             } else {
                 PatternColor pc = new PatternColor(null, null);
                 pc.setPattern(pattern);
@@ -350,9 +352,10 @@ public abstract class AbstractContentParser {
             // Create or update the current PatternColorSpace with an instance
             // of the current pattern. These object will be used later during
             // fill, show text and Do with image masks.
+            // Install a copy, as for SCN: the current PatternColor usually comes from the shared resources (cs).
             if (graphicState.getFillColorSpace() instanceof PatternColor) {
                 PatternColor pc = (PatternColor) graphicState.getFillColorSpace();
-                pc.setPattern(pattern);
+                graphicState.setFillColorSpace(pc.withPattern(pattern));
             } else {
                 PatternColor pc = new PatternColor(library, null);
                 pc.setPattern(pattern);
@@ -688,6 +691,13 @@ public abstract class AbstractContentParser {
             shapes.add(new NoClipDrawCmd());
             //  5. Restore the saved graphics state
             graphicState = graphicState.restore();
+            // The form's BBox clip and the NoClipDrawCmd above changed the paint-time clip without going through
+            // the graphics state, so restore() cannot tell the caller's clip needs putting back; re-apply it.
+            Shape restoredClip = graphicState.getClip();
+            if (restoredClip != null) {
+                shapes.add(new ShapeDrawCmd(restoredClip));
+                shapes.add(clipDrawCmd);
+            }
         }
         // Image XObject
         else if (viewParse) {
@@ -1478,7 +1488,7 @@ public abstract class AbstractContentParser {
                 // the shading and the mask to buffers and composite, instead of
                 // dropping the mask for a flat alpha (faded.pdf white-fade bug).
                 pattern.init(graphicState);
-                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(), shSoftMask,
+                shapes.add(new ShadingSoftMaskDrawCmd(pattern.getPaint(graphicState), shSoftMask,
                         graphicState.getFillAlpha()));
                 return;
             }
@@ -1496,7 +1506,7 @@ public abstract class AbstractContentParser {
                             graphicState.getAlphaRule(),
                             graphicState.getFillAlpha());
                 }
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
             } else {
                 // apply the current fill color along ith a little alpha
                 // to at least try to paint a colour for an unsupported mesh
@@ -1938,7 +1948,7 @@ public abstract class AbstractContentParser {
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init(graphicState);
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
             }
@@ -2075,7 +2085,7 @@ public abstract class AbstractContentParser {
             } else if (pattern != null &&
                     pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
                 pattern.init(graphicState);
-                shapes.add(new PaintDrawCmd(pattern.getPaint()));
+                shapes.add(new PaintDrawCmd(pattern.getPaint(graphicState)));
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());
             }

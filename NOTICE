@@ -1,0 +1,16 @@
+ICEpdf
+Copyright 2006-2026 ICEsoft Technologies Canada Corp. and Patrick Corless
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/):
+
+  - org.icepdf.core.pobjects.fonts.zfont.fontFiles.GlyphCache is derived from
+    org.apache.pdfbox.rendering.GlyphCache of Apache PDFBox 3.0.6.
+
+Apache PDFBox
+Copyright 2014 The Apache Software Foundation
+
+Third-party libraries distributed with ICEpdf, and their licenses and notices,
+are listed in the licenses/ directory of the binary distribution.

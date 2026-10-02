@@ -495,7 +495,9 @@ public class FontManager {
             throws IllegalArgumentException {
         String errorString = "Error parsing font properties ";
         try {
-            fontList = new ArrayList<>(500);
+            // built aside and published only once every entry has parsed, so a bad cache leaves the
+            // current list intact rather than half replaced.
+            List<Object[]> parsedFonts = new ArrayList<>(500);
             String[] fontKeys = fontPreferences.keys();
             String name;
             String family;
@@ -515,12 +517,13 @@ public class FontManager {
                     // check exclusion list
                     fontProperty = new Object[]{name, family, decorations, path};
                     if (!checkExclusionLists(fontProperty)) {
-                        fontList.add(new Object[]{name, family, decorations, path});
+                        parsedFonts.add(new Object[]{name, family, decorations, path});
                     }
                 } else {
                     throw new IllegalArgumentException(errorString);
                 }
             }
+            fontList = parsedFonts;
             sortFontListByName();
         } catch (Exception e) {
             logger.log(Level.FINE, "Error setting font properties ", e);
@@ -694,29 +697,38 @@ public class FontManager {
             TrueTypeCollection collection = new TrueTypeCollection(
                     new ByteArrayInputStream(Files.readAllBytes(file.toPath())));
             collection.processAllFonts(face -> {
-                String name = face.getName();
-                if (name == null || isPostScriptOutlines(face)) {
-                    // CFF-outline faces (Noto CJK and most OpenType collections) are skipped: the
-                    // renderer only draws glyf outlines for system fonts, so registering them would
-                    // hand the substitution machinery a font that silently draws nothing.
-                    return;
-                }
-                String fontName = name.toLowerCase();
-                Object[] fontProperty = new Object[]{fontName,      // original PS name
-                        FontUtil.normalizeString(face.getNaming() != null
-                                ? face.getNaming().getFontFamily() : name),  // family name
-                        guessFontStyle(fontName),                   // weight and decorations
-                        fontPath};
-                if (!checkExclusionLists(fontProperty)) {
-                    fontList.add(fontProperty);
-                }
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer("Adding system font from collection: " + name + " " + fontPath);
+                // caught per face: one unreadable face must not drop its siblings from the scan
+                try {
+                    evaluateCollectionFaceForInsertion(face, fontPath);
+                } catch (Exception e) {
+                    logger.log(Level.FINE, "Error reading a face of font collection " + fontPath, e);
                 }
             });
             collection.close();
         } catch (Throwable e) {
             logger.log(Level.FINE, "Error reading font collection " + fontPath, e);
+        }
+    }
+
+    private void evaluateCollectionFaceForInsertion(TrueTypeFont face, String fontPath) throws IOException {
+        String name = face.getName();
+        if (name == null || isPostScriptOutlines(face)) {
+            // CFF-outline faces (Noto CJK and most OpenType collections) are skipped: the
+            // renderer only draws glyf outlines for system fonts, so registering them would
+            // hand the substitution machinery a font that silently draws nothing.
+            return;
+        }
+        String fontName = name.toLowerCase();
+        String family = face.getNaming() != null ? face.getNaming().getFontFamily() : null;
+        Object[] fontProperty = new Object[]{fontName,      // original PS name
+                FontUtil.normalizeString(family != null ? family : name),  // family name
+                guessFontStyle(fontName),                   // weight and decorations
+                fontPath};
+        if (!checkExclusionLists(fontProperty)) {
+            fontList.add(fontProperty);
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer("Adding system font from collection: " + name + " " + fontPath);
         }
     }
 

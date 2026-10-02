@@ -421,6 +421,38 @@ public class TextSprite {
     }
 
     /**
+     * Returns true if this sprite might intersect the clip of {@code g}.  Uses {@link Graphics#hitClip}, which
+     * tests against the already-rasterized clip region, rather than {@code g.getClip()}, which copies and
+     * inverse-transforms the whole clip outline on every call (O(segments) per sprite on a complex clip).
+     *
+     * @param g graphics context whose current transform maps this sprite's bounds.
+     * @return true, if the sprite bounds may intersect the clip of g; otherwise false.
+     */
+    public boolean intersects(Graphics2D g) {
+        return !(optimizedDrawingEnabled) || hitClip(g, bounds);
+    }
+
+    /**
+     * Conservative {@link Graphics#hitClip} for a fractional user-space rectangle: the integer rectangle is widened
+     * to fully cover {@code r}.  Bounds that don't fit in an int (a "whole page" fill drawn as a huge rectangle, or
+     * NaN) are reported as hitting: narrowing them would overflow the width and cull the shape.
+     */
+    public static boolean hitClip(Graphics2D g, Rectangle2D r) {
+        double minX = Math.floor(r.getMinX());
+        double minY = Math.floor(r.getMinY());
+        double maxX = Math.ceil(r.getMaxX());
+        double maxY = Math.ceil(r.getMaxY());
+        if (!(minX >= Integer.MIN_VALUE && minY >= Integer.MIN_VALUE &&
+                maxX - minX <= Integer.MAX_VALUE && maxY - minY <= Integer.MAX_VALUE &&
+                maxX <= Integer.MAX_VALUE && maxY <= Integer.MAX_VALUE)) {
+            return true;
+        }
+        int w = (int) (maxX - minX);
+        int h = (int) (maxY - minY);
+        return g.hitClip((int) minX, (int) minY, Math.max(w, 1), Math.max(h, 1));
+    }
+
+    /**
      * Tests if the interior of the <code>TextSprite</code> bounds intersects the
      * interior of a specified <code>shape</code>.
      *
@@ -428,6 +460,7 @@ public class TextSprite {
      * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
      * otherwise; false.
      */
+
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
         return !(optimizedDrawingEnabled) ||

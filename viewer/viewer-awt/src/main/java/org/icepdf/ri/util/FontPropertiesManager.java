@@ -19,7 +19,9 @@ import org.icepdf.core.pobjects.fonts.FontManager;
 import org.icepdf.core.util.Defs;
 import org.icepdf.ri.util.font.FontCache;
 
+import java.io.File;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
@@ -45,7 +47,7 @@ public class FontPropertiesManager {
     private static final Logger logger = Logger.getLogger(FontPropertiesManager.class.getName());
 
     // can't use system level cache on window as of JDK 1.8_14, but should work in 9.
-    private static final Preferences prefs = Preferences.userNodeForPackage(getPreferencesClass());
+    private final Preferences prefs;
 
     public static final String PREFERENCES_KEY_CLASS = "org.icepdf.ri.util.FontPreferencesKey";
 
@@ -62,8 +64,9 @@ public class FontPropertiesManager {
      * every key of the font node and parses its value as {@code family|decorations|path}, so a key
      * that isn't a font would make the whole cache fail to load.
      */
-    private static final Preferences cacheMeta = prefs.node("cache");
+    private final Preferences cacheMeta;
     private static final String FONT_CACHE_VERSION_KEY = "version";
+    private static final String FONT_CACHE_COUNT_KEY = "count";
 
     private static Class<?> getPreferencesClass() {
         String fontPreferencesKey = Defs.sysProperty(PREFERENCES_KEY_CLASS);
@@ -82,7 +85,18 @@ public class FontPropertiesManager {
     private static final FontManager fontManager = FontManager.getInstance();
 
     private FontPropertiesManager() {
+        this(Preferences.userNodeForPackage(getPreferencesClass()));
+    }
 
+    /**
+     * Binds the manager to an arbitrary backing-store node.  Package private so tests can work
+     * against an isolated node instead of the user-global font cache.
+     *
+     * @param fontNode node holding the font entries; its "cache" child holds the version.
+     */
+    FontPropertiesManager(Preferences fontNode) {
+        prefs = fontNode;
+        cacheMeta = fontNode.node("cache");
     }
 
     /**
@@ -103,12 +117,72 @@ public class FontPropertiesManager {
      */
     public void loadOrReadSystemFonts() {
         if (isFontPropertiesEmpty() || isFontCacheStale()) {
-            readDefaultFontProperties();
-            saveProperties();
+            rebuildCache();
         } else {
-            // load properties from cache into the fontManager
-            loadProperties();
+            try {
+                // load properties from cache into the fontManager
+                loadProperties();
+            } catch (IllegalArgumentException e) {
+                // one unreadable entry fails the whole load; without this the cache would stay
+                // broken and fail the same way on every launch.
+                logger.log(Level.WARNING, "Font cache could not be read, rebuilding it.", e);
+                rebuildCache();
+            }
         }
+    }
+
+    /**
+     * Rescans the system fonts into the backing store, then drops entries that can no longer be used,
+     * and finally reloads the {@link FontManager} from the store so memory and cache agree.
+     * <p>
+     * Entries are merged rather than the store being cleared first: fonts an application saved from its
+     * own extra font paths aren't part of the system scan and would otherwise be lost on upgrade.
+     */
+    private void rebuildCache() {
+        readDefaultFontProperties();
+        saveProperties();
+        pruneUnusableEntries();
+        loadProperties();
+    }
+
+    /**
+     * Removes entries that {@link FontManager#setFontProperties} can't parse, and entries whose font
+     * file has since been removed from the system.
+     */
+    private void pruneUnusableEntries() {
+        try {
+            for (String name : prefs.keys()) {
+                String path = fontPath(prefs.get(name, null));
+                if (path == null || !new File(path).isFile()) {
+                    prefs.remove(name);
+                }
+            }
+            stampCache();
+        } catch (BackingStoreException e) {
+            logger.log(Level.WARNING, "Error pruning the font cache: ", e);
+        }
+    }
+
+    /**
+     * Font path of a cache entry, or null if the entry isn't in the {@code family|decorations|path}
+     * form {@link FontManager#setFontProperties} reads (it tokenizes the same way, so empty fields
+     * shift the tokens).
+     */
+    private static String fontPath(String value) {
+        if (value == null) {
+            return null;
+        }
+        StringTokenizer tokens = new StringTokenizer(value, "|");
+        if (tokens.countTokens() < 3) {
+            return null;
+        }
+        tokens.nextToken();
+        try {
+            Integer.parseInt(tokens.nextToken());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+        return tokens.nextToken();
     }
 
     /**
@@ -121,7 +195,26 @@ public class FontPropertiesManager {
      * changes, so installations re-scan once and then carry on using the cache.
      */
     private boolean isFontCacheStale() {
-        return cacheMeta.getInt(FONT_CACHE_VERSION_KEY, 0) < FONT_CACHE_VERSION;
+        if (cacheMeta.getInt(FONT_CACHE_VERSION_KEY, 0) < FONT_CACHE_VERSION) {
+            return true;
+        }
+        // An older release can't see the version node, so after a downgrade its "clear font cache"
+        // leaves the version behind and rewrites the entries with its own, smaller scan.  The entry
+        // count written alongside the version catches that.
+        int count = cacheMeta.getInt(FONT_CACHE_COUNT_KEY, -1);
+        try {
+            return count >= 0 && count != prefs.keys().length;
+        } catch (BackingStoreException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Records the version and entry count of the cache as it now stands in the backing store.
+     */
+    private void stampCache() throws BackingStoreException {
+        cacheMeta.putInt(FONT_CACHE_VERSION_KEY, FONT_CACHE_VERSION);
+        cacheMeta.putInt(FONT_CACHE_COUNT_KEY, prefs.keys().length);
     }
 
     /**
@@ -189,7 +282,11 @@ public class FontPropertiesManager {
         for (Object key : fontProps.keySet()) {
             prefs.put((String) key, fontProps.getProperty((String) key));
         }
-        cacheMeta.putInt(FONT_CACHE_VERSION_KEY, FONT_CACHE_VERSION);
+        try {
+            stampCache();
+        } catch (BackingStoreException e) {
+            logger.log(Level.WARNING, "Error writing the font cache version: ", e);
+        }
     }
 
     /**

@@ -46,7 +46,7 @@ public class ListItemTransferHandler extends TransferHandler {
             dataFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType +
                     ";class=\"" + Object[].class.getName() + "\"");
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error creating the list transfer data flavor", e);
         }
     }
 

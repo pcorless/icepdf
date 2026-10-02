@@ -82,6 +82,15 @@ public class ObjectStream extends Stream {
         }
     }
 
+    /**
+     * @return the numbers of the objects held in this stream, in index order.
+     * @throws IOException if the stream can not be decoded.
+     */
+    public int[] getObjectNumbers() throws IOException {
+        initialize();
+        return objectNumbers.clone();
+    }
+
     public PObject decompressObject(Parser parser, int objectIndex) throws IOException {
         initialize();
         if (objectNumbers == null || objectOffset == null || objectNumbers.length != objectOffset.length ||

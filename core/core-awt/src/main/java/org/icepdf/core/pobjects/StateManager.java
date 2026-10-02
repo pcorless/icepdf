@@ -148,6 +148,23 @@ public class StateManager {
     }
 
     /**
+     * 7.4.x form of {@link #addChange(PObject)}, kept so code built against it still compiles and links.
+     *
+     * @param pObject object to add to cache.
+     * @param isNew   true for a user edit; false for a library repair.
+     * @deprecated since 7.5.0, use {@link #addChange(PObject)}, inside {@link #repairing(Runnable)} where isNew
+     * was false.
+     */
+    @Deprecated
+    public void addChange(PObject pObject, boolean isNew) {
+        if (isNew) {
+            addChange(pObject);
+        } else {
+            repairing(() -> addChange(pObject));
+        }
+    }
+
+    /**
      * Add a new PObject containing temporary changed data to the cache.
      *
      * @param pObject object to add to cache.

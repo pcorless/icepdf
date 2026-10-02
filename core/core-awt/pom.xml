@@ -28,6 +28,14 @@
         <!-- Filter only product-info.properties so the version is stamped into
              it at build time; everything else is copied verbatim. -->
         <resources>
+            <!-- NOTICE (Apache 2.0 section 4(d)): core carries PDFBox-derived code -->
+            <resource>
+                <directory>${project.basedir}/../..</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>NOTICE</include>
+                </includes>
+            </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
@@ -131,7 +139,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.3</version>
+            <version>${junit.bom.version}</version>
             <scope>test</scope>
         </dependency>
 

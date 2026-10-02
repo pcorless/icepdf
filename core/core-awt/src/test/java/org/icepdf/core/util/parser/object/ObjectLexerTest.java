@@ -15,12 +15,7 @@
  */
 package org.icepdf.core.util.parser.object;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.HexStringObject;
-import org.icepdf.core.pobjects.LiteralStringObject;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,13 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Token-level tests for the object {@link Lexer}, the reader that turns the bytes of a PDF body
@@ -131,6 +120,21 @@ public class ObjectLexerTest {
     public void literalStringEscapes() throws IOException {
         StringObject string = (StringObject) firstToken("(a\\nb\\rc\\td\\be\\ff) ");
         assertEquals("a\nb\rc\td\be\ff", string.getLiteralString());
+    }
+
+    @DisplayName("literal strings - an unterminated string stops at the end of the buffer")
+    @Test
+    public void literalStringUnterminated() throws IOException {
+        // A damaged file's trailer search can land the lexer on a '(' with no closing ')' before
+        // the end of the file.  The walk is on its own index, not the buffer position, so it must
+        // stop at the limit rather than read past it - including with a trailing escape or octal.
+        assertEquals("abc", ((StringObject) firstToken("(abc")).getLiteralString());
+        assertEquals("abc", ((StringObject) firstToken("(abc\\")).getLiteralString());
+        assertEquals("abc\u0001", ((StringObject) firstToken("(abc\\1")).getLiteralString());
+        // two-byte (BOM-prefixed) text with no terminator
+        assertNotNull(firstToken("(\u00fe\u00ffab"));
+        // and a well-formed one still reads to its terminator
+        assertEquals("abc", ((StringObject) firstToken("(abc)")).getLiteralString());
     }
 
     @DisplayName("literal strings - escaped and balanced parentheses")

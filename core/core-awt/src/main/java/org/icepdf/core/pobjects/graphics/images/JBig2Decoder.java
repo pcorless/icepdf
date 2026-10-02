@@ -46,7 +46,6 @@ public class JBig2Decoder extends AbstractImageDecoder {
             "org.apache.pdfbox.jbig2.JBIG2Globals"};
 
     private static final Name JBIG2_GLOBALS_KEY = new Name("JBIG2Globals");
-    private static final Name DECODE_PARMS_KEY = new Name("DecodeParms");
 
     // the JBIG2 library is optional; only warn about it being absent once per
     // JVM rather than for every JBIG2 image encountered.
@@ -62,8 +61,10 @@ public class JBig2Decoder extends AbstractImageDecoder {
         BufferedImage tmpImage = null;
 
         ImageParams imageParams = imageStream.getImageParams();
-        // get the decode params form the stream
-        DictionaryEntries decodeParams = imageParams.getDictionary(DECODE_PARMS_KEY);
+        // get the decode params form the stream.  With /Filter [/JBIG2Decode] they come as an array,
+        // /DecodeParms [<< /JBIG2Globals ... >>]; reading only the dictionary form lost the globals, and a page
+        // whose text regions use symbols from them failed to decode, falling back to an all-black raw image.
+        DictionaryEntries decodeParams = imageParams.getDecodeParams();
         Stream globalsStream = null;
         if (decodeParams != null) {
             Object jbigGlobals = imageParams.getObject(decodeParams, JBIG2_GLOBALS_KEY);
@@ -74,7 +75,9 @@ public class JBig2Decoder extends AbstractImageDecoder {
         // grab the data,
         ImageInputStream imageInputStream = null;
         try {
-            byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+            // the filter passes this encoding through undecoded, so the result is the compressed data;
+            // presizing it to the decoded raster size would allocate far more than it holds.
+            byte[] data = imageStream.getDecodedStreamBytes(0);
             imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(data));
             tmpImage = decodeJbig2(decodeParams, globalsStream, imageInputStream, JBIG2_PDF_BOX);
         } catch (ClassNotFoundException | NoClassDefFoundError e) {

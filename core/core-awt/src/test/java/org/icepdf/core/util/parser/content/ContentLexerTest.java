@@ -15,11 +15,7 @@
  */
 package org.icepdf.core.util.parser.content;
 
-import org.icepdf.core.pobjects.Dictionary;
-import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.Stream;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,11 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Token-level tests for the content-stream {@link Lexer}.
@@ -278,6 +270,40 @@ public class ContentLexerTest {
     @Test
     public void noContentStream() {
         assertThrows(IOException.class, () -> new Lexer().next());
+    }
+
+    @DisplayName("position - a stray '>' inside an inline dictionary does not stall the lexer")
+    @Test
+    public void strayDelimiterInDictionary() throws IOException {
+        // Corrupt Flate output produced "<</MCID > BDC": the lone '>' lexes as an empty operand
+        // that consumes nothing, and the dictionary loop spun on it forever.
+        List<Object> tokens = tokens("/Span <</MCID > /A 1 >> BDC 1 0 0 RG");
+        assertTrue(tokens.contains(Operands.RG), "lexer must reach the operator after the dictionary");
+        // with no closing >> at all the dictionary runs to the end of the stream, but it must end
+        assertNotNull(tokens("/Span <</MCID > BDC 1 0 0 RG"));
+        // and a lone '>' as the very last byte has no successor to look at
+        assertNotNull(tokens("<</A 1 >"));
+    }
+
+    @DisplayName("position - a truncated 'nu' token never rewinds the lexer behind itself")
+    @Test
+    public void truncatedNullTokenDoesNotRewind() throws IOException {
+        // A corrupt Flate stream produced "5nu 0 d" deep inside a page: the number parser stopped
+        // at the 'n', and the operator table returned the token's byte position (not a trailing-
+        // byte count) as the rewind for the two-byte "nu".  The lexer jumped back to the start of
+        // the stream and the content parser looped forever.  Every token must leave the position
+        // monotonically non-decreasing, and the stream must run out.
+        String content = "q 0.0 w 0 J [] 0 d 42.50 691.60 524.40 19.85 re S Q 21.10 5nu 0 d 1 0 0 RG";
+        Lexer lexer = lexerFor(content);
+        int last = lexer.getPos();
+        int count = 0;
+        while (lexer.next() != null) {
+            assertTrue(lexer.getPos() >= last, "lexer rewound from " + last + " to " + lexer.getPos());
+            last = lexer.getPos();
+            assertTrue(++count < 1000, "lexer did not reach the end of the stream");
+        }
+        // the trailing operator must still have been reached.
+        assertEquals(content.length(), lexer.getPos());
     }
 
     @DisplayName("position - getPos advances as tokens are consumed")

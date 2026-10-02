@@ -422,7 +422,8 @@ public class Lexer {
         Object value;
         int count = 1;
         while (pos < streamBytes.length &&
-                !(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
+                !(streamBytes[pos] == '>' && pos + 1 < streamBytes.length && streamBytes[pos + 1] == '>')) {
+            int before = pos;
             if (count == 1) {
                 key = next();
                 // double check we don't have an empty dictionary << >>
@@ -433,7 +434,9 @@ public class Lexer {
                 count++;
             } else if (count == 2) {
                 value = next();
-                dictionaryEntries.put((Name)key, value);
+                if (key instanceof Name) {
+                    dictionaryEntries.put((Name) key, value);
+                }
                 count = 1;
             }
 
@@ -447,7 +450,11 @@ public class Lexer {
             }
             // check for in very odd  corner cases. end
             checkLength();
-
+            // A stray delimiter (a lone '>' in a corrupt stream, say) lexes as an empty operand
+            // and leaves pos where it was; step over it or this loop never ends.
+            if (pos == before) {
+                pos++;
+            }
         }
         // skip the trailing >>
         pos += 2;
@@ -580,9 +587,11 @@ public class Lexer {
         }
         if (pos <= numRead && pos > startTokenPos) {
             int[] tmp = Operands.parseOperand(streamBytes, startTokenPos, pos - startTokenPos);
-            // adjust for any potential parsing compensation.
+            // adjust for any potential parsing compensation.  The compensation is a count of
+            // trailing bytes to hand back, so it can never exceed the token's length; clamp it so a
+            // bad value can't rewind the lexer behind the token and re-parse the stream forever.
             if (tmp[1] > 0) {
-                pos -= tmp[1];
+                pos -= Math.min(tmp[1], pos - startTokenPos - 1);
             }
             return tmp[0];
         } else {

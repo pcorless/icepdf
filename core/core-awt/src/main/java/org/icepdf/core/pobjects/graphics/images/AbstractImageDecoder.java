@@ -85,6 +85,22 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
     }
 
     /**
+     * The sampling step a decoder that can subsample should read a really big image at, so its longest edge comes
+     * out at about preferredSize (never shorter), the size {@link #scaleReallyBigImages} would have scaled the full
+     * raster down to.  Images that aren't really big are read whole.
+     *
+     * @param width  image width in pixels.
+     * @param height image height in pixels.
+     * @return sampling step, 1 for every pixel.
+     */
+    int subsamplingFor(int width, int height) {
+        if (!isImageReallyBig(width, height)) {
+            return 1;
+        }
+        return Math.max(1, Math.max(width, height) / preferredSize);
+    }
+
+    /**
      * Scales images larger then org.icepdf.core.imageDecoder.maxwWidth x org.icepdf.core.imageDecoder.maxHeight.
      * The images will be scaled down to preferredSize on the longest edge.
      *

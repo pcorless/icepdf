@@ -154,7 +154,10 @@ public class ConservativeSizingByteArrayOutputStream extends OutputStream {
             steppedSize = (steppedSize * 5) / 4;  // x 1.25
             steppedSize &= (~0x0FFF);           // Fit on even 4KB pages
         } else {
-            steppedSize = (steppedSize + (3 * 1024 * 1024));  // Go up in 3MB increments
+            // x 1.25, still geometric: a fixed increment makes growing to n bytes copy O(n^2) bytes, which took
+            // tens of seconds on a 1GB image stream.  Worked in long and capped at the largest array the VM allows.
+            long grown = (long) steppedSize + steppedSize / 4;
+            steppedSize = (int) Math.min(grown, Integer.MAX_VALUE - 8);
             steppedSize &= (~0x0FFF);           // Fit on even 4KB pages
         }
 

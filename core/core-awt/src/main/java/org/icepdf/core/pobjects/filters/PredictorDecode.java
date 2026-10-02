@@ -134,6 +134,14 @@ public class PredictorDecode extends ChunkingInputStream {
         aboveBuffer = buffer;
         buffer = temp;
 
+        // TIFF rows carry no per-row predictor tag, unlike PNG rows
+        if (predictor == PREDICTOR_TIFF_2) {
+            int numRead = fillBufferFromInputStream();
+            if (numRead <= 0) return -1;
+            applyTiffPredictor(numRead);
+            return numRead;
+        }
+
         int currPredictor;
         int cp = in.read();
         if (cp < 0) return -1;
@@ -225,6 +233,44 @@ public class PredictorDecode extends ChunkingInputStream {
         }
     }
 
+    /**
+     * TIFF predictor 2 (horizontal differencing): each sample is stored as its difference from the same component
+     * of the pixel to its left, modulo 2^bitsPerComponent.  The buffer holds one row, so the running sum restarts
+     * every row.  Samples are packed big-endian, most significant bits first, as in the image data itself.
+     *
+     * @param numRead number of bytes of the row read, less than a full row only at the end of the stream.
+     */
+    protected void applyTiffPredictor(int numRead) {
+        if (bitsPerComponent == 8) {
+            for (int i = numComponents; i < numRead; i++) {
+                buffer[i] += buffer[i - numComponents];
+            }
+        } else if (bitsPerComponent == 16) {
+            int stride = numComponents * 2;
+            for (int i = stride; i + 1 < numRead; i += 2) {
+                int left = ((buffer[i - stride] & 0xFF) << 8) | (buffer[i - stride + 1] & 0xFF);
+                int sample = (((buffer[i] & 0xFF) << 8) | (buffer[i + 1] & 0xFF)) + left;
+                buffer[i] = (byte) (sample >> 8);
+                buffer[i + 1] = (byte) sample;
+            }
+        } else if (bitsPerComponent == 1 || bitsPerComponent == 2 || bitsPerComponent == 4) {
+            int mask = (1 << bitsPerComponent) - 1;
+            int samples = Math.min(width * numComponents, numRead * 8 / bitsPerComponent);
+            for (int s = numComponents; s < samples; s++) {
+                int sample = (getSample(s) + getSample(s - numComponents)) & mask;
+                int bit = s * bitsPerComponent;
+                int shift = 8 - bitsPerComponent - (bit & 7);
+                buffer[bit >> 3] = (byte) ((buffer[bit >> 3] & ~(mask << shift)) | (sample << shift));
+            }
+        }
+    }
+
+    private int getSample(int s) {
+        int bit = s * bitsPerComponent;
+        int shift = 8 - bitsPerComponent - (bit & 7);
+        return (buffer[bit >> 3] >> shift) & ((1 << bitsPerComponent) - 1);
+    }
+
     private static int applyLeftPredictor(byte[] buffer, int bytesPerPixel, int i) {
         return (((int) buffer[(i - bytesPerPixel)]) & 0xFF);
     }
@@ -243,7 +289,8 @@ public class PredictorDecode extends ChunkingInputStream {
             return false;
         }
         int predictor = library.getInt(decodeParmsDictionary, PREDICTOR_VALUE);
-        return predictor == PREDICTOR_PNG_NONE || predictor == PREDICTOR_PNG_SUB ||
+        return predictor == PREDICTOR_TIFF_2 ||
+                predictor == PREDICTOR_PNG_NONE || predictor == PREDICTOR_PNG_SUB ||
                 predictor == PREDICTOR_PNG_UP || predictor == PREDICTOR_PNG_AVG ||
                 predictor == PREDICTOR_PNG_PAETH || predictor == PREDICTOR_PNG_OPTIMUM;
     }

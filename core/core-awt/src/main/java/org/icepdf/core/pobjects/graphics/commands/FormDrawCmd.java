@@ -807,7 +807,9 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // capture them aligned to the group buffer so the blend can run
         // subtractively from real ink instead of the lossy sRGB.
         boolean cmykGroup = cmykSubtractiveEnabled && isCmykGroup(xForm);
-        boolean prevPreserve = cmykGroup && ImageUtility.setPreserveCmyk(true);
+        if (cmykGroup) {
+            ImageUtility.beginPreserveCmyk();
+        }
         capturedInk = null;
         BufferedImage isolated;
         try {
@@ -815,7 +817,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
         } finally {
             BlendComposite.setTransparentBackdrop(prevBackdrop);
             if (cmykGroup) {
-                ImageUtility.setPreserveCmyk(prevPreserve);
+                ImageUtility.endPreserveCmyk();
             }
         }
         BufferedImage backdrop = captureBackdrop(g, parentPage, base, isolated.getWidth(), isolated.getHeight());

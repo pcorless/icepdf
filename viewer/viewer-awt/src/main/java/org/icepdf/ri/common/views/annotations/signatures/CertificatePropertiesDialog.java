@@ -362,7 +362,8 @@ class CertificateInfo {
             // Extract issuer name
             issuerName = CertificatePropertiesDialog.parseRelativeDistinguishedName(principalIssuer, BCStyle.CN);
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.getLogger(CertificateInfo.class.getName())
+                    .log(Level.FINE, "Error reading the certificate subject/issuer names", e);
         }
 
         // Add Subject name and Issuer name in the return string

@@ -94,7 +94,10 @@ public class BlurredImageReference extends CachedImageReference {
             }
             image = imageStream.getImage(graphicsState, resources);
             // check constraints for applying a the kernel blur effect.
-            if (image.getWidth() > minWidth && image.getHeight() > minHeight) {
+            if (image == null) {
+                // undecodable image, skipped
+                logger.finest("Image could not be decoded, nothing to blur.");
+            } else if (image.getWidth() > minWidth && image.getHeight() > minHeight) {
                 BufferedImageOp op = new ConvolveOp(new Kernel(dimension, dimension, matrix));
                 image = op.filter(image, null);
             }

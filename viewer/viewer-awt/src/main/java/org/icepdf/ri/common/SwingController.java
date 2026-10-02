@@ -2114,7 +2114,6 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             // repaint the page views.
             documentViewController.getViewContainer().repaint();
         } catch (java.awt.HeadlessException e) {
-            e.printStackTrace();
             logger.log(Level.FINE, "Headless exception during tool selection", e);
         }
     }

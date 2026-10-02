@@ -7,6 +7,9 @@ allprojects {
     //   ./gradlew :core:core-awt:test :core:core-awt:jacocoTestReport
     // HTML lands in <module>/build/reports/jacoco/test/html/index.html, XML beside it for CI.
     apply plugin: 'jacoco'
+    jacoco {
+        toolVersion = '0.8.15'   // keep in step with jacoco.version in pom.xml
+    }
 
     tasks.withType(JacocoReport).configureEach {
         dependsOn tasks.withType(Test)
@@ -73,6 +76,7 @@ distributions {
             into('licenses') {
                 from 'licenses'
             }
+            from('NOTICE')
             // maven auto generated pom files.
             into ('maven2') {
                 from 'core/core-awt/build/publications/coreJar/pom-default.xml'

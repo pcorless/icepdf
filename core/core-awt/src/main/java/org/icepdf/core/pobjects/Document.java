@@ -397,6 +397,8 @@ public class Document {
             }
             // set up a signature permission dictionary
             library.configurePermissions();
+            // a rebuilt index of an encrypted file could not read its object streams until now
+            library.indexDeferredObjectStreams();
 
             catalog = trailerDictionary.getRootCatalog();
             catalog.init();
