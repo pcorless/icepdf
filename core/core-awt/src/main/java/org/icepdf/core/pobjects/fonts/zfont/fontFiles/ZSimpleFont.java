@@ -17,12 +17,12 @@ package org.icepdf.core.pobjects.fonts.zfont.fontFiles;
 
 import org.apache.fontbox.FontBoxFont;
 import org.apache.fontbox.cmap.CMap;
-import org.apache.fontbox.ttf.TrueTypeFont;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.fonts.zfont.GlyphList;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.graphics.TextState;
+import org.icepdf.core.util.Defs;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -44,6 +44,35 @@ public abstract class ZSimpleFont implements FontFile {
 
     private static final Logger logger =
             Logger.getLogger(ZSimpleFont.class.getName());
+
+    /**
+     * Turns TrueType bytecode hinting (grid fitting of glyph outlines) on, e.g.
+     * {@code -Dorg.icepdf.core.fonts.hinting=true}.  Off by default.  FontBox no longer decides this itself -
+     * {@code TrueTypeFont.getHintedPath} always grid-fits and leaves the choice to the caller - so the switch
+     * lives here.  The older {@code -Dorg.apache.fontbox.ttf.hinting} is still honoured as an alias.
+     */
+    public static final String HINTING_PROPERTY = "org.icepdf.core.fonts.hinting";
+    private static final String FONTBOX_HINTING_PROPERTY = "org.apache.fontbox.ttf.hinting";
+
+    private static volatile boolean hintingEnabled =
+            Defs.booleanProperty(HINTING_PROPERTY, Defs.booleanProperty(FONTBOX_HINTING_PROPERTY, false));
+
+    /**
+     * @return true when TrueType outline fonts are grid-fitted before painting.
+     */
+    public static boolean isHintingEnabled() {
+        return hintingEnabled;
+    }
+
+    /**
+     * Turns TrueType hinting on or off at runtime; already cached outlines for the other mode are kept, so
+     * switching back and forth is cheap.  Pages must be repainted to see the change.
+     *
+     * @param enabled true to grid-fit TrueType glyph outlines.
+     */
+    public static void setHintingEnabled(boolean enabled) {
+        hintingEnabled = enabled;
+    }
 
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
@@ -199,8 +228,8 @@ public abstract class ZSimpleFont implements FontFile {
     /**
      * Resolves the glyph outline to paint for the given character code: the grid-fitted outline when
      * hinting is enabled and the glyph/ppem can be grid-fit, otherwise the plain outline.
-     * Hinting is switched on and off by FontBox, see {@link TrueTypeFont#isHintingEnabled()} and
-     * {@code -Dorg.apache.fontbox.ttf.hinting=true}; only TrueType outline fonts
+     * Hinting is switched on and off by {@link #HINTING_PROPERTY} / {@link #setHintingEnabled(boolean)};
+     * only TrueType outline fonts
      * ({@link ZFontTrueType}, {@link ZFontType2}) carry executable hinting.
      * Results are cached.
      *
@@ -211,7 +240,7 @@ public abstract class ZSimpleFont implements FontFile {
      */
     protected Shape resolveGlyphShape(char estr, AffineTransform graphicsTransform) {
         GlyphCache cache = getGlyphCache();
-        if (TrueTypeFont.isHintingEnabled()) {
+        if (hintingEnabled) {
             int ppem = gridFitPpem(graphicsTransform);
             if (ppem > 0) {
                 return cache.getGridFitPathForCharacterCode(estr, ppem);
