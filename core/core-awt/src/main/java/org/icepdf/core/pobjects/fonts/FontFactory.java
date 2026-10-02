@@ -163,7 +163,16 @@ public class FontFactory {
         } else if (FONT_TYPE_1 == fontType) {
             fontFile = new ZFontType1(fontStream);
         } else if (FONT_TYPE_1C == fontType) {
-            fontFile = new ZFontType1C(fontStream);
+            // /FontFile3 /Type1C is meant to be bare CFF, but some producers embed a whole sfnt under it; the
+            // CFF parser can't read TrueType outlines, so route by what the program actually is
+            byte[] fontBytes = fontStream.getDecodedStreamBytes();
+            if (SfntProgram.isTrueTypeOutlines(fontBytes)) {
+                fontFile = new ZFontTrueType(fontStream);
+            } else if (SfntProgram.isOpenTypeCff(fontBytes)) {
+                fontFile = new ZFontOpenType(fontStream);
+            } else {
+                fontFile = new ZFontType1C(fontStream);
+            }
         } else if (FONT_CID_TYPE_0 == fontType) {
             fontFile = new ZFontType0(fontStream);
         } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
