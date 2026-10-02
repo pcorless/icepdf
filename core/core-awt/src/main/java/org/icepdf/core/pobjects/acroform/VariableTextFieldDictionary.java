@@ -171,6 +171,10 @@ public class VariableTextFieldDictionary extends FieldDictionary {
             if (resources == null) {
                 resources = library.getCatalog().getInteractiveForm().getResources();
             }
+            if (resources == null) {
+                // an AcroForm without /DR: parse the DA against empty resources so the font lookup can fall back
+                resources = new Resources(library, new DictionaryEntries());
+            }
             ContentParser cp = new ContentParser(library, resources);
             // usefull parser so we parse the font color.
             Stream[] possibleContentStream = Stream.fromByteArray(possibleContent.getBytes(StandardCharsets.ISO_8859_1), this);
