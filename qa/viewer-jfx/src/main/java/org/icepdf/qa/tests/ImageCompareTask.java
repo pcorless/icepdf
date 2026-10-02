@@ -359,7 +359,8 @@ public class ImageCompareTask extends AbstractTestTask {
 
     private int loadTestInstance(CaptureSet captureSet, Object testInstance, Path filePath, int documentIndex, int captureSetTotal) {
         if (filePath != null) {
-            System.err.format("File [%d/%d]=%s\n", documentIndex, captureSetTotal, filePath);
+            // progress, not a problem: the console, not System.err (which the QA log records)
+            System.out.format("File [%d/%d]=%s\n", documentIndex, captureSetTotal, filePath);
 
             // call setup on the test which returns total number of pages.
             CaptureLog.setContext(captureSet.getName() + ": " + filePath.getFileName() + " open");

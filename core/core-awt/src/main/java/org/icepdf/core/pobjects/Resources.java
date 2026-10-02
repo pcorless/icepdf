@@ -179,7 +179,8 @@ public class Resources extends Dictionary {
             } catch (Exception e) {
                 org.icepdf.core.pobjects.fonts.Font finalFont = font;
                 logger.log(Level.WARNING, e,
-                        () -> "Error initializing font, falling back to font substitution. " + finalFont);
+                        () -> "Could not initialize font " + finalFont.getBaseFont() + " "
+                                + finalFont.getPObjectReference() + ", using a substitute.");
             }
         }
         return font;

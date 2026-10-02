@@ -232,7 +232,7 @@ public class Library {
                 }
                 // a null object is ok in this case we are looking at likely an incorrectly indexed file.
                 logger.warning(() -> "Cross reference indexing failed loading " + reference +
-                        ", reindexing file. " + getFileOrigin());
+                        ", reindexing file." + originSuffix());
                 logger.log(Level.FINE, "Cross reference failure", e);
                 try {
                     rebuildCrossReferenceTable();
@@ -240,12 +240,12 @@ public class Library {
                     obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
                 } catch (IOException | CrossReferenceStateException | ObjectStateException e1) {
                     logger.log(Level.WARNING, e1, () -> "Linear traversal of file failed, can not load " +
-                            reference + " " + getFileOrigin());
+                            reference + originSuffix());
                     return null;
                 }
             } catch (ClassCastException e) {
                 logger.log(Level.WARNING, e,
-                        () -> "Failed to load object, likely malformed. " + reference + " " + getFileOrigin());
+                        () -> "Failed to load object, likely malformed. " + reference + originSuffix());
                 return null;
             }
             if (obj == null) return null;
@@ -349,6 +349,11 @@ public class Library {
         synchronized (mappedFileByteBufferLock) {
             new Indexer(this).indexDeferredObjectStreams(root, mappedFileByteBuffer);
         }
+    }
+
+    /** " (origin)" for log messages, or "" when the document's origin isn't known. */
+    private String originSuffix() {
+        return fileOrigin != null ? " (" + fileOrigin + ")" : "";
     }
 
     public String getFileOrigin() {

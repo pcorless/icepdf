@@ -240,6 +240,20 @@ public abstract class CompositeFont extends SimpleFont {
      *
      * @return the collection's UCS2 CMap, or null if it has none
      */
+    /**
+     * Reports that the descendant's /W widths could not be applied.  With no font program at all the text
+     * cannot render, which is worth a warning; a substitute of another kind still renders, just with its own
+     * advances, so that is only of diagnostic interest.
+     */
+    protected void logWidthsNotApplied(java.util.logging.Logger log, org.icepdf.core.pobjects.fonts.FontFile fontFile) {
+        if (fontFile == null) {
+            log.warning(() -> "CID font " + basefont + " has no font program; its text can't be drawn.");
+        } else {
+            log.fine(() -> "CID font " + basefont + ": widths not applied to substitute "
+                    + fontFile.getClass().getSimpleName() + ' ' + fontFile.getName());
+        }
+    }
+
     public CMap getUcs2CMap() {
         if (!ucs2CMapResolved) {
             ucs2CMapResolved = true;

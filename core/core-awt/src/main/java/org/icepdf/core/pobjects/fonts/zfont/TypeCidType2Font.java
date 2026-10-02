@@ -56,8 +56,8 @@ public class TypeCidType2Font extends CompositeFont {
             // but its widths are still the descendant's and still indexed by cid.
             font = ((ZFontType0) font).deriveFont(cidDefaultWidth, cidWidths);
         } else {
-            // something bad happened font couldn't be loaded.
-            logger.warning("Could not derive with because of null Type2CID font.");
+            // no font program, or a substitute of another kind: the CID widths can't be applied to it
+            logWidthsNotApplied(logger, font);
         }
     }
 

@@ -70,7 +70,7 @@ public class ZFontType1 extends ZSimpleFont {
             fontBoxFont = type1Font;
             calculateFontBbox();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error reading font file with ", e);
+            logger.log(Level.FINE, "Could not read Type 1 font program", e);
             throw e;
         }
     }
@@ -207,7 +207,7 @@ public class ZFontType1 extends ZSimpleFont {
     private int repairLength2(byte[] bytes, int length1, int length2) {
         // repair Length2 if necessary
         if (length2 < 0 || length2 > bytes.length - length1) {
-            logger.warning("Ignored invalid Length2 " + length2 + " for Type 1 font " + getName());
+            logger.fine("Ignored invalid Length2 " + length2 + " for Type 1 font " + getName());
             return bytes.length - length1;
         }
         return length2;
