@@ -70,6 +70,7 @@ public class MeshShadingPaint implements Paint {
 
     private final List<Triangle> triangles;
     private final AffineTransform shadingToUser;
+    private final boolean extendBeyondMesh;
 
     /**
      * @param triangles    mesh triangles in shading space (may be empty).
@@ -78,8 +79,20 @@ public class MeshShadingPaint implements Paint {
      *                      {@code sh} shading, where shading space is user space.
      */
     public MeshShadingPaint(List<Triangle> triangles, AffineTransform shadingToUser) {
+        this(triangles, shadingToUser, true);
+    }
+
+    /**
+     * @param triangles         triangles in shading space (may be empty).
+     * @param shadingToUser     maps shading space to user space; may be {@code null}.
+     * @param extendBeyondMesh  true to paint pixels outside every triangle with the nearest vertex colour (mesh
+     *                          shadings, matching Ghostscript/Acrobat); false to leave them transparent, as a
+     *                          function-based (type 1) shading paints nothing outside its domain.
+     */
+    public MeshShadingPaint(List<Triangle> triangles, AffineTransform shadingToUser, boolean extendBeyondMesh) {
         this.triangles = triangles;
         this.shadingToUser = shadingToUser;
+        this.extendBeyondMesh = extendBeyondMesh;
     }
 
     @Override
@@ -95,7 +108,7 @@ public class MeshShadingPaint implements Paint {
         if (shadingToUser != null) {
             full.concatenate(shadingToUser);
         }
-        return new MeshPaintContext(triangles, full, deviceBounds);
+        return new MeshPaintContext(triangles, full, deviceBounds, extendBeyondMesh);
     }
 
     /**
@@ -127,7 +140,11 @@ public class MeshShadingPaint implements Paint {
         private final double gridMinX, gridMinY, gridCellW, gridCellH;
         private final int[][] grid;
 
-        MeshPaintContext(List<Triangle> triangles, AffineTransform full, Rectangle deviceBounds) {
+        private final boolean extendBeyondMesh;
+
+        MeshPaintContext(List<Triangle> triangles, AffineTransform full, Rectangle deviceBounds,
+                         boolean extendBeyondMesh) {
+            this.extendBeyondMesh = extendBeyondMesh;
             originX = deviceBounds.x;
             originY = deviceBounds.y;
             imgW = Math.max(1, deviceBounds.width);
@@ -334,10 +351,12 @@ public class MeshShadingPaint implements Paint {
                     }
                     if (covered[srcRow + sx]) {
                         tile[dstRow + i] = buffer[srcRow + sx];
-                    } else {
+                    } else if (extendBeyondMesh) {
                         // Outside every triangle: clamp to the nearest mesh
                         // vertex's colour so the fill region has no holes.
                         tile[dstRow + i] = nearestVertexColor(x + i, y + j);
+                    } else {
+                        tile[dstRow + i] = 0;
                     }
                 }
             }
