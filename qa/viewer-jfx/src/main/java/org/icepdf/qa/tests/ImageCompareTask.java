@@ -19,6 +19,7 @@ import javafx.application.Platform;
 import org.icepdf.qa.config.*;
 import org.icepdf.qa.tests.exceptions.ConfigurationException;
 import org.icepdf.qa.tests.exceptions.ValidationException;
+import org.icepdf.qa.utilities.CaptureLog;
 import org.icepdf.qa.utilities.CompareMetrics;
 import org.icepdf.qa.utilities.ImageCompare;
 import org.icepdf.qa.utilities.TimeTestWatcher;
@@ -85,6 +86,9 @@ public class ImageCompareTask extends AbstractTestTask {
 
     @Override
     protected List<Result> call()  {
+        CaptureLog captureLog = CaptureLog.start(Paths.get(PreferencesController.getResultsPathDirectory()),
+                "Image compare: " + (mediator.getCurrentProject() != null
+                        ? mediator.getCurrentProject().getName() : "?"));
         try {
             TimeTestWatcher timeTestWatcher = new TimeTestWatcher();
             timeTestWatcher.starting("Image Compare");
@@ -100,6 +104,9 @@ public class ImageCompareTask extends AbstractTestTask {
             System.out.println("There was a configuration error: " + e.getMessage());
         } finally {
             teardown();
+            if (captureLog != null) {
+                captureLog.finish();
+            }
         }
         return null;
     }
@@ -355,6 +362,7 @@ public class ImageCompareTask extends AbstractTestTask {
             System.err.format("File [%d/%d]=%s\n", documentIndex, captureSetTotal, filePath);
 
             // call setup on the test which returns total number of pages.
+            CaptureLog.setContext(captureSet.getName() + ": " + filePath.getFileName() + " open");
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
                 Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
@@ -363,6 +371,8 @@ public class ImageCompareTask extends AbstractTestTask {
             } catch (ClassNotFoundException | InvocationTargetException | IllegalAccessException |
                      NoSuchMethodException e) {
                 e.printStackTrace();
+            } finally {
+                CaptureLog.clearContext();
             }
         }
         return 0;
@@ -494,6 +504,7 @@ public class ImageCompareTask extends AbstractTestTask {
         }
 
         public Void call() {
+            CaptureLog.setContext(captureSet.getName() + ": " + fileName + " p" + (pageNumber + 1));
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
                 Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
@@ -522,6 +533,8 @@ public class ImageCompareTask extends AbstractTestTask {
             } catch (IllegalAccessException | ClassNotFoundException | IOException | NoSuchMethodException |
                      InvocationTargetException e) {
                 e.printStackTrace();
+            } finally {
+                CaptureLog.clearContext();
             }
             return null;
         }
@@ -601,6 +614,7 @@ public class ImageCompareTask extends AbstractTestTask {
         }
 
         public Void call() {
+            CaptureLog.setContext(captureSet.getName() + ": dispose");
             try {
                 URLClassLoader classLoader = captureSet.getClassLoader();
                 Class<?> pageCaptureClass = classLoader.loadClass(PAGE_CAPTURE_CLASS);
@@ -610,6 +624,8 @@ public class ImageCompareTask extends AbstractTestTask {
             } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException |
                      ClassNotFoundException e) {
                 e.printStackTrace();
+            } finally {
+                CaptureLog.clearContext();
             }
             return null;
         }
