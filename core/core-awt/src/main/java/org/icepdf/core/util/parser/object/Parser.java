@@ -319,8 +319,15 @@ public class Parser {
 
     private CrossReference parseCrossReferenceStream(ByteBuffer byteBuffer, int offset)
             throws IOException, ObjectStateException {
-        // use parser to get xref stream object.
-        CrossReferenceStream crossReferenceStream = (CrossReferenceStream) getPObject(byteBuffer, offset).getObject();
+        // use parser to get xref stream object.  startxref (or /Prev, /XRefStm) can point at the wrong object in a
+        // damaged file; report it as a structural problem, which the caller answers by reindexing, rather than
+        // failing the cast.
+        Object object = getPObject(byteBuffer, offset).getObject();
+        if (!(object instanceof CrossReferenceStream)) {
+            throw new ObjectStateException("Expected a cross-reference stream at offset " + offset + " but found "
+                    + (object == null ? "nothing" : object.getClass().getSimpleName()));
+        }
+        CrossReferenceStream crossReferenceStream = (CrossReferenceStream) object;
         crossReferenceStream.initialize();
         crossReferenceStream.setXrefStartPos(offset);
         return crossReferenceStream;
