@@ -130,7 +130,7 @@ public class ScaledImageReference extends CachedImageReference {
             }
         } catch (Exception e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
+                    " " + describe(imageStream));
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

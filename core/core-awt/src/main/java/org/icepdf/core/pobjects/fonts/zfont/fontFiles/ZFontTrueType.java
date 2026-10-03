@@ -102,7 +102,7 @@ public class ZFontTrueType extends ZSimpleFont {
                 extractHeadTable();
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error reading font file with", e);
+            logger.log(Level.FINE, "Could not read TrueType font program", e);
             throw e;
         }
     }

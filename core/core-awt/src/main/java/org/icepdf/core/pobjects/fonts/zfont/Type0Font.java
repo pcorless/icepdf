@@ -143,12 +143,16 @@ public class Type0Font extends SimpleFont {
                 Name cmapName = library.getName(gidMap.getEntries(), new Name("CMapName"));
                 // update font with oneByte information from the cmap, so far I've only
                 // scene this on a handful of CID font but fix encoding issue in each case.
-                if (cmapName.equals("OneByteIdentityH")) {
+                if (cmapName != null && cmapName.equals("OneByteIdentityH")) {
                     subTypeFormat = SIMPLE_FORMAT;
                 }
                 // todo pull registry info CIDSystemInfo
                 cMap = CMapFactory.parseEmbeddedCMap(gidMap);
-                cMap.setName(cmapName.getName());
+                // /CMapName is required on an embedded CMap stream but not always written; without it the
+                // CMap keeps the name its program declares rather than taking the whole font down
+                if (cmapName != null) {
+                    cMap.setName(cmapName.getName());
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

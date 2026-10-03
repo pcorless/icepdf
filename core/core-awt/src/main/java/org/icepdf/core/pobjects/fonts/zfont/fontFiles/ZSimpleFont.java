@@ -676,7 +676,7 @@ public abstract class ZSimpleFont implements FontFile {
 
         if (length1 - offset != 0 && offset > 0) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
+                logger.fine("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
             }
             return offset;
         }

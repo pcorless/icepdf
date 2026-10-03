@@ -27,6 +27,8 @@ public final class SfntProgram {
      * Table directory tag of an OpenType font whose outlines are PostScript rather than TrueType.
      */
     private static final int OTTO = 0x4F54544F;
+    /** Apple's sfnt version tag for TrueType outlines, an alternative to 0x00010000. */
+    private static final int TRUE = 0x74727565;
     private static final String CFF_TAG = "CFF ";
     private static final String GLYF_TAG = "glyf";
 
@@ -76,6 +78,44 @@ public final class SfntProgram {
             return null;
         }
         return Arrays.copyOfRange(fontBytes, cffOffset, cffOffset + cffLength);
+    }
+
+    /**
+     * True when the bytes are an sfnt font program (version 0x00010000 or 'true') carrying a 'glyf' table, i.e.
+     * TrueType outlines - whatever subtype the PDF declared for it.
+     *
+     * @param fontBytes decoded font program, may be null
+     * @return true for a TrueType-outline sfnt program
+     */
+    public static boolean isTrueTypeOutlines(byte[] fontBytes) {
+        if (fontBytes == null || fontBytes.length < DIRECTORY_LENGTH) {
+            return false;
+        }
+        int version = readInt(fontBytes, 0);
+        if (version != 0x00010000 && version != TRUE) {
+            return false;
+        }
+        int numTables = readUnsignedShort(fontBytes, 4);
+        for (int i = 0; i < numTables; i++) {
+            int record = DIRECTORY_LENGTH + i * RECORD_LENGTH;
+            if (record + RECORD_LENGTH > fontBytes.length) {
+                return false;
+            }
+            if (GLYF_TAG.equals(readTag(fontBytes, record))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True when the bytes are an OpenType program with PostScript (CFF) outlines ('OTTO').
+     *
+     * @param fontBytes decoded font program, may be null
+     * @return true for an OpenType/CFF program
+     */
+    public static boolean isOpenTypeCff(byte[] fontBytes) {
+        return fontBytes != null && fontBytes.length >= 4 && readInt(fontBytes, 0) == OTTO;
     }
 
     private static int readInt(byte[] bytes, int offset) {

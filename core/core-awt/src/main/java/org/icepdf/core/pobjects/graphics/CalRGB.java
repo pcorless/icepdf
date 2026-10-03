@@ -78,13 +78,17 @@ public class CalRGB extends PColorSpace {
     }
 
 
+    private static float clamp(float component) {
+        return Math.max(0f, Math.min(1f, component));
+    }
+
     public int getNumComponents() {
         return 3;
     }
 
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return new Color(f[0], f[1], f[2]);
+        return new Color(clamp(f[0]), clamp(f[1]), clamp(f[2]));
         /*        float A = (float)Math.exp(gamma[0]*Math.log(f[2]));
          float B = (float)Math.exp(gamma[1]*Math.log(f[1]));
          float C = (float)Math.exp(gamma[2]*Math.log(f[0]));*/

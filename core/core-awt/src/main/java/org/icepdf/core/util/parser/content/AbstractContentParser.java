@@ -902,11 +902,13 @@ public abstract class AbstractContentParser {
         // build the new font and initialize it.
         graphicState.getTextState().tsize = size;
         graphicState.getTextState().fontName = name2;
-        graphicState.getTextState().font = resources.getFont(name2);
+        // a content stream parsed without resources (a form field's /DA when the AcroForm has no /DR, say)
+        // can't name a font; skip straight to the last-resort fallback below rather than throwing
+        graphicState.getTextState().font = resources != null ? resources.getFont(name2) : null;
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
-        if (graphicState.getTextState().font == null ||
-                graphicState.getTextState().font.getFont() == null) {
+        if (resources != null && (graphicState.getTextState().font == null ||
+                graphicState.getTextState().font.getFont() == null)) {
             try {
                 // this should almost never happen but of course we have a few corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
@@ -932,7 +934,7 @@ public abstract class AbstractContentParser {
                 }
             } catch (Exception throwable) {
                 // keep block protected as we don't want to accidentally fail parsing the reset of the stream
-                logger.warning("Warning could not find font by named resource " + name2);
+                logger.log(Level.FINE, throwable, () -> "Could not find font resource " + name2);
             }
         }
         if (graphicState.getTextState().font != null) {
@@ -943,7 +945,7 @@ public abstract class AbstractContentParser {
                 graphicState.getTextState().currentfont =
                         graphicState.getTextState().font.getFont().deriveFont(size);
             }
-        } else {
+        } else if (resources != null) {
             // not font found which is a problem,  so we need to check for interactive form dictionary
             graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
             if (graphicState.getTextState().font != null) {
@@ -960,7 +962,9 @@ public abstract class AbstractContentParser {
             FontFile fallback = FontManager.getInstance().initialize().getInstance("Helvetica", 0);
             if (fallback != null) {
                 graphicState.getTextState().currentfont = fallback.deriveFont(size);
-                logger.warning("Font " + name2 + " supplied no font program, falling back to "
+                // the AcroForm standard aliases (Helv, ZaDb...) routinely come without a program
+                Level level = isAcroFormStandardFontAlias(name2) ? Level.FINE : Level.WARNING;
+                logger.log(level, () -> "Font " + name2 + " supplied no font program, falling back to "
                         + fallback.getName());
             }
         }
@@ -1519,6 +1523,12 @@ public abstract class AbstractContentParser {
             shapes.add(new ShapeDrawCmd(graphicState.getClip()));
             shapes.add(new FillDrawCmd());
         }
+    }
+
+    private static boolean isAcroFormStandardFontAlias(Name name) {
+        String alias = name.getName();
+        return "Helv".equals(alias) || "HeBo".equals(alias) || "TiRo".equals(alias) || "Cour".equals(alias)
+                || "ZaDb".equals(alias) || "Symb".equals(alias);
     }
 
     protected static void consume_TJ(GraphicsState graphicState, Stack<Object> stack,

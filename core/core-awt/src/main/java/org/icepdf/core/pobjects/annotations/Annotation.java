@@ -730,13 +730,14 @@ public abstract class Annotation extends Dictionary {
                                     appearance));
                     appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one " +
-                            "for " + this);
+                    logger.log(Level.WARNING, e, () -> "Could not parse the appearance of " + getSubType()
+                            + " annotation " + getPObjectReference() + "; generating a new one.");
                     createNewAppearance();
                 }
             } else {
                 //Broken pdf/appearance, create new
-                logger.warning("Missing appearance stream for " + this);
+                logger.fine(() -> "No appearance stream for " + getSubType() + " annotation "
+                        + getPObjectReference() + "; generating one.");
                 createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.

@@ -48,8 +48,8 @@ public class ZFontType1C extends ZSimpleFont {
             }
             fontBoxFont = cffType1Font;
         } catch (IOException e) {
-            logger.log(Level.FINE, "Error reading font file with ", e);
-            throw new Exception(e);
+            logger.log(Level.FINE, "Could not read CFF (Type1C) font program", e);
+            throw e;
         }
     }
 

@@ -229,7 +229,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         }
         else if (objectUnicode instanceof Name) {
             Name unicodeName = (Name) objectUnicode;
-            logger.warning("found unicodeName " + unicodeName);
+            logger.fine(() -> "Predefined /ToUnicode name " + unicodeName + " for font " + basefont);
             if (CMapFactory.IDENTITY_NAME.equals(unicodeName)) {
                 toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             } else if (CMapFactory.IDENTITY_V_NAME.equals(unicodeName)) {

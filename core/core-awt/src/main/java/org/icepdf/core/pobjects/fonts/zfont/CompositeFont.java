@@ -30,8 +30,12 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class CompositeFont extends SimpleFont {
 
@@ -50,6 +54,14 @@ public abstract class CompositeFont extends SimpleFont {
 
     protected String ordering;
     protected String registry;
+
+    /**
+     * The character collections that have a {@code <Registry>-<Ordering>-UCS2} CMap: the Adobe CJK collections
+     * PDF 32000-1 9.10.2 (c) names, and the only ones FontBox ships.  Any other ordering - {@code Identity},
+     * {@code UCS}, a producer's own - has none, so asking for it can only fail.
+     */
+    private static final Set<String> UCS2_COLLECTIONS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("CNS1", "GB1", "Japan1", "Korea1")));
     /** Lazily resolved CID&rarr;Unicode map for the CIDSystemInfo character collection; null when the
      *  collection has none.  See {@link #getUcs2CMap()}. */
     private CMap ucs2CMap;
@@ -145,7 +157,7 @@ public abstract class CompositeFont extends SimpleFont {
 
                 // find a font and assign a charset.
                 // simplified Chinese
-                if (ordering.startsWith("GB1") || ordering.startsWith("'CNS1")) {
+                if (ordering.startsWith("GB1")) {
                     font = fontManager.getChineseSimplifiedInstance(basefont, fontFlags);
                 }
                 // Korean
@@ -155,6 +167,10 @@ public abstract class CompositeFont extends SimpleFont {
                 // Japanese
                 else if (ordering.startsWith("Japan1")) {
                     font = fontManager.getJapaneseInstance(basefont, fontFlags);
+                }
+                // traditional Chinese (and the fallback below)
+                else if (ordering.startsWith("CNS1")) {
+                    font = fontManager.getChineseTraditionalInstance(basefont, fontFlags);
                 }
                 // might be a font loading error a we need check normal system fonts too
                 else if (ordering.startsWith("Identity")) {
@@ -216,17 +232,32 @@ public abstract class CompositeFont extends SimpleFont {
      * take the registry and ordering from {@code CIDSystemInfo}, then load
      * {@code <Registry>-<Ordering>-UCS2}).
      * <p>
-     * Returns null for the {@code Identity} ordering, which is not a character collection at all
-     * &mdash; its CIDs are the embedded font's own glyph indices and carry no Unicode meaning, so
-     * there is no {@code Adobe-Identity-UCS2} to load.  Such a font can only be extracted with a
-     * {@code /ToUnicode} CMap.
+     * Returns null unless the font names one of the Adobe CJK collections (see {@link #UCS2_COLLECTIONS}).
+     * In particular the {@code Identity} ordering is not a character collection at all &mdash; its CIDs are
+     * the embedded font's own glyph indices and carry no Unicode meaning, so there is no
+     * {@code Adobe-Identity-UCS2} to load &mdash; and orderings such as {@code UCS} have no UCS2 CMap either.
+     * Such fonts can only be extracted with a {@code /ToUnicode} CMap.
      *
      * @return the collection's UCS2 CMap, or null if it has none
      */
+    /**
+     * Reports that the descendant's /W widths could not be applied.  With no font program at all the text
+     * cannot render, which is worth a warning; a substitute of another kind still renders, just with its own
+     * advances, so that is only of diagnostic interest.
+     */
+    protected void logWidthsNotApplied(java.util.logging.Logger log, org.icepdf.core.pobjects.fonts.FontFile fontFile) {
+        if (fontFile == null) {
+            log.warning(() -> "CID font " + basefont + " has no font program; its text can't be drawn.");
+        } else {
+            log.fine(() -> "CID font " + basefont + ": widths not applied to substitute "
+                    + fontFile.getClass().getSimpleName() + ' ' + fontFile.getName());
+        }
+    }
+
     public CMap getUcs2CMap() {
         if (!ucs2CMapResolved) {
             ucs2CMapResolved = true;
-            if (registry != null && ordering != null && !ordering.startsWith("Identity")) {
+            if ("Adobe".equals(registry) && ordering != null && UCS2_COLLECTIONS.contains(ordering)) {
                 String name = registry + '-' + ordering + "-UCS2";
                 try {
                     ucs2CMap = CMapFactory.getPredefinedCMap(name);
