@@ -902,11 +902,13 @@ public abstract class AbstractContentParser {
         // build the new font and initialize it.
         graphicState.getTextState().tsize = size;
         graphicState.getTextState().fontName = name2;
-        graphicState.getTextState().font = resources.getFont(name2);
+        // a content stream parsed without resources (a form field's /DA when the AcroForm has no /DR, say)
+        // can't name a font; skip straight to the last-resort fallback below rather than throwing
+        graphicState.getTextState().font = resources != null ? resources.getFont(name2) : null;
         // in the rare case that the font can't be found then we try and build
         // one so the document can be rendered in some shape or form.
-        if (graphicState.getTextState().font == null ||
-                graphicState.getTextState().font.getFont() == null) {
+        if (resources != null && (graphicState.getTextState().font == null ||
+                graphicState.getTextState().font.getFont() == null)) {
             try {
                 // this should almost never happen but of course we have a few corner cases:
                 // get the first pages resources, no need to lock the page, already locked.
@@ -943,7 +945,7 @@ public abstract class AbstractContentParser {
                 graphicState.getTextState().currentfont =
                         graphicState.getTextState().font.getFont().deriveFont(size);
             }
-        } else {
+        } else if (resources != null) {
             // not font found which is a problem,  so we need to check for interactive form dictionary
             graphicState.getTextState().font = resources.getLibrary().getInteractiveFormFont(name2.getName());
             if (graphicState.getTextState().font != null) {
