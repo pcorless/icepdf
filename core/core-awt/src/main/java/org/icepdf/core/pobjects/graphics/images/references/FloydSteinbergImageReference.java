@@ -103,7 +103,7 @@ public class FloydSteinbergImageReference{// extends CachedImageReference {
             }
         } catch (Throwable e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
+                    " " + describe(imageStream));
         }
         return image;
     }

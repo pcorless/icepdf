@@ -171,7 +171,7 @@ public class ShadingType3Pattern extends ShadingPattern {
             // get type 3 specific data.
             inited = true;
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 3.", e);
+            logger.log(Level.WARNING, e, () -> "Could not initialize type 3 shading " + getPObjectReference() + ": " + e.getMessage());
         }
     }
 

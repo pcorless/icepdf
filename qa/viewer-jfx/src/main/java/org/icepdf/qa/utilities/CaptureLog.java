@@ -235,16 +235,48 @@ public final class CaptureLog {
         return key.toString();
     }
 
-    private static String normalise(String text) {
-        return text == null ? "" : text.replaceAll("\\d+", "#");
+    /**
+     * Strips the document-specific parts of a message so the same problem in different files groups together:
+     * dictionary dumps, object references, quoted or bracketed values, then any remaining numbers.
+     */
+    static String normalise(String text) {
+        if (text == null) {
+            return "";
+        }
+        String normalised = text;
+        // nested {...} dumps: strip innermost first until none remain
+        String previous;
+        do {
+            previous = normalised;
+            normalised = normalised.replaceAll("\\{[^{}]*\\}", "{…}");
+        } while (!normalised.equals(previous));
+        normalised = normalised.replaceAll("\\b\\d+ \\d+ R\\b", "n n R")
+                .replaceAll("\"[^\"]*\"", "\"…\"")
+                .replaceAll("\\[[^\\[\\]]*\\]", "[…]")
+                .replaceAll("\\d+", "#");
+        return normalised;
     }
 
     String summary() {
         StringBuilder summary = new StringBuilder("==== Summary: ").append(problems.size())
                 .append(" distinct problem(s), ").append(stderrLines).append(" line(s) of System.err ====\n");
         List<Problem> sorted = new ArrayList<>(problems.values());
-        sorted.sort((a, b) -> Integer.compare(b.count, a.count));
+        // problems thrown from ICEpdf's own code first - those are the likely bugs - then by count
+        sorted.sort(Comparator.comparing((Problem p) -> !p.fromIcepdfCode()).thenComparing(p -> -p.count));
+        List<Problem> fontBox = new ArrayList<>();
+        boolean headed = false;
         for (Problem problem : sorted) {
+            if (problem.logger != null && problem.logger.startsWith("org.apache.fontbox")) {
+                fontBox.add(problem);
+                continue;
+            }
+            if (!headed && problem.fromIcepdfCode()) {
+                summary.append("\n-- Exceptions thrown from ICEpdf code --\n");
+                headed = true;
+            } else if (headed && !problem.fromIcepdfCode()) {
+                summary.append("\n-- Everything else --\n");
+                headed = false;
+            }
             summary.append('\n').append(problem.count).append(" x ").append(problem.level).append(' ')
                     .append(problem.logger).append(": ").append(problem.message).append('\n');
             if (problem.thrown != null) {
@@ -259,6 +291,20 @@ public final class CaptureLog {
                 }
             }
             summary.append("    e.g. ").append(String.join(" | ", problem.examples)).append('\n');
+        }
+        if (!fontBox.isEmpty()) {
+            Map<String, int[]> byLogger = new LinkedHashMap<>();
+            for (Problem problem : fontBox) {
+                byLogger.computeIfAbsent(problem.logger, k -> new int[2]);
+                byLogger.get(problem.logger)[0] += problem.count;
+                byLogger.get(problem.logger)[1]++;
+            }
+            summary.append("\n-- FontBox (").append(fontBox.stream().mapToInt(p -> p.count).sum())
+                    .append(" records, by logger) --\n");
+            byLogger.entrySet().stream()
+                    .sorted((a, b) -> Integer.compare(b.getValue()[0], a.getValue()[0]))
+                    .forEach(e -> summary.append(e.getValue()[0]).append(" x ").append(e.getKey())
+                            .append(" (").append(e.getValue()[1]).append(" distinct)\n"));
         }
         return summary.toString();
     }
@@ -276,6 +322,25 @@ public final class CaptureLog {
             this.logger = logger;
             this.message = message;
             this.thrown = thrown;
+        }
+
+        /**
+         * True when the first non-JDK frame of the stack trace is ICEpdf code: ICEpdf threw, or passed bad
+         * values to the JDK (an out-of-range {@code new Color(...)}, say), rather than a library such as FontBox.
+         */
+        boolean fromIcepdfCode() {
+            if (thrown == null) {
+                return false;
+            }
+            for (StackTraceElement frame : thrown.getStackTrace()) {
+                String className = frame.getClassName();
+                if (className.startsWith("java.") || className.startsWith("javax.") || className.startsWith("sun.")
+                        || className.startsWith("jdk.")) {
+                    continue;
+                }
+                return className.startsWith("org.icepdf.");
+            }
+            return false;
         }
 
         void add(String context) {

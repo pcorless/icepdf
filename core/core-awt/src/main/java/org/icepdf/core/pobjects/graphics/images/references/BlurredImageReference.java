@@ -112,7 +112,7 @@ public class BlurredImageReference extends CachedImageReference {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
+                    " " + describe(imageStream));
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

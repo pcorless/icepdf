@@ -52,6 +52,22 @@ import java.util.logging.Logger;
  */
 public abstract class ImageReference implements Callable<BufferedImage> {
 
+    /**
+     * A one-line description of an image stream for log messages - filter, size and colour space - instead of
+     * its whole dictionary.
+     */
+    protected static String describe(ImageStream imageStream) {
+        if (imageStream == null) {
+            return "(no image stream)";
+        }
+        org.icepdf.core.pobjects.DictionaryEntries entries = imageStream.getEntries();
+        return "[" + entries.get(new org.icepdf.core.pobjects.Name("Filter")) + ", "
+                + entries.get(new org.icepdf.core.pobjects.Name("Width")) + "x"
+                + entries.get(new org.icepdf.core.pobjects.Name("Height")) + ", "
+                + entries.get(new org.icepdf.core.pobjects.Name("ColorSpace")) + "]";
+    }
+
+
     /** An image occupies the unit square in user space; the CTM puts it where it is drawn. */
     private static final Rectangle2D UNIT_SQUARE = new Rectangle2D.Float(0, 0, 1, 1);
 

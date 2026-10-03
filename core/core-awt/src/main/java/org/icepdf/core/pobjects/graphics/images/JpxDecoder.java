@@ -119,7 +119,7 @@ public class JpxDecoder extends AbstractImageDecoder {
                     tmpImage = ImageUtility.makeRGBBufferedImage(wr);
                     cco.filter(tmpImage, tmpImage);
                 } catch (Exception e) {
-                    logger.warning("Error processing ICC Color profile, failing " +
+                    logger.warning("Error processing ICC Color profile, falling " +
                             "back to alternative.");
                     // set the alternate as the current and try and process
                     // using the below rules.

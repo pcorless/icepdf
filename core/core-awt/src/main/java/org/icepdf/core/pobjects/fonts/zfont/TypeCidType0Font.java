@@ -45,8 +45,8 @@ public class TypeCidType0Font extends CompositeFont {
                 font = ((ZFontType0) font).deriveFont(1000, null);
             }
         } else {
-            // something bad happened font couldn't be loaded.
-            logger.warning("Could not derive with because of null Type0CID font.");
+            // no font program, or a substitute of another kind: the CID widths can't be applied to it
+            logWidthsNotApplied(logger, font);
         }
     }
 

@@ -56,7 +56,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             trueTypeFont = openTypeFont;
             if (openTypeFont.isPostScript()) {
                 isDamaged = true;
-                logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
+                logger.fine("Embedded font " + trueTypeFont.getName() + " has CFF outlines, not TrueType; reading it as CFF.");
             }
             cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
             extractCmapTable();

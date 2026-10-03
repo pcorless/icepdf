@@ -24,6 +24,7 @@ import org.icepdf.core.util.parser.content.ContentParser;
 
 import java.awt.*;
 import java.nio.charset.StandardCharsets;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.acroform.InteractiveForm.DR_KEY;
@@ -143,7 +144,8 @@ public class VariableTextFieldDictionary extends FieldDictionary {
                         }
                     }
                 } catch (Exception e) {
-                    logger.warning("Could not validate default appearance, defaulting.");
+                    logger.log(Level.FINE, e, () -> "Could not use the default appearance \"" + defaultAppearance
+                            + "\" of field " + getPartialFieldName() + ", using defaults.");
                 }
             }
         }

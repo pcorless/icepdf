@@ -156,7 +156,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     matrix);
             inited = true;
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);
+            logger.log(Level.WARNING, e, () -> "Could not initialize type 2 shading " + getPObjectReference() + ": " + e.getMessage());
         }
     }
 

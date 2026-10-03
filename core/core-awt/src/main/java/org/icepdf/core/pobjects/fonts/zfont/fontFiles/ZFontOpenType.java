@@ -46,12 +46,12 @@ public class ZFontOpenType extends ZFontTrueType {
                 fontBoxFont = trueTypeFont;
                 if (openTypeFont.isPostScript()) {
                     isDamaged = true;
-                    logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
+                    logger.fine("Embedded font " + trueTypeFont.getName() + " has CFF outlines, not TrueType; reading it as CFF.");
                 }
                 extractCmapTable();
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error reading font file with", e);
+            logger.log(Level.FINE, "Could not read OpenType font program", e);
             throw e;
         }
     }

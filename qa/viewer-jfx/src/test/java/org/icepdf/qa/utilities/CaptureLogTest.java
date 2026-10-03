@@ -69,4 +69,48 @@ public class CaptureLogTest {
         assertTrue(summaryText, summaryText.contains("2 x SEVERE " + logger.getName()));
         assertTrue(summaryText, summaryText.contains("e.g. A: out.pdf p3 | B: other.pdf p1"));
     }
+
+    @Test
+    public void normaliseGroupsDumpsReferencesAndValues() {
+        String a = CaptureLog.normalise("Missing appearance for ANNOTATION= {Type=Annot, Rect=[1.0, 2.0], AP={N=12 0 R}} 8 0 R");
+        String b = CaptureLog.normalise("Missing appearance for ANNOTATION= {Type=Annot, Rect=[9.5, 3.0], AP={N=99 0 R}} 41 0 R");
+        assertEquals(a, b);
+        assertEquals(CaptureLog.normalise("could not find \"Arial\""), CaptureLog.normalise("could not find \"Helv\""));
+    }
+
+    @Test
+    public void summaryLeadsWithIcepdfExceptionsAndRollsUpFontBox() throws Exception {
+        Path results = Files.createTempDirectory("qa-capture-log-summary");
+        CaptureLog log = CaptureLog.start(results, "summary run");
+        assertNotNull(log);
+        try {
+            CaptureLog.setContext("A: x.pdf p1");
+            // many FontBox records, one ICEpdf-thrown exception (via a JDK frame), one plain warning
+            Logger fontBox = Logger.getLogger("org.apache.fontbox.ttf.GlyphSubstitutionTable");
+            for (int i = 0; i < 5; i++) {
+                fontBox.warning("lookupListOffset is 0, LookupListTable is considered empty " + i);
+            }
+            Logger.getLogger("org.icepdf.core.pobjects.fonts.zfont.SimpleFont").warning("plain warning");
+            IllegalArgumentException thrown = new IllegalArgumentException("Color parameter outside of expected range");
+            thrown.setStackTrace(new StackTraceElement[]{
+                    new StackTraceElement("java.awt.Color", "testColorValueRange", "Color.java", 310),
+                    new StackTraceElement("org.icepdf.core.pobjects.graphics.Separation", "getColor", "Separation.java", 176)});
+            Logger.getLogger("org.icepdf.core.pobjects.graphics.ShadingType2Pattern")
+                    .log(Level.WARNING, "Could not initialize type 2 shading", thrown);
+            CaptureLog.clearContext();
+        } finally {
+            log.finish();
+        }
+        Path summaryFile = log.getLogFile().resolveSibling(
+                log.getLogFile().getFileName().toString().replace(".log", "-summary.txt"));
+        String summary = new String(Files.readAllBytes(summaryFile), StandardCharsets.UTF_8);
+        int icepdf = summary.indexOf("-- Exceptions thrown from ICEpdf code --");
+        int shading = summary.indexOf("ShadingType2Pattern");
+        int rest = summary.indexOf("-- Everything else --");
+        int fontBoxSection = summary.indexOf("-- FontBox (5 records, by logger) --");
+        assertTrue(summary, icepdf >= 0 && shading > icepdf && rest > shading && fontBoxSection > rest);
+        assertTrue(summary, summary.contains("5 x org.apache.fontbox.ttf.GlyphSubstitutionTable (1 distinct)"));
+        assertFalse("FontBox records are not listed individually",
+                summary.substring(0, fontBoxSection).contains("lookupListOffset"));
+    }
 }

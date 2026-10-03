@@ -934,7 +934,7 @@ public abstract class AbstractContentParser {
                 }
             } catch (Exception throwable) {
                 // keep block protected as we don't want to accidentally fail parsing the reset of the stream
-                logger.warning("Warning could not find font by named resource " + name2);
+                logger.log(Level.FINE, throwable, () -> "Could not find font resource " + name2);
             }
         }
         if (graphicState.getTextState().font != null) {
@@ -962,7 +962,9 @@ public abstract class AbstractContentParser {
             FontFile fallback = FontManager.getInstance().initialize().getInstance("Helvetica", 0);
             if (fallback != null) {
                 graphicState.getTextState().currentfont = fallback.deriveFont(size);
-                logger.warning("Font " + name2 + " supplied no font program, falling back to "
+                // the AcroForm standard aliases (Helv, ZaDb...) routinely come without a program
+                Level level = isAcroFormStandardFontAlias(name2) ? Level.FINE : Level.WARNING;
+                logger.log(level, () -> "Font " + name2 + " supplied no font program, falling back to "
                         + fallback.getName());
             }
         }
@@ -1521,6 +1523,12 @@ public abstract class AbstractContentParser {
             shapes.add(new ShapeDrawCmd(graphicState.getClip()));
             shapes.add(new FillDrawCmd());
         }
+    }
+
+    private static boolean isAcroFormStandardFontAlias(Name name) {
+        String alias = name.getName();
+        return "Helv".equals(alias) || "HeBo".equals(alias) || "TiRo".equals(alias) || "Cour".equals(alias)
+                || "ZaDb".equals(alias) || "Symb".equals(alias);
     }
 
     protected static void consume_TJ(GraphicsState graphicState, Stack<Object> stack,
