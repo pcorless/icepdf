@@ -15,14 +15,18 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
@@ -179,6 +183,31 @@ public class PdfView extends Control {
 
     public void clearSelection() {
         setTextSelection(null);
+    }
+
+    /**
+     * The selected text, paragraph-formatted, extracted off the FX thread (pages the selection
+     * spans are loaded as needed).  Completes with "" when nothing is selected or before the control
+     * is shown; complete on a background thread.
+     */
+    public CompletableFuture<String> selectedTextAsync() {
+        DocumentSelection selection = getTextSelection();
+        if (selection == null || selection.isCollapsed() || !(getSkin() instanceof PdfViewSkin skin)) {
+            return CompletableFuture.completedFuture("");
+        }
+        return skin.selectedTextAsync(selection);
+    }
+
+    /** Copies the selected text to the system clipboard once extracted; no-op with nothing selected. */
+    public void copySelection() {
+        selectedTextAsync().thenAccept(text -> {
+            if (text.isEmpty()) return;
+            Platform.runLater(() -> {
+                ClipboardContent content = new ClipboardContent();
+                content.putString(text);
+                Clipboard.getSystemClipboard().setContent(content);
+            });
+        });
     }
 
     public void nextPage() {

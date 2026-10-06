@@ -18,10 +18,13 @@ package org.icepdf.fx.view;
 import javafx.application.Platform;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
 
 import java.util.*;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -61,6 +64,10 @@ final class PageTextLoader {
     private final Map<Integer, Optional<TextSequence>> loaded = new HashMap<>();
     private final Map<Integer, Future<?>> pending = new HashMap<>();
     private final Set<Integer> failed = new HashSet<>();
+    // off-screen pages asked for explicitly (keyboard caret moves); kept through retain() so they
+    // survive until used.  Small and most-recent-first.
+    private static final int MAX_EXTRA = 16;
+    private final LinkedHashSet<Integer> extra = new LinkedHashSet<>();
     private Document document;
 
     PageTextLoader(Sink sink) {
@@ -93,14 +100,51 @@ final class PageTextLoader {
         pending.put(pageIndex, future);
     }
 
+    /** Like {@link #request}, and keeps the page through {@link #retain} even while off-screen. */
+    void requestKept(int pageIndex) {
+        extra.remove(pageIndex);
+        extra.add(pageIndex);
+        if (extra.size() > MAX_EXTRA) extra.remove(extra.iterator().next());
+        request(pageIndex);
+    }
+
     /** Cancels pending loads and drops loaded text for pages no longer wanted. */
     void retain(IntPredicate wanted) {
+        IntPredicate keep = page -> wanted.test(page) || extra.contains(page);
         pending.entrySet().removeIf(e -> {
-            if (wanted.test(e.getKey())) return false;
+            if (keep.test(e.getKey())) return false;
             e.getValue().cancel(true);
             return true;
         });
-        loaded.keySet().removeIf(page -> !wanted.test(page));
+        loaded.keySet().removeIf(page -> !keep.test(page));
+    }
+
+    /**
+     * Extracts a selection's text on the loader's worker, loading (and initialising) every page it
+     * spans - for select-all on a long document that is real work, hence asynchronous.  Runs on the
+     * same single thread as page loads, so a page's sequence is never built by two threads at once.
+     */
+    CompletableFuture<String> extractAsync(DocumentSelection selection) {
+        Document doc = document;
+        if (doc == null || selection == null) return CompletableFuture.completedFuture("");
+        CompletableFuture<String> result = new CompletableFuture<>();
+        executor.submit(() -> {
+            try {
+                result.complete(selection.extractText(page -> {
+                    try {
+                        if (page >= doc.getNumberOfPages()) return null;
+                        PageText text = doc.getPageViewText(page);
+                        return text != null ? text.getTextSequence() : null;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new CancellationException("interrupted");
+                    }
+                }));
+            } catch (Throwable t) {
+                result.completeExceptionally(t);
+            }
+        });
+        return result;
     }
 
     void clear() {
@@ -108,6 +152,7 @@ final class PageTextLoader {
         pending.clear();
         loaded.clear();
         failed.clear();
+        extra.clear();
     }
 
     void shutdown() {

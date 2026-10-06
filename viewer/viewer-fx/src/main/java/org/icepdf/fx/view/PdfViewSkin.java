@@ -75,6 +75,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
     private final TileRenderer renderer;
     private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> scheduleRefresh());
+    private CaretNavigator caretNavigator;
     // caret blink phase; the caret is drawn on the focus page's layer only (see updateText).
     private static final Duration CARET_BLINK = Duration.millis(500);
     private final Timeline caretBlink = new Timeline();
@@ -264,6 +265,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         document = getSkinnable().getDocument();
         renderer.setDocument(document);
         textLoader.setDocument(document);
+        caretNavigator = null;
         resetRasters();
         scrollX = 0;
         scrollY = 0;
@@ -643,6 +645,49 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** The page's loaded text, or null if it isn't loaded (or has none). */
     TextSequence textSequence(int pageIndex) {
         return textLoader.get(pageIndex);
+    }
+
+    /** Keyboard caret movement over the loader's text; rebuilt per document. */
+    CaretNavigator caretNavigator() {
+        if (caretNavigator == null) {
+            caretNavigator = new CaretNavigator(new CaretNavigator.Texts() {
+                public TextSequence get(int pageIndex) {
+                    return textLoader.get(pageIndex);
+                }
+
+                public boolean isLoaded(int pageIndex) {
+                    return textLoader.isLoaded(pageIndex);
+                }
+
+                public void request(int pageIndex) {
+                    textLoader.requestKept(pageIndex);
+                }
+            }, unitWidths.length);
+        }
+        return caretNavigator;
+    }
+
+    /** Text of a selection, extracted off the FX thread. */
+    java.util.concurrent.CompletableFuture<String> selectedTextAsync(DocumentSelection selection) {
+        return textLoader.extractAsync(selection);
+    }
+
+    /**
+     * Brings the selection's focus caret into view, switching page first in the non-continuous
+     * modes.  Needs the focus page's text to be loaded, which it is after any caret move.
+     */
+    void revealCaret() {
+        DocumentSelection selection = getSkinnable().getTextSelection();
+        if (selection == null) return;
+        int page = selection.getFocusPage();
+        if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(page) == null) {
+            getSkinnable().setCurrentPageIndex(page);
+        }
+        TextSequence sequence = textLoader.get(page);
+        if (sequence == null) return;
+        java.awt.geom.Rectangle2D.Double caret = sequence.caretRect(
+                new Caret(Math.min(selection.getFocusOffset(), sequence.length()), Bias.FORWARD));
+        ensureVisible(new PagePoint(page, caret.getCenterX(), caret.getCenterY()), 48);
     }
 
     /** True if the viewport point is over a glyph of a page whose text is loaded. */

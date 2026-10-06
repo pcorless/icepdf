@@ -72,7 +72,9 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `view/PanHandler` | viewer-fx phase 1 skin | The drag-to-scroll code moved into a tool handler. |
 | `view/SelectionController` | viewer-awt `TextSelection` (`selectionStart`, `selection`, `columnAwareCaretOffset`, `selectRangeAtPoint`) | The gesture semantics and the D4 column rule (constrain only the nearest-line fallback to the pointer's column, else the anchor column in a gutter; never constrain a direct glyph hit). Rewritten as a toolkit-free class over `DocumentSelection`. |
 
-Test fixtures: `SelectionControllerTest` reads `test_print.pdf` and
+| `view/CaretNavigator` | viewer-awt `TextSelection` (`horizontalCaret`, `wordCaret`, `lineEdgeCaret`, `verticalCaret`, sticky `goalX`) | The keyboard caret rules, including page crossing and word roll-over at page edges. Rewritten toolkit-free over `DocumentSelection`; skipping pages with no text layer and not blocking on unloaded pages are new. |
+
+Test fixtures: `SelectionControllerTest` and `CaretNavigatorTest` read `test_print.pdf` and
 `windrivercasestudy1n3d2m8km0r.pdf` from `viewer/viewer-awt/src/test/resources/redact/` in place.
 They are not copied into this module.
 

@@ -19,8 +19,10 @@ import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.scene.Cursor;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 
 /**
  * Text selection tool.  Converts mouse events to page points and delegates the selection logic to
@@ -81,6 +83,68 @@ final class TextSelectHandler implements ToolHandler {
     public void released(MouseEvent e) {
         autoScroll.stop();
         controller.release();
+    }
+
+    /**
+     * Ctrl+A select all, Ctrl+C copy, Esc clear; with a selection, arrows move the caret (shift
+     * extends, ctrl by word) and Home/End go to the line's edges.  Without a selection the keys
+     * fall through to the view's scrolling.
+     */
+    @Override
+    public boolean keyPressed(KeyEvent e) {
+        PdfView view = skin.getSkinnable();
+        DocumentSelection selection = view.getTextSelection();
+        boolean shortcut = e.isShortcutDown();
+        switch (e.getCode()) {
+            case A:
+                if (!shortcut) return false;
+                view.selectAll();
+                return true;
+            case C:
+                if (!shortcut || selection == null || selection.isCollapsed()) return false;
+                view.copySelection();
+                return true;
+            case ESCAPE:
+                if (selection == null) return false;
+                view.clearSelection();
+                return true;
+            default:
+                break;
+        }
+        if (selection == null) return false;
+        CaretNavigator.Move move;
+        switch (e.getCode()) {
+            case LEFT:
+                move = shortcut ? CaretNavigator.Move.WORD_LEFT : CaretNavigator.Move.LEFT;
+                break;
+            case RIGHT:
+                move = shortcut ? CaretNavigator.Move.WORD_RIGHT : CaretNavigator.Move.RIGHT;
+                break;
+            case UP:
+                move = CaretNavigator.Move.UP;
+                break;
+            case DOWN:
+                move = CaretNavigator.Move.DOWN;
+                break;
+            case HOME:
+                if (shortcut) return false; // document start: the view's scrolling
+                move = CaretNavigator.Move.LINE_START;
+                break;
+            case END:
+                if (shortcut) return false;
+                move = CaretNavigator.Move.LINE_END;
+                break;
+            default:
+                return false;
+        }
+        DocumentSelection moved = skin.caretNavigator().move(selection, move, e.isShiftDown());
+        if (moved != selection) {
+            view.setTextSelection(moved);
+            skin.revealCaret();
+        }
+        // consumed even when nothing moved (page text loading, document edge) so the view doesn't
+        // scroll instead.
+        return true;
     }
 
     @Override

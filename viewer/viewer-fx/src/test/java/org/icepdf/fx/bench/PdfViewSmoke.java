@@ -178,6 +178,7 @@ public final class PdfViewSmoke {
         checkSelectionLayer(document);
         checkSelectionGestures(document);
         checkCaret(document);
+        checkKeyboard(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
     }
 
@@ -618,6 +619,96 @@ public final class PdfViewSmoke {
             if (max[i] - min[i] > 60) out.add(new double[]{(i % w + 0.5) / scale, (i / w + 0.5) / scale});
         }
         return out;
+    }
+
+    /** Real keys through the Robot: extend, copy, clear, select-all, line move, page crossing, scroll. */
+    private void checkKeyboard(Document document) throws Exception {
+        int pageIndex = Math.min(document.getNumberOfPages() - 2, 99);
+        org.icepdf.core.pobjects.graphics.text.TextSequence sequence =
+                document.getPageViewText(pageIndex).getTextSequence();
+        int start = 641;
+        org.icepdf.core.pobjects.graphics.text.OffsetRange word = sequence.wordRange(start);
+        act("keyboard setup: caret at " + start, v -> {
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.setViewMode(ViewMode.CONTINUOUS);
+            v.setRotation(0);
+            v.setFitMode(FitMode.WIDTH);
+            v.setCurrentPageIndex(pageIndex);
+            stage.toFront();
+            v.requestFocus();
+            v.setTextSelection(org.icepdf.core.pobjects.graphics.text.DocumentSelection.collapsed(pageIndex, word.getStart()));
+        });
+        javafx.scene.robot.Robot robot = onFx(javafx.scene.robot.Robot::new);
+        javafx.scene.input.KeyCode shortcut = javafx.scene.input.KeyCode.CONTROL;
+
+        for (int i = 0; i < word.length(); i++) {
+            keys(robot, javafx.scene.input.KeyCode.SHIFT, javafx.scene.input.KeyCode.RIGHT);
+        }
+        org.icepdf.core.pobjects.graphics.text.DocumentSelection sel = onFx(view::getTextSelection);
+        check("shift+right extends over the word",
+                org.icepdf.core.pobjects.graphics.text.DocumentSelection.of(pageIndex, word.getStart(),
+                        pageIndex, word.getEnd()).equals(sel), sel + " \"" + sequence.text(word) + "\"");
+
+        fx(() -> javafx.scene.input.Clipboard.getSystemClipboard().clear());
+        keys(robot, shortcut, javafx.scene.input.KeyCode.C);
+        String clip = null;
+        for (int i = 0; i < 40 && (clip == null || clip.isEmpty()); i++) {
+            Thread.sleep(50);
+            clip = onFx(() -> javafx.scene.input.Clipboard.getSystemClipboard().getString());
+        }
+        String expectedText = sequence.extractText(word);
+        check("ctrl+C copies the selection", expectedText.equals(clip), "clipboard \"" + clip + "\"");
+
+        keys(robot, javafx.scene.input.KeyCode.ESCAPE);
+        check("Esc clears", onFx(view::getTextSelection) == null, String.valueOf(onFx(view::getTextSelection)));
+
+        keys(robot, shortcut, javafx.scene.input.KeyCode.A);
+        int pages = document.getNumberOfPages();
+        sel = onFx(view::getTextSelection);
+        check("ctrl+A selects all", org.icepdf.core.pobjects.graphics.text.DocumentSelection.all(pages).equals(sel),
+                String.valueOf(sel));
+
+        fx(() -> view.setTextSelection(org.icepdf.core.pobjects.graphics.text.DocumentSelection.collapsed(pageIndex, start + 3)));
+        keys(robot, javafx.scene.input.KeyCode.DOWN);
+        sel = onFx(view::getTextSelection);
+        check("down moves the caret to the next line", sel != null && sel.isCollapsed() && sel.getFocusPage() == pageIndex
+                        && sequence.lineIndexOf(sel.getFocusOffset()) == sequence.lineIndexOf(start + 3) + 1,
+                sel + " line " + (sel == null ? -1 : sequence.lineIndexOf(sel.getFocusOffset())));
+
+        fx(() -> view.setTextSelection(org.icepdf.core.pobjects.graphics.text.DocumentSelection.collapsed(pageIndex,
+                sequence.length())));
+        // the next page's text may still be loading: the first press requests it, a later one moves.
+        for (int i = 0; i < 10 && onFx(view::getTextSelection).getFocusPage() == pageIndex; i++) {
+            keys(robot, javafx.scene.input.KeyCode.RIGHT);
+            Thread.sleep(150);
+        }
+        sel = onFx(view::getTextSelection);
+        check("right at a page's end crosses to the next page",
+                org.icepdf.core.pobjects.graphics.text.DocumentSelection.collapsed(pageIndex + 1, 0).equals(sel), String.valueOf(sel));
+
+        fx(view::clearSelection);
+        double[] c = onFx(() -> new double[]{view.getWidth() / 2, view.getHeight() / 2});
+        org.icepdf.fx.view.PagePoint before = onFx(() -> view.pageAt(c[0], c[1]).orElse(null));
+        keys(robot, javafx.scene.input.KeyCode.DOWN);
+        Thread.sleep(100);
+        org.icepdf.fx.view.PagePoint after = onFx(() -> view.pageAt(c[0], c[1]).orElse(null));
+        check("arrows scroll with no selection", before != null && after != null
+                        && (after.pageIndex() != before.pageIndex() || Math.abs(after.y() - before.y()) > 1),
+                before + " -> " + after);
+    }
+
+    /** Presses the keys in order, releases them in reverse: a chord such as ctrl+C. */
+    private void keys(javafx.scene.robot.Robot robot, javafx.scene.input.KeyCode... codes) throws Exception {
+        for (javafx.scene.input.KeyCode code : codes) {
+            fx(() -> robot.keyPress(code));
+            Thread.sleep(15);
+        }
+        for (int i = codes.length - 1; i >= 0; i--) {
+            javafx.scene.input.KeyCode code = codes[i];
+            fx(() -> robot.keyRelease(code));
+            Thread.sleep(15);
+        }
+        Thread.sleep(60);
     }
 
     /** Every highlight pixel maps (via pageAt) into one of the core's selection rectangles. */
