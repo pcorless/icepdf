@@ -113,6 +113,9 @@ public class PdfView extends Control {
             new ReadOnlyObjectWrapper<>(this, "selectedAnnotation");
     private final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationAction =
             new SimpleObjectProperty<>(this, "onAnnotationAction");
+    private final AnnotationEdits.History history = new AnnotationEdits.History();
+    private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
+    private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
 
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
@@ -130,6 +133,8 @@ public class PdfView extends Control {
         document.addListener((obs, old, doc) -> {
             clearSearch();
             selectedAnnotation.set(null);
+            history.clear();
+            updateHistoryState();
             setTextSelection(null);
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
@@ -236,6 +241,54 @@ public class PdfView extends Control {
         if (!(getSkin() instanceof PdfViewSkin skin)) return Optional.empty();
         PdfViewSkin.AnnotationHit hit = skin.annotationAt(x, y);
         return hit != null ? Optional.of(hit.annotation()) : Optional.empty();
+    }
+
+    /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */
+    public void deleteSelectedAnnotation() {
+        if (!(getSkin() instanceof PdfViewSkin skin)) return;
+        PdfViewSkin.AnnotationHit hit = skin.selectedHit();
+        if (hit == null || !PdfViewSkin.isEditable(hit.annotation())) return;
+        Page page = getDocument().getPageTree().getPage(hit.pageIndex());
+        recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, hit.pageIndex(), hit.annotation()));
+        clearAnnotationSelection();
+    }
+
+    /** Undoes the last annotation edit (move, resize, delete, add). */
+    public void undo() {
+        afterHistory(history.undo());
+    }
+
+    /** Redoes the last undone annotation edit. */
+    public void redo() {
+        afterHistory(history.redo());
+    }
+
+    public final ReadOnlyBooleanProperty canUndoProperty() {
+        return canUndo.getReadOnlyProperty();
+    }
+
+    public final ReadOnlyBooleanProperty canRedoProperty() {
+        return canRedo.getReadOnlyProperty();
+    }
+
+    /** Records an edit already applied; re-renders that page's annotation layers. */
+    void recordEdit(AnnotationEdits.Edit edit) {
+        if (edit == null) return;
+        history.push(edit);
+        afterHistory(edit);
+    }
+
+    private void afterHistory(AnnotationEdits.Edit edit) {
+        if (edit != null && getSkin() instanceof PdfViewSkin skin) {
+            skin.bumpAnnotationGeneration(edit.pageIndex());
+            skin.refreshAnnotationChrome();
+        }
+        updateHistoryState();
+    }
+
+    private void updateHistoryState() {
+        canUndo.set(history.canUndo());
+        canRedo.set(history.canRedo());
     }
 
     /**

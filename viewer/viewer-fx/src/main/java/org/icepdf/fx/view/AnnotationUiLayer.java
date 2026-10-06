@@ -45,6 +45,11 @@ final class AnnotationUiLayer extends Group {
     private final Rectangle selection = new Rectangle();
     private final List<Rectangle> handles = new ArrayList<>(8);
     private final Group popups = new Group();
+    // live drag: the annotation rendered alone, mapped from where it was to where it is being put.
+    private final javafx.scene.image.ImageView proxy = new javafx.scene.image.ImageView();
+    private final javafx.scene.transform.Affine proxyTransform = new javafx.scene.transform.Affine();
+    private Rectangle2D proxyFrom;
+    private Rectangle2D dragBounds;
     private AffineTransform pageToView;
     private Annotation hovered;
     private Annotation selected;
@@ -70,7 +75,10 @@ final class AnnotationUiLayer extends Group {
             handle.setMouseTransparent(true);
             handles.add(handle);
         }
-        getChildren().add(popups);
+        proxy.getTransforms().add(proxyTransform);
+        proxy.setMouseTransparent(true);
+        proxy.setVisible(false);
+        getChildren().addAll(popups, proxy);
         getChildren().addAll(hover, selection);
         getChildren().addAll(handles);
     }
@@ -100,6 +108,49 @@ final class AnnotationUiLayer extends Group {
         selected = annotation;
         handlesShown = withHandles;
         place();
+    }
+
+    /**
+     * Shows the live drag node: {@code buffer} holds the annotation rendered alone over the device
+     * region whose top-left is (deviceX, deviceY); {@code from} is the annotation's view bounds when
+     * the drag began.
+     */
+    void setProxy(RasterBuffer buffer, double deviceX, double deviceY, double scale, Rectangle2D from) {
+        proxy.setImage(buffer.getImage());
+        proxy.setX(deviceX / scale);
+        proxy.setY(deviceY / scale);
+        proxy.setFitWidth(buffer.getWidth() / scale);
+        proxy.setFitHeight(buffer.getHeight() / scale);
+        proxyFrom = from;
+        proxy.setVisible(true);
+        placeProxy();
+    }
+
+    boolean hasProxy() {
+        return proxy.isVisible();
+    }
+
+    void clearProxy() {
+        proxy.setVisible(false);
+        proxy.setImage(null);
+        proxyFrom = null;
+    }
+
+    /** During a drag, the bounds the selection chrome and proxy follow; null when not dragging. */
+    void setDragBounds(Rectangle2D bounds) {
+        dragBounds = bounds;
+        place();
+        placeProxy();
+    }
+
+    private void placeProxy() {
+        if (proxyFrom == null) return;
+        Rectangle2D to = dragBounds != null ? dragBounds : proxyFrom;
+        double sx = to.getWidth() / Math.max(1e-6, proxyFrom.getWidth());
+        double sy = to.getHeight() / Math.max(1e-6, proxyFrom.getHeight());
+        // map proxyFrom onto to: translate(to) . scale . translate(-from)
+        proxyTransform.setToTransform(sx, 0, to.getX() - sx * proxyFrom.getX(),
+                0, sy, to.getY() - sy * proxyFrom.getY());
     }
 
     /** Re-reads the annotations' rectangles (after a move or resize). */
@@ -135,7 +186,7 @@ final class AnnotationUiLayer extends Group {
         if (showHover) setRect(hover, viewBounds(hovered), 1);
         boolean showSelection = selected != null && pageToView != null;
         selection.setVisible(showSelection);
-        Rectangle2D b = showSelection ? viewBounds(selected) : null;
+        Rectangle2D b = showSelection ? (dragBounds != null ? dragBounds : viewBounds(selected)) : null;
         if (showSelection) setRect(selection, b, 2);
         for (int i = 0; i < handles.size(); i++) {
             Rectangle handle = handles.get(i);

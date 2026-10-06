@@ -63,6 +63,16 @@ public final class TileRenderer {
 
     private static final Logger logger = Logger.getLogger(TileRenderer.class.toString());
 
+    private static final java.util.concurrent.atomic.AtomicLong CONTENT_RENDERS = new java.util.concurrent.atomic.AtomicLong();
+
+    /**
+     * Diagnostics: page-content region paints so far, process-wide.  Annotation edits must not move
+     * it - they only re-render annotation layers.
+     */
+    public static long contentRenderCount() {
+        return CONTENT_RENDERS.get();
+    }
+
     /** Diagnostic: bake annotations into the page tiles instead of separate layers. */
     public static final boolean SINGLE_PASS_ANNOTATIONS = Boolean.getBoolean("org.icepdf.fx.view.singlePassAnnotations");
 
@@ -169,8 +179,8 @@ public final class TileRenderer {
     }
 
     /**
-     * Whether annotation appearances are drawn: in the annotation layers, and in previews (and in
-     * the page tiles only under {@link #SINGLE_PASS_ANNOTATIONS}).
+     * Whether annotation appearances are drawn, in the annotation layers (and in the page tiles
+     * and previews only under {@link #SINGLE_PASS_ANNOTATIONS}).
      */
     public void setPaintAnnotations(boolean paintAnnotations) {
         this.paintAnnotations = paintAnnotations;
@@ -194,6 +204,7 @@ public final class TileRenderer {
         boolean annotations = paintAnnotations && SINGLE_PASS_ANNOTATIONS;
         submitRegions(pageIndex, grid, tiles, t -> new CacheKey.Tile(pageIndex, params, t.column(), t.row()),
                 params, (g, page) -> {
+                    CONTENT_RENDERS.incrementAndGet();
                     page.paint(g, GraphicsRenderingHints.SCREEN, params.boundary(), params.rotation(),
                             params.zoom(), annotations, false);
                     return PaintResult.ALL;
@@ -231,7 +242,7 @@ public final class TileRenderer {
             g.transform(pageToView);
             float totalRotation = page.getTotalRotation(params.rotation());
             for (Annotation annotation : annotations) {
-                if (annotation == null) continue;
+                if (annotation == null || annotation.isDeleted()) continue;
                 boolean blend = annotation.appearanceHasBlendMode();
                 if (blend != (layer == CacheKey.AnnotationLayer.BLEND)) continue;
                 any = true;
@@ -245,6 +256,53 @@ public final class TileRenderer {
             }
         }
         return any ? new PaintResult(true, areas) : PaintResult.NOTHING;
+    }
+
+    /**
+     * Runs a mutation of a page's annotations (an edit) under the lock annotation tile jobs hold
+     * while painting that page, so no worker sees the list or an appearance half-changed.  Called on
+     * the FX thread; waits at most for one in-progress annotation paint of that page.
+     */
+    public void withAnnotationLock(int pageIndex, Runnable mutation) {
+        synchronized (annotationLocks.computeIfAbsent(pageIndex, k -> new Object())) {
+            mutation.run();
+        }
+    }
+
+    /**
+     * Renders one annotation alone, for the live node that follows a move/resize drag while the
+     * annotation layers re-render without it.
+     *
+     * @param region device-pixel region of the page to render (the annotation's bounds, clipped to
+     *               the viewport so a huge annotation at deep zoom stays bounded)
+     * @param ready  receives the raster on the FX thread
+     */
+    public void requestAnnotationProxy(int pageIndex, CacheKey.Params params, Annotation annotation,
+                                       TileGrid.Region region, java.util.function.Consumer<RasterBuffer> ready) {
+        Document doc = document;
+        if (doc == null || region.isEmpty()) return;
+        tileExecutor.submit(() -> {
+            try {
+                Page page = doc.getPageTree().getPage(pageIndex);
+                RasterBuffer buffer = new RasterBuffer(region.width(), region.height());
+                Graphics2D g = buffer.getBufferedImage().createGraphics();
+                try {
+                    g.setClip(0, 0, region.width(), region.height());
+                    g.translate(-region.x(), -region.y());
+                    g.scale(params.scale(), params.scale());
+                    synchronized (annotationLocks.computeIfAbsent(pageIndex, k -> new Object())) {
+                        g.transform(page.getPageTransform(params.boundary(), params.rotation(), params.zoom()));
+                        annotation.render(g, GraphicsRenderingHints.SCREEN, page.getTotalRotation(params.rotation()),
+                                params.zoom(), false);
+                    }
+                } finally {
+                    g.dispose();
+                }
+                Platform.runLater(() -> ready.accept(buffer));
+            } catch (Throwable e) {
+                logger.log(Level.FINE, "Annotation proxy render failed", e);
+            }
+        });
     }
 
     /**
@@ -407,7 +465,9 @@ public final class TileRenderer {
             Graphics2D g = buffer.getBufferedImage().createGraphics();
             try {
                 g.setClip(0, 0, w, h);
-                page.paint(g, GraphicsRenderingHints.SCREEN, key.boundary(), 0f, zoom, paintAnnotations, false);
+                // without annotations: those live in their own layers, so an edit never stales a preview.
+                page.paint(g, GraphicsRenderingHints.SCREEN, key.boundary(), 0f, zoom,
+                        paintAnnotations && SINGLE_PASS_ANNOTATIONS, false);
             } finally {
                 g.dispose();
             }

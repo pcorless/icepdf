@@ -594,7 +594,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                     renderer.requestPreview(index, params.boundary(), PREVIEW_LONG_SIDE);
                 }
             }
-            incomplete |= !updateTiles(layer, slot, params, wanted);
+            boolean pageComplete = updateTiles(layer, slot, params, wanted);
+            incomplete |= !pageComplete;
+            if (pageComplete && ui.hasProxy() && (drag == null || drag.hit().pageIndex() != index)) {
+                ui.clearProxy();
+                ui.refresh();
+            }
             updateText(layer);
         }
         layers.entrySet().removeIf(e -> {
@@ -668,7 +673,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                         }
                         if (!missing.isEmpty()) {
                             renderer.requestAnnotationTiles(page, params, kind, generation, grid, missing,
-                                    Set.of(), backdrops);
+                                    excludedAnnotations(page), backdrops);
                         }
                     });
         }
@@ -718,6 +723,151 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     int annotationGeneration(int pageIndex) {
         return annotationGenerations.getOrDefault(pageIndex, 0);
+    }
+
+    // ---- annotation move/resize -------------------------------------------------------------
+
+    /** An annotation being moved (handle -1) or resized, with its view bounds when the drag began. */
+    private record Drag(AnnotationHit hit, int handle, java.awt.geom.Rectangle2D from) {
+    }
+
+    private Drag drag;
+    // drag-excluded annotations per page: left out of the annotation tiles while a live node shows them.
+    private final Map<Integer, Set<Annotation>> excluded = new HashMap<>();
+
+    private Set<Annotation> excludedAnnotations(int pageIndex) {
+        return excluded.getOrDefault(pageIndex, Set.of());
+    }
+
+    /** True if the annotation may be moved/resized by the user. */
+    static boolean isEditable(Annotation annotation) {
+        return annotation != null && !(annotation instanceof LinkAnnotation)
+                && annotation.allowAlterProperties() && !annotation.getFlagReadOnly();
+    }
+
+    /** View bounds of an annotation in its page's view space, or null if the page isn't visible. */
+    java.awt.geom.Rectangle2D annotationViewBounds(AnnotationHit hit) {
+        AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
+        return ui != null ? ui.viewBounds(hit.annotation()) : null;
+    }
+
+    /** Converts a viewport point into a page's view space. */
+    Point2D toPageView(int pageIndex, double vx, double vy) {
+        PageSlot slot = layout != null ? layout.getSlot(pageIndex) : null;
+        return slot == null ? null : new Point2D(scrollX + vx - slot.x(), scrollY + vy - slot.y());
+    }
+
+    /** The selected annotation's handle under a viewport point, or -1. */
+    int handleAtViewport(double vx, double vy) {
+        Annotation selected = getSkinnable().getSelectedAnnotation();
+        if (selected == null) return -1;
+        for (AnnotationUiLayer ui : uiLayers.values()) {
+            Point2D p = toPageView(ui.getPageIndex(), vx, vy);
+            if (p != null) {
+                int handle = ui.handleAt(p.getX(), p.getY());
+                if (handle >= 0) return handle;
+            }
+        }
+        return -1;
+    }
+
+    /** The page the selected annotation is on, or null. */
+    AnnotationHit selectedHit() {
+        Annotation selected = getSkinnable().getSelectedAnnotation();
+        if (selected == null) return null;
+        for (AnnotationUiLayer ui : uiLayers.values()) {
+            if (isOnPage(selected, ui.getPageIndex())) return new AnnotationHit(ui.getPageIndex(), selected);
+        }
+        return null;
+    }
+
+    /**
+     * Starts a move (handle -1) or resize: the annotation leaves its tiles and a live node rendered
+     * from it follows the pointer until the drag ends.
+     */
+    void beginAnnotationDrag(AnnotationHit hit, int handle) {
+        java.awt.geom.Rectangle2D from = annotationViewBounds(hit);
+        AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
+        PageLayer layer = layers.get(hit.pageIndex());
+        if (from == null || ui == null || layer == null) return;
+        drag = new Drag(hit, handle, from);
+        // render the live node first; the tiles drop the annotation only once it can show.
+        CacheKey.Params params = layer.getParams();
+        double scale = params.scale();
+        PageSlot slot = layout.getSlot(hit.pageIndex());
+        double vx0 = Math.max(from.getMinX() - 8, scrollX - slot.x());
+        double vy0 = Math.max(from.getMinY() - 8, scrollY - slot.y());
+        double vx1 = Math.min(from.getMaxX() + 8, scrollX + viewportW - slot.x());
+        double vy1 = Math.min(from.getMaxY() + 8, scrollY + viewportH - slot.y());
+        if (vx1 <= vx0 || vy1 <= vy0) return;
+        TileGrid.Region region = new TileGrid.Region((int) Math.floor(vx0 * scale), (int) Math.floor(vy0 * scale),
+                (int) Math.ceil((vx1 - vx0) * scale) + 1, (int) Math.ceil((vy1 - vy0) * scale) + 1);
+        Drag started = drag;
+        renderer.requestAnnotationProxy(hit.pageIndex(), params, hit.annotation(), region, buffer -> {
+            if (drag != started) return;
+            ui.setProxy(buffer, region.x(), region.y(), scale, from);
+            excluded.computeIfAbsent(hit.pageIndex(), k -> new HashSet<>()).add(hit.annotation());
+            bumpAnnotationGeneration(hit.pageIndex());
+        });
+    }
+
+    /** Follows the pointer: (dx, dy) is the total view-space movement since the drag began. */
+    void updateAnnotationDrag(double dx, double dy) {
+        if (drag == null) return;
+        AnnotationUiLayer ui = uiLayers.get(drag.hit().pageIndex());
+        PageSlot slot = layout.getSlot(drag.hit().pageIndex());
+        if (ui == null || slot == null) return;
+        java.awt.geom.Rectangle2D page = new java.awt.geom.Rectangle2D.Double(0, 0, slot.width(), slot.height());
+        ui.setDragBounds(drag.handle() < 0 ? AnnotationGeometry.move(drag.from(), dx, dy, page)
+                : AnnotationGeometry.resize(drag.from(), drag.handle(), dx, dy, page));
+    }
+
+    /** Ends the drag; commits it through core unless {@code cancel}, and returns the edit (or null). */
+    AnnotationEdits.Edit endAnnotationDrag(double dx, double dy, boolean cancel) {
+        Drag ended = drag;
+        drag = null;
+        if (ended == null) return null;
+        int pageIndex = ended.hit().pageIndex();
+        AnnotationUiLayer ui = uiLayers.get(pageIndex);
+        AnnotationEdits.Edit edit = null;
+        PageSlot slot = layout.getSlot(pageIndex);
+        if (!cancel && slot != null && (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5)) {
+            java.awt.geom.Rectangle2D page = new java.awt.geom.Rectangle2D.Double(0, 0, slot.width(), slot.height());
+            java.awt.geom.Rectangle2D to = ended.handle() < 0 ? AnnotationGeometry.move(ended.from(), dx, dy, page)
+                    : AnnotationGeometry.resize(ended.from(), ended.handle(), dx, dy, page);
+            Page p = document.getPageTree().getPage(pageIndex);
+            AffineTransform toPageSpace = p.getToPageSpaceTransform(getSkinnable().getPageBoundary(),
+                    layoutRotation, (float) layoutZoom);
+            // the gesture's effective delta (after clamping), as Swing passes the mouse delta.
+            double edx = to.getX() - ended.from().getX();
+            double edy = to.getY() - ended.from().getY();
+            edit = AnnotationEdits.reshape(renderer::withAnnotationLock, p, pageIndex, ended.hit().annotation(),
+                    to, edx, edy, toPageSpace);
+        }
+        Set<Annotation> set = excluded.get(pageIndex);
+        if (set != null) set.remove(ended.hit().annotation());
+        if (ui != null) {
+            ui.setDragBounds(null);
+            // keep the live node until the re-rendered tiles cover it (see refresh), so no flash.
+            if (!ui.hasProxy()) ui.refresh();
+        }
+        bumpAnnotationGeneration(pageIndex);
+        return edit;
+    }
+
+    boolean isDraggingAnnotation() {
+        return drag != null;
+    }
+
+    AnnotationEdits.Locker annotationLocker() {
+        return renderer::withAnnotationLock;
+    }
+
+    void refreshAnnotationChrome() {
+        uiLayers.values().forEach(ui -> {
+            updateAnnotationChrome(ui, null);
+            ui.refresh();
+        });
     }
 
     /** Invalidates a page's annotation layers: they re-render; page content tiles are untouched. */
@@ -877,7 +1027,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             Annotation a = annotations.get(i);
             // MarkupGlueAnnotation is core's synthetic popup connector for printing; its rect spans
             // the markup and its popup, so it would swallow clicks meant for the markup.
-            if (a == null || a instanceof PopupAnnotation || a instanceof AbstractWidgetAnnotation
+            if (a == null || a.isDeleted() || a instanceof PopupAnnotation || a instanceof AbstractWidgetAnnotation
                     || a instanceof org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation) continue;
             if (!a.allowScreenNormalMode() || a.getFlagHidden()) continue;
             java.awt.geom.Rectangle2D.Float r = a.getUserSpaceRectangle();
@@ -903,14 +1053,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
         Annotation selected = getSkinnable().getSelectedAnnotation();
         Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
-        ui.setSelected(onPage, onPage != null && !(onPage instanceof LinkAnnotation)
-                && onPage.allowAlterProperties() && !onPage.getFlagReadOnly());
+        ui.setSelected(onPage, isEditable(onPage));
     }
 
     private boolean isOnPage(Annotation annotation, int pageIndex) {
         Page page = document.getPageTree().getPage(pageIndex);
         List<Annotation> annotations = page != null && page.isInitiated() ? page.getAnnotations() : null;
-        return annotations != null && annotations.contains(annotation);
+        return annotations != null && !annotation.isDeleted() && annotations.contains(annotation);
     }
 
     /** The UI layer of a visible page, or null. */
@@ -1167,6 +1316,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 spacePanned = false;
                 if (gestureHandler == null) restoreViewportCursor();
             }
+            e.consume();
+            return;
+        }
+        if (e.isShortcutDown() && (e.getCode() == KeyCode.Z || e.getCode() == KeyCode.Y)) {
+            // undo/redo annotation edits, in any tool
+            if (e.getCode() == KeyCode.Y || e.isShiftDown()) getSkinnable().redo();
+            else getSkinnable().undo();
             e.consume();
             return;
         }

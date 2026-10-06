@@ -59,16 +59,41 @@ final class TextSelectHandler implements ToolHandler {
     private double pressY;
     // a press that selected an annotation: no text selection for this gesture.
     private boolean annotationGesture;
+    // an editable annotation pressed: becomes a move once the pointer travels a few px.
+    private PdfViewSkin.AnnotationHit pendingMove;
+    private boolean draggingAnnotation;
 
     @Override
     public void moved(MouseEvent e) {
+        int handle = skin.handleAtViewport(e.getX(), e.getY());
+        if (handle >= 0) {
+            skin.setHovered(null);
+            skin.setViewportCursor(resizeCursor(handle));
+            return;
+        }
         PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
         skin.setHovered(hit != null && !PdfViewSkin.isActionable(hit.annotation()) ? hit : null);
         if (hit != null) {
-            skin.setViewportCursor(PdfViewSkin.isActionable(hit.annotation()) ? Cursor.HAND : Cursor.DEFAULT);
+            boolean selectedEditable = hit.annotation() == skin.getSkinnable().getSelectedAnnotation()
+                    && PdfViewSkin.isEditable(hit.annotation());
+            skin.setViewportCursor(PdfViewSkin.isActionable(hit.annotation()) ? Cursor.HAND
+                    : selectedEditable ? Cursor.MOVE : Cursor.DEFAULT);
         } else {
             skin.setViewportCursor(skin.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
         }
+    }
+
+    private static Cursor resizeCursor(int handle) {
+        return switch (AnnotationGeometry.direction(handle)) {
+            case "nw" -> Cursor.NW_RESIZE;
+            case "n" -> Cursor.N_RESIZE;
+            case "ne" -> Cursor.NE_RESIZE;
+            case "e" -> Cursor.E_RESIZE;
+            case "se" -> Cursor.SE_RESIZE;
+            case "s" -> Cursor.S_RESIZE;
+            case "sw" -> Cursor.SW_RESIZE;
+            default -> Cursor.W_RESIZE;
+        };
     }
 
     @Override
@@ -80,6 +105,19 @@ final class TextSelectHandler implements ToolHandler {
         PdfView view = skin.getSkinnable();
         annotationGesture = false;
         pendingLink = null;
+        pendingMove = null;
+        draggingAnnotation = false;
+        // a handle of the selected annotation: resize straight away.
+        int handle = skin.handleAtViewport(e.getX(), e.getY());
+        if (handle >= 0) {
+            PdfViewSkin.AnnotationHit selected = skin.selectedHit();
+            if (selected != null) {
+                annotationGesture = true;
+                draggingAnnotation = true;
+                skin.beginAnnotationDrag(selected, handle);
+                return;
+            }
+        }
         PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
         if (hit != null && PdfViewSkin.isActionable(hit.annotation())) {
             pendingLink = hit;
@@ -87,6 +125,7 @@ final class TextSelectHandler implements ToolHandler {
             // annotations win over text: select it, no text selection for this gesture.
             view.selectAnnotation(hit.annotation());
             annotationGesture = true;
+            if (PdfViewSkin.isEditable(hit.annotation())) pendingMove = hit;
             return;
         }
         view.clearAnnotationSelection();
@@ -96,7 +135,17 @@ final class TextSelectHandler implements ToolHandler {
 
     @Override
     public void dragged(MouseEvent e) {
-        if (annotationGesture) return;
+        if (annotationGesture) {
+            double dx = e.getX() - pressX;
+            double dy = e.getY() - pressY;
+            if (pendingMove != null && Math.hypot(dx, dy) > 3) {
+                skin.beginAnnotationDrag(pendingMove, -1);
+                pendingMove = null;
+                draggingAnnotation = true;
+            }
+            if (draggingAnnotation) skin.updateAnnotationDrag(dx, dy);
+            return;
+        }
         if (pendingLink != null && Math.hypot(e.getX() - pressX, e.getY() - pressY) > 4) pendingLink = null;
         lastX = e.getX();
         lastY = e.getY();
@@ -117,6 +166,11 @@ final class TextSelectHandler implements ToolHandler {
             pendingLink = null;
             skin.getSkinnable().performAnnotationAction(link.annotation());
         }
+        if (draggingAnnotation) {
+            draggingAnnotation = false;
+            skin.getSkinnable().recordEdit(skin.endAnnotationDrag(e.getX() - pressX, e.getY() - pressY, false));
+        }
+        pendingMove = null;
         annotationGesture = false;
     }
 
@@ -139,7 +193,17 @@ final class TextSelectHandler implements ToolHandler {
                 if (!shortcut || selection == null || selection.isCollapsed()) return false;
                 view.copySelection();
                 return true;
+            case DELETE:
+            case BACK_SPACE:
+                if (view.getSelectedAnnotation() == null) return false;
+                view.deleteSelectedAnnotation();
+                return true;
             case ESCAPE:
+                if (draggingAnnotation) {
+                    draggingAnnotation = false;
+                    skin.endAnnotationDrag(0, 0, true);
+                    return true;
+                }
                 if (view.getSelectedAnnotation() != null) {
                     view.clearAnnotationSelection();
                     return true;

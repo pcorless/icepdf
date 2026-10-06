@@ -223,6 +223,7 @@ public final class PdfViewSmoke {
             check("click elsewhere deselects", onFx(view::getSelectedAnnotation) == null,
                     String.valueOf(onFx(view::getSelectedAnnotation)));
             check("chrome gone", countPixels(0, 119, 255, 12) < 5, "");
+            checkAnnotationEdits(robot, square);
         }
         fx(() -> view.setDocument(null));
         rect.dispose();
@@ -271,6 +272,107 @@ public final class PdfViewSmoke {
             view.setDocument(null);
         });
         links.dispose();
+    }
+
+    /**
+     * Move, resize, undo/redo and delete of a square annotation, with real mouse drags; edits must
+     * change the annotation's /Rect as dragged and render no page-content tiles.
+     */
+    private void checkAnnotationEdits(javafx.scene.robot.Robot robot,
+                                      org.icepdf.core.pobjects.annotations.Annotation square) throws Exception {
+        java.awt.geom.Rectangle2D original = new java.awt.geom.Rectangle2D.Float();
+        original.setRect(square.getUserSpaceRectangle());
+        double zoom = onFx(view::getZoom);
+        long contentBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+
+        double[] p = viewPointIn(0, original);
+        robotClick(robot, p);
+        robotDragFrom(robot, p, 60, 40);
+        waitIdle(30_000);
+        java.awt.geom.Rectangle2D moved = square.getUserSpaceRectangle();
+        check("drag moves the annotation", near(moved.getX(), original.getX() + 60 / zoom, 1.5)
+                        && near(moved.getY(), original.getY() - 40 / zoom, 1.5)
+                        && near(moved.getWidth(), original.getWidth(), 1.5),
+                String.format("rect x %.1f -> %.1f, y %.1f -> %.1f (expected +%.1f, -%.1f)", original.getX(),
+                        moved.getX(), original.getY(), moved.getY(), 60 / zoom, 40 / zoom));
+        double[] inNew = viewPointIn(0, moved);
+        check("hit-test follows the move", onFx(() -> view.annotationAt(inNew[0], inNew[1])).orElse(null) == square, "");
+        snapshot(out.resolve("edit_moved.png").toFile());
+
+        // resize from the bottom-right handle: view-space bottom-right = user (maxX, minY) at rotation 0.
+        java.awt.geom.Rectangle2D beforeResize = new java.awt.geom.Rectangle2D.Float();
+        beforeResize.setRect(moved);
+        double[] br = viewPointNear(0, beforeResize.getMaxX(), beforeResize.getMinY());
+        robotDragFrom(robot, br, 30, 20);
+        waitIdle(30_000);
+        java.awt.geom.Rectangle2D resized = square.getUserSpaceRectangle();
+        check("handle drag resizes", near(resized.getWidth(), beforeResize.getWidth() + 30 / zoom, 1.5)
+                        && near(resized.getHeight(), beforeResize.getHeight() + 20 / zoom, 1.5)
+                        && near(resized.getX(), beforeResize.getX(), 1.5),
+                String.format("w %.1f -> %.1f, h %.1f -> %.1f", beforeResize.getWidth(), resized.getWidth(),
+                        beforeResize.getHeight(), resized.getHeight()));
+
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo reverts the resize", sameRect(square.getUserSpaceRectangle(), beforeResize),
+                String.valueOf(square.getUserSpaceRectangle()));
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo reverts the move", sameRect(square.getUserSpaceRectangle(), original),
+                square.getUserSpaceRectangle() + " vs " + original);
+        fx(view::redo);
+        waitIdle(30_000);
+        check("redo re-applies the move", sameRect(square.getUserSpaceRectangle(), beforeResize),
+                String.valueOf(square.getUserSpaceRectangle()));
+
+        fx(() -> view.selectAnnotation(square));
+        fx(view::deleteSelectedAnnotation);
+        waitIdle(30_000);
+        double[] at = viewPointIn(0, square.getUserSpaceRectangle());
+        check("delete removes it", square.isDeleted() && onFx(() -> view.annotationAt(at[0], at[1])).isEmpty()
+                && onFx(view::getSelectedAnnotation) == null, "deleted=" + square.isDeleted());
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo restores it", !square.isDeleted()
+                        && onFx(() -> view.annotationAt(at[0], at[1])).orElse(null) == square, "");
+        long contentRenders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - contentBefore;
+        check("edits rendered no page-content tiles", contentRenders == 0, contentRenders + " content renders");
+    }
+
+    private static boolean near(double a, double b, double tolerance) {
+        return Math.abs(a - b) <= tolerance;
+    }
+
+    private static boolean sameRect(java.awt.geom.Rectangle2D a, java.awt.geom.Rectangle2D b) {
+        return near(a.getX(), b.getX(), 1.01) && near(a.getY(), b.getY(), 1.01)
+                && near(a.getWidth(), b.getWidth(), 1.01) && near(a.getHeight(), b.getHeight(), 1.01);
+    }
+
+    /** The view point mapping closest to a page user-space point. */
+    private double[] viewPointNear(int pageIndex, double ux, double uy) throws Exception {
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        return onFx(() -> {
+            double[] best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (double y = 2; y < size[1] - 2; y += 1) {
+                for (double x = 2; x < size[0] - 20; x += 1) {
+                    java.util.Optional<org.icepdf.fx.view.PagePoint> p = view.pageAt(x, y);
+                    if (p.isEmpty() || p.get().pageIndex() != pageIndex) continue;
+                    double d = Math.hypot(p.get().x() - ux, p.get().y() - uy);
+                    if (d < bestDistance) {
+                        bestDistance = d;
+                        best = new double[]{x, y};
+                    }
+                }
+            }
+            return best;
+        });
+    }
+
+    /** Presses at a view point and drags by (dx, dy) view px in steps, then releases. */
+    private void robotDragFrom(javafx.scene.robot.Robot robot, double[] from, double dx, double dy) throws Exception {
+        robotDrag(robot, from, new double[]{from[0] + dx, from[1] + dy}, 0);
+        Thread.sleep(300);
     }
 
     /** A view point inside a page user-space rectangle, found by probing pageAt (nearest its centre). */

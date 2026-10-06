@@ -179,6 +179,17 @@ public class PdfViewDemo extends Application {
             view.requestFocus();
         });
 
+        Button undo = new Button("Undo");
+        undo.disableProperty().bind(view.canUndoProperty().not());
+        undo.setOnAction(e -> view.undo());
+        Button redo = new Button("Redo");
+        redo.disableProperty().bind(view.canRedoProperty().not());
+        redo.setOnAction(e -> view.redo());
+        Button delete = new Button("Delete");
+        delete.setTooltip(new Tooltip("Delete the selected annotation (Del)"));
+        delete.disableProperty().bind(view.selectedAnnotationProperty().isNull());
+        delete.setOnAction(e -> view.deleteSelectedAnnotation());
+
         CheckBox overlay = new CheckBox("Overlay test");
         overlay.setTooltip(new Tooltip("Draws a frame 36pt inside each page's crop box, in PDF user space,\n"
                 + "to check native overlays stay locked to the content through zoom and rotation."));
@@ -187,7 +198,7 @@ public class PdfViewDemo extends Application {
         return new ToolBar(open, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
                 new Separator(), mode, cover, new Separator(), select, hand, copy, selectAll,
-                new Separator(), overlay);
+                new Separator(), undo, redo, delete, new Separator(), overlay);
     }
 
     /** Find bar: Enter searches (or goes to the next hit for the same term), arrows step through hits. */
