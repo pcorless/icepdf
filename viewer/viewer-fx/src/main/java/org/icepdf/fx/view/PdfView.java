@@ -346,7 +346,7 @@ public class PdfView extends Control {
 
     private void afterHistory(AnnotationEdits.Edit edit) {
         if (edit != null && getSkin() instanceof PdfViewSkin skin) {
-            skin.bumpAnnotationGeneration(edit.pageIndex());
+            edit.pages().forEach(skin::bumpAnnotationGeneration);
             skin.refreshAnnotationChrome();
         }
         updateHistoryState();

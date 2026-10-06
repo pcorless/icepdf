@@ -53,6 +53,11 @@ final class AnnotationEdits {
     interface Edit {
         int pageIndex();
 
+        /** Every page the edit touches (a form reset or radio group can span pages). */
+        default java.util.Set<Integer> pages() {
+            return java.util.Set.of(pageIndex());
+        }
+
         Annotation annotation();
 
         void undo();
