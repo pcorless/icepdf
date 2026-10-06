@@ -20,9 +20,11 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.SkinBase;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -90,13 +92,23 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private boolean publishingPage;
     // viewport point a zoom should hold still (mouse position for wheel/pinch zoom), else centre.
     private Point2D zoomFocus;
-    private double dragX;
-    private double dragY;
+
+    // tools: the active handler gets primary-button gestures; middle-button and Space+drag pan
+    // whatever the tool.  gestureHandler owns a press-drag-release sequence from start to end.
+    private final PanHandler panHandler = new PanHandler(this);
+    private final TextSelectHandler textSelectHandler = new TextSelectHandler(this);
+    private ToolHandler activeHandler;
+    private ToolHandler gestureHandler;
+    private MouseButton gestureButton;
+    private boolean spaceDown;
+    // a Space press that panned is not also a page-down when released.
+    private boolean spacePanned;
 
     private final ChangeListener<Number> outputScaleListener = (obs, o, n) -> updateOutputScale();
     private final javafx.event.EventHandler<ScrollEvent> scrollHandler = this::onScroll;
     private final javafx.event.EventHandler<ZoomEvent> pinchHandler = this::onPinch;
     private final javafx.event.EventHandler<KeyEvent> keyHandler = this::onKey;
+    private final javafx.event.EventHandler<KeyEvent> keyReleasedHandler = this::onKeyReleased;
     private Window window;
 
     PdfViewSkin(PdfView control) {
@@ -158,14 +170,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             refresh();
         });
         registerChangeListener(control.sceneProperty(), o -> watchWindow());
+        registerChangeListener(control.toolModeProperty(), o -> installTool());
 
         control.addEventHandler(ScrollEvent.SCROLL, scrollHandler);
         control.addEventHandler(ZoomEvent.ZOOM, pinchHandler);
         control.addEventHandler(KeyEvent.KEY_PRESSED, keyHandler);
-        // on the viewport, not the control, so dragging a scroll bar thumb doesn't also pan.
+        control.addEventHandler(KeyEvent.KEY_RELEASED, keyReleasedHandler);
+        // on the viewport, not the control, so dragging a scroll bar thumb isn't a page gesture.
         viewport.addEventHandler(MouseEvent.MOUSE_PRESSED, this::onPress);
         viewport.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDrag);
+        viewport.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onRelease);
+        viewport.addEventHandler(MouseEvent.MOUSE_MOVED, this::onMoved);
 
+        installTool();
         watchWindow();
         onDocument();
     }
@@ -178,6 +195,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
         getSkinnable().removeEventHandler(ZoomEvent.ZOOM, pinchHandler);
         getSkinnable().removeEventHandler(KeyEvent.KEY_PRESSED, keyHandler);
+        getSkinnable().removeEventHandler(KeyEvent.KEY_RELEASED, keyReleasedHandler);
+        if (activeHandler != null) activeHandler.uninstall();
         super.dispose();
     }
 
@@ -615,22 +634,104 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         zoomFocus = null;
     }
 
-    private void onPress(MouseEvent e) {
-        getSkinnable().requestFocus();
-        dragX = e.getX();
-        dragY = e.getY();
+    // ---- tools ----------------------------------------------------------------------------
+
+    private void installTool() {
+        ToolHandler next = getSkinnable().getToolMode() == ToolMode.PAN ? panHandler : textSelectHandler;
+        if (next == activeHandler) return;
+        if (activeHandler != null) activeHandler.uninstall();
+        activeHandler = next;
+        gestureHandler = null;
+        activeHandler.install();
+        restoreViewportCursor();
     }
 
-    private void onDrag(MouseEvent e) {
-        // panning; tool modes (selection, annotation) will claim the primary button later.
-        if (e.getButton() != MouseButton.PRIMARY && e.getButton() != MouseButton.MIDDLE) return;
-        scrollTo(scrollX - (e.getX() - dragX), scrollY - (e.getY() - dragY));
-        dragX = e.getX();
-        dragY = e.getY();
+    void setViewportCursor(Cursor cursor) {
+        viewport.setCursor(cursor);
+    }
+
+    /** The cursor for the current state: hand while Space is held, else the active tool's. */
+    void restoreViewportCursor() {
+        viewport.setCursor(spaceDown ? Cursor.OPEN_HAND : activeHandler.idleCursor());
+    }
+
+    private void onPress(MouseEvent e) {
+        getSkinnable().requestFocus();
+        if (gestureHandler != null) return; // a second button during a gesture
+        if (e.getButton() == MouseButton.MIDDLE || (spaceDown && e.getButton() == MouseButton.PRIMARY)) {
+            gestureHandler = panHandler;
+            spacePanned |= spaceDown;
+        } else if (e.getButton() == MouseButton.PRIMARY) {
+            gestureHandler = activeHandler;
+        } else {
+            return;
+        }
+        gestureButton = e.getButton();
+        gestureHandler.pressed(e);
         e.consume();
     }
 
+    private void onDrag(MouseEvent e) {
+        if (gestureHandler == null) return;
+        gestureHandler.dragged(e);
+        e.consume();
+    }
+
+    private void onRelease(MouseEvent e) {
+        // only the button that started the gesture ends it.
+        if (gestureHandler == null || e.getButton() != gestureButton) return;
+        ToolHandler handler = gestureHandler;
+        gestureHandler = null;
+        handler.released(e);
+        restoreViewportCursor();
+        e.consume();
+    }
+
+    private void onMoved(MouseEvent e) {
+        if (!spaceDown) activeHandler.moved(e);
+    }
+
+    // ---- hit testing ----------------------------------------------------------------------
+
+    /**
+     * The page and PDF user-space point under a point in viewport coordinates, or null over the
+     * gaps between pages, outside the document, or before a document is laid out.
+     */
+    PagePoint pageAtViewport(double vx, double vy) {
+        if (layout == null || document == null) return null;
+        double dx = scrollX + vx;
+        double dy = scrollY + vy;
+        List<PageSlot> hit = layout.slotsIntersecting(dx, dy, 1e-6, 1e-6);
+        if (hit.isEmpty()) return null;
+        PageSlot slot = hit.get(0);
+        Page page = document.getPageTree().getPage(slot.pageIndex());
+        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
+                layoutRotation, (float) layoutZoom);
+        Point2D user = PageTransforms.viewToPage(pageToView, dx - slot.x(), dy - slot.y());
+        return user == null ? null : new PagePoint(slot.pageIndex(), user.getX(), user.getY());
+    }
+
+    /** {@link #pageAtViewport} for a point in the control's own coordinates. */
+    PagePoint pageAt(double x, double y) {
+        Point2D local = viewport.parentToLocal(x, y);
+        return pageAtViewport(local.getX(), local.getY());
+    }
+
     private void onKey(KeyEvent e) {
+        if (e.getCode() == KeyCode.SPACE) {
+            // hold Space to pan with the primary button; a tap without a drag pages down on release.
+            if (!spaceDown) {
+                spaceDown = true;
+                spacePanned = false;
+                if (gestureHandler == null) restoreViewportCursor();
+            }
+            e.consume();
+            return;
+        }
+        if (activeHandler.keyPressed(e)) {
+            e.consume();
+            return;
+        }
         PdfView control = getSkinnable();
         boolean continuous = control.getViewMode().isContinuous();
         switch (e.getCode()) {
@@ -642,10 +743,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 if (continuous) scrollTo(scrollX, scrollY - viewportH * 0.9);
                 else control.previousPage();
             }
-            case PAGE_DOWN, SPACE -> {
-                if (continuous) scrollTo(scrollX, scrollY + viewportH * 0.9);
-                else control.nextPage();
-            }
+            case PAGE_DOWN -> pageDown();
             case HOME -> {
                 if (continuous) scrollTo(scrollX, 0);
                 else control.setCurrentPageIndex(0);
@@ -672,5 +770,18 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             }
         }
         e.consume();
+    }
+
+    private void onKeyReleased(KeyEvent e) {
+        if (e.getCode() != KeyCode.SPACE || !spaceDown) return;
+        spaceDown = false;
+        if (!spacePanned) pageDown();
+        if (gestureHandler == null) restoreViewportCursor();
+        e.consume();
+    }
+
+    private void pageDown() {
+        if (getSkinnable().getViewMode().isContinuous()) scrollTo(scrollX, scrollY + viewportH * 0.9);
+        else getSkinnable().nextPage();
     }
 }

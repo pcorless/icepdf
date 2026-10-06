@@ -36,6 +36,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
 import org.icepdf.fx.view.PdfView;
+import org.icepdf.fx.view.ToolMode;
 import org.icepdf.fx.view.ViewMode;
 
 import java.io.File;
@@ -137,6 +138,23 @@ public class PdfViewDemo extends Application {
         CheckBox cover = new CheckBox("Cover page");
         cover.selectedProperty().bindBidirectional(view.coverPageProperty());
 
+        ToggleGroup toolGroup = new ToggleGroup();
+        ToggleButton select = new ToggleButton("Select");
+        ToggleButton hand = new ToggleButton("Hand");
+        select.setToggleGroup(toolGroup);
+        hand.setToggleGroup(toolGroup);
+        select.setTooltip(new Tooltip("Drag selects text. Middle-drag or Space+drag pans in any tool."));
+        hand.setTooltip(new Tooltip("Drag pans."));
+        select.setSelected(view.getToolMode() == ToolMode.TEXT_SELECT);
+        hand.setSelected(view.getToolMode() == ToolMode.PAN);
+        toolGroup.selectedToggleProperty().addListener((obs, o, n) -> {
+            if (n == null) {
+                o.setSelected(true); // one tool is always active
+                return;
+            }
+            view.setToolMode(n == hand ? ToolMode.PAN : ToolMode.TEXT_SELECT);
+        });
+
         CheckBox overlay = new CheckBox("Overlay test");
         overlay.setTooltip(new Tooltip("Draws a frame 36pt inside each page's crop box, in PDF user space,\n"
                 + "to check native overlays stay locked to the content through zoom and rotation."));
@@ -144,7 +162,7 @@ public class PdfViewDemo extends Application {
 
         return new ToolBar(open, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
-                new Separator(), mode, cover, new Separator(), overlay);
+                new Separator(), mode, cover, new Separator(), select, hand, new Separator(), overlay);
     }
 
     private Node buildStatusBar() {

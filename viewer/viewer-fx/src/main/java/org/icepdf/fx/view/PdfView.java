@@ -21,6 +21,8 @@ import javafx.scene.control.Skin;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 
+import java.util.Optional;
+
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
  * <p>
@@ -77,6 +79,13 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
     private final ReadOnlyIntegerWrapper pageCount = new ReadOnlyIntegerWrapper(this, "pageCount", 0);
     private final ReadOnlyBooleanWrapper rendering = new ReadOnlyBooleanWrapper(this, "rendering", false);
+    private final ObjectProperty<ToolMode> toolMode = new SimpleObjectProperty<>(this, "toolMode",
+            ToolMode.TEXT_SELECT) {
+        @Override
+        public void set(ToolMode value) {
+            super.set(value == null ? ToolMode.TEXT_SELECT : value);
+        }
+    };
 
     public PdfView() {
         getStyleClass().add("pdf-view");
@@ -139,6 +148,15 @@ public class PdfView extends Control {
      */
     public void scrollBy(double dx, double dy) {
         if (getSkin() instanceof PdfViewSkin skin) skin.scrollBy(dx, dy);
+    }
+
+    /**
+     * The page and PDF user-space point under a point in this control's coordinates (for example a
+     * mouse event's {@code getX()/getY()}), or empty over the gaps between pages or before the
+     * control is shown.
+     */
+    public Optional<PagePoint> pageAt(double x, double y) {
+        return getSkin() instanceof PdfViewSkin skin ? Optional.ofNullable(skin.pageAt(x, y)) : Optional.empty();
     }
 
     public void nextPage() {
@@ -277,6 +295,19 @@ public class PdfView extends Control {
 
     public final void setPaintAnnotations(boolean value) {
         paintAnnotations.set(value);
+    }
+
+    /** What a primary-button drag does; text selection by default. */
+    public final ObjectProperty<ToolMode> toolModeProperty() {
+        return toolMode;
+    }
+
+    public final ToolMode getToolMode() {
+        return toolMode.get();
+    }
+
+    public final void setToolMode(ToolMode value) {
+        toolMode.set(value);
     }
 
     /** Supplies native overlay content per visible page; see {@link PageOverlayFactory}. */

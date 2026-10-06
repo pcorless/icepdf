@@ -68,6 +68,8 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `view/DocumentLayout`, `view/ViewMode` | viewer-awt `OneColumnPageViewLayout`, `TwoColumnPageViewLayout`, `OnePageViewLayout`, `TwoPageViewLayout`, `DocumentViewControllerImpl` view types | Behaviour only: the six view types (one page / column, two page / column, left or right cover) and vertical centring when content is shorter than the viewport. The code is new: no Swing types, and a pure function of page sizes. |
 | `view/TileRenderer` | viewer-awt `AbstractPageViewComponent.PageImageCaptureTask` | The Graphics2D set-up for a clipped region paint: clip, translate to region origin, scale to device px, `page.paint(SCREEN, …)`. Rewritten around tiles and regions. |
 | `view/PageTransforms` | core `Page.getPageTransform` | Called, not copied: every FX mapping is derived from the core's own transform. |
+| core `DocumentSelection` (added for this module) | viewer-awt `DocumentTextSelection`, `TextSelectionSupport.rangeForPage` / `selectedText` | The anchor/focus semantics, the per-page range rule and the multi-page text join, reimplemented as an immutable core value. Its tests port `DocumentTextSelectionTest`'s cases. |
+| `view/PanHandler` | viewer-fx phase 1 skin | The drag-to-scroll code moved into a tool handler. |
 
 ## Reference material (ideas only, no code copied)
 
