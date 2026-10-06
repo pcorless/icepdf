@@ -98,6 +98,11 @@ public class PdfViewDemo extends Application {
             if (file != null) open(file);
         });
 
+        Button save = new Button("Save as…");
+        save.setTooltip(new Tooltip("Saves the document with your annotation changes (incremental update)."));
+        save.disableProperty().bind(view.documentProperty().isNull());
+        save.setOnAction(e -> saveAs());
+
         Button previous = new Button("◀");
         previous.setOnAction(e -> view.previousPage());
         Button next = new Button("▶");
@@ -195,7 +200,7 @@ public class PdfViewDemo extends Application {
                 + "to check native overlays stay locked to the content through zoom and rotation."));
         overlay.selectedProperty().addListener((obs, o, on) -> view.setPageOverlayFactory(on ? cropFrame() : null));
 
-        return new ToolBar(open, new Separator(), previous, pageField, pageCount, next, new Separator(),
+        return new ToolBar(open, save, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
                 new Separator(), mode, cover, new Separator(), tool, copy, selectAll,
                 new Separator(), highlight, underline, strikeOut, undo, redo, delete, new Separator(), overlay);
@@ -284,6 +289,19 @@ public class PdfViewDemo extends Application {
             corner.setFill(Color.RED);
             return new javafx.scene.Group(frame, corner);
         };
+    }
+
+    /** Writes the document, with every edit, as an incremental update - core's StateManager tracks them. */
+    private void saveAs() {
+        FileChooser chooser = new FileChooser();
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        File file = chooser.showSaveDialog(stage);
+        if (file == null || document == null) return;
+        try (java.io.OutputStream out = new java.io.BufferedOutputStream(new java.io.FileOutputStream(file))) {
+            document.saveToOutputStream(out);
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR, "Could not save " + file + ":\n" + e.getMessage()).showAndWait();
+        }
     }
 
     private void open(File file) {

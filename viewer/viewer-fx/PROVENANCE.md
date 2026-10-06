@@ -82,7 +82,7 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `view/AnnotationUiLayer`, `view/PopupNode` | viewer-awt `PageViewComponentImpl.addPopupAnnotationComponent`, `PopupAnnotationComponent`, `MarkupGlueComponent` | Behaviour: popups hosted above the pages and free of the page bounds, title/date/minimise, connector to the markup. New FX code. |
 | `view/TileRenderer` (blend layer) | viewer-awt `PageViewComponentImpl.paintBlendedAnnotation` | The approach: render blend-mode annotations over real page pixels. Here the backdrop is the cached content tiles. |
 
-Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest` and `DocumentSearchTest` read `test_print.pdf`,
+Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest`, `DocumentSearchTest` and `AnnotationRoundTripTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and
 `windrivercasestudy1n3d2m8km0r.pdf` from `viewer/viewer-awt/src/test/resources/redact/` in place.
 They are not copied into this module.

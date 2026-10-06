@@ -78,7 +78,12 @@ public final class PdfViewSmoke {
             javafx.scene.layout.BorderPane root = new javafx.scene.layout.BorderPane(view);
             root.setTop(new javafx.scene.control.ToolBar(new javafx.scene.control.Button("toolbar")));
             root.setBottom(new javafx.scene.control.Label("status bar"));
-            stage.setScene(new Scene(root, 1200, 900));
+            // fit the screen (at a 2x UI scale a 1200x900 window can run off it, and the Robot can't
+            // click off-screen), top-left aligned.
+            javafx.geometry.Rectangle2D screen = javafx.stage.Screen.getPrimary().getVisualBounds();
+            stage.setScene(new Scene(root, Math.min(1200, screen.getWidth()), Math.min(900, screen.getHeight() - 30)));
+            stage.setX(screen.getMinX());
+            stage.setY(screen.getMinY());
             stage.show();
             ready.countDown();
         });
@@ -486,8 +491,12 @@ public final class PdfViewSmoke {
         }
         Thread.sleep(300);
         waitIdle(30_000);
+        String hitAtIcon = String.valueOf(onFx(() -> view.annotationAt(icon[0], icon[1])).orElse(null));
+        javafx.geometry.Rectangle2D screenBounds = onFx(() -> javafx.stage.Screen.getPrimary().getBounds());
         check("double-clicking the note reopens it", popup.isOpen() && onFx(() -> popupNodeFor(popup)) != null,
-                "open=" + popup.isOpen());
+                "open=" + popup.isOpen() + ", view point " + icon[0] + "," + icon[1] + " screen " + screen
+                        + " in " + screenBounds + ", hit " + hitAtIcon + ", selected "
+                        + onFx(view::getSelectedAnnotation));
         fx(() -> view.setDocument(null));
         doc.dispose();
     }
