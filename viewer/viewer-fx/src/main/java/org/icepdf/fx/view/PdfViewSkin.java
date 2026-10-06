@@ -236,6 +236,35 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     // ---- layout ---------------------------------------------------------------------------
 
+    // Sizing is independent of content.  SkinBase's default derives the pref size from where the
+    // children sit, and the horizontal bar sits below the viewport: each layout pass then grew the
+    // pref height by a scroll bar, which a parent like BorderPane honoured, re-laying out without
+    // end - thousands of refreshes rendering ever more "visible" pages until the heap was gone.
+    // A document view, like a ScrollPane, takes the space it is given.
+    private static final double PREF_WIDTH = 600;
+    private static final double PREF_HEIGHT = 800;
+    private static final double MIN_SIZE = 50;
+
+    @Override
+    protected double computePrefWidth(double height, double top, double right, double bottom, double left) {
+        return PREF_WIDTH + left + right;
+    }
+
+    @Override
+    protected double computePrefHeight(double width, double top, double right, double bottom, double left) {
+        return PREF_HEIGHT + top + bottom;
+    }
+
+    @Override
+    protected double computeMinWidth(double height, double top, double right, double bottom, double left) {
+        return MIN_SIZE + left + right;
+    }
+
+    @Override
+    protected double computeMinHeight(double width, double top, double right, double bottom, double left) {
+        return MIN_SIZE + top + bottom;
+    }
+
     @Override
     protected void layoutChildren(double x, double y, double w, double h) {
         // the vertical bar is always shown so fit-width can't oscillate against its appearance.

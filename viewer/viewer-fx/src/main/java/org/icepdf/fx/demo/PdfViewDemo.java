@@ -33,6 +33,7 @@ import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
 import org.icepdf.fx.view.PdfView;
@@ -155,6 +156,21 @@ public class PdfViewDemo extends Application {
             view.setToolMode(n == hand ? ToolMode.PAN : ToolMode.TEXT_SELECT);
         });
 
+        Button copy = new Button("Copy");
+        copy.setTooltip(new Tooltip("Copy the selected text (Ctrl+C)"));
+        copy.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed(),
+                view.textSelectionProperty()));
+        copy.setOnAction(e -> view.copySelection());
+        Button selectAll = new Button("Select all");
+        selectAll.setTooltip(new Tooltip("Select all text (Ctrl+A)"));
+        selectAll.disableProperty().bind(view.pageCountProperty().isEqualTo(0));
+        selectAll.setOnAction(e -> {
+            view.setToolMode(ToolMode.TEXT_SELECT);
+            view.selectAll();
+            view.requestFocus();
+        });
+
         CheckBox overlay = new CheckBox("Overlay test");
         overlay.setTooltip(new Tooltip("Draws a frame 36pt inside each page's crop box, in PDF user space,\n"
                 + "to check native overlays stay locked to the content through zoom and rotation."));
@@ -162,7 +178,8 @@ public class PdfViewDemo extends Application {
 
         return new ToolBar(open, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
-                new Separator(), mode, cover, new Separator(), select, hand, new Separator(), overlay);
+                new Separator(), mode, cover, new Separator(), select, hand, copy, selectAll,
+                new Separator(), overlay);
     }
 
     private Node buildStatusBar() {
@@ -174,7 +191,16 @@ public class PdfViewDemo extends Application {
         }));
         poll.setCycleCount(Timeline.INDEFINITE);
         poll.play();
-        HBox bar = new HBox(memory);
+        // selection span, to show the public textSelection property in use.
+        Label selection = new Label();
+        selection.textProperty().bind(javafx.beans.binding.Bindings.createStringBinding(() -> {
+            DocumentSelection s = view.getTextSelection();
+            if (s == null) return "";
+            if (s.isCollapsed()) return "caret p" + (s.getFocusPage() + 1) + ":" + s.getFocusOffset();
+            return s.startPage() == s.endPage() ? "selected p" + (s.startPage() + 1)
+                    : "selected p" + (s.startPage() + 1) + "-" + (s.endPage() + 1);
+        }, view.textSelectionProperty()));
+        HBox bar = new HBox(16, memory, selection);
         bar.setPadding(new Insets(2, 8, 2, 8));
         return bar;
     }

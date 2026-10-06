@@ -73,7 +73,12 @@ public final class PdfViewSmoke {
         Platform.startup(() -> {
             view = new PdfView();
             stage = new Stage();
-            stage.setScene(new Scene(view, 1200, 900));
+            // hosted the way applications embed it - a BorderPane with bars around it - not as the
+            // scene root, which sizes it directly and hid a pref-size layout loop once.
+            javafx.scene.layout.BorderPane root = new javafx.scene.layout.BorderPane(view);
+            root.setTop(new javafx.scene.control.ToolBar(new javafx.scene.control.Button("toolbar")));
+            root.setBottom(new javafx.scene.control.Label("status bar"));
+            stage.setScene(new Scene(root, 1200, 900));
             stage.show();
             ready.countDown();
         });
@@ -173,6 +178,7 @@ public final class PdfViewSmoke {
 
     private void checkTools(Document document) throws Exception {
         System.out.println("tool checks:");
+        checkLayoutStable();
         checkHitTesting(document);
         checkPanning();
         checkSelectionLayer(document);
@@ -180,6 +186,33 @@ public final class PdfViewSmoke {
         checkCaret(document);
         checkKeyboard(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
+    }
+
+    /**
+     * Embedded in a BorderPane, an idle view must be still: same size over a second and no render
+     * cycles.  Guards the pref-size feedback loop (each pass grew the pref height by a scroll bar).
+     */
+    private void checkLayoutStable() throws Exception {
+        act("layout setup: continuous 100%", v -> {
+            v.setViewMode(ViewMode.CONTINUOUS);
+            v.setFitMode(FitMode.NONE);
+            v.setZoom(1);
+            v.setCurrentPageIndex(0);
+        });
+        double[] before = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        double sceneHeight = onFx(() -> view.getScene().getHeight());
+        int[] renders = {0};
+        javafx.beans.value.ChangeListener<Boolean> counter = (obs, o, n) -> {
+            if (n) renders[0]++;
+        };
+        fx(() -> view.renderingProperty().addListener(counter));
+        Thread.sleep(1000);
+        fx(() -> view.renderingProperty().removeListener(counter));
+        double[] after = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        check("idle embedded view is stable", before[0] == after[0] && before[1] == after[1]
+                        && after[1] < sceneHeight && renders[0] == 0,
+                String.format("%.0fx%.0f -> %.0fx%.0f in a %.0f high scene, %d render cycles",
+                        before[0], before[1], after[0], after[1], sceneHeight, renders[0]));
     }
 
     /**
