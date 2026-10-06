@@ -25,12 +25,20 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.actions.GoToAction;
+import org.icepdf.core.pobjects.actions.NamedAction;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.SearchTerm;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
@@ -101,6 +109,11 @@ public class PdfView extends Control {
     private boolean searchAutoSelect;
     private int searchStartPage;
 
+    private final ReadOnlyObjectWrapper<Annotation> selectedAnnotation =
+            new ReadOnlyObjectWrapper<>(this, "selectedAnnotation");
+    private final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationAction =
+            new SimpleObjectProperty<>(this, "onAnnotationAction");
+
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
     private final ObjectProperty<ToolMode> toolMode = new SimpleObjectProperty<>(this, "toolMode",
@@ -116,6 +129,7 @@ public class PdfView extends Control {
         setFocusTraversable(true);
         document.addListener((obs, old, doc) -> {
             clearSearch();
+            selectedAnnotation.set(null);
             setTextSelection(null);
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
@@ -192,6 +206,97 @@ public class PdfView extends Control {
      */
     public void ensureVisible(PagePoint point) {
         if (point != null && getSkin() instanceof PdfViewSkin skin) skin.ensureVisible(point, 48);
+    }
+
+    // ---- annotations ----------------------------------------------------------------------
+
+    /** The annotation selected for editing (outline and handles), or null. */
+    public final ReadOnlyObjectProperty<Annotation> selectedAnnotationProperty() {
+        return selectedAnnotation.getReadOnlyProperty();
+    }
+
+    public final Annotation getSelectedAnnotation() {
+        return selectedAnnotation.get();
+    }
+
+    /** Selects an annotation as a click would; null clears.  Popups and form widgets aren't selectable. */
+    public void selectAnnotation(Annotation annotation) {
+        selectedAnnotation.set(annotation);
+    }
+
+    public void clearAnnotationSelection() {
+        selectedAnnotation.set(null);
+    }
+
+    /**
+     * The topmost visible annotation under a point in this control's coordinates (popups and form
+     * widgets excluded), or empty.  Only pages already rendered are searched.
+     */
+    public Optional<Annotation> annotationAt(double x, double y) {
+        if (!(getSkin() instanceof PdfViewSkin skin)) return Optional.empty();
+        PdfViewSkin.AnnotationHit hit = skin.annotationAt(x, y);
+        return hit != null ? Optional.of(hit.annotation()) : Optional.empty();
+    }
+
+    /**
+     * Receives annotation actions the view doesn't perform itself (URI, launch, remote GoTo,
+     * JavaScript, ...).  In-document navigation is handled by the view.  Null ignores them.
+     */
+    public final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationActionProperty() {
+        return onAnnotationAction;
+    }
+
+    public final void setOnAnnotationAction(Consumer<AnnotationActionEvent> handler) {
+        onAnnotationAction.set(handler);
+    }
+
+    public final Consumer<AnnotationActionEvent> getOnAnnotationAction() {
+        return onAnnotationAction.get();
+    }
+
+    /**
+     * Performs an annotation's action, as a click on it does: GoTo destinations and the page named
+     * actions navigate; anything else goes to {@link #onAnnotationActionProperty()}.  A link with a
+     * /Dest and no action navigates to it.
+     */
+    public void performAnnotationAction(Annotation annotation) {
+        if (annotation == null) return;
+        Action action = annotation.getAction();
+        if (action instanceof GoToAction goTo) {
+            navigateTo(goTo.getDestination());
+        } else if (action instanceof NamedAction named && named.getNamedAction() != null) {
+            Name name = named.getNamedAction();
+            if (NamedAction.FIRST_PAGE_KEY.equals(name)) setCurrentPageIndex(0);
+            else if (NamedAction.LAST_PAGE_KEY.equals(name)) setCurrentPageIndex(getPageCount() - 1);
+            else if (NamedAction.NEXT_PAGE_KEY.equals(name)) setCurrentPageIndex(getCurrentPageIndex() + 1);
+            else if (NamedAction.PREV_PAGE_KEY.equals(name)) setCurrentPageIndex(getCurrentPageIndex() - 1);
+            else dispatchAction(annotation, action);
+        } else if (action != null) {
+            dispatchAction(annotation, action);
+        } else if (annotation instanceof LinkAnnotation link && link.getDestination() != null) {
+            navigateTo(link.getDestination());
+        }
+    }
+
+    private void dispatchAction(Annotation annotation, Action action) {
+        Consumer<AnnotationActionEvent> handler = getOnAnnotationAction();
+        if (handler != null) handler.accept(new AnnotationActionEvent(annotation, action));
+    }
+
+    /**
+     * Shows a destination: its page, and its top/left when the destination gives them (otherwise the
+     * page's top).  Unresolvable destinations are ignored.
+     */
+    public void navigateTo(Destination destination) {
+        Document doc = getDocument();
+        if (destination == null || doc == null || destination.getPageReference() == null) return;
+        int page = doc.getPageTree().getPageNumber(destination.getPageReference());
+        if (page < 0 || page >= getPageCount()) return;
+        setCurrentPageIndex(page);
+        if (destination.getTop() != null && getSkin() instanceof PdfViewSkin skin) {
+            Float left = destination.getLeft();
+            skin.alignTop(new PagePoint(page, left != null ? left : 0, destination.getTop()));
+        }
     }
 
     // ---- search ---------------------------------------------------------------------------

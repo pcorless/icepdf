@@ -28,6 +28,9 @@ final class PanHandler implements ToolHandler {
     private double lastX;
     private double lastY;
 
+    private double pressX;
+    private double pressY;
+
     PanHandler(PdfViewSkin skin) {
         this.skin = skin;
     }
@@ -36,6 +39,8 @@ final class PanHandler implements ToolHandler {
     public void pressed(MouseEvent e) {
         lastX = e.getX();
         lastY = e.getY();
+        pressX = e.getX();
+        pressY = e.getY();
         skin.setViewportCursor(Cursor.CLOSED_HAND);
     }
 
@@ -49,6 +54,11 @@ final class PanHandler implements ToolHandler {
     @Override
     public void released(MouseEvent e) {
         skin.restoreViewportCursor();
+        // a click (not a drag) with the hand tool follows a link, as in Acrobat.
+        if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY
+                && Math.hypot(e.getX() - pressX, e.getY() - pressY) <= 4) {
+            skin.activateLinkAtViewport(e.getX(), e.getY());
+        }
     }
 
     @Override

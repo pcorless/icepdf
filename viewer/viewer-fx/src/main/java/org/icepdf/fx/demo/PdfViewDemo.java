@@ -72,6 +72,13 @@ public class PdfViewDemo extends Application {
         stage.show();
         view.requestFocus();
 
+        // links that leave the document are the application's call; the demo opens URIs.
+        view.setOnAnnotationAction(event -> {
+            if (event.action() instanceof org.icepdf.core.pobjects.actions.URIAction uri && uri.getURI() != null) {
+                getHostServices().showDocument(uri.getURI());
+            }
+        });
+
         List<String> args = getParameters().getUnnamed();
         if (!args.isEmpty()) open(new File(args.get(0)));
     }

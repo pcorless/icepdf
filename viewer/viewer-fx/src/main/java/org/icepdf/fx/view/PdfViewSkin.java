@@ -24,6 +24,7 @@ import javafx.beans.value.ChangeListener;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.SkinBase;
@@ -40,6 +41,11 @@ import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
@@ -81,6 +87,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final Timeline caretBlink = new Timeline();
     private boolean caretOn = true;
     private final Map<Integer, PageLayer> layers = new HashMap<>();
+    // page layers (clipped to their pages) under the annotation UI layers (not clipped: popups and
+    // chrome may extend past a page edge, as Swing's document-level popup layer allows).
+    private final Group pagesGroup = new Group();
+    private final Group uiGroup = new Group();
+    private final Map<Integer, AnnotationUiLayer> uiLayers = new HashMap<>();
+    // the annotation under the pointer, for the hover outline.
+    private AnnotationHit hovered;
 
     private Document document;
     // page sizes at zoom 1 for the current rotation and boundary.
@@ -154,6 +167,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         renderer.setPaintAnnotations(control.isPaintAnnotations());
 
         viewport.setClip(viewportClip);
+        viewport.getChildren().addAll(pagesGroup, uiGroup);
         viewport.setManaged(false);
         vbar.setOrientation(Orientation.VERTICAL);
         vbar.setUnitIncrement(SCROLL_UNIT);
@@ -195,6 +209,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             refresh();
         });
         control.getSearchHits().addListener((javafx.collections.ListChangeListener<SearchHit>) c -> scheduleRefresh());
+        registerChangeListener(control.selectedAnnotationProperty(), o ->
+                uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null)));
         registerChangeListener(control.textSelectionProperty(), o -> {
             // solid again whenever the caret moves, so it is visible straight after interaction.
             caretOn = true;
@@ -550,12 +566,22 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             if (layer == null) {
                 layer = new PageLayer(index, document.getPageTree().getPage(index));
                 layers.put(index, layer);
-                viewport.getChildren().add(layer);
+                pagesGroup.getChildren().add(layer);
             }
             layer.setParams(params, slot.width(), slot.height());
             layer.setLayoutX(snap(slot.x() - scrollX));
             layer.setLayoutY(snap(slot.y() - scrollY));
             layer.ensureOverlay(control.getPageOverlayFactory());
+            AnnotationUiLayer ui = uiLayers.get(index);
+            if (ui == null) {
+                ui = new AnnotationUiLayer(index);
+                uiLayers.put(index, ui);
+                uiGroup.getChildren().add(ui);
+            }
+            ui.setLayoutX(layer.getLayoutX());
+            ui.setLayoutY(layer.getLayoutY());
+            ui.setPageToView(layer.getPageToView());
+            updateAnnotationChrome(ui, layer.getPage());
 
             CacheKey.Preview previewKey = new CacheKey.Preview(index, params.boundary());
             wanted.add(previewKey);
@@ -573,7 +599,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         }
         layers.entrySet().removeIf(e -> {
             if (keep.contains(e.getKey())) return false;
-            viewport.getChildren().remove(e.getValue());
+            pagesGroup.getChildren().remove(e.getValue());
+            return true;
+        });
+        uiLayers.entrySet().removeIf(e -> {
+            if (keep.contains(e.getKey())) return false;
+            uiGroup.getChildren().remove(e.getValue());
             return true;
         });
         cache.pin(wanted);
@@ -818,8 +849,99 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void clearLayers() {
-        viewport.getChildren().clear();
+        pagesGroup.getChildren().clear();
         layers.clear();
+        uiGroup.getChildren().clear();
+        uiLayers.clear();
+    }
+
+    // ---- annotations ----------------------------------------------------------------------
+
+    /** An annotation and the page it is on. */
+    record AnnotationHit(int pageIndex, Annotation annotation) {
+    }
+
+    /**
+     * The topmost annotation under a viewport point that the view lets you interact with: visible,
+     * not a popup (popups are nodes) and not a form widget (a later phase).  Only pages already
+     * initialised by rendering are searched, so this never parses on the FX thread.
+     */
+    AnnotationHit annotationAtViewport(double vx, double vy) {
+        PagePoint point = pageAtViewport(vx, vy);
+        if (point == null) return null;
+        Page page = document.getPageTree().getPage(point.pageIndex());
+        if (page == null || !page.isInitiated()) return null;
+        List<Annotation> annotations = page.getAnnotations();
+        if (annotations == null) return null;
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Annotation a = annotations.get(i);
+            // MarkupGlueAnnotation is core's synthetic popup connector for printing; its rect spans
+            // the markup and its popup, so it would swallow clicks meant for the markup.
+            if (a == null || a instanceof PopupAnnotation || a instanceof AbstractWidgetAnnotation
+                    || a instanceof org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation) continue;
+            if (!a.allowScreenNormalMode() || a.getFlagHidden()) continue;
+            java.awt.geom.Rectangle2D.Float r = a.getUserSpaceRectangle();
+            if (r != null && r.contains(point.x(), point.y())) return new AnnotationHit(point.pageIndex(), a);
+        }
+        return null;
+    }
+
+    AnnotationHit annotationAt(double x, double y) {
+        Point2D local = viewport.parentToLocal(x, y);
+        return annotationAtViewport(local.getX(), local.getY());
+    }
+
+    /** Sets the hover outline (null clears). */
+    void setHovered(AnnotationHit hit) {
+        if (java.util.Objects.equals(hit, hovered)) return;
+        hovered = hit;
+        uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null));
+    }
+
+    private void updateAnnotationChrome(AnnotationUiLayer ui, Page page) {
+        int index = ui.getPageIndex();
+        ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
+        Annotation selected = getSkinnable().getSelectedAnnotation();
+        Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
+        ui.setSelected(onPage, onPage != null && !(onPage instanceof LinkAnnotation)
+                && onPage.allowAlterProperties() && !onPage.getFlagReadOnly());
+    }
+
+    private boolean isOnPage(Annotation annotation, int pageIndex) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        List<Annotation> annotations = page != null && page.isInitiated() ? page.getAnnotations() : null;
+        return annotations != null && annotations.contains(annotation);
+    }
+
+    /** The UI layer of a visible page, or null. */
+    AnnotationUiLayer uiLayer(int pageIndex) {
+        return uiLayers.get(pageIndex);
+    }
+
+    /** Follows the link (or action) under a viewport point; true if there was one. */
+    boolean activateLinkAtViewport(double vx, double vy) {
+        AnnotationHit hit = annotationAtViewport(vx, vy);
+        if (hit == null || !isActionable(hit.annotation())) return false;
+        getSkinnable().performAnnotationAction(hit.annotation());
+        return true;
+    }
+
+    static boolean isActionable(Annotation annotation) {
+        return annotation instanceof LinkAnnotation
+                || (annotation.getAction() != null && !(annotation instanceof MarkupAnnotation));
+    }
+
+    /** Scrolls so a page point sits at the viewport's top (and left edge if the page is wider). */
+    void alignTop(PagePoint point) {
+        if (layout == null || document == null) return;
+        PageSlot slot = layout.getSlot(point.pageIndex());
+        if (slot == null) return;
+        Page page = document.getPageTree().getPage(point.pageIndex());
+        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
+                layoutRotation, (float) layoutZoom);
+        Point2D view = PageTransforms.pageToView(pageToView, point.x(), point.y());
+        double x = layout.getWidth() > viewportW ? slot.x() + view.getX() - 8 : scrollX;
+        scrollTo(x, slot.y() + view.getY() - 8);
     }
 
     private void resetRasters() {

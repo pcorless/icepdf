@@ -90,6 +90,12 @@ public final class PdfViewSmoke {
             annotationSnapshots(file);
             return;
         }
+        if ("annotation-ui".equals(System.getProperty("smoke.only"))) {
+            checkAnnotationUi(file);
+            System.out.println(failures == 0 ? "annotation UI checks: all passed"
+                    : "annotation UI checks: " + failures + " FAILED");
+            return;
+        }
         Document document = new Document();
         document.setFile(file.toString());
         int pages = document.getNumberOfPages();
@@ -169,6 +175,179 @@ public final class PdfViewSmoke {
         String state = onFx(() -> String.format("page %d/%d zoom %.0f%% rot %.0f",
                 view.getCurrentPageIndex() + 1, view.getPageCount(), view.getZoom() * 100, view.getRotation()));
         System.out.printf("%-32s %s %8.0fms  heap %4dMB  %s%n", name, idle ? "idle   " : "TIMEOUT", ms, heap, state);
+    }
+
+    // ---- annotation interaction -------------------------------------------------------------
+
+    /**
+     * Select, hover and links through real mouse input, on the annotation corpus directory: a
+     * square annotation is hit-tested, selected by a click (chrome drawn) and deselected by a click
+     * elsewhere; a /Dest link navigates and a GoToR link reaches the application callback.
+     */
+    private void checkAnnotationUi(Path dir) throws Exception {
+        javafx.scene.robot.Robot robot = onFx(javafx.scene.robot.Robot::new);
+        // -- select / deselect
+        Document rect = new Document();
+        rect.setFile(dir.resolve("Invoice_rectangle.pdf").toString());
+        act("annotation UI: Invoice_rectangle fit page", v -> {
+            v.setDocument(rect);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+        });
+        org.icepdf.core.pobjects.annotations.Annotation target = null;
+        for (org.icepdf.core.pobjects.annotations.Annotation a : rect.getPageTree().getPage(0).getAnnotations()) {
+            if (a instanceof org.icepdf.core.pobjects.annotations.SquareAnnotation) {
+                target = a;
+                break;
+            }
+        }
+        if (target == null) {
+            check("square annotation found", false, "fixture has none");
+        } else {
+            org.icepdf.core.pobjects.annotations.Annotation square = target;
+            double[] p = viewPointIn(0, square.getUserSpaceRectangle());
+            java.util.Optional<org.icepdf.core.pobjects.annotations.Annotation> hit =
+                    onFx(() -> view.annotationAt(p[0], p[1]));
+            check("annotationAt finds the square", hit.isPresent() && hit.get() == square, String.valueOf(hit));
+            robotClick(robot, p);
+            check("click selects it", onFx(view::getSelectedAnnotation) == square,
+                    String.valueOf(onFx(view::getSelectedAnnotation)));
+            int chrome = countPixels(0, 119, 255, 12);
+            check("selection chrome drawn", chrome > 40, chrome + " chrome px");
+            check("no text selection from that click", onFx(view::getTextSelection) == null,
+                    String.valueOf(onFx(view::getTextSelection)));
+            double[] away = viewPointWithoutAnnotation(0);
+            robotClick(robot, away);
+            check("click elsewhere deselects", onFx(view::getSelectedAnnotation) == null,
+                    String.valueOf(onFx(view::getSelectedAnnotation)));
+            check("chrome gone", countPixels(0, 119, 255, 12) < 5, "");
+        }
+        fx(() -> view.setDocument(null));
+        rect.dispose();
+
+        // -- links
+        Document links = new Document();
+        links.setFile(dir.resolve("links.pdf").toString());
+        java.util.List<org.icepdf.fx.view.AnnotationActionEvent> events = new java.util.ArrayList<>();
+        act("annotation UI: links.pdf page 1 fit page", v -> {
+            v.setDocument(links);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setCurrentPageIndex(0);
+            v.setFitMode(FitMode.PAGE);
+            v.setOnAnnotationAction(events::add);
+        });
+        org.icepdf.core.pobjects.annotations.LinkAnnotation destLink = null;
+        org.icepdf.core.pobjects.annotations.LinkAnnotation remoteLink = null;
+        for (org.icepdf.core.pobjects.annotations.Annotation a : links.getPageTree().getPage(0).getAnnotations()) {
+            if (!(a instanceof org.icepdf.core.pobjects.annotations.LinkAnnotation link)) continue;
+            if (destLink == null && link.getAction() == null && link.getDestination() != null) destLink = link;
+            if (remoteLink == null && link.getAction() instanceof org.icepdf.core.pobjects.actions.GoToRAction) remoteLink = link;
+        }
+        if (remoteLink != null) {
+            double[] p = viewPointIn(0, remoteLink.getUserSpaceRectangle());
+            robotMove(robot, p);
+            javafx.scene.Node viewport = onFx(() -> view.getChildrenUnmodifiable().get(0));
+            check("hand cursor over a link", onFx(viewport::getCursor) == javafx.scene.Cursor.HAND,
+                    String.valueOf(onFx(viewport::getCursor)));
+            robotClick(robot, p);
+            check("GoToR link goes to the app callback", events.size() == 1
+                            && events.get(0).action() instanceof org.icepdf.core.pobjects.actions.GoToRAction
+                            && events.get(0).annotation() == remoteLink,
+                    events.size() + " events");
+        }
+        if (destLink != null) {
+            int expected = links.getPageTree().getPageNumber(destLink.getDestination().getPageReference());
+            double[] p = viewPointIn(0, destLink.getUserSpaceRectangle());
+            robotClick(robot, p);
+            waitIdle(30_000);
+            int page = onFx(view::getCurrentPageIndex);
+            check("/Dest link navigates", page == expected && expected != 0, "page " + (page + 1)
+                    + ", expected " + (expected + 1));
+        }
+        fx(() -> {
+            view.setOnAnnotationAction(null);
+            view.setDocument(null);
+        });
+        links.dispose();
+    }
+
+    /** A view point inside a page user-space rectangle, found by probing pageAt (nearest its centre). */
+    private double[] viewPointIn(int pageIndex, java.awt.geom.Rectangle2D rect) throws Exception {
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        return onFx(() -> {
+            double[] best = null;
+            double bestDistance = Double.MAX_VALUE;
+            for (double y = 2; y < size[1] - 2; y += 2) {
+                for (double x = 2; x < size[0] - 20; x += 2) {
+                    java.util.Optional<org.icepdf.fx.view.PagePoint> p = view.pageAt(x, y);
+                    if (p.isEmpty() || p.get().pageIndex() != pageIndex || !rect.contains(p.get().x(), p.get().y())) {
+                        continue;
+                    }
+                    double d = Math.hypot(p.get().x() - rect.getCenterX(), p.get().y() - rect.getCenterY());
+                    if (d < bestDistance) {
+                        bestDistance = d;
+                        best = new double[]{x, y};
+                    }
+                }
+            }
+            return best;
+        });
+    }
+
+    /** A view point on the page, clear of annotations and text. */
+    private double[] viewPointWithoutAnnotation(int pageIndex) throws Exception {
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        return onFx(() -> {
+            for (double y = size[1] - 40; y > 20; y -= 9) {
+                for (double x = 30; x < size[0] - 40; x += 9) {
+                    java.util.Optional<org.icepdf.fx.view.PagePoint> p = view.pageAt(x, y);
+                    if (p.isPresent() && p.get().pageIndex() == pageIndex && view.annotationAt(x, y).isEmpty()) {
+                        return new double[]{x, y};
+                    }
+                }
+            }
+            return new double[]{size[0] / 2, size[1] / 2};
+        });
+    }
+
+    private void robotMove(javafx.scene.robot.Robot robot, double[] p) throws Exception {
+        javafx.geometry.Point2D screen = onFx(() -> view.localToScreen(p[0], p[1]));
+        fx(() -> robot.mouseMove(screen));
+        Thread.sleep(60);
+        fx(() -> robot.mouseMove(screen.getX() + 1, screen.getY()));
+        Thread.sleep(120);
+    }
+
+    private void robotClick(javafx.scene.robot.Robot robot, double[] p) throws Exception {
+        robotMove(robot, p);
+        fx(() -> robot.mousePress(javafx.scene.input.MouseButton.PRIMARY));
+        Thread.sleep(40);
+        fx(() -> robot.mouseRelease(javafx.scene.input.MouseButton.PRIMARY));
+        Thread.sleep(400); // past the double-click interval
+        waitIdle(30_000);
+    }
+
+    private int countPixels(int r, int g, int b, int tolerance) throws Exception {
+        double scale = onFx(() -> stage.getOutputScaleX());
+        WritableImage image = onFx(() -> {
+            SnapshotParameters params = new SnapshotParameters();
+            params.setTransform(new Scale(scale, scale));
+            return view.snapshot(params, null);
+        });
+        int w = (int) image.getWidth();
+        int h = (int) image.getHeight();
+        int[] argb = new int[w * h];
+        image.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), argb, 0, w);
+        int count = 0;
+        for (int c : argb) {
+            if (Math.abs((c >> 16 & 0xff) - r) <= tolerance && Math.abs((c >> 8 & 0xff) - g) <= tolerance
+                    && Math.abs((c & 0xff) - b) <= tolerance) {
+                count++;
+            }
+        }
+        return count;
     }
 
     // ---- annotation rendering A/B ------------------------------------------------------------

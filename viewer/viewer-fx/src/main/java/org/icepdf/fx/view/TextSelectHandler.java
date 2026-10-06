@@ -53,22 +53,51 @@ final class TextSelectHandler implements ToolHandler {
         autoScroll.stop();
     }
 
+    // a press on a link: followed on release unless the pointer moved (then it was a text drag).
+    private PdfViewSkin.AnnotationHit pendingLink;
+    private double pressX;
+    private double pressY;
+    // a press that selected an annotation: no text selection for this gesture.
+    private boolean annotationGesture;
+
     @Override
     public void moved(MouseEvent e) {
-        skin.setViewportCursor(skin.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
+        PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
+        skin.setHovered(hit != null && !PdfViewSkin.isActionable(hit.annotation()) ? hit : null);
+        if (hit != null) {
+            skin.setViewportCursor(PdfViewSkin.isActionable(hit.annotation()) ? Cursor.HAND : Cursor.DEFAULT);
+        } else {
+            skin.setViewportCursor(skin.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
+        }
     }
 
     @Override
     public void pressed(MouseEvent e) {
         lastX = e.getX();
         lastY = e.getY();
+        pressX = e.getX();
+        pressY = e.getY();
         PdfView view = skin.getSkinnable();
+        annotationGesture = false;
+        pendingLink = null;
+        PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
+        if (hit != null && PdfViewSkin.isActionable(hit.annotation())) {
+            pendingLink = hit;
+        } else if (hit != null) {
+            // annotations win over text: select it, no text selection for this gesture.
+            view.selectAnnotation(hit.annotation());
+            annotationGesture = true;
+            return;
+        }
+        view.clearAnnotationSelection();
         view.setTextSelection(controller.press(view.getTextSelection(), skin.pageAtViewport(e.getX(), e.getY()),
                 e.getClickCount(), e.isShiftDown()));
     }
 
     @Override
     public void dragged(MouseEvent e) {
+        if (annotationGesture) return;
+        if (pendingLink != null && Math.hypot(e.getX() - pressX, e.getY() - pressY) > 4) pendingLink = null;
         lastX = e.getX();
         lastY = e.getY();
         extendToLast();
@@ -83,6 +112,12 @@ final class TextSelectHandler implements ToolHandler {
     public void released(MouseEvent e) {
         autoScroll.stop();
         controller.release();
+        if (pendingLink != null) {
+            PdfViewSkin.AnnotationHit link = pendingLink;
+            pendingLink = null;
+            skin.getSkinnable().performAnnotationAction(link.annotation());
+        }
+        annotationGesture = false;
     }
 
     /**
@@ -105,6 +140,10 @@ final class TextSelectHandler implements ToolHandler {
                 view.copySelection();
                 return true;
             case ESCAPE:
+                if (view.getSelectedAnnotation() != null) {
+                    view.clearAnnotationSelection();
+                    return true;
+                }
                 if (selection == null) return false;
                 view.clearSelection();
                 return true;
