@@ -35,6 +35,11 @@ import java.util.logging.Logger;
  * from its contours on every call, so an outline that is painted once per repaint is re-rendered
  * once per repaint.  Caching here removes that work from every repaint, zoom and scroll after the
  * first.
+ * <br>
+ * Two outlines are cached: the plain outline keyed by character code, and the grid-fitted outline
+ * keyed by {@code (code, ppem)}, since grid fitting depends on the pixels-per-em the glyph is
+ * rendered at.  "Hinting" names the feature that is switched on and off; "grid fit" names what the
+ * code paths below actually do.
  *
  * @author John Hewson
  * <p>
@@ -50,6 +55,7 @@ import java.util.logging.Logger;
  * - {@code RuntimeException} is caught as well as {@code IOException}, and the empty fallback
  *   outline is cached rather than returned uncached, so a bad glyph costs one throw and not one
  *   per paint
+ * - a second, grid-fitted outline is cached alongside the plain one; PDFBox has no equivalent
  * @see ZSimpleFont#getGlphyShape(char)
  */
 final class GlyphCache {
@@ -59,13 +65,44 @@ final class GlyphCache {
 
     private final ZSimpleFont font;
     private final Map<Integer, Shape> cache = new ConcurrentHashMap<>();
+    private final Map<Long, Shape> gridFitCache = new ConcurrentHashMap<>();
 
     GlyphCache(ZSimpleFont font) {
         this.font = font;
     }
 
     /**
-     * Returns the glyph outline for the given character code, caching it by code.
+     * Returns the grid-fitted glyph outline for the given character code at the given ppem, falling
+     * back to the plain outline when the font cannot grid-fit that glyph/ppem.  Results are cached
+     * per {@code (code, ppem)}.
+     *
+     * @param code character code in a PDF
+     * @param ppem the pixels-per-em the glyph will be rendered at
+     * @return the grid-fitted outline if available, otherwise the plain outline
+     */
+    Shape getGridFitPathForCharacterCode(char code, int ppem) {
+        long key = ((long) ppem << 32) | (code & 0xFFFFFFFFL);
+        Shape cached = gridFitCache.get(key);
+        if (cached != null) {
+            return cached;
+        }
+        Shape path = null;
+        try {
+            path = font.getGridFitGlyphShape(code, ppem);
+        } catch (IOException | RuntimeException e) {
+            // a failed grid-fit is recoverable - the plain outline below is still correct, just
+            // not snapped to the pixel grid - so log quietly and cache the fallback
+            logger.log(Level.FINE, "Grid fit failed for code " + (int) code + " in font " + font.getName(), e);
+        }
+        // fall back to the plain outline (itself cached by code); cache the decision per (code, ppem)
+        Shape result = path != null ? path : getPathForCharacterCode(code);
+        gridFitCache.put(key, result);
+        return result;
+    }
+
+    /**
+     * Returns the plain (not grid-fitted) glyph outline for the given character code, caching it by
+     * code.
      *
      * @param code character code in a PDF
      * @return the glyph outline, or an empty path on error

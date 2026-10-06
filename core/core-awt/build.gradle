@@ -5,6 +5,7 @@ def baseJarName = 'icepdf'
 def baseAppendixName = 'core'
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
