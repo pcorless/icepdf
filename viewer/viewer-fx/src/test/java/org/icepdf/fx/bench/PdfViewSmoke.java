@@ -229,6 +229,7 @@ public final class PdfViewSmoke {
         rect.dispose();
 
         checkPopups(robot, dir);
+        checkCreation(robot, dir);
 
         // -- links
         Document links = new Document();
@@ -487,6 +488,127 @@ public final class PdfViewSmoke {
         waitIdle(30_000);
         check("double-clicking the note reopens it", popup.isOpen() && onFx(() -> popupNodeFor(popup)) != null,
                 "open=" + popup.isOpen());
+        fx(() -> view.setDocument(null));
+        doc.dispose();
+    }
+
+    /**
+     * Creation tools through the mouse: rectangle, ellipse, line and ink drags, note and free text
+     * clicks, and a highlight from a text drag; each adds the right annotation type where drawn, and
+     * undo removes them all.  No page-content tile is rendered by any of it.
+     */
+    private void checkCreation(javafx.scene.robot.Robot robot, Path dir) throws Exception {
+        Document doc = new Document();
+        doc.setFile(dir.resolve("Invoice_rectangle.pdf").toString());
+        act("create: Invoice_rectangle fit page", v -> {
+            v.setDocument(doc);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+        });
+        org.icepdf.core.pobjects.Page page = doc.getPageTree().getPage(0);
+        double zoom = onFx(view::getZoom);
+        long contentBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+        double[] base = viewPointWithoutAnnotation(0);
+        java.util.List<org.icepdf.core.pobjects.annotations.Annotation> created = new java.util.ArrayList<>();
+
+        record Draw(org.icepdf.fx.view.ToolMode mode, double dx, double dy,
+                    Class<? extends org.icepdf.core.pobjects.annotations.Annotation> type) {
+        }
+        Draw[] draws = {
+                new Draw(org.icepdf.fx.view.ToolMode.RECTANGLE, 70, -40, org.icepdf.core.pobjects.annotations.SquareAnnotation.class),
+                new Draw(org.icepdf.fx.view.ToolMode.ELLIPSE, 70, -40, org.icepdf.core.pobjects.annotations.CircleAnnotation.class),
+                new Draw(org.icepdf.fx.view.ToolMode.LINE, 90, -30, org.icepdf.core.pobjects.annotations.LineAnnotation.class),
+                new Draw(org.icepdf.fx.view.ToolMode.INK, 60, -50, org.icepdf.core.pobjects.annotations.InkAnnotation.class),
+                new Draw(org.icepdf.fx.view.ToolMode.NOTE, 0, 0, org.icepdf.core.pobjects.annotations.TextAnnotation.class),
+                new Draw(org.icepdf.fx.view.ToolMode.FREE_TEXT, 0, 0, org.icepdf.core.pobjects.annotations.FreeTextAnnotation.class),
+        };
+        double offset = 0;
+        for (Draw d : draws) {
+            fx(() -> view.setToolMode(d.mode()));
+            double[] at = {base[0] + offset, base[1]};
+            offset = (offset + 110) % 440;
+            java.util.Set<org.icepdf.core.pobjects.annotations.Annotation> before =
+                    new java.util.HashSet<>(page.getAnnotations());
+            if (d.dx() == 0 && d.dy() == 0) robotClick(robot, at);
+            else robotDragFrom(robot, at, d.dx(), d.dy());
+            waitIdle(30_000);
+            org.icepdf.core.pobjects.annotations.Annotation added = null;
+            for (org.icepdf.core.pobjects.annotations.Annotation a : page.getAnnotations()) {
+                if (!before.contains(a) && d.type().isInstance(a)) added = a;
+            }
+            boolean placed = false;
+            if (added != null) {
+                java.awt.geom.Rectangle2D r = added.getUserSpaceRectangle();
+                java.util.Optional<org.icepdf.fx.view.PagePoint> p = onFx(() -> view.pageAt(at[0], at[1]));
+                // the press point lies on (or within a few points of) the new annotation's rect.
+                placed = p.isPresent() && r.getMinX() - 12 <= p.get().x() && p.get().x() <= r.getMaxX() + 12
+                        && r.getMinY() - 12 <= p.get().y() && p.get().y() <= r.getMaxY() + 12;
+                if (d.dx() != 0) {
+                    placed &= Math.abs(r.getWidth() - Math.abs(d.dx()) / zoom) < 20 / zoom + 6;
+                }
+                created.add(added);
+            }
+            String detail = added == null ? "nothing added" : added.getClass().getSimpleName() + " " + added.getUserSpaceRectangle();
+            check(d.mode() + " creates " + d.type().getSimpleName(), added != null && placed, detail);
+            if (d.mode() == org.icepdf.fx.view.ToolMode.NOTE && added != null) {
+                org.icepdf.core.pobjects.annotations.PopupAnnotation popup =
+                        ((org.icepdf.core.pobjects.annotations.MarkupAnnotation) added).getPopupAnnotation();
+                check("new note opens its popup", popup != null && popup.isOpen() && onFx(() -> popupNodeFor(popup)) != null, "");
+            }
+            if (d.mode() == org.icepdf.fx.view.ToolMode.FREE_TEXT && added != null) {
+                javafx.scene.control.TextArea editor = (javafx.scene.control.TextArea) onFx(() -> view.lookup(".pdf-free-text-editor"));
+                if (editor != null) {
+                    fx(() -> {
+                        editor.setText("Typed into the box");
+                        view.requestFocus();
+                    });
+                    waitIdle(30_000);
+                    Thread.sleep(150);
+                }
+                check("free text editor commits its text", editor != null
+                        && "Typed into the box".equals(added.getContents()), String.valueOf(added.getContents()));
+            }
+        }
+
+        // highlight: a drag along a text line in the HIGHLIGHT tool
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.HIGHLIGHT));
+        org.icepdf.core.pobjects.graphics.text.TextSequence sequence = doc.getPageViewText(0).getTextSequence();
+        double[] lineStart = null;
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        for (double y = 60; y < size[1] / 2 && lineStart == null; y += 4) {
+            for (double x = 40; x < size[0] - 160 && lineStart == null; x += 4) {
+                double px = x, py = y;
+                java.util.Optional<org.icepdf.fx.view.PagePoint> p = onFx(() -> view.pageAt(px, py));
+                java.util.Optional<org.icepdf.fx.view.PagePoint> q = onFx(() -> view.pageAt(px + 60, py));
+                if (p.isPresent() && q.isPresent() && sequence.hitsText(p.get().toAwt()) && sequence.hitsText(q.get().toAwt())
+                        && onFx(() -> view.annotationAt(px, py)).isEmpty()) {
+                    lineStart = new double[]{x, y};
+                }
+            }
+        }
+        java.util.Set<org.icepdf.core.pobjects.annotations.Annotation> beforeHighlight = new java.util.HashSet<>(page.getAnnotations());
+        if (lineStart != null) robotDragFrom(robot, lineStart, 60, 0);
+        waitIdle(30_000);
+        org.icepdf.core.pobjects.annotations.Annotation highlight = null;
+        for (org.icepdf.core.pobjects.annotations.Annotation a : page.getAnnotations()) {
+            if (!beforeHighlight.contains(a) && a instanceof org.icepdf.core.pobjects.annotations.TextMarkupAnnotation) highlight = a;
+        }
+        check("HIGHLIGHT turns a text drag into a highlight", highlight != null && onFx(view::getTextSelection) == null,
+                highlight == null ? "none" : "\"" + highlight.getContents() + "\"");
+        if (highlight != null) created.add(highlight);
+        snapshot(out.resolve("created.png").toFile());
+
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT));
+        // undo everything created (free text has two edits: add + text)
+        for (int i = 0; i < created.size() + 1; i++) {
+            fx(view::undo);
+        }
+        waitIdle(30_000);
+        boolean allGone = created.stream().allMatch(org.icepdf.core.pobjects.annotations.Annotation::isDeleted);
+        check("undo removes every created annotation", allGone && !created.isEmpty(), created.size() + " created");
+        long contentRenders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - contentBefore;
+        check("creation rendered no page-content tiles", contentRenders == 0, contentRenders + " content renders");
         fx(() -> view.setDocument(null));
         doc.dispose();
     }

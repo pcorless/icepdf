@@ -147,22 +147,22 @@ public class PdfViewDemo extends Application {
         CheckBox cover = new CheckBox("Cover page");
         cover.selectedProperty().bindBidirectional(view.coverPageProperty());
 
-        ToggleGroup toolGroup = new ToggleGroup();
-        ToggleButton select = new ToggleButton("Select");
-        ToggleButton hand = new ToggleButton("Hand");
-        select.setToggleGroup(toolGroup);
-        hand.setToggleGroup(toolGroup);
-        select.setTooltip(new Tooltip("Drag selects text. Middle-drag or Space+drag pans in any tool."));
-        hand.setTooltip(new Tooltip("Drag pans."));
-        select.setSelected(view.getToolMode() == ToolMode.TEXT_SELECT);
-        hand.setSelected(view.getToolMode() == ToolMode.PAN);
-        toolGroup.selectedToggleProperty().addListener((obs, o, n) -> {
-            if (n == null) {
-                o.setSelected(true); // one tool is always active
-                return;
-            }
-            view.setToolMode(n == hand ? ToolMode.PAN : ToolMode.TEXT_SELECT);
-        });
+        ComboBox<ToolMode> tool = new ComboBox<>();
+        tool.getItems().setAll(ToolMode.values());
+        tool.valueProperty().bindBidirectional(view.toolModeProperty());
+        tool.setTooltip(new Tooltip("TEXT_SELECT selects text and annotations; PAN drags the page; the rest create "
+                + "annotations.  Middle-drag or Space+drag pans in any tool."));
+        Button highlight = new Button("Highlight");
+        highlight.setOnAction(e -> view.highlightSelection());
+        Button underline = new Button("Underline");
+        underline.setOnAction(e -> view.underlineSelection());
+        Button strikeOut = new Button("Strike out");
+        strikeOut.setOnAction(e -> view.strikeOutSelection());
+        for (Button b : new Button[]{highlight, underline, strikeOut}) {
+            b.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
+                    () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed(),
+                    view.textSelectionProperty()));
+        }
 
         Button copy = new Button("Copy");
         copy.setTooltip(new Tooltip("Copy the selected text (Ctrl+C)"));
@@ -197,8 +197,8 @@ public class PdfViewDemo extends Application {
 
         return new ToolBar(open, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
-                new Separator(), mode, cover, new Separator(), select, hand, copy, selectAll,
-                new Separator(), undo, redo, delete, new Separator(), overlay);
+                new Separator(), mode, cover, new Separator(), tool, copy, selectAll,
+                new Separator(), highlight, underline, strikeOut, undo, redo, delete, new Separator(), overlay);
     }
 
     /** Find bar: Enter searches (or goes to the next hit for the same term), arrows step through hits. */

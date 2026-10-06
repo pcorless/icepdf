@@ -42,6 +42,9 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
+import org.icepdf.core.pobjects.annotations.TextAnnotation;
+import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -123,6 +126,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     // whatever the tool.  gestureHandler owns a press-drag-release sequence from start to end.
     private final PanHandler panHandler = new PanHandler(this);
     private final TextSelectHandler textSelectHandler = new TextSelectHandler(this);
+    private final AnnotationCreateHandler createHandler = new AnnotationCreateHandler(this);
     private ToolHandler activeHandler;
     private ToolHandler gestureHandler;
     private MouseButton gestureButton;
@@ -951,6 +955,128 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return nodes;
     }
 
+    // ---- creating annotations -----------------------------------------------------------------
+
+    java.util.Collection<AnnotationUiLayer> uiLayers() {
+        return uiLayers.values();
+    }
+
+    private AffineTransform pageToViewNow(Page page) {
+        return PageTransforms.pageToView(page, getSkinnable().getPageBoundary(), layoutRotation, (float) layoutZoom);
+    }
+
+    private AffineTransform toPageSpaceNow(Page page) {
+        return page.getToPageSpaceTransform(getSkinnable().getPageBoundary(), layoutRotation, (float) layoutZoom);
+    }
+
+    private AnnotationCreator.Style style(ToolMode mode) {
+        PdfView control = getSkinnable();
+        javafx.scene.paint.Color fx = control.getAnnotationColor();
+        java.awt.Color color = fx != null
+                ? new java.awt.Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue())
+                : switch (mode) {
+            case HIGHLIGHT, NOTE -> new java.awt.Color(255, 255, 0);
+            case UNDERLINE -> new java.awt.Color(0, 102, 255);
+            case FREE_TEXT -> java.awt.Color.BLACK;
+            default -> new java.awt.Color(230, 0, 0);
+        };
+        int opacity = mode == ToolMode.HIGHLIGHT ? TextMarkupAnnotation.HIGHLIGHT_ALPHA : 255;
+        return new AnnotationCreator.Style(control.getAnnotationAuthor(), color, opacity, 2f);
+    }
+
+    /** Adds a built annotation (with a popup for markup) as one undoable edit and selects it. */
+    private void addCreated(int pageIndex, Page page, Annotation annotation, boolean popupOpen) {
+        PopupAnnotation popup = annotation instanceof MarkupAnnotation markup
+                && !(annotation instanceof FreeTextAnnotation)
+                ? AnnotationCreator.popup(page.getLibrary(), markup, popupOpen, toPageSpaceNow(page)) : null;
+        getSkinnable().recordEdit(AnnotationEdits.add(renderer::withAnnotationLock, page, pageIndex, annotation, popup));
+        getSkinnable().selectAnnotation(annotation);
+    }
+
+    void createNote(int pageIndex, double viewX, double viewY) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        TextAnnotation note = AnnotationCreator.note(page.getLibrary(), viewX, viewY, pageToViewNow(page),
+                toPageSpaceNow(page), style(ToolMode.NOTE));
+        addCreated(pageIndex, page, note, true);
+        scheduleRefresh();
+    }
+
+    void createShape(int pageIndex, boolean ellipse, java.awt.geom.Rectangle2D viewRect) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        addCreated(pageIndex, page, AnnotationCreator.shape(page.getLibrary(), ellipse, viewRect, toPageSpaceNow(page),
+                style(ellipse ? ToolMode.ELLIPSE : ToolMode.RECTANGLE)), false);
+    }
+
+    void createLine(int pageIndex, Point2D start, Point2D end) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        addCreated(pageIndex, page, AnnotationCreator.line(page.getLibrary(),
+                new java.awt.geom.Point2D.Double(start.getX(), start.getY()),
+                new java.awt.geom.Point2D.Double(end.getX(), end.getY()), toPageSpaceNow(page), style(ToolMode.LINE)), false);
+    }
+
+    void createInk(int pageIndex, java.awt.geom.GeneralPath viewPath) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        addCreated(pageIndex, page, AnnotationCreator.ink(page.getLibrary(), viewPath, toPageSpaceNow(page),
+                style(ToolMode.INK)), false);
+    }
+
+    void createFreeText(int pageIndex, double viewX, double viewY) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        FreeTextAnnotation freeText = AnnotationCreator.freeText(page.getLibrary(), viewX, viewY, layoutZoom,
+                toPageSpaceNow(page), style(ToolMode.FREE_TEXT));
+        addCreated(pageIndex, page, freeText, false);
+        editFreeText(new AnnotationHit(pageIndex, freeText));
+    }
+
+    /** Opens the inline editor over a free text annotation; the text commits as an undoable edit. */
+    void editFreeText(AnnotationHit hit) {
+        if (!(hit.annotation() instanceof FreeTextAnnotation freeText)) return;
+        AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
+        if (ui == null) return;
+        Page page = document.getPageTree().getPage(hit.pageIndex());
+        ui.openTextEditor(ui.viewBounds(freeText), freeText.getContents(), layoutZoom, text -> {
+            String current = freeText.getContents() == null ? "" : freeText.getContents();
+            if (text.equals(current)) return;
+            getSkinnable().recordEdit(AnnotationEdits.freeTextContents(renderer::withAnnotationLock, page,
+                    hit.pageIndex(), freeText, text, toPageSpaceNow(page)));
+        });
+    }
+
+    /**
+     * Turns the current text selection into highlight/underline/strike-out annotations, one per page
+     * it spans (pages whose text isn't loaded are skipped), and clears the selection.
+     *
+     * @return the number created
+     */
+    int markupSelection(org.icepdf.core.pobjects.Name subtype) {
+        DocumentSelection selection = getSkinnable().getTextSelection();
+        if (selection == null || selection.isCollapsed() || document == null) return 0;
+        ToolMode mode = TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) ? ToolMode.HIGHLIGHT
+                : TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) ? ToolMode.UNDERLINE : ToolMode.STRIKE_OUT;
+        int created = 0;
+        Annotation last = null;
+        for (int pageIndex = selection.startPage(); pageIndex <= selection.endPage(); pageIndex++) {
+            TextSequence sequence = textLoader.get(pageIndex);
+            org.icepdf.core.pobjects.graphics.text.OffsetRange range = selection.rangeForPage(pageIndex, sequence);
+            if (range == null || range.isEmpty()) continue;
+            Page page = document.getPageTree().getPage(pageIndex);
+            AffineTransform pageToView = pageToViewNow(page);
+            List<java.awt.geom.Rectangle2D> viewRects = new ArrayList<>();
+            for (java.awt.geom.Rectangle2D r : sequence.rectsFor(range)) {
+                viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
+            }
+            if (viewRects.isEmpty()) continue;
+            TextMarkupAnnotation markup = AnnotationCreator.textMarkup(page.getLibrary(), subtype, viewRects,
+                    sequence.extractText(range), toPageSpaceNow(page), style(mode));
+            addCreated(pageIndex, page, markup, false);
+            last = markup;
+            created++;
+        }
+        getSkinnable().setTextSelection(null);
+        if (last != null) getSkinnable().selectAnnotation(last);
+        return created;
+    }
+
     AnnotationEdits.Locker annotationLocker() {
         return renderer::withAnnotationLock;
     }
@@ -993,7 +1119,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** Page text is needed to select, or to draw a selection or search hits. */
     private boolean needsText() {
         PdfView control = getSkinnable();
-        return control.getToolMode() == ToolMode.TEXT_SELECT || control.getTextSelection() != null
+        return control.getToolMode().selectsText() || control.getTextSelection() != null
                 || !control.getSearchHits().isEmpty();
     }
 
@@ -1020,7 +1146,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** A caret shows in the select tool, while focused, when there is a selection. */
     private boolean isCaretActive() {
         PdfView control = getSkinnable();
-        return control.getToolMode() == ToolMode.TEXT_SELECT && control.isFocused()
+        return control.getToolMode().selectsText() && control.isFocused()
                 && control.getTextSelection() != null;
     }
 
@@ -1254,7 +1380,15 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     // ---- tools ----------------------------------------------------------------------------
 
     private void installTool() {
-        ToolHandler next = getSkinnable().getToolMode() == ToolMode.PAN ? panHandler : textSelectHandler;
+        ToolMode mode = getSkinnable().getToolMode();
+        textSelectHandler.setMarkupSubtype(switch (mode) {
+            case HIGHLIGHT -> TextMarkupAnnotation.SUBTYPE_HIGHLIGHT;
+            case UNDERLINE -> TextMarkupAnnotation.SUBTYPE_UNDERLINE;
+            case STRIKE_OUT -> TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
+            default -> null;
+        });
+        createHandler.setMode(mode);
+        ToolHandler next = mode == ToolMode.PAN ? panHandler : mode.selectsText() ? textSelectHandler : createHandler;
         if (next == activeHandler) return;
         if (activeHandler != null) activeHandler.uninstall();
         activeHandler = next;

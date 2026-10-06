@@ -20,8 +20,36 @@ package org.icepdf.fx.view;
  * drag or holding Space while dragging pans, and the wheel / pinch zoom and scroll.
  */
 public enum ToolMode {
-    /** Drag selects text; the cursor is an I-beam over text. */
+    /** Drag selects text; the cursor is an I-beam over text.  Annotations can be selected and edited. */
     TEXT_SELECT,
     /** Drag pans the view (hand tool). */
-    PAN
+    PAN,
+    /** Select text as usual; on release the selection becomes a highlight. */
+    HIGHLIGHT,
+    /** Select text; on release it is underlined. */
+    UNDERLINE,
+    /** Select text; on release it is struck out. */
+    STRIKE_OUT,
+    /** Click to place a sticky note; its popup opens for typing. */
+    NOTE,
+    /** Click to place a free text box and type into it. */
+    FREE_TEXT,
+    /** Drag to draw freehand ink. */
+    INK,
+    /** Drag to draw a rectangle. */
+    RECTANGLE,
+    /** Drag to draw an ellipse. */
+    ELLIPSE,
+    /** Drag to draw a straight line. */
+    LINE;
+
+    /** The tool selects text (plain selection or a text-markup tool). */
+    public boolean selectsText() {
+        return this == TEXT_SELECT || this == HIGHLIGHT || this == UNDERLINE || this == STRIKE_OUT;
+    }
+
+    /** The tool creates annotations. */
+    public boolean createsAnnotations() {
+        return this != TEXT_SELECT && this != PAN;
+    }
 }

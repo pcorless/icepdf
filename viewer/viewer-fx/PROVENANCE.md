@@ -77,6 +77,11 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | core `search/TextSearch` (added for this module) | viewer-awt `DocumentSearchControllerImpl.searchHighlightPage` / `compileSearchPattern` | The matching rules (collapsed literal corpus, regex on canonical text, `\b` whole word, diacritic folding) factored out as a stateless core function returning offset ranges. `DocumentSearchTest` pins it to the Swing viewer's recorded counts. |
 | `view/DocumentSearch`, search API in `PdfView` | the Swing search flow | Behaviour only: whole-document scan, next/previous with wrap. New code over `SearchHit` offset ranges, with no word flags. |
 
+| `view/AnnotationCreator` | viewer-awt `HighLightAnnotationHandler`, `TextAnnotationHandler` (incl. `createPopupAnnotation`), `SquareAnnotationHandler`, `CircleAnnotationHandler`, `LineAnnotationHandler`, `InkAnnotationHandler`, `FreeTextAnnotationHandler` | The core build recipe per type: `AnnotationFactory.buildAnnotation` with a page-space bbox, the properties, author and date, then `setBBox` and `resetAppearanceStream(toPageSpace)`, plus the popup registration. Rewritten without Swing components. |
+| `view/AnnotationEdits` | viewer-awt `AbstractAnnotationComponent.mouseReleased`, `AnnotationState`, `MyAnnotationCallback.newAnnotation/removeAnnotation` | Commit-through-core semantics for move/resize/add/delete and undo. Deliberate change: `/Rect` is set directly, not via `syncBBoxToUserSpaceRectangle` (see the class comment). |
+| `view/AnnotationUiLayer`, `view/PopupNode` | viewer-awt `PageViewComponentImpl.addPopupAnnotationComponent`, `PopupAnnotationComponent`, `MarkupGlueComponent` | Behaviour: popups hosted above the pages and free of the page bounds, title/date/minimise, connector to the markup. New FX code. |
+| `view/TileRenderer` (blend layer) | viewer-awt `PageViewComponentImpl.paintBlendedAnnotation` | The approach: render blend-mode annotations over real page pixels. Here the backdrop is the cached content tiles. |
+
 Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest` and `DocumentSearchTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and
 `windrivercasestudy1n3d2m8km0r.pdf` from `viewer/viewer-awt/src/test/resources/redact/` in place.

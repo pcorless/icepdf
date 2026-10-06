@@ -175,6 +175,73 @@ final class AnnotationEdits {
         return edit;
     }
 
+    /** Adds a new annotation (and its popup, if any) to the page, applied now; undo deletes it. */
+    static Edit add(Locker locker, Page page, int pageIndex, Annotation annotation, PopupAnnotation popup) {
+        boolean[] first = {true};
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return annotation;
+            }
+
+            public void undo() {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    page.deleteAnnotation(annotation);
+                    if (popup != null) page.deleteAnnotation(popup);
+                });
+            }
+
+            public void redo() {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    if (!first[0]) {
+                        annotation.setDeleted(false);
+                        if (popup != null) popup.setDeleted(false);
+                    }
+                    first[0] = false;
+                    page.addAnnotation(annotation);
+                    if (popup != null) page.addAnnotation(popup);
+                });
+            }
+        });
+    }
+
+    /** Sets a free text annotation's text and regenerates its appearance, applied now. */
+    static Edit freeTextContents(Locker locker, Page page, int pageIndex,
+                                 org.icepdf.core.pobjects.annotations.FreeTextAnnotation freeText, String after,
+                                 AffineTransform toPageSpace) {
+        String before = freeText.getContents();
+        AffineTransform toPage = new AffineTransform(toPageSpace);
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return freeText;
+            }
+
+            public void undo() {
+                set(before);
+            }
+
+            public void redo() {
+                set(after);
+            }
+
+            private void set(String text) {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    freeText.setContents(text);
+                    freeText.setModifiedDate(org.icepdf.core.pobjects.PDate.formatDateTime(new java.util.Date()));
+                    freeText.resetAppearanceStream(toPage);
+                    page.updateAnnotation(freeText);
+                });
+            }
+        });
+    }
+
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
     static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;

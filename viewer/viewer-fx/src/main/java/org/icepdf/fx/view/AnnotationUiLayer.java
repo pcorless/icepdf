@@ -323,6 +323,67 @@ final class AnnotationUiLayer extends Group {
         return popupNodes.values();
     }
 
+    // ---- creation ---------------------------------------------------------------------------
+
+    private Node creationPreview;
+    private javafx.scene.control.TextArea textEditor;
+
+    /** A drawing tool's live outline (view space); null removes it. */
+    void setCreationPreview(Node node) {
+        if (creationPreview != null) getChildren().remove(creationPreview);
+        creationPreview = node;
+        if (node != null) getChildren().add(node);
+    }
+
+    /**
+     * An inline editor over a free text annotation (view space), committing on focus loss or
+     * Ctrl+Enter and cancelling on Esc.
+     */
+    void openTextEditor(Rectangle2D viewBounds, String text, double zoom, java.util.function.Consumer<String> commit) {
+        closeTextEditor();
+        javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(text == null ? "" : text);
+        area.getStyleClass().add("pdf-free-text-editor");
+        area.setWrapText(true);
+        area.setStyle(String.format(java.util.Locale.ROOT, "-fx-font-size: %.1fpx;", Math.max(6, 12 * zoom)));
+        area.setLayoutX(viewBounds.getX());
+        area.setLayoutY(viewBounds.getY());
+        area.setPrefSize(Math.max(40, viewBounds.getWidth()), Math.max(24, viewBounds.getHeight()));
+        boolean[] done = {false};
+        Runnable finish = () -> {
+            if (done[0]) return;
+            done[0] = true;
+            String value = area.getText();
+            javafx.application.Platform.runLater(() -> {
+                closeTextEditor();
+                commit.accept(value);
+            });
+        };
+        area.focusedProperty().addListener((obs, was, now) -> {
+            if (!now) finish.run();
+        });
+        area.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER && e.isShortcutDown()) {
+                finish.run();
+                e.consume();
+            } else if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                done[0] = true;
+                closeTextEditor();
+                e.consume();
+            }
+        });
+        area.addEventHandler(javafx.scene.input.MouseEvent.ANY, javafx.scene.input.MouseEvent::consume);
+        textEditor = area;
+        getChildren().add(area);
+        area.requestFocus();
+    }
+
+    void closeTextEditor() {
+        if (textEditor != null) {
+            getChildren().remove(textEditor);
+            textEditor = null;
+        }
+    }
+
     /** For tests: the selection outline node. */
     Node selectionOutline() {
         return selection;

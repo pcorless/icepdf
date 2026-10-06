@@ -34,6 +34,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.SearchTerm;
@@ -116,6 +117,10 @@ public class PdfView extends Control {
     private final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationAction =
             new SimpleObjectProperty<>(this, "onAnnotationAction");
     private final AnnotationEdits.History history = new AnnotationEdits.History();
+    private final StringProperty annotationAuthor =
+            new SimpleStringProperty(this, "annotationAuthor", System.getProperty("user.name", ""));
+    private final ObjectProperty<javafx.scene.paint.Color> annotationColor =
+            new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
 
@@ -261,6 +266,47 @@ public class PdfView extends Control {
         });
         skin.refreshAnnotationChrome();
         skin.requestRefresh();
+    }
+
+    /** Author (/T) written on annotations the user creates; the system user name by default. */
+    public final StringProperty annotationAuthorProperty() {
+        return annotationAuthor;
+    }
+
+    public final String getAnnotationAuthor() {
+        return annotationAuthor.get();
+    }
+
+    public final void setAnnotationAuthor(String author) {
+        annotationAuthor.set(author);
+    }
+
+    /** Colour for new annotations; null uses each tool's default (yellow highlights, red shapes, ...). */
+    public final ObjectProperty<javafx.scene.paint.Color> annotationColorProperty() {
+        return annotationColor;
+    }
+
+    public final javafx.scene.paint.Color getAnnotationColor() {
+        return annotationColor.get();
+    }
+
+    public final void setAnnotationColor(javafx.scene.paint.Color color) {
+        annotationColor.set(color);
+    }
+
+    /** Highlights the selected text (one annotation per page), clearing the selection; undoable. */
+    public int highlightSelection() {
+        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) : 0;
+    }
+
+    /** Underlines the selected text; see {@link #highlightSelection()}. */
+    public int underlineSelection() {
+        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_UNDERLINE) : 0;
+    }
+
+    /** Strikes out the selected text; see {@link #highlightSelection()}. */
+    public int strikeOutSelection() {
+        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) : 0;
     }
 
     /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */

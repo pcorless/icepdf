@@ -62,6 +62,12 @@ final class TextSelectHandler implements ToolHandler {
     // an editable annotation pressed: becomes a move once the pointer travels a few px.
     private PdfViewSkin.AnnotationHit pendingMove;
     private boolean draggingAnnotation;
+    // in a text-markup tool, the subtype the selection becomes on release; null for plain select.
+    private org.icepdf.core.pobjects.Name markupSubtype;
+
+    void setMarkupSubtype(org.icepdf.core.pobjects.Name subtype) {
+        markupSubtype = subtype;
+    }
 
     @Override
     public void moved(MouseEvent e) {
@@ -124,6 +130,12 @@ final class TextSelectHandler implements ToolHandler {
         } else if (hit != null) {
             // annotations win over text: select it, no text selection for this gesture.
             view.selectAnnotation(hit.annotation());
+            // double-click a free text box to edit its text in place.
+            if (e.getClickCount() == 2 && hit.annotation() instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation) {
+                skin.editFreeText(hit);
+                annotationGesture = true;
+                return;
+            }
             // double-click opens (or closes) a markup annotation's popup note, as in Acrobat.
             if (e.getClickCount() == 2 && hit.annotation() instanceof org.icepdf.core.pobjects.annotations.MarkupAnnotation m
                     && m.getPopupAnnotation() != null) {
@@ -177,6 +189,7 @@ final class TextSelectHandler implements ToolHandler {
             draggingAnnotation = false;
             skin.getSkinnable().recordEdit(skin.endAnnotationDrag(e.getX() - pressX, e.getY() - pressY, false));
         }
+        if (markupSubtype != null && !annotationGesture) skin.markupSelection(markupSubtype);
         pendingMove = null;
         annotationGesture = false;
     }
