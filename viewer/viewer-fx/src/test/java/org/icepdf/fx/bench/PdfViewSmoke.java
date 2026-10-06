@@ -176,6 +176,7 @@ public final class PdfViewSmoke {
         checkHitTesting(document);
         checkPanning();
         checkSelectionLayer(document);
+        checkSelectionGestures(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
     }
 
@@ -419,6 +420,108 @@ public final class PdfViewSmoke {
 
         act("clear selection", PdfView::clearSelection);
         check("cleared selection draws nothing", highlightPixels().isEmpty(), "");
+    }
+
+    /**
+     * Real-input selection through the Robot: drag along a line, double-click a word, and a drag
+     * held past the bottom edge that auto-scrolls onto the next page.
+     */
+    private void checkSelectionGestures(Document document) throws Exception {
+        int pageIndex = Math.min(document.getNumberOfPages() - 2, 99);
+        org.icepdf.core.pobjects.graphics.text.TextSequence sequence =
+                document.getPageViewText(pageIndex).getTextSequence();
+        act("gestures setup: page " + (pageIndex + 1) + " fit width", v -> {
+            v.setTextSelection(null);
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.setViewMode(ViewMode.CONTINUOUS);
+            v.setRotation(0);
+            v.setFitMode(FitMode.WIDTH);
+            v.setCurrentPageIndex(pageIndex);
+        });
+        // two points on one text line, 150px apart, found by probing.
+        double[] a = null;
+        double[] b = null;
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        for (double y = 80; y < size[1] / 2 && b == null; y += 5) {
+            for (double x = 40; x < size[0] - 220 && b == null; x += 5) {
+                double px = x, py = y;
+                java.util.Optional<org.icepdf.fx.view.PagePoint> p = onFx(() -> view.pageAt(px, py));
+                java.util.Optional<org.icepdf.fx.view.PagePoint> q = onFx(() -> view.pageAt(px + 150, py));
+                if (p.isPresent() && q.isPresent() && p.get().pageIndex() == pageIndex
+                        && sequence.hitsText(p.get().toAwt()) && sequence.hitsText(q.get().toAwt())
+                        && sequence.lineIndexOf(sequence.caretAt(p.get().toAwt()).getOffset())
+                        == sequence.lineIndexOf(sequence.caretAt(q.get().toAwt()).getOffset())) {
+                    a = new double[]{x, y};
+                    b = new double[]{x + 150, y};
+                }
+            }
+        }
+        if (b == null) {
+            check("drag selects along a line", false, "no line found to drag along");
+            return;
+        }
+        final double[] start = a;
+        javafx.scene.robot.Robot robot = onFx(javafx.scene.robot.Robot::new);
+        robotDrag(robot, a, b, 0);
+        org.icepdf.core.pobjects.graphics.text.DocumentSelection sel = onFx(view::getTextSelection);
+        int expectA = sequence.caretAt(onFx(() -> view.pageAt(start[0], start[1])).get().toAwt()).getOffset();
+        double[] bb = b;
+        int expectB = sequence.caretAt(onFx(() -> view.pageAt(bb[0], bb[1])).get().toAwt()).getOffset();
+        check("drag selects along a line",
+                sel != null && sel.equals(org.icepdf.core.pobjects.graphics.text.DocumentSelection.of(
+                        pageIndex, expectA, pageIndex, expectB)),
+                sel + " expected " + pageIndex + ":" + expectA + "->" + expectB + " \""
+                        + (sel == null ? "" : sel.extractText(i -> i == pageIndex ? sequence : null)) + "\"");
+
+        // double-click the word at a
+        javafx.geometry.Point2D sa = onFx(() -> view.localToScreen(start[0], start[1]));
+        fx(() -> robot.mouseMove(sa));
+        Thread.sleep(100);
+        for (int i = 0; i < 2; i++) {
+            fx(() -> robot.mousePress(javafx.scene.input.MouseButton.PRIMARY));
+            Thread.sleep(30);
+            fx(() -> robot.mouseRelease(javafx.scene.input.MouseButton.PRIMARY));
+            Thread.sleep(60);
+        }
+        Thread.sleep(150);
+        org.icepdf.core.pobjects.graphics.text.OffsetRange word = sequence.wordRange(expectA);
+        sel = onFx(view::getTextSelection);
+        check("double-click selects the word",
+                sel != null && sel.equals(org.icepdf.core.pobjects.graphics.text.DocumentSelection.of(
+                        pageIndex, word.getStart(), pageIndex, word.getEnd())),
+                sel + " \"" + sequence.text(word) + "\"");
+
+        // drag from the line down past the viewport's bottom edge and hold: auto-scroll carries the
+        // selection onto following pages.
+        Thread.sleep(600); // let the double-click window lapse
+        double[] below = {a[0], size[1] + 40};
+        robotDrag(robot, a, below, 1500);
+        sel = onFx(view::getTextSelection);
+        check("auto-scroll drag crosses onto the next page",
+                sel != null && sel.getAnchorPage() == pageIndex && sel.getFocusPage() > pageIndex,
+                String.valueOf(sel));
+        act("clear after gestures", PdfView::clearSelection);
+    }
+
+    /** Press at {@code from}, move to {@code to} in steps, hold {@code holdMs}, release. */
+    private void robotDrag(javafx.scene.robot.Robot robot, double[] from, double[] to, long holdMs) throws Exception {
+        javafx.geometry.Point2D s0 = onFx(() -> view.localToScreen(from[0], from[1]));
+        javafx.geometry.Point2D s1 = onFx(() -> view.localToScreen(to[0], to[1]));
+        fx(() -> {
+            stage.toFront();
+            robot.mouseMove(s0);
+        });
+        Thread.sleep(120);
+        fx(() -> robot.mousePress(javafx.scene.input.MouseButton.PRIMARY));
+        for (int i = 1; i <= 12; i++) {
+            int step = i;
+            Thread.sleep(20);
+            fx(() -> robot.mouseMove(s0.getX() + (s1.getX() - s0.getX()) * step / 12,
+                    s0.getY() + (s1.getY() - s0.getY()) * step / 12));
+        }
+        Thread.sleep(holdMs + 60);
+        fx(() -> robot.mouseRelease(javafx.scene.input.MouseButton.PRIMARY));
+        Thread.sleep(120);
     }
 
     /** Every highlight pixel maps (via pageAt) into one of the core's selection rectangles. */

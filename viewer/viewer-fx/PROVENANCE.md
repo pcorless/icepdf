@@ -70,6 +70,11 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `view/PageTransforms` | core `Page.getPageTransform` | Called, not copied: every FX mapping is derived from the core's own transform. |
 | core `DocumentSelection` (added for this module) | viewer-awt `DocumentTextSelection`, `TextSelectionSupport.rangeForPage` / `selectedText` | The anchor/focus semantics, the per-page range rule and the multi-page text join, reimplemented as an immutable core value. Its tests port `DocumentTextSelectionTest`'s cases. |
 | `view/PanHandler` | viewer-fx phase 1 skin | The drag-to-scroll code moved into a tool handler. |
+| `view/SelectionController` | viewer-awt `TextSelection` (`selectionStart`, `selection`, `columnAwareCaretOffset`, `selectRangeAtPoint`) | The gesture semantics and the D4 column rule (constrain only the nearest-line fallback to the pointer's column, else the anchor column in a gutter; never constrain a direct glyph hit). Rewritten as a toolkit-free class over `DocumentSelection`. |
+
+Test fixtures: `SelectionControllerTest` reads `test_print.pdf` and
+`windrivercasestudy1n3d2m8km0r.pdf` from `viewer/viewer-awt/src/test/resources/redact/` in place.
+They are not copied into this module.
 
 ## Reference material (ideas only, no code copied)
 

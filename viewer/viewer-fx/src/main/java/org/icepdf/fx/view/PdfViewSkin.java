@@ -752,6 +752,47 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return user == null ? null : new PagePoint(slot.pageIndex(), user.getX(), user.getY());
     }
 
+    /**
+     * Like {@link #pageAtViewport}, but a point between pages or outside the viewport snaps to the
+     * nearest page edge: what a selection drag across a page gap or past the viewport edge means.
+     * Null only without a layout or pages.
+     */
+    PagePoint nearestPageAtViewport(double vx, double vy) {
+        PagePoint direct = pageAtViewport(vx, vy);
+        if (direct != null || layout == null || document == null) return direct;
+        double dx = scrollX + vx;
+        double dy = scrollY + vy;
+        double reach = Math.max(viewportH, 4 * getSkinnable().getPageGap());
+        PageSlot best = null;
+        double bestDistance = Double.MAX_VALUE;
+        for (PageSlot slot : layout.slotsIntersecting(0, dy - reach, layout.getWidth(), 2 * reach)) {
+            double ox = Math.max(0, Math.max(slot.x() - dx, dx - slot.maxX()));
+            double oy = Math.max(0, Math.max(slot.y() - dy, dy - slot.maxY()));
+            double distance = ox * ox + oy * oy;
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                best = slot;
+            }
+        }
+        if (best == null) return null;
+        // clamp into the slot, a hair inside so the inverse transform lands on the page.
+        double cx = clamp(dx, best.x() + 1e-3, best.maxX() - 1e-3);
+        double cy = clamp(dy, best.y() + 1e-3, best.maxY() - 1e-3);
+        Page page = document.getPageTree().getPage(best.pageIndex());
+        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
+                layoutRotation, (float) layoutZoom);
+        Point2D user = PageTransforms.viewToPage(pageToView, cx - best.x(), cy - best.y());
+        return user == null ? null : new PagePoint(best.pageIndex(), user.getX(), user.getY());
+    }
+
+    double getViewportWidth() {
+        return viewportW;
+    }
+
+    double getViewportHeight() {
+        return viewportH;
+    }
+
     /** {@link #pageAtViewport} for a point in the control's own coordinates. */
     PagePoint pageAt(double x, double y) {
         Point2D local = viewport.parentToLocal(x, y);
