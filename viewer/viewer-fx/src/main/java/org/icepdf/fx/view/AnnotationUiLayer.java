@@ -50,6 +50,14 @@ final class AnnotationUiLayer extends Group {
     private final javafx.scene.transform.Affine proxyTransform = new javafx.scene.transform.Affine();
     private Rectangle2D proxyFrom;
     private Rectangle2D dragBounds;
+    // open popups: one node and one connector line each.
+    private final java.util.Map<org.icepdf.core.pobjects.annotations.PopupAnnotation, PopupNode> popupNodes =
+            new java.util.LinkedHashMap<>();
+    private final java.util.Map<PopupNode, javafx.scene.shape.Line> glue = new java.util.HashMap<>();
+    private final Group glueLines = new Group();
+    // a popup being dragged/resized: placed from the live gesture, not its /Rect.
+    private PopupNode reshaping;
+    private double[] reshape;
     private AffineTransform pageToView;
     private Annotation hovered;
     private Annotation selected;
@@ -78,7 +86,8 @@ final class AnnotationUiLayer extends Group {
         proxy.getTransforms().add(proxyTransform);
         proxy.setMouseTransparent(true);
         proxy.setVisible(false);
-        getChildren().addAll(popups, proxy);
+        glueLines.setMouseTransparent(true);
+        getChildren().addAll(glueLines, popups, proxy);
         getChildren().addAll(hover, selection);
         getChildren().addAll(handles);
     }
@@ -219,6 +228,99 @@ final class AnnotationUiLayer extends Group {
         r.setY(b.getY() - outset);
         r.setWidth(b.getWidth() + 2 * outset);
         r.setHeight(b.getHeight() + 2 * outset);
+    }
+
+    // ---- popups ---------------------------------------------------------------------------
+
+    /**
+     * Creates, places and drops popup nodes to match the page's open popups.  Popups are not
+     * clipped to the page and are placed exactly from their /Rect, so one can sit past the page edge.
+     */
+    void updatePopups(java.util.List<org.icepdf.core.pobjects.annotations.Annotation> annotations, double zoom,
+                      PopupNode.Listener listener) {
+        java.util.Set<org.icepdf.core.pobjects.annotations.PopupAnnotation> open = new java.util.HashSet<>();
+        if (annotations != null && pageToView != null) {
+            for (org.icepdf.core.pobjects.annotations.Annotation a : annotations) {
+                if (!(a instanceof org.icepdf.core.pobjects.annotations.PopupAnnotation popup) || popup.isDeleted()
+                        || !popup.isOpen()) continue;
+                org.icepdf.core.pobjects.annotations.MarkupAnnotation parent = popup.getParent();
+                if (parent == null || parent.isDeleted()) continue;
+                open.add(popup);
+                PopupNode node = popupNodes.get(popup);
+                if (node == null) {
+                    node = new PopupNode(popup, parent, listener);
+                    popupNodes.put(popup, node);
+                    popups.getChildren().add(node);
+                    javafx.scene.shape.Line line = new javafx.scene.shape.Line();
+                    line.setStroke(Color.rgb(153, 153, 153));
+                    glue.put(node, line);
+                    glueLines.getChildren().add(line);
+                }
+                placePopup(node, zoom);
+            }
+        }
+        popupNodes.entrySet().removeIf(e -> {
+            if (open.contains(e.getKey())) return false;
+            popups.getChildren().remove(e.getValue());
+            glueLines.getChildren().remove(glue.remove(e.getValue()));
+            if (reshaping == e.getValue()) reshaping = null;
+            return true;
+        });
+    }
+
+    /** Live feedback while a popup is dragged or resized (view px since the gesture began). */
+    void setPopupReshape(PopupNode node, double dx, double dy, double dw, double dh, double zoom) {
+        reshaping = node;
+        reshape = new double[]{dx, dy, dw, dh};
+        placePopup(node, zoom);
+    }
+
+    void clearPopupReshape(double zoom) {
+        PopupNode node = reshaping;
+        reshaping = null;
+        reshape = null;
+        if (node != null) placePopup(node, zoom);
+    }
+
+    /** The popup's top-left in this page's view space: its /Rect's view bounds' minimum. */
+    double[] popupAnchor(org.icepdf.core.pobjects.annotations.PopupAnnotation popup) {
+        Rectangle2D b = viewBounds(popup);
+        return new double[]{b.getMinX(), b.getMinY()};
+    }
+
+    private void placePopup(PopupNode node, double zoom) {
+        java.awt.geom.Rectangle2D.Float rect = node.getPopup().getUserSpaceRectangle();
+        double[] anchor = popupAnchor(node.getPopup());
+        double x = anchor[0];
+        double y = anchor[1];
+        double w = rect.getWidth();
+        double h = rect.getHeight();
+        if (node == reshaping && reshape != null) {
+            x += reshape[0];
+            y += reshape[1];
+            w = Math.max(PopupNode.MIN_WIDTH, w + reshape[2] / zoom);
+            h = Math.max(PopupNode.MIN_HEIGHT, h + reshape[3] / zoom);
+        }
+        node.place(x, y, w, h, zoom);
+        // connector: from the markup annotation's centre to the popup's nearest corner.
+        javafx.scene.shape.Line line = glue.get(node);
+        if (line != null) {
+            Rectangle2D m = viewBounds(node.getMarkup());
+            double pw = Math.max(PopupNode.MIN_WIDTH, w) * zoom;
+            double ph = Math.max(PopupNode.MIN_HEIGHT, h) * zoom;
+            double cx = m.getCenterX();
+            double cy = m.getCenterY();
+            line.setStartX(cx);
+            line.setStartY(cy);
+            line.setEndX(Math.abs(cx - x) < Math.abs(cx - (x + pw)) ? x : x + pw);
+            line.setEndY(Math.abs(cy - y) < Math.abs(cy - (y + ph)) ? y : y + ph);
+            line.setVisible(!m.intersects(x, y, pw, ph));
+        }
+    }
+
+    /** Open popup nodes, for tests and lookups. */
+    java.util.Collection<PopupNode> popupNodes() {
+        return popupNodes.values();
     }
 
     /** For tests: the selection outline node. */

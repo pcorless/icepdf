@@ -124,6 +124,13 @@ final class TextSelectHandler implements ToolHandler {
         } else if (hit != null) {
             // annotations win over text: select it, no text selection for this gesture.
             view.selectAnnotation(hit.annotation());
+            // double-click opens (or closes) a markup annotation's popup note, as in Acrobat.
+            if (e.getClickCount() == 2 && hit.annotation() instanceof org.icepdf.core.pobjects.annotations.MarkupAnnotation m
+                    && m.getPopupAnnotation() != null) {
+                view.setPopupOpen(m, !m.getPopupAnnotation().isOpen());
+                annotationGesture = true;
+                return;
+            }
             annotationGesture = true;
             if (PdfViewSkin.isEditable(hit.annotation())) pendingMove = hit;
             return;

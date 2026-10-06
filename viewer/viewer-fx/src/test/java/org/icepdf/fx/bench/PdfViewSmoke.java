@@ -228,6 +228,8 @@ public final class PdfViewSmoke {
         fx(() -> view.setDocument(null));
         rect.dispose();
 
+        checkPopups(robot, dir);
+
         // -- links
         Document links = new Document();
         links.setFile(dir.resolve("links.pdf").toString());
@@ -373,6 +375,128 @@ public final class PdfViewSmoke {
     private void robotDragFrom(javafx.scene.robot.Robot robot, double[] from, double dx, double dy) throws Exception {
         robotDrag(robot, from, new double[]{from[0] + dx, from[1] + dy}, 0);
         Thread.sleep(300);
+    }
+
+    /**
+     * Popup notes: open one, drag it by its title bar past the page's left edge (it must stay there
+     * and be saved outside the crop box), survive zoom and rotation, edit its text with undo,
+     * minimise it and re-open it by double-clicking the note.
+     */
+    private void checkPopups(javafx.scene.robot.Robot robot, Path dir) throws Exception {
+        Document doc = new Document();
+        doc.setFile(dir.resolve("Invoice_sticky_note.pdf").toString());
+        act("popups: Invoice_sticky_note fit page", v -> {
+            v.setDocument(doc);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+        });
+        org.icepdf.core.pobjects.Page page = doc.getPageTree().getPage(0);
+        org.icepdf.core.pobjects.annotations.MarkupAnnotation note = null;
+        for (org.icepdf.core.pobjects.annotations.Annotation a : page.getAnnotations()) {
+            if (a instanceof org.icepdf.core.pobjects.annotations.MarkupAnnotation m && m.getPopupAnnotation() != null) {
+                note = m;
+                break;
+            }
+        }
+        if (note == null) {
+            check("fixture has a note with a popup", false, "");
+            return;
+        }
+        org.icepdf.core.pobjects.annotations.MarkupAnnotation markup = note;
+        org.icepdf.core.pobjects.annotations.PopupAnnotation popup = note.getPopupAnnotation();
+        fx(() -> view.setPopupOpen(markup, false));
+        act("popups: open", v -> v.setPopupOpen(markup, true));
+        javafx.scene.layout.Region node = (javafx.scene.layout.Region) onFx(() -> popupNodeFor(popup));
+        javafx.scene.control.TextArea text = node == null ? null
+                : (javafx.scene.control.TextArea) onFx(() -> node.lookup(".text-area"));
+        String expected = markup.getContents() == null ? "" : markup.getContents();
+        check("popup opens with the note's text", node != null && text != null && expected.equals(onFx(text::getText)),
+                node == null ? "no popup node" : "\"" + onFx(text::getText) + "\"");
+        if (node == null) return;
+
+        // drag the title bar until the popup's left edge is 80px past the page's left edge.
+        double pageLeft = onFx(() -> {
+            for (double x = 0; x < view.getWidth(); x += 1) {
+                if (view.pageAt(x, view.getHeight() / 2).isPresent()) return x;
+            }
+            return 0.0;
+        });
+        javafx.geometry.Bounds b = onFx(() -> view.sceneToLocal(node.localToScene(node.getBoundsInLocal())));
+        double[] grab = {b.getMinX() + 12, b.getMinY() + 5};
+        double dx = (pageLeft - 80) - b.getMinX();
+        robotDragFrom(robot, grab, dx, 30);
+        waitIdle(30_000);
+        org.icepdf.core.pobjects.PRectangle crop = page.getPageBoundary(org.icepdf.core.pobjects.Page.BOUNDARY_CROPBOX);
+        java.awt.geom.Rectangle2D.Float moved = new java.awt.geom.Rectangle2D.Float();
+        moved.setRect(popup.getUserSpaceRectangle());
+        javafx.geometry.Bounds after = onFx(() -> view.sceneToLocal(node.localToScene(node.getBoundsInLocal())));
+        check("popup dragged past the page edge stays there", moved.getMinX() < crop.getX() && after.getMinX() < pageLeft
+                        && after.getMaxX() > 0,
+                String.format("/Rect x %.1f (crop starts %.1f); view left %.0f, page left %.0f", moved.getMinX(),
+                        crop.getX(), after.getMinX(), pageLeft));
+        snapshot(out.resolve("popup_past_edge.png").toFile());
+
+        act("popups: 150%", v -> {
+            v.setFitMode(FitMode.NONE);
+            v.setZoom(1.5);
+        });
+        act("popups: rotate 90", v -> v.setRotation(90));
+        javafx.scene.Node still = onFx(() -> popupNodeFor(popup));
+        check("popup survives zoom and rotation, /Rect untouched",
+                still != null && sameRect(popup.getUserSpaceRectangle(), moved), String.valueOf(popup.getUserSpaceRectangle()));
+        snapshot(out.resolve("popup_rotated.png").toFile());
+        act("popups: back to fit page", v -> {
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+        });
+
+        // edit the text; focus leaving the text area commits it
+        javafx.scene.control.TextArea area = (javafx.scene.control.TextArea) onFx(() ->
+                popupNodeFor(popup).lookup(".text-area"));
+        String edited = "Edited by the smoke test";
+        fx(() -> {
+            area.requestFocus();
+            area.setText(edited);
+            view.requestFocus();
+        });
+        waitIdle(30_000);
+        check("editing the note updates /Contents", edited.equals(markup.getContents()), markup.getContents());
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo restores the text", expected.equals(markup.getContents() == null ? "" : markup.getContents()),
+                markup.getContents());
+
+        // minimise, then double-click the note to reopen
+        javafx.scene.control.Button minimise = (javafx.scene.control.Button) onFx(() ->
+                popupNodeFor(popup).lookupAll(".button").iterator().next());
+        fx(minimise::fire);
+        waitIdle(30_000);
+        check("minimise closes it", !popup.isOpen() && onFx(() -> popupNodeFor(popup)) == null, "");
+        double[] icon = viewPointIn(0, markup.getUserSpaceRectangle());
+        javafx.geometry.Point2D screen = onFx(() -> view.localToScreen(icon[0], icon[1]));
+        fx(() -> robot.mouseMove(screen));
+        Thread.sleep(80);
+        for (int i = 0; i < 2; i++) {
+            fx(() -> robot.mousePress(javafx.scene.input.MouseButton.PRIMARY));
+            Thread.sleep(30);
+            fx(() -> robot.mouseRelease(javafx.scene.input.MouseButton.PRIMARY));
+            Thread.sleep(60);
+        }
+        Thread.sleep(300);
+        waitIdle(30_000);
+        check("double-clicking the note reopens it", popup.isOpen() && onFx(() -> popupNodeFor(popup)) != null,
+                "open=" + popup.isOpen());
+        fx(() -> view.setDocument(null));
+        doc.dispose();
+    }
+
+    /** The popup node showing a popup annotation (they carry it as user data), or null. */
+    private javafx.scene.Node popupNodeFor(org.icepdf.core.pobjects.annotations.PopupAnnotation popup) {
+        for (javafx.scene.Node n : view.lookupAll(".pdf-annotation-popup")) {
+            if (n.getUserData() == popup) return n;
+        }
+        return null;
     }
 
     /** A view point inside a page user-space rectangle, found by probing pageAt (nearest its centre). */

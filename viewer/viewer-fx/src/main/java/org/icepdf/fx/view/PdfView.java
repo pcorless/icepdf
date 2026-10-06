@@ -32,6 +32,8 @@ import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.NamedAction;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.search.SearchTerm;
@@ -241,6 +243,24 @@ public class PdfView extends Control {
         if (!(getSkin() instanceof PdfViewSkin skin)) return Optional.empty();
         PdfViewSkin.AnnotationHit hit = skin.annotationAt(x, y);
         return hit != null ? Optional.of(hit.annotation()) : Optional.empty();
+    }
+
+    /**
+     * Opens or closes a markup annotation's popup note; the state is saved in the document (/Open).
+     * No-op for an annotation without a popup.
+     */
+    public void setPopupOpen(MarkupAnnotation markup, boolean open) {
+        PopupAnnotation popup = markup != null ? markup.getPopupAnnotation() : null;
+        if (popup == null || !(getSkin() instanceof PdfViewSkin skin)) return;
+        PdfViewSkin.AnnotationHit hit = skin.hitOf(markup);
+        if (hit == null) return;
+        Page page = getDocument().getPageTree().getPage(hit.pageIndex());
+        skin.annotationLocker().withAnnotationLock(hit.pageIndex(), () -> {
+            popup.setOpen(open);
+            page.updateAnnotation(popup);
+        });
+        skin.refreshAnnotationChrome();
+        skin.requestRefresh();
     }
 
     /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */

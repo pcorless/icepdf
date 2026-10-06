@@ -106,6 +106,75 @@ final class AnnotationEdits {
         return edit;
     }
 
+    /**
+     * Moves/resizes a popup to a new /Rect, applied now.  Popups have no appearance stream; only the
+     * rectangle changes, and it is not confined to the page.
+     */
+    static Edit popupRect(Locker locker, Page page, int pageIndex, PopupAnnotation popup, Rectangle2D after) {
+        Rectangle2D.Float before = new Rectangle2D.Float();
+        before.setRect(popup.getUserSpaceRectangle());
+        Rectangle2D.Float target = new Rectangle2D.Float();
+        target.setRect(after);
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return popup;
+            }
+
+            public void undo() {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    popup.setUserSpaceRectangle(before);
+                    page.updateAnnotation(popup);
+                });
+            }
+
+            public void redo() {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    popup.setUserSpaceRectangle(target);
+                    page.updateAnnotation(popup);
+                });
+            }
+        });
+    }
+
+    /** Replaces a markup annotation's contents (its popup note text), applied now. */
+    static Edit contents(Locker locker, Page page, int pageIndex, MarkupAnnotation markup, String after) {
+        String before = markup.getContents();
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return markup;
+            }
+
+            public void undo() {
+                set(before);
+            }
+
+            public void redo() {
+                set(after);
+            }
+
+            private void set(String text) {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    markup.setContents(text);
+                    markup.setModifiedDate(org.icepdf.core.pobjects.PDate.formatDateTime(new java.util.Date()));
+                    page.updateAnnotation(markup);
+                });
+            }
+        });
+    }
+
+    private static Edit applied(Edit edit) {
+        edit.redo();
+        return edit;
+    }
+
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
     static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;

@@ -582,6 +582,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             ui.setLayoutY(layer.getLayoutY());
             ui.setPageToView(layer.getPageToView());
             updateAnnotationChrome(ui, layer.getPage());
+            if (layer.getPage() != null && layer.getPage().isInitiated() && control.isPaintAnnotations()) {
+                ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, popupListener);
+            } else {
+                ui.updatePopups(null, layoutZoom, popupListener);
+            }
 
             CacheKey.Preview previewKey = new CacheKey.Preview(index, params.boundary());
             wanted.add(previewKey);
@@ -771,6 +776,18 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return -1;
     }
 
+    /** The page an annotation is on (among visible pages), or null. */
+    AnnotationHit hitOf(Annotation annotation) {
+        for (AnnotationUiLayer ui : uiLayers.values()) {
+            if (isOnPage(annotation, ui.getPageIndex())) return new AnnotationHit(ui.getPageIndex(), annotation);
+        }
+        return null;
+    }
+
+    void requestRefresh() {
+        scheduleRefresh();
+    }
+
     /** The page the selected annotation is on, or null. */
     AnnotationHit selectedHit() {
         Annotation selected = getSkinnable().getSelectedAnnotation();
@@ -857,6 +874,81 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     boolean isDraggingAnnotation() {
         return drag != null;
+    }
+
+    // ---- popups ----------------------------------------------------------------------------
+
+    private final PopupNode.Listener popupListener = new PopupNode.Listener() {
+        @Override
+        public void reshaping(PopupNode node, double dx, double dy, double dw, double dh) {
+            AnnotationUiLayer ui = uiLayerOf(node);
+            if (ui != null) ui.setPopupReshape(node, dx, dy, dw, dh, layoutZoom);
+        }
+
+        @Override
+        public void reshaped(PopupNode node, double dx, double dy, double dw, double dh) {
+            AnnotationUiLayer ui = uiLayerOf(node);
+            if (ui == null) return;
+            ui.clearPopupReshape(layoutZoom);
+            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(dw) < 0.5 && Math.abs(dh) < 0.5) return;
+            int pageIndex = ui.getPageIndex();
+            java.awt.geom.Rectangle2D.Float rect = node.getPopup().getUserSpaceRectangle();
+            double w = Math.max(PopupNode.MIN_WIDTH, rect.getWidth() + dw / layoutZoom);
+            double h = Math.max(PopupNode.MIN_HEIGHT, rect.getHeight() + dh / layoutZoom);
+            double[] anchor = ui.popupAnchor(node.getPopup());
+            Page page = document.getPageTree().getPage(pageIndex);
+            java.awt.geom.Rectangle2D target = placeUpright(page, anchor[0] + dx, anchor[1] + dy, w, h);
+            getSkinnable().recordEdit(AnnotationEdits.popupRect(renderer::withAnnotationLock, page, pageIndex,
+                    node.getPopup(), target));
+        }
+
+        @Override
+        public void contentsEdited(PopupNode node, String contents) {
+            AnnotationUiLayer ui = uiLayerOf(node);
+            String current = node.getMarkup().getContents();
+            if (ui == null || contents.equals(current == null ? "" : current)) return;
+            Page page = document.getPageTree().getPage(ui.getPageIndex());
+            getSkinnable().recordEdit(AnnotationEdits.contents(renderer::withAnnotationLock, page,
+                    ui.getPageIndex(), node.getMarkup(), contents));
+        }
+
+        @Override
+        public void minimised(PopupNode node) {
+            getSkinnable().setPopupOpen(node.getMarkup(), false);
+        }
+    };
+
+    private AnnotationUiLayer uiLayerOf(PopupNode node) {
+        for (AnnotationUiLayer ui : uiLayers.values()) {
+            if (ui.popupNodes().contains(node)) return ui;
+        }
+        return null;
+    }
+
+    /**
+     * The user-space rectangle of size (w, h) points whose view-space bounds have their top-left at
+     * (viewX, viewY) - for an upright popup at any page rotation.
+     */
+    private java.awt.geom.Rectangle2D placeUpright(Page page, double viewX, double viewY, double w, double h) {
+        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
+                layoutRotation, (float) layoutZoom);
+        java.awt.geom.Rectangle2D origin = pageToView.createTransformedShape(
+                new java.awt.geom.Rectangle2D.Double(0, 0, w, h)).getBounds2D();
+        // shift the origin-placed rect so its view bounds start at (viewX, viewY), in user space.
+        try {
+            java.awt.geom.Point2D shift = pageToView.createInverse().deltaTransform(
+                    new java.awt.geom.Point2D.Double(viewX - origin.getMinX(), viewY - origin.getMinY()), null);
+            return new java.awt.geom.Rectangle2D.Double(shift.getX(), shift.getY(), w, h);
+        } catch (java.awt.geom.NoninvertibleTransformException e) {
+            return new java.awt.geom.Rectangle2D.Double(0, 0, w, h);
+        }
+    }
+
+    /** All open popup nodes on visible pages; for tests. */
+    List<PopupNode> openPopupNodes() {
+        List<PopupNode> nodes = new ArrayList<>();
+        uiLayers.values().forEach(ui -> nodes.addAll(ui.popupNodes()));
+        return nodes;
     }
 
     AnnotationEdits.Locker annotationLocker() {
@@ -1309,6 +1401,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void onKey(KeyEvent e) {
+        // typing in a popup note (or any text input inside the view) is not a view command.
+        if (e.getTarget() instanceof javafx.scene.control.TextInputControl) return;
         if (e.getCode() == KeyCode.SPACE) {
             // hold Space to pan with the primary button; a tap without a drag pages down on release.
             if (!spaceDown) {
