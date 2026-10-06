@@ -163,6 +163,15 @@ public class PdfView extends Control {
         return getSkin() instanceof PdfViewSkin skin ? Optional.ofNullable(skin.pageAt(x, y)) : Optional.empty();
     }
 
+    /**
+     * Scrolls the least distance needed to bring a page point comfortably into view (e.g. a caret or
+     * search hit).  In single-page and facing modes the point's page must be the one shown; set
+     * {@link #currentPageIndexProperty()} first.
+     */
+    public void ensureVisible(PagePoint point) {
+        if (point != null && getSkin() instanceof PdfViewSkin skin) skin.ensureVisible(point, 48);
+    }
+
     /** Selects every page's text; no-op without a document. */
     public void selectAll() {
         if (getPageCount() > 0) setTextSelection(DocumentSelection.all(getPageCount()));

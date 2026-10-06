@@ -177,6 +177,7 @@ public final class PdfViewSmoke {
         checkPanning();
         checkSelectionLayer(document);
         checkSelectionGestures(document);
+        checkCaret(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
     }
 
@@ -522,6 +523,101 @@ public final class PdfViewSmoke {
         Thread.sleep(holdMs + 60);
         fx(() -> robot.mouseRelease(javafx.scene.input.MouseButton.PRIMARY));
         Thread.sleep(120);
+    }
+
+    /**
+     * The caret is whatever blinks: pixels that change across a burst of snapshots.  They must map
+     * (via pageAt) onto the core's caretRect for the focus offset, at fit width and at 400%; the
+     * hand tool shows no caret.
+     */
+    private void checkCaret(Document document) throws Exception {
+        int pageIndex = Math.min(document.getNumberOfPages() - 1, 99);
+        org.icepdf.core.pobjects.graphics.text.TextSequence sequence =
+                document.getPageViewText(pageIndex).getTextSequence();
+        int offset = Math.min(sequence.length() - 1, 645);
+        java.awt.geom.Rectangle2D.Double expected = sequence.caretRect(new org.icepdf.core.pobjects.graphics.text.Caret(
+                offset, org.icepdf.core.pobjects.graphics.text.Bias.FORWARD));
+        act("caret setup: page " + (pageIndex + 1) + " caret at " + offset, v -> {
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setCurrentPageIndex(pageIndex);
+            v.setFitMode(FitMode.WIDTH);
+            stage.toFront();
+            v.requestFocus();
+            v.setTextSelection(org.icepdf.core.pobjects.graphics.text.DocumentSelection.collapsed(pageIndex, offset));
+        });
+        checkCaretAt("caret blinks at caretRect (fit width)", pageIndex, expected);
+        act("caret at 400%", v -> {
+            v.setFitMode(FitMode.NONE);
+            v.setZoom(4);
+        });
+        act("ensureVisible(caret)", v -> v.ensureVisible(
+                new org.icepdf.fx.view.PagePoint(pageIndex, expected.x, expected.getCenterY())));
+        checkCaretAt("caret blinks at caretRect (400%)", pageIndex, expected);
+        act("hand tool", v -> v.setToolMode(org.icepdf.fx.view.ToolMode.PAN));
+        java.util.List<double[]> blinking = blinkingPixels();
+        check("no caret in the hand tool", blinking.isEmpty(), blinking.size() + " blinking px");
+        act("caret cleanup", v -> {
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.clearSelection();
+        });
+    }
+
+    private void checkCaretAt(String name, int pageIndex, java.awt.geom.Rectangle2D.Double expected) throws Exception {
+        boolean focused = onFx(() -> view.isFocused());
+        java.util.List<double[]> blinking = blinkingPixels();
+        if (blinking.size() < 4) {
+            check(name, false, blinking.size() + " blinking px, focused=" + focused);
+            return;
+        }
+        int inside = 0;
+        for (double[] p : blinking) {
+            java.util.Optional<org.icepdf.fx.view.PagePoint> hit = onFx(() -> view.pageAt(p[0], p[1]));
+            if (hit.isPresent() && hit.get().pageIndex() == pageIndex
+                    && Math.abs(hit.get().x() - expected.x) <= 1.5
+                    && hit.get().y() >= expected.getMinY() - 1 && hit.get().y() <= expected.getMaxY() + 1) {
+                inside++;
+            }
+        }
+        double fraction = inside / (double) blinking.size();
+        check(name, fraction >= 0.95, String.format("%d blinking px, %.0f%% on caretRect x=%.1f y[%.1f,%.1f]",
+                blinking.size(), fraction * 100, expected.x, expected.getMinY(), expected.getMaxY()));
+    }
+
+    /** Pixels whose colour changes across ~1.3s of snapshots (two blink periods). */
+    private java.util.List<double[]> blinkingPixels() throws Exception {
+        double scale = onFx(() -> stage.getOutputScaleX());
+        int[] min = null;
+        int[] max = null;
+        int w = 0;
+        for (int frame = 0; frame < 14; frame++) {
+            WritableImage image = onFx(() -> {
+                SnapshotParameters params = new SnapshotParameters();
+                params.setTransform(new Scale(scale, scale));
+                return view.snapshot(params, null);
+            });
+            w = (int) image.getWidth();
+            int h = (int) image.getHeight();
+            int[] argb = new int[w * h];
+            image.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), argb, 0, w);
+            if (min == null) {
+                min = new int[argb.length];
+                max = new int[argb.length];
+                java.util.Arrays.fill(min, 255);
+            }
+            for (int i = 0; i < argb.length; i++) {
+                int grey = ((argb[i] >> 16 & 0xff) + (argb[i] >> 8 & 0xff) + (argb[i] & 0xff)) / 3;
+                min[i] = Math.min(min[i], grey);
+                max[i] = Math.max(max[i], grey);
+            }
+            Thread.sleep(95);
+        }
+        java.util.List<double[]> out = new java.util.ArrayList<>();
+        for (int i = 0; i < min.length; i++) {
+            if (max[i] - min[i] > 60) out.add(new double[]{(i % w + 0.5) / scale, (i / w + 0.5) / scale});
+        }
+        return out;
     }
 
     /** Every highlight pixel maps (via pageAt) into one of the core's selection rectangles. */

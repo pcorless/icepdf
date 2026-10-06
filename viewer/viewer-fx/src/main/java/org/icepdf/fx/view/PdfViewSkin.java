@@ -15,7 +15,10 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Orientation;
@@ -37,6 +40,8 @@ import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.Bias;
+import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.fx.view.DocumentLayout.PageSlot;
@@ -70,6 +75,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
     private final TileRenderer renderer;
     private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> scheduleRefresh());
+    // caret blink phase; the caret is drawn on the focus page's layer only (see updateText).
+    private static final Duration CARET_BLINK = Duration.millis(500);
+    private final Timeline caretBlink = new Timeline();
+    private boolean caretOn = true;
     private final Map<Integer, PageLayer> layers = new HashMap<>();
 
     private Document document;
@@ -175,9 +184,24 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         registerChangeListener(control.sceneProperty(), o -> watchWindow());
         registerChangeListener(control.toolModeProperty(), o -> {
             installTool();
+            updateCaretBlink(false);
             refresh();
         });
-        registerChangeListener(control.textSelectionProperty(), o -> refresh());
+        registerChangeListener(control.textSelectionProperty(), o -> {
+            // solid again whenever the caret moves, so it is visible straight after interaction.
+            caretOn = true;
+            updateCaretBlink(true);
+            refresh();
+        });
+        registerChangeListener(control.focusedProperty(), o -> {
+            updateCaretBlink(false);
+            refresh();
+        });
+        caretBlink.getKeyFrames().add(new KeyFrame(CARET_BLINK, e -> {
+            caretOn = !caretOn;
+            layers.values().forEach(layer -> layer.setCaretVisible(caretOn));
+        }));
+        caretBlink.setCycleCount(Animation.INDEFINITE);
 
         control.addEventHandler(ScrollEvent.SCROLL, scrollHandler);
         control.addEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -199,6 +223,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         renderer.shutdown();
         textLoader.shutdown();
+        caretBlink.stop();
         cache.clear();
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
         getSkinnable().removeEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -583,6 +608,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private void updateText(PageLayer layer) {
         if (!needsText()) {
             layer.setSelection(null, null);
+            layer.setCaret(null);
             return;
         }
         int index = layer.getPageIndex();
@@ -590,6 +616,28 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         TextSequence sequence = textLoader.get(index);
         DocumentSelection selection = getSkinnable().getTextSelection();
         layer.setSelection(sequence, selection != null ? selection.rangeForPage(index, sequence) : null);
+        // the caret sits at the focus end, as in the Swing viewer.
+        boolean caretHere = isCaretActive() && sequence != null && selection.getFocusPage() == index;
+        layer.setCaret(caretHere ? sequence.caretRect(
+                new Caret(Math.min(selection.getFocusOffset(), sequence.length()), Bias.FORWARD)) : null);
+        layer.setCaretVisible(caretOn);
+    }
+
+    /** A caret shows in the select tool, while focused, when there is a selection. */
+    private boolean isCaretActive() {
+        PdfView control = getSkinnable();
+        return control.getToolMode() == ToolMode.TEXT_SELECT && control.isFocused()
+                && control.getTextSelection() != null;
+    }
+
+    /** Runs the blink while a caret is active; {@code restart} resets the cycle (caret moved). */
+    private void updateCaretBlink(boolean restart) {
+        if (!isCaretActive()) {
+            caretBlink.stop();
+            caretOn = true;
+        } else if (restart || caretBlink.getStatus() != Animation.Status.RUNNING) {
+            caretBlink.playFromStart();
+        }
     }
 
     /** The page's loaded text, or null if it isn't loaded (or has none). */
@@ -783,6 +831,31 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 layoutRotation, (float) layoutZoom);
         Point2D user = PageTransforms.viewToPage(pageToView, cx - best.x(), cy - best.y());
         return user == null ? null : new PagePoint(best.pageIndex(), user.getX(), user.getY());
+    }
+
+    /**
+     * Scrolls the least distance that brings a page point at least {@code margin} logical px inside
+     * the viewport; does nothing if it is already there or the page isn't laid out (a
+     * non-continuous mode showing another page - change the current page first).
+     */
+    void ensureVisible(PagePoint point, double margin) {
+        if (layout == null || document == null) return;
+        PageSlot slot = layout.getSlot(point.pageIndex());
+        if (slot == null) return;
+        Page page = document.getPageTree().getPage(point.pageIndex());
+        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
+                layoutRotation, (float) layoutZoom);
+        Point2D view = PageTransforms.pageToView(pageToView, point.x(), point.y());
+        double dx = slot.x() + view.getX();
+        double dy = slot.y() + view.getY();
+        double m = Math.min(margin, Math.min(viewportW, viewportH) / 2);
+        double x = scrollX;
+        double y = scrollY;
+        if (dx < scrollX + m) x = dx - m;
+        else if (dx > scrollX + viewportW - m) x = dx - viewportW + m;
+        if (dy < scrollY + m) y = dy - m;
+        else if (dy > scrollY + viewportH - m) y = dy - viewportH + m;
+        if (x != scrollX || y != scrollY) scrollTo(x, y);
     }
 
     double getViewportWidth() {
