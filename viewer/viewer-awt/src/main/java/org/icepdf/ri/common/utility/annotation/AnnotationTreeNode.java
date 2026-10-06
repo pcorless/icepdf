@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 public class AnnotationTreeNode extends AbstractAnnotationTreeNode<Annotation> {
 
     private static final Logger logger =
-            Logger.getLogger(AnnotationTreeNode.class.toString());
+            Logger.getLogger(AnnotationTreeNode.class.getName());
 
     private Annotation annotation;
     private final Pattern searchPattern;

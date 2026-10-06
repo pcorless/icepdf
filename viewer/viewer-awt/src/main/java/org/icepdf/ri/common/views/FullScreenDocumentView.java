@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class FullScreenDocumentView extends OnePageView implements WindowListener {
 
     private static final Logger logger =
-            Logger.getLogger(FullScreenDocumentView.class.toString());
+            Logger.getLogger(FullScreenDocumentView.class.getName());
 
     private static Object instance;
     private boolean disposed;

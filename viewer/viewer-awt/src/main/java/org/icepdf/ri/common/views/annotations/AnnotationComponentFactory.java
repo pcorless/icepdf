@@ -41,7 +41,7 @@ import static org.icepdf.core.pobjects.acroform.ButtonFieldDictionary.ButtonFiel
 public class AnnotationComponentFactory {
 
     protected static final Logger logger =
-            Logger.getLogger(AnnotationComponentFactory.class.toString());
+            Logger.getLogger(AnnotationComponentFactory.class.getName());
 
     private AnnotationComponentFactory() {
     }

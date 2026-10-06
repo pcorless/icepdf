@@ -56,7 +56,7 @@ public class TextWidgetComponent extends AbstractAnnotationComponent<TextWidgetA
         implements PropertyChangeListener {
 
     private static final Logger logger =
-            Logger.getLogger(TextWidgetComponent.class.toString());
+            Logger.getLogger(TextWidgetComponent.class.getName());
 
     private boolean textContentChange;
     private JTextComponent textWidgetComponent;

@@ -18,15 +18,10 @@ package org.icepdf.core.pobjects.security;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.security.Provider;
-import java.security.Security;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -53,7 +48,7 @@ import java.util.logging.Logger;
 public class SecurityManager {
 
     private static final Logger logger =
-            Logger.getLogger(SecurityManager.class.toString());
+            Logger.getLogger(SecurityManager.class.getName());
 
     // Default Encryption dictionary, which also contians keys need for
     // standard, crypt and public security handlers.
@@ -62,9 +57,12 @@ public class SecurityManager {
     // Pointer to class which implements the SecurityHandler interface
     private final SecurityHandler securityHandler;
 
-    // key caches, fairly expensive calculation
-    private byte[] encryptionKey;
-    private byte[] decryptionKey;
+    // key caches, fairly expensive calculation.  volatile + double-checked
+    // publication in getDecryptionKey(): concurrent page/stream decodes all
+    // first-touch this lazily, and the underlying securityHandler.getEncryptionKey()
+    // mutates shared crypto state, so it must be computed exactly once.
+    private volatile byte[] encryptionKey;
+    private volatile byte[] decryptionKey;
 
     /**
      * Disposes of the security handler instance.
@@ -134,10 +132,17 @@ public class SecurityManager {
      * @return encryption key used to encrypt the data
      */
     public byte[] getEncryptionKey() {
-        if (encryptionKey == null) {
-            encryptionKey = securityHandler.getEncryptionKey();
+        byte[] key = encryptionKey;
+        if (key == null) {
+            synchronized (this) {
+                key = encryptionKey;
+                if (key == null) {
+                    key = securityHandler.getEncryptionKey();
+                    encryptionKey = key;
+                }
+            }
         }
-        return encryptionKey;
+        return key;
     }
 
     /**
@@ -146,10 +151,17 @@ public class SecurityManager {
      * @return decryption key used to encrypt the data
      */
     public byte[] getDecryptionKey() {
-        if (decryptionKey == null) {
-            decryptionKey = securityHandler.getDecryptionKey();
+        byte[] key = decryptionKey;
+        if (key == null) {
+            synchronized (this) {
+                key = decryptionKey;
+                if (key == null) {
+                    key = securityHandler.getDecryptionKey();
+                    decryptionKey = key;
+                }
+            }
         }
-        return decryptionKey;
+        return key;
     }
 
     /**

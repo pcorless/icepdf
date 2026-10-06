@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class JpxDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(JpxDecoder.class.toString());
+            Logger.getLogger(JpxDecoder.class.getName());
 
     public JpxDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
@@ -57,7 +57,10 @@ public class JpxDecoder extends AbstractImageDecoder {
             }
             ImageParams imageParams = imageStream.getImageParams();
 
-            byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+            // the filter passes this encoding through undecoded, so the result is the compressed data;
+            // presizing it to the decoded raster size would allocate far more than it holds.
+            // some encoders under-count tile-parts, which makes the reader drop the last one (see Jpeg2000TileParts)
+            byte[] data = Jpeg2000TileParts.repairTilePartCounts(imageStream.getDecodedStreamBytes(0));
             ImageInputStream imageInputStream = ImageIO.createImageInputStream(
                     new ByteArrayInputStream(data));
 
@@ -84,6 +87,12 @@ public class JpxDecoder extends AbstractImageDecoder {
             ImageReadParam param = reader.getDefaultReadParam();
             reader.setInput(imageInputStream, true, true);
             try {
+                // subsample a really big image while decoding rather than build the full raster and scale it
+                // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
+                int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
+                if (subsampling > 1) {
+                    param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+                }
                 tmpImage = reader.read(0, param);
             } finally {
                 reader.dispose();
@@ -110,7 +119,7 @@ public class JpxDecoder extends AbstractImageDecoder {
                     tmpImage = ImageUtility.makeRGBBufferedImage(wr);
                     cco.filter(tmpImage, tmpImage);
                 } catch (Exception e) {
-                    logger.warning("Error processing ICC Color profile, failing " +
+                    logger.warning("Error processing ICC Color profile, falling " +
                             "back to alternative.");
                     // set the alternate as the current and try and process
                     // using the below rules.

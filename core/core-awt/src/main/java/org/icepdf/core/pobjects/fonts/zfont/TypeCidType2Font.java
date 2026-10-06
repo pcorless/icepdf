@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.zfont.cmap.CMapFactory;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontTrueType;
+import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType0;
 import org.icepdf.core.pobjects.fonts.zfont.fontFiles.ZFontType2;
 import org.icepdf.core.util.Library;
 
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
 public class TypeCidType2Font extends CompositeFont {
 
     private static final Logger logger =
-            Logger.getLogger(TypeCidType2Font.class.toString());
+            Logger.getLogger(TypeCidType2Font.class.getName());
 
     public TypeCidType2Font(Library library, DictionaryEntries entries) {
         super(library, entries);
@@ -45,15 +46,18 @@ public class TypeCidType2Font extends CompositeFont {
 
     protected void parseWidths() {
         super.parseWidths();
+        boolean declaresWidths = widths != null || defaultWidth > -1;
+        float cidDefaultWidth = declaresWidths ? defaultWidth : 1000;
+        float[] cidWidths = declaresWidths ? widths : null;
         if (font instanceof ZFontType2) {
-            if (widths != null || defaultWidth > -1) {
-                font = ((ZFontType2) font).deriveFont(defaultWidth, widths);
-            } else {
-                font = ((ZFontType2) font).deriveFont(1000, null);
-            }
+            font = ((ZFontType2) font).deriveFont(cidDefaultWidth, cidWidths);
+        } else if (font instanceof ZFontType0) {
+            // a CIDFontType2 whose program turned out to be OpenType/CFF is read as a CFF font,
+            // but its widths are still the descendant's and still indexed by cid.
+            font = ((ZFontType0) font).deriveFont(cidDefaultWidth, cidWidths);
         } else {
-            // something bad happened font couldn't be loaded.
-            logger.warning("Could not derive with because of null Type2CID font.");
+            // no font program, or a substitute of another kind: the CID widths can't be applied to it
+            logWidthsNotApplied(logger, font);
         }
     }
 

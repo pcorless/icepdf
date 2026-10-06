@@ -52,7 +52,7 @@ import java.util.logging.Logger;
 public class CertificateVerifier {
 
     private static final Logger logger =
-            Logger.getLogger(CertificateVerifier.class.toString());
+            Logger.getLogger(CertificateVerifier.class.getName());
 
     /**
      * Attempts to build a certification chain for given certificate and to verify

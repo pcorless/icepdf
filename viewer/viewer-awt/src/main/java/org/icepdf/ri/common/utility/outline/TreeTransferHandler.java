@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 class TreeTransferHandler extends TransferHandler {
 
     protected static final Logger logger =
-            Logger.getLogger(TreeTransferHandler.class.toString());
+            Logger.getLogger(TreeTransferHandler.class.getName());
 
     DataFlavor nodesFlavor;
     DataFlavor[] flavors = new DataFlavor[1];

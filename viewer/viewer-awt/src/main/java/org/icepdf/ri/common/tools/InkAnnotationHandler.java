@@ -56,7 +56,7 @@ import java.util.logging.Logger;
 public class InkAnnotationHandler extends CommonToolHandler implements ToolHandler, ActionListener {
 
     private static final Logger logger =
-            Logger.getLogger(LineAnnotationHandler.class.toString());
+            Logger.getLogger(LineAnnotationHandler.class.getName());
 
     // need to make the stroke cap, thickness configurable. Or potentially
     // static from the lineAnnotationHandle, so it would look like the last

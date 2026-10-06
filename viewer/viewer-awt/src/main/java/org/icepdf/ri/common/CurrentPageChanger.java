@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class CurrentPageChanger extends MouseAdapter implements AdjustmentListener {
 
     private static final Logger logger =
-            Logger.getLogger(CurrentPageChanger.class.toString());
+            Logger.getLogger(CurrentPageChanger.class.getName());
 
     private boolean isScrolled = false;
 

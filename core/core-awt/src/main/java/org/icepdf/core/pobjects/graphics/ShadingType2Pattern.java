@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.graphics.batik.ext.awt.MultipleGradientPaint;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 public class ShadingType2Pattern extends ShadingPattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingType2Pattern.class.toString());
+            Logger.getLogger(ShadingType2Pattern.class.getName());
 
     // An array of two numbers [t0, t1] specifying the limiting values of a
     // parametric variable t. The variable is considered to vary linearly between
@@ -155,7 +156,7 @@ public class ShadingType2Pattern extends ShadingPattern {
                     matrix);
             inited = true;
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 2.", e);
+            logger.log(Level.WARNING, e, () -> "Could not initialize type 2 shading " + getPObjectReference() + ": " + e.getMessage());
         }
     }
 
@@ -174,37 +175,22 @@ public class ShadingType2Pattern extends ShadingPattern {
                                            Point2D.Float startPoint,
                                            Point2D.Float endPoint,
                                            float t0, float t1) {
-        // calculate the slope
-        float m = (startPoint.y - endPoint.y) / (startPoint.x - endPoint.x);
-        // calculate the y intercept
-        float b = startPoint.y - (m * startPoint.x);
-
-        // let calculate x points between startPoint.x and startPoint.y that
-        // are on the line using y = mx + b.
-        Color[] color;
-        // if we don't have a y-axis line we can uses y=mx + b to get our points.
-        if (!Float.isInfinite(m)) {
-            float xDiff = (endPoint.x - startPoint.x) / numberOfPoints;
-            float xOffset = startPoint.x;
-            color = new Color[numberOfPoints + 1];
-            Point2D.Float point;
-            for (int i = 0, max = color.length; i < max; i++) {
-                point = new Point2D.Float(xOffset, (m * xOffset) + b);
-                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
-                xOffset += xDiff;
-            }
-        }
-        // otherwise we have a infinite m and can just pick y values
-        else {
-            float yDiff = (endPoint.y - startPoint.y) / numberOfPoints;
-            float yOffset = startPoint.y;
-            color = new Color[numberOfPoints + 1];
-            Point2D.Float point;
-            for (int i = 0, max = color.length; i < max; i++) {
-                point = new Point2D.Float(0, yOffset);
-                color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
-                yOffset += yDiff;
-            }
+        // Sample the axis by interpolating between the end points.  Solving the
+        // line equation (y = mx + b) for each sample instead loses all precision
+        // on a near-vertical axis: a sub-pixel dx gives a huge slope, so the
+        // y-intercept b = y0 - m*x0 is a large magnitude float and (m*x) + b
+        // cancels catastrophically.  Every sample point then lands off the axis,
+        // the parametric value collapses, and the gradient degenerates to a
+        // single (often white) colour -- e.g. the opera mask's upper lip in
+        // shadding-2-3-6.pdf, a 20 unit tall axis whose ends differ by 9e-5 in x.
+        Color[] color = new Color[numberOfPoints + 1];
+        float xDiff = (endPoint.x - startPoint.x) / numberOfPoints;
+        float yDiff = (endPoint.y - startPoint.y) / numberOfPoints;
+        for (int i = 0, max = color.length; i < max; i++) {
+            Point2D.Float point = new Point2D.Float(
+                    startPoint.x + (xDiff * i),
+                    startPoint.y + (yDiff * i));
+            color[i] = calculateColour(colorSpace, point, startPoint, endPoint, t0, t1);
         }
         return color;
     }
@@ -313,6 +299,12 @@ public class ShadingType2Pattern extends ShadingPattern {
         }
     }
 
+    /**
+     * @return the gradient in pattern space, not anchored to any use.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint in pattern space, not anchored to any use.
+     */
+    @Deprecated
     public Paint getPaint() {
         try {
             init();
@@ -321,6 +313,27 @@ public class ShadingType2Pattern extends ShadingPattern {
             logger.fine("ShadingType2Pattern initialization interrupted");
         }
         return linearGradientPaint;
+    }
+
+    /**
+     * The cached gradient carries the raw pattern matrix; each use gets a copy anchored to its own CTM.  Caching
+     * the anchored paint gave every later use the first use's CTM, so a pattern reused under a different
+     * {@code cm} slid off its shape and clamped to one end colour - and under concurrent page rendering, which
+     * use came first varied between runs.
+     */
+    @Override
+    public Paint getPaint(GraphicsState graphicsState) {
+        init(graphicsState);
+        LinearGradientPaint paint = linearGradientPaint;
+        if (paint == null) {
+            return null;
+        }
+        AffineTransform anchored = anchorToDefaultSpace(matrix, graphicsState);
+        if (anchored == matrix) {
+            return paint;
+        }
+        return new LinearGradientPaint(paint.getStartPoint(), paint.getEndPoint(), paint.getFractions(),
+                paint.getColors(), paint.getCycleMethod(), paint.getColorSpace(), anchored);
     }
 
     public String toString() {

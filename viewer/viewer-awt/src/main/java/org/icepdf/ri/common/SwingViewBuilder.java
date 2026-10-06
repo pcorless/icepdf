@@ -287,7 +287,7 @@ import java.util.prefs.Preferences;
 public class SwingViewBuilder implements ViewBuilder {
 
     private static final Logger logger =
-            Logger.getLogger(SwingViewBuilder.class.toString());
+            Logger.getLogger(SwingViewBuilder.class.getName());
 
     public static final int TOOL_BAR_STYLE_FIXED = 2;
     protected static final float[] DEFAULT_ZOOM_LEVELS = {
@@ -412,7 +412,7 @@ public class SwingViewBuilder implements ViewBuilder {
         viewerController.setPropertiesManager(propertiesManager);
 
         // Apply viewer preferences settings to various core system properties.
-        overrideHighlightColor(propertiesManager);
+        applyPropertyManagerSettings(propertiesManager);
 
         // update View Controller with previewer document page fit and view type info
         DocumentViewControllerImpl documentViewController =
@@ -496,6 +496,7 @@ public class SwingViewBuilder implements ViewBuilder {
         JPanel statusPanel = buildStatusPanel();
         if (statusPanel != null)
             cp.add(statusPanel, BorderLayout.SOUTH);
+        viewerController.setViewerContainer(cp);
     }
 
 
@@ -2540,7 +2541,7 @@ public class SwingViewBuilder implements ViewBuilder {
      *
      * @param propertiesManager current properties manager.
      */
-    protected void overrideHighlightColor(ViewerPropertiesManager propertiesManager) {
+    protected void applyPropertyManagerSettings(ViewerPropertiesManager propertiesManager) {
 
         Preferences preferences = propertiesManager.getPreferences();
 

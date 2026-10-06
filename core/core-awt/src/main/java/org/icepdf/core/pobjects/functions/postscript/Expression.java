@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects.functions.postscript;
 
-import java.util.Stack;
-
 /**
  * Representing a generic Expression which follows the Command pattern for delayed
  * or differed execution.  Expression is just another type of Operator but we
@@ -32,7 +30,7 @@ public class Expression extends Operator {
     }
 
     @Override
-    public void eval(Stack stack) {
+    public void eval(OperandStack stack) {
         // nothing to do for an expression
     }
 }

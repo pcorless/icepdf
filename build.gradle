@@ -3,6 +3,21 @@ apply plugin: 'project-report'
 
 allprojects {
     apply plugin: 'java'
+    // Test coverage.  Run e.g.
+    //   ./gradlew :core:core-awt:test :core:core-awt:jacocoTestReport
+    // HTML lands in <module>/build/reports/jacoco/test/html/index.html, XML beside it for CI.
+    apply plugin: 'jacoco'
+    jacoco {
+        toolVersion = '0.8.15'   // keep in step with jacoco.version in pom.xml
+    }
+
+    tasks.withType(JacocoReport).configureEach {
+        dependsOn tasks.withType(Test)
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
 
     java {
         toolchain {
@@ -47,11 +62,7 @@ distributions {
                 include '*-sources.jar'
             }
             into('libs') {
-                // dependency jars
-                def libs = []
-                libs << project(':core:core-awt').configurations.runtimeClasspath.files
-//                libs << project(':viewer:viewer-awt').configurations.runtimeClasspath.files
-                from libs
+                from { configurations.runtimeClasspath }
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
                 from project(':core:core-fonts').jar
@@ -64,6 +75,7 @@ distributions {
             into('licenses') {
                 from 'licenses'
             }
+            from('NOTICE')
             // maven auto generated pom files.
             into ('maven2') {
                 from 'core/core-awt/build/publications/coreJar/pom-default.xml'

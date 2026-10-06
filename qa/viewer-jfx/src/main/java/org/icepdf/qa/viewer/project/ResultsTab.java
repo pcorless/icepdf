@@ -27,6 +27,7 @@ import javafx.scene.layout.VBox;
 import org.icepdf.qa.config.Project;
 import org.icepdf.qa.config.Result;
 import org.icepdf.qa.viewer.common.Mediator;
+import org.icepdf.qa.viewer.common.PreferencesController;
 import org.icepdf.qa.viewer.common.Viewer;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import java.util.List;
  */
 public class ResultsTab extends Tab {
 
-    private final TextField filterTextField;
+    private final Slider filterSlider;
 
     private final ContextMenu openFileContextMenu;
     private final TableView<Result> resultsTable;
@@ -47,7 +48,15 @@ public class ResultsTab extends Tab {
         super(title);
         setClosable(false);
 
-        filterTextField = new TextField("99.99");
+        // Threshold slider: show only results whose similarity is at or below
+        // the slider value, i.e. drag right to widen the net and include
+        // near-identical pages, drag left to surface only the worst regressions.
+        filterSlider = new Slider(0, 100, PreferencesController.getImageCompareThreshold());
+        filterSlider.setShowTickMarks(true);
+        filterSlider.setShowTickLabels(true);
+        filterSlider.setMajorTickUnit(25);
+        filterSlider.setMinorTickCount(4);
+        filterSlider.setPrefWidth(260);
 
         resultsTable = new TableView<>();
         resultsTable.setEditable(false);
@@ -61,11 +70,18 @@ public class ResultsTab extends Tab {
         TableColumn<Result, String> captureNameColumn = new TableColumn<>("Capture ");
         captureNameColumn.setCellValueFactory(new PropertyValueFactory<>("fileNameA"));
 
-        TableColumn<Result, Double> compareColumn = new TableColumn<>("Compare");
+        // Ink-weighted similarity is the headline regression number.
+        TableColumn<Result, Double> compareColumn = new TableColumn<>("Ink %");
         compareColumn.setCellValueFactory(new PropertyValueFactory<>("difference"));
 
+        TableColumn<Result, Double> aeColumn = new TableColumn<>("AE %");
+        aeColumn.setCellValueFactory(new PropertyValueFactory<>("aeSimilarity"));
+
+        TableColumn<Result, Double> ssimColumn = new TableColumn<>("SSIM %");
+        ssimColumn.setCellValueFactory(new PropertyValueFactory<>("structuralSimilarity"));
+
         resultsTable.getSortOrder().add(fileNameColumn);
-        resultsTable.getColumns().addAll(fileNameColumn, captureNameColumn, compareColumn);
+        resultsTable.getColumns().addAll(fileNameColumn, captureNameColumn, compareColumn, aeColumn, ssimColumn);
 
         openFileContextMenu = new ContextMenu();
         MenuItem openClassPathA = new MenuItem("Open With classpath A");
@@ -103,24 +119,21 @@ public class ResultsTab extends Tab {
 
         FilteredList<Result> filteredData = new FilteredList<>(data, p -> true);
 
-        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> filteredData.setPredicate(result -> {
-            // If filter text is empty, display all persons.
-            if (newValue == null || newValue.isEmpty()) {
-                return true;
-            }
-
-            return result.getDifference() <= Double.parseDouble(newValue);// Does not match.
-        }));
-        filterTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (!newValue.matches("\\d+(?:\\.\\d+)?")) {
-                filterTextField.setText(newValue.replaceAll("[^\\d.]", ""));
+        Label filterValueLabel = new Label();
+        filterValueLabel.setMinWidth(60);
+        Runnable applyFilter = () -> {
+            double threshold = filterSlider.getValue();
+            filterValueLabel.setText(String.format("≤ %.2f%%", threshold));
+            filteredData.setPredicate(result -> result.getDifference() <= threshold);
+        };
+        filterSlider.valueProperty().addListener((observable, oldValue, newValue) -> applyFilter.run());
+        // Persist the chosen threshold as the new default once the drag settles.
+        filterSlider.valueChangingProperty().addListener((observable, wasChanging, changing) -> {
+            if (!changing) {
+                PreferencesController.saveImageCompareThreshold(filterSlider.getValue());
             }
         });
-
-        filteredData.setPredicate(result -> {
-            // If filter text is empty, display all persons.
-            return result.getDifference() < Double.parseDouble(filterTextField.getText());
-        });
+        applyFilter.run();
 
         SortedList<Result> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(resultsTable.comparatorProperty());
@@ -128,7 +141,7 @@ public class ResultsTab extends Tab {
 
         BorderPane borderPane = new BorderPane();
         ToolBar viewTools = new ToolBar();
-        viewTools.getItems().addAll(new Label("Filter"), filterTextField);
+        viewTools.getItems().addAll(new Label("Show ≤"), filterSlider, filterValueLabel);
         borderPane.setTop(new VBox(20, viewTools));
         borderPane.setCenter(resultsTable);
         this.setContent(borderPane);

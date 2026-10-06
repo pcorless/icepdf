@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * @since 7.2
  */
 public class ModifierFactory {
-    private static final Logger logger = Logger.getLogger(ModifierFactory.class.toString());
+    private static final Logger logger = Logger.getLogger(ModifierFactory.class.getName());
 
     public static Modifier getModifier(Dictionary parent, Dictionary modify) {
         if (modify instanceof Page) {

@@ -69,7 +69,17 @@ public class TextSprite {
     private FontFile font;
     // font's resource name and size, used by PS writer.
     private String fontName;
-    private int fontSize;
+    private float fontSize;
+    // Text-state values already folded into the glyph positions below, kept so a writer that
+    // rebuilds a show operation can work out how far the reader advances between two glyphs on its
+    // own.  Both carry the horizontal scaling, matching how drawString accumulates them.
+    private float charSpacing;
+    private float wordSpacing;
+    // The font's writing mode, i.e. whether the text advances down the page in text space.  Not the
+    // same question as GlyphText.isVerticalWriting(), which answers it in page space with any page
+    // rotation applied: on a /Rotate 90 page a horizontally written font is vertical there and
+    // horizontal here.  Anything reasoning about text-space geometry wants this one.
+    private boolean verticalWriting;
 
     private static final String TYPE_3 = "Type3";
 
@@ -135,6 +145,22 @@ public class TextSprite {
         }
         // can't have Rectangle2D with negative w or h, api will zero the bounds.
         w = Math.abs(w);
+
+        // a zero width culls the glyph for the same reason a zero height does: Rectangle2D
+        // treats an empty rectangle as intersecting nothing, so TextSpriteDrawCmd's clip test
+        // fails and the sprite is never painted.  A Type3 glyph that the producer positions
+        // individually with Tm legitimately advances by nothing at all -- Ghostscript writes
+        // `0 0 0 0 51 48 d1` and matching zero /Widths -- so the advance cannot be relied on to
+        // give the glyph a width here.
+        if (w == 0.0f) {
+            Rectangle2D glyphBounds = font.getBounds(cid, 0, 1);
+            if (glyphBounds != null && glyphBounds.getWidth() > 0) {
+                w = (float) glyphBounds.getWidth();
+            } else {
+                // match the height, mirroring what the zero-height case does with the width.
+                w = Math.abs(font.getSize());
+            }
+        }
         // this is still terrible, should be applying the fontTransform but this little hack is fast until I can
         // figure out the geometry for the corner cases.
         Rectangle2D.Double glyphBounds;
@@ -294,11 +320,45 @@ public class TextSprite {
         this.fontName = fontName;
     }
 
-    public int getFontSize() {
+    /**
+     * @return true when the font writes vertically, in text space
+     */
+    public boolean isVerticalWriting() {
+        return verticalWriting;
+    }
+
+    public void setVerticalWriting(boolean verticalWriting) {
+        this.verticalWriting = verticalWriting;
+    }
+
+    /**
+     * @return character spacing (Tc), scaled the way glyph positions were accumulated
+     */
+    public float getCharSpacing() {
+        return charSpacing;
+    }
+
+    public void setCharSpacing(float charSpacing) {
+        this.charSpacing = charSpacing;
+    }
+
+    /**
+     * @return word spacing (Tw), scaled the way glyph positions were accumulated. Applies only to
+     * the single byte code 32.
+     */
+    public float getWordSpacing() {
+        return wordSpacing;
+    }
+
+    public void setWordSpacing(float wordSpacing) {
+        this.wordSpacing = wordSpacing;
+    }
+
+    public float getFontSize() {
         return fontSize;
     }
 
-    public void setFontSize(int fontSize) {
+    public void setFontSize(float fontSize) {
         this.fontSize = fontSize;
     }
 
@@ -361,6 +421,38 @@ public class TextSprite {
     }
 
     /**
+     * Returns true if this sprite might intersect the clip of {@code g}.  Uses {@link Graphics#hitClip}, which
+     * tests against the already-rasterized clip region, rather than {@code g.getClip()}, which copies and
+     * inverse-transforms the whole clip outline on every call (O(segments) per sprite on a complex clip).
+     *
+     * @param g graphics context whose current transform maps this sprite's bounds.
+     * @return true, if the sprite bounds may intersect the clip of g; otherwise false.
+     */
+    public boolean intersects(Graphics2D g) {
+        return !(optimizedDrawingEnabled) || hitClip(g, bounds);
+    }
+
+    /**
+     * Conservative {@link Graphics#hitClip} for a fractional user-space rectangle: the integer rectangle is widened
+     * to fully cover {@code r}.  Bounds that don't fit in an int (a "whole page" fill drawn as a huge rectangle, or
+     * NaN) are reported as hitting: narrowing them would overflow the width and cull the shape.
+     */
+    public static boolean hitClip(Graphics2D g, Rectangle2D r) {
+        double minX = Math.floor(r.getMinX());
+        double minY = Math.floor(r.getMinY());
+        double maxX = Math.ceil(r.getMaxX());
+        double maxY = Math.ceil(r.getMaxY());
+        if (!(minX >= Integer.MIN_VALUE && minY >= Integer.MIN_VALUE &&
+                maxX - minX <= Integer.MAX_VALUE && maxY - minY <= Integer.MAX_VALUE &&
+                maxX <= Integer.MAX_VALUE && maxY <= Integer.MAX_VALUE)) {
+            return true;
+        }
+        int w = (int) (maxX - minX);
+        int h = (int) (maxY - minY);
+        return g.hitClip((int) minX, (int) minY, Math.max(w, 1), Math.max(h, 1));
+    }
+
+    /**
      * Tests if the interior of the <code>TextSprite</code> bounds intersects the
      * interior of a specified <code>shape</code>.
      *
@@ -368,6 +460,7 @@ public class TextSprite {
      * @return true, if <code>TextSprite</code> bounds intersects <code>shape</code>;
      * otherwise; false.
      */
+
     public boolean intersects(Shape shape) {
 //        return shape.intersects(bounds.toJava2dCoordinates());
         return !(optimizedDrawingEnabled) ||

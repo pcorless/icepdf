@@ -84,7 +84,7 @@ public class ObjectUpdateTests {
                             Annotation.SUBTYPE_TEXT,
                             new Rectangle(10, 10, 50, 50));
 
-            page.addAnnotation(textAnnotation, true);
+            page.addAnnotation(textAnnotation);
 
             File out = new File("./src/test/out/ObjectUpdateTest_testXrefStreamFullUpdate.pdf");
             try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(out), 8192)) {

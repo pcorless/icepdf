@@ -167,7 +167,9 @@ public class Separation extends PColorSpace {
         if (namedColor != null) {
             // apply tint
             synchronized (cacheLock) {
-                tint = components[0];
+                // a tint is 0..1 by definition; a tint transform or shading function that overshoots must not
+                // turn into an out-of-range Color (which throws and drops the whole shading)
+                tint = Math.max(0f, Math.min(1f, components[0]));
                 Color cachedNamedColor = namedColorCache.get(tint);
                 if (cachedNamedColor == null) {
                     // apply tint as an alpha value.

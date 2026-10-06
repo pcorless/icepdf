@@ -60,7 +60,7 @@ import java.util.logging.Logger;
  */
 public class OCSPVerifier {
 
-    private static final Logger logger = Logger.getLogger(OCSPVerifier.class.toString());
+    private static final Logger logger = Logger.getLogger(OCSPVerifier.class.getName());
 
     /**
      * Verify whether the certificate has been revoked at signing date, and verify whether

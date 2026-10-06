@@ -113,6 +113,9 @@ public class SignatureReferenceDictionary extends Dictionary {
      */
     public TransformParams getTransformParams() {
         Name tmp = library.getName(entries, TRANSFORM_METHOD_KEY);
+        if (tmp == null) {
+            return null;
+        }
         if (tmp.equals(TransformMethods.DocMDP.toString())) {
             transformParams =
                     new DocMDPTransferParam(library, library.getDictionary(entries, TRANSFORM_PARAMS_KEY));

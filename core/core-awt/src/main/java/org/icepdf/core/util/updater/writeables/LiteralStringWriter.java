@@ -41,9 +41,11 @@ public class LiteralStringWriter extends BaseWriter {
             writeRaw(writeable.getLiteralString(), output);
         } else if (securityManager != null) {
             if (writeable.isModified()) {
-                // encryption will take care of any escape issue.
-                String writeableString = writeable.encryption(writeable.getLiteralString(), pObject.getReference(),
-                        securityManager);
+                // authored since the document was opened, so it is plain text and has to be
+                // encrypted on the way out.  The cipher runs over bytes; the byte string that comes
+                // back is only turned into characters so the delimiters can be escaped.
+                byte[] encrypted = writeable.getEncryptedRawBytes(pObject.getReference(), securityManager);
+                String writeableString = Utils.convertByteArrayToByteString(encrypted);
                 writeRaw(writeableString.replaceAll(LITERAL_REGEX, LITERAL_REPLACEMENT), output);
             } else {
                 // just need to write the string data as is, string data will already be in the correct state

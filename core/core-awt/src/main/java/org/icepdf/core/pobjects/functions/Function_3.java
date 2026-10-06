@@ -120,9 +120,11 @@ public class Function_3 extends Function {
                     return encode(x, functions[k - 1], k - 1);
                 }
             }
-            // bounds <= x < bounds b + 1, return function if true
-            if (bounds[b] <= x[0] && x[0] < bounds[b + 1]) {
-                return encode(x, functions[b], b);
+            // bounds[b] <= x < bounds[b+1]: this interval is governed by the
+            // function AFTER bounds[b] (PDF spec: Functions_i applies to
+            // Bounds_(i-1) <= x < Bounds_i), i.e. functions[b+1], not functions[b].
+            if (b + 1 < bounds.length && bounds[b] <= x[0] && x[0] < bounds[b + 1]) {
+                return encode(x, functions[b + 1], b + 1);
             }
         }
 
@@ -144,7 +146,7 @@ public class Function_3 extends Function {
     private float[] encode(float[] x, Function function, int i) {
         int k = functions.length;
 
-        if (i <= 0 && i < k && bounds.length > 0) {
+        if (i >= 0 && i < k && bounds.length > 0) {
 
             float b1;
             float b2;

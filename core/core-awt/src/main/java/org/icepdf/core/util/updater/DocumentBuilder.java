@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class DocumentBuilder {
 
     private static final Logger logger =
-            Logger.getLogger(Document.class.toString());
+            Logger.getLogger(Document.class.getName());
 
     public long createDocument(
             WriteMode writeMode,

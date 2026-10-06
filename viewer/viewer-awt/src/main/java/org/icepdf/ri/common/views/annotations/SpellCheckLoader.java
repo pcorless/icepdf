@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class SpellCheckLoader {
 
     private static final Logger logger =
-            Logger.getLogger(SpellCheckLoader.class.toString());
+            Logger.getLogger(SpellCheckLoader.class.getName());
 
     protected static final String JORTHO_SPELL_CHECKER_CLASS = "com.inet.jortho.SpellChecker";
     protected static final String JORTHO_FILE_USER_DICTIONARY_CLASS = "com.inet.jortho.UserDictionaryProvider";
@@ -89,7 +89,6 @@ public class SpellCheckLoader {
             Method addSpellCheckMethod = spellCheckerClass.getMethod(JORTHO_SET_USER_DICTIONARY_PROVIDER_METHOD, fileUserDictionaryClass);
             addSpellCheckMethod.invoke(null, fileUserDictionary);
         } catch (Exception e) {
-            e.printStackTrace();
             logger.info(JORTHO_SET_USER_DICTIONARY_PROVIDER_METHOD + " could not be found on the class path");
         }
     }

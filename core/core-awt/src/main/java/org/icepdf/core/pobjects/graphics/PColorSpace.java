@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public abstract class PColorSpace extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(PColorSpace.class.toString());
+            Logger.getLogger(PColorSpace.class.getName());
 
     public abstract int getNumComponents();
 

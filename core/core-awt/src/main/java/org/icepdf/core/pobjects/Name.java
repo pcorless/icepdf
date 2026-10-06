@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class Name {
 
     private static final Logger logger =
-            Logger.getLogger(Name.class.toString());
+            Logger.getLogger(Name.class.getName());
 
     private static final int HEX_CHAR = 0X23;
 

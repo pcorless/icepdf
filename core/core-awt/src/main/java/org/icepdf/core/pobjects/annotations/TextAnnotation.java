@@ -15,6 +15,7 @@
  */
 package org.icepdf.core.pobjects.annotations;
 
+import java.nio.charset.StandardCharsets;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.util.Library;
@@ -42,7 +43,7 @@ import java.util.logging.Logger;
 public class TextAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(TextAnnotation.class.toString());
+            Logger.getLogger(TextAnnotation.class.getName());
 
     /**
      * (Optional) A flag specifying whether the annotation shall initially be
@@ -203,7 +204,7 @@ public class TextAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
         // setup the context
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -271,13 +272,13 @@ public class TextAnnotation extends MarkupAnnotation {
         MessageFormat formatter = new MessageFormat(iconContentString);
         iconContentString = formatter.format(colorArgument);
 
-        Form form = updateAppearanceStream(null, bbox, matrix, null, isNew);
+        Form form = updateAppearanceStream(null, bbox, matrix, null);
         generateExternalGraphicsState(form, opacity);
         // parse the shapes and assign to this instance
         try {
             Resources resources = form.getResources();
             ContentParser cp = new ContentParser(library, resources);
-            shapes = cp.parse(Stream.fromByteArray(iconContentString.getBytes(), this),
+            shapes = cp.parse(Stream.fromByteArray(iconContentString.getBytes(StandardCharsets.ISO_8859_1), this),
                     null).getShapes();
         } catch (Exception e) {
             shapes = new Shapes();
@@ -286,7 +287,7 @@ public class TextAnnotation extends MarkupAnnotation {
 
         // update the appearance stream
         // create/update the appearance stream of the xObject.
-        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(), isNew);
+        form = updateAppearanceStream(shapes, bbox, matrix, iconContentString.getBytes(StandardCharsets.ISO_8859_1));
 //        generateExternalGraphicsState(form, opacity);
         if (form != null) {
             appearanceState.setShapes(shapes);

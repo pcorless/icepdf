@@ -25,6 +25,9 @@ import org.icepdf.core.util.Library;
 
 import java.awt.geom.GeneralPath;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.fonts.Font.*;
@@ -66,7 +69,7 @@ public class FontBuilder {
 
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.SUBTYPE_KEY, FONT_SUBTYPE_TRUE_TYPE);
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.ENCODING_KEY, new Name("WinAnsiEncoding"));
-        fontDictionary.put(TO_UNICODE_KEY, IDENTITY_NAME);
+        fontDictionary.put(TO_UNICODE_KEY, createToUnicodeStream());
         fontDictionary.put(org.icepdf.core.pobjects.fonts.Font.BASEFONT_KEY, new Name(fontName));
 
         // build font descriptor
@@ -128,11 +131,13 @@ public class FontBuilder {
             default:
                 break;
         }
-        // PDF/A-2.0 requires that the symbolic and non-symbolic bits be mutually exclusive, so we set the non-symbolic
-        // bit if the font has a Unicode cmap, otherwise we set the symbolic bit.  Can build out later for CID fonts
-        // if needed.
-//        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, true);
-        flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, false);
+        // Exactly one of Symbolic and Nonsymbolic shall be set (PDF 32000-1, Table 123), and they
+        // are mutually exclusive.  This font is written with /WinAnsiEncoding and draws text, so it
+        // is nonsymbolic.  Setting the nonsymbolic bit to false and leaving symbolic commented out
+        // left /Flags 0, declaring neither - invalid, and rejected by validators stricter than
+        // veraPDF at 1b.
+        flags = setFlagBit(flags, FONT_FLAG_SYMBOLIC, false);
+        flags = setFlagBit(flags, FONT_FLAG_NON_SYMBOLIC, true);
         fontDescriptorDictionary.put(FLAGS, flags);
 
         // FontBBox
@@ -186,6 +191,14 @@ public class FontBuilder {
         fontDescriptor = new FontDescriptor(library, fontDescriptorDictionary);
         fontDescriptor.setPObjectReference(fontDescriptorReference);
         stateManager.addTempChange(new PObject(fontDescriptor, fontDescriptorReference));
+    }
+
+    /**
+     * The {@code /ToUnicode} CMap for the subset. The codes are the ones the {@code /Widths} array is
+     * indexed by, and the font declares WinAnsiEncoding, so the mapping is that encoding's.
+     */
+    protected Reference createToUnicodeStream() {
+        return ToUnicodeCMap.forUnicode(library, fontFileSubSetter.getSubsetCodePoints());
     }
 
     private int setFlagBit(int flags, int bit, boolean value) {

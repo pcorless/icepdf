@@ -28,20 +28,34 @@ import java.io.IOException;
 public class TextContentEditor {
 
     /**
-     * Updates the text content of a PDF page.
+     * Replaces the text within {@code textBounds}.
+     * <p>
+     * Where the font the text is drawn in cannot write the replacement - the ordinary case for a
+     * subsetted composite font, which holds the characters the document already uses and no others -
+     * the replacement is written in a substitute font embedded for the purpose. Text whose glyphs are
+     * not characters in a font at all cannot be edited; see
+     * {@link TextEditCapability#unsupportedReason(Page, Rectangle)}.
      *
      * @param page       the PDF page to update
-     * @param text       text to be replaced
      * @param textBounds the bounds of the text to be replaced
      * @param newText    the new text to replace the old text
      * @throws InterruptedException page init can be interrupted
      * @throws IOException          if an error occurs while writing the content stream
+     * @since 7.5.0
      */
-    public static void updateText(Page page, String text, Rectangle textBounds, String newText) throws InterruptedException,
+    public static void updateText(Page page, Rectangle textBounds, String newText) throws InterruptedException,
             IOException {
         Library library = page.getLibrary();
+        // When the run's own font cannot write the replacement - which is the ordinary case for a
+        // subsetted composite font, since it holds the characters the document already used and no
+        // others - the text is written in a substitute instead. Refusing would be the alternative,
+        // and for the small corrections this exists for it is the worse one.
+        SubstituteFont substitute = null;
+        if (TextEditCapability.requiresSubstitution(page, textBounds, newText)) {
+            substitute = SubstituteFont.forText(page, TextEditCapability.fontAt(page, textBounds), newText);
+        }
         ContentStreamTextEditorCallback contentStreamCallback =
-                new ContentStreamTextEditorCallback(library, text, textBounds, newText);
+                new ContentStreamTextEditorCallback(library, textBounds, newText, substitute);
         page.init(contentStreamCallback);
         contentStreamCallback.endContentStream();
     }

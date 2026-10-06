@@ -162,9 +162,6 @@ public abstract class Font extends Dictionary {
     // Font Descriptor used
     protected FontDescriptor fontDescriptor;
 
-    // initiated flag
-    protected boolean inited;
-
     // AFM flag
     protected boolean isAFMFont;
 
@@ -371,6 +368,28 @@ public abstract class Font extends Dictionary {
     }
 
     /**
+     * Splits a show-text string's bytes into character codes, one code per returned char.
+     * <p>
+     * A simple font's codes are always exactly one byte wide (PDF 32000-1 9.6), so that is what this
+     * base implementation produces.  Composite fonts override it: their code width is defined by the
+     * encoding CMap's codespace ranges and may vary from code to code
+     * ({@link org.icepdf.core.pobjects.fonts.zfont.Type0Font#toCodes}).
+     * <p>
+     * Code width is never a function of the font's glyph coverage or its {@code /W} widths &mdash;
+     * a code that maps to no glyph still consumes its full width in bytes and simply selects CID 0.
+     *
+     * @param bytes the string's raw bytes, from {@link org.icepdf.core.pobjects.StringObject#getRawBytes()}
+     * @return the character codes, one per char
+     */
+    public StringBuilder toCodes(byte[] bytes) {
+        StringBuilder codes = new StringBuilder(bytes.length);
+        for (byte b : bytes) {
+            codes.append((char) (b & 0xFF));
+        }
+        return codes;
+    }
+
+    /**
      * Gets the font encoding name.
      *
      * @return font encoding name.
@@ -437,6 +456,18 @@ public abstract class Font extends Dictionary {
      * @return true, if font name is a core 14 font; false, otherwise.
      */
     public boolean isCore14(String fontName) {
+        return isCore14Name(fontName);
+    }
+
+    /**
+     * <p>Returns true if the font name is one of the core 14 fonts specified by Adobe.  These are the
+     * fonts a reader is required to have, and the only ones a font dictionary may leave /Widths,
+     * /FirstChar, /LastChar and /FontDescriptor out of (PDF 32000-1, 9.6.2.1).</p>
+     *
+     * @param fontName name to test if a core 14 font.
+     * @return true, if font name is a core 14 font; false, otherwise.
+     */
+    public static boolean isCore14Name(String fontName) {
         for (String aCORE14 : CORE14) {
             if (fontName.startsWith(aCORE14)) {
                 return true;

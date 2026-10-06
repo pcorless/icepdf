@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class SignatureAnnotationHandler extends SelectionBoxHandler
         implements ToolHandler, MouseInputListener {
 
-    private static final Logger logger = Logger.getLogger(SignatureAnnotationHandler.class.toString());
+    private static final Logger logger = Logger.getLogger(SignatureAnnotationHandler.class.getName());
 
     public SignatureAnnotationHandler(DocumentViewController documentViewController,
                                       AbstractPageViewComponent pageViewComponent) {

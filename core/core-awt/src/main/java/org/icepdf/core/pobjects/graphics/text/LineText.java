@@ -41,6 +41,22 @@ public class LineText extends AbstractText implements TextSelect {
         this.pageRotation = pageRotation;
     }
 
+    /**
+     * An independent copy, words and glyphs and all. See {@link GlyphText#copy()} for why a
+     * placement needs one.
+     *
+     * @return a copy holding copies of this line's words
+     */
+    public LineText copy() {
+        LineText copy = new LineText(pageRotation);
+        List<WordText> copiedWords = new ArrayList<>(words.size());
+        for (WordText word : words) {
+            copiedWords.add(word.copy());
+        }
+        copy.setWords(copiedWords);
+        return copy;
+    }
+
     public Rectangle2D.Double getBounds() {
         // lazy load the bounds as the calculation is very expensive
         if (bounds == null) {
@@ -166,6 +182,46 @@ public class LineText extends AbstractText implements TextSelect {
      */
     public List<WordText> getWords() {
         return words;
+    }
+
+    /**
+     * Whether this line's text is written along a vertical axis (rotated or upright-stacked), determined from the
+     * first non-whitespace glyph.  Used by the extraction pipeline to slice/cluster along the correct axis.
+     *
+     * @return true if the line's dominant writing axis is vertical.
+     */
+    public boolean isVerticalWriting() {
+        GlyphText glyph = representativeGlyph();
+        return glyph != null && glyph.isVerticalWriting();
+    }
+
+    /**
+     * The line's page-space writing direction, taken from its first non-whitespace glyph.  Used to order words along
+     * the reading axis for rotated/vertical lines.
+     *
+     * @return writing-direction vector, or a horizontal (1,0) default when the line has no glyphs.
+     */
+    public java.awt.geom.Point2D getWriteDirection() {
+        GlyphText glyph = representativeGlyph();
+        return glyph != null ? glyph.getWriteDirection() : new java.awt.geom.Point2D.Double(1, 0);
+    }
+
+    /** First non-whitespace glyph (falling back to any glyph) used to characterise the line's orientation. */
+    private GlyphText representativeGlyph() {
+        for (WordText word : words) {
+            if (word.isWhiteSpace()) {
+                continue;
+            }
+            for (GlyphText glyph : word.getGlyphs()) {
+                return glyph;
+            }
+        }
+        for (WordText word : words) {
+            for (GlyphText glyph : word.getGlyphs()) {
+                return glyph;
+            }
+        }
+        return null;
     }
 
     /**

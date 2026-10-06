@@ -86,6 +86,21 @@ public class Launcher extends Application {
         mediator.loadOrCreateProject();
     }
 
+    /**
+     * Called by the JavaFX runtime when the application is shutting down (last window closed via the X button or the
+     * Exit menu). A completed or cancelled run leaves non-daemon worker threads alive — most notably ICEpdf's own
+     * internal {@code Library} thread pools, which live inside each capture-set's child classloader and cannot be
+     * reached to shut down from here — and those keep the JVM running after the window is gone. Cancel any in-flight
+     * run and force a hard exit so the process actually terminates.
+     */
+    @Override
+    public void stop() {
+        if (mediator != null) {
+            mediator.cancelTestInstance();
+        }
+        System.exit(0);
+    }
+
     private BorderPane createProjectViewContent() {
         BorderPane projectBorderPane = new BorderPane();
         projectBorderPane.setTop(buildProjectToolBar());

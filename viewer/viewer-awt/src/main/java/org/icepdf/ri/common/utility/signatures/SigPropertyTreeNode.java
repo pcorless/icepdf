@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class SigPropertyTreeNode extends DefaultMutableTreeNode {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureTreeNode.class.toString());
+            Logger.getLogger(SignatureTreeNode.class.getName());
 
     public SigPropertyTreeNode(Object userObject) {
         super(userObject);

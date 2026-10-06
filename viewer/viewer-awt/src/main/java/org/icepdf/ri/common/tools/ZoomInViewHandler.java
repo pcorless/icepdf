@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class ZoomInViewHandler extends SelectionBoxHandler implements ToolHandler {
 
     private static final Logger logger =
-            Logger.getLogger(ZoomInPageHandler.class.toString());
+            Logger.getLogger(ZoomInPageHandler.class.getName());
 
     private final AbstractDocumentView parentComponent;
 

@@ -580,14 +580,39 @@ public class CCITTFaxDecoder {
     }
 
     protected boolean consumeEOL() {
+        int startBytePointer = bytePointer;
+        int startBitPointer = bitPointer;
+
         // Get the next 12 bits.
         int next12Bits = nextNBits(12);
         if (next12Bits == 1) {
             // EOL found & consumed
             return true;
         }
+        if (next12Bits == 0) {
+            // Twelve zero bits are not an EOL but they are the start of one: T.4 lets an encoder put
+            // any number of zero fill bits before an EOL so the code word ends on a byte boundary,
+            // which pushes the EOL further along than the twelve bits just read.  Reading a fixed
+            // twelve and giving up here left the fill itself to be decoded as image data, and a run
+            // of zeros decodes to black - so a byte aligned fax came out a solid black page rather
+            // than the scan it holds.  Slide the window on a bit at a time instead, which consumes
+            // the fill along with the EOL that ends it.  The two dimensional path already does this,
+            // by way of seekEOL.
+            int bitIndexMax = data.length * 8 - 1;
+            int bitIndex = startBytePointer * 8 + startBitPointer + 12;
+            while (next12Bits != 1 && bitIndex < bitIndexMax) {
+                next12Bits = ((next12Bits & 0x000007ff) << 1)
+                        | (nextLesserThan8Bits(1) & 0x00000001);
+                bitIndex++;
+            }
+            if (next12Bits == 1) {
+                // EOL found & consumed, fill and all
+                return true;
+            }
+        }
         // no EOL - unread and return
-        updatePointer(12);
+        bytePointer = startBytePointer;
+        bitPointer = startBitPointer;
         return false;
     }
 

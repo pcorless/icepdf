@@ -19,6 +19,8 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
+import org.icepdf.core.pobjects.fonts.FontTextEncoder;
 import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
@@ -45,7 +47,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public static final Name HIGHLIGHT_NONE = new Name("N");
 
     protected static final Logger logger =
-            Logger.getLogger(AbstractWidgetAnnotation.class.toString());
+            Logger.getLogger(AbstractWidgetAnnotation.class.getName());
 
     /**
      * Transparency value used to simulate text highlighting.
@@ -108,7 +110,9 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         // check to make sure the field value matches the content stream.
         InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
         if (interactiveForm != null && interactiveForm.needAppearances()) {
-            resetAppearanceStream(new AffineTransform());
+            // /NeedAppearances asks the reader to build the appearance itself; the user has not touched the field,
+            // so this is a repair and must not leave the document looking modified.
+            library.getStateManager().repairing(() -> resetAppearanceStream(new AffineTransform()));
         }
         // todo check if we have content value but no appearance stream.
     }
@@ -133,7 +137,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
     public abstract void reset();
 
     @Override
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
     @Override
     protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
@@ -257,17 +261,49 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
      * @param contents string to be encoded into '&lt;...&gt;&lt;/...&gt;' hex format.
      * @return original content stream with contents encoded in the hex string format.
      */
-    protected StringBuilder encodeHexString(StringBuilder content, String contents) {
-        String[] lines = contents.split("\n|\r|\f");
-        for (String line : lines) {
-            char[] chars = line.toCharArray();
-            StringBuilder hex = new StringBuilder();
-            for (char aChar : chars) {
-                hex.append(Integer.toHexString(aChar));
-            }
-            content.append('<').append(hex).append(">' ");
+    /**
+     * Appends the field's text as one show operator per line, in the codes of the font the field is
+     * actually drawn with.
+     * <p>
+     * This used to write every character as four hex digits whatever the font was, which is right
+     * only for a composite font. The usual {@code /DA} font is {@code /Helv} - a simple font, one
+     * byte to a code - and a field showing "Ab" was written {@code <00410062>}, read back as the four
+     * codes {@code 00 41 00 62}: a .notdef in front of every character. The rule about how wide a
+     * code is belongs to the font, so it is asked, through the same encoder the rest of the content
+     * writing uses.
+     *
+     * @param contents the field's value
+     */
+    protected StringBuilder encodeString(StringBuilder content, String contents) {
+        FontTextEncoder encoder = FontTextEncoder.of(getTextFont());
+        for (String line : contents.split("\n|\r|\f")) {
+            encoder.appendShowString(content, line).append("' ");
         }
         return content;
+    }
+
+    /**
+     * The font the field's text is drawn with: the one its {@code /DA} names, looked for in the
+     * appearance's own resources and then in the form's.  Null when it cannot be resolved, which the
+     * encoder treats as the simple WinAnsiEncoding font such a name almost always turns out to be.
+     */
+    protected org.icepdf.core.pobjects.fonts.Font getTextFont() {
+        T fieldDictionary = getFieldDictionary();
+        if (!(fieldDictionary instanceof VariableTextFieldDictionary)) {
+            return null;
+        }
+        Name fontName = ((VariableTextFieldDictionary) fieldDictionary).getFontName();
+        if (fontName == null) {
+            return null;
+        }
+        Appearance appearance = appearances.get(currentAppearance);
+        if (appearance != null && appearance.getSelectedAppearanceState() != null) {
+            Resources resources = appearance.getSelectedAppearanceState().getResources();
+            if (resources != null && resources.getFont(fontName) != null) {
+                return resources.getFont(fontName);
+            }
+        }
+        return library.getInteractiveFormFont(fontName.toString());
     }
 
     /**

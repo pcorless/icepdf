@@ -18,6 +18,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.search.DocumentSearchController;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.core.util.GraphicsRenderingHints;
 import org.icepdf.ri.common.search.DocumentSearchControllerImpl;
 
@@ -52,10 +53,12 @@ public class SearchControllerHeadless {
             // get the search controller
             DocumentSearchController searchController =
                     new DocumentSearchControllerImpl(document);
-            // add a specified search terms.
-            searchController.addSearchTerm("PDF", true, false);
-            searchController.addSearchTerm("Part", true, false);
-            searchController.addSearchTerm("Contents", true, false);
+            // add the specified search terms.  Enabling diacritic folding makes matching
+            // accent-insensitive (Unicode-normalized), so e.g. "resume" would also find "résumé".
+            for (String term : new String[]{"PDF", "Part", "Contents"}) {
+                SearchTerm searchTerm = searchController.addSearchTerm(term, true, false);
+                searchTerm.setFoldDiacritics(true);
+            }
 
             // Paint each pages content to an image and write the image to file
             for (int i = 0; i < 5; i++) {

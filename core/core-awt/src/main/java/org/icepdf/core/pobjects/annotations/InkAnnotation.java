@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class InkAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(InkAnnotation.class.toString());
+            Logger.getLogger(InkAnnotation.class.getName());
 
     /**
      * (Required) An array of n arrays, each representing a stroked path. Each
@@ -177,7 +177,7 @@ public class InkAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
 
         // setup clean shapes
         Appearance appearance = appearances.get(currentAppearance);
@@ -233,7 +233,7 @@ public class InkAnnotation extends MarkupAnnotation {
 
         // mark the change.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
     }
 

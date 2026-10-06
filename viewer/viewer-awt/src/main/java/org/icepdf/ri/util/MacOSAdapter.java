@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class MacOSAdapter implements InvocationHandler {
     private static final Logger logger =
-            Logger.getLogger(MacOSAdapter.class.toString());
+            Logger.getLogger(MacOSAdapter.class.getName());
 
     protected final Object targetObject;
     protected final Method targetMethod;
@@ -111,7 +111,7 @@ public class MacOSAdapter implements InvocationHandler {
             Object osxAdapterProxy = Proxy.newProxyInstance(MacOSAdapter.class.getClassLoader(), new Class[]{applicationListenerClass}, adapter);
             addListenerMethod.invoke(macOSXApplication, osxAdapterProxy);
         } catch (ClassNotFoundException cnfe) {
-            System.err.println("This version of Mac OS X does not support the Apple EAWT.  ApplicationEvent handling has been disabled (" + cnfe + ")");
+            logger.log(Level.FINE, "This version of Mac OS X does not support the Apple EAWT; ApplicationEvent handling has been disabled", cnfe);
         } catch (Exception ex) {  // Likely a NoSuchMethodException or an IllegalAccessException loading/invoking eawt.Application methods
             logger.log(Level.FINE, "Mac OS X Adapter could not talk to EAWT", ex);
         }

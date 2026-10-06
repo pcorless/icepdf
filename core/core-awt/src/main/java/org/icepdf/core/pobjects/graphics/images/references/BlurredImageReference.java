@@ -21,13 +21,11 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
-import java.util.concurrent.FutureTask;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,7 +51,7 @@ import java.util.logging.Logger;
 public class BlurredImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(ImageStreamReference.class.toString());
+            Logger.getLogger(ImageStreamReference.class.getName());
 
     private static final int dimension;
     private static final int minWidth;
@@ -81,8 +79,7 @@ public class BlurredImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            futureTask = new FutureTask<>(this);
-            Library.executeImage(futureTask);
+            submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {
             image = call();
         }
@@ -97,7 +94,10 @@ public class BlurredImageReference extends CachedImageReference {
             }
             image = imageStream.getImage(graphicsState, resources);
             // check constraints for applying a the kernel blur effect.
-            if (image.getWidth() > minWidth && image.getHeight() > minHeight) {
+            if (image == null) {
+                // undecodable image, skipped
+                logger.finest("Image could not be decoded, nothing to blur.");
+            } else if (image.getWidth() > minWidth && image.getHeight() > minHeight) {
                 BufferedImageOp op = new ConvolveOp(new Kernel(dimension, dimension, matrix));
                 image = op.filter(image, null);
             }
@@ -112,7 +112,7 @@ public class BlurredImageReference extends CachedImageReference {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
+                    " " + describe(imageStream));
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

@@ -8,6 +8,10 @@
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
+
+    <properties>
+        <jacoco.coverage.minimum>0.23</jacoco.coverage.minimum>
+    </properties>
     <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
         ICEpdf Java Swing/AWT reference implementation.
@@ -21,29 +25,67 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.3</version>
+            <version>${junit.bom.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.2.0</version>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>${mockito.version}</version>
             <scope>test</scope>
         </dependency>
         <!-- verapdf library dependencies -->
         <dependency>
             <groupId>org.verapdf</groupId>
             <artifactId>validation-model</artifactId>
-            <version>1.28.1</version>
+            <version>1.30.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.verapdf</groupId>
             <artifactId>pdfbox-validation-model</artifactId>
-            <version>1.28.1</version>
+            <version>1.28.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!--
+        The tests run on the classpath rather than the module path.  A test needs things the
+        published module does not - LocalTimeStampAuthority serves over com.sun.net.httpserver,
+        which lives in jdk.httpserver and which org.icepdf.ri.viewer has no reason to require - and
+        on the module path the test classes are patched into the module and inherit its reads.
+        Core does the same, for the same reason.
+    -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <useModulePath>false</useModulePath>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <profiles>
         <profile>

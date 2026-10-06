@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 public class PolyAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(PolyAnnotation.class.toString());
+            Logger.getLogger(PolyAnnotation.class.getName());
 
     public static final Name SUBTYPE_POLYLINE = new Name("PolyLine");
     public static final Name SUBTYPE_POLYGON = new Name("Polygon");
@@ -90,7 +90,7 @@ public class PolyAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
 
     }
 }

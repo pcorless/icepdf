@@ -36,7 +36,7 @@ import static org.icepdf.core.pobjects.PTrailer.ROOT_KEY;
  */
 public class CrossReferenceRoot {
 
-    private static final Logger log = Logger.getLogger(CrossReferenceRoot.class.toString());
+    private static final Logger log = Logger.getLogger(CrossReferenceRoot.class.getName());
 
     private final Library library;
     private Trailer trailer;
@@ -45,6 +45,8 @@ public class CrossReferenceRoot {
     private final ArrayList<CrossReference> crossReferences;
 
     private boolean initializationFailed;
+    // a rebuilt index of an encrypted file whose object streams can't be read until the security handler is set up
+    private CrossReferenceTable deferredObjectStreams;
 
     public CrossReferenceRoot(Library library) {
         this.library = library;
@@ -77,8 +79,17 @@ public class CrossReferenceRoot {
             CrossReferenceTable crossReferenceTable = (CrossReferenceTable) crossReference;
             int offset = library.getInt(crossReferenceTable.getDictionaryEntries(), PTrailer.XREF_STRM_KEY);
             if (offset > 0) {
-                CrossReferenceStream xrefStream = (CrossReferenceStream) parser.getCrossReference(byteBuffer, offset);
-                crossReferences.add(xrefStream);
+                // /XRefStm only supplements the table; a bad pointer loses the extra entries, not the document
+                try {
+                    CrossReference xrefStream = parser.getCrossReference(byteBuffer, offset);
+                    if (xrefStream instanceof CrossReferenceStream) {
+                        crossReferences.add(xrefStream);
+                    } else {
+                        log.fine(() -> "Ignoring /XRefStm " + offset + ": not a cross-reference stream");
+                    }
+                } catch (ObjectStateException e) {
+                    log.log(java.util.logging.Level.FINE, e, () -> "Ignoring /XRefStm " + offset);
+                }
             }
         }
         // PTrailer dictionary wrapper to aid in getting the trailer dictionary values.
@@ -139,6 +150,17 @@ public class CrossReferenceRoot {
 
     public boolean isInitializationFailed() {
         return initializationFailed;
+    }
+
+    /**
+     * @return the rebuilt table still waiting for its object streams to be indexed, or null.
+     */
+    public CrossReferenceTable getDeferredObjectStreams() {
+        return deferredObjectStreams;
+    }
+
+    public void setDeferredObjectStreams(CrossReferenceTable crossReferenceTable) {
+        deferredObjectStreams = crossReferenceTable;
     }
 
     public void addCrossReference(CrossReference crossReferenceTable) {

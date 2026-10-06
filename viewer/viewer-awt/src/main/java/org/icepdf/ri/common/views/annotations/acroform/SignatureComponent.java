@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 public class SignatureComponent extends AbstractAnnotationComponent<SignatureWidgetAnnotation> {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureComponent.class.toString());
+            Logger.getLogger(SignatureComponent.class.getName());
 
     protected final JMenuItem validationMenu;
     protected final JMenuItem signaturePropertiesMenu;

@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class JceProvider {
 
     private static final Logger logger =
-            Logger.getLogger(JceProvider.class.toString());
+            Logger.getLogger(JceProvider.class.getName());
 
     /**
      * Try and load a JCE provider specified by org.icepdf.core.security.jceProvider system property.  If not set

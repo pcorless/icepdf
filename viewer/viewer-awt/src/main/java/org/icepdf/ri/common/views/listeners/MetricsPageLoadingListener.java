@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class MetricsPageLoadingListener implements PageLoadingListener {
 
     private static final Logger logger =
-            Logger.getLogger(MetricsPageLoadingListener.class.toString());
+            Logger.getLogger(MetricsPageLoadingListener.class.getName());
 
     public static final DecimalFormat formatter = new DecimalFormat("#.###");
     public static final DecimalFormat percentFormatter = new DecimalFormat("#");

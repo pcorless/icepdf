@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  */
 public class ListItemTransferHandler extends TransferHandler {
 
-    private static final Logger logger = Logger.getLogger(ListItemTransferHandler.class.toString());
+    private static final Logger logger = Logger.getLogger(ListItemTransferHandler.class.getName());
 
     private static DataFlavor dataFlavor;
 
@@ -46,7 +46,7 @@ public class ListItemTransferHandler extends TransferHandler {
             dataFlavor = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType +
                     ";class=\"" + Object[].class.getName() + "\"");
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error creating the list transfer data flavor", e);
         }
     }
 

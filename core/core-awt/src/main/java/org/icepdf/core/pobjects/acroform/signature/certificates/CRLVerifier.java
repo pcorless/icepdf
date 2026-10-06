@@ -22,7 +22,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Extension;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.RevocationVerificationException;
+import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -58,23 +58,26 @@ public class CRLVerifier {
      * @throws CertificateVerificationException if the certificate is revoked
      */
     public static void verifyCRL(X509Certificate cert)
-            throws CertificateVerificationException {
+            throws CertificateVerificationException, RevokedCertificateException {
         try {
             List<String> crlDistPoints = getCrlDistributionPoints(cert);
             for (String crlDP : crlDistPoints) {
                 X509CRL crl = downloadCRL(crlDP);
                 if (crl.isRevoked(cert)) {
-                    throw new RevocationVerificationException(
-                            "The certificate is revoked by CRL: " + crlDP);
+                    throw new RevokedCertificateException(
+                            "The certificate is revoked by CRL: " + crlDP,
+                            crl.getRevokedCertificate(cert).getRevocationDate());
                 }
             }
+        } catch (RevokedCertificateException revoked) {
+            throw revoked;
         } catch (Exception ex) {
             if (ex instanceof CertificateVerificationException) {
                 throw (CertificateVerificationException) ex;
             } else {
                 throw new CertificateVerificationException(
                         "Can not verify CRL for certificate: " +
-                                cert.getSubjectX500Principal());
+                                cert.getSubjectX500Principal(), ex);
             }
         }
     }

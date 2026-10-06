@@ -55,7 +55,7 @@ import java.util.logging.Logger;
 public class PrintServices {
 
     private static final Logger logger =
-            Logger.getLogger(PrintServices.class.toString());
+            Logger.getLogger(PrintServices.class.getName());
 
     static {
         Defs.setProperty("java.awt.headless", "true");

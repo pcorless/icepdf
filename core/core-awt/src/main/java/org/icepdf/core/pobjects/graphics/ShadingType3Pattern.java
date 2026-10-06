@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.graphics.batik.ext.awt.RadialGradientPaint;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 public class ShadingType3Pattern extends ShadingPattern {
 
     private static final Logger logger =
-            Logger.getLogger(ShadingType3Pattern.class.toString());
+            Logger.getLogger(ShadingType3Pattern.class.getName());
 
     // An array of two numbers [t0, t1] specifying the limiting values of a
     // parametric variable t. The variable is considered to vary linearly between
@@ -170,7 +171,7 @@ public class ShadingType3Pattern extends ShadingPattern {
             // get type 3 specific data.
             inited = true;
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed ot initialize gradient paint type 3.", e);
+            logger.log(Level.WARNING, e, () -> "Could not initialize type 3 shading " + getPObjectReference() + ": " + e.getMessage());
         }
     }
 
@@ -210,9 +211,34 @@ public class ShadingType3Pattern extends ShadingPattern {
         return t0 + ((t1 - t0) * linearMapping);
     }
 
+    /**
+     * @return the gradient in pattern space, not anchored to any use.
+     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
+     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint in pattern space, not anchored to any use.
+     */
+    @Deprecated
     public Paint getPaint() throws InterruptedException {
         init();
         return radialGradientPaint;
+    }
+
+    /**
+     * The cached gradient carries the raw pattern matrix; each use gets a copy anchored to its own CTM (see
+     * {@link ShadingType2Pattern#getPaint(GraphicsState)}).
+     */
+    @Override
+    public Paint getPaint(GraphicsState graphicsState) {
+        init(graphicsState);
+        RadialGradientPaint paint = radialGradientPaint;
+        if (paint == null) {
+            return null;
+        }
+        AffineTransform anchored = anchorToDefaultSpace(matrix, graphicsState);
+        if (anchored == matrix) {
+            return paint;
+        }
+        return new RadialGradientPaint(paint.getCenterPoint(), paint.getRadius(), paint.getFocusPoint(),
+                paint.getFractions(), paint.getColors(), paint.getCycleMethod(), paint.getColorSpace(), anchored);
     }
 
     public String toSting() {

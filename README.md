@@ -24,18 +24,18 @@ ICEpdf is an open source project and is always looking for more contributors.  T
  <dependency>
  <groupId>com.github.pcorless.icepdf</groupId>
  <artifactId>icepdf-core</artifactId>
- <version>7.4.0</version>
+ <version>7.4.1</version>
 </dependency>
 <dependency>
 <groupId>com.github.pcorless.icepdf</groupId>
 <artifactId>icepdf-viewer</artifactId>
-<version>7.4.0</version>
+<version>7.4.1</version>
 </dependency>
 <dependency>
 <!-- optional dependency for embedding fonts -->
 <groupId>com.github.pcorless.icepdf</groupId>
 <artifactId>icepdf-fonts</artifactId>
-<version>7.4.0</version>
+<version>7.4.1</version>
 </dependency>
  ```
  

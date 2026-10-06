@@ -16,6 +16,7 @@
 
 package org.icepdf.core.pobjects.annotations;
 
+import java.nio.charset.StandardCharsets;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.TextFieldDictionary;
@@ -57,7 +58,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         }
     }
 
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // we won't touch password fields, we'll used the original display
         TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
@@ -75,7 +76,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
             // finally create the shapes from the altered stream.
             if (currentContentStream != null) {
-                appearanceState.setContentStream(currentContentStream.getBytes());
+                appearanceState.setContentStream(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
             }
 
             // some widgets don't have AP dictionaries in such a case we need to create the form object
@@ -84,10 +85,10 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
 
             if (appearanceStream != null) {
                 // update the content stream with the new stream data.
-                appearanceStream.setRawBytes(currentContentStream.getBytes());
+                appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
                 // add the appearance stream
                 StateManager stateManager = library.getStateManager();
-                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()), isNew);
+                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
                 // add an AP entry for the
                 DictionaryEntries appearanceRefs = new DictionaryEntries();
                 appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
@@ -108,7 +109,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
                     }
                 }
                 // add the annotation as changed as T entry has also been updated to reflect teh changed content.
-                stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+                stateManager.addChange(new PObject(this, this.getPObjectReference()));
 
                 // compress the form object stream.
                 if (compressAppearanceStream) {
@@ -189,7 +190,7 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         }
         // encode the text so it can be properly encoded in PDF string format
         // hex encode the text so that we better handle character codes > 127
-        content = encodeHexString(content, contents);
+        content = encodeString(content, contents);
 
         // build the final content stream.
         currentContentStream = preBt + content + postEt;

@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  */
 public class FindFontsTask extends AbstractTask<Void, Font> {
 
-    private static final Logger logger = Logger.getLogger(FindFontsTask.class.toString());
+    private static final Logger logger = Logger.getLogger(FindFontsTask.class.getName());
 
     // canned internationalized messages.
     private final MessageFormat searchingMessageForm;

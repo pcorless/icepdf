@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class ICCBased extends PColorSpace {
 
     private static final Logger logger =
-            Logger.getLogger(ICCBased.class.toString());
+            Logger.getLogger(ICCBased.class.getName());
 
     private static final Object lock = new Object();
 

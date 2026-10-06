@@ -70,13 +70,20 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
             if (prevCrossReference != null) {
                 return prevCrossReference.getEntry(reference);
             } else {
-                // try finding the entry in the previous table
-                Parser parser = new Parser(library);
-                synchronized (library.getMappedFileByteBufferLock()) {
-                    CrossReference crossReference = parser.getCrossReference(
-                            library.getMappedFileByteBuffer(), this.crossReference.getInt(PTrailer.PREV_KEY));
-                    if (crossReference != null) {
-                        prevCrossReference = crossReference;
+                // try finding the entry in the previous table.  Lazily parse the previous cross reference on a
+                // duplicate of the shared file buffer so the parse never mutates the shared position/limit, then
+                // guard the one-time assignment so concurrent readers don't re-parse it (GH-495).
+                synchronized (this) {
+                    if (prevCrossReference == null) {
+                        Parser parser = new Parser(library);
+                        CrossReference parsed = parser.getCrossReference(
+                                library.getMappedFileByteBuffer().duplicate(),
+                                this.crossReference.getInt(PTrailer.PREV_KEY));
+                        if (parsed != null) {
+                            prevCrossReference = parsed;
+                        }
+                    }
+                    if (prevCrossReference != null) {
                         return prevCrossReference.getEntry(reference);
                     }
                 }

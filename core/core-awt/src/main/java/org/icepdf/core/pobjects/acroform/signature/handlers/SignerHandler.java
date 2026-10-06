@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  */
 public abstract class SignerHandler {
 
-    private static final Logger logger = Logger.getLogger(SignerHandler.class.toString());
+    private static final Logger logger = Logger.getLogger(SignerHandler.class.getName());
 
     protected static final String algorithm = "SHA256WithRSA";
 

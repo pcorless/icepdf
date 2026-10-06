@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 public class SignaturesHandlerPanel extends AbstractWorkerPanel {
 
     private static final Logger logger =
-            Logger.getLogger(SignaturesHandlerPanel.class.toString());
+            Logger.getLogger(SignaturesHandlerPanel.class.getName());
 
     public SignaturesHandlerPanel(Controller controller) {
         super(controller);

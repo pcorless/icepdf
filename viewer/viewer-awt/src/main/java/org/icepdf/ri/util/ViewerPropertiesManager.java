@@ -53,7 +53,7 @@ import java.util.prefs.Preferences;
 public final class ViewerPropertiesManager {
 
     private static final Logger logger =
-            Logger.getLogger(ViewerPropertiesManager.class.toString());
+            Logger.getLogger(ViewerPropertiesManager.class.getName());
 
     // use ascii '27' or ESC as the delimiting character when storing multiple values in one property name.
     public static final String PROPERTY_TOKEN_SEPARATOR = "|";
@@ -102,6 +102,12 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SIGNATURE_IMAGE_SCALE = "org.icepdf.core.signatures.show.imageScale";
     public static final String PROPERTY_SIGNATURE_FONT_NAME = "org.icepdf.core.signatures.font.name";
     public static final String PROPERTY_SIGNATURE_FONT_SIZE = "org.icepdf.core.signatures.font.size";
+    // how a signature appearance arranges its image and its text
+    public static final String PROPERTY_SIGNATURE_PADDING = "org.icepdf.core.signatures.layout.padding";
+    public static final String PROPERTY_SIGNATURE_IMAGE_WIDTH_MAX =
+            "org.icepdf.core.signatures.layout.imageWidthMax";
+    public static final String PROPERTY_SIGNATURE_LINE_LEADING = "org.icepdf.core.signatures.layout.leading";
+    public static final String PROPERTY_SIGNATURE_LAYOUT = "org.icepdf.core.signatures.layout.mode";
     // advanced threading properties
     public static final String PROPERTY_IMAGE_PROXY_ENABLED = "org.icepdf.core.imageProxy";
     public static final String PROPERTY_IMAGE_PROXY_THREAD_COUNT = "org.icepdf.core.library.imageThreadPoolSize";
@@ -290,6 +296,7 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED = "application.viewer.utility.search.whole.words.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED = "application.viewer.utility.search.case.sensitive.enabled";
     public static final String PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED = "application.viewer.utility.search.case.cumulative.enabled";
+    public static final String PROPERTY_SEARCH_PANEL_FOLD_DIACRITICS_ENABLED = "application.viewer.utility.search.fold.diacritics.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_COMMENTS_ENABLED = "application.viewer.utility.search.comments.cumulative.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_DEST_ENABLED = "application.viewer.utility.search.case.destinations.enabled";
     public static final String PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED = "application.viewer.utility.search.case.text.enabled";
@@ -367,7 +374,7 @@ public final class ViewerPropertiesManager {
                 logger.fine(key + " -> " + propertiesManager.checkAndStoreStringProperty(key, ""));
             });
         } catch (BackingStoreException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error reading the viewer preferences", e);
         }
     }
 

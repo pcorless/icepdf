@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  */
 public class OcspHelper {
 
-    private static final Logger logger = Logger.getLogger(OcspHelper.class.toString());
+    private static final Logger logger = Logger.getLogger(OcspHelper.class.getName());
 
     private final X509Certificate issuerCertificate;
     private final Date signDate;

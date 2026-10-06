@@ -55,11 +55,19 @@ public abstract class CachedImageReference extends ImageReference {
         BufferedImage cached = imagePool.get(reference);
         if (cached != null) {
             return cached;
+        } else if (isInTransientBackoff()) {
+            // a very recent decode ran out of memory; skip this frame's re-decode so
+            // rapid repaints don't thrash the heap.  The image reappears once the
+            // backoff window passes and memory has had a chance to free up.
+            return null;
         } else {
             BufferedImage im = createImage();
             if (im != null && reference != null) {
                 imagePool.put(reference, im);
-            } else if (reference != null) {
+            } else if (reference != null && !transientFailure) {
+                // Only latch the image permanently off when it is genuinely
+                // undecodable.  A transient failure (out of memory) must stay
+                // retryable so the image reappears once the heap recovers.
                 isNull = true;
             }
             return im;

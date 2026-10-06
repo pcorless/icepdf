@@ -51,12 +51,12 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
         announceSignatureType(signatureDictionary);
         // start decode of the raw type.
         StringObject stringObject = signatureDictionary.getContents();
-        // make sure we don't lose any bytes converting the string in the raw.
-        byte[] cmsData = Utils.convertByteCharSequenceToByteArray(stringObject.getLiteralString());
+        // the bytes as the file held them, rather than round tripping through the text accessor,
+        // which for a hexadecimal string applies byte order marker handling (see Pkcs7Validator)
+        byte[] cmsData = stringObject.getRawBytes();
         // get the certificate
         stringObject = signatureDictionary.getCertString();
-        // make sure we don't lose any bytes converting the string in the raw.
-        byte[] certsKey = Utils.convertByteCharSequenceToByteArray(stringObject.getLiteralString());
+        byte[] certsKey = stringObject.getRawBytes();
 
         try {
             CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509", "BC");

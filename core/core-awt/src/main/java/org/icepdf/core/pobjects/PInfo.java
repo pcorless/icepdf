@@ -76,6 +76,11 @@ public class PInfo extends Dictionary {
      */
     public void setProperty(final Name name, final Object value) {
         entries.put(name, value);
+        // Without this the change lives only in this dictionary and the writer never learns of it,
+        // so setting any metadata and saving quietly kept the old value.
+        if (getPObjectReference() != null) {
+            library.getStateManager().addChange(new PObject(this, getPObjectReference()));
+        }
     }
 
     /**

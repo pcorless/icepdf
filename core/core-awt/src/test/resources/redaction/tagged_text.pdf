@@ -1,0 +1,52 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 6 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 91 >>
+stream
+/Span << /ActualText (bravo) >> BDC
+BT
+/F1 12 Tf
+20 150 Td
+(alpha bravo charlie) Tj
+ET
+EMC
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /FirstChar 32 /LastChar 126 /Widths [500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500] /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /Type /StructTreeRoot /K [7 0 R] >>
+endobj
+7 0 obj
+<< /Type /StructElem /S /P /P 6 0 R /T (bravo section) /Alt (a paragraph about bravo) /K [8 0 R] >>
+endobj
+8 0 obj
+<< /Type /StructElem /S /Span /P 7 0 R /ActualText (bravo) /E (bravo expanded) /K 0 >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000086 00000 n 
+0000000143 00000 n 
+0000000269 00000 n 
+0000000410 00000 n 
+0000000925 00000 n 
+0000000979 00000 n 
+0000001094 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1196
+%%EOF

@@ -54,22 +54,37 @@ public class IccCmykRasterOp implements RasterOp {
 
         float[] rgbColorValue;
 
+        // ICC colorSpace.toRGB is a per-pixel native round-trip and is by far the
+        // most expensive step here.  Flat regions (common in scanned CMYK pages)
+        // repeat the same sample, so skip the conversion when the four CMYK bytes
+        // match the previous pixel and reuse the last computed ARGB.
+        int lastC = -1, lastM = -1, lastY = -1, lastK = -1;
+        int lastArgb = 0xff000000;
         for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
-            colorValue[0] = (srcPixels[pixel] & 0xff) / 255.0f;
-            colorValue[1] = (srcPixels[pixel + 1] & 0xff) / 255.0f;
-            colorValue[2] = (srcPixels[pixel + 2] & 0xff) / 255.0f;
-            colorValue[3] = (srcPixels[pixel + 3] & 0xff) / 255.0f;
+            int c = srcPixels[pixel] & 0xff;
+            int m = srcPixels[pixel + 1] & 0xff;
+            int y = srcPixels[pixel + 2] & 0xff;
+            int k = srcPixels[pixel + 3] & 0xff;
 
-            rgbColorValue = colorSpace.toRGB(colorValue); //new float[]{0.5f, 0.2f, 0.3f};//
-            rgbColorValue[0] = rgbColorValue[0] * 255;
-            rgbColorValue[1] = rgbColorValue[1] * 255;
-            rgbColorValue[2] = rgbColorValue[2] * 255;
+            if (!(c == lastC && m == lastM && y == lastY && k == lastK)) {
+                colorValue[0] = c / 255.0f;
+                colorValue[1] = m / 255.0f;
+                colorValue[2] = y / 255.0f;
+                colorValue[3] = k / 255.0f;
 
-            destPixels[intPixels] = ((0xff) << 24) |
-                    (((int) rgbColorValue[0] & 0xff) << 16) |
-                    (((int) rgbColorValue[1] & 0xff) << 8) |
-                    ((int) rgbColorValue[2] & 0xff);
+                rgbColorValue = colorSpace.toRGB(colorValue);
+
+                lastArgb = (0xff << 24) |
+                        (((int) (rgbColorValue[0] * 255) & 0xff) << 16) |
+                        (((int) (rgbColorValue[1] * 255) & 0xff) << 8) |
+                        ((int) (rgbColorValue[2] * 255) & 0xff);
+                lastC = c;
+                lastM = m;
+                lastY = y;
+                lastK = k;
+            }
+            destPixels[intPixels] = lastArgb;
         }
         return dest;
     }

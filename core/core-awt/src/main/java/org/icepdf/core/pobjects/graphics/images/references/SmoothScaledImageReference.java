@@ -23,13 +23,11 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Defs;
-import org.icepdf.core.util.Library;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.FutureTask;
 import java.util.logging.Logger;
 
 /**
@@ -43,7 +41,7 @@ import java.util.logging.Logger;
 public class SmoothScaledImageReference extends CachedImageReference {
 
     private static final Logger logger =
-            Logger.getLogger(SmoothScaledImageReference.class.toString());
+            Logger.getLogger(SmoothScaledImageReference.class.getName());
 
     private static int maxImageWidth = 7000;
     private static int maxImageHeight = 7000;
@@ -78,8 +76,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
         if (useProxy && imagePool.get(reference) == null) {
-            futureTask = new FutureTask<>(this);
-            Library.executeImage(futureTask);
+            submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {
             image = call();
         }
@@ -156,7 +153,7 @@ public class SmoothScaledImageReference extends CachedImageReference {
             }
         } catch (Exception e) {
             logger.warning("Error loading image: " + imageStream.getPObjectReference() +
-                    " " + imageStream.toString());
+                    " " + describe(imageStream));
         }
         long end = System.nanoTime();
         notifyImagePageEvents((end - start));

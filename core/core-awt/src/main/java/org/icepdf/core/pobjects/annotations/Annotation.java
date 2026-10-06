@@ -23,6 +23,10 @@ import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils;
 import org.icepdf.core.pobjects.fonts.zfont.SimpleFont;
 import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.BlendCompositeDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.FormDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.GraphicsRenderingHints;
@@ -335,7 +339,7 @@ import java.util.logging.Logger;
 public abstract class Annotation extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(Annotation.class.toString());
+            Logger.getLogger(Annotation.class.getName());
 
     public static final Name TYPE = new Name("Annot");
     public static final Name RESOURCES_VALUE = new Name("Resources");
@@ -726,13 +730,14 @@ public abstract class Annotation extends Dictionary {
                                     appearance));
                     appearances.get(APPEARANCE_STREAM_NORMAL_KEY).setSelectedName(appearanceState);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e, () -> "Error parsing annotation normal appearance, creating new one " +
-                            "for " + this);
+                    logger.log(Level.WARNING, e, () -> "Could not parse the appearance of " + getSubType()
+                            + " annotation " + getPObjectReference() + "; generating a new one.");
                     createNewAppearance();
                 }
             } else {
                 //Broken pdf/appearance, create new
-                logger.warning("Missing appearance stream for " + this);
+                logger.fine(() -> "No appearance stream for " + getSubType() + " annotation "
+                        + getPObjectReference() + "; generating one.");
                 createNewAppearance();
             }
             // (Optional) The annotation’s rollover appearance.
@@ -881,6 +886,11 @@ public abstract class Annotation extends Dictionary {
         return null;
     }
 
+    /**
+     * Generates an appearance stream for an annotation whose file did not carry one, so that it can be rendered at
+     * all.  Nothing here was asked for by the user, so it is recorded as a repair and does not make the document
+     * look modified.
+     */
     protected void resetNullAppearanceStream() {
         // try and generate an appearance stream.
         if (!hasAppearanceStream()) {
@@ -892,7 +902,7 @@ public abstract class Annotation extends Dictionary {
             if (rectangle != null) {
                 setBBox(rectangle.getBounds());
             }
-            resetAppearanceStream(new AffineTransform());
+            library.getStateManager().repairing(() -> resetAppearanceStream(new AffineTransform()));
         }
     }
 
@@ -1351,6 +1361,98 @@ public abstract class Annotation extends Dictionary {
 //origG.fill( topLeft );
     }
 
+    /**
+     * Tests whether the current appearance stream carries a non-Normal blend
+     * mode (e.g. a Multiply text-highlight).  Such an annotation must blend
+     * against the real page content beneath it; on a Swing/X11 canvas the
+     * {@code BlendComposite} path throws and falls back to a flat alpha, so the
+     * caller can instead rasterise the annotation over a page-backdrop buffer
+     * (where the blend composites correctly) and blit the result.
+     *
+     * @return true if the selected appearance contains a blend composite.
+     */
+    public boolean appearanceHasBlendMode() {
+        Appearance appearance = appearances.get(currentAppearance);
+        if (appearance == null) return false;
+        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
+        if (appearanceState == null || appearanceState.getShapes() == null) return false;
+        return containsBlendComposite(appearanceState.getShapes());
+    }
+
+    private static boolean containsBlendComposite(Shapes shapes) {
+        if (shapes == null) return false;
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof BlendCompositeDrawCmd) {
+                return true;
+            }
+            if (cmd instanceof ShapesDrawCmd
+                    && containsBlendComposite(((ShapesDrawCmd) cmd).getShapes())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The transform from an appearance stream's own coordinates to the annotation's rectangle, per
+     * PDF 32000-1 12.5.5.
+     *
+     * @param appearanceState appearance being drawn
+     * @return transform from appearance space to the annotation's space
+     */
+    protected AffineTransform getAppearanceToAnnotationSpace(AppearanceState appearanceState) {
+        AffineTransform matrix = appearanceState.getMatrix();
+        Rectangle2D bbox = appearanceState.getBbox();
+
+        // step 1. appearance bounding box (BBox) is transformed, using
+        // Matrix, to produce a quadrilateral with arbitrary orientation.
+        Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
+
+        // Step 2. matrix is computed that scales and translates the
+        // transformed appearance box (tBbox) to align with the edges of
+        // the annotation's rectangle (Ret).
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform tAs = AffineTransform.getScaleInstance(
+                (rect.getWidth() / tBbox.getWidth()),
+                (rect.getHeight() / tBbox.getHeight()));
+
+        // check for identity transformation
+        // we have to be careful in such as case as the coordinates of the annotation may actually
+        // be in page space.  If the rectangle in page pace is more or less the same location
+        // as the tbbox then we know the annotation coordinate space must also be in page space.
+        // Thus, we shift back to page space.
+        if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -rect.getX(), -rect.getY());
+        } else {
+            tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
+                    tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
+        }
+        // Step 3. matrix is concatenated with A to form a matrix AA
+        // that maps from the appearance's coordinate system to the
+        // annotation's rectangle in default user space.
+        tAs.concatenate(matrix);
+        return tAs;
+    }
+
+    /**
+     * The transform from an appearance stream's own coordinates to page space.
+     * <p>
+     * Rendering does not need this: the graphics context is already positioned at the annotation, so
+     * {@link #getAppearanceToAnnotationSpace} leaves off the final step. Anything reasoning about
+     * where the appearance's content actually sits on the page - a redaction deciding whether a
+     * glyph inside it falls under a rectangle - needs the whole way there.
+     *
+     * @param appearanceState appearance to locate
+     * @return transform from appearance space to page space
+     */
+    public AffineTransform getAppearanceToPageSpace(AppearanceState appearanceState) {
+        Rectangle2D rect = getUserSpaceRectangle();
+        AffineTransform toPage = AffineTransform.getTranslateInstance(rect.getX(), rect.getY());
+        toPage.concatenate(getAppearanceToAnnotationSpace(appearanceState));
+        return toPage;
+    }
+
     protected void renderAppearanceStream(Graphics2D g, float rotation, float zoom) {
         Appearance appearance = appearances.get(currentAppearance);
         if (appearance == null) return;
@@ -1363,38 +1465,16 @@ public abstract class Annotation extends Dictionary {
 //            Rectangle2D.Float newRect = deriveDrawingRectangle();
 //            g.draw( newRect );
 
-            // step 1. appearance bounding box (BBox) is transformed, using
-            // Matrix, to produce a quadrilateral with arbitrary orientation.
-            Rectangle2D tBbox = matrix.createTransformedShape(bbox).getBounds2D();
-
-            // Step 2. matrix is computed that scales and translates the
-            // transformed appearance box (tBbox) to align with the edges of
-            // the annotation's rectangle (Ret).
-            Rectangle2D rect = getUserSpaceRectangle();
-            AffineTransform tAs = AffineTransform.getScaleInstance(
-                    (rect.getWidth() / tBbox.getWidth()),
-                    (rect.getHeight() / tBbox.getHeight()));
-
-            // check for identity transformation
-            // we have to be careful in such as case as the coordinates of the annotation may actually
-            // be in page space.  If the rectangle in page pace is more or less the same location
-            // as the tbbox then we know the annotation coordinate space must also be in page space.
-            // Thus, we shift back to page space.
-            if (rect.getMinX() == tBbox.getMinX() && rect.getMinY() == tBbox.getMinY()) {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -rect.getX(), -rect.getY());
-            } else {
-                tAs.setTransform(tAs.getScaleX(), tAs.getShearX(), tAs.getShearY(),
-                        tAs.getScaleY(), -tBbox.getX(), -tBbox.getY());
-            }
-            // Step 3. matrix is concatenated with A to form a matrix AA
-            // that maps from the appearance's coordinate system to the
-            // annotation's rectangle in default user space.
-            tAs.concatenate(matrix);
-            g.transform(tAs);
+            g.transform(getAppearanceToAnnotationSpace(appearanceState));
 
             AffineTransform preAf = g.getTransform();
             boolean paintFailed = false;
+            // An annotation paints over the already-rendered page, so a blended
+            // group in its appearance stream (e.g. a Multiply text highlight) must
+            // blend against the real page pixels in g, not the replay-reconstructed
+            // backdrop (which is blank for an appearance stream).  Flag the paint so
+            // FormDrawCmd takes the direct-composite path.
+            FormDrawCmd.setAnnotationAppearance(true);
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
@@ -1416,6 +1496,7 @@ public abstract class Annotation extends Dictionary {
                     logger.fine("Page Annotation Painting interrupted.");
                 }
             }
+            FormDrawCmd.setAnnotationAppearance(false);
 
             g.setTransform(preAf);
         }
@@ -1847,7 +1928,7 @@ public abstract class Annotation extends Dictionary {
                 // build out an appearance stream, corner case iText 2.1
                 // didn't correctly set type = form on the appearance stream obj.
                 try {
-                    form = new Form(library, stream.getEntries(), null);
+                    form = new Form(library, stream.getEntries(), (byte[]) null);
                     form.setPObjectReference(stream.getPObjectReference());
                     form.setRawBytes(stream.getDecodedStreamBytes());
                     form.init();
@@ -1861,7 +1942,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
@@ -1877,8 +1958,7 @@ public abstract class Annotation extends Dictionary {
      * @param rawBytes raw bytes of string data making up the content stream.
      * @return new Form object with updated appearance stream.
      */
-    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes,
-                                       boolean isNew) {
+    public Form updateAppearanceStream(Shapes shapes, Rectangle2D bbox, AffineTransform matrix, byte[] rawBytes) {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
@@ -1891,7 +1971,7 @@ public abstract class Annotation extends Dictionary {
             DictionaryEntries formEntries = new DictionaryEntries();
             formEntries.put(Form.TYPE_KEY, Form.TYPE_VALUE);
             formEntries.put(Form.SUBTYPE_KEY, Form.SUB_TYPE_VALUE);
-            form = new Form(library, formEntries, null);
+            form = new Form(library, formEntries, (byte[]) null);
             form.setPObjectReference(stateManager.getNewReferenceNumber());
             library.addObject(form, form.getPObjectReference());
         }
@@ -1901,7 +1981,7 @@ public abstract class Annotation extends Dictionary {
                     (float) bbox.getWidth(), (float) bbox.getHeight());
             form.setAppearance(shapes, matrix, formBbox);
 
-            stateManager.addChange(new PObject(form, form.getPObjectReference()), isNew);
+            stateManager.addChange(new PObject(form, form.getPObjectReference()));
             // update the AP's stream bytes so contents can be written out
             form.setRawBytes(rawBytes);
             DictionaryEntries appearanceRefs = new DictionaryEntries();
@@ -2037,19 +2117,39 @@ public abstract class Annotation extends Dictionary {
      * @param dx        coord-x
      * @param dy        coord-y
      * @param pageSpace page space transform
-     * @param isNew     marks the reset as happening because of user interaction not created because of a missing content
-     *                  stream.
      */
-    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew);
+    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
-//    public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
-
-    public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
-        resetAppearanceStream(0, 0, pageSpace, isNew);
+    /**
+     * Reset the appearance stream at the annotation's current location.
+     * <br>
+     * This records a user edit.  When the library is regenerating an appearance the file was missing rather than
+     * carrying out something the user asked for, run it inside
+     * {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)} so the document is not left looking modified.
+     *
+     * @param pageSpace page space transform
+     */
+    public void resetAppearanceStream(AffineTransform pageSpace) {
+        resetAppearanceStream(0, 0, pageSpace);
     }
 
-    public void resetAppearanceStream(AffineTransform pageSpace) {
-        resetAppearanceStream(0, 0, pageSpace, false);
+    /**
+     * 7.4.x form of {@link #resetAppearanceStream(AffineTransform)}, kept so code built against it still compiles
+     * and links.
+     *
+     * @param pageSpace page space transform
+     * @param isNew     true for a user edit; false for a library repair (see
+     *                  {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)}).
+     * @deprecated since 7.5.0, use {@link #resetAppearanceStream(AffineTransform)}, inside
+     * {@link org.icepdf.core.pobjects.StateManager#repairing(Runnable)} where isNew was false.
+     */
+    @Deprecated
+    public void resetAppearanceStream(AffineTransform pageSpace, boolean isNew) {
+        if (isNew) {
+            resetAppearanceStream(pageSpace);
+        } else {
+            library.getStateManager().repairing(() -> resetAppearanceStream(pageSpace));
+        }
     }
 
     /**

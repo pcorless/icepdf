@@ -54,7 +54,7 @@ import static org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBE
 public class FreeTextAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(FreeTextAnnotation.class.toString());
+            Logger.getLogger(FreeTextAnnotation.class.getName());
 
     public static final int INSETS = 5;
 
@@ -164,7 +164,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     public static Color defaultFontColor;
     public static Color defaultFillColor;
     public static Color defaultBorderColor;
-    public static int defaultFontSize;
+    public static float defaultFontSize;
 
     static {
 
@@ -212,8 +212,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
 
         // sets annotation free text fill colour
         try {
-            defaultFontSize = Defs.sysPropertyInt(
-                    "org.icepdf.core.views.page.annotation.freeText.font.size", 12);
+            defaultFontSize = Defs.floatProperty("org.icepdf.core.views.page.annotation.freeText.font.size", 12.0f);
         } catch (NumberFormatException e) {
             if (logger.isLoggable(Level.WARNING)) {
                 logger.warning("Error reading free text annotation fill colour");
@@ -233,7 +232,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     // the annotations appearance stream and other needed properties on edits.
     private String fontName = "Helvetica";
     private int fontStyle = Font.PLAIN;
-    private int fontSize = defaultFontSize;
+    private float fontSize = defaultFontSize;
     private Color fontColor = defaultFontColor;
     // fill
     private boolean fillType = false;
@@ -370,7 +369,7 @@ public class FreeTextAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         Appearance appearance = appearances.get(currentAppearance);
         AppearanceState appearanceState = appearance.getSelectedAppearanceState();
@@ -437,9 +436,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         // create/update the appearance stream of the xObject.
         StateManager stateManager = library.getStateManager();
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity);
-        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager, isNew);
+        ContentWriterUtils.setAppearance(this, form, appearanceState, stateManager);
 
         // form is fresh
         SimpleFont pdfFont = SimpleFontFactory.createFont(library, fontName, trueTypeeFontSubSetter);
@@ -585,11 +584,11 @@ public class FreeTextAnnotation extends MarkupAnnotation {
         this.fontStyle = fontStyle;
     }
 
-    public int getFontSize() {
+    public float getFontSize() {
         return fontSize;
     }
 
-    public void setFontSize(int fontSize) {
+    public void setFontSize(float fontSize) {
         this.fontSize = fontSize;
         fontPropertyChanged = true;
     }
@@ -645,9 +644,9 @@ public class FreeTextAnnotation extends MarkupAnnotation {
                     }
                 } else if (cssProperty != null && cssProperty.contains("font-size")) {
                     String fontSize = cssProperty.substring(cssProperty.indexOf(":") + 1).trim();
-                    fontSize = fontSize.substring(0, fontSize.indexOf('p'));
+                    fontSize = fontSize.replaceFirst(".*?(\\d+(?:\\.\\d+)?).*", "$1");
                     try {
-                        this.fontSize = (int) Float.parseFloat(fontSize);
+                        this.fontSize = Float.parseFloat(fontSize);
                     } catch (NumberFormatException e) {
                         logger.finer("Error parsing font size: " + fontSize);
                     }

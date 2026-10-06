@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 public class Lexer {
 
     private static final Logger logger =
-            Logger.getLogger(Lexer.class.toString());
+            Logger.getLogger(Lexer.class.getName());
 
     private static final int
             NO_MORE = 1,
@@ -56,14 +56,26 @@ public class Lexer {
     public void setContentStream(Stream[] in, ContentStreamCallback contentStreamCallback) throws IOException {
         streams = in;
         streamCount = 0;
+        contentStreamCallbackCallback = contentStreamCallback;
+        // A page's content-stream array can legitimately contain null entries (an unresolved or
+        // missing stream object); the multi-stream advance and the debug logging both guard for
+        // this.  Skip any leading null streams so the first real stream is loaded rather than
+        // dereferencing a null entry here (NPE on streams[0]).
+        while (streamCount < streams.length && streams[streamCount] == null) {
+            streamCount++;
+        }
+        if (streamCount >= streams.length) {
+            // no usable content stream found; leave streamBytes null so next() ends cleanly.
+            streamBytes = null;
+            numRead = 0;
+            streamCount = 0;
+            return;
+        }
         streamBytes = streams[streamCount].getDecodedStreamBytes();
         if (streamBytes != null) {
             numRead = streamBytes.length;
         }
-        contentStreamCallbackCallback = contentStreamCallback;
-        if (contentStreamCallbackCallback != null) {
-            contentStreamCallbackCallback.startContentStream(streams[streamCount]);
-        }
+        markContentStreamStart();
     }
 
     public Object next() throws IOException {
@@ -410,7 +422,8 @@ public class Lexer {
         Object value;
         int count = 1;
         while (pos < streamBytes.length &&
-                !(streamBytes[pos] == '>' && streamBytes[pos + 1] == '>')) {
+                !(streamBytes[pos] == '>' && pos + 1 < streamBytes.length && streamBytes[pos + 1] == '>')) {
+            int before = pos;
             if (count == 1) {
                 key = next();
                 // double check we don't have an empty dictionary << >>
@@ -421,7 +434,9 @@ public class Lexer {
                 count++;
             } else if (count == 2) {
                 value = next();
-                dictionaryEntries.put((Name)key, value);
+                if (key instanceof Name) {
+                    dictionaryEntries.put((Name) key, value);
+                }
                 count = 1;
             }
 
@@ -435,7 +450,11 @@ public class Lexer {
             }
             // check for in very odd  corner cases. end
             checkLength();
-
+            // A stray delimiter (a lone '>' in a corrupt stream, say) lexes as an empty operand
+            // and leaves pos where it was; step over it or this loop never ends.
+            if (pos == before) {
+                pos++;
+            }
         }
         // skip the trailing >>
         pos += 2;
@@ -451,16 +470,34 @@ public class Lexer {
     }
 
     private void nextContentStream() throws IOException {
-        markContentStreamEnd();
         streamCount++;
-        // assign next byte array, but skip over the corner
-        // case of a zero length content stream.
-        if (streams[streamCount].getDecompressedBytes() != null &&
-                streams[streamCount].getDecompressedBytes().length == 0 &&
-                streamCount + 1 < streams.length) {
+        // Decode robustly, mirroring setContentStream(): getDecodedStreamBytes()
+        // re-inflates from the still-compressed rawBytes when the decompressed
+        // cache is absent.  The previous getDecompressedBytes() read the nullable
+        // cache field directly, so when a page shared a content stream with
+        // another page that had already finished parsing and called
+        // disposeDecompressed(), this advance saw null -> numRead 0 -> the whole
+        // (often trailing, e.g. footer) stream was silently skipped and its
+        // content dropped under concurrency (GH-495, HA_20120316a footer).
+        // skip over any null entries (unresolved/missing stream objects) so we never dereference a
+        // null; a page's content-stream array can legitimately contain nulls.
+        while (streamCount < streams.length && streams[streamCount] == null) {
             streamCount++;
         }
-        streamBytes = streams[streamCount].getDecompressedBytes();
+        byte[] next = streamCount < streams.length ? streams[streamCount].getDecodedStreamBytes() : null;
+        // skip over the corner case of a zero length content stream.
+        if (next != null && next.length == 0 && streamCount + 1 < streams.length) {
+            streamCount++;
+            while (streamCount < streams.length && streams[streamCount] == null) {
+                streamCount++;
+            }
+            next = streamCount < streams.length ? streams[streamCount].getDecodedStreamBytes() : null;
+        }
+        // Close the previous stream only once it is known whether another follows: bytes left at
+        // the end of a stream that has a successor may be the operands of an operator that starts
+        // in it, and the callback has to hold them back rather than write them out.
+        markContentStreamEnd(next != null);
+        streamBytes = next;
         markContentStreamStart();
         // reset the  pointers.
         pos = 0;
@@ -468,14 +505,14 @@ public class Lexer {
     }
 
     private void markContentStreamStart() throws IOException {
-        if (contentStreamCallbackCallback != null) {
+        if (contentStreamCallbackCallback != null && streamCount < streams.length && streams[streamCount] != null) {
             contentStreamCallbackCallback.startContentStream(streams[streamCount]);
         }
     }
 
-    private void markContentStreamEnd() throws IOException {
+    private void markContentStreamEnd(boolean moreStreamsFollow) throws IOException {
         if (contentStreamCallbackCallback != null) {
-            contentStreamCallbackCallback.endContentStream();
+            contentStreamCallbackCallback.endContentStream(moreStreamsFollow);
         }
     }
 
@@ -550,9 +587,11 @@ public class Lexer {
         }
         if (pos <= numRead && pos > startTokenPos) {
             int[] tmp = Operands.parseOperand(streamBytes, startTokenPos, pos - startTokenPos);
-            // adjust for any potential parsing compensation.
+            // adjust for any potential parsing compensation.  The compensation is a count of
+            // trailing bytes to hand back, so it can never exceed the token's length; clamp it so a
+            // bad value can't rewind the lexer behind the token and re-parse the stream forever.
             if (tmp[1] > 0) {
-                pos -= tmp[1];
+                pos -= Math.min(tmp[1], pos - startTokenPos - 1);
             }
             return tmp[0];
         } else {
@@ -663,11 +702,13 @@ public class Lexer {
         float divisor = 10;
         boolean isDigit;
         boolean isDecimal = false;
-        boolean singed = streamBytes[startTokenPos] == '-' ||
-                streamBytes[startTokenPos] == '+';
-        startTokenPos = singed ? startTokenPos + 1 : startTokenPos;
+        // a '+' marks a number as explicitly positive (7.3.3); only a '-' makes it negative.
+        boolean negative = streamBytes[startTokenPos] == '-';
+        boolean signed = negative || streamBytes[startTokenPos] == '+';
+        startTokenPos = signed ? startTokenPos + 1 : startTokenPos;
         // check for  double neg sign
-        if (singed && streamBytes[startTokenPos] == '-') {
+        if (signed && streamBytes[startTokenPos] == '-') {
+            negative = true;
             startTokenPos++;
         }
         int current;
@@ -689,7 +730,7 @@ public class Lexer {
                 break;
             }
         }
-        if (singed) {
+        if (negative) {
             return -digit;
         } else {
             return digit;

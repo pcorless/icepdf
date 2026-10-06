@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public abstract class AbstractDrawCmd implements DrawCmd {
 
     protected static final Logger logger =
-            Logger.getLogger(AbstractDrawCmd.class.toString());
+            Logger.getLogger(AbstractDrawCmd.class.getName());
 
     protected static final boolean disableClipping;
 

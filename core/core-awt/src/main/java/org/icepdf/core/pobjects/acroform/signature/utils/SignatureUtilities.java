@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class SignatureUtilities {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureUtilities.class.toString());
+            Logger.getLogger(SignatureUtilities.class.getName());
 
     /**
      * Parse out a known data element from an X500Name.

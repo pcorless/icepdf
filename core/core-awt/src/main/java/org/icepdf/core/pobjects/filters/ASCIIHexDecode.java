@@ -42,7 +42,9 @@ public class ASCIIHexDecode extends ChunkingInputStream {
             do {
                 hi = in.read();
             } while (Utils.isWhitespace((char) hi));
-            if (hi < 0)
+            // '>' marks the end of the data (7.4.2).  Read as a digit it matches nothing, so a
+            // zero byte was appended to the end of every hex stream.
+            if (hi < 0 || hi == '>')
                 break;
             do {
                 lo = in.read();
@@ -59,7 +61,9 @@ public class ASCIIHexDecode extends ChunkingInputStream {
                 val |= ((byte) ((hi << 4) & 0xF0));
             }
 
-            if (lo >= 0) {
+            // an odd final digit is the high nibble of a byte whose low nibble is zero, which is
+            // what leaving val alone here gives
+            if (lo >= 0 && lo != '>') {
                 if (lo >= '0' && lo <= '9') {
                     lo -= '0';
                     val |= ((byte) (lo & 0x0F));

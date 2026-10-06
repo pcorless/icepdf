@@ -64,7 +64,7 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         implements PropertyChangeListener, DocumentListener {
 
     private static final Logger logger =
-            Logger.getLogger(FreeTextAnnotation.class.toString());
+            Logger.getLogger(FreeTextAnnotation.class.getName());
     private final ScalableTextArea freeTextPane;
     // font file cache.
     protected Font fontFile;
@@ -105,7 +105,10 @@ public class FreeTextAnnotationComponent extends MarkupAnnotationComponent<FreeT
         focusManager.addPropertyChangeListener(this);
 
         if (!annotation.hasAppearanceStream()) {
-            resetAppearanceShapes();
+            // the file carried no appearance for this annotation; building one is the only way to render it, and is
+            // not something the user asked for.  The scope also covers the font objects saveAppearanceStream()
+            // promotes, which have no other way of knowing why they were built.
+            annotation.getLibrary().getStateManager().repairing(this::resetAppearanceShapes);
         }
         revalidate();
 

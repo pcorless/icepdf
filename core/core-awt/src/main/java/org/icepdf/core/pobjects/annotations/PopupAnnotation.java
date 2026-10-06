@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 public class PopupAnnotation extends Annotation {
 
     private static final Logger logger =
-            Logger.getLogger(PopupAnnotation.class.toString());
+            Logger.getLogger(PopupAnnotation.class.getName());
 
     public static final Color BORDER_COLOR = new Color(153, 153, 153);
 
@@ -281,7 +281,7 @@ public class PopupAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 

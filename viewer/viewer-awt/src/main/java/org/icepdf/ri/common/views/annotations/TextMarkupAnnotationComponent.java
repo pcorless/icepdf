@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class TextMarkupAnnotationComponent extends MarkupAnnotationComponent<TextMarkupAnnotation> {
 
     private static final Logger logger =
-            Logger.getLogger(TextMarkupAnnotationComponent.class.toString());
+            Logger.getLogger(TextMarkupAnnotationComponent.class.getName());
 
     public TextMarkupAnnotationComponent(TextMarkupAnnotation annotation, DocumentViewController documentViewController,
                                          AbstractPageViewComponent pageViewComponent) {

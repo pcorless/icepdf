@@ -13,6 +13,7 @@
  */
 package org.icepdf.ri.common.utility.search;
 
+import org.icepdf.core.util.Defs;
 import org.icepdf.ri.common.DropDownButton;
 import org.icepdf.ri.common.PersistentJCheckBoxMenuItem;
 import org.icepdf.ri.common.SwingViewBuilder;
@@ -32,6 +33,7 @@ public class SearchFilterButton extends DropDownButton {
     private final JCheckBoxMenuItem wholeWordCheckbox;
     private final JCheckBoxMenuItem regexCheckbox;
     private final JCheckBoxMenuItem caseSensitiveCheckbox;
+    private final JCheckBoxMenuItem foldDiacriticsCheckbox;
     private final JCheckBoxMenuItem cumulativeCheckbox;
     private final JCheckBoxMenuItem textCheckbox;
     private final JCheckBoxMenuItem formsCheckbox;
@@ -52,6 +54,9 @@ public class SearchFilterButton extends DropDownButton {
         boolean isRegex = preferences.getBoolean(PROPERTY_SEARCH_PANEL_REGEX_ENABLED, true);
         boolean isWholeWord = preferences.getBoolean(PROPERTY_SEARCH_PANEL_WHOLE_WORDS_ENABLED, false);
         boolean isCaseSensitive = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, false);
+        // accent-insensitive matching defaults to the -Dorg.icepdf.core.search.foldDiacritics flag (true).
+        boolean isFoldDiacritics = preferences.getBoolean(PROPERTY_SEARCH_PANEL_FOLD_DIACRITICS_ENABLED,
+                Defs.booleanProperty("org.icepdf.core.search.foldDiacritics", true));
         boolean isCumulative = preferences.getBoolean(PROPERTY_SEARCH_PANEL_CUMULATIVE_ENABLED, false);
 
         boolean isText = preferences.getBoolean(PROPERTY_SEARCH_PANEL_SEARCH_TEXT_ENABLED, true);
@@ -89,7 +94,13 @@ public class SearchFilterButton extends DropDownButton {
                 "viewer.utilityPane.search.caseSenstiveCheckbox.label"), isCaseSensitive);
         caseSensitiveCheckbox.addActionListener(actionEvent -> {
             component.notifySearchFiltersChanged();
-            preferences.putBoolean(PROPERTY_SEARCH_PANEL_SHOW_PAGES_ENABLED, isShowPages());
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_CASE_SENSITIVE_ENABLED, isCaseSensitive());
+        });
+        foldDiacriticsCheckbox = new PersistentJCheckBoxMenuItem(messageBundle.getString(
+                "viewer.utilityPane.search.foldDiacriticsCheckbox.label"), isFoldDiacritics);
+        foldDiacriticsCheckbox.addActionListener(actionEvent -> {
+            component.notifySearchFiltersChanged();
+            preferences.putBoolean(PROPERTY_SEARCH_PANEL_FOLD_DIACRITICS_ENABLED, isFoldDiacritics());
         });
         if (isRegex || isWholeWord) {
             regexCheckbox.setEnabled(isRegex);
@@ -143,6 +154,7 @@ public class SearchFilterButton extends DropDownButton {
             add(regexCheckbox);
             add(wholeWordCheckbox);
             add(caseSensitiveCheckbox);
+            add(foldDiacriticsCheckbox);
             add(cumulativeCheckbox);
             addSeparator();
             add(textCheckbox);
@@ -155,6 +167,7 @@ public class SearchFilterButton extends DropDownButton {
         } else {
             add(wholeWordCheckbox);
             add(caseSensitiveCheckbox);
+            add(foldDiacriticsCheckbox);
             add(commentsCheckbox);
         }
     }
@@ -173,6 +186,10 @@ public class SearchFilterButton extends DropDownButton {
 
     public JCheckBoxMenuItem getCaseSensitiveCheckbox() {
         return caseSensitiveCheckbox;
+    }
+
+    public JCheckBoxMenuItem getFoldDiacriticsCheckbox() {
+        return foldDiacriticsCheckbox;
     }
 
     public JCheckBoxMenuItem getCumulativeCheckbox() {
@@ -219,6 +236,10 @@ public class SearchFilterButton extends DropDownButton {
         return caseSensitiveCheckbox.isSelected();
     }
 
+    public boolean isFoldDiacritics() {
+        return foldDiacriticsCheckbox.isSelected();
+    }
+
     public boolean isCumulative() {
         return cumulativeCheckbox.isSelected();
     }
@@ -252,6 +273,7 @@ public class SearchFilterButton extends DropDownButton {
         return builder.setSearchModel(panel)
                 .setWholePage(isWholePage())
                 .setCaseSensitive(isCaseSensitive())
+                .setFoldDiacritics(isFoldDiacritics())
                 .setWholeWord(isWholeWord())
                 .setCumulative(isCumulative())
                 .setShowPages(isShowPages())
@@ -266,6 +288,7 @@ public class SearchFilterButton extends DropDownButton {
     public SimpleSearchHelper getSimpleSearchHelper(Controller controller, String pattern) {
         SimpleSearchHelper.Builder builder = new SimpleSearchHelper.Builder(controller, pattern);
         return builder.setCaseSensitive(isCaseSensitive())
+                .setFoldDiacritics(isFoldDiacritics())
                 .setWholePage(isWholePage())
                 .setWholeWord(isWholeWord())
                 .setComments(isComments()).build();

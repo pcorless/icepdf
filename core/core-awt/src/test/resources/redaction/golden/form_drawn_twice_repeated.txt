@@ -1,0 +1,7 @@
+q 1 0 0 1 20 150 cm /Fm0 Do Q
+q 1 0 0 1 20 60 cm /Fm0 Do Q
+% form 6 0 R
+BT
+/F1 12 Tf
+0 0 Td [ -4000 ( text)] TJ
+ET

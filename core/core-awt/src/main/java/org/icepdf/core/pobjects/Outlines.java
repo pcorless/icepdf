@@ -37,12 +37,6 @@ public class Outlines extends Dictionary {
     public static final Name D_KEY = new Name("D");
     public static final Name COUNT_KEY = new Name("Count");
 
-    // number of child outline items
-    private Integer count;
-
-    // needed for future dispose implementation.
-    //private OutlineItem rootOutlineItem;
-
     /**
      * Creates a new instance of Outlines.
      *
@@ -51,20 +45,26 @@ public class Outlines extends Dictionary {
      */
     public Outlines(Library l, DictionaryEntries h) {
         super(l, h);
-        if (entries != null) {
-            count = library.getInt(entries, COUNT_KEY);
-        }
     }
 
     /**
      * Gets the root OutlineItem.  The root outline item can be traversed to build
      * a visible outline of the hierarchy.
+     * <p>
+     * Whether a document has an outline at all is decided by {@link Catalog#getOutlines()}, which
+     * answers null unless the catalog carries an /Outlines reference.  An outline that exists but
+     * has nothing in it is reported by {@link OutlineItem#isEmpty()}, not by a null here.
      *
-     * @return root outline item.
+     * @return root outline item, never null.
      */
     public OutlineItem getRootOutlineItem() {
-        if (count == null)
-            return null;
+        // This used to read /Count into an Integer field and return null when that was null, which
+        // reads as "no /Count, no outline" but could never mean it, twice over: Library.getInt
+        // answers a primitive 0 for a missing key, and Dictionary substitutes an empty
+        // DictionaryEntries for a null one, so neither the count nor the entries were ever null.
+        // The guard was unreachable.  Worth knowing it never fired, because /Count really is
+        // optional - three documents in a 648 document corpus sample carry /First without it - so
+        // had it ever meant what it read as, those outlines would have gone missing.
         OutlineItem outlineItem = new OutlineItem(library, entries);
         outlineItem.setPObjectReference(getPObjectReference());
         return outlineItem;
@@ -73,13 +73,24 @@ public class Outlines extends Dictionary {
     /**
      * Creates a new instance of an OutlineItem and sets the reference number
      *
-     * @param library document library
+     * @param library document library, which must carry a state manager: the new item needs a
+     *                reference number, and only the state manager can issue one
      * @return new instance of an OutlineItem that is not registered with the state manager.
+     * @throws IllegalStateException if the library has no state manager
      */
     public static OutlineItem createNewOutlineItem(Library library) {
+        StateManager stateManager = library.getStateManager();
+        if (stateManager == null) {
+            // this used to be a NullPointerException naming getNewReferenceNumber, which sends the
+            // reader looking at the wrong object.  Handing back an item without a reference is not
+            // an option: the reference is part of the per object encryption key, so a title written
+            // to it could not be encrypted, and the state manager could not track it either.
+            throw new IllegalStateException(
+                    "Cannot create an outline item without a state manager; the library belongs to " +
+                            "a document that has not been loaded for editing");
+        }
         OutlineItem outlineItem = new OutlineItem(library, new DictionaryEntries());
-        Reference reference = library.getStateManager().getNewReferenceNumber();
-        outlineItem.setPObjectReference(reference);
+        outlineItem.setPObjectReference(stateManager.getNewReferenceNumber());
         return outlineItem;
     }
 

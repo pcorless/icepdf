@@ -23,6 +23,9 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.prefs.Preferences;
 
@@ -46,23 +49,15 @@ public class ImagingPreferencesPanel extends JPanel {
 
         preferences = propertiesManager.getPreferences();
 
-        ImageReferenceItem[] imageReferenceItems = new ImageReferenceItem[]{
-                new ImageReferenceItem(messageBundle.getString(
-                        "viewer.dialog.viewerPreferences.section.imaging.imageReference.default.label"),
-                        ImageReferenceFactory.ImageReference.DEFAULT),
-                new ImageReferenceItem(messageBundle.getString(
-                        "viewer.dialog.viewerPreferences.section.imaging.imageReference.scaled.label"),
-                        ImageReferenceFactory.ImageReference.SCALED),
-                new ImageReferenceItem(messageBundle.getString(
-                        "viewer.dialog.viewerPreferences.section.imaging.imageReference.mipMap.label"),
-                        ImageReferenceFactory.ImageReference.MIP_MAP),
-                new ImageReferenceItem(messageBundle.getString(
-                        "viewer.dialog.viewerPreferences.section.imaging.imageReference.smothScaled.label"),
-                        ImageReferenceFactory.ImageReference.SMOOTH_SCALED),
-                new ImageReferenceItem(messageBundle.getString(
-                        "viewer.dialog.viewerPreferences.section.imaging.imageReference.blurred.label"),
-                        ImageReferenceFactory.ImageReference.BLURRED)
-        };
+        // Build combo items dynamically from the registry so custom types appear automatically
+        List<ImageReferenceItem> itemList = new ArrayList<>();
+        for (Map.Entry<String, ImageReferenceFactory.RegistryEntry> e :
+                ImageReferenceFactory.getRegisteredTypes().entrySet()) {
+            String key = e.getKey();
+            String label = localizedLabel(messageBundle, key, e.getValue().getDisplayName());
+            itemList.add(new ImageReferenceItem(label, key));
+        }
+        ImageReferenceItem[] imageReferenceItems = itemList.toArray(new ImageReferenceItem[0]);
 
         JComboBox<ImageReferenceItem> imageReferenceComboBox = new JComboBox<>(imageReferenceItems);
         imageReferenceComboBox.setSelectedItem(new ImageReferenceItem("", ImageReferenceFactory.imageReferenceType));
@@ -70,7 +65,7 @@ public class ImagingPreferencesPanel extends JPanel {
             JComboBox cb = (JComboBox) e.getSource();
             ImageReferenceItem selectedItem = (ImageReferenceItem) cb.getSelectedItem();
             ImageReferenceFactory.imageReferenceType = selectedItem.getValue();
-            preferences.put(ViewerPropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, selectedItem.getValue().toString());
+            preferences.put(ViewerPropertiesManager.PROPERTY_IMAGING_REFERENCE_TYPE, selectedItem.getValue());
         });
 
         JPanel imagingPreferencesPanel = new JPanel(new GridBagLayout());
@@ -112,11 +107,43 @@ public class ImagingPreferencesPanel extends JPanel {
         layout.add(component, constraints);
     }
 
+    /**
+     * Returns a localized label for a built-in type key, falling back to the registry display name
+     * for any custom type that has no bundle entry.
+     */
+    private static String localizedLabel(ResourceBundle bundle, String key, String fallback) {
+        String bundleKey;
+        switch (key) {
+            case ImageReferenceFactory.TYPE_DEFAULT:
+                bundleKey = "viewer.dialog.viewerPreferences.section.imaging.imageReference.default.label";
+                break;
+            case ImageReferenceFactory.TYPE_SCALED:
+                bundleKey = "viewer.dialog.viewerPreferences.section.imaging.imageReference.scaled.label";
+                break;
+            case ImageReferenceFactory.TYPE_MIP_MAP:
+                bundleKey = "viewer.dialog.viewerPreferences.section.imaging.imageReference.mipMap.label";
+                break;
+            case ImageReferenceFactory.TYPE_SMOOTH_SCALED:
+                bundleKey = "viewer.dialog.viewerPreferences.section.imaging.imageReference.smothScaled.label";
+                break;
+            case ImageReferenceFactory.TYPE_BLURRED:
+                bundleKey = "viewer.dialog.viewerPreferences.section.imaging.imageReference.blurred.label";
+                break;
+            default:
+                return fallback;
+        }
+        try {
+            return bundle.getString(bundleKey);
+        } catch (java.util.MissingResourceException e) {
+            return fallback;
+        }
+    }
+
     static class ImageReferenceItem {
         final String label;
-        final ImageReferenceFactory.ImageReference value;
+        final String value;
 
-        public ImageReferenceItem(String label, ImageReferenceFactory.ImageReference value) {
+        public ImageReferenceItem(String label, String value) {
             this.label = label;
             this.value = value;
         }
@@ -125,7 +152,7 @@ public class ImagingPreferencesPanel extends JPanel {
             return label;
         }
 
-        public ImageReferenceFactory.ImageReference getValue() {
+        public String getValue() {
             return value;
         }
 
@@ -138,7 +165,7 @@ public class ImagingPreferencesPanel extends JPanel {
         public boolean equals(Object imageReferenceItem) {
             if (imageReferenceItem instanceof ImageReferenceItem)
                 return value.equals(((ImageReferenceItem) imageReferenceItem).getValue());
-            else if (imageReferenceItem instanceof ImageReferenceFactory.ImageReference) {
+            else if (imageReferenceItem instanceof String) {
                 return value.equals(imageReferenceItem);
             }
             return false;

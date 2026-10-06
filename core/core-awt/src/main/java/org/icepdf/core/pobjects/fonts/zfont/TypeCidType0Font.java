@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 public class TypeCidType0Font extends CompositeFont {
 
     private static final Logger logger =
-            Logger.getLogger(TypeCidType0Font.class.toString());
+            Logger.getLogger(TypeCidType0Font.class.getName());
 
     public TypeCidType0Font(Library library, DictionaryEntries entries) {
         super(library, entries);
@@ -45,8 +45,8 @@ public class TypeCidType0Font extends CompositeFont {
                 font = ((ZFontType0) font).deriveFont(1000, null);
             }
         } else {
-            // something bad happened font couldn't be loaded.
-            logger.warning("Could not derive with because of null Type0CID font.");
+            // no font program, or a substitute of another kind: the CID widths can't be applied to it
+            logWidthsNotApplied(logger, font);
         }
     }
 

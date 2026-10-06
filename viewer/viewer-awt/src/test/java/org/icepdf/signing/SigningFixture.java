@@ -1,0 +1,220 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.icepdf.signing;
+
+import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.PDate;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
+import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
+import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
+import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
+import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
+import org.icepdf.core.pobjects.annotations.AnnotationFactory;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.core.pobjects.security.JceProvider;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.SignatureManager;
+import org.icepdf.core.util.updater.WriteMode;
+import org.icepdf.ri.common.views.annotations.signing.BasicSignatureAppearanceCallback;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceLayout;
+import org.icepdf.ri.common.views.annotations.signing.SignatureAppearanceModelImpl;
+
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Locale;
+
+/**
+ * Signs a document, the way the tests here need it signed.
+ * <p>
+ * Three tests wanted the same twenty-odd lines with a couple of details different, and had three
+ * copies of them. What each test is actually about - a level A document staying conformant, an
+ * indirect {@code /AcroForm} being written through, a signature validating - is the part that was
+ * hardest to see for all the setup around it.
+ */
+public class SigningFixture {
+
+    private static final String KEYSTORE = "src/test/resources/signing/certificate.pfx";
+    private static final String PASSWORD = "changeit";
+    private static final String ALIAS = "senderKeyPair";
+
+    private final File source;
+    private SignatureType signatureType = SignatureType.CERTIFIER;
+    private String reason = "Certification";
+    private boolean appearance;
+    private BufferedImage signatureImage;
+    private String signerName;
+    private String appearanceFont;
+    private SignatureAppearanceLayout layout = SignatureAppearanceLayout.SIDE_BY_SIDE;
+    private String timeStampAuthority;
+
+    private SigningFixture(File source) {
+        this.source = source;
+    }
+
+    public static SigningFixture of(File source) {
+        return new SigningFixture(source);
+    }
+
+    public SigningFixture signatureType(SignatureType signatureType) {
+        this.signatureType = signatureType;
+        return this;
+    }
+
+    /**
+     * Asks the named authority to timestamp the signature.
+     * <p>
+     * Off unless a test asks for it, and the caller supplies the authority.  It used to default to a
+     * public authority on the internet, which meant every signing test passed only while that server
+     * was reachable and answering the size it answered last time - and put a request to somebody
+     * else's server on every build.  A test that is actually about timestamping should start a
+     * {@link LocalTimeStampAuthority} and pass its url; the signer handler treats the null this
+     * holds otherwise as "do not timestamp".
+     *
+     * @param url where to ask for a timestamp
+     * @return this fixture
+     */
+    public SigningFixture timestampWith(String url) {
+        this.timeStampAuthority = url;
+        return this;
+    }
+
+    public SigningFixture reason(String reason) {
+        this.reason = reason;
+        return this;
+    }
+
+    /**
+     * Draws the signature's appearance. Off by default: it pulls in the font machinery, which a test
+     * about where a dictionary entry lands does not need.
+     */
+    public SigningFixture withAppearance() {
+        this.appearance = true;
+        return this;
+    }
+
+    public SigningFixture withAppearance(BufferedImage signatureImage) {
+        this.signatureImage = signatureImage;
+        return withAppearance();
+    }
+
+    /**
+     * Overrides the name drawn in the appearance, which is otherwise the certificate's.
+     */
+    public SigningFixture signerName(String signerName) {
+        this.signerName = signerName;
+        return this;
+    }
+
+    /**
+     * The face the appearance is drawn with.  Worth naming when the text needs glyphs the default
+     * face does not have - a font returns glyph 0 for a character it lacks rather than failing.
+     */
+    public SigningFixture appearanceFont(String appearanceFont) {
+        this.appearanceFont = appearanceFont;
+        return this;
+    }
+
+    /**
+     * How the appearance arranges its image and text.  Stated rather than left to the preference,
+     * for the same reason the rest of the appearance settings are.
+     */
+    public SigningFixture layout(SignatureAppearanceLayout layout) {
+        this.layout = layout;
+        return this;
+    }
+
+    /**
+     * @param outputFile where to write the signed document
+     * @return the file written, so a caller can go straight on to reading it
+     */
+    public File signTo(File outputFile) throws Exception {
+        JceProvider.loadProvider();
+        PfxGenerator.createPfx(KEYSTORE, PASSWORD, ALIAS);
+        Pkcs12SignerHandler signerHandler = new Pkcs12SignerHandler(timeStampAuthority,
+                new File(KEYSTORE), ALIAS, new SimplePasswordCallbackHandler(PASSWORD));
+
+        Document document = new Document();
+        try (InputStream stream = new FileInputStream(source)) {
+            document.setInputStream(stream, source.getName());
+        }
+        Library library = document.getCatalog().getLibrary();
+        SignatureManager signatureManager = library.getSignatureDictionaries();
+
+        SignatureWidgetAnnotation signatureAnnotation =
+                (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
+                        library, FieldDictionaryFactory.TYPE_SIGNATURE,
+                        new Rectangle(100, 250, 375, 150));
+        document.getPageTree().getPage(0).addAnnotation(signatureAnnotation);
+
+        InteractiveForm interactiveForm = document.getCatalog().getOrCreateInteractiveForm();
+        interactiveForm.addField(signatureAnnotation);
+
+        SignatureDictionary signatureDictionary =
+                SignatureDictionary.getInstance(signatureAnnotation, signatureType);
+        signatureDictionary.setSignerHandler(signerHandler);
+        signatureDictionary.setReason(reason);
+        signatureDictionary.setDate(PDate.formatDateTime(new Date()));
+        signatureManager.addSignature(signatureDictionary, signatureAnnotation);
+        SignatureUtilities.updateSignatureDictionary(signatureDictionary, signerHandler.getCertificate());
+
+        if (appearance) {
+            SignatureAppearanceModelImpl appearanceModel = new SignatureAppearanceModelImpl(library);
+            // The model keeps its settings in java.util.prefs, so anything not set here is whatever
+            // the machine happens to hold.  A test that asks for an appearance with text in it should
+            // say so rather than hope.
+            appearanceModel.setSignatureTextVisible(true);
+            appearanceModel.setLocale(Locale.ENGLISH);
+            appearanceModel.setName(signerName != null ? signerName : signatureDictionary.getName());
+            if (appearanceFont != null) {
+                appearanceModel.setFontName(appearanceFont);
+            }
+            appearanceModel.setContact(signatureDictionary.getContactInfo());
+            appearanceModel.setLocation(signatureDictionary.getLocation());
+            appearanceModel.setSignatureType(signatureType);
+            // Same reason as the text above: whether the image is drawn, and how big, are stored
+            // preferences, so a test that hands one over has to say it wants it drawn rather than
+            // inherit whatever the machine's viewer was last set to.
+            appearanceModel.setLayout(layout);
+            appearanceModel.setSignatureImageVisible(signatureImage != null);
+            if (signatureImage != null) {
+                appearanceModel.setSignatureImage(signatureImage);
+                appearanceModel.setImageScale(100);
+            }
+
+            BasicSignatureAppearanceCallback appearanceCallback = new BasicSignatureAppearanceCallback();
+            appearanceCallback.setSignatureAppearanceModel(appearanceModel);
+            signatureAnnotation.setAppearanceCallback(appearanceCallback);
+            signatureAnnotation.resetAppearanceStream(new AffineTransform());
+            signatureAnnotation.saveAppearanceStream();
+        }
+
+        outputFile.getParentFile().mkdirs();
+        try (BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(outputFile), 8192)) {
+            document.saveToOutputStream(stream, WriteMode.INCREMENT_UPDATE);
+        }
+        document.dispose();
+        return outputFile;
+    }
+}

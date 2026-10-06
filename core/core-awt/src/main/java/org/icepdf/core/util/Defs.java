@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 public class Defs {
 
     private static final Logger logger =
-            Logger.getLogger(Defs.class.toString());
+            Logger.getLogger(Defs.class.getName());
 
     /**
      * Equivalent to property(name, null)

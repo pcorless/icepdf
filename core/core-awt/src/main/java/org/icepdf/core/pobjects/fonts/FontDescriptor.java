@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class FontDescriptor extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(FontDescriptor.class.toString());
+            Logger.getLogger(FontDescriptor.class.getName());
 
     private FontFile font;
 
@@ -313,7 +313,7 @@ public class FontDescriptor extends Dictionary {
         // catch everything, we can fall back to font substitution if a failure
         // occurs.
         catch (Exception e) {
-            logger.log(Level.WARNING, "Error Reading Embedded Font, falling back to substitution ", e);
+            logger.log(Level.WARNING, e, () -> "Embedded font " + getFontName() + " could not be read, using a substitute: " + e.getMessage());
             embeddedFontDamaged = true;
         }
 

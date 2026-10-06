@@ -46,7 +46,7 @@ import static org.icepdf.core.pobjects.acroform.SignatureDictionary.V_KEY;
 public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<SignatureFieldDictionary> {
 
     private static final Logger logger =
-            Logger.getLogger(SignatureWidgetAnnotation.class.toString());
+            Logger.getLogger(SignatureWidgetAnnotation.class.getName());
 
     // signature field dictionary,
     private final SignatureFieldDictionary fieldDictionary;
@@ -138,9 +138,9 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
         if (signatureAppearanceCallback != null) {
-            signatureAppearanceCallback.createAppearanceStream(this, pageSpace, isNew);
+            signatureAppearanceCallback.createAppearanceStream(this, pageSpace);
         }
     }
 

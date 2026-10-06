@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.Stream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +41,7 @@ import java.util.logging.Logger;
 public class CMapFactory {
 
     private static final Logger logger =
-            Logger.getLogger(CMapFactory.class.toString());
+            Logger.getLogger(CMapFactory.class.getName());
 
     public static final Name TYPE = new Name("CMap");
 
@@ -49,6 +50,8 @@ public class CMapFactory {
     public static final Name IDENTITY_H_NAME = new Name("Identity-H");
 
     private static final Map<String, CMap> CMAP_CACHE = new ConcurrentHashMap<>();
+    // names FontBox has no predefined CMap for; remembered so the miss is reported once, not per font
+    private static final Set<String> MISSING_CMAPS = ConcurrentHashMap.newKeySet();
 
     private CMapFactory() {
     }
@@ -57,19 +60,32 @@ public class CMapFactory {
         return getPredefinedCMap(cMapName.getName());
     }
 
+    /**
+     * Returns a predefined CMap by name, or null if FontBox has none by that name.  A missing CMap means the
+     * document named one that isn't predefined, not that loading failed, so it is reported once per name as a
+     * warning without a stack trace and not looked up again.
+     *
+     * @param cMapName predefined CMap name, e.g. {@code UniJIS-UCS2-H}
+     * @return the CMap, or null if there is no predefined CMap with that name
+     */
     public static CMap getPredefinedCMap(String cMapName) {
         CMap cmap = CMAP_CACHE.get(cMapName);
         if (cmap != null) {
             return cmap;
         }
-
-        CMap targetCmap = null;
+        if (MISSING_CMAPS.contains(cMapName)) {
+            return null;
+        }
         try {
-            targetCmap = new CMapParser().parsePredefined(cMapName);
+            CMap targetCmap = new CMapParser().parsePredefined(cMapName);
             CMAP_CACHE.put(targetCmap.getName(), targetCmap);
+            CMAP_CACHE.put(cMapName, targetCmap);
             return targetCmap;
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error while getting predefined CMap", e);
+            if (MISSING_CMAPS.add(cMapName)) {
+                logger.warning("No predefined CMap named " + cMapName + ": " + e.getMessage());
+                logger.log(Level.FINE, "Predefined CMap lookup failed", e);
+            }
             return null;
         }
     }

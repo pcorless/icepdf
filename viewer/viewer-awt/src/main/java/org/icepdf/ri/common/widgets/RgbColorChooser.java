@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 public class RgbColorChooser {
 
     private static final Logger logger =
-            Logger.getLogger(RgbColorChooser.class.toString());
+            Logger.getLogger(RgbColorChooser.class.getName());
 
     /**
      * Shows a modal color-chooser dialog and blocks until the

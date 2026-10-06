@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class CertificateUtils {
 
     private static final Logger logger =
-            Logger.getLogger(CertificateUtils.class.toString());
+            Logger.getLogger(CertificateUtils.class.getName());
 
     /**
      * Checks whether given X.509 certificate is self-signed.

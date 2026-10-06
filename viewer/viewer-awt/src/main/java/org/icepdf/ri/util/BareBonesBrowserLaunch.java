@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class BareBonesBrowserLaunch {
 
     private static final Logger logger =
-            Logger.getLogger(BareBonesBrowserLaunch.class.toString());
+            Logger.getLogger(BareBonesBrowserLaunch.class.getName());
     private static final String errMsg =
             "Error attempting to launch web browser";
 

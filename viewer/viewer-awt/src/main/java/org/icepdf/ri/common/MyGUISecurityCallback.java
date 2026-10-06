@@ -198,6 +198,22 @@ public class MyGUISecurityCallback implements SecurityCallback {
             dispose();
         }
 
+        /**
+         * Puts the caret in the password field, so that the password can simply be typed.
+         * <p>
+         * The focus lands there anyway today, but only because the field happens to be the first
+         * focusable thing in the layout - the two labels above it cannot take focus and the buttons
+         * come after.  That is a property of the running order of this constructor rather than
+         * anything asked for, and adding a focusable control above the field, or reordering these,
+         * would move the focus to it with nothing to say so.  Asked for here instead, which is also
+         * the earliest point the dialog is on screen and the request will hold.
+         *
+         * @param ev window opened event
+         */
+        public void windowOpened(java.awt.event.WindowEvent ev) {
+            passwordField.requestFocusInWindow();
+        }
+
         // not currently used
         public void windowActivated(java.awt.event.WindowEvent ev) {
         }
@@ -212,9 +228,6 @@ public class MyGUISecurityCallback implements SecurityCallback {
         }
 
         public void windowIconified(java.awt.event.WindowEvent ev) {
-        }
-
-        public void windowOpened(java.awt.event.WindowEvent ev) {
         }
 
     }

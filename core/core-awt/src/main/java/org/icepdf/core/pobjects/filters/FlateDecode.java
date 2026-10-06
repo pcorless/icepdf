@@ -126,24 +126,12 @@ public class FlateDecode extends ChunkingInputStream {
             if (numRead <= 0)
                 return -1;
             return numRead;
-        } else if (predictor == PredictorDecode.PREDICTOR_TIFF_2) {
-            int numRead = fillBufferFromInputStream();
-            if (numRead <= 0)
-                return -1;
-            if (bitsPerComponent == 8) {
-                for (int i = 0; i < numRead; i++) {
-                    int prevIndex = i - numComponents;
-                    if (prevIndex >= 0) {
-                        buffer[i] += buffer[prevIndex];
-                    }
-                }
-            }
-            return numRead;
         }
-        // Predictor decode is handle by the PredictorDecode class as it's also
+        // Predictor decode, TIFF and PNG, is handled by the PredictorDecode class as it's also
         // used by LZW Decode. So all we need to do is fill the buffer.
-        else if (predictor >= PredictorDecode.PREDICTOR_PNG_NONE &&
-                predictor <= PredictorDecode.PREDICTOR_PNG_OPTIMUM) {
+        else if (predictor == PredictorDecode.PREDICTOR_TIFF_2 ||
+                (predictor >= PredictorDecode.PREDICTOR_PNG_NONE &&
+                        predictor <= PredictorDecode.PREDICTOR_PNG_OPTIMUM)) {
             int numRead = fillBufferFromInputStream();
             if (numRead <= 0) return -1;
             return numRead;

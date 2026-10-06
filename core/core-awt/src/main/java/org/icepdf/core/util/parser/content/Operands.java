@@ -278,6 +278,10 @@ public class Operands {
                     return new int[]{n, 0};
                 } else {
                     c1 = ch[offset + 1];
+                    // offset is the token's byte position on entry; it must be reset before being
+                    // returned as a rewind count or a malformed "nu" token rewinds the lexer to the
+                    // start of the stream and the parser loops forever.
+                    offset = 0;
                     if (c1 == 'u') {
                         if (length > 3) {
                             offset = length - 3;
@@ -297,7 +301,7 @@ public class Operands {
             case 'E':
                 if (length == 3) {
                     return new int[]{EMC, 0};
-                } else {
+                } else if (length >= 2) {
                     c1 = ch[offset + 1];
                     offset = 0;
                     switch (c1) {
@@ -323,6 +327,10 @@ public class Operands {
                             return new int[]{EMC, offset};
                     }
                 }
+                // lone 'E' or unrecognized E-operator: fall through to the
+                // unknown-operator (OP) result rather than read past the token
+                // or misclassify it as the following 'i' case.
+                break;
             case 'i':
                 offset = 0;
                 if (length > 1) {

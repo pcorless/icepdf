@@ -43,7 +43,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 public class DestinationComponent extends JComponent implements FocusListener, MouseInputListener, ResizeableComponent,
         ActionListener {
     protected static final Logger logger =
-            Logger.getLogger(DestinationComponent.class.toString());
+            Logger.getLogger(DestinationComponent.class.getName());
 
     private static final int HEIGHT = 24;
 

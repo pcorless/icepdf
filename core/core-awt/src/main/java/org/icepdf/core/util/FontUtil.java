@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class FontUtil {
 
-    private static final Logger logger = Logger.getLogger(FontUtil.class.toString());
+    private static final Logger logger = Logger.getLogger(FontUtil.class.getName());
 
     // awt font style lookup style tokens
     private static final String AWT_STYLE_BOLD_ITAL = "boldital";

@@ -44,7 +44,7 @@ import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.parseQuadPoi
 public class RedactionAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(RedactionAnnotation.class.toString());
+            Logger.getLogger(RedactionAnnotation.class.getName());
 
     private static Color redactionColor;
 
@@ -165,7 +165,7 @@ public class RedactionAnnotation extends MarkupAnnotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace) {
         // check if we have anything to reset.
         if (markupBounds == null) {
             return;
@@ -198,7 +198,7 @@ public class RedactionAnnotation extends MarkupAnnotation {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity);
     }
 }

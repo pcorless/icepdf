@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class LineAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(LineAnnotation.class.toString());
+            Logger.getLogger(LineAnnotation.class.getName());
 
     /**
      * (Required) An array of four numbers, [x1 y1 x2 y2], specifying the starting
@@ -537,7 +537,7 @@ public class LineAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // nothing to reset,  creating new annotation.
         if (startOfLine == null || endOfLine == null) {
@@ -637,7 +637,7 @@ public class LineAnnotation extends MarkupAnnotation {
 
         // mark the change.
         StateManager stateManager = library.getStateManager();
-        stateManager.addChange(new PObject(this, this.getPObjectReference()), isNew);
+        stateManager.addChange(new PObject(this, this.getPObjectReference()));
     }
 
     public Point2D getStartOfLine() {

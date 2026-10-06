@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 public class SignaturePropertiesDialog extends EscapeJDialog {
 
     private static final Logger logger =
-            Logger.getLogger(SignaturePropertiesDialog.class.toString());
+            Logger.getLogger(SignaturePropertiesDialog.class.getName());
 
     // layouts constraint
     private GridBagConstraints constraints;

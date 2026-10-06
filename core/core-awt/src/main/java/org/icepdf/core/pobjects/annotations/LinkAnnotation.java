@@ -62,7 +62,7 @@ import java.util.logging.Logger;
 public class LinkAnnotation extends Annotation {
 
     private static final Logger logger =
-            Logger.getLogger(LinkAnnotation.class.toString());
+            Logger.getLogger(LinkAnnotation.class.getName());
 
     /**
      * Key used to indicate highlight mode.
@@ -209,7 +209,7 @@ public class LinkAnnotation extends Annotation {
     }
 
     @Override
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
     }
 }

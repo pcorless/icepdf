@@ -61,7 +61,7 @@ public class MarkupAnnotationPanel extends JPanel implements ActionListener, Pro
         MutableDocument, DocumentListener {
 
     private static final Logger logger =
-            Logger.getLogger(MarkupAnnotationPanel.class.toString());
+            Logger.getLogger(MarkupAnnotationPanel.class.getName());
 
     public static final String COLUMN_PROPERTY = "Column";
 

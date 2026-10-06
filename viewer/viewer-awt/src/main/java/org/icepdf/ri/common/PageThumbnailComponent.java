@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class PageThumbnailComponent extends AbstractPageViewComponent implements MouseListener {
 
     private static final Logger logger =
-            Logger.getLogger(PageThumbnailComponent.class.toString());
+            Logger.getLogger(PageThumbnailComponent.class.getName());
 
     public PageThumbnailComponent(DocumentViewController documentViewController,
                                   DocumentViewModel documentViewModel, PageTree pageTree,
@@ -82,9 +82,9 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
         Rectangle pageLocation = this.getBounds();
         Rectangle viewPort = documentViewModel.getDocumentViewScrollPane().getViewport().getViewRect();
 
-        // check if we need create or refresh the back pageBufferPadding.
+        // check if we need to create or refresh the back buffer.
         if (viewPort.intersects(pageLocation) && pageBufferStore.getImageReference() == null) {
-            // start future task to paint back pageBufferPadding
+            // start future task to paint the back buffer
             if (pageImageCaptureTask == null || pageImageCaptureTask.isDone() || pageImageCaptureTask.isCancelled()) {
                 pageImageCaptureTask = new FutureTask<>(
                         new PageImageCaptureTask(this, pageSize, pageSize,
@@ -96,6 +96,11 @@ public class PageThumbnailComponent extends AbstractPageViewComponent implements
     }
 
     public void dispose() {
+        // cancel any in-flight capture task so a disposed thumbnail doesn't keep an
+        // expensive page init/paint running (mirrors PageViewComponentImpl.dispose()).
+        if (pageImageCaptureTask != null && !pageImageCaptureTask.isDone()) {
+            pageImageCaptureTask.cancel(true);
+        }
         removeMouseListener(this);
     }
 

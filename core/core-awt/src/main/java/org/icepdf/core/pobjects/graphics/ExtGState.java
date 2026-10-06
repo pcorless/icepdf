@@ -224,7 +224,7 @@ import java.util.logging.Logger;
 public class ExtGState extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(ExtGState.class.toString());
+            Logger.getLogger(ExtGState.class.getName());
 
     public static final Name SMASK_KEY = new Name("SMask");
     public static final Name LW_KEY = new Name("LW");

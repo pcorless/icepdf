@@ -126,7 +126,7 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
 
         // font comps
         applySelectedValue(fontNameBox, freeTextAnnotation.getFontName());
-        applySelectedValue(fontSizeBox, freeTextAnnotation.getFontSize());
+        applySelectedValue(fontSizeBox, (int) freeTextAnnotation.getFontSize());
         setButtonBackgroundColor(fontColorButton, freeTextAnnotation.getFontColor());
 
         // border comps.
@@ -176,8 +176,8 @@ public class FreeTextAnnotationPanel extends AnnotationPanelAdapter implements I
                 freeTextAnnotation.setFontName((String) item.getValue());
                 preferences.put(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_FONT, freeTextAnnotation.getFontName());
             } else if (e.getSource() == fontSizeBox) {
-                freeTextAnnotation.setFontSize((Integer) item.getValue());
-                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, freeTextAnnotation.getFontSize());
+                freeTextAnnotation.setFontSize((float) (Integer) item.getValue());
+                preferences.putInt(ViewerPropertiesManager.PROPERTY_ANNOTATION_FREE_TEXT_SIZE, Math.round(freeTextAnnotation.getFontSize()));
             } else if (e.getSource() == strokeTypeBox) {
                 Boolean visible = (Boolean) item.getValue();
                 freeTextAnnotation.setStrokeType(visible);

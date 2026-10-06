@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 
 public final class MailSender {
 
-    private static final Logger logger = Logger.getLogger(MailSender.class.toString());
+    private static final Logger logger = Logger.getLogger(MailSender.class.getName());
 
     private MailSender() {
     }

@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 public class ZFontTrueType extends ZSimpleFont {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontTrueType.class.toString());
+            Logger.getLogger(ZFontTrueType.class.getName());
 
     private static final int START_RANGE_F000 = 0xF000;
     private static final int START_RANGE_F100 = 0xF100;
@@ -63,6 +63,29 @@ public class ZFontTrueType extends ZSimpleFont {
         source = url;
     }
 
+    /**
+     * Wraps a font that has already been parsed, as happens for one face of a TrueType/OpenType
+     * collection: the collection is parsed once and hands back each face it contains, so there are
+     * no bytes of its own to re-parse.
+     *
+     * @param trueTypeFont the parsed face
+     * @param url          the collection file the face came from
+     */
+    public ZFontTrueType(TrueTypeFont trueTypeFont, URL url) throws Exception {
+        try {
+            this.trueTypeFont = trueTypeFont;
+            fontBoxFont = trueTypeFont;
+            source = url;
+
+            extractCmapTable();
+            extractMetricsTable();
+            extractHeadTable();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Error reading font from collection", e);
+            throw e;
+        }
+    }
+
     public ZFontTrueType(Stream fontStream) throws Exception {
         this(fontStream.getDecodedStreamBytes());
     }
@@ -79,7 +102,7 @@ public class ZFontTrueType extends ZSimpleFont {
                 extractHeadTable();
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error reading font file with", e);
+            logger.log(Level.FINE, "Could not read TrueType font program", e);
             throw e;
         }
     }
@@ -256,19 +279,36 @@ public class ZFontTrueType extends ZSimpleFont {
 //        }
     }
 
+    /**
+     * Maps a glyph name to Unicode, falling back to the ZapfDingbats glyph list.
+     * <p>
+     * The dingbat names ({@code a1} to {@code a191}) are not in the Adobe Glyph List - they have
+     * their own list, per the AGL specification - so a Unicode-cmap substitute standing in for
+     * ZapfDingbats resolved every one of them to nothing and drew a page of .notdef boxes.  The
+     * Adobe list is still tried first: it is the far larger of the two, and {@code a1} and friends
+     * appear in no other encoding, so there is nothing for the fallback to shadow.
+     */
+    private static String glyphNameToUnicode(String name) {
+        String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
+        if (unicode == null) {
+            unicode = GlyphList.getZapfDingBatsGlyphList().toUnicode(name);
+        }
+        return unicode;
+    }
+
     public int codeToGID(int code) {
         int gid = 0; // worried about this, 0 is a valid glyph id for some CID fonts.
         try {
             if (cmapWinSymbol == null) {
                 if (encoding == null) {
-                    return cmapMacRoman.getGlyphId(code);
+                    return cmapMacRoman != null ? cmapMacRoman.getGlyphId(code) : 0;
                 }
                 String name = encoding.getName(code);
                 // this is slow,  would like to improve.
                 if (!".notdef".equals(name)) {
                     // (3, 1) - (Windows, Unicode)
                     if (cmapWinUnicode != null && name != null) {
-                        String unicode = GlyphList.getAdobeGlyphList().toUnicode(name);
+                        String unicode = glyphNameToUnicode(name);
                         if (unicode != null) {
                             int uni = unicode.codePointAt(0);
                             gid = cmapWinUnicode.getGlyphId(uni);

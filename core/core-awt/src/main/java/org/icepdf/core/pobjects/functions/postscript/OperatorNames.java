@@ -42,7 +42,7 @@ public class OperatorNames {
         // quickly switch though possible operands to find matching operands
         // as quickly as possible.
         switch (c) {
-            case 'a': // abs | add | atan
+            case 'a': // abs | add | and | atan
             case 'A':
                 if (length == 4) return OP_ATAN;
                 c1 = ch[offset + 1];
@@ -50,6 +50,8 @@ public class OperatorNames {
                     return OP_ABS;
                 } else if (c1 == 'd' || c1 == 'D') {
                     return OP_ADD;
+                } else if (c1 == 'n' || c1 == 'N') {
+                    return OP_AND;
                 }
                 break;
             case 'b': // bitshift
@@ -57,7 +59,7 @@ public class OperatorNames {
                 return OP_BITSHIFT;
             case 'c': // ceiling | cos | copy | cvi | cvr
             case 'C':
-                if (length == 8) return OP_CEILING;
+                if (length == 7) return OP_CEILING;
                 if (length == 4) return OP_COPY;
                 c1 = ch[offset + 1];
                 if (c1 == 'o' || c1 == 'O') {
@@ -108,15 +110,16 @@ public class OperatorNames {
                     return OP_IF;
                 } else if (c1 == 'n' || c1 == 'N') {
                     if (length == 5) return OP_INDEX;
-                    if (length == 2) return OP_LN;
                 }
                 break;
-            case 'l': // le | log | lt
+            case 'l': // le | ln | log | lt
             case 'L':
                 if (length == 3) return OP_LOG;
                 c1 = ch[offset + 1];
                 if (c1 == 'e' || c1 == 'E') {
                     return OP_LE;
+                } else if (c1 == 'n' || c1 == 'N') {
+                    return OP_LN;
                 } else if (c1 == 't' || c1 == 'T') {
                     return OP_LT;
                 }

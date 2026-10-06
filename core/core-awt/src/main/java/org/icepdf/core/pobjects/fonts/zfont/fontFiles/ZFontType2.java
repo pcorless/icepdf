@@ -21,7 +21,6 @@ import org.apache.pdfbox.io.RandomAccessReadBuffer;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.fonts.Encoding;
 import org.icepdf.core.pobjects.fonts.FontFile;
-import org.icepdf.core.pobjects.graphics.TextState;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -36,7 +35,7 @@ import java.util.logging.Logger;
 public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
 
     private static final Logger logger =
-            Logger.getLogger(ZFontType2.class.toString());
+            Logger.getLogger(ZFontType2.class.getName());
 
     private final TrueTypeFont trueTypeFont;
 
@@ -57,7 +56,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             trueTypeFont = openTypeFont;
             if (openTypeFont.isPostScript()) {
                 isDamaged = true;
-                logger.warning("Found CFF/OTF but expected embedded TTF font " + trueTypeFont.getName());
+                logger.fine("Embedded font " + trueTypeFont.getName() + " has CFF outlines, not TrueType; reading it as CFF.");
             }
             cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
             extractCmapTable();
@@ -102,16 +101,13 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     @Override
     public Point2D getAdvance(char ech) {
         float advance = defaultWidth;
-        int gid = ech;
-        try {
-            if (cid2gid == null) {
-                gid = getCharToGid(ech);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (widths != null && gid < widths.length) {
-            advance = widths[gid];
+        // /W is indexed by CID, never by glyph index and never by the raw code: for anything but an
+        // identity CMap those are different numbers, and looking a width up by the wrong one misses,
+        // falls back to /DW and advances a full em.  In a CJK font that makes every Latin run - which
+        // is half width - come out spaced like full-width text.
+        int cid = toCid(ech);
+        if (widths != null && cid >= 0 && cid < widths.length) {
+            advance = widths[cid];
         }
         if (advance == 0) {
             if (defaultWidth > 0.0f) {
@@ -126,35 +122,19 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
-    public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
-        try {
-            AffineTransform af = g.getTransform();
-            int gid = getCharToGid(estr);
-            GlyphData glyphData = trueTypeFont.getGlyph().getGlyph(gid);
-            Shape outline;
-            if (glyphData == null) {
-                outline = new GeneralPath();
-            } else {
-                // must be scaled by caller using FontMatrix
-                outline = glyphData.getPath();
-            }
-
-            // clean up,  not very efficient
-            g.translate(x, y);
-            g.transform(this.fontTransform);
-
-            if (TextState.MODE_FILL == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_FILL_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.fill(outline);
-            }
-            if (TextState.MODE_STROKE == mode || TextState.MODE_FILL_STROKE == mode ||
-                    TextState.MODE_STROKE_ADD == mode || TextState.MODE_FILL_STROKE_ADD == mode) {
-                g.draw(outline);
-            }
-            g.setTransform(af);
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error painting FontType2 font", e);
+    public Shape getGlphyShape(char estr) throws IOException {
+        // CID glyphs are addressed directly by glyph id; the outline is in raw font units and is
+        // scaled by the 1/unitsPerEm fontMatrix at paint time.  Painting and outline geometry both
+        // route through here so they share the cached outline (see ZSimpleFont#getGlyphCache).
+        int gid = getCharToGid(estr);
+        // fontbox has no glyf table for OTF/CFF-backed fonts; treat as an empty outline rather
+        // than letting the exception abort the whole text run / page
+        GlyphData glyphData = trueTypeFont.getGlyph() != null
+                ? trueTypeFont.getGlyph().getGlyph(gid) : null;
+        if (glyphData == null) {
+            return new GeneralPath();
         }
+        return glyphData.getPath();
     }
 
     @Override
@@ -197,6 +177,7 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
         ZFontType2 font = new ZFontType2(this);
         font.encoding = encoding;
         font.cmapEncoding = cmapEncoding != null ? cmapEncoding : this.toUnicode;
+        font.setCidEncoding(cmapEncoding);
         font.toUnicode = deriveToUnicode(encoding, toUnicode != null ? toUnicode : cmapEncoding);
         return font;
     }
@@ -292,6 +273,11 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
             String eString = ucs2Cmap.toUnicode(echar);
             // finally we can get a usable glyph;
             CmapLookup cmapLookup = trueTypeFont.getUnicodeCmapLookup(false);
+            // a substituted CID font may have no unicode cmap, or the UCS2 map may not cover this code; either way
+            // we can't resolve a glyph, so fall back to the raw code rather than NPE (GH-495).
+            if (cmapLookup == null || eString == null || eString.isEmpty()) {
+                return code;
+            }
             echar = cmapLookup.getGlyphId(eString.codePointAt(0));
             return echar;
         } else {

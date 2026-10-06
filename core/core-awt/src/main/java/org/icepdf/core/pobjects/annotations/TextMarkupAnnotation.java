@@ -48,7 +48,7 @@ import static org.icepdf.core.pobjects.annotations.utils.QuadPoints.parseQuadPoi
 public class TextMarkupAnnotation extends MarkupAnnotation {
 
     private static final Logger logger =
-            Logger.getLogger(TextMarkupAnnotation.class.toString());
+            Logger.getLogger(TextMarkupAnnotation.class.getName());
 
     public static final Name SUBTYPE_HIGHLIGHT = new Name("Highlight");
     public static final Name SUBTYPE_UNDERLINE = new Name("Underline");
@@ -192,7 +192,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     /**
      * Resets the annotations appearance stream.
      */
-    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform, boolean isNew) {
+    public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
 
         // check if we have anything to reset.
         if (markupBounds == null) {
@@ -256,7 +256,7 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // update the appearance stream
         // create/update the appearance stream of the xObject.
         Form form = updateAppearanceStream(shapes, bbox, matrix,
-                PostScriptEncoder.generatePostScript(shapes.getShapes()), isNew);
+                PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity);
     }
 

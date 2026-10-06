@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class MyAnnotationCallback implements AnnotationCallback {
 
     private static final Logger logger =
-            Logger.getLogger(MyAnnotationCallback.class.toString());
+            Logger.getLogger(MyAnnotationCallback.class.getName());
 
     private final DocumentViewController documentViewController;
 
@@ -185,7 +185,13 @@ public class MyAnnotationCallback implements AnnotationCallback {
         Document document = documentViewController.getDocument();
         PageTree pageTree = document.getPageTree();
         Page page = pageTree.getPage(pageComponent.getPageIndex());
-        page.addAnnotation(annotationComponent.getAnnotation(), !annotationComponent.isSynthetic());
+        if (annotationComponent.isSynthetic()) {
+            // the component stands for something the file never had - a popup manufactured so an existing markup
+            // annotation has somewhere to show its contents.  Adding it is a repair, not a user edit.
+            document.getStateManager().repairing(() -> page.addAnnotation(annotationComponent.getAnnotation()));
+        } else {
+            page.addAnnotation(annotationComponent.getAnnotation());
+        }
 
         // no we have let the pageComponent now about it.
         ((PageViewComponentImpl) pageComponent).addAnnotation(annotationComponent);

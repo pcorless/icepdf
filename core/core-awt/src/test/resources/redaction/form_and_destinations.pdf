@@ -1,0 +1,65 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Outlines 7 0 R /Names 11 0 R /AcroForm << /Fields [12 0 R] >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Contents 4 0 R /Annots [12 0 R 13 0 R] /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 51 >>
+stream
+BT
+/F1 12 Tf
+20 100 Td
+(alpha bravo charlie) Tj
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /FirstChar 32 /LastChar 126 /Widths [500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500] /Encoding /WinAnsiEncoding >>
+endobj
+7 0 obj
+<< /Type /Outlines /First 8 0 R /Last 8 0 R /Count 1 >>
+endobj
+8 0 obj
+<< /Title (go to section) /Parent 7 0 R /Dest (bravo dest) >>
+endobj
+11 0 obj
+<< /Dests 14 0 R >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (notes) /Rect [20 20 200 40] /V (contains bravo) /DV (contains bravo) /DA (/Helv 0 Tf 0 g) >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Link /Rect [20 60 200 80] /A << /S /GoTo /D (bravo dest) >> >>
+endobj
+14 0 obj
+<< /Names [(bravo dest) [3 0 R /Fit]] >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000015 00000 n 
+0000000127 00000 n 
+0000000184 00000 n 
+0000000334 00000 n 
+0000000435 00000 n 
+0000000000 65535 f 
+0000000950 00000 n 
+0000001021 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000001098 00000 n 
+0000001134 00000 n 
+0000001288 00000 n 
+0000001393 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+1450
+%%EOF

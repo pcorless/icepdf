@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class EmbeddedFontUtil {
 
     private static final Logger logger =
-            Logger.getLogger(EmbeddedFontUtil.class.toString());
+            Logger.getLogger(EmbeddedFontUtil.class.getName());
 
     // font available in the icepdf font resources jar
     private static final Map<String, String> otfFontMapper = new java.util.HashMap<>();

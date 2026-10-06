@@ -29,13 +29,16 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class JBig2Decoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(JBig2Decoder.class.toString());
+            Logger.getLogger(JBig2Decoder.class.getName());
 
     private static final String[] JBIG2_PDF_BOX = new String[]{
             "org.apache.pdfbox.jbig2.JBIG2ImageReader",
@@ -43,7 +46,10 @@ public class JBig2Decoder extends AbstractImageDecoder {
             "org.apache.pdfbox.jbig2.JBIG2Globals"};
 
     private static final Name JBIG2_GLOBALS_KEY = new Name("JBIG2Globals");
-    private static final Name DECODE_PARMS_KEY = new Name("DecodeParms");
+
+    // the JBIG2 library is optional; only warn about it being absent once per
+    // JVM rather than for every JBIG2 image encountered.
+    private static final AtomicBoolean jbig2LibraryMissingLogged = new AtomicBoolean(false);
 
     public JBig2Decoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
@@ -55,8 +61,10 @@ public class JBig2Decoder extends AbstractImageDecoder {
         BufferedImage tmpImage = null;
 
         ImageParams imageParams = imageStream.getImageParams();
-        // get the decode params form the stream
-        DictionaryEntries decodeParams = imageParams.getDictionary(DECODE_PARMS_KEY);
+        // get the decode params form the stream.  With /Filter [/JBIG2Decode] they come as an array,
+        // /DecodeParms [<< /JBIG2Globals ... >>]; reading only the dictionary form lost the globals, and a page
+        // whose text regions use symbols from them failed to decode, falling back to an all-black raw image.
+        DictionaryEntries decodeParams = imageParams.getDecodeParams();
         Stream globalsStream = null;
         if (decodeParams != null) {
             Object jbigGlobals = imageParams.getObject(decodeParams, JBIG2_GLOBALS_KEY);
@@ -67,12 +75,24 @@ public class JBig2Decoder extends AbstractImageDecoder {
         // grab the data,
         ImageInputStream imageInputStream = null;
         try {
-            byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+            // the filter passes this encoding through undecoded, so the result is the compressed data;
+            // presizing it to the decoded raster size would allocate far more than it holds.
+            byte[] data = imageStream.getDecodedStreamBytes(0);
             imageInputStream = ImageIO.createImageInputStream(new ByteArrayInputStream(data));
             tmpImage = decodeJbig2(decodeParams, globalsStream, imageInputStream, JBIG2_PDF_BOX);
+        } catch (ClassNotFoundException | NoClassDefFoundError e) {
+            // the optional library isn't reachable from the class loader that
+            // loaded this class; warn once with enough detail to diagnose it.
+            if (jbig2LibraryMissingLogged.compareAndSet(false, true)) {
+                logger.log(Level.WARNING, "Optional Apache PDFBox JBIG2 library (" + JBIG2_PDF_BOX[0]
+                        + ") was not found on the class path of " + describeClassLoader()
+                        + "; JBIG2 images will not be decoded.");
+                logger.log(Level.FINE, "JBIG2 library class load failure", e);
+            }
         } catch (IOException | InstantiationException | InvocationTargetException | NoSuchMethodException |
-                IllegalAccessException | ClassNotFoundException e) {
-            logger.log(Level.WARNING, "Could not find Apache JBIG2 library on class path.");
+                IllegalAccessException e) {
+            // the library is present but failed to decode this particular image.
+            logger.log(Level.WARNING, "Error decoding JBIG2 image with the Apache PDFBox JBIG2 library.", e);
         } finally {
             // dispose the stream
             if (imageInputStream != null) {
@@ -84,8 +104,9 @@ public class JBig2Decoder extends AbstractImageDecoder {
             }
         }
 
-        // apply decode
-        if (imageStream.getColourSpace() instanceof DeviceGray) {
+        // apply decode (tmpImage is null when the optional JBIG2 library is
+        // absent or decoding failed, in which case there is nothing to decode)
+        if (tmpImage != null && imageStream.getColourSpace() instanceof DeviceGray) {
             tmpImage = ImageUtility.applyGrayDecode(tmpImage, imageParams);
         }
 
@@ -148,5 +169,21 @@ public class JBig2Decoder extends AbstractImageDecoder {
         Method dispose = jbig2ImageReaderClass.getMethod("dispose");
         dispose.invoke(jbig2Reader);
         return tmpImage;
+    }
+
+    /**
+     * Describes the class loader that loaded this class, including its URLs when
+     * it is a {@link URLClassLoader}. The reflective JBIG2 load resolves against
+     * this loader, so surfacing its search path makes a missing optional jar
+     * (e.g. an isolated QA capture-set class path) diagnosable at a glance.
+     *
+     * @return human readable description of the loader and its class path.
+     */
+    private static String describeClassLoader() {
+        ClassLoader classLoader = JBig2Decoder.class.getClassLoader();
+        if (classLoader instanceof URLClassLoader) {
+            return classLoader + " " + Arrays.toString(((URLClassLoader) classLoader).getURLs());
+        }
+        return String.valueOf(classLoader);
     }
 }

@@ -28,6 +28,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import org.icepdf.core.util.PdfNumberFormat;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -240,13 +242,11 @@ public class BaseWriter {
     }
 
     protected void writeDouble(double r, CountingOutputStream output) throws IOException {
-        String str = BigDecimal.valueOf(r).toString();
-        writeByteString(str, output);
+        writeByteString(PdfNumberFormat.format(r), output);
     }
 
     protected void writeFloat(float f, CountingOutputStream output) throws IOException {
-        String str = BigDecimal.valueOf(f).toString();
-        writeByteString(str, output);
+        writeByteString(PdfNumberFormat.format(f), output);
     }
 
     protected void writeNumber(Number n, CountingOutputStream output) throws IOException {

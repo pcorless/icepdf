@@ -39,7 +39,7 @@ public class LinkAnnotationHandler extends SelectionBoxHandler
         implements ToolHandler, MouseInputListener {
 
     private static final Logger logger =
-            Logger.getLogger(LinkAnnotationHandler.class.toString());
+            Logger.getLogger(LinkAnnotationHandler.class.getName());
 
     public LinkAnnotationHandler(DocumentViewController documentViewController,
                                  AbstractPageViewComponent pageViewComponent) {

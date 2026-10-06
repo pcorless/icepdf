@@ -52,7 +52,7 @@ import java.util.logging.Logger;
 public class CircleAnnotationHandler extends SquareAnnotationHandler {
 
     private static final Logger logger =
-            Logger.getLogger(CircleAnnotationHandler.class.toString());
+            Logger.getLogger(CircleAnnotationHandler.class.getName());
 
     protected final static float DEFAULT_STROKE_WIDTH = 3.0f;
 

@@ -42,10 +42,15 @@ import static java.awt.Font.PLAIN;
 public abstract class ZSimpleFont implements FontFile {
 
     private static final Logger logger =
-            Logger.getLogger(ZSimpleFont.class.toString());
+            Logger.getLogger(ZSimpleFont.class.getName());
 
     // text layout map, very expensive to create, so we'll cache them.
     private HashMap<String, Point2D.Float> echarAdvanceCache;
+
+    // lazily created per-font outline cache, keyed by character code.  Not shared with derived
+    // fonts as their encoding/gid mappings may differ; a derived instance is however retained by
+    // the TextSprite that draws with it, so its cache lives as long as the page's shapes do.
+    private GlyphCache glyphCache;
 
     // copied over from font descriptor
     protected float missingWidth;
@@ -62,6 +67,12 @@ public abstract class ZSimpleFont implements FontFile {
     protected float defaultWidth;
     protected boolean isTypeCidSubstitution;
     protected CMap ucs2Cmap;
+    /** CID &rarr; Unicode from the character collection, set only when the PDF supplied no
+     *  {@code /ToUnicode}; see {@link #setCidToUnicode}.  Distinct from {@link #ucs2Cmap}, which
+     *  {@code ZFontType2} uses to pick substitute glyphs rather than to extract text. */
+    protected CMap cidUnicodeCmap;
+    /** Character code &rarr; CID, the composite font's encoding CMap; identity when null. */
+    protected CMap cidEncodingCmap;
 
     // Why have one encoding when you can three.
     protected Encoding encoding;
@@ -97,11 +108,13 @@ public abstract class ZSimpleFont implements FontFile {
         this.bbox = font.bbox;
         this.widths = font.widths;
         this.cMap = font.cMap;
+        this.cidUnicodeCmap = font.cidUnicodeCmap;
+        this.cidEncodingCmap = font.cidEncodingCmap;
         this.size = font.size;
         this.source = font.source;
         this.fontBoxFont = font.fontBoxFont;
         this.isDamaged = font.isDamaged;
-        this.gsTransform = new AffineTransform(gsTransform);
+        this.gsTransform = new AffineTransform(font.gsTransform);
         this.fontMatrix = new AffineTransform(font.fontMatrix);
         this.fontTransform = new AffineTransform(font.fontTransform);
         Rectangle2D maxCharBounds = font.maxCharBounds;
@@ -168,11 +181,27 @@ public abstract class ZSimpleFont implements FontFile {
         return outline;
     }
 
+    /**
+     * Returns the outline cache for this font, creating it lazily.
+     *
+     * @return this font's glyph outline cache.
+     */
+    protected GlyphCache getGlyphCache() {
+        // benign race: at worst two caches are created, the loser is discarded
+        if (glyphCache == null) {
+            glyphCache = new GlyphCache(this);
+        }
+        return glyphCache;
+    }
+
     @Override
     public void paint(Graphics2D g, char estr, float x, float y, long layout, int mode, Color strokeColor) {
         try {
+            if (isSubstitutedNotdef(estr)) {
+                return;
+            }
             AffineTransform af = g.getTransform();
-            Shape outline = getGlphyShape(estr);
+            Shape outline = getGlyphCache().getPathForCharacterCode(estr);
 
             g.translate(x, y);
             g.transform(this.fontTransform);
@@ -186,7 +215,7 @@ public abstract class ZSimpleFont implements FontFile {
                 g.draw(outline);
             }
             g.setTransform(af);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             logger.log(Level.FINE, "Error painting SimpleFont", e);
         }
     }
@@ -194,14 +223,17 @@ public abstract class ZSimpleFont implements FontFile {
     @Override
     public Shape getOutline(char estr, float x, float y) {
         try {
-            Shape glyph = getGlphyShape(estr);
+            if (isSubstitutedNotdef(estr)) {
+                return new Area();
+            }
+            Shape glyph = getGlyphCache().getPathForCharacterCode(estr);
             Area outline = new Area(glyph);
             AffineTransform transform = new AffineTransform();
             transform.translate(x, y);
             transform.concatenate(fontTransform);
             outline = outline.createTransformedArea(transform);
             return outline;
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             logger.log(Level.FINE, "Error painting font outline", e);
         }
         return null;
@@ -243,8 +275,79 @@ public abstract class ZSimpleFont implements FontFile {
         return sb.toString();
     }
 
+    /**
+     * Supplies the CID&rarr;Unicode mapping for a composite font that carries no {@code /ToUnicode}
+     * CMap, per PDF 32000-1 9.10.2 (b)&ndash;(d): the descendant font's {@code CIDSystemInfo} names a
+     * character collection, and the collection's {@code <Registry>-<Ordering>-UCS2} CMap maps its CIDs
+     * to Unicode.  Without this an embedded CID font extracts as raw CIDs.
+     *
+     * @param encodingCMap character code &rarr; CID (the composite font's /Encoding CMap); null for
+     *                     an identity mapping, where the code is already the CID
+     * @param ucs2CMap     CID &rarr; Unicode for the character collection
+     */
+    public void setCidToUnicode(CMap encodingCMap, CMap ucs2CMap) {
+        this.cidEncodingCmap = encodingCMap;
+        this.cidUnicodeCmap = ucs2CMap;
+    }
+
+    /**
+     * Records the composite font's encoding CMap, which maps a character code to a CID.  Needed
+     * whenever something is indexed by CID rather than by code &mdash; the {@code /W} widths above
+     * all, since a non-identity CMap makes the two differ.
+     *
+     * @param encodingCMap character code &rarr; CID; null for an identity mapping
+     */
+    public void setCidEncoding(CMap encodingCMap) {
+        this.cidEncodingCmap = encodingCMap;
+    }
+
+    /**
+     * True when the code selects CID&nbsp;0 in a font we had to substitute, in which case nothing
+     * should be drawn.
+     * <p>
+     * CID&nbsp;0 is the CIDFont's {@code .notdef} (PDF 32000-2 9.7.4.2), and what it looks like "is at
+     * the discretion of the font designer" (9.6.5.2).  That designer is the document's own font, which
+     * by definition we do not have here: a producer that emits {@code 0000} codes usually pairs them
+     * with a blank {@code .notdef}, so painting the substitute's box invents a mark the document never
+     * asked for.  Leaving the slot empty is the closer approximation.
+     * <p>
+     * Deliberately narrow, since suppressing glyphs hides real faults:
+     * <ul>
+     *     <li>only for substituted fonts &mdash; an embedded font's own {@code .notdef} is drawn as
+     *     the spec intends;</li>
+     *     <li>only for CID&nbsp;0 itself, not for any CID whose glyph the substitute happens to lack.
+     *     Those still show a box, which is how the missing traditional-Chinese forms were spotted.</li>
+     * </ul>
+     * The advance is unaffected either way: the code still consumes its {@code /W} or {@code /DW}
+     * width, so nothing moves.
+     */
+    protected boolean isSubstitutedNotdef(char estr) {
+        return source != null && cidEncodingCmap != null && toCid(estr) == 0;
+    }
+
+    /**
+     * The CID a character code selects.  {@code /W} and {@code /DW} are defined against CIDs
+     * (PDF 32000-1 9.7.4.3), so a width lookup must come through here; indexing them by the code, or
+     * worse by a glyph index, silently returns another glyph's width.
+     */
+    protected int toCid(char code) {
+        return cidEncodingCmap != null ? cidEncodingCmap.toCID(code) : code;
+    }
+
     @Override
     public String toUnicode(char displayChar) {
+        if (cidUnicodeCmap != null) {
+            // The PDF supplied no /ToUnicode, so go the long way round: code -> CID -> Unicode
+            // (9.10.2).  Only when the collection actually covers the CID; an unmapped one falls
+            // through to the behaviour below.  Note this cannot test toUnicode == null: deriveToUnicode
+            // always leaves a map in place (a guess from the encoding, else Identity-H), and the
+            // Identity one returns the CID unchanged - which is the raw-CID extraction being fixed.
+            int cid = cidEncodingCmap != null ? cidEncodingCmap.toCID(displayChar) : displayChar;
+            String unicode = cidUnicodeCmap.toUnicode(cid);
+            if (unicode != null && !unicode.isEmpty()) {
+                return unicode;
+            }
+        }
         // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
         // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
         // differences.
@@ -260,8 +363,36 @@ public abstract class ZSimpleFont implements FontFile {
         return String.valueOf(c);
     }
 
+    /**
+     * The character code that draws this character, which is what writing text back into a content
+     * stream needs.
+     * <p>
+     * The map to run backwards is {@code /ToUnicode}, and FontBox keeps the reverse index for it -
+     * {@code getCodesFromUnicode}. This used to ask {@code toCID} instead, which is a different
+     * mapping entirely: it takes a character <em>code</em> and returns a CID, so handing it a Unicode
+     * value returned 0 for everything. Every character written into a composite font came out as CID
+     * 0, notdef, so an edited word rendered as a row of blanks - including characters the page was
+     * already drawing.
+     * <p>
+     * Falls back to the old behaviour when the reverse index has no answer, which is where a simple
+     * font with a guessed {@code /ToUnicode} lands; for those, code and Unicode coincide over ASCII
+     * and the old path happened to work.
+     *
+     * @param unicode character to write
+     * @return the code that selects it, or 0 when this font has none
+     */
     @Override
     public char toSelector(char unicode) {
+        if (toUnicode != null) {
+            byte[] codes = toUnicode.getCodesFromUnicode(String.valueOf(unicode));
+            if (codes != null && codes.length > 0) {
+                int code = 0;
+                for (byte codeByte : codes) {
+                    code = (code << 8) | (codeByte & 0xFF);
+                }
+                return (char) code;
+            }
+        }
         // the toUnicode map is used for font substitution and especially for CID fonts.  If toUnicode is available
         // we use it as is, if not then we can use the charDiff mapping, which takes care of font encoding
         // differences.
@@ -437,7 +568,7 @@ public abstract class ZSimpleFont implements FontFile {
 
         if (length1 - offset != 0 && offset > 0) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.warning("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
+                logger.fine("Ignored invalid Length1 " + length1 + " for Type 1 font " + getName());
             }
             return offset;
         }

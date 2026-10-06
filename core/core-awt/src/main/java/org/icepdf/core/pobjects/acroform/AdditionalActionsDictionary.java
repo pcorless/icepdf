@@ -94,7 +94,7 @@ public class AdditionalActionsDictionary extends Dictionary {
      * The action shall be executed after the O action in the page’s additional-actions dictionary (see Table 195) and
      * the OpenAction entry in the document Catalog(see Table 28), if such actions are present.
      */
-    public static final Name ANNOTATION_PO_KEY = new Name("Bl");
+    public static final Name ANNOTATION_PO_KEY = new Name("PO");
 
     /**
      * (Optional; PDF 1.5) An action that shall be performed when the page containing the annotation is closed.

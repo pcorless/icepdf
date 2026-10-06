@@ -62,7 +62,7 @@ public class DestinationsPanel extends JPanel
         implements MutableDocument, TreeSelectionListener, MouseListener, ActionListener, PropertyChangeListener {
 
     private static final Logger logger =
-            Logger.getLogger(DestinationsPanel.class.toString());
+            Logger.getLogger(DestinationsPanel.class.getName());
 
     // layouts constraint
     protected final GridBagConstraints constraints;

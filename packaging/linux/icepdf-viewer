@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Launcher shim for the ICEpdf Swing viewer.
+#
+# The viewer's main class takes "-loadfile <path>" rather than a bare path, so
+# this script translates the file argument handed over by the desktop entry.
+#
+# Override the jar location with ICEPDF_VIEWER_JAR if it lives elsewhere.
+set -euo pipefail
+
+JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/java}"
+JAVA_BIN="${JAVA_BIN:-java}"
+
+default_jar() {
+    local libs
+    for libs in \
+        "${ICEPDF_HOME:-}/lib" \
+        "$HOME/.local/lib/icepdf" \
+        "/opt/icepdf/lib" \
+        "/usr/share/icepdf/lib"; do
+        [ -n "$libs" ] || continue
+        # prefer the fat jar, fall back to the plain viewer jar
+        local jar
+        jar=$(ls -1 "$libs"/icepdf-viewer-*-jar-with-dependencies.jar 2>/dev/null | sort -V | tail -n1 || true)
+        [ -z "$jar" ] && jar=$(ls -1 "$libs"/icepdf-viewer-*.jar 2>/dev/null | grep -v -- '-sources' | sort -V | tail -n1 || true)
+        if [ -n "$jar" ]; then
+            printf '%s' "$jar"
+            return 0
+        fi
+    done
+    return 1
+}
+
+JAR="${ICEPDF_VIEWER_JAR:-$(default_jar || true)}"
+if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
+    echo "icepdf-viewer: could not locate the viewer jar." >&2
+    echo "Set ICEPDF_VIEWER_JAR=/path/to/icepdf-viewer-<version>-jar-with-dependencies.jar" >&2
+    exit 1
+fi
+
+args=()
+for arg in "$@"; do
+    case "$arg" in
+        -*) args+=("$arg") ;;                       # pass viewer flags straight through
+        file://*) args+=(-loadfile "${arg#file://}") ;;
+        http://*|https://*) args+=(-loadurl "$arg") ;;
+        *) args+=(-loadfile "$arg") ;;
+    esac
+done
+
+exec "$JAVA_BIN" ${ICEPDF_JAVA_OPTS:-} -jar "$JAR" "${args[@]}"

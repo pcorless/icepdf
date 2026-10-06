@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 public class AnnotationFactory {
 
     private static final Logger logger =
-            Logger.getLogger(AnnotationFactory.class.toString());
+            Logger.getLogger(AnnotationFactory.class.getName());
 
     /**
      * Creates a new Annotation object using properties from the annotationState

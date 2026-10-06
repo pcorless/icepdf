@@ -56,9 +56,11 @@ public class Dictionary {
     protected DictionaryEntries entries;
 
     /**
-     * Indicates if Dictionary has been initiated.
+     * Indicates if Dictionary has been initiated.  Volatile so that a thread observing {@code inited == true}
+     * also sees the fields populated by init() - these objects (fonts, colour spaces, etc.) are cached and
+     * shared, and several page-parsing threads may init the same instance concurrently.
      */
-    protected boolean inited;
+    protected volatile boolean inited;
 
     /**
      * Flag to indicate this object has been flaged for deletion.
@@ -236,7 +238,7 @@ public class Dictionary {
      * @return string value of the newly set string which will always be decrypted.
      */
     protected String setHexString(final Name key, String value) {
-        entries.put(key, HexStringObject.createHexString(value));
+        entries.put(key, new HexStringObject(value, getPObjectReference()));
         return value;
     }
 

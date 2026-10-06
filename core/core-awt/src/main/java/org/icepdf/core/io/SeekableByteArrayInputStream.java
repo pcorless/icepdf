@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 public class SeekableByteArrayInputStream extends ByteArrayInputStream implements SeekableInput {
 
     private static final Logger log =
-            Logger.getLogger(SeekableByteArrayInputStream.class.toString());
+            Logger.getLogger(SeekableByteArrayInputStream.class.getName());
 
     private final int m_iBeginningOffset;
 

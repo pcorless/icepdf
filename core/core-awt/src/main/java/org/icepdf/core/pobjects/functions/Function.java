@@ -62,7 +62,7 @@ import java.util.logging.Logger;
 public abstract class Function {
 
     private static final Logger logger =
-            Logger.getLogger(Function.class.toString());
+            Logger.getLogger(Function.class.getName());
 
     public static final Name FUNCTIONTYPE_NAME = new Name("FunctionType");
     public static final Name DOMAIN_NAME = new Name("Domain");
@@ -114,6 +114,12 @@ public abstract class Function {
         }
 
         if (d != null) {
+            // Every function type is required to carry a /FunctionType and a /Domain (7.10.2).
+            // Without them there is nothing to dispatch on and nothing to evaluate against
+            if (d.getObject(FUNCTIONTYPE_NAME) == null || !(d.getObject(DOMAIN_NAME) instanceof List)) {
+                logger.warning("Function dictionary is missing its type or domain: " + d.getEntries());
+                return null;
+            }
             // find out what time of function type and create the appropriate
             // function object.
             int fType = d.getInt(FUNCTIONTYPE_NAME);

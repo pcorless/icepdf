@@ -14,18 +14,71 @@
         The ICEpdf Common rendering core. Contains AWT based rendering core.
     </description>
 
+    <properties>
+        <jacoco.coverage.minimum>0.59</jacoco.coverage.minimum>
+        <!-- Values stamped into product-info.properties (see ProductInfo). -->
+        <company>https://github.com/pcorless/</company>
+        <product>ICEpdf</product>
+        <releaseType></releaseType>
+        <build>0</build>
+        <revision>0</revision>
+    </properties>
+
     <build>
+        <!-- Filter only product-info.properties so the version is stamped into
+             it at build time; everything else is copied verbatim. -->
+        <resources>
+            <!-- NOTICE (Apache 2.0 section 4(d)): core carries PDFBox-derived code -->
+            <resource>
+                <directory>${project.basedir}/../..</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>NOTICE</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>**/product-info.properties</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                    <exclude>**/product-info.properties</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>templating-maven-plugin</artifactId>
-                <version>1.0.0</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <!-- Use @token@ delimiters so the one template works for
+                         both Maven and Gradle (Ant ReplaceTokens) filtering. -->
+                    <delimiters>
+                        <delimiter>@</delimiter>
+                    </delimiters>
+                    <useDefaultDelimiters>false</useDefaultDelimiters>
+                </configuration>
+            </plugin>
+            <!-- The tests are not part of the published module and are compiled and run on the
+                 classpath, which is what the Gradle build already does.  On the module path they
+                 would be patched into org.icepdf.core and could only see what it requires, so a
+                 test needing something the library itself does not - jdk.httpserver, for the local
+                 OCSP, timestamp and CRL servers the revocation tests ask - would force a runtime
+                 requirement into the module descriptor to satisfy a test. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-version-class</id>
-                        <goals>
-                            <goal>filter-sources</goal>
-                        </goals>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <useModulePath>false</useModulePath>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -33,6 +86,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.0</version>
+                <configuration>
+                    <useModulePath>false</useModulePath>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -83,7 +139,7 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.9.3</version>
+            <version>${junit.bom.version}</version>
             <scope>test</scope>
         </dependency>
 

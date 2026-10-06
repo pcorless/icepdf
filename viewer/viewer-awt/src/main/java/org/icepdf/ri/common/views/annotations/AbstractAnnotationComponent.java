@@ -56,7 +56,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
         MouseInputListener, AnnotationComponent, ResizeableComponent {
 
     protected static final Logger logger =
-            Logger.getLogger(AbstractAnnotationComponent.class.toString());
+            Logger.getLogger(AbstractAnnotationComponent.class.getName());
     protected static Color annotationHighlightColor;
     protected static float annotationHighlightAlpha;
 
@@ -595,7 +595,7 @@ public abstract class AbstractAnnotationComponent<T extends Annotation> extends 
                 dy = endOfMousePress.getY() - startOfMousePress.getY();
             }
 
-            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform(), true);
+            annotation.resetAppearanceStream(dx, -dy, getToPageSpaceTransform());
 
             // fire new bounds change event, let the listener handle
             // how to deal with the bound change.

@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 public class ResizableBorder extends AbstractBorder {
 
     private static final Logger logger =
-            Logger.getLogger(ResizableBorder.class.toString());
+            Logger.getLogger(ResizableBorder.class.getName());
 
     private static Color selectColor;
     private static Color outlineColor;

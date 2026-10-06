@@ -37,8 +37,10 @@ public class URIAction extends Action {
     // uniform resource identifier to be resolved.
     private StringObject URI;
 
+    public static final Name IS_MAP_KEY = new Name("IsMap");
+
     // specifies whether to track the mouse position.
-    private boolean isMap;
+    private final boolean isMap;
 
     /**
      * Creates a new instance of a Action.
@@ -48,6 +50,7 @@ public class URIAction extends Action {
      */
     public URIAction(Library l, DictionaryEntries h) {
         super(l, h);
+        isMap = library.getBoolean(entries, IS_MAP_KEY);
     }
 
     /**

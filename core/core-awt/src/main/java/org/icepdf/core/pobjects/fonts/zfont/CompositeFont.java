@@ -30,8 +30,12 @@ import org.icepdf.core.util.Library;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public abstract class CompositeFont extends SimpleFont {
 
@@ -49,6 +53,19 @@ public abstract class CompositeFont extends SimpleFont {
     public static final Name W2_KEY = new Name("W2");
 
     protected String ordering;
+    protected String registry;
+
+    /**
+     * The character collections that have a {@code <Registry>-<Ordering>-UCS2} CMap: the Adobe CJK collections
+     * PDF 32000-1 9.10.2 (c) names, and the only ones FontBox ships.  Any other ordering - {@code Identity},
+     * {@code UCS}, a producer's own - has none, so asking for it can only fail.
+     */
+    private static final Set<String> UCS2_COLLECTIONS =
+            Collections.unmodifiableSet(new HashSet<>(Arrays.asList("CNS1", "GB1", "Japan1", "Korea1")));
+    /** Lazily resolved CID&rarr;Unicode map for the CIDSystemInfo character collection; null when the
+     *  collection has none.  See {@link #getUcs2CMap()}. */
+    private CMap ucs2CMap;
+    private boolean ucs2CMapResolved;
 
     protected final Map<Integer, Float> glyphHeights = new HashMap<>();
     protected BoundingBox fontBBox;
@@ -75,19 +92,60 @@ public abstract class CompositeFont extends SimpleFont {
 
     protected abstract void parseCidToGidMap() throws IOException;
 
+    /**
+     * Reads the descendant font's {@code CIDSystemInfo}: the character collection its CIDs belong to.
+     * Always read, whether or not the font is embedded &mdash; an embedded font still needs the
+     * collection to map its CIDs to Unicode for extraction when it carries no {@code /ToUnicode}
+     * (see {@link #getUcs2CMap()}).  Only the font <em>substitution</em> that follows is conditional.
+     */
     protected void parseCidSystemInfo() {
+        Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
+        if (obj instanceof DictionaryEntries) {
+            DictionaryEntries cidSystemInfo = (DictionaryEntries) obj;
+            // /Registry and /Ordering may be indirect, so they have to be resolved rather than read
+            // straight out of the dictionary - a raw get() hands back the Reference itself.  This
+            // runs for embedded fonts too now, so a cast failure here aborts Font.init() and the
+            // whole text block draws with no font at all.
+            String orderingValue = literalStringOf(cidSystemInfo, CID_SYSTEM_INFO_ORDERING_KEY);
+            String registryValue = literalStringOf(cidSystemInfo, CID_SYSTEM_INFO_REGISTRY_KEY);
+            if (orderingValue != null && registryValue != null) {
+                ordering = orderingValue;
+                registry = registryValue;
+            }
+        }
+        substituteFontForOrdering();
+    }
+
+    /**
+     * Reads one {@code CIDSystemInfo} entry as a string, resolving an indirect reference and
+     * tolerating a producer that wrote a name where the spec calls for a string.
+     */
+    private String literalStringOf(DictionaryEntries cidSystemInfo, Name key) {
+        Object value = library.getObject(cidSystemInfo, key);
+        if (value instanceof StringObject) {
+            return ((StringObject) value).getDecryptedLiteralString(library.getSecurityManager());
+        }
+        if (value instanceof Name) {
+            return value.toString();
+        }
+        return null;
+    }
+
+    /**
+     * Picks a system font for a CID font that has no usable embedded font program, and wires the
+     * character collection's CMaps into it.  A no-op once a real embedded font is in hand.
+     */
+    protected void substituteFontForOrdering() {
         if (font != null && !isFontSubstitution) {
             return;
         }
-        // Get CIDSystemInfo dictionary so we can get ordering data
         Object obj = library.getObject(entries, CID_SYSTEM_INFO_KEY);
         if (obj instanceof DictionaryEntries) {
-            StringObject orderingObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_ORDERING_KEY);
-            StringObject registryObject = (StringObject) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_REGISTRY_KEY);
-            Integer supplement = (Integer) ((DictionaryEntries) obj).get(CID_SYSTEM_INFO_SUPPLEMENT_KEY);
-            if (orderingObject != null && registryObject != null) {
-                ordering = orderingObject.getDecryptedLiteralString(library.getSecurityManager());
-                String registry = registryObject.getDecryptedLiteralString(library.getSecurityManager());
+            // resolved, not read straight out of the dictionary: /Supplement may be indirect, and a
+            // producer may write it as a real number rather than an integer
+            Object supplementValue = library.getObject((DictionaryEntries) obj, CID_SYSTEM_INFO_SUPPLEMENT_KEY);
+            int supplement = supplementValue instanceof Number ? ((Number) supplementValue).intValue() : 0;
+            if (ordering != null && registry != null) {
                 FontManager fontManager = FontManager.getInstance().initialize();
                 isFontSubstitution = true;
 
@@ -99,7 +157,7 @@ public abstract class CompositeFont extends SimpleFont {
 
                 // find a font and assign a charset.
                 // simplified Chinese
-                if (ordering.startsWith("GB1") || ordering.startsWith("'CNS1")) {
+                if (ordering.startsWith("GB1")) {
                     font = fontManager.getChineseSimplifiedInstance(basefont, fontFlags);
                 }
                 // Korean
@@ -110,10 +168,18 @@ public abstract class CompositeFont extends SimpleFont {
                 else if (ordering.startsWith("Japan1")) {
                     font = fontManager.getJapaneseInstance(basefont, fontFlags);
                 }
+                // traditional Chinese (and the fallback below)
+                else if (ordering.startsWith("CNS1")) {
+                    font = fontManager.getChineseTraditionalInstance(basefont, fontFlags);
+                }
                 // might be a font loading error a we need check normal system fonts too
                 else if (ordering.startsWith("Identity")) {
                     font = fontManager.getInstance(basefont, fontFlags);
-                    font = new ZFontType2((ZFontTrueType) font);
+                    // the substitute is very nearly always a TrueType, but a system font list that
+                    // offers only a Type1 face must not take the whole font down with a cast error
+                    if (font instanceof ZFontTrueType) {
+                        font = new ZFontType2((ZFontTrueType) font);
+                    }
                 }
                 // fallback traditional Chinese.
                 else {
@@ -160,6 +226,52 @@ public abstract class CompositeFont extends SimpleFont {
         }
     }
 
+    /**
+     * The CID&rarr;Unicode map for this font's character collection, used to build a
+     * {@code /ToUnicode} equivalent when the font supplies none (PDF 32000-1 9.10.2 (b)&ndash;(d):
+     * take the registry and ordering from {@code CIDSystemInfo}, then load
+     * {@code <Registry>-<Ordering>-UCS2}).
+     * <p>
+     * Returns null unless the font names one of the Adobe CJK collections (see {@link #UCS2_COLLECTIONS}).
+     * In particular the {@code Identity} ordering is not a character collection at all &mdash; its CIDs are
+     * the embedded font's own glyph indices and carry no Unicode meaning, so there is no
+     * {@code Adobe-Identity-UCS2} to load &mdash; and orderings such as {@code UCS} have no UCS2 CMap either.
+     * Such fonts can only be extracted with a {@code /ToUnicode} CMap.
+     *
+     * @return the collection's UCS2 CMap, or null if it has none
+     */
+    /**
+     * Reports that the descendant's /W widths could not be applied.  With no font program at all the text
+     * cannot render, which is worth a warning; a substitute of another kind still renders, just with its own
+     * advances, so that is only of diagnostic interest.
+     */
+    protected void logWidthsNotApplied(java.util.logging.Logger log, org.icepdf.core.pobjects.fonts.FontFile fontFile) {
+        if (fontFile == null) {
+            log.warning(() -> "CID font " + basefont + " has no font program; its text can't be drawn.");
+        } else {
+            log.fine(() -> "CID font " + basefont + ": widths not applied to substitute "
+                    + fontFile.getClass().getSimpleName() + ' ' + fontFile.getName());
+        }
+    }
+
+    public CMap getUcs2CMap() {
+        if (!ucs2CMapResolved) {
+            ucs2CMapResolved = true;
+            if ("Adobe".equals(registry) && ordering != null && UCS2_COLLECTIONS.contains(ordering)) {
+                String name = registry + '-' + ordering + "-UCS2";
+                try {
+                    ucs2CMap = CMapFactory.getPredefinedCMap(name);
+                } catch (Exception e) {
+                    logger.warning("Could not load the character collection's CMap " + name);
+                }
+                if (ucs2CMap == null) {
+                    logger.fine(() -> "No UCS2 CMap for character collection " + registry + '-' + ordering);
+                }
+            }
+        }
+        return ucs2CMap;
+    }
+
     protected void parseWidths() {
 
         if (library.getObject(entries, W_KEY) != null) {
@@ -171,6 +283,11 @@ public abstract class CompositeFont extends SimpleFont {
             for (int i = 0, max = individualWidths.size() - 1; i < max; i++) {
                 current = ((Number) individualWidths.get(i)).intValue();
                 currentNext = individualWidths.get(i + 1);
+                // the c [w1 w2 ...] group's width array may be given as an
+                // indirect reference rather than an inline array.
+                if (currentNext instanceof Reference) {
+                    currentNext = library.getObject(currentNext);
+                }
                 if (currentNext instanceof ArrayList) {
                     ArrayList widths2 = (ArrayList) currentNext;
                     Object tmp;
@@ -229,6 +346,9 @@ public abstract class CompositeFont extends SimpleFont {
         for (int i = 0, max = widths.size() - 1; i < max; i++) {
             current = ((Number) widths.get(i)).intValue();
             currentNext = widths.get(i + 1);
+            if (currentNext instanceof Reference) {
+                currentNext = library.getObject(currentNext);
+            }
             if (currentNext instanceof ArrayList) {
                 ArrayList widths2 = (ArrayList) currentNext;
                 int newMax = current + widths2.size();

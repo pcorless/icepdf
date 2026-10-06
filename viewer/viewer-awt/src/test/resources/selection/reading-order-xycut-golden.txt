@@ -1,0 +1,479 @@
+=== xr_650 p6 - single column drawn out of order (Environmental/Programs/legal) [/redact/xr_650.pdf p5] ===
+  L000 y=  569.4 x=  144.0..476.5    ENVIRONMENTAL COMMITMENT
+  L001 y=  552.1 x=  144.0..480.0    At Honda, we believe in performance and leadership, and that
+  L002 y=  540.1 x=  144.0..480.0    it comes to the environment. We continue to develop low-emis
+  L003 y=  528.1 x=  144.0..480.0    motorcycles, ATVs, scooters and personal watercraft. We alre
+  L004 y=  516.1 x=  144.0..480.0    2008 CARB emissions requirements years ahead of schedule. An
+  L005 y=  504.1 x=  144.0..192.9    can appreciate.
+  L006 y=  471.1 x=  143.9..432.0    PROGRAMS THAT PERFORM
+  L007 y=  453.9 x=  143.9..480.0    You chose your new Honda XR or XRL because it has so many gr
+  L008 y=  441.9 x=  143.9..480.0    all of the programs available to you as a Honda owner. Take 
+  L009 y=  429.9 x=  143.9..480.0    let you extend virtually all of your Honda’s great warranty 
+  L010 y=  417.9 x=  143.9..480.0    America.† Open to all Honda owners,†† the real-world benefit
+  L011 y=  405.9 x=  143.9..480.0    HRCA. Interested in some accessories to make your XR or XRL 
+  L012 y=  393.9 x=  143.9..445.4    selection of Honda Genuine Accessories. Time for service? Be
+  L013 y=  393.9 x=  444.6..480.0    ™ Oils and
+  L014 y=  381.9 x=  143.9..480.0    Chemicals. And if you’re looking for a way to pay for your n
+  L015 y=  369.9 x=  143.9..480.0    gestions. First, ask about the American Honda Finance Corpor
+  L016 y=  357.9 x=  143.9..454.6    can set everything up for you right in the showroom. Another
+  L017 y=  357.9 x=  454.6..480.0    ™ revolv-
+  L018 y=  345.9 x=  143.9..480.0    ing charge card.‡‡ You can use the Honda Card to purchase Ho
+  L019 y=  333.9 x=  143.9..480.0    And make sure to ask your Honda Dealer about MSF rider train
+  L020 y=  321.9 x=  143.9..480.0    we think our family of Honda off-road motorcycles is the bes
+  L021 y=  309.9 x=  143.9..254.6    grams and support to go with them.
+  L022 y=  277.6 x=  143.9..480.0    Specifications, programs and availability subject to change 
+  L023 y=  268.6 x=  143.9..480.0    specifications in this brochure—including colors, warranty t
+  L024 y=  259.6 x=  143.9..480.0    States. ◊ Mounting brackets required. * Maximum reimbursemen
+  L025 y=  250.6 x=  143.9..480.0    American Honda Service Contract Corporation in the state of 
+  L026 y=  241.6 x=  143.9..480.0    motorcycles purchased from participating dealers in the U.S.
+  L027 y=  232.6 x=  143.9..480.0    approved credit by AHFC. ‡‡ Financing available to qualified
+  L028 y=  223.6 x=  143.9..480.0    Honda Card program at participating dealers. California vers
+  L029 y=  214.6 x=  143.9..480.0    are standard equipment on all Honda streetbikes. Performance
+  L030 y=  205.6 x=  143.9..481.3    Honda Genuine Accessories,™ HRCA,null Honda Rider’s Club of 
+  L031 y=  196.6 x=  143.9..403.7    of Honda Motor Co., Ltd. ©2003 American Honda Motor Co., Inc
+  L032 y=   97.9 x=  331.5..396.8    honda.com
+
+=== windriver p2 - clean two-column body + full-width footer [/redact/windrivercasestudy1n3d2m8km0r.pdf p1] ===
+  L000 y=  670.6 x=   77.1..283.6    information helps both parties improve their support
+  L001 y=  653.6 x=   77.1..281.3    plans, for example training seminars, services en-
+  L002 y=  636.6 x=   77.1..251.9    gagements, and project resource allocation.
+  L003 y=  612.6 x=   77.1..291.6    “One of the key benefits of the Macrovision solution is
+  L004 y=  595.6 x=   77.1..295.0    that it provides easy access to technology. Second, it is
+  L005 y=  578.6 x=   77.1..296.9    a very objective approach to licensing. It’s not about how
+  L006 y=  561.6 x=   77.1..290.2    many concurrent users you might have, or about how
+  L007 y=  544.6 x=   77.1..298.1    many license servers you need, or how many machines
+  L008 y=  527.6 x=   77.1..286.6    the product is installed on—it really comes down to
+  L009 y=  510.6 x=   77.1..293.8    making sure that software developers have access to
+  L010 y=  493.6 x=   77.1..199.5    our software,” explains Hogan.
+  L011 y=  469.6 x=   77.1..292.8    Hogan says Wind River has been using Macrovision’s
+  L012 y=  452.6 x=   77.1..296.1    licensing solutions for more than 3 years, and is planning
+  L013 y=  435.6 x=   77.1..296.8    to migrate to the next Macrovision release in 2004. Hogan
+  L014 y=  418.6 x=   77.1..299.5    says that Macrovision has done a good job of making its
+  L015 y=  401.6 x=   77.1..292.1    software easy to implement and easy to embed in its
+  L016 y=  384.6 x=   77.1..300.1    products. “At the end of the day, utility pricing, although
+  L017 y=  367.6 x=   77.1..298.6    gaining in popularity, is still relatively new for customers
+  L018 y=  350.6 x=   77.1..179.4    and software publishers .”
+  L019 y=  326.6 x=   77.1..298.7    Hogan points out one caveat that other software vendors
+  L020 y=  309.6 x=   77.1..293.7    should consider when evaluating this approach: “Not
+  L021 y=  292.6 x=   77.1..300.0    all buyers will be attracted to utility pricing so publisher
+  L022 y=  275.6 x=   77.1..298.1    should view it as an extension to their current offerings
+  L023 y=  258.6 x=   77.1..188.1    rather than a replacement .”
+  L024 y=  234.6 x=   77.1..298.6    Hogan also cites three key questions for software vendors
+  L025 y=  217.6 x=   77.1..285.4    considering utility pricing: First, what market forces
+  L026 y=  200.6 x=   77.1..295.8    are driving you and your customers toward utility-based
+  L027 y=  183.6 x=   77.1..296.6    pricing? Second, what’s the utility you’re trying to price
+  L028 y=  166.6 x=   77.1..288.9    and why have you chosen it over others? Third, who’s
+  L029 y=  149.6 x=   77.1..298.0    asking for it and why? His recommendation is to evaluate
+  L030 y=  132.6 x=   77.1..287.6    the strengths and weaknesses of traditional models,
+  L031 y=  115.6 x=   77.1..296.5    and then determine what is most important to a specific
+  L032 y=   98.6 x=   77.1..130.1    market need.
+  L033 y=   46.0 x=   76.7..153.5    Macrovision Corporation
+  L034 y=   37.0 x=   76.7..232.2    2830 De La Cruz Boulevard, Santa Clara, CA 95050
+  L035 y=   28.0 x=   76.7..223.1    US +1 888-755-0861 Int’l +44 (0) 870-873-6300
+  L036 y=   19.0 x=   76.7..145.9    www.macrovision .com
+  L037 y=  670.3 x=  319.4..527.4    Says Hogan, “A major benefit of Macrovision’s utility
+  L038 y=  653.3 x=  319.4..515.4    pricing is being able to create a new offering for
+  L039 y=  636.3 x=  319.4..531.2    existing and new buyers to consider. And that usually
+  L040 y=  619.3 x=  319.4..530.0    translates into new revenue streams and an increasing
+  L041 y=  602.3 x=  319.4..514.1    ability to be more responsive to your customers .”
+  L042 y=  578.3 x=  319.4..396.0    About Macrovision
+  L043 y=  561.3 x=  319.4..531.9    Macrovision Corporation (Nasdaq:MVSN) is the market
+  L044 y=  544.3 x=  319.4..520.7    leader in electronic licensing, copy protection, and
+  L045 y=  527.3 x=  319.4..519.0    digital rights management ("DRM") technologies.
+  L046 y=  510.3 x=  319.4..520.0    Analysts recognize Macrovision as the clear market
+  L047 y=  493.3 x=  319.4..530.7    leader, and it's estimated that the company sells more
+  L048 y=  476.3 x=  319.4..531.1    software-based licensing solutions than all its compet-
+  L049 y=  459.3 x=  319.4..529.0    itors combined. Macrovision FLEXnet, the world's first
+  L050 y=  442.3 x=  319.4..523.2    universal licensing platform, enables customers to
+  L051 y=  425.3 x=  319.4..512.3    easily price, package and protect their software.
+  L052 y=  408.3 x=  319.4..518.7    More than 3000 software publishers have shipped
+  L053 y=  391.3 x=  319.4..371.7    FLEXenabled
+  L054 y=  391.3 x=  371.7..520.7    tm software, and hundreds of Fortune
+  L055 y=  374.3 x=  319.4..519.1    1000 companies use Macrovision technologies to
+  L056 y=  357.3 x=  319.4..530.4    better manage their software licenses. The company
+  L057 y=  340.3 x=  319.4..524.6    holds over 700 software licensing and DRM patents
+  L058 y=  323.3 x=  319.4..525.7    worldwide, and has been ranked by Business 2.0 as
+  L059 y=  306.3 x=  319.4..533.6    one of the top 100 Tech Companies for two consecutive
+  L060 y=  289.3 x=  319.4..514.6    years. Headquartered in Santa Clara, California,
+  L061 y=  272.3 x=  319.4..513.9    Macrovision has international offices in London,
+  L062 y=  255.3 x=  319.4..516.8    Frankfurt, Tel Aviv, Tokyo, Taipei, Hong Kong and
+  L063 y=  238.3 x=  319.4..523.6    Seoul. More information about the Macrovision can
+  L064 y=  221.3 x=  319.4..457.4    be found at www.macrovision.com.
+  L065 y=    9.6 x=   76.8..525.8    ©2004 Macrovision Corporation. Macrovision and FLEXnet are r
+  L066 y=    4.1 x=   76.8..471.6    and VxWorks is a registered trademark of Wind River Systems,
+
+=== 2005CAT p1 - vertical + horizontal mixed [/redact/2005CAT.pdf p0] ===
+  L000 y=  523.1 x=   60.8..267.2    It all started in 1949. In Bologna, Italy two
+  L001 y=  503.2 x=   60.8..260.6    brothers Stefano and Gugliemo Marzocchi
+  L002 y=  483.2 x=   60.8..268.4    founded Marzocchi SPA Italia. They built the
+  L003 y=  463.2 x=   60.8..257.6    company on solid, race-proven technology
+  L004 y=  443.2 x=   60.8..257.5    providing durability and performance from
+  L005 y=  423.2 x=   60.8..253.6    all of their premium suspension products.
+  L006 y=  383.1 x=   60.8..210.8    In the early 1990’s, Marzocchi
+  L007 y=  363.2 x=   60.8..260.3    introduced the Bomber line of suspension.
+  L008 y=  343.2 x=   60.8..256.3    Due to our extensive knowledge base and
+  L009 y=  323.2 x=   60.8..273.7    more than ﬁ fty years experience, we met the
+  L010 y=  303.2 x=   60.8..266.5    demand mountain bikers had for a stronger
+  L011 y=  283.2 x=   60.8..150.9    more durable fork.
+  L012 y=  253.7 x=    9.6..24.6     INTRODUCTION
+  L013 y=  263.2 x=   60.8..257.9    Marzocchi became the benchmark in hard
+  L014 y=  243.2 x=   60.8..206.4    core mountain bike suspension.
+  L015 y=  203.1 x=   60.8..278.9    This year we are proud to introduce our most
+  L016 y=  183.2 x=   60.8..270.3    extensive line to date. We feel that for every
+  L017 y=  163.2 x=   60.8..258.4    rider there is a fork. If you can’t ﬁ nd what
+  L018 y=  143.2 x=   60.8..214.6    you’re looking for in this catalog,
+  L019 y=  123.2 x=   60.8..159.4    then it doesn’t exist.
+  L020 y=   83.1 x=   60.8..236.1    Enjoy the mountain, ride Marzocchi.
+
+=== test_print p1 - plain single column [/redact/test_print.pdf p0] ===
+  L000 y=  807.6 x=  286.7..322.7    - 1 -
+  L001 y=  779.3 x=   70.9..488.5    Qué es un antipoeta: Un comerciante en urnas y ataúdes? Un
+  L002 y=  767.3 x=   70.9..524.5    sacerdote que no cree en nada? Un general que duda de sí mis
+  L003 y=  755.3 x=   70.9..481.2    Un vagabundo que se ríe de todo Hasta de la vejez y de la
+  L004 y=  743.3 x=   70.9..510.0    muerte? Un interlocutor de mal carácter? Un bailarín al bord
+  L005 y=  731.3 x=   70.9..409.3    del abismo? Un narciso que ama a todo el mundo?
+
+=== reference addendum p1 - dense reference layout [/redact/pdf_reference_addendum_redaction.pdf p0] ===
+  L000 y=  662.2 x=   70.5..114.7    bbc
+  L001 y=  420.4 x=  113.8..463.7    PDF Redaction: Addendum for the
+  L002 y=  391.4 x=  113.8..514.1    PDF Reference, sixth edition, version 1.7
+  L003 y=   66.2 x=   70.0..150.2    November 2006
+
+=== libre-test p1 [/redact/libre-test.pdf p0] ===
+  L000 y=  706.7 x=   56.8..533.6    Calculate a foundation price with your current plan
+  L001 y=  687.1 x=   56.8..506.7    Now, let’s lay out the foundation we’ll work from when consi
+  L002 y=  671.2 x=   56.8..549.9    experience, the most important thing to keep in mind is the 
+  L003 y=  655.4 x=   56.8..553.4    in most cases, the amount you pay for the smartphone won’t c
+  L004 y=  639.5 x=   56.8..548.9    a phone from a carrier, most require you also to get specifi
+  L005 y=  623.7 x=   56.8..161.9    what you already pay.
+  L006 y=  589.1 x=   56.8..509.6    The monthly cost of your phone plan will fluctuate depending
+  L007 y=  573.2 x=   56.8..530.5    Therefore, I recommend starting your search for a cheap Pixe
+  L008 y=  557.4 x=   56.8..551.3    considering whether it covers your needs. If it doesn’t, you
+  L009 y=  541.5 x=   56.8..534.6    (which you can probably do alongside getting a new Pixel). I
+  L010 y=  525.7 x=   56.8..539.0    currently need, it might be worth investigating cheaper opti
+  L011 y=  509.8 x=   56.8..540.3    own-phone (BYOP) plans offered by various wireless providers
+  L012 y=  494.0 x=   56.8..149.4    works best for you.
+
+=== potato_out p1 [/redact/potato_out.pdf p0] ===
+  L000 y=  676.8 x=   23.0..472.4    PAN    5
+  L001 y=  692.1 x=  311.0..443.5    SOUPS,STARTERS & SNACKS
+  L002 y=  674.1 x=   36.1..67.5     PREPARATION
+  L003 y=  664.6 x=   38.3..56.6     25 mins
+  L004 y=  653.7 x=   36.0..62.2     COOKING
+  L005 y=  647.0 x=  147.4..463.5    Spanish potato omelette
+  L006 y=  644.7 x=   38.3..56.6     40mins
+
+=== java_embedded p1 - wide body over a narrow multi-lane list + sidebar [/selection/java_embedded.pdf p0] ===
+  L000 y=  728.6 x=   82.3..529.7    Java Embedded Resource Catalog 2004
+  L001 y=  683.0 x=   25.0..432.9    Reach 25,000 embedded Java developers & engineers!
+  L002 y=  660.0 x=   24.0..436.8    Extension Media is pleased to present the Java Embedded Reso
+  L003 y=  648.0 x=   24.0..436.8    print and online buyers’ guide designed to help embedded Jav
+  L004 y=  636.0 x=   24.0..124.2    purchasing decisions.
+  L005 y=  615.0 x=   24.0..361.1    We invite you to participate now at a 30% special early bird
+  L006 y=  594.0 x=   24.0..436.8    This buyers’ guide will help embedded Java developers and en
+  L007 y=  582.0 x=   24.0..436.8    purchasing decisions all year long—a great opportunity for y
+  L008 y=  570.0 x=   24.0..128.6    products and services.
+  L009 y=  544.6 x=   24.0..295.2    Who will use the Java Embedded Resource Catalog?
+  L010 y=  523.8 x=   24.0..436.8    The print version of the Catalog will be directly distribute
+  L011 y=  511.8 x=   24.0..436.8    developers and engineers—with an average pass along readersh
+  L012 y=  499.8 x=   24.0..112.3    a reach of 25,000!
+  L013 y=  478.8 x=   24.0..436.8    The Catalog is targeted at decision-makers who will use it w
+  L014 y=  466.8 x=   24.0..217.4    hardware, software, tools and services.
+  L015 y=  445.8 x=   24.0..436.8    In addition, the Catalog will be available in a convenient, 
+  L016 y=  433.8 x=   24.0..318.6    continually updated, and aggressively marketed for 12 months
+  L017 y=  412.3 x=   24.0..343.5    Shouldn’t your company be included in this inﬂuential resour
+  L018 y=  391.3 x=   24.0..436.8    You can participate with product data sheets, display ads, a
+  L019 y=  379.3 x=   24.0..143.3    rates starting at just $595.
+  L020 y=  353.9 x=   24.0..127.7    Advertising Beneﬁts
+  L021 y=  335.5 x=   24.0..356.3    ➽ Catalogs are used for one key reason: to make purchasing d
+  L022 y=  316.9 x=   24.0..430.9    ➽ The shelf life of a Catalog lasts 12+ months—more than any
+  L023 y=  298.3 x=   24.0..396.9    ➽ The convenient catalog format—in print (8.375” x 10.875”) 
+  L024 y=  285.7 x=   42.0..304.0    preferred format of developers—a one-stop buying guide
+  L025 y=  267.1 x=   24.0..432.7    ➽ Data Sheets enable you to communicate detailed information
+  L026 y=  254.5 x=   42.0..106.1    your products
+  L027 y=  229.1 x=   24.0..181.5    Product & Services Categories
+  L028 y=  206.5 x=   27.0..141.7    Hardware / Hardware Tools
+  L029 y=  195.8 x=   33.0..68.0     • Chips
+  L030 y=  185.0 x=   33.0..129.3    • Design / Debug Tools
+  L031 y=  174.2 x=   33.0..97.9     • Networking /
+  L032 y=  163.4 x=   42.7..112.0    Communications
+  L033 y=  152.6 x=   33.0..89.3     • Processors
+  L034 y=  135.7 x=   27.0..105.4    Software Products
+  L035 y=  125.0 x=   33.0..147.4    • RTOS / Operating Sytems
+  L036 y=  114.2 x=   33.0..75.1     • Applets
+  L037 y=  103.4 x=   33.0..93.7     • Applications
+  L038 y=   92.6 x=   33.0..150.7    • Compilers / JIT Compilers
+  L039 y=  206.5 x=  163.5..276.1    Software Products (cont’d)
+  L040 y=  195.8 x=  169.5..265.8    • Design / Debug Tools
+  L041 y=  185.0 x=  169.5..231.7    • File Systems
+  L042 y=  174.2 x=  169.5..282.6    • Graphics / User Interface
+  L043 y=  163.4 x=  179.0..216.7    Software
+  L044 y=  152.6 x=  169.5..251.7    • JVM (Java Virtual
+  L045 y=  141.8 x=  179.2..217.5    Machine)
+  L046 y=  131.0 x=  169.5..287.4    • Network / Communication
+  L047 y=  120.2 x=  179.2..220.4    Packages
+  L048 y=  109.4 x=  169.5..230.4    • Middleware
+  L049 y=  206.5 x=  306.5..345.0    Services
+  L050 y=  195.8 x=  315.0..369.4    • Consulting
+  L051 y=  185.0 x=  315.0..357.7    • Training
+  L052 y=  174.2 x=  315.0..354.4    • Design
+  L053 y=  163.4 x=  315.0..385.2    • Other Services
+  L054 y=  677.0 x=  470.0..564.6    Java Embedded
+  L055 y=  663.0 x=  465.1..569.5    Resource Catalog
+  L056 y=  649.0 x=  483.5..544.2    Highlights
+  L057 y=  628.7 x=  447.8..556.0    ◆ Distributed directly to
+  L058 y=  616.7 x=  459.8..579.4    10,000 direct requests and
+  L059 y=  604.7 x=  459.8..573.0    qualiﬁed embedded Java
+  L060 y=  592.7 x=  459.8..572.6    developers and engineers
+  L061 y=  571.7 x=  447.8..580.9    ◆ Distribution at Key Industry
+  L062 y=  559.7 x=  459.8..537.0    Events, including:
+  L063 y=  538.7 x=  460.8..567.6    ➤ JavaOne Conference
+  L064 y=  526.7 x=  472.8..567.2    (San Francisco: June
+  L065 y=  514.7 x=  467.5..497.2    2004)
+  L066 y=  493.7 x=  460.8..564.7    ➤ Embedded Software
+  L067 y=  481.7 x=  472.8..586.0    Development Conference
+  L068 y=  469.7 x=  472.8..578.2    (San Jose: August 2004)
+  L069 y=  448.7 x=  460.8..564.3    ➤ Embedded Systems
+  L070 y=  436.7 x=  472.8..548.1    Conference East
+  L071 y=  424.7 x=  472.8..559.7    (Boston: Sept 2004)
+  L072 y=  403.7 x=  460.8..564.3    ➤ Embedded Systems
+  L073 y=  391.7 x=  472.8..561.3    Conference Munich
+  L074 y=  379.7 x=  472.8..557.7    (Munich: Nov 2004)
+  L075 y=  358.7 x=  447.8..555.3    ◆ Available online 24/7
+  L076 y=  346.7 x=  459.8..559.2    for 12 Months at www.
+  L077 y=  334.7 x=  459.8..551.0    extensionmedia .com
+  L078 y=  313.7 x=  447.8..548.9    ◆ Early bird discounts
+  L079 y=  301.7 x=  459.8..569.5    available through May 19
+  L080 y=  280.7 x=  447.8..576.2    ◆ Contents include: product
+  L081 y=  268.7 x=  459.8..553.8    data sheets, industry
+  L082 y=  256.7 x=  459.8..584.7    analysis, application articles
+  L083 y=  244.7 x=  459.8..581.9    & case studies, and display
+  L084 y=  232.7 x=  455.7..475.9    ads
+  L085 y=  211.7 x=  447.8..562.3    ◆ Size: 8.375” x 10.875”
+  L086 y=  190.7 x=  447.8..550.7    ◆ Off press: June 2004
+  L087 y=  162.9 x=  464.6..570.8    Space Deadline
+  L088 y=  146.1 x=  492.5..539.2    May 19
+  L089 y=  117.3 x=  470.4..565.0    Materials Due
+  L090 y=   98.1 x=  492.5..539.2    May 23
+  L091 y=   67.7 x=   29.3..582.7    Contact Patricia Grannan at 415.255.0390 x17 or pgrannan@ext
+  L092 y=   52.3 x=   24.0..67.4     Published by
+  L093 y=   22.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
+
+=== java_embedded p2 - side-by-side panels between full-width tables [/selection/java_embedded.pdf p1] ===
+  L000 y=  745.4 x=  261.5..584.3    Java Embedded Resource Catalog 2004
+  L001 y=  733.5 x=  196.4..584.3    Rates & Reservation Form—Reserve space by May 19th and save 
+  L002 y=  713.1 x=   28.4..507.6    PRODUCT / SERVICE DATA SHEETS STANDARD RATE EARLY BIRD RATE 
+  L003 y=  699.1 x=   27.4..490.3    1st Full Page Datasheet ❏ $1,300 ❏ $910 ❏ $250
+  L004 y=  686.1 x=   27.4..556.8    Each Additional Full Page Datasheet ❏ $1,060 x_____ (qty) ❏ 
+  L005 y=  673.2 x=   27.4..556.8    ½ Page Datasheet ❏ $975 x_____ (qty) ❏ $595 x_____ (qty) ❏ $
+  L006 y=  660.2 x=   27.4..556.8    Matrix Page (multiple products in chart) ❏ $1,900 x_____ (qt
+  L007 y=  644.0 x=  224.2..387.8    — Integrated Sponsorship Programs —
+  L008 y=  628.0 x=   77.3..246.5    DIAMOND SPONSORSHIP (VALUED AT $25,000)
+  L009 y=  612.6 x=   28.4..283.1    Standard Rate ❏ $15,000 Discount Rate ❏ $8,950
+  L010 y=  598.1 x=   28.4..281.9    • Logo in top position on Catalog Cover as the Diamond Spons
+  L011 y=  588.6 x=   28.4..159.7    • 6 Full Page, 4-color Datasheets
+  L012 y=  579.1 x=   28.4..231.8    • 3 Editorial Pages (Application Article / Case Study)
+  L013 y=  569.6 x=   28.4..230.1    • Your Logo & Link on Home page of Online Version
+  L014 y=  560.1 x=   28.4..261.7    • One 4-Color Full Page Display Ad w/ Back Cover Position
+  L015 y=  550.6 x=   28.4..221.9    • 100 Copies of Print Catalog for your distribution
+  L016 y=  541.1 x=   28.4..168.2    • Limited to 1 company per catalog
+  L017 y=  502.3 x=   78.3..245.5    GOLD CO-SPONSORSHIP (VALUED AT $13,250)
+  L018 y=  486.9 x=   28.4..283.1    Standard Rate ❏ $10,750 Discount Rate ❏ $6,500
+  L019 y=  472.4 x=   28.4..201.9    • Logo on Catalog Cover as a Gold Sponsor
+  L020 y=  462.9 x=   28.4..159.7    • 3 Full Page, 4-color Datasheets
+  L021 y=  453.4 x=   28.4..227.5    • 1 Editorial Page (Application Article / Case Study)
+  L022 y=  443.9 x=   28.4..230.1    • Your Logo & Link on Home page of Online Version
+  L023 y=  434.4 x=   28.4..246.4    • One 4-Color Full Page Display Ad w/ Priority Position:
+  L024 y=  424.9 x=   28.4..237.0    ❏ Opposite Introduction ❏ Opposite your edit page
+  L025 y=  415.4 x=   28.4..238.1    ❏ Opposite ToC1 ❏ Opposite ToC2
+  L026 y=  405.9 x=   28.4..132.5    ❏ Best Available upfront
+  L027 y=  396.4 x=   28.4..217.2    • 50 Copies of Print Catalog for your distribution
+  L028 y=  386.9 x=   28.4..179.2    • Limited to 4 companies per catalog
+  L029 y=  628.0 x=  364.1..535.6    PLATINUM SPONSORSHIP (VALUED AT $18,300)
+  L030 y=  612.6 x=  316.4..571.1    Standard Rate ❏ $15,000 Discount Rate ❏ $7,950
+  L031 y=  598.1 x=  316.4..504.9    • Logo on Catalog Cover as a Platinum Sponsor
+  L032 y=  588.6 x=  316.4..447.7    • 5 Full Page, 4-color Datasheets
+  L033 y=  579.1 x=  316.4..519.8    • 2 Editorial Pages (Application Article / Case Study)
+  L034 y=  569.6 x=  316.4..518.1    • Your Logo & Link on Home page of Online Version
+  L035 y=  560.1 x=  316.4..534.4    • One 4-Color Full Page Display Ad w/ Priority Position:
+  L036 y=  550.6 x=  316.4..502.6    ❏ Inside Front Cover ❏ Inside Back Cover
+  L037 y=  541.1 x=  316.4..394.1    ❏ Opposite ToC1
+  L038 y=  531.6 x=  316.4..509.9    • 100 Copies of Print Catalog for your distribution
+  L039 y=  522.1 x=  316.4..462.7    • Limited to 3 companies per catalog
+  L040 y=  502.3 x=  380.1..519.7    DELUXE PACKAGE (VALUED AT $8,710)
+  L041 y=  486.9 x=  316.4..566.4    Standard Rate ❏ 5,250 Discount Rate ❏ 3,950
+  L042 y=  472.4 x=  316.4..447.7    • 2 Full Page, 4-color Datasheets
+  L043 y=  462.9 x=  316.4..515.5    • 1 Editorial Page (Application Article / Case Study)
+  L044 y=  453.4 x=  316.4..449.6    • 1 Full Page, 4-Color Display Ad:
+  L045 y=  443.9 x=  316.4..552.5    ❏ Opposite your edit page ❏ Best Available upfront
+  L046 y=  434.4 x=  316.4..431.1    ❏ Opposite your datasheet
+  L047 y=  371.5 x=  254.5..357.5    — Display Advertising —
+  L048 y=  357.1 x=   28.4..507.6    DISPLAY ADVERTISING STANDARD RATE DISCOUNT RATE ADD COLOR
+  L049 y=  343.1 x=   27.4..490.3    2-Page Spread, Black and White ❏ $3,750 ❏ $2,500 ❏ $400
+  L050 y=  330.1 x=   27.4..490.3    1-Page, Black and White ❏ $2,750 ❏ $1,750 ❏ $300
+  L051 y=  317.2 x=   27.4..490.3    1/2 Page, Black and White ❏ $2,000 ❏ $1,250 ❏ $250
+  L052 y=  296.9 x=   24.0..249.7    ❏ Please contact me about insert options
+  L053 y=  282.6 x=   24.0..181.8    Billing Information (All pricing USD. All pricing net .)
+  L054 y=  260.5 x=   24.0..407.5    Company:Total Amount:
+  L055 y=  238.8 x=   24.0..375.7    Name:Title:
+  L056 y=  217.0 x=   24.0..376.5    Address:PO#:
+  L057 y=  195.3 x=   24.0..466.2    City/State:Postal Code:Country:
+  L058 y=  173.5 x=   24.0..362.4    Telephone:Fax:Email:
+  L059 y=  151.8 x=   24.0..377.5    Signature:Date:
+  L060 y=  116.6 x=   76.7..535.3    Space Deadline: May 19 • Materials Deadline: May 23 • Fax to
+  L061 y=  101.0 x=   62.9..549.1    Contact: Patricia Grannan • 415-255-0390 x17 • pgrannan@exte
+  L062 y=   81.1 x=   24.0..586.9    The above Advertiser is contracting for the advertising prog
+  L063 y=   74.1 x=   24.0..582.5    Terms: Payment due upon receipt with interest accruing at th
+  L064 y=   67.1 x=   24.0..588.2    errors which may appear in ads; advertiser/agency will indem
+  L065 y=   60.1 x=   24.0..585.9    agreed to its conditions without any further agreement or no
+  L066 y=   53.1 x=   24.0..41.7     orders.
+  L067 y=   21.8 x=  133.7..570.6    1786 18th Street • San Francisco, CA 94107 • www.extensionme
+
+=== R&D-05-Carbon p1 - gutter-spanning deck over two columns [/selection/R-D-05-Carbon.pdf p0] ===
+  L000 y=  754.0 x=  155.6..403.4    TECHNOLOGY REPORT
+  L001 y=  687.3 x=   38.0..464.1    CUTTINGCARBON NUMBERFIVE
+  L002 y=  622.0 x=   45.8..325.6    CLEAN CUT CARBON
+  L003 y=  604.3 x=   45.8..355.7    So you want to take a little width off those carbon
+  L004 y=  584.3 x=   45.8..352.0    handlebars? You cut down your old aluminum bars —
+  L005 y=  564.3 x=   45.8..355.7    no problem — but you spent a bundle on those new
+  L006 y=  544.3 x=   45.8..355.7    carbon bars. Here are some tips for safely trimming
+  L007 y=  524.3 x=   45.8..355.8    off a little exotic material from your handlebars…or
+  L008 y=  504.3 x=   45.8..124.1    your seatpost.
+  L009 y=  478.5 x=   79.9..193.4    arbon tubing (i.e. han-
+  L010 y=  464.5 x=   79.9..196.1    dlebars, seatpost, fork
+  L011 y=  440.9 x=   42.2..92.5     C
+  L012 y=  450.5 x=   79.9..196.2    steerer tubes, etc.) can
+  L013 y=  436.5 x=   79.9..196.3    be quite easily cut using
+  L014 y=  422.5 x=   46.0..196.2    a standard hacksaw. There are,
+  L015 y=  408.5 x=   46.0..196.1    however, some precautions
+  L016 y=  394.5 x=   46.0..196.2    that must be taken to prevent
+  L017 y=  380.5 x=   46.0..196.3    damage to the component, and
+  L018 y=  366.5 x=   46.0..126.8    harm to yourself.
+  L019 y=  352.5 x=   60.4..196.2    Here’s a step-by-step guide
+  L020 y=  338.5 x=   46.0..196.2    to carbon handlebar trimming.
+  L021 y=  324.5 x=   46.0..193.4    If you don’t feel confident fol-
+  L022 y=  310.5 x=   46.0..196.2    lowing these instruction, there’s
+  L023 y=  296.5 x=   46.0..196.2    no shame in taking your bar to
+  L024 y=  282.5 x=   46.0..196.3    a qualified bicycle mechanic.
+  L025 y=  268.5 x=   46.0..196.2    (You might want to take these
+  L026 y=  254.5 x=   46.0..173.0    directions along with you. )
+  L027 y=  226.5 x=   46.0..76.8     STEP 1
+  L028 y=  212.5 x=   46.0..196.3    You’ll need a sharp, fine tooth
+  L029 y=  198.5 x=   46.0..193.4    blade (32 teeth per inch) appro-
+  L030 y=  184.5 x=   46.0..162.1    priate for cutting metals.
+  L031 y=  156.5 x=   46.0..76.8     STEP 2
+  L032 y=  142.5 x=   46.0..196.3    Wrap the bar with several layers
+  L033 y=  128.5 x=   46.0..196.3    of masking tape in the area of
+  L034 y=  114.5 x=   46.0..196.2    the cut. This will ensure a clean
+  L035 y=  100.5 x=   46.0..196.2    cut with minimal unraveling of
+  L036 y=   86.5 x=   46.0..127.9    the carbon fibres.
+  L037 y=  478.5 x=  205.4..236.2    STEP 3
+  L038 y=  464.5 x=  205.4..352.8    Determine the amount of mate-
+  L039 y=  450.5 x=  205.4..355.6    rial to be removed. The cut line
+  L040 y=  436.5 x=  205.4..355.6    can be marked with a pen or
+  L041 y=  422.5 x=  205.4..355.6    pencil directly on the masking
+  L042 y=  408.5 x=  205.4..355.6    tape. Make sure you remove the
+  L043 y=  394.5 x=  205.4..355.6    same length of material from
+  L044 y=  380.5 x=  205.4..355.6    both ends of the bar. (Unless
+  L045 y=  366.5 x=  205.4..355.6    you like to lean to one side
+  L046 y=  352.5 x=  205.4..293.2    while your riding. )
+  L047 y=  292.4 x=  215.5..350.1    “Double check your
+  L048 y=  272.4 x=  216.6..348.9    measurements! It’s
+  L049 y=  252.4 x=  221.9..343.6    easier to measure
+  L050 y=  232.4 x=  221.3..344.3    twice than to buy
+  L051 y=  212.4 x=  221.5..343.4    a new bar twice.”
+  L052 y=  156.5 x=  205.4..236.2    STEP 4
+  L053 y=  142.5 x=  205.4..352.8    Double check your measure-
+  L054 y=  128.5 x=  205.4..355.6    ments! It’s easier to measure
+  L055 y=  114.5 x=  205.4..355.6    twice than to buy a new bar
+  L056 y=  100.5 x=  205.4..235.7    twice.
+  L057 y=  629.4 x=  370.4..407.5    STEP 1
+  L058 y=  478.2 x=  370.4..407.1    STEP 2
+  L059 y=  326.9 x=  370.4..407.1    STEP 3
+  L060 y=  175.7 x=  370.4..407.1    STEP 4
+  L061 y=   48.3 x=  480.3..514.0    continued
+
+=== R&D-05-Carbon p2 - gutter-spanning running header [/selection/R-D-05-Carbon.pdf p1] ===
+  L000 y=  726.0 x=  155.6..403.4    TECHNOLOGY REPORT
+  L001 y=  660.5 x=   46.0..79.7     STEP 5
+  L002 y=  646.5 x=   46.0..196.4    For the best results the bar
+  L003 y=  632.5 x=   46.0..196.4    should be clamped securely in
+  L004 y=  618.5 x=   46.0..193.5    a vice for cutting. To accommo-
+  L005 y=  604.5 x=   46.0..196.4    date this without cracking the
+  L006 y=  590.5 x=   46.0..196.3    bar, the bar should be held in
+  L007 y=  576.5 x=   46.0..196.4    a tubing fixture. You can make
+  L008 y=  562.5 x=   46.0..193.5    this fixture quite easily by bor-
+  L009 y=  548.5 x=   46.0..196.4    ing a 7/8” hole in a 4” section
+  L010 y=  534.5 x=   46.0..196.4    of a 2” x 4” and then cutting
+  L011 y=  520.5 x=   46.0..176.2    the block in half as shown.
+  L012 y=  453.2 x=   56.5..185.3    “When it comes to
+  L013 y=  433.2 x=   59.5..178.1    composite compo-
+  L014 y=  413.2 x=   57.4..184.3    nents, it is critical
+  L015 y=  393.2 x=   64.7..177.1    that any fixture
+  L016 y=  373.2 x=   58.9..182.8    that clamps them
+  L017 y=  353.2 x=   69.0..172.7    is free of sharp
+  L018 y=  333.2 x=   60.3..180.8    edges and burrs.”
+  L019 y=  268.5 x=   46.0..76.8     STEP 6
+  L020 y=  254.5 x=   46.0..196.4    The two blocks can then be
+  L021 y=  240.5 x=   46.0..196.3    placed into a vice holding the
+  L022 y=  226.5 x=   46.0..196.4    bar firmly in place. Be careful
+  L023 y=  212.5 x=   46.0..196.3    not to overtighten the vice
+  L024 y=  198.5 x=   46.0..196.3    however, if you hear a crack,
+  L025 y=  184.5 x=   46.0..190.4    you’re buying a new bar twice.
+  L026 y=  170.5 x=   60.4..196.4    In a pinch, you can cut your
+  L027 y=  156.5 x=   46.0..196.4    bar while it is mounted on the
+  L028 y=  142.5 x=   46.0..196.4    bike. Make sure your handlebar
+  L029 y=  128.5 x=   46.0..196.4    is installed properly in your
+  L030 y=  114.5 x=   46.0..196.4    stem. Then secure the front
+  L031 y=  100.5 x=   46.0..196.3    wheel to the down tube or have
+  L032 y=   86.5 x=   46.0..196.4    someone straddle the wheel to
+  L033 y=   72.5 x=   46.0..178.4    steady the bar as you cut it.
+  L034 y=  687.3 x=  233.1..331.1    CUTTING CARBON
+  L035 y=  660.5 x=  205.5..236.3    STEP 7
+  L036 y=  646.5 x=  205.5..355.9    Start cutting along your marked
+  L037 y=  632.5 x=  205.5..355.9    line with slow, smooth, even
+  L038 y=  618.5 x=  205.5..355.9    strokes. Take care not inhale
+  L039 y=  604.5 x=  205.5..355.9    any of the carbon dust! (As
+  L040 y=  590.5 x=  205.5..355.9    with any project of this nature,
+  L041 y=  576.5 x=  205.5..355.9    we recommend taking proper
+  L042 y=  562.5 x=  205.5..355.9    safety precautions. Please wear
+  L043 y=  548.5 x=  205.5..355.9    safety googles, gloves and a
+  L044 y=  534.5 x=  205.5..355.9    dust mask.) Take care at the end
+  L045 y=  520.5 x=  205.5..355.9    of the cut to avoid splintering
+  L046 y=  506.5 x=  205.5..265.1    the material.
+  L047 y=  464.5 x=  205.5..236.3    STEP 8
+  L048 y=  450.5 x=  205.5..355.9    After cutting, any burrs can be
+  L049 y=  436.5 x=  205.5..355.9    carefully sanded off with fine
+  L050 y=  423.2 x=  217.9..346.8    “It is important to
+  L051 y=  422.5 x=  205.5..355.9    emery paper. Do not inhale or
+  L052 y=  408.5 x=  205.5..333.5    touch the shavings or dust.
+  L053 y=  403.2 x=  219.2..345.5    note that a higher
+  L054 y=  383.2 x=  223.8..340.9    number does not
+  L055 y=  363.2 x=  223.0..341.7    necessarily mean
+  L056 y=  366.5 x=  205.5..236.3    STEP 9
+  L057 y=  352.5 x=  205.5..355.8    Clean off the dust using a damp
+  L058 y=  343.2 x=  228.3..336.4    that an alloy is
+  L059 y=  338.5 x=  205.5..351.3    cloth and discard immediately.
+  L060 y=  323.2 x=  247.6..313.0    superior. ”
+  L061 y=  296.5 x=  205.5..314.7    Installation of bar ends
+  L062 y=  282.5 x=  205.5..355.9    Be sure to follow manufacturer’s
+  L063 y=  268.5 x=  205.5..355.8    recommendations concerning
+  L064 y=  254.5 x=  205.5..355.9    the installation of bar ends on
+  L065 y=  240.5 x=  205.5..355.9    carbon fiber handlebars. Some
+  L066 y=  226.5 x=  205.5..355.9    handlebars (including Easton’s
+  L067 y=  212.5 x=  205.5..355.9    MonkeyLite riser bars) are not
+  L068 y=  198.5 x=  205.5..355.9    designed to accommodate bar
+  L069 y=  184.5 x=  205.5..355.9    ends. Easton’s carbon fiber flat
+  L070 y=  170.5 x=  205.5..355.9    bars are designed with thicker
+  L071 y=  156.5 x=  205.5..353.0    material at the ends for clamp-
+  L072 y=  142.5 x=  205.5..355.8    ing of bar ends. The riser bars
+  L073 y=  128.5 x=  205.5..355.9    do not have this extra material
+  L074 y=  114.5 x=  205.5..355.8    and will break if you mount bar
+  L075 y=  100.5 x=  205.5..230.0    ends.
+  L076 y=   65.0 x=  315.1..351.5    continued
+  L077 y=  401.7 x=  369.5..406.2    STEP 7
+  L078 y=  273.5 x=  369.5..406.2    STEP 8
+  L079 y=  530.0 x=  369.5..406.2    STEP 6
+  L080 y=  658.3 x=  369.5..406.2    STEP 5
+  L081 y=  145.2 x=  369.5..406.2    STEP 9
+

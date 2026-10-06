@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  */
 public class RevocationsVerifier {
 
-    private static final Logger logger = Logger.getLogger(RevocationsVerifier.class.toString());
+    private static final Logger logger = Logger.getLogger(RevocationsVerifier.class.getName());
 
     public static void verifyRevocations(X509Certificate cert,
                                          Set<X509Certificate> additionalCerts,

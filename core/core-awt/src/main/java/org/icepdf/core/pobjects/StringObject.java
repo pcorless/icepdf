@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects;
 
-import org.icepdf.core.pobjects.fonts.FontFile;
 import org.icepdf.core.pobjects.security.SecurityManager;
 
 /**
@@ -35,31 +34,34 @@ public interface StringObject {
 
     /**
      * <p>Returns a string representation of the object.</p>
+     * <p>
+     * CAUTION, this is not the same thing in both implementations, and it is not what you want for
+     * writing.  {@link LiteralStringObject} returns its stored data; {@link HexStringObject} returns
+     * its data <em>decoded</em>, which is not what the file held.  Writing that back out between
+     * angle brackets is how a 62 digit string once became {@code <EBEAE0>}: re-parsing kept only
+     * the characters that happened to be hexadecimal digits.  For writing use
+     * {@link #getHexString()}; for bytes use {@link #getRawBytes()}.
      *
      * @return a string representing the object.
      */
     String toString();
 
     /**
-     * <p>Gets a literal StringBuffer representation of this object's data.</p>
-     *
-     * @return a StringBuffer representing the object's data.
-     */
-    StringBuilder getLiteralStringBuffer();
-
-    /**
      * <p>Gets a literal String representation of this object's data.
+     * <p>
+     * The two implementations differ, deliberately.  For a literal string this is the stored data,
+     * one character per byte.  For a hexadecimal string it is the data <em>decoded</em>: digit pairs
+     * become characters, and a leading UTF-16BE byte order marker is consumed and honoured.
+     * <p>
+     * So this is the accessor for TEXT.  For a string carrying binary - a signature, a colour lookup
+     * table, an /O or /U entry - use {@link #getRawBytes()}, or {@link #getDecryptedRawBytes} when
+     * the document is encrypted.  Reaching for bytes through here works only as long as the payload
+     * never begins FE FF, at which point the marker handling silently eats two bytes and shifts
+     * everything after them.
      *
      * @return a String representation of the object's data.
      */
     String getLiteralString();
-
-    /**
-     * <p>Gets a hexadecimal StringBuffer representation of this objects data.</p>
-     *
-     * @return a StringBuffer representation of the object's data.
-     */
-    StringBuilder getHexStringBuffer();
 
     /**
      * <p>Gets a hexadecimal String representation of this object's data. </p>
@@ -69,27 +71,24 @@ public interface StringObject {
     String getHexString();
 
     /**
-     * Gets the unsigned integer value of this object's data specified by
-     * the start index and offset parameters.
+     * The string's raw bytes, as they appeared in the file: no character-code interpretation, and
+     * for a hexadecimal string no hex decoding artefacts.  This is the input to
+     * {@link org.icepdf.core.pobjects.fonts.Font#toCodes(byte[])}, which is the only thing that
+     * knows how wide a character code is.
      *
-     * @param start  the beginning index, inclusive.
-     * @param offset the number of string characters to read.
-     * @return integer value of the specified range of characters.
+     * @return the string's bytes; never null, may be empty.
      */
-    int getUnsignedInt(int start, int offset);
+    byte[] getRawBytes();
 
     /**
-     * Gets a literal String representation of this objects data using the
-     * specified font and format.
+     * The string's bytes, decrypted, with no character interpretation.  The primitive for a string
+     * holding binary data rather than text; {@link #getDecryptedLiteralString} is the text
+     * counterpart.
      *
-     * @param fontFormat the type of PDF font which will be used to display
-     *                   the text.  Valid values are CID_FORMAT and SIMPLE_FORMAT for Adobe
-     *                   Composite and Simple font types respectively
-     * @param font       font used to render the literal string data.
-     * @return StringBuffer which contains all renderable characters for the
-     * given font.
+     * @param securityManager security manager associated with parent document.
+     * @return the decrypted bytes; never null, may be empty.
      */
-    StringBuilder getLiteralStringBuffer(final int fontFormat, FontFile font);
+    byte[] getDecryptedRawBytes(SecurityManager securityManager);
 
     /**
      * The length of the underlying objects data.

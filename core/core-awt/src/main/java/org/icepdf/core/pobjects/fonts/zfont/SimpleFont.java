@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
 
     protected static final Logger logger =
-            Logger.getLogger(SimpleFont.class.toString());
+            Logger.getLogger(SimpleFont.class.getName());
 
     // get list of all available fonts.
     private static final java.awt.Font[] fonts =
@@ -60,6 +60,14 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
     protected String[] cMap;
 
     protected Encoding encoding;
+
+    /**
+     * @return the font's encoding, which maps a character code to the glyph it shows; null if the
+     * font has none of its own
+     */
+    public Encoding getFontEncoding() {
+        return encoding;
+    }
 
     /**
      * Creates a new instance of a PDF Font.
@@ -221,7 +229,7 @@ public class SimpleFont extends org.icepdf.core.pobjects.fonts.Font {
         }
         else if (objectUnicode instanceof Name) {
             Name unicodeName = (Name) objectUnicode;
-            logger.warning("found unicodeName " + unicodeName);
+            logger.fine(() -> "Predefined /ToUnicode name " + unicodeName + " for font " + basefont);
             if (CMapFactory.IDENTITY_NAME.equals(unicodeName)) {
                 toUnicodeCMap = CMapFactory.getPredefinedCMap(CMapFactory.IDENTITY_H_NAME);
             } else if (CMapFactory.IDENTITY_V_NAME.equals(unicodeName)) {

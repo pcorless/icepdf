@@ -28,9 +28,9 @@ import org.icepdf.core.util.Library;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.Collections;
+import java.lang.ref.SoftReference;
 import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +42,7 @@ import static org.icepdf.core.pobjects.Dictionary.SUBTYPE_KEY;
 public class FontFactory {
 
     private static final Logger logger =
-            Logger.getLogger(FontFactory.class.toString());
+            Logger.getLogger(FontFactory.class.getName());
 
     public static final boolean useEmbeddedFonts;
 
@@ -67,7 +67,12 @@ public class FontFactory {
     // Singleton instance of class
     private static FontFactory fontFactory;
 
-    private static Map<String, FontFile> systemFontCache = Collections.synchronizedMap(new WeakHashMap<>(75));
+    // Cache of loaded system fonts, keyed by URL string.  Values are held via
+    // SoftReference so a parsed font survives normal GC (avoiding a re-read/re-parse
+    // from disk) but is reclaimed under memory pressure.  A WeakHashMap here would
+    // be keyed by the throwaway url.toString() String, which nothing holds strongly,
+    // so every entry would be collected on the next GC -- caching nothing across a GC.
+    private static final Map<String, SoftReference<FontFile>> systemFontCache = new ConcurrentHashMap<>(75);
 
     public static final Name FONT_SUBTYPE_TYPE_0 = new Name("Type0");
     public static final Name FONT_SUBTYPE_TYPE_1 = new Name("Type1");
@@ -158,13 +163,31 @@ public class FontFactory {
         } else if (FONT_TYPE_1 == fontType) {
             fontFile = new ZFontType1(fontStream);
         } else if (FONT_TYPE_1C == fontType) {
-            fontFile = new ZFontType1C(fontStream);
+            // /FontFile3 /Type1C is meant to be bare CFF, but some producers embed a whole sfnt under it; the
+            // CFF parser can't read TrueType outlines, so route by what the program actually is
+            byte[] fontBytes = fontStream.getDecodedStreamBytes();
+            if (SfntProgram.isTrueTypeOutlines(fontBytes)) {
+                fontFile = new ZFontTrueType(fontStream);
+            } else if (SfntProgram.isOpenTypeCff(fontBytes)) {
+                fontFile = new ZFontOpenType(fontStream);
+            } else {
+                fontFile = new ZFontType1C(fontStream);
+            }
         } else if (FONT_CID_TYPE_0 == fontType) {
             fontFile = new ZFontType0(fontStream);
         } else if (FONT_CID_TYPE_0C == fontType || FONT_CID_TYPE_1C == fontType) {
             fontFile = new ZFontType0(fontStream);
         } else if (FONT_CID_TYPE_2 == fontType) {
-            fontFile = new ZFontType2(fontStream);
+            // Quartz labels an OpenType/CFF program as a CIDFontType2 and stores it in /FontFile2
+            // stripped of every TrueType table, so it can't be parsed as one; read the CFF it
+            // actually holds rather than failing over to substitution, which would strand the
+            // Identity-H codes since those are the subset's own glyph indices.
+            byte[] postScriptOutlines = SfntProgram.postScriptOutlines(fontStream.getDecodedStreamBytes());
+            if (postScriptOutlines != null) {
+                fontFile = new ZFontType0(postScriptOutlines);
+            } else {
+                fontFile = new ZFontType2(fontStream);
+            }
         }
         return fontFile;
     }
@@ -179,7 +202,13 @@ public class FontFactory {
     }
 
     public FontFile createFontFile(URL url, int fontType, String fontSubType) {
-        FontFile fontFile = systemFontCache.get(url.toString());
+        String key = url.toString();
+        SoftReference<FontFile> cached = systemFontCache.get(key);
+        FontFile fontFile = cached != null ? cached.get() : null;
+        if (cached != null && fontFile == null) {
+            // soft reference cleared under memory pressure; drop the dead entry.
+            systemFontCache.remove(key, cached);
+        }
         if (fontFile == null) {
             try (InputStream inputStream = url.openStream()) {
                 byte[] fontBytes = inputStream.readAllBytes();
@@ -189,7 +218,7 @@ public class FontFactory {
                     fontFile = new ZFontType1(fontBytes, url);
                 }
                 if (fontFile != null) {
-                    systemFontCache.put(url.toString(), fontFile);
+                    systemFontCache.put(key, new SoftReference<>(fontFile));
                 }
             } catch (Exception e) {
                 logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);

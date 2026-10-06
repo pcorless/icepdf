@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class FaxDecoder extends AbstractImageDecoder {
 
     private static final Logger logger =
-            Logger.getLogger(FaxDecoder.class.toString());
+            Logger.getLogger(FaxDecoder.class.getName());
 
     public static final Name K_KEY = new Name("K");
     public static final Name ENCODED_BYTE_ALIGN_KEY = new Name("EncodedByteAlign");
@@ -81,7 +81,9 @@ public class FaxDecoder extends AbstractImageDecoder {
 
         int size = rows * ((columns + 7) >> 3);
 
-        byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+        // the filter passes this encoding through undecoded, so the result is the compressed data;
+        // presizing it to the decoded raster size would allocate far more than it holds.
+        byte[] data = imageStream.getDecodedStreamBytes(0);
         byte[] decodedStreamData = null;
         try {
             // try and load the image via twelve monkeys
@@ -90,7 +92,9 @@ public class FaxDecoder extends AbstractImageDecoder {
             try {
                 // on a failure then fall back on our implementation.
                 logger.fine("Error during decode falling back on alternative fax decode.");
-                data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
+                // the filter passes this encoding through undecoded, so the result is the compressed data;
+                // presizing it to the decoded raster size would allocate far more than it holds.
+                data = imageStream.getDecodedStreamBytes(0);
                 decodedStreamData = ccittFaxDecodeCCITTFaxDecoder(data, k, encodedByteAlign, columns, rows, size);
             } catch (Exception f) {
                 // on a failure then fall back to JAI
@@ -112,6 +116,11 @@ public class FaxDecoder extends AbstractImageDecoder {
                 decodedImage = ccittFaxDecodeJAI(imageStream, imageStream.getLibrary(),
                         imageStream.getEntries(), graphicsState.getFillColor());
             }
+        }
+        // bound ludicrously large fax images before they reach Java2D, where the
+        // transformed paint would otherwise pop the heap.
+        if (decodedImage != null && isImageReallyBig(decodedImage.getWidth(), decodedImage.getHeight())) {
+            decodedImage = scaleReallyBigImage(decodedImage);
         }
         return decodedImage;
     }

@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 public class FieldDictionary extends Dictionary {
 
     private static final Logger logger =
-            Logger.getLogger(FieldDictionary.class.toString());
+            Logger.getLogger(FieldDictionary.class.getName());
 
     /**
      * Required for terminal fields; inheritable) The type of field that this

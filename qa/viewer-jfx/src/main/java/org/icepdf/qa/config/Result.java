@@ -36,8 +36,12 @@ public class Result {
     private final SimpleStringProperty captureNameA;
     private final SimpleStringProperty captureNameB;
 
-    // percent difference between captureOne and captureTwo
+    // headline similarity (%) between captureOne and captureTwo; ink-weighted so missing content scores low.
     private final SimpleDoubleProperty difference;
+    // fuzz-tolerant absolute-error similarity (%) over the whole page.
+    private final SimpleDoubleProperty aeSimilarity;
+    // mean windowed structural similarity (%).
+    private final SimpleDoubleProperty structuralSimilarity;
 
     // can be extended for other properties.
 
@@ -45,13 +49,25 @@ public class Result {
     public Result(@JsonProperty("documentName") String documentName,
                   @JsonProperty("fileNameA") String fileNameA,
                   @JsonProperty("fileName") String fileNameB,
-                  @JsonProperty("difference") double difference) {
+                  @JsonProperty("difference") double difference,
+                  @JsonProperty("aeSimilarity") double aeSimilarity,
+                  @JsonProperty("structuralSimilarity") double structuralSimilarity) {
         // relative path to content set location
         this.documentName = new SimpleStringProperty(documentName);
         // relative path to capture set location
         this.captureNameA = new SimpleStringProperty(fileNameA);
         this.captureNameB = new SimpleStringProperty(fileNameB);
         this.difference = new SimpleDoubleProperty(difference);
+        this.aeSimilarity = new SimpleDoubleProperty(aeSimilarity);
+        this.structuralSimilarity = new SimpleDoubleProperty(structuralSimilarity);
+    }
+
+    /**
+     * Backward-compatible constructor for callers that only have a single
+     * similarity score (e.g. the text compare task or older saved projects).
+     */
+    public Result(String documentName, String fileNameA, String fileNameB, double difference) {
+        this(documentName, fileNameA, fileNameB, difference, difference, difference);
     }
 
     public String getDocumentName() {
@@ -94,5 +110,21 @@ public class Result {
 
     public void setDifference(double difference) {
         this.difference.set(difference);
+    }
+
+    public double getAeSimilarity() {
+        return Math.round(aeSimilarity.get() * 100.0) / 100.0;
+    }
+
+    public void setAeSimilarity(double aeSimilarity) {
+        this.aeSimilarity.set(aeSimilarity);
+    }
+
+    public double getStructuralSimilarity() {
+        return Math.round(structuralSimilarity.get() * 100.0) / 100.0;
+    }
+
+    public void setStructuralSimilarity(double structuralSimilarity) {
+        this.structuralSimilarity.set(structuralSimilarity);
     }
 }

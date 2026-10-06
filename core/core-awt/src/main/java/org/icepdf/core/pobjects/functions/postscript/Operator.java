@@ -15,8 +15,6 @@
  */
 package org.icepdf.core.pobjects.functions.postscript;
 
-import java.util.Stack;
-
 /**
  * Representing a generic operand which follows the Command pattern for delayed
  * or differed execution.
@@ -31,7 +29,7 @@ public abstract class Operator {
         this.type = type;
     }
 
-    public abstract void eval(Stack stack);
+    public abstract void eval(OperandStack stack);
 
     public boolean equals(Object op) {
         return (op instanceof Operator) && ((Operator) op).type == type;

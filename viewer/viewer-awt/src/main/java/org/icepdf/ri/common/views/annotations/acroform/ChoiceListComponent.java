@@ -41,7 +41,7 @@ import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 public class ChoiceListComponent extends AbstractChoiceComponent implements
         AdjustmentListener, FocusListener, PropertyChangeListener {
 
-    private static final Logger logger = Logger.getLogger(AbstractChoiceComponent.class.toString());
+    private static final Logger logger = Logger.getLogger(AbstractChoiceComponent.class.getName());
 
     private ScalableJList choiceList;
     private ScalableJScrollPane choiceListPane;
