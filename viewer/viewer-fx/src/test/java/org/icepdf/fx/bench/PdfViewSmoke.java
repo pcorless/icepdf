@@ -100,6 +100,16 @@ public final class PdfViewSmoke {
             System.out.println(failures == 0 ? "form checks: all passed" : "form checks: " + failures + " FAILED");
             return;
         }
+        if ("forms-corpus".equals(System.getProperty("smoke.only"))) {
+            // file is the corpus directory; smoke.forms lists the documents (comma separated).
+            for (String name : System.getProperty("smoke.forms",
+                    "checking_application.pdf,OoPdfFormExample.pdf,form-400.pdf,support_2550.pdf").split(",")) {
+                checkCorpusForm(file.resolve(name.trim()));
+            }
+            System.out.println(failures == 0 ? "corpus form checks: all passed"
+                    : "corpus form checks: " + failures + " FAILED");
+            return;
+        }
         if ("annotation-ui".equals(System.getProperty("smoke.only"))) {
             checkAnnotationUi(file);
             System.out.println(failures == 0 ? "annotation UI checks: all passed"
@@ -212,6 +222,98 @@ public final class PdfViewSmoke {
         String partial = f.getPartialFieldName();
         return (partial == null || partial.isEmpty()) && f.getParent() != null
                 ? f.getParent().getFullyQualifiedFieldName() : f.getFullyQualifiedFieldName();
+    }
+
+    /**
+     * A real form: Tab through every field (each editor opens and closes, and a walk that types
+     * nothing must leave no edits); editors sit on their fields; then fill some fields - single
+     * line, multi-line, comb - and snapshot the regenerated appearances for review.
+     */
+    private void checkCorpusForm(Path file) throws Exception {
+        String tag = file.getFileName().toString().replaceAll("[^A-Za-z0-9]+", "_");
+        java.util.List<Throwable> errors = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+        Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> errors.add(e));
+        fx(() -> Thread.currentThread().setUncaughtExceptionHandler((t, e) -> errors.add(e)));
+        Document doc = new Document();
+        doc.setFile(file.toString());
+        act("forms corpus: " + file.getFileName(), v -> {
+            v.setDocument(doc);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setFitMode(FitMode.WIDTH);
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+        });
+        java.util.Map<String, Integer> kinds = new java.util.TreeMap<>();
+        java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> walked = new java.util.ArrayList<>();
+        int misplaced = 0;
+        String misplacedDetail = "";
+        for (int i = 0; i < 400; i++) {
+            fx(view::focusNextField);
+            Thread.sleep(30);
+            waitIdle(30_000);
+            org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w = onFx(view::getFocusedField);
+            if (w == null || walked.contains(w)) break;
+            walked.add(w);
+            kinds.merge(w.getClass().getSimpleName().replace("WidgetAnnotation", ""), 1, Integer::sum);
+            javafx.scene.control.Control editor = onFx(() -> (javafx.scene.control.Control) view.lookup(".pdf-field-editor"));
+            if (editor != null && onFx(view::getRotation) == 0) {
+                java.awt.geom.Rectangle2D r = w.getUserSpaceRectangle();
+                double zoom = onFx(view::getZoom);
+                double dw = Math.abs(onFx(editor::getWidth) - r.getWidth() * zoom);
+                double dh = Math.abs(onFx(editor::getHeight) - r.getHeight() * zoom);
+                if (dw > 2 || dh > 2) {
+                    misplaced++;
+                    misplacedDetail = nameOf(w) + " " + onFx(editor::getWidth) + "x" + onFx(editor::getHeight)
+                            + " vs " + r.getWidth() * zoom + "x" + r.getHeight() * zoom;
+                }
+            }
+        }
+        fx(view::clearFieldFocus);
+        waitIdle(30_000);
+        check(file.getFileName() + ": Tab walks the fields " + kinds, walked.size() > 0, walked.size() + " fields");
+        check(file.getFileName() + ": walking without typing changes nothing", !onFx(() -> view.canUndoProperty().get()),
+                "an edit was recorded");
+        check(file.getFileName() + ": editors sit on their fields", misplaced == 0, misplaced + " off, e.g. " + misplacedDetail);
+
+        // fill the first single-line, multi-line and comb text fields; snapshot each regenerated appearance.
+        String[] wanted = {"single", "multi", "comb"};
+        java.util.Map<String, org.icepdf.core.pobjects.annotations.TextWidgetAnnotation> picks = new java.util.LinkedHashMap<>();
+        for (org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w : walked) {
+            if (!(w instanceof org.icepdf.core.pobjects.annotations.TextWidgetAnnotation t)) continue;
+            org.icepdf.core.pobjects.acroform.TextFieldDictionary f = t.getFieldDictionary();
+            String kind = f.isComb() ? "comb"
+                    : f.getTextFieldType() == org.icepdf.core.pobjects.acroform.TextFieldDictionary.TextFieldType.TEXT_AREA ? "multi"
+                    : f.getTextFieldType() == org.icepdf.core.pobjects.acroform.TextFieldDictionary.TextFieldType.TEXT_INPUT ? "single" : null;
+            if (kind != null) picks.putIfAbsent(kind, t);
+        }
+        java.util.List<String> filled = new java.util.ArrayList<>();
+        for (String kind : wanted) {
+            org.icepdf.core.pobjects.annotations.TextWidgetAnnotation t = picks.get(kind);
+            if (t == null) continue;
+            String text = switch (kind) {
+                case "multi" -> "A multi-line value that is long enough to wrap across the width of the field, "
+                        + "with a second sentence.\nAnd an explicit new line.";
+                case "comb" -> "1234567890";
+                default -> "Smoke test value 123";
+            };
+            fx(() -> view.focusField(t));
+            waitIdle(30_000);
+            javafx.scene.control.TextInputControl editor = editor();
+            if (editor == null) continue;
+            fx(() -> editor.setText(text));
+            fx(view::clearFieldFocus);
+            Thread.sleep(150);
+            waitIdle(30_000);
+            snapshot(out.resolve("corpus_" + tag + "_" + kind + ".png").toFile());
+            filled.add(kind + "=" + nameOf(t) + " -> " + String.valueOf(t.getFieldDictionary().getFieldValue()).length() + " chars");
+        }
+        System.out.println("  filled " + filled);
+        Thread.setDefaultUncaughtExceptionHandler(previous);
+        check(file.getFileName() + ": no uncaught exceptions", errors.isEmpty(),
+                errors.isEmpty() ? "" : errors.get(0).toString());
+        fx(() -> view.setDocument(null));
+        doc.dispose();
     }
 
     /** Form filling on the project fixture all_fields.pdf (step-by-step checks are appended per phase step). */
@@ -330,6 +432,9 @@ public final class PdfViewSmoke {
         check("click opens an editor with the field's text", edit != null && "Ada".equals(onFx(edit::getText)),
                 edit == null ? "no editor" : onFx(edit::getText));
         if (edit == null) return;
+        double[] editSize = onFx(() -> new double[]{edit.getWidth(), edit.getHeight()});
+        check("the text editor covers the field", editSize[0] > 100 && editSize[1] > 15, java.util.Arrays.toString(editSize));
+        snapshot(out.resolve("forms_text_editing.png").toFile());
         fx(() -> edit.setText("Grace"));
         key(edit, javafx.scene.input.KeyCode.ENTER, false, false);
         check("Enter commits the value", "Grace".equals(fieldValue(name)) && editor() == null,
@@ -398,8 +503,151 @@ public final class PdfViewSmoke {
         checkButtonsAndChoices(robot);
     }
 
+    private static boolean on(org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
+        return ((org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) w).isOn();
+    }
+
+    private void clickField(javafx.scene.robot.Robot robot, org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w)
+            throws Exception {
+        robotClick(robot, viewPointIn(0, w.getUserSpaceRectangle()));
+        Thread.sleep(120);
+        waitIdle(30_000);
+    }
+
     /** Buttons and choices (step 4). */
     private void checkButtonsAndChoices(javafx.scene.robot.Robot robot) throws Exception {
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation agree = widgets("agree").get(0);
+        clickField(robot, agree);
+        boolean afterClick = on(agree);
+        clickField(robot, agree);
+        check("click toggles a check box on and off", afterClick && !on(agree), afterClick + " then " + on(agree));
+        key(view, javafx.scene.input.KeyCode.SPACE, false, false);
+        check("Space toggles the focused check box", on(agree) && onFx(view::getFocusedField) == agree,
+                String.valueOf(on(agree)));
+
+        java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> color = widgets("color");
+        clickField(robot, color.get(1));
+        check("click selects a radio, its siblings turn off", on(color.get(1)) && !on(color.get(0)) && !on(color.get(2)),
+                on(color.get(0)) + " " + on(color.get(1)) + " " + on(color.get(2)));
+        clickField(robot, color.get(1));
+        check("clicking the selected radio keeps it (NoToggleToOff)", on(color.get(1)), String.valueOf(on(color.get(1))));
+        java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> pair = widgets("pair");
+        clickField(robot, pair.get(0));
+        check("radios in unison switch together", on(pair.get(0)) && on(pair.get(1)) && !on(pair.get(2)),
+                on(pair.get(0)) + " " + on(pair.get(1)) + " " + on(pair.get(2)));
+        snapshot(out.resolve("forms_buttons.png").toFile());
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation country = widgets("country").get(0);
+        clickField(robot, country);
+        Thread.sleep(300);
+        javafx.scene.control.ComboBox<?> combo = onFx(() -> (javafx.scene.control.ComboBox<?>) view.lookup(".pdf-field-editor"));
+        check("click opens a combo with its drop-down", combo != null && onFx(combo::isShowing),
+                combo == null ? "no editor" : "showing " + onFx(combo::isShowing));
+        if (combo != null) {
+            double[] size = onFx(() -> new double[]{combo.getWidth(), combo.getHeight()});
+            check("the combo editor covers the field", size[0] > 100 && size[1] > 15, java.util.Arrays.toString(size));
+        }
+        snapshot(out.resolve("forms_combo_open.png").toFile());
+        if (combo != null) {
+            // click "Japan" in the drop-down, as a user does (the popup is its own window).
+            double[] cell = onFx(() -> {
+                for (javafx.stage.Window w : javafx.stage.Window.getWindows()) {
+                    if (!(w instanceof javafx.stage.PopupWindow) || w.getScene() == null) continue;
+                    for (javafx.scene.Node n : w.getScene().getRoot().lookupAll(".list-cell")) {
+                        if (n instanceof javafx.scene.control.ListCell<?> c && "Japan".equals(c.getText())) {
+                            javafx.geometry.Bounds b = c.localToScreen(c.getBoundsInLocal());
+                            return new double[]{b.getCenterX(), b.getCenterY()};
+                        }
+                    }
+                }
+                return null;
+            });
+            if (cell != null) {
+                fx(() -> robot.mouseMove(cell[0], cell[1]));
+                Thread.sleep(80);
+                fx(() -> robot.mouseClick(javafx.scene.input.MouseButton.PRIMARY));
+            } else {
+                fx(() -> combo.getSelectionModel().select(2));
+            }
+            Thread.sleep(200);
+            waitIdle(30_000);
+        }
+        check("picking a combo entry commits it", "Japan".equals(fieldValue(country)) && editor() == null
+                        && onFx(() -> view.lookup(".pdf-field-editor")) == null,
+                String.valueOf(fieldValue(country)));
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation city = widgets("city").get(0);
+        fx(() -> view.focusField(city));
+        waitIdle(30_000);
+        javafx.scene.control.ComboBox<?> editable = onFx(() -> (javafx.scene.control.ComboBox<?>) view.lookup(".pdf-field-editor"));
+        check("editable combo is editable", editable != null && onFx(editable::isEditable),
+                editable == null ? "no editor" : "editable " + onFx(editable::isEditable));
+        if (editable != null) {
+            fx(() -> editable.getEditor().setText("Montreal"));
+            key(editable.getEditor(), javafx.scene.input.KeyCode.ENTER, false, false);
+        }
+        check("typed combo text commits on Enter", "Montreal".equals(fieldValue(city)), String.valueOf(fieldValue(city)));
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation fruit = widgets("fruit").get(0);
+        clickField(robot, fruit);
+        javafx.scene.control.ListView<?> list = onFx(() -> (javafx.scene.control.ListView<?>) view.lookup(".pdf-field-editor"));
+        check("click opens a list", list != null, "focused " + nameOf(onFx(view::getFocusedField)));
+        snapshot(out.resolve("forms_list_open.png").toFile());
+        if (list != null) {
+            double[] size = onFx(() -> new double[]{list.getWidth(), list.getHeight(),
+                    list.lookupAll(".list-cell").stream().filter(n -> ((javafx.scene.control.ListCell<?>) n).getText() != null).count()});
+            check("the list editor covers the field and shows its entries", size[0] > 100 && size[1] > 40 && size[2] == 3,
+                    java.util.Arrays.toString(size));
+        }
+        if (list != null) {
+            fx(() -> list.getSelectionModel().clearAndSelect(0));
+            Thread.sleep(150);
+            waitIdle(30_000);
+        }
+        check("picking a single-select list entry commits it", "Apple".equals(fieldValue(fruit)) && editor() == null,
+                String.valueOf(fieldValue(fruit)));
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation toppings = widgets("toppings").get(0);
+        fx(() -> view.focusField(toppings));
+        waitIdle(30_000);
+        javafx.scene.control.ListView<?> multi = onFx(() -> (javafx.scene.control.ListView<?>) view.lookup(".pdf-field-editor"));
+        boolean multiple = multi != null && onFx(() -> multi.getSelectionModel().getSelectionMode())
+                == javafx.scene.control.SelectionMode.MULTIPLE;
+        check("multi-select list allows several", multiple, multi == null ? "no editor" : "mode");
+        if (multi != null) {
+            fx(() -> {
+                multi.getSelectionModel().clearSelection();
+                multi.getSelectionModel().selectIndices(1, 2);
+            });
+            fx(view::clearFieldFocus);
+            Thread.sleep(150);
+            waitIdle(30_000);
+        }
+        java.util.List<Integer> picked = ((org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation) toppings)
+                .getFieldDictionary().getIndexes();
+        check("multi-select commits on leaving", java.util.List.of(1, 2).equals(picked), String.valueOf(picked));
+        snapshot(out.resolve("forms_choices.png").toFile());
+
+        java.util.List<org.icepdf.fx.view.AnnotationActionEvent> actions = new java.util.ArrayList<>();
+        fx(() -> view.setOnAnnotationAction(actions::add));
+        clickField(robot, widgets("submit").get(0));
+        check("submit goes to the application", actions.size() == 1
+                        && actions.get(0).action() instanceof org.icepdf.core.pobjects.actions.SubmitFormAction,
+                actions.toString());
+        fx(() -> view.setOnAnnotationAction(null));
+
+        clickField(robot, widgets("reset").get(0));
+        check("reset button restores defaults", "".equals(String.valueOf(fieldValue(widgets("name").get(0))))
+                        && !on(agree) && on(color.get(0)) && "Canada".equals(fieldValue(country)),
+                fieldValue(widgets("name").get(0)) + " " + on(agree) + " " + on(color.get(0)) + " " + fieldValue(country));
+        snapshot(out.resolve("forms_reset.png").toFile());
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo brings the filled values back", on(agree) && on(color.get(1)) && "Japan".equals(fieldValue(country)),
+                on(agree) + " " + on(color.get(1)) + " " + fieldValue(country));
+        fx(view::clearFieldFocus);
+        waitIdle(30_000);
+        snapshot(out.resolve("forms_filled.png").toFile());
     }
 
     private java.util.List<double[]> pixelsNear(int r, int g, int b, int tolerance) throws Exception {

@@ -160,7 +160,7 @@ final class FormController {
                 () -> widget.getFieldDictionary().setFieldValue(label, widget.getPObjectReference()));
     }
 
-    /** Selects several entries of a multi-select list by index. */
+    /** Selects entries of a combo or list by index (several for a multi-select list). */
     AnnotationEdits.Edit chooseIndexes(Located field, List<Integer> indexes, AffineTransform toPageSpace) {
         ChoiceWidgetAnnotation widget = (ChoiceWidgetAnnotation) field.widget();
         return change(List.of(field), toPageSpace, () -> {
@@ -174,7 +174,13 @@ final class FormController {
                     values.add(new org.icepdf.core.pobjects.LiteralStringObject(options.get(i).getValue()));
                 }
             }
-            dictionary.getEntries().put(FieldDictionary.V_KEY, values);
+            if (valid.size() == 1 && !dictionary.isMultiSelect()) {
+                // one entry: V is its export value as a plain string (not a one-element array).
+                dictionary.setFieldValue(options.get(valid.get(0)).getValue(), widget.getPObjectReference());
+            } else {
+                dictionary.getEntries().put(FieldDictionary.V_KEY, values);
+            }
+            // core matches V against the option labels, which misses [export display] pairs: set /I here.
             setIndexes(dictionary, valid);
         });
     }

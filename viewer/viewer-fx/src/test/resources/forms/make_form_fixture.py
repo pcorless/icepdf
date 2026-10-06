@@ -21,7 +21,7 @@ Fields (fully-qualified names):
   name        single-line text, value "Ada", default ""
   notes       multi-line text
   secret      password
-  code        text with /MaxLen 5, value "AB"
+  code        comb text with /MaxLen 5, value "AB"
   agree       check box (on state /Yes), off, default off
   color       radio group Red / Green / Blue, value Red, default Red, NoToggleToOff
   pair        radio group with RadiosInUnison: two kids share the /A on-state, one is /B
@@ -114,7 +114,7 @@ def push_button(name, rect, action, label):
 text_field(b"name", (150, 720, 400, 742), b"Ada")
 text_field(b"notes", (150, 640, 400, 710), b"line one", flags=4096)
 text_field(b"secret", (150, 610, 400, 630), flags=8192)
-text_field(b"code", (150, 580, 250, 600), b"AB", extra=b"/MaxLen 5")
+text_field(b"code", (150, 580, 250, 600), b"AB", flags=1 << 24, extra=b"/MaxLen 5")
 
 # -- check box
 agree = new(b"<< /Type /Annot /Subtype /Widget /FT /Btn /T (agree) /V /Off /DV /Off /AS /Off "

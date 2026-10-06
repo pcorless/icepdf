@@ -366,6 +366,8 @@ final class AnnotationUiLayer extends Group {
         area.setLayoutX(viewBounds.getX());
         area.setLayoutY(viewBounds.getY());
         area.setPrefSize(Math.max(40, viewBounds.getWidth()), Math.max(24, viewBounds.getHeight()));
+        // children aren't auto-sized here (popups keep their own size).
+        area.resize(area.getPrefWidth(), area.getPrefHeight());
         boolean[] done = {false};
         Runnable finish = () -> {
             if (done[0]) return;

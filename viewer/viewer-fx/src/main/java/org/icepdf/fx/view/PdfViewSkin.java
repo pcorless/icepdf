@@ -40,8 +40,15 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.actions.FormAction;
+import org.icepdf.core.pobjects.actions.ResetFormAction;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
@@ -895,6 +902,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     // the open text field editor, and which field it edits.
     private FieldEditor fieldEditor;
     private FormController.Located editing;
+    // a click (not Tab) is focusing a field: a combo opens its drop-down.
+    private boolean openPopupOnFocus;
 
     FormController forms() {
         if (forms == null) forms = new FormController(renderer::withAnnotationLock);
@@ -912,49 +921,145 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return null;
     }
 
-    /** The focused field changed: commit an open editor elsewhere; open one on a text field. */
+    /** The focused field changed: commit an open editor elsewhere; open one on a text or choice field. */
     private void onFieldFocusChanged() {
         AbstractWidgetAnnotation focused = getSkinnable().getFocusedField();
         if (fieldEditor != null && (editing == null || editing.widget() != focused)) {
-            fieldEditor.commitNow(editorListener(fieldEditor, editing));
+            fieldEditor.commitNow();
         }
-        if (focused != null && fieldEditor == null) openTextEditor(focused);
+        if (focused != null && fieldEditor == null) openEditor(focused, false);
     }
 
-    /** A press (or hand-tool click) on a field: focus it, or reopen its editor if already focused. */
+    /**
+     * A click on a field: focuses it (opening its editor), toggles a check box or radio, or runs a
+     * push button's action.  A click on the focused text field reopens its editor after an Esc.
+     */
     void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
         AbstractWidgetAnnotation widget = (AbstractWidgetAnnotation) field.annotation();
-        if (getSkinnable().getFocusedField() == widget) {
-            reopenEditor(widget);
-        } else {
-            getSkinnable().focusField(widget);
+        FormController.FieldKind kind = FormController.kindOf(widget);
+        if (getSkinnable().getFocusedField() != widget) {
+            openPopupOnFocus = true;
+            try {
+                getSkinnable().focusField(widget);
+            } finally {
+                openPopupOnFocus = false;
+            }
+        } else if (fieldEditor == null) {
+            openEditor(widget, true);
         }
+        actuate(widget, kind);
     }
 
     void reopenEditor(AbstractWidgetAnnotation widget) {
-        if (fieldEditor == null) openTextEditor(widget);
+        if (fieldEditor == null) openEditor(widget, false);
     }
 
-    /** Opens the native editor over a text or password field; the widget leaves the tiles meanwhile. */
-    private void openTextEditor(AbstractWidgetAnnotation widget) {
+    /** Check boxes and radios toggle, push buttons act; as a click or Space does. */
+    private void actuate(AbstractWidgetAnnotation widget, FormController.FieldKind kind) {
+        if (kind != FormController.FieldKind.CHECK && kind != FormController.FieldKind.RADIO
+                && kind != FormController.FieldKind.PUSH) {
+            return;
+        }
+        FormController.Located located = locate(widget);
+        if (located == null) return;
+        switch (kind) {
+            case CHECK -> getSkinnable().recordEdit(forms().toggleCheck(located, toPageSpaceNow(located.page())));
+            case RADIO -> {
+                String name = FormController.fieldNameOf(widget);
+                List<FormController.Located> siblings = new ArrayList<>();
+                for (FormController.Located f : fieldsInTabOrder()) {
+                    if (FormController.kindOf(f.widget()) == FormController.FieldKind.RADIO
+                            && Objects.equals(name, FormController.fieldNameOf(f.widget()))) {
+                        siblings.add(f);
+                    }
+                }
+                if (siblings.stream().noneMatch(f -> f.widget() == widget)) siblings.add(located);
+                getSkinnable().recordEdit(forms().selectRadio(located, siblings, toPageSpaceNow(located.page())));
+            }
+            default -> push(located);
+        }
+    }
+
+    /**
+     * A push button: a ResetForm action resets the form in the view (honouring its /Fields
+     * include/exclude list, which core's ResetFormAction ignores); anything else (SubmitForm,
+     * JavaScript, URI, ...) goes where a link's action goes.
+     */
+    private void push(FormController.Located button) {
+        if (button.widget().getAction() instanceof ResetFormAction reset) {
+            resetFields(fieldsForReset(reset));
+        } else {
+            getSkinnable().performAnnotationAction(button.widget());
+        }
+    }
+
+    /** Resets fields to their defaults as one undoable edit; every fillable field when null. */
+    void resetFields(List<FormController.Located> fields) {
+        if (fields == null) fields = fieldsInTabOrder();
+        // buttons and signatures have no value to reset (and their appearances must not be redrawn).
+        fields = fields.stream().filter(f -> switch (FormController.kindOf(f.widget())) {
+            case PUSH, SIGNATURE, OTHER -> false;
+            default -> true;
+        }).toList();
+        if (fields.isEmpty()) return;
+        if (fieldEditor != null) fieldEditor.commitNow();
+        // the transform is only used to regenerate appearances, which are page-local per field.
+        getSkinnable().recordEdit(forms().reset(fields, toPageSpaceNow(fields.get(0).page())));
+    }
+
+    /** The fields a ResetForm action names: all, the /Fields listed, or all but those (Flags bit 1). */
+    private List<FormController.Located> fieldsForReset(ResetFormAction reset) {
+        List<FormController.Located> all = fieldsInTabOrder();
+        Object listed = reset.getEntries().get(FormAction.FIELDS_KEY);
+        if (listed instanceof Reference ref) listed = document.getCatalog().getLibrary().getObject(ref);
+        if (!(listed instanceof List<?> entries) || entries.isEmpty()) return all;
+        Set<String> names = new HashSet<>();
+        for (Object entry : entries) {
+            if (entry instanceof Reference ref) entry = document.getCatalog().getLibrary().getObject(ref);
+            if (entry instanceof AbstractWidgetAnnotation w) names.add(FormController.fieldNameOf(w));
+            else if (entry instanceof FieldDictionary f) names.add(f.getFullyQualifiedFieldName());
+            else if (entry instanceof StringObject str) names.add(str.getDecryptedLiteralString(
+                    document.getCatalog().getLibrary().getSecurityManager()));
+            else if (entry instanceof String str) names.add(str);
+        }
+        boolean exclude = reset.isIncludeExclude();
+        List<FormController.Located> out = new ArrayList<>();
+        for (FormController.Located f : all) {
+            String name = FormController.fieldNameOf(f.widget());
+            boolean named = names.stream().anyMatch(n -> name.equals(n) || name.startsWith(n + "."));
+            if (named != exclude) out.add(f);
+        }
+        return out;
+    }
+
+    /**
+     * Opens the native editor over a text, password, combo or list field; the widget leaves the
+     * tiles meanwhile.  Buttons have no editor.
+     */
+    private void openEditor(AbstractWidgetAnnotation widget, boolean openPopup) {
         FormController.FieldKind kind = FormController.kindOf(widget);
-        if (kind != FormController.FieldKind.TEXT && kind != FormController.FieldKind.PASSWORD) return;
+        boolean text = kind == FormController.FieldKind.TEXT || kind == FormController.FieldKind.PASSWORD;
+        boolean choice = kind == FormController.FieldKind.COMBO || kind == FormController.FieldKind.LIST;
+        if (!text && !choice) return;
         FormController.Located located = locate(widget);
         if (located == null) return;
         AnnotationUiLayer ui = uiLayers.get(located.pageIndex());
         if (ui == null) return;
-        TextWidgetAnnotation text = (TextWidgetAnnotation) widget;
         FieldEditor[] holder = new FieldEditor[1];
-        FieldEditor editor = new FieldEditor(text, FormController.textOf(text), ui.viewBounds(widget), layoutZoom,
-                new FieldEditor.Listener() {
-                    public void commit(String value, int advance) {
-                        editorListener(holder[0], located).commit(value, advance);
-                    }
+        FieldEditor.Listener listener = new FieldEditor.Listener() {
+            public void commit(Object value, int advance) {
+                editorListener(holder[0], located).commit(value, advance);
+            }
 
-                    public void cancel() {
-                        editorListener(holder[0], located).cancel();
-                    }
-                });
+            public void cancel() {
+                editorListener(holder[0], located).cancel();
+            }
+        };
+        FieldEditor editor = text
+                ? FieldEditor.text((TextWidgetAnnotation) widget, FormController.textOf((TextWidgetAnnotation) widget),
+                ui.viewBounds(widget), layoutZoom, listener)
+                : FieldEditor.choice((ChoiceWidgetAnnotation) widget, ui.viewBounds(widget), layoutZoom,
+                openPopup || openPopupOnFocus, listener);
         holder[0] = editor;
         fieldEditor = editor;
         editing = located;
@@ -962,18 +1067,36 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         bumpAnnotationGeneration(located.pageIndex());
         ui.addFieldEditor(editor.control());
         editor.control().requestFocus();
-        editor.control().selectAll();
+        if (editor.control() instanceof javafx.scene.control.TextInputControl input) input.selectAll();
     }
 
     /** Closes an editor (once): commit applies the value as an undoable edit; the widget re-renders. */
     private FieldEditor.Listener editorListener(FieldEditor editor, FormController.Located located) {
         return new FieldEditor.Listener() {
-            public void commit(String value, int advance) {
+            public void commit(Object value, int advance) {
                 close(editor, located);
-                String current = FormController.textOf((TextWidgetAnnotation) located.widget());
-                if (!value.equals(current)) {
-                    getSkinnable().recordEdit(forms().setText(located, value, toPageSpaceNow(located.page())));
+                AnnotationEdits.Edit edit = null;
+                AffineTransform toPage = toPageSpaceNow(located.page());
+                if (located.widget() instanceof TextWidgetAnnotation textWidget) {
+                    if (!value.equals(FormController.textOf(textWidget))) {
+                        edit = forms().setText(located, (String) value, toPage);
+                    }
+                } else if (located.widget() instanceof ChoiceWidgetAnnotation choice) {
+                    ChoiceFieldDictionary field = choice.getFieldDictionary();
+                    if (value instanceof List<?> indexes) {
+                        List<Integer> current = FieldEditor.selectedIndexes(field);
+                        if (!indexes.equals(current)) {
+                            @SuppressWarnings("unchecked") List<Integer> chosen = (List<Integer>) indexes;
+                            edit = forms().chooseIndexes(located, chosen, toPage);
+                        }
+                    } else if (value instanceof String typed) {
+                        Object current = field.getFieldValue();
+                        if (!typed.equals(current instanceof String s ? s : current != null ? current.toString() : "")) {
+                            edit = forms().choose(located, typed, toPage);
+                        }
+                    }
                 }
+                getSkinnable().recordEdit(edit);
                 if (advance > 0) getSkinnable().focusNextField();
                 else if (advance < 0) getSkinnable().focusPreviousField();
             }
@@ -1631,7 +1754,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private void onPress(MouseEvent e) {
         getSkinnable().requestFocus();
-        if (gestureHandler != null) return; // a second button during a gesture
+        if (gestureHandler != null) {
+            if (e.getButton() != gestureButton) return; // a second button during a gesture
+            // the same button again: its release went elsewhere (a popup the press opened, such as a
+            // combo field's drop-down, takes it), so that gesture is over.
+            gestureHandler = null;
+        }
         if (e.getButton() == MouseButton.MIDDLE || (spaceDown && e.getButton() == MouseButton.PRIMARY)) {
             gestureHandler = panHandler;
             spacePanned |= spaceDown;
@@ -1760,6 +1888,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private void onKey(KeyEvent e) {
         // typing in a popup note (or any text input inside the view) is not a view command.
         if (e.getTarget() instanceof javafx.scene.control.TextInputControl) return;
+        AbstractWidgetAnnotation focusedField = getSkinnable().getFocusedField();
+        if (focusedField != null && fieldEditor == null
+                && (e.getCode() == KeyCode.SPACE || (e.getCode() == KeyCode.ENTER
+                && FormController.kindOf(focusedField) == FormController.FieldKind.PUSH))) {
+            // Space toggles a focused check box or radio and presses a focused button (Enter too).
+            FormController.FieldKind kind = FormController.kindOf(focusedField);
+            if (kind == FormController.FieldKind.CHECK || kind == FormController.FieldKind.RADIO
+                    || kind == FormController.FieldKind.PUSH) {
+                actuate(focusedField, kind);
+                e.consume();
+                return;
+            }
+        }
         if (e.getCode() == KeyCode.SPACE) {
             // hold Space to pan with the primary button; a tap without a drag pages down on release.
             if (!spaceDown) {

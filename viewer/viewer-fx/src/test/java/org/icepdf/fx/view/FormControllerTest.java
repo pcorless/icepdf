@@ -198,6 +198,17 @@ class FormControllerTest {
         assertEquals(List.of(0, 2), list.getFieldDictionary().getIndexes());
     }
 
+    @DisplayName("choosing one combo entry by index writes its export value as a string, and /I")
+    @Test
+    void chooseOneByIndex() {
+        Located country = one("country");
+        AnnotationEdits.Edit edit = forms.chooseIndexes(country, List.of(2), toPage);
+        assertEquals("Japan", value(country));
+        assertEquals(List.of(2), ((ChoiceWidgetAnnotation) country.widget()).getFieldDictionary().getIndexes());
+        edit.undo();
+        assertEquals("France", value(country));
+    }
+
     @DisplayName("reset restores defaults across field types, as one undoable edit")
     @Test
     void reset() {
