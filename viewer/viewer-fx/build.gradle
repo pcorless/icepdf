@@ -17,7 +17,7 @@ repositories {
 description = 'ICEpdf FX viewer reference implementation project'
 
 application {
-    mainClass = "org.icepdf.fx.ri.viewer.Launcher"
+    mainClass = "org.icepdf.fx.demo.PdfViewDemo"
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 
@@ -29,7 +29,7 @@ def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
 
 javafx {
     version = "21.0.5"
-    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics', 'javafx.swing' ]
+    modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics' ]
 }
 
 
@@ -38,11 +38,13 @@ dependencies {
     // signature validation.
     implementation 'org.bouncycastle:bcprov-jdk18on:' + "${BOUNCY_VERSION}"
     implementation 'org.bouncycastle:bcpkix-jdk18on:' + "${BOUNCY_VERSION}"
-    // drawing tests
-    implementation 'org.jfree:org.jfree.fxgraphics2d:2.1'
+    // RasterBench only (test source set, never shipped) -- see PROVENANCE.md
+    testImplementation 'org.jfree:org.jfree.fxgraphics2d:2.1'
+    testImplementation "org.openjfx:javafx-swing:${javafx.version}"
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
+    testRuntimeOnly('org.junit.platform:junit-platform-launcher')
 }
 
 // generatePomFileForViewerJarPublication
@@ -90,7 +92,7 @@ jar {
         manifest {
             attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
             // executable jar
-            attributes("Main-Class": 'org.icepdf.ri.viewer.Launcher')
+            attributes("Main-Class": 'org.icepdf.fx.demo.PdfViewDemo')
             if (!configurations.runtimeClasspath.isEmpty()) {
                 attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }
@@ -126,3 +128,37 @@ task javadocJar(type: Jar, dependsOn: 'javadoc') {
 }
 
 // Archives are now automatically included via publishing plugin
+
+// RasterBench: measures the Java2D -> JavaFX raster hand-off candidates (JAVAFX-PAGEVIEW-PLAN.md step 1).
+// Lives in the test source set so its bench-only dependencies never ship.
+// ./gradlew :viewer:viewer-fx:bench -PbenchArgs="--runs=3;--zooms=1,4;/path/file.pdf#3"   (';' separated)
+tasks.register('bench', JavaExec) {
+    description = 'Runs RasterBench, the Java2D to JavaFX raster hand-off comparison.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.bench.RasterBench'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs = ['-Xmx1g', '-Dprism.vsync=false', '-Djavafx.animation.fullspeed=true']
+    if (project.hasProperty('benchArgs')) {
+        args project.property('benchArgs').toString().split(';')
+    }
+}
+
+// PdfViewSmoke: scripted run of the control through the plan's verification steps, with snapshots.
+// ./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="/path/file.pdf;build/smoke" -PsmokeXmx=512m
+tasks.register('smoke', JavaExec) {
+    description = 'Drives PdfView through zoom/pan/rotate/view-mode steps and snapshots each.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.bench.PdfViewSmoke'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs = ["-Xmx${project.findProperty('smokeXmx') ?: '512m'}"]
+    if (project.hasProperty('smokeJvmArgs')) {
+        jvmArgs project.property('smokeJvmArgs').toString().split(';')
+    }
+    if (project.hasProperty('smokeArgs')) {
+        args project.property('smokeArgs').toString().split(';')
+    }
+}

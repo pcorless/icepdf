@@ -3,7 +3,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>viewer</artifactId>
-        <version>7.4.0-SNAPSHOT</version>
+        <version>7.5.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>icepdf-viewer-fx</artifactId>
@@ -13,38 +13,45 @@
         ICEpdf JavaFX reference implementation.
     </description>
 
+    <properties>
+        <javafx.version>21.0.5</javafx.version>
+        <!-- JavaFX 21 requires Java 17+, mirrors the gradle toolchain override -->
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>21</version>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-            <version>21</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jfree</groupId>
-            <artifactId>org.jfree.fxgraphics2d</artifactId>
-            <version>2.1</version>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.pcorless.icepdf</groupId>
             <artifactId>icepdf-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- RasterBench only (test scope, never shipped) - see PROVENANCE.md -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.9.3</version>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>23</version>
-            <scope>compile</scope>
+            <groupId>org.jfree</groupId>
+            <artifactId>org.jfree.fxgraphics2d</artifactId>
+            <version>2.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -60,7 +67,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.icepdf.fx.ri.viewer.Launcher</mainClass>
+                    <mainClass>org.icepdf.fx.demo.PdfViewDemo</mainClass>
                 </configuration>
             </plugin>
         </plugins>
