@@ -86,6 +86,10 @@ public final class PdfViewSmoke {
         System.out.printf("max heap %dMB, output scale %.2f%n", Runtime.getRuntime().maxMemory() >> 20,
                 onFx(() -> stage.getOutputScaleX()));
 
+        if ("annotations".equals(System.getProperty("smoke.only"))) {
+            annotationSnapshots(file);
+            return;
+        }
         Document document = new Document();
         document.setFile(file.toString());
         int pages = document.getNumberOfPages();
@@ -165,6 +169,117 @@ public final class PdfViewSmoke {
         String state = onFx(() -> String.format("page %d/%d zoom %.0f%% rot %.0f",
                 view.getCurrentPageIndex() + 1, view.getPageCount(), view.getZoom() * 100, view.getRotation()));
         System.out.printf("%-32s %s %8.0fms  heap %4dMB  %s%n", name, idle ? "idle   " : "TIMEOUT", ms, heap, state);
+    }
+
+    // ---- annotation rendering A/B ------------------------------------------------------------
+
+    private static final String[] ANNOTATION_DOCS = {
+            "Invoice_highlight.pdf", "Invoice_highlight_note.pdf", "Invoice_ink.pdf", "Invoice_oval.pdf",
+            "Invoice_rectangle.pdf", "Invoice_sticky_note.pdf", "Invoice_text_markup.pdf",
+            "Invoice_free_text.pdf", "Invoice_lines.pdf", "Invoice_poly_line.pdf", "Invoice_text_callout.pdf",
+            "Invoice_cross_out_note.pdf", "links.pdf", "pp_10431_annots.pdf", "93annrep.pdf", "a7_tryme_gb.pdf"};
+
+    /**
+     * Snapshots annotation-heavy documents (fit page, then 250% at the page centre) into the out
+     * directory.  With {@code -Dsmoke.compare=<dir>} each snapshot is diffed against the one of the
+     * same name there - run once with {@code -Dorg.icepdf.fx.view.singlePassAnnotations=true} to make
+     * the reference, then without to check the split annotation layers match it.
+     */
+    private void annotationSnapshots(Path dir) throws Exception {
+        String compare = System.getProperty("smoke.compare");
+        System.out.println("annotation snapshots" + (compare != null ? ", comparing with " + compare : "")
+                + (org.icepdf.fx.view.TileRenderer.SINGLE_PASS_ANNOTATIONS ? " [single pass]" : " [split layers]"));
+        for (String name : ANNOTATION_DOCS) {
+            Path file = dir.resolve(name);
+            if (!Files.exists(file)) {
+                System.out.println("  missing " + name);
+                continue;
+            }
+            Document document = new Document();
+            document.setFile(file.toString());
+            int pages = Math.min(2, document.getNumberOfPages());
+            for (int p = 0; p < pages; p++) {
+                int page = p;
+                for (double zoom : new double[]{0, 2.5}) {
+                    onFx(() -> {
+                        if (view.getDocument() != document) view.setDocument(document);
+                        view.setViewMode(ViewMode.SINGLE_PAGE);
+                        view.setRotation(0);
+                        view.setCurrentPageIndex(page);
+                        if (zoom == 0) {
+                            view.setFitMode(FitMode.PAGE);
+                        } else {
+                            view.setFitMode(FitMode.NONE);
+                            view.setZoom(zoom);
+                        }
+                        return null;
+                    });
+                    waitIdle(60_000);
+                    if (zoom != 0) {
+                        // centre on the page's first annotation, so the zoomed shot covers one.
+                        java.util.List<org.icepdf.core.pobjects.annotations.Annotation> annots =
+                                document.getPageTree().getPage(page).getAnnotations();
+                        if (annots != null && !annots.isEmpty() && annots.get(0) != null) {
+                            java.awt.geom.Rectangle2D r = annots.get(0).getUserSpaceRectangle();
+                            onFx(() -> {
+                                view.ensureVisible(new org.icepdf.fx.view.PagePoint(page, r.getCenterX(), r.getCenterY()));
+                                return null;
+                            });
+                            waitIdle(60_000);
+                        }
+                    }
+                    Thread.sleep(150);
+                    waitIdle(60_000);
+                    String shot = String.format("%s_p%d_%s.png", name.replace(".pdf", ""), page + 1,
+                            zoom == 0 ? "fit" : "z250");
+                    File out = this.out.resolve(shot).toFile();
+                    snapshot(out);
+                    if (compare != null) compareImages(Paths.get(compare).resolve(shot).toFile(), out, shot);
+                }
+            }
+            onFx(() -> {
+                view.setDocument(null);
+                return null;
+            });
+            document.dispose();
+        }
+        if (compare != null) {
+            System.out.println(failures == 0 ? "annotation A/B: all within tolerance"
+                    : "annotation A/B: " + failures + " over tolerance");
+        }
+    }
+
+    /**
+     * Pixel diff: reports the largest channel difference and the share of pixels differing by more
+     * than 8 and 48 levels.  Passes when under 0.1% of pixels differ by more than 48.
+     */
+    private void compareImages(File reference, File actual, String name) throws Exception {
+        if (!reference.exists()) {
+            check(name, false, "no reference image");
+            return;
+        }
+        java.awt.image.BufferedImage a = ImageIO.read(reference);
+        java.awt.image.BufferedImage b = ImageIO.read(actual);
+        if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) {
+            check(name, false, "size differs");
+            return;
+        }
+        long over8 = 0, over48 = 0;
+        int max = 0;
+        long total = (long) a.getWidth() * a.getHeight();
+        for (int y = 0; y < a.getHeight(); y++) {
+            for (int x = 0; x < a.getWidth(); x++) {
+                int pa = a.getRGB(x, y), pb = b.getRGB(x, y);
+                int d = Math.max(Math.abs((pa >> 16 & 0xff) - (pb >> 16 & 0xff)),
+                        Math.max(Math.abs((pa >> 8 & 0xff) - (pb >> 8 & 0xff)), Math.abs((pa & 0xff) - (pb & 0xff))));
+                max = Math.max(max, d);
+                if (d > 8) over8++;
+                if (d > 48) over48++;
+            }
+        }
+        double share48 = over48 * 100.0 / total;
+        check(name, share48 < 0.1, String.format("max diff %d, >8: %.3f%%, >48: %.3f%%", max,
+                over8 * 100.0 / total, share48));
     }
 
     // ---- tool-mode checks: pass/fail by numbers -------------------------------------------

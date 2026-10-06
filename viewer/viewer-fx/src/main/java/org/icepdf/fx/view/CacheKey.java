@@ -19,7 +19,7 @@ package org.icepdf.fx.view;
  * Identity of a cached raster.  Everything that changes the pixels is part of the key, so a
  * lookup can never return a buffer rendered for a different zoom, rotation or screen scale.
  */
-public sealed interface CacheKey permits CacheKey.Tile, CacheKey.Preview {
+public sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile, CacheKey.Preview {
 
     int pageIndex();
 
@@ -29,6 +29,18 @@ public sealed interface CacheKey permits CacheKey.Tile, CacheKey.Preview {
 
     /** One device-pixel tile of a page. */
     record Tile(int pageIndex, Params params, int column, int row) implements CacheKey {
+    }
+
+    /** Which annotation raster: plain src-over appearances, or those carrying a blend mode. */
+    enum AnnotationLayer {NORMAL, BLEND}
+
+    /**
+     * One device-pixel tile of a page's annotation raster - transparent, annotations only.
+     * {@code generation} is the page's annotation generation, bumped on every add/edit/delete, so
+     * a tile rendered before a change can never be shown after it.
+     */
+    record AnnotationTile(int pageIndex, Params params, AnnotationLayer layer, int column, int row,
+                          int generation) implements CacheKey {
     }
 
     /** A whole-page low-resolution render shown while tiles are missing. */

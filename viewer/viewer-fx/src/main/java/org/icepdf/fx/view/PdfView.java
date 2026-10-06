@@ -499,7 +499,10 @@ public class PdfView extends Control {
         pageBoundary.set(value);
     }
 
-    /** Whether annotation appearances are part of the page raster. */
+    /**
+     * Whether annotation appearances are drawn.  They render in their own layers above the page
+     * content, so annotation changes never re-render the page.
+     */
     public final BooleanProperty paintAnnotationsProperty() {
         return paintAnnotations;
     }

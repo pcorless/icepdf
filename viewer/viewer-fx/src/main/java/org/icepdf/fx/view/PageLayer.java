@@ -37,6 +37,9 @@ import java.util.*;
  *     <li>stale tiles - tiles from the previous zoom/rotation, mapped the same way, until the
  *     current tiles cover the viewport;</li>
  *     <li>tiles - current tiles at 1:1 device pixels;</li>
+ *     <li>blend-annotation tiles - opaque copies of the page with its blend-mode appearances
+ *     (Multiply highlights) composited in by core, only where those annotations are;</li>
+ *     <li>annotation tiles - plain appearances on transparent, over everything below;</li>
  *     <li>overlay, in PDF user space: the text selection highlight, then the application's
  *     {@link PageOverlayFactory} content;</li>
  *     <li>caret, in page view space so it stays one device pixel wide at any zoom.</li>
@@ -56,9 +59,9 @@ final class PageLayer extends Group {
     private final Rectangle clip = new Rectangle();
     private final ImageView preview = new ImageView();
     private final Affine previewTransform = new Affine();
-    private final Group staleTiles = new Group();
-    private final Affine staleTransform = new Affine();
-    private final Group tiles = new Group();
+    private final TileSet content = new TileSet();
+    private final TileSet annotations = new TileSet();
+    private final TileSet blendAnnotations = new TileSet();
     private final Group overlay = new Group();
     private final Affine overlayTransform = new Affine();
     private final Path searchHits = new Path();
@@ -68,8 +71,6 @@ final class PageLayer extends Group {
 
     private CacheKey.Params params;
     private AffineTransform pageToView;
-    private final Map<CacheKey.Tile, ImageView> tileViews = new HashMap<>();
-    private CacheKey.Params staleParams;
     private AffineTransform previewPageToView;
     private boolean hasPreview;
     private boolean overlayCreated;
@@ -88,7 +89,6 @@ final class PageLayer extends Group {
         preview.getTransforms().add(previewTransform);
         preview.setSmooth(true);
         preview.setVisible(false);
-        staleTiles.getTransforms().add(staleTransform);
         overlay.getTransforms().add(overlayTransform);
         java.awt.Color c = Page.selectionColor;
         selection.setFill(Color.rgb(c.getRed(), c.getGreen(), c.getBlue(), Page.SELECTION_ALPHA));
@@ -102,7 +102,7 @@ final class PageLayer extends Group {
         caret.setStroke(Color.BLACK);
         caret.setMouseTransparent(true);
         caret.setVisible(false);
-        getChildren().addAll(paper, preview, staleTiles, tiles, overlay, caret);
+        getChildren().addAll(paper, preview, content.root, blendAnnotations.root, annotations.root, overlay, caret);
         setClip(clip);
     }
 
@@ -133,21 +133,11 @@ final class PageLayer extends Group {
         clip.setWidth(width);
         clip.setHeight(height);
         if (newParams.equals(params)) return;
-        AffineTransform newPageToView = PageTransforms.pageToView(page, newParams.boundary(),
-                newParams.rotation(), newParams.zoom());
-        if (!tileViews.isEmpty()) {
-            staleTiles.getChildren().setAll(tiles.getChildren());
-            tiles.getChildren().clear();
-            tileViews.clear();
-            staleParams = params;
-        }
         params = newParams;
-        pageToView = newPageToView;
-        if (staleParams != null) {
-            AffineTransform from = PageTransforms.pageToView(page, staleParams.boundary(),
-                    staleParams.rotation(), staleParams.zoom());
-            PageTransforms.setFx(staleTransform, PageTransforms.between(from, pageToView));
-        }
+        pageToView = PageTransforms.pageToView(page, newParams.boundary(), newParams.rotation(), newParams.zoom());
+        content.setToken(newParams, newParams);
+        annotations.setToken(new AnnotationToken(newParams, annotations.generation), newParams);
+        blendAnnotations.setToken(new AnnotationToken(newParams, blendAnnotations.generation), newParams);
         if (previewPageToView != null) {
             PageTransforms.setFx(previewTransform, PageTransforms.between(previewPageToView, pageToView));
         }
@@ -156,40 +146,109 @@ final class PageLayer extends Group {
         placeCaret();
     }
 
-    boolean hasTile(CacheKey.Tile key) {
-        return tileViews.containsKey(key);
+    TileSet content() {
+        return content;
     }
 
-    /** Adds a current-params tile; ignored if the key is for other params. */
-    void addTile(CacheKey.Tile key, TileGrid.Tile tile, RasterBuffer buffer) {
-        if (!key.params().equals(params) || tileViews.containsKey(key)) return;
-        ImageView view = new ImageView(buffer.getImage());
-        double scale = params.scale();
-        view.setX(tile.x() / scale);
-        view.setY(tile.y() / scale);
-        view.setFitWidth(tile.width() / scale);
-        view.setFitHeight(tile.height() / scale);
-        // 1:1 device pixels: filtering would only blur.
-        view.setSmooth(false);
-        tileViews.put(key, view);
-        tiles.getChildren().add(view);
+    /** The annotation tile set for a layer, moved to {@code generation} (older tiles go stale). */
+    TileSet annotations(CacheKey.AnnotationLayer layer, int generation) {
+        TileSet set = layer == CacheKey.AnnotationLayer.BLEND ? blendAnnotations : annotations;
+        if (set.generation != generation) {
+            set.generation = generation;
+            set.setToken(new AnnotationToken(params, generation), params);
+        }
+        return set;
     }
 
-    /** Drops tile nodes not in {@code keep} (they stay in the cache). */
-    void retainTiles(Set<CacheKey.Tile> keep) {
-        Iterator<Map.Entry<CacheKey.Tile, ImageView>> it = tileViews.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<CacheKey.Tile, ImageView> e = it.next();
-            if (!keep.contains(e.getKey())) {
-                tiles.getChildren().remove(e.getValue());
-                it.remove();
+    private record AnnotationToken(CacheKey.Params params, int generation) {
+    }
+
+    /**
+     * One kind of tile on this page: the current tiles, plus the previous set kept as "stale" -
+     * mapped onto the current transform - until the current set covers the viewport, so a zoom, a
+     * rotation or an annotation edit never flashes a hole.
+     */
+    final class TileSet {
+        final Group root = new Group();
+        private final Group current = new Group();
+        private final Group stale = new Group();
+        private final Affine staleTransform = new Affine();
+        // present keys; the view is null for an EMPTY tile (nothing to draw there).
+        private final Map<CacheKey, ImageView> views = new HashMap<>();
+        private Object token;
+        private CacheKey.Params staleParams;
+        int generation;
+
+        TileSet() {
+            stale.getTransforms().add(staleTransform);
+            root.getChildren().addAll(stale, current);
+        }
+
+        /** Current tiles become stale if the token (params, plus generation for annotations) changes. */
+        void setToken(Object newToken, CacheKey.Params newParams) {
+            if (newToken.equals(token)) return;
+            CacheKey.Params oldParams = token == null ? null
+                    : token instanceof AnnotationToken a ? a.params() : (CacheKey.Params) token;
+            if (!current.getChildren().isEmpty()) {
+                stale.getChildren().setAll(current.getChildren());
+                current.getChildren().clear();
+                staleParams = oldParams;
+            }
+            views.clear();
+            token = newToken;
+            if (staleParams != null && newParams != null) {
+                AffineTransform from = PageTransforms.pageToView(page, staleParams.boundary(),
+                        staleParams.rotation(), staleParams.zoom());
+                PageTransforms.setFx(staleTransform, PageTransforms.between(from, pageToView));
             }
         }
-    }
 
-    void clearStale() {
-        staleTiles.getChildren().clear();
-        staleParams = null;
+        boolean has(CacheKey key) {
+            return views.containsKey(key);
+        }
+
+        /** Adds a tile at the current params; {@link RasterBuffer#EMPTY} records it with no node. */
+        void add(CacheKey key, TileGrid.Tile tile, RasterBuffer buffer) {
+            if (views.containsKey(key)) return;
+            if (buffer == RasterBuffer.EMPTY) {
+                views.put(key, null);
+                return;
+            }
+            ImageView view = new ImageView(buffer.getImage());
+            double scale = params.scale();
+            view.setX(tile.x() / scale);
+            view.setY(tile.y() / scale);
+            view.setFitWidth(tile.width() / scale);
+            view.setFitHeight(tile.height() / scale);
+            // 1:1 device pixels: filtering would only blur.
+            view.setSmooth(false);
+            views.put(key, view);
+            current.getChildren().add(view);
+        }
+
+        /** Drops tile nodes not in {@code keep} (they stay in the cache). */
+        void retain(Set<? extends CacheKey> keep) {
+            Iterator<Map.Entry<CacheKey, ImageView>> it = views.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<CacheKey, ImageView> e = it.next();
+                if (!keep.contains(e.getKey())) {
+                    if (e.getValue() != null) current.getChildren().remove(e.getValue());
+                    it.remove();
+                }
+            }
+        }
+
+        void clearStale() {
+            stale.getChildren().clear();
+            staleParams = null;
+        }
+
+        /** Removes everything, current and stale (annotations switched off). */
+        void clear() {
+            views.clear();
+            current.getChildren().clear();
+            clearStale();
+        }
     }
 
     boolean hasPreview() {

@@ -34,6 +34,9 @@ import java.nio.IntBuffer;
  */
 public final class RasterBuffer {
 
+    /** Stands for "nothing here" (an annotation tile with no annotation on it); never displayed. */
+    public static final RasterBuffer EMPTY = new RasterBuffer(1, 1);
+
     private final BufferedImage image;
     private final int[] pixels;
     private final WritableImage fxImage;
@@ -54,6 +57,14 @@ public final class RasterBuffer {
             System.arraycopy(source, (y + row) * sourceStride + x, tile.pixels, row * width, width);
         }
         return tile;
+    }
+
+    /** Copies this buffer into a larger ARGB_PRE raster at (x, y): the inverse of {@link #slice}. */
+    void copyInto(int[] target, int targetStride, int x, int y) {
+        int width = getWidth();
+        for (int row = 0; row < getHeight(); row++) {
+            System.arraycopy(pixels, row * width, target, (y + row) * targetStride + x, width);
+        }
     }
 
     /** Pixel array of a BufferedImage created as TYPE_INT_ARGB_PRE. */

@@ -128,7 +128,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         super(control);
         renderer = new TileRenderer(TileRenderer.defaultThreads(), new TileRenderer.Sink() {
             @Override
-            public void tileReady(CacheKey.Tile key, RasterBuffer buffer) {
+            public void tileReady(CacheKey key, RasterBuffer buffer) {
                 cache.put(key, buffer);
                 scheduleRefresh();
             }
@@ -137,6 +137,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             public void previewReady(CacheKey.Preview key, RasterBuffer buffer, float zoom) {
                 cache.put(key, buffer);
                 scheduleRefresh();
+            }
+
+            @Override
+            public void annotationLayerEmpty(int pageIndex, CacheKey.AnnotationLayer layer, int generation) {
+                emptyAnnotationLayers.computeIfAbsent(pageIndex, k -> new EnumMap<>(CacheKey.AnnotationLayer.class))
+                        .put(layer, generation);
             }
 
             @Override
@@ -292,6 +298,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void onDocument() {
+        annotationGenerations.clear();
         document = getSkinnable().getDocument();
         renderer.setDocument(document);
         textLoader.setDocument(document);
@@ -584,36 +591,114 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         double y0 = Math.max(slot.y(), scrollY) - slot.y();
         double x1 = Math.min(slot.maxX(), scrollX + viewportW) - slot.x();
         double y1 = Math.min(slot.maxY(), scrollY + viewportH) - slot.y();
-        Set<CacheKey.Tile> keys = new HashSet<>();
+        boolean annotationsOn = getSkinnable().isPaintAnnotations() && !TileRenderer.SINGLE_PASS_ANNOTATIONS;
         if (x1 <= x0 || y1 <= y0) {
-            layer.retainTiles(keys);
+            layer.content().retain(Set.of());
+            if (annotationsOn) {
+                for (CacheKey.AnnotationLayer kind : CacheKey.AnnotationLayer.values()) {
+                    layer.annotations(kind, annotationGeneration(slot.pageIndex())).retain(Set.of());
+                }
+            }
             return true;
         }
         TileGrid grid = new TileGrid(TileGrid.deviceSize(slot.width(), scale),
                 TileGrid.deviceSize(slot.height(), scale), TileGrid.DEFAULT_TILE_SIZE);
+        List<TileGrid.Tile> visible = grid.tilesIntersecting(x0 * scale, y0 * scale, (x1 - x0) * scale,
+                (y1 - y0) * scale);
+        int page = slot.pageIndex();
+
+        boolean complete = updateTileSet(layer.content(), visible, wanted,
+                t -> new CacheKey.Tile(page, params, t.column(), t.row()),
+                missing -> renderer.requestTiles(page, params, grid, missing));
+
+        for (CacheKey.AnnotationLayer kind : CacheKey.AnnotationLayer.values()) {
+            int generation = annotationGeneration(page);
+            PageLayer.TileSet set = layer.annotations(kind, generation);
+            if (!annotationsOn || isAnnotationLayerEmpty(page, kind, generation)) {
+                set.clear();
+                continue;
+            }
+            boolean blend = kind == CacheKey.AnnotationLayer.BLEND;
+            complete &= updateTileSet(set, visible, wanted,
+                    t -> new CacheKey.AnnotationTile(page, params, kind, t.column(), t.row(), generation),
+                    missing -> {
+                        Map<TileGrid.Tile, RasterBuffer> backdrops = null;
+                        if (blend) {
+                            // blend appearances composite against the page: wait for its content tiles.
+                            backdrops = new HashMap<>();
+                            List<TileGrid.Tile> ready = new ArrayList<>();
+                            for (TileGrid.Tile t : missing) {
+                                RasterBuffer content = cache.get(new CacheKey.Tile(page, params, t.column(), t.row()));
+                                if (content == null || content == RasterBuffer.EMPTY) continue;
+                                backdrops.put(t, content);
+                                ready.add(t);
+                            }
+                            missing = ready;
+                        }
+                        if (!missing.isEmpty()) {
+                            renderer.requestAnnotationTiles(page, params, kind, generation, grid, missing,
+                                    Set.of(), backdrops);
+                        }
+                    });
+        }
+        return complete;
+    }
+
+    /**
+     * Shows a tile set's cached tiles for the visible grid cells, requests the missing ones (unless a
+     * zoom is settling) and drops nodes that scrolled away; stale tiles go once the set is complete.
+     *
+     * @return true when every visible tile is showing (or has failed)
+     */
+    private boolean updateTileSet(PageLayer.TileSet set, List<TileGrid.Tile> visible, Set<CacheKey> wanted,
+                                  java.util.function.Function<TileGrid.Tile, CacheKey> keyOf,
+                                  java.util.function.Consumer<List<TileGrid.Tile>> request) {
+        Set<CacheKey> keys = new HashSet<>();
         List<TileGrid.Tile> missing = new ArrayList<>();
         boolean complete = true;
-        for (TileGrid.Tile tile : grid.tilesIntersecting(x0 * scale, y0 * scale, (x1 - x0) * scale,
-                (y1 - y0) * scale)) {
-            CacheKey.Tile key = new CacheKey.Tile(slot.pageIndex(), params, tile.column(), tile.row());
+        for (TileGrid.Tile tile : visible) {
+            CacheKey key = keyOf.apply(tile);
             keys.add(key);
             wanted.add(key);
-            if (layer.hasTile(key) || renderer.hasFailed(key)) continue;
+            if (set.has(key) || renderer.hasFailed(key)) continue;
             RasterBuffer buffer = cache.get(key);
             if (buffer != null) {
-                layer.addTile(key, tile, buffer);
+                set.add(key, tile, buffer);
             } else {
                 complete = false;
                 if (!renderer.isPending(key)) missing.add(tile);
             }
         }
-        layer.retainTiles(keys);
+        set.retain(keys);
         if (complete) {
-            layer.clearStale();
+            set.clearStale();
         } else if (!zoomSettling && !missing.isEmpty()) {
-            renderer.requestTiles(slot.pageIndex(), params, grid, missing);
+            request.accept(missing);
         }
         return complete;
+    }
+
+    // ---- annotation generations ------------------------------------------------------------
+
+    /** Per page, bumped on every annotation add/edit/delete; part of the annotation tile keys. */
+    private final Map<Integer, Integer> annotationGenerations = new HashMap<>();
+    // layers found to hold no annotations at a page's generation: not requested again.
+    private final Map<Integer, Map<CacheKey.AnnotationLayer, Integer>> emptyAnnotationLayers = new HashMap<>();
+
+    int annotationGeneration(int pageIndex) {
+        return annotationGenerations.getOrDefault(pageIndex, 0);
+    }
+
+    /** Invalidates a page's annotation layers: they re-render; page content tiles are untouched. */
+    void bumpAnnotationGeneration(int pageIndex) {
+        annotationGenerations.merge(pageIndex, 1, Integer::sum);
+        emptyAnnotationLayers.remove(pageIndex);
+        scheduleRefresh();
+    }
+
+    private boolean isAnnotationLayerEmpty(int pageIndex, CacheKey.AnnotationLayer layer, int generation) {
+        Map<CacheKey.AnnotationLayer, Integer> empty = emptyAnnotationLayers.get(pageIndex);
+        return empty != null && Integer.valueOf(generation).equals(empty.get(layer));
     }
 
     private void publishCurrentPage() {
@@ -738,6 +823,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void resetRasters() {
+        emptyAnnotationLayers.clear();
         renderer.cancelAll();
         cache.clear();
         clearLayers();

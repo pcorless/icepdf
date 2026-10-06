@@ -19,9 +19,12 @@ import javafx.application.Platform;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
@@ -44,18 +47,39 @@ import java.util.logging.Logger;
  * Every paint gets a real clip, so the core's own offscreens (transparency groups, soft masks) are
  * sized to the region rather than the zoomed page.
  * <p>
+ * Annotations are not part of the page tiles: they render into their own
+ * {@link CacheKey.AnnotationTile}s, so editing an annotation re-renders that cheap layer and never
+ * page content - the Swing viewer likewise paints page buffers without annotations.  Plain
+ * appearances go on a transparent layer.  Blend-mode appearances (Multiply highlights) can't: core's
+ * blend composite over a transparent backdrop multiplies by zero and paints black.  So, like the
+ * Swing viewer's {@code paintBlendedAnnotation}, they are rendered over the real page pixels - the
+ * cached content tiles, read-only once rendered, so still no page re-render - and shown as opaque
+ * copies where blend annotations are.  {@code -Dorg.icepdf.fx.view.singlePassAnnotations=true}
+ * restores the single-pass render (annotations baked into the page tiles) for A/B comparison.
+ * <p>
  * Requests, cancellation and delivery are all on the FX thread; only the paint runs on workers.
  */
 public final class TileRenderer {
 
     private static final Logger logger = Logger.getLogger(TileRenderer.class.toString());
 
+    /** Diagnostic: bake annotations into the page tiles instead of separate layers. */
+    public static final boolean SINGLE_PASS_ANNOTATIONS = Boolean.getBoolean("org.icepdf.fx.view.singlePassAnnotations");
+
     /** Max region edge in device px: 4096² ARGB is a 64MB scratch raster per job. */
     public static final int MAX_REGION = 4096;
 
     /** Receives finished rasters on the FX thread. */
     public interface Sink {
-        void tileReady(CacheKey.Tile key, RasterBuffer buffer);
+        /** A page tile or annotation tile; {@link RasterBuffer#EMPTY} for an annotation tile with nothing on it. */
+        void tileReady(CacheKey key, RasterBuffer buffer);
+
+        /**
+         * The page has no annotations in this layer at all, at this generation: no need to request
+         * its tiles again at any zoom until the generation changes.
+         */
+        default void annotationLayerEmpty(int pageIndex, CacheKey.AnnotationLayer layer, int generation) {
+        }
 
         /**
          * @param zoom the zoom the preview was rendered at, unrotated; its pixels are
@@ -91,6 +115,25 @@ public final class TileRenderer {
     private final Set<CacheKey> failed = new HashSet<>();
     private volatile Document document;
     private volatile boolean paintAnnotations = true;
+    // annotation rendering is serialised per page: render() may lazily build appearance state.
+    private final Map<Integer, Object> annotationLocks = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * What a region paint covered.
+     *
+     * @param anyOnPage false if the page has nothing of this kind at all
+     * @param areas     device-space areas painted (page-tile coordinates), or null for "all of it";
+     *                  tiles touching none of them are delivered as {@link RasterBuffer#EMPTY}
+     */
+    private record PaintResult(boolean anyOnPage, List<Rectangle2D> areas) {
+        static final PaintResult ALL = new PaintResult(true, null);
+        static final PaintResult NOTHING = new PaintResult(false, List.of());
+    }
+
+    /** Paints one region into a prepared graphics (clipped, region-translated, device-scaled). */
+    private interface RegionPainter {
+        PaintResult paint(Graphics2D g, Page page) throws InterruptedException;
+    }
 
     public TileRenderer(int threads, Sink sink) {
         this.sink = sink;
@@ -125,7 +168,10 @@ public final class TileRenderer {
         this.document = document;
     }
 
-    /** Whether annotation appearance streams are part of the page raster. */
+    /**
+     * Whether annotation appearances are drawn: in the annotation layers, and in previews (and in
+     * the page tiles only under {@link #SINGLE_PASS_ANNOTATIONS}).
+     */
     public void setPaintAnnotations(boolean paintAnnotations) {
         this.paintAnnotations = paintAnnotations;
     }
@@ -145,23 +191,87 @@ public final class TileRenderer {
      * @param tiles tiles to render (normally the visible ones missing from the cache)
      */
     public void requestTiles(int pageIndex, CacheKey.Params params, TileGrid grid, List<TileGrid.Tile> tiles) {
+        boolean annotations = paintAnnotations && SINGLE_PASS_ANNOTATIONS;
+        submitRegions(pageIndex, grid, tiles, t -> new CacheKey.Tile(pageIndex, params, t.column(), t.row()),
+                params, (g, page) -> {
+                    page.paint(g, GraphicsRenderingHints.SCREEN, params.boundary(), params.rotation(),
+                            params.zoom(), annotations, false);
+                    return PaintResult.ALL;
+                }, null, null);
+    }
+
+    /**
+     * Queues tiles of one page's annotation layer: annotations only, on transparent, through the page
+     * transform - no content stream, so cheap.
+     *
+     * @param excluded  annotations to leave out (one being dragged as a live node); may be empty
+     * @param backdrops for {@link CacheKey.AnnotationLayer#BLEND}, the content tile under each requested
+     *                  tile (required: blend appearances composite against the page); null for NORMAL
+     */
+    public void requestAnnotationTiles(int pageIndex, CacheKey.Params params, CacheKey.AnnotationLayer layer,
+                                       int generation, TileGrid grid, List<TileGrid.Tile> tiles,
+                                       Set<Annotation> excluded, Map<TileGrid.Tile, RasterBuffer> backdrops) {
+        submitRegions(pageIndex, grid, tiles,
+                t -> new CacheKey.AnnotationTile(pageIndex, params, layer, t.column(), t.row(), generation),
+                params, (g, page) -> paintAnnotations(g, page, pageIndex, params, layer, excluded),
+                () -> sink.annotationLayerEmpty(pageIndex, layer, generation), backdrops);
+    }
+
+    private PaintResult paintAnnotations(Graphics2D g, Page page, int pageIndex, CacheKey.Params params,
+                                         CacheKey.AnnotationLayer layer, Set<Annotation> excluded) {
+        List<Annotation> annotations = page.getAnnotations();
+        if (annotations == null || annotations.isEmpty()) return PaintResult.NOTHING;
+        boolean any = false;
+        List<Rectangle2D> areas = new ArrayList<>();
+        synchronized (annotationLocks.computeIfAbsent(pageIndex, k -> new Object())) {
+            AffineTransform pageToView = page.getPageTransform(params.boundary(), params.rotation(), params.zoom());
+            // page user space -> page device px, for the painted-area bookkeeping.
+            AffineTransform toDevice = AffineTransform.getScaleInstance(params.scale(), params.scale());
+            toDevice.concatenate(pageToView);
+            g.transform(pageToView);
+            float totalRotation = page.getTotalRotation(params.rotation());
+            for (Annotation annotation : annotations) {
+                if (annotation == null) continue;
+                boolean blend = annotation.appearanceHasBlendMode();
+                if (blend != (layer == CacheKey.AnnotationLayer.BLEND)) continue;
+                any = true;
+                if (excluded.contains(annotation)) continue;
+                annotation.render(g, GraphicsRenderingHints.SCREEN, totalRotation, params.zoom(), false);
+                Rectangle2D bounds = toDevice.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds2D();
+                // borders and anti-aliasing reach a little past the rect; NoZoom icons further.
+                double margin = 4 + (annotation.getFlagNoZoom() ? 64 * params.scale() : 0);
+                areas.add(new Rectangle2D.Double(bounds.getX() - margin, bounds.getY() - margin,
+                        bounds.getWidth() + 2 * margin, bounds.getHeight() + 2 * margin));
+            }
+        }
+        return any ? new PaintResult(true, areas) : PaintResult.NOTHING;
+    }
+
+    /**
+     * Buckets tiles into blocks of at most MAX_REGION px, one job per block: each job paints its
+     * region once and slices it into tiles.
+     */
+    private void submitRegions(int pageIndex, TileGrid grid, List<TileGrid.Tile> tiles,
+                               java.util.function.Function<TileGrid.Tile, CacheKey> keyOf, CacheKey.Params params,
+                               RegionPainter painter, Runnable onNothingToPaint,
+                               Map<TileGrid.Tile, RasterBuffer> backdrops) {
         Document doc = document;
         if (doc == null || tiles.isEmpty()) return;
-        // bucket into blocks of at most MAX_REGION px so each job's region stays bounded.
         int block = Math.max(1, MAX_REGION / grid.getTileSize());
         Map<Long, List<TileGrid.Tile>> blocks = new LinkedHashMap<>();
         for (TileGrid.Tile t : tiles) {
-            CacheKey.Tile key = new CacheKey.Tile(pageIndex, params, t.column(), t.row());
+            CacheKey key = keyOf.apply(t);
             if (inFlight.containsKey(key) || failed.contains(key)) continue;
             long blockId = ((long) (t.row() / block) << 32) | (t.column() / block);
             blocks.computeIfAbsent(blockId, k -> new ArrayList<>()).add(t);
         }
         for (List<TileGrid.Tile> blockTiles : blocks.values()) {
             List<CacheKey> keys = new ArrayList<>(blockTiles.size());
-            for (TileGrid.Tile t : blockTiles) keys.add(new CacheKey.Tile(pageIndex, params, t.column(), t.row()));
+            for (TileGrid.Tile t : blockTiles) keys.add(keyOf.apply(t));
             Job job = new Job(keys);
             TileGrid.Region region = TileGrid.union(blockTiles);
-            job.future = tileExecutor.submit(() -> renderRegion(doc, job, pageIndex, params, region, blockTiles));
+            job.future = tileExecutor.submit(() -> renderRegion(doc, job, pageIndex, params, region, blockTiles,
+                    keys, painter, onNothingToPaint, backdrops));
             track(job);
         }
     }
@@ -224,33 +334,49 @@ public final class TileRenderer {
     }
 
     private void renderRegion(Document doc, Job job, int pageIndex, CacheKey.Params params,
-                              TileGrid.Region region, List<TileGrid.Tile> tiles) {
+                              TileGrid.Region region, List<TileGrid.Tile> tiles, List<CacheKey> keys,
+                              RegionPainter painter, Runnable onNothingToPaint,
+                              Map<TileGrid.Tile, RasterBuffer> backdrops) {
         try {
             Page page = doc.getPageTree().getPage(pageIndex);
             page.init();
             BufferedImage scratch = new BufferedImage(region.width(), region.height(),
                     BufferedImage.TYPE_INT_ARGB_PRE);
+            if (backdrops != null) {
+                // seed with the page pixels under the region (content tiles never change once rendered).
+                int[] target = RasterBuffer.pixelsOf(scratch);
+                for (TileGrid.Tile t : tiles) {
+                    RasterBuffer backdrop = backdrops.get(t);
+                    if (backdrop != null) {
+                        backdrop.copyInto(target, region.width(), t.x() - region.x(), t.y() - region.y());
+                    }
+                }
+            }
             Graphics2D g = scratch.createGraphics();
+            PaintResult result;
             try {
                 g.setClip(0, 0, region.width(), region.height());
                 g.translate(-region.x(), -region.y());
                 g.scale(params.scale(), params.scale());
-                page.paint(g, GraphicsRenderingHints.SCREEN, params.boundary(), params.rotation(), params.zoom(),
-                        paintAnnotations, false);
+                result = painter.paint(g, page);
             } finally {
                 g.dispose();
             }
             if (Thread.currentThread().isInterrupted()) return;
+            Map<CacheKey, RasterBuffer> out = new LinkedHashMap<>();
             int[] pixels = RasterBuffer.pixelsOf(scratch);
-            Map<CacheKey.Tile, RasterBuffer> out = new LinkedHashMap<>();
-            for (TileGrid.Tile t : tiles) {
-                out.put(new CacheKey.Tile(pageIndex, params, t.column(), t.row()),
-                        RasterBuffer.slice(pixels, region.width(), t.x() - region.x(), t.y() - region.y(),
-                                t.width(), t.height()));
+            for (int i = 0; i < tiles.size(); i++) {
+                TileGrid.Tile t = tiles.get(i);
+                out.put(keys.get(i), touches(result, t)
+                        ? RasterBuffer.slice(pixels, region.width(), t.x() - region.x(), t.y() - region.y(),
+                        t.width(), t.height())
+                        : RasterBuffer.EMPTY);
             }
+            boolean nothing = !result.anyOnPage();
             Platform.runLater(() -> {
                 if (!jobs.contains(job)) return; // cancelled after the paint finished
                 untrack(job);
+                if (nothing && onNothingToPaint != null) onNothingToPaint.run();
                 out.forEach(sink::tileReady);
             });
         } catch (InterruptedException e) {
@@ -258,6 +384,15 @@ public final class TileRenderer {
         } catch (Throwable e) {
             fail(job, "page " + (pageIndex + 1) + " region " + region, e);
         }
+    }
+
+    private static boolean touches(PaintResult result, TileGrid.Tile tile) {
+        if (!result.anyOnPage()) return false;
+        if (result.areas() == null) return true;
+        for (Rectangle2D area : result.areas()) {
+            if (area.intersects(tile.x(), tile.y(), tile.width(), tile.height())) return true;
+        }
+        return false;
     }
 
     private void renderPreview(Document doc, Job job, CacheKey.Preview key, int longSide) {
