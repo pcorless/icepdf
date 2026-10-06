@@ -185,6 +185,7 @@ public final class PdfViewSmoke {
         checkSelectionGestures(document);
         checkCaret(document);
         checkKeyboard(document);
+        checkSearch(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
     }
 
@@ -728,6 +729,141 @@ public final class PdfViewSmoke {
         check("arrows scroll with no selection", before != null && after != null
                         && (after.pageIndex() != before.pageIndex() || Math.abs(after.y() - before.y()) > 1),
                 before + " -> " + after);
+    }
+
+    /**
+     * Whole-document search: the hit count equals a direct core count over every page, the first
+     * hit is auto-selected, next/previous select and reveal hits, hit highlights sit on the hit
+     * bounds, and clearing removes them.
+     */
+    private void checkSearch(Document document) throws Exception {
+        String query = System.getProperty("smoke.search", "Functions");
+        org.icepdf.core.search.SearchTerm term = new org.icepdf.core.search.SearchTerm(query, null, false, false, false);
+        act("search setup: continuous fit width, page 1", v -> {
+            v.clearSelection();
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.setViewMode(ViewMode.CONTINUOUS);
+            v.setRotation(0);
+            v.setFitMode(FitMode.WIDTH);
+            v.setCurrentPageIndex(0);
+        });
+        long t0 = System.nanoTime();
+        fx(() -> view.search(term));
+        long deadline = System.currentTimeMillis() + 300_000;
+        while (onFx(view::isSearching) && System.currentTimeMillis() < deadline) Thread.sleep(100);
+        double seconds = (System.nanoTime() - t0) / 1e9;
+        System.gc();
+        long heap = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) >> 20;
+        waitIdle(30_000);
+        java.util.List<org.icepdf.fx.view.SearchHit> hits = onFx(() -> new java.util.ArrayList<>(view.getSearchHits()));
+        int expected = 0;
+        for (int p = 0; p < document.getNumberOfPages(); p++) {
+            expected += org.icepdf.core.search.TextSearch.find(document.getPageViewText(p).getTextSequence(), term).size();
+        }
+        check("search finds every hit", !hits.isEmpty() && hits.size() == expected,
+                String.format("\"%s\": %d hits, core count %d, %.1fs, heap %dMB after", query, hits.size(),
+                        expected, seconds, heap));
+
+        int current = onFx(view::getCurrentSearchHitIndex);
+        org.icepdf.core.pobjects.graphics.text.DocumentSelection sel = onFx(view::getTextSelection);
+        check("first hit auto-selected", current == 0 && sel != null && sel.equals(selectionOf(hits.get(0))),
+                "current " + current + ", selection " + sel);
+
+        fx(view::nextSearchHit);
+        waitIdle(30_000);
+        int next = onFx(view::getCurrentSearchHitIndex);
+        sel = onFx(view::getTextSelection);
+        org.icepdf.fx.view.SearchHit hit = hits.get(Math.max(0, next));
+        check("next hit selected", next == 1 && sel.equals(selectionOf(hit)), "current " + next + " " + hit.text());
+        check("next hit scrolled into view", isOnScreen(hit), "page " + (hit.pageIndex() + 1));
+
+        // jump far: previous from the first wraps to the last hit, which is pages away.
+        fx(() -> {
+            view.selectSearchHit(0);
+            view.previousSearchHit();
+        });
+        waitIdle(30_000);
+        int last = onFx(view::getCurrentSearchHitIndex);
+        org.icepdf.fx.view.SearchHit lastHit = hits.get(Math.max(0, last));
+        check("previous wraps to the last hit and reveals it", last == hits.size() - 1 && isOnScreen(lastHit),
+                "current " + last + " on page " + (lastHit.pageIndex() + 1));
+
+        checkSearchHighlight(hits, lastHit.pageIndex());
+
+        fx(view::clearSearch);
+        waitIdle(30_000);
+        boolean cleared = onFx(() -> view.getSearchHits().isEmpty()) && searchPixels().isEmpty();
+        check("clear search removes hits and highlights", cleared, "");
+    }
+
+    private static org.icepdf.core.pobjects.graphics.text.DocumentSelection selectionOf(org.icepdf.fx.view.SearchHit hit) {
+        return org.icepdf.core.pobjects.graphics.text.DocumentSelection.of(hit.pageIndex(), hit.range().getStart(),
+                hit.pageIndex(), hit.range().getEnd());
+    }
+
+    /** True if some view point (sampled on a grid) maps inside the hit's bounds. */
+    private boolean isOnScreen(org.icepdf.fx.view.SearchHit hit) throws Exception {
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        return onFx(() -> {
+            for (double y = 0; y < size[1]; y += 3) {
+                for (double x = 0; x < size[0]; x += 3) {
+                    java.util.Optional<org.icepdf.fx.view.PagePoint> p = view.pageAt(x, y);
+                    if (p.isPresent() && p.get().pageIndex() == hit.pageIndex()
+                            && p.get().x() >= hit.x() && p.get().x() <= hit.x() + hit.width()
+                            && p.get().y() >= hit.y() && p.get().y() <= hit.y() + hit.height()) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+    }
+
+    /** Search-highlight pixels (#CC00FF at 30% over white) all map into some hit's bounds. */
+    private void checkSearchHighlight(java.util.List<org.icepdf.fx.view.SearchHit> hits, int pageIndex) throws Exception {
+        java.util.List<double[]> pixels = searchPixels();
+        if (pixels.isEmpty()) {
+            check("hit highlights on the hit bounds", false, "no highlight pixels on screen");
+            return;
+        }
+        int inside = 0;
+        for (double[] p : pixels) {
+            java.util.Optional<org.icepdf.fx.view.PagePoint> hit = onFx(() -> view.pageAt(p[0], p[1]));
+            if (hit.isEmpty()) continue;
+            for (org.icepdf.fx.view.SearchHit h : hits) {
+                if (h.pageIndex() == hit.get().pageIndex()
+                        && hit.get().x() >= h.x() - 1.5 && hit.get().x() <= h.x() + h.width() + 1.5
+                        && hit.get().y() >= h.y() - 1.5 && hit.get().y() <= h.y() + h.height() + 1.5) {
+                    inside++;
+                    break;
+                }
+            }
+        }
+        double fraction = inside / (double) pixels.size();
+        check("hit highlights on the hit bounds", fraction > 0.99,
+                String.format("%d highlight px, %.2f%% inside hit bounds", pixels.size(), fraction * 100));
+    }
+
+    private java.util.List<double[]> searchPixels() throws Exception {
+        double scale = onFx(() -> stage.getOutputScaleX());
+        WritableImage image = onFx(() -> {
+            SnapshotParameters params = new SnapshotParameters();
+            params.setTransform(new Scale(scale, scale));
+            return view.snapshot(params, null);
+        });
+        int w = (int) image.getWidth();
+        int h = (int) image.getHeight();
+        int[] argb = new int[w * h];
+        image.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), argb, 0, w);
+        java.util.List<double[]> out = new java.util.ArrayList<>();
+        for (int i = 0; i < argb.length; i += 3) {
+            int c = argb[i];
+            int r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+            if (Math.abs(r - 240) <= 8 && Math.abs(g - 179) <= 8 && b >= 245) {
+                out.add(new double[]{(i % w + 0.5) / scale, (i / w + 0.5) / scale});
+            }
+        }
+        return out;
     }
 
     /** Presses the keys in order, releases them in reverse: a chord such as ctrl+C. */

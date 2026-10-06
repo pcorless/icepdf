@@ -74,7 +74,11 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 
 | `view/CaretNavigator` | viewer-awt `TextSelection` (`horizontalCaret`, `wordCaret`, `lineEdgeCaret`, `verticalCaret`, sticky `goalX`) | The keyboard caret rules, including page crossing and word roll-over at page edges. Rewritten toolkit-free over `DocumentSelection`; skipping pages with no text layer and not blocking on unloaded pages are new. |
 
-Test fixtures: `SelectionControllerTest` and `CaretNavigatorTest` read `test_print.pdf` and
+| core `search/TextSearch` (added for this module) | viewer-awt `DocumentSearchControllerImpl.searchHighlightPage` / `compileSearchPattern` | The matching rules (collapsed literal corpus, regex on canonical text, `\b` whole word, diacritic folding) factored out as a stateless core function returning offset ranges. `DocumentSearchTest` pins it to the Swing viewer's recorded counts. |
+| `view/DocumentSearch`, search API in `PdfView` | the Swing search flow | Behaviour only: whole-document scan, next/previous with wrap. New code over `SearchHit` offset ranges, with no word flags. |
+
+Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest` and `DocumentSearchTest` read `test_print.pdf`,
+`pdf_reference_addendum_redaction.pdf` and
 `windrivercasestudy1n3d2m8km0r.pdf` from `viewer/viewer-awt/src/test/resources/redact/` in place.
 They are not copied into this module.
 

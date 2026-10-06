@@ -61,6 +61,7 @@ final class PageLayer extends Group {
     private final Group tiles = new Group();
     private final Group overlay = new Group();
     private final Affine overlayTransform = new Affine();
+    private final Path searchHits = new Path();
     private final Path selection = new Path();
     private final Group appOverlay = new Group();
     private final Line caret = new Line();
@@ -76,6 +77,8 @@ final class PageLayer extends Group {
     private TextSequence selectionSequence;
     private OffsetRange selectionRange;
     private Rectangle2D.Double caretRect;
+    private TextSequence searchSequence;
+    private List<SearchHit> searchHitList = List.of();
 
     PageLayer(int pageIndex, Page page) {
         this.pageIndex = pageIndex;
@@ -91,7 +94,11 @@ final class PageLayer extends Group {
         selection.setFill(Color.rgb(c.getRed(), c.getGreen(), c.getBlue(), Page.SELECTION_ALPHA));
         selection.setStroke(null);
         selection.setMouseTransparent(true);
-        overlay.getChildren().addAll(selection, appOverlay);
+        java.awt.Color h = Page.highlightColor;
+        searchHits.setFill(Color.rgb(h.getRed(), h.getGreen(), h.getBlue(), Page.SELECTION_ALPHA));
+        searchHits.setStroke(null);
+        searchHits.setMouseTransparent(true);
+        overlay.getChildren().addAll(searchHits, selection, appOverlay);
         caret.setStroke(Color.BLACK);
         caret.setMouseTransparent(true);
         caret.setVisible(false);
@@ -231,6 +238,28 @@ final class PageLayer extends Group {
             }
         }
         selection.getElements().setAll(elements);
+    }
+
+    /**
+     * Highlights search hits, under the selection (the current hit is the selection).  Rebuilt only
+     * when the hit list or sequence changes.
+     */
+    void setSearchHits(TextSequence sequence, List<SearchHit> hits) {
+        if (sequence == null) hits = List.of();
+        if (hits == searchHitList && (hits.isEmpty() || sequence == searchSequence)) return;
+        searchSequence = sequence;
+        searchHitList = hits;
+        List<PathElement> elements = new ArrayList<>();
+        for (SearchHit hit : hits) {
+            for (Rectangle2D.Double r : sequence.rectsFor(hit.range())) {
+                elements.add(new MoveTo(r.x, r.y));
+                elements.add(new LineTo(r.x + r.width, r.y));
+                elements.add(new LineTo(r.x + r.width, r.y + r.height));
+                elements.add(new LineTo(r.x, r.y + r.height));
+                elements.add(new ClosePath());
+            }
+        }
+        searchHits.getElements().setAll(elements);
     }
 
     /** True if the layer currently highlights something; for tests and diagnostics. */

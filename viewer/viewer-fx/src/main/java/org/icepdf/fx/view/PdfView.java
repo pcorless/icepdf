@@ -17,6 +17,8 @@ package org.icepdf.fx.view;
 
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.input.Clipboard;
@@ -24,8 +26,10 @@ import javafx.scene.input.ClipboardContent;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
+import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.search.SearchTerm;
 
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -84,6 +88,19 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
     private final ReadOnlyIntegerWrapper pageCount = new ReadOnlyIntegerWrapper(this, "pageCount", 0);
     private final ReadOnlyBooleanWrapper rendering = new ReadOnlyBooleanWrapper(this, "rendering", false);
+    // search: hits arrive progressively from a worker; hitsByPage indexes them for drawing.
+    private final ObservableList<SearchHit> searchHits = FXCollections.observableArrayList();
+    private final ObservableList<SearchHit> searchHitsView = FXCollections.unmodifiableObservableList(searchHits);
+    private final Map<Integer, List<SearchHit>> hitsByPage = new HashMap<>();
+    private final ReadOnlyIntegerWrapper currentSearchHitIndex =
+            new ReadOnlyIntegerWrapper(this, "currentSearchHitIndex", -1);
+    private final ReadOnlyBooleanWrapper searching = new ReadOnlyBooleanWrapper(this, "searching", false);
+    private final ReadOnlyDoubleWrapper searchProgress = new ReadOnlyDoubleWrapper(this, "searchProgress", 0);
+    private Thread searchThread;
+    private int searchGeneration;
+    private boolean searchAutoSelect;
+    private int searchStartPage;
+
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
     private final ObjectProperty<ToolMode> toolMode = new SimpleObjectProperty<>(this, "toolMode",
@@ -98,6 +115,7 @@ public class PdfView extends Control {
         getStyleClass().add("pdf-view");
         setFocusTraversable(true);
         document.addListener((obs, old, doc) -> {
+            clearSearch();
             setTextSelection(null);
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
@@ -175,6 +193,152 @@ public class PdfView extends Control {
     public void ensureVisible(PagePoint point) {
         if (point != null && getSkin() instanceof PdfViewSkin skin) skin.ensureVisible(point, 48);
     }
+
+    // ---- search ---------------------------------------------------------------------------
+
+    /** Case-insensitive search for a phrase; see {@link #search(SearchTerm...)}. */
+    public void search(String text) {
+        search(new SearchTerm(text, null, false, false, false));
+    }
+
+    /**
+     * Searches the whole document on a background thread, replacing any previous search.  Hits
+     * appear in {@link #getSearchHits()} page by page as they are found and are highlighted on the
+     * pages; the first hit at or after the current page is selected and scrolled into view as soon
+     * as it is found.  Every page is loaded to be searched, so a long document takes a while; watch
+     * {@link #searchingProperty()} and {@link #searchProgressProperty()}.
+     */
+    public void search(SearchTerm... terms) {
+        clearSearch();
+        Document doc = getDocument();
+        List<SearchTerm> list = new ArrayList<>();
+        for (SearchTerm term : terms) {
+            if (term != null && term.getTerm() != null && !term.getTerm().isEmpty()) list.add(term);
+        }
+        if (doc == null || list.isEmpty()) return;
+        int generation = searchGeneration;
+        int pages = getPageCount();
+        searchAutoSelect = true;
+        searchStartPage = getCurrentPageIndex();
+        searching.set(true);
+        searchThread = new Thread(() -> DocumentSearch.run(page -> {
+            try {
+                PageText text = doc.getPageViewText(page);
+                return text != null ? text.getTextSequence() : null;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+        }, list, pages, () -> Thread.currentThread().isInterrupted(), (page, hits, done, total) ->
+                Platform.runLater(() -> {
+                    if (generation != searchGeneration) return;
+                    if (!hits.isEmpty()) {
+                        hitsByPage.put(page, List.copyOf(hits));
+                        searchHits.addAll(hits);
+                    }
+                    searchProgress.set(done / (double) total);
+                    if (done == total) searching.set(false);
+                    autoSelectSearchHit(done == total);
+                })), "icepdf-fx-search");
+        searchThread.setDaemon(true);
+        searchThread.setPriority(Thread.NORM_PRIORITY - 1);
+        searchThread.start();
+    }
+
+    /** Selects the first hit at or after the page the search started from, once one is known. */
+    private void autoSelectSearchHit(boolean finished) {
+        if (!searchAutoSelect || searchHits.isEmpty()) return;
+        for (int i = 0; i < searchHits.size(); i++) {
+            if (searchHits.get(i).pageIndex() >= searchStartPage) {
+                searchAutoSelect = false;
+                selectSearchHit(i);
+                return;
+            }
+        }
+        if (finished) {
+            searchAutoSelect = false;
+            selectSearchHit(0);
+        }
+    }
+
+    /** Stops any running search and removes all hits; the text selection is left alone. */
+    public void clearSearch() {
+        searchGeneration++;
+        if (searchThread != null) {
+            searchThread.interrupt();
+            searchThread = null;
+        }
+        searchAutoSelect = false;
+        hitsByPage.clear();
+        searchHits.clear();
+        currentSearchHitIndex.set(-1);
+        searching.set(false);
+        searchProgress.set(0);
+    }
+
+    /** Selects and reveals the next hit, wrapping; the first hit from the current page if none is current. */
+    public void nextSearchHit() {
+        searchAutoSelect = false;
+        selectSearchHit(DocumentSearch.next(searchHits, getCurrentSearchHitIndex(), getCurrentPageIndex()));
+    }
+
+    /** Selects and reveals the previous hit, wrapping. */
+    public void previousSearchHit() {
+        searchAutoSelect = false;
+        selectSearchHit(DocumentSearch.previous(searchHits, getCurrentSearchHitIndex(), getCurrentPageIndex()));
+    }
+
+    /**
+     * Makes hit {@code index} current: it becomes the text selection (so it can be copied) and is
+     * scrolled into view, switching page first in the non-continuous modes.
+     */
+    public void selectSearchHit(int index) {
+        if (index < 0 || index >= searchHits.size()) return;
+        SearchHit hit = searchHits.get(index);
+        currentSearchHitIndex.set(index);
+        setTextSelection(DocumentSelection.of(hit.pageIndex(), hit.range().getStart(),
+                hit.pageIndex(), hit.range().getEnd()));
+        if (!getViewMode().isContinuous()) setCurrentPageIndex(hit.pageIndex());
+        ensureVisible(hit.centre());
+    }
+
+    /** All hits of the current search in document order; grows while {@link #isSearching()}. */
+    public final ObservableList<SearchHit> getSearchHits() {
+        return searchHitsView;
+    }
+
+    /** Hits on one page, for drawing. */
+    List<SearchHit> searchHitsOnPage(int pageIndex) {
+        return hitsByPage.getOrDefault(pageIndex, List.of());
+    }
+
+    /** Index into {@link #getSearchHits()} of the current hit, or -1. */
+    public final ReadOnlyIntegerProperty currentSearchHitIndexProperty() {
+        return currentSearchHitIndex.getReadOnlyProperty();
+    }
+
+    public final int getCurrentSearchHitIndex() {
+        return currentSearchHitIndex.get();
+    }
+
+    public final ReadOnlyBooleanProperty searchingProperty() {
+        return searching.getReadOnlyProperty();
+    }
+
+    public final boolean isSearching() {
+        return searching.get();
+    }
+
+    /** Fraction of pages searched, 0 to 1. */
+    public final ReadOnlyDoubleProperty searchProgressProperty() {
+        return searchProgress.getReadOnlyProperty();
+    }
+
+    public final double getSearchProgress() {
+        return searchProgress.get();
+    }
+
+    // ---- selection ------------------------------------------------------------------------
 
     /** Selects every page's text; no-op without a document. */
     public void selectAll() {

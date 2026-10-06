@@ -34,6 +34,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
+import org.icepdf.core.search.SearchTerm;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
 import org.icepdf.fx.view.PdfView;
@@ -64,7 +65,7 @@ public class PdfViewDemo extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         BorderPane root = new BorderPane(view);
-        root.setTop(buildToolBar());
+        root.setTop(new javafx.scene.layout.VBox(buildToolBar(), buildSearchBar()));
         root.setBottom(buildStatusBar());
         stage.setScene(new Scene(root, 1200, 900));
         stage.setTitle("ICEpdf PdfView demo");
@@ -180,6 +181,50 @@ public class PdfViewDemo extends Application {
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
                 new Separator(), mode, cover, new Separator(), select, hand, copy, selectAll,
                 new Separator(), overlay);
+    }
+
+    /** Find bar: Enter searches (or goes to the next hit for the same term), arrows step through hits. */
+    private ToolBar buildSearchBar() {
+        TextField field = new TextField();
+        field.setPromptText("Find in document");
+        field.setPrefColumnCount(24);
+        CheckBox matchCase = new CheckBox("Match case");
+        CheckBox wholeWord = new CheckBox("Whole word");
+        CheckBox accents = new CheckBox("Ignore accents");
+        String[] lastQuery = {null};
+        Runnable find = () -> {
+            String text = field.getText();
+            String query = text + "|" + matchCase.isSelected() + wholeWord.isSelected() + accents.isSelected();
+            if (query.equals(lastQuery[0]) && !view.getSearchHits().isEmpty()) {
+                view.nextSearchHit();
+                return;
+            }
+            lastQuery[0] = query;
+            SearchTerm term = new SearchTerm(text, null, matchCase.isSelected(), wholeWord.isSelected(), false);
+            term.setFoldDiacritics(accents.isSelected());
+            view.search(term);
+        };
+        field.setOnAction(e -> find.run());
+        Button previous = new Button("▲");
+        previous.setOnAction(e -> view.previousSearchHit());
+        Button next = new Button("▼");
+        next.setOnAction(e -> view.nextSearchHit());
+        Button clear = new Button("Clear");
+        clear.setOnAction(e -> {
+            lastQuery[0] = null;
+            view.clearSearch();
+        });
+        Label count = new Label();
+        count.textProperty().bind(javafx.beans.binding.Bindings.createStringBinding(() -> {
+            int hits = view.getSearchHits().size();
+            int current = view.getCurrentSearchHitIndex();
+            String position = hits == 0 ? "no hits" : (current >= 0 ? (current + 1) + " of " : "") + hits;
+            return view.isSearching()
+                    ? String.format("%s  (searching %.0f%%)", position, view.getSearchProgress() * 100)
+                    : (lastQuery[0] == null ? "" : position);
+        }, view.getSearchHits(), view.currentSearchHitIndexProperty(), view.searchingProperty(),
+                view.searchProgressProperty()));
+        return new ToolBar(field, previous, next, matchCase, wholeWord, accents, clear, count);
     }
 
     private Node buildStatusBar() {

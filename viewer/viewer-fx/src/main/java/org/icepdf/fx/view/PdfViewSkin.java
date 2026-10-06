@@ -188,6 +188,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             updateCaretBlink(false);
             refresh();
         });
+        control.getSearchHits().addListener((javafx.collections.ListChangeListener<SearchHit>) c -> scheduleRefresh());
         registerChangeListener(control.textSelectionProperty(), o -> {
             // solid again whenever the caret moves, so it is visible straight after interaction.
             caretOn = true;
@@ -631,14 +632,17 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return Math.round(v * outputScale) / outputScale;
     }
 
-    /** Page text is needed to select, or to draw a selection. */
+    /** Page text is needed to select, or to draw a selection or search hits. */
     private boolean needsText() {
-        return getSkinnable().getToolMode() == ToolMode.TEXT_SELECT || getSkinnable().getTextSelection() != null;
+        PdfView control = getSkinnable();
+        return control.getToolMode() == ToolMode.TEXT_SELECT || control.getTextSelection() != null
+                || !control.getSearchHits().isEmpty();
     }
 
     private void updateText(PageLayer layer) {
         if (!needsText()) {
             layer.setSelection(null, null);
+            layer.setSearchHits(null, List.of());
             layer.setCaret(null);
             return;
         }
@@ -647,6 +651,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         TextSequence sequence = textLoader.get(index);
         DocumentSelection selection = getSkinnable().getTextSelection();
         layer.setSelection(sequence, selection != null ? selection.rangeForPage(index, sequence) : null);
+        layer.setSearchHits(sequence, getSkinnable().searchHitsOnPage(index));
         // the caret sits at the focus end, as in the Swing viewer.
         boolean caretHere = isCaretActive() && sequence != null && selection.getFocusPage() == index;
         layer.setCaret(caretHere ? sequence.caretRect(
