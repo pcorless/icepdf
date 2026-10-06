@@ -354,8 +354,16 @@ public class PdfView extends Control {
 
     /** Gives a field input focus and scrolls it into view; null clears. */
     public void focusField(AbstractWidgetAnnotation widget) {
+        // reveal first, so the field's page is laid out when its editor opens.
+        if (widget != null && getSkin() instanceof PdfViewSkin skin) {
+            skin.revealField(widget);
+            // already focused (an Esc closed its editor): focusing again reopens it, as a click does.
+            if (widget == getFocusedField()) {
+                skin.reopenEditor(widget);
+                return;
+            }
+        }
         focusedField.set(widget);
-        if (widget != null && getSkin() instanceof PdfViewSkin skin) skin.revealField(widget);
     }
 
     public void clearFieldFocus() {

@@ -45,6 +45,7 @@ import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -327,6 +328,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void onDocument() {
+        fieldEditor = null;
+        editing = null;
         annotationGenerations.clear();
         document = getSkinnable().getDocument();
         renderer.setDocument(document);
@@ -888,13 +891,114 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         }
     }
 
-    /** Hook for the editors (steps 3-4): the focused field changed. */
-    private void onFieldFocusChanged() {
+    private FormController forms;
+    // the open text field editor, and which field it edits.
+    private FieldEditor fieldEditor;
+    private FormController.Located editing;
+
+    FormController forms() {
+        if (forms == null) forms = new FormController(renderer::withAnnotationLock);
+        return forms;
     }
 
-    /** A press (or hand-tool click) on a field: focus it; the editors take it from there. */
+    /** The located form field (page and widget) of a widget, among the document's pages. */
+    FormController.Located locate(AbstractWidgetAnnotation widget) {
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            Page page = document.getPageTree().getPage(i);
+            if (page.getAnnotations() != null && page.getAnnotations().contains(widget)) {
+                return new FormController.Located(i, page, widget);
+            }
+        }
+        return null;
+    }
+
+    /** The focused field changed: commit an open editor elsewhere; open one on a text field. */
+    private void onFieldFocusChanged() {
+        AbstractWidgetAnnotation focused = getSkinnable().getFocusedField();
+        if (fieldEditor != null && (editing == null || editing.widget() != focused)) {
+            fieldEditor.commitNow(editorListener(fieldEditor, editing));
+        }
+        if (focused != null && fieldEditor == null) openTextEditor(focused);
+    }
+
+    /** A press (or hand-tool click) on a field: focus it, or reopen its editor if already focused. */
     void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
-        getSkinnable().focusField((AbstractWidgetAnnotation) field.annotation());
+        AbstractWidgetAnnotation widget = (AbstractWidgetAnnotation) field.annotation();
+        if (getSkinnable().getFocusedField() == widget) {
+            reopenEditor(widget);
+        } else {
+            getSkinnable().focusField(widget);
+        }
+    }
+
+    void reopenEditor(AbstractWidgetAnnotation widget) {
+        if (fieldEditor == null) openTextEditor(widget);
+    }
+
+    /** Opens the native editor over a text or password field; the widget leaves the tiles meanwhile. */
+    private void openTextEditor(AbstractWidgetAnnotation widget) {
+        FormController.FieldKind kind = FormController.kindOf(widget);
+        if (kind != FormController.FieldKind.TEXT && kind != FormController.FieldKind.PASSWORD) return;
+        FormController.Located located = locate(widget);
+        if (located == null) return;
+        AnnotationUiLayer ui = uiLayers.get(located.pageIndex());
+        if (ui == null) return;
+        TextWidgetAnnotation text = (TextWidgetAnnotation) widget;
+        FieldEditor[] holder = new FieldEditor[1];
+        FieldEditor editor = new FieldEditor(text, FormController.textOf(text), ui.viewBounds(widget), layoutZoom,
+                new FieldEditor.Listener() {
+                    public void commit(String value, int advance) {
+                        editorListener(holder[0], located).commit(value, advance);
+                    }
+
+                    public void cancel() {
+                        editorListener(holder[0], located).cancel();
+                    }
+                });
+        holder[0] = editor;
+        fieldEditor = editor;
+        editing = located;
+        excluded.computeIfAbsent(located.pageIndex(), k -> new HashSet<>()).add(widget);
+        bumpAnnotationGeneration(located.pageIndex());
+        ui.addFieldEditor(editor.control());
+        editor.control().requestFocus();
+        editor.control().selectAll();
+    }
+
+    /** Closes an editor (once): commit applies the value as an undoable edit; the widget re-renders. */
+    private FieldEditor.Listener editorListener(FieldEditor editor, FormController.Located located) {
+        return new FieldEditor.Listener() {
+            public void commit(String value, int advance) {
+                close(editor, located);
+                String current = FormController.textOf((TextWidgetAnnotation) located.widget());
+                if (!value.equals(current)) {
+                    getSkinnable().recordEdit(forms().setText(located, value, toPageSpaceNow(located.page())));
+                }
+                if (advance > 0) getSkinnable().focusNextField();
+                else if (advance < 0) getSkinnable().focusPreviousField();
+            }
+
+            public void cancel() {
+                close(editor, located);
+            }
+        };
+    }
+
+    private void close(FieldEditor editor, FormController.Located located) {
+        AnnotationUiLayer ui = uiLayers.get(located.pageIndex());
+        if (ui != null) ui.removeFieldEditor(editor.control());
+        if (fieldEditor == editor) {
+            fieldEditor = null;
+            editing = null;
+        }
+        Set<Annotation> set = excluded.get(located.pageIndex());
+        if (set != null) set.remove(located.widget());
+        bumpAnnotationGeneration(located.pageIndex());
+        // keyboard focus back to the view, so Tab and the arrows work after an editor closes.
+        if (!getSkinnable().isFocused() && getSkinnable().getScene() != null
+                && getSkinnable().getScene().getFocusOwner() == null) {
+            getSkinnable().requestFocus();
+        }
     }
 
     /** The page an annotation is on (among visible pages), or null. */

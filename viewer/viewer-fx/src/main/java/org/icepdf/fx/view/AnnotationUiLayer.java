@@ -395,6 +395,15 @@ final class AnnotationUiLayer extends Group {
         area.requestFocus();
     }
 
+    /** Adds a form field editor (view space) above everything else on this page. */
+    void addFieldEditor(Node editor) {
+        getChildren().add(editor);
+    }
+
+    void removeFieldEditor(Node editor) {
+        getChildren().remove(editor);
+    }
+
     void closeTextEditor() {
         if (textEditor != null) {
             getChildren().remove(textEditor);

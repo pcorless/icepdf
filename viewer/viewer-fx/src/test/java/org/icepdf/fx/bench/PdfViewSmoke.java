@@ -304,8 +304,102 @@ public final class PdfViewSmoke {
         formDoc.dispose();
     }
 
-    /** Filled in by later form steps. */
+    private static Object fieldValue(org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
+        org.icepdf.core.pobjects.acroform.FieldDictionary f = w.getFieldDictionary();
+        return f.getParent() != null && f.getEntries().get(org.icepdf.core.pobjects.acroform.FieldDictionary.V_KEY) == null
+                ? f.getParent().getFieldValue() : f.getFieldValue();
+    }
+
+    private javafx.scene.control.TextInputControl editor() throws Exception {
+        return onFx(() -> (javafx.scene.control.TextInputControl) view.lookup(".pdf-field-editor"));
+    }
+
+    private void key(javafx.scene.Node target, javafx.scene.input.KeyCode code, boolean shift, boolean shortcut)
+            throws Exception {
+        fx(() -> javafx.event.Event.fireEvent(target, new javafx.scene.input.KeyEvent(
+                javafx.scene.input.KeyEvent.KEY_PRESSED, "", "", code, shift, shortcut, false, shortcut)));
+        Thread.sleep(80);
+        waitIdle(30_000);
+    }
+
+    /** Text editing (step 3); later steps append buttons and choices. */
     private void checkFormFilling(javafx.scene.robot.Robot robot) throws Exception {
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation name = widgets("name").get(0);
+        robotClick(robot, viewPointIn(0, name.getUserSpaceRectangle()));
+        javafx.scene.control.TextInputControl edit = editor();
+        check("click opens an editor with the field's text", edit != null && "Ada".equals(onFx(edit::getText)),
+                edit == null ? "no editor" : onFx(edit::getText));
+        if (edit == null) return;
+        fx(() -> edit.setText("Grace"));
+        key(edit, javafx.scene.input.KeyCode.ENTER, false, false);
+        check("Enter commits the value", "Grace".equals(fieldValue(name)) && editor() == null,
+                fieldValue(name) + ", editor " + (editor() != null));
+        snapshot(out.resolve("forms_text_committed.png").toFile());
+        fx(view::undo);
+        waitIdle(30_000);
+        check("undo restores the old value", "Ada".equals(fieldValue(name)), String.valueOf(fieldValue(name)));
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation notes = widgets("notes").get(0);
+        fx(() -> view.focusField(notes));
+        waitIdle(30_000);
+        javafx.scene.control.TextInputControl area = editor();
+        check("multi-line field gets a TextArea", area instanceof javafx.scene.control.TextArea,
+                area == null ? "none" : area.getClass().getSimpleName());
+        if (area != null) {
+            fx(() -> area.setText("first line\nsecond line"));
+            fx(view::clearFieldFocus);
+            Thread.sleep(150);
+            waitIdle(30_000);
+            check("moving focus away commits", String.valueOf(fieldValue(notes)).contains("second line") && editor() == null,
+                    String.valueOf(fieldValue(notes)));
+        }
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation code = widgets("code").get(0);
+        fx(() -> view.focusField(code));
+        waitIdle(30_000);
+        javafx.scene.control.TextInputControl codeEditor = editor();
+        if (codeEditor != null) {
+            fx(() -> codeEditor.replaceText(0, codeEditor.getLength(), "ABCDEFG"));
+            fx(() -> codeEditor.appendText("XYZ"));
+            check("/MaxLen 5 is enforced", onFx(codeEditor::getText).length() <= 5, onFx(codeEditor::getText));
+            key(codeEditor, javafx.scene.input.KeyCode.ESCAPE, false, false);
+        }
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation secret = widgets("secret").get(0);
+        fx(() -> view.focusField(secret));
+        waitIdle(30_000);
+        check("password field gets a PasswordField", editor() instanceof javafx.scene.control.PasswordField,
+                editor() == null ? "none" : editor().getClass().getSimpleName());
+        if (editor() != null) key(editor(), javafx.scene.input.KeyCode.ESCAPE, false, false);
+
+        fx(() -> view.focusField(name));
+        waitIdle(30_000);
+        javafx.scene.control.TextInputControl esc = editor();
+        if (esc != null) {
+            fx(() -> esc.setText("zzz"));
+            key(esc, javafx.scene.input.KeyCode.ESCAPE, false, false);
+        }
+        check("Esc cancels the edit", "Ada".equals(fieldValue(name)) && editor() == null, String.valueOf(fieldValue(name)));
+
+        fx(() -> view.focusField(name));
+        waitIdle(30_000);
+        javafx.scene.control.TextInputControl tab = editor();
+        if (tab != null) {
+            fx(() -> tab.setText("Tabbed"));
+            key(tab, javafx.scene.input.KeyCode.TAB, false, false);
+        }
+        check("Tab commits and moves to the next field", "Tabbed".equals(fieldValue(name))
+                        && "notes".equals(nameOf(onFx(view::getFocusedField))),
+                fieldValue(name) + " -> " + nameOf(onFx(view::getFocusedField)));
+        if (editor() != null) key(editor(), javafx.scene.input.KeyCode.ESCAPE, false, false);
+        fx(view::clearFieldFocus);
+        waitIdle(30_000);
+        snapshot(out.resolve("forms_text.png").toFile());
+        checkButtonsAndChoices(robot);
+    }
+
+    /** Buttons and choices (step 4). */
+    private void checkButtonsAndChoices(javafx.scene.robot.Robot robot) throws Exception {
     }
 
     private java.util.List<double[]> pixelsNear(int r, int g, int b, int tolerance) throws Exception {
