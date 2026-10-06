@@ -235,6 +235,49 @@ class FormControllerTest {
         assertEquals("Japan", value(one("country")));
     }
 
+    @DisplayName("values as plain Java, for each kind")
+    @Test
+    void values() {
+        assertEquals("Ada", FormController.valueOf(one("name").widget()));
+        assertEquals("Off", FormController.valueOf(one("agree").widget()));
+        assertEquals("Red", FormController.valueOf(one("color").widget()));
+        assertEquals("France", FormController.valueOf(one("country").widget()));
+        assertEquals("Banana", FormController.valueOf(one("fruit").widget()));
+        assertEquals(List.of("Apple", "Cherry"), FormController.valueOf(one("toppings").widget()));
+        forms.toggleCheck(one("agree"), toPage);
+        assertEquals("Yes", FormController.valueOf(one("agree").widget()));
+    }
+
+    @DisplayName("an edit reports each changed field once, old and new")
+    @Test
+    void changes() {
+        FormController.FieldEdit text = (FormController.FieldEdit) forms.setText(one("name"), "Grace", toPage);
+        assertEquals(List.of(new FormController.FieldChange(one("name").widget(), "name", "Ada", "Grace")), text.changes());
+
+        // a radio click touches three kids but changes one field.
+        FormController.FieldEdit radio = (FormController.FieldEdit) forms.selectRadio(field("color").get(2), field("color"), toPage);
+        assertEquals(1, radio.changes().size());
+        assertEquals("color", radio.changes().get(0).name());
+        assertEquals("Red", radio.changes().get(0).oldValue());
+        assertEquals("Blue", radio.changes().get(0).newValue());
+
+        // a reset reports only the fields it actually changed.
+        List<Located> all = new ArrayList<>();
+        for (Annotation a : page.getAnnotations()) {
+            if (a instanceof AbstractWidgetAnnotation w && FormController.isFillable(w)
+                    && FormController.kindOf(w) != FieldKind.PUSH) all.add(new Located(0, page, w));
+        }
+        FormController.FieldEdit reset = (FormController.FieldEdit) forms.reset(all, toPage);
+        Map<String, Object> changed = new TreeMap<>();
+        for (FormController.FieldChange c : reset.changes()) changed.put(c.name(), c.newValue());
+        // no /DV: the value is removed (text empties, a choice has nothing chosen).
+        Map<String, Object> expected = new TreeMap<>(Map.of("name", "", "notes", "", "code", "", "color", "Red",
+                "country", "Canada", "toppings", List.of()));
+        expected.put("city", null);
+        expected.put("fruit", null);
+        assertEquals(expected, changed);
+    }
+
     @DisplayName("filled values survive an incremental save and reopen")
     @Test
     void roundTrip() throws Exception {

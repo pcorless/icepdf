@@ -120,6 +120,8 @@ public class PdfView extends Control {
     private final AnnotationEdits.History history = new AnnotationEdits.History();
     private final BooleanProperty formFieldsEditable = new SimpleBooleanProperty(this, "formFieldsEditable", true);
     private final BooleanProperty highlightFormFields = new SimpleBooleanProperty(this, "highlightFormFields", false);
+    private final ObjectProperty<Consumer<FormFieldChangeEvent>> onFormFieldChanged =
+            new SimpleObjectProperty<>(this, "onFormFieldChanged");
     private final ReadOnlyObjectWrapper<AbstractWidgetAnnotation> focusedField =
             new ReadOnlyObjectWrapper<>(this, "focusedField");
     private final StringProperty annotationAuthor =
@@ -380,6 +382,161 @@ public class PdfView extends Control {
         if (getSkin() instanceof PdfViewSkin skin) focusField(skin.adjacentField(getFocusedField(), true));
     }
 
+    // ---- form values ----------------------------------------------------------------------------
+
+    /**
+     * Receives every form field value change: typing, clicks and choices, resets,
+     * {@link #setFieldValue}, undo and redo.  For applications tracking dirty state or validating;
+     * null ignores them.
+     */
+    public final ObjectProperty<Consumer<FormFieldChangeEvent>> onFormFieldChangedProperty() {
+        return onFormFieldChanged;
+    }
+
+    public final void setOnFormFieldChanged(Consumer<FormFieldChangeEvent> handler) {
+        onFormFieldChanged.set(handler);
+    }
+
+    public final Consumer<FormFieldChangeEvent> getOnFormFieldChanged() {
+        return onFormFieldChanged.get();
+    }
+
+    /**
+     * A field's value by fully-qualified name: a text field's text; a check box's or radio group's
+     * on-state name ("Off" when off); a choice's export value, or a List of them for a multi-select
+     * list.  Null if there is no such field (or a choice has nothing chosen).
+     */
+    public Object getFieldValue(String name) {
+        List<FormController.Located> widgets = fieldWidgets(name);
+        return widgets.isEmpty() ? null : FormController.valueOf(widgets.get(0).widget());
+    }
+
+    /** The fully-qualified names of the document's form fields, in page and /Annots order. */
+    public List<String> getFieldNames() {
+        Set<String> names = new LinkedHashSet<>();
+        forEachWidget(w -> names.add(FormController.fieldNameOf(w.widget())));
+        return new ArrayList<>(names);
+    }
+
+    /**
+     * Sets a field's value, as the user would - appearances regenerate, the change is undoable and
+     * reported to {@link #onFormFieldChangedProperty()}.  Read-only fields can be set (it's the
+     * application asking).
+     *
+     * @param value text field: any value (its toString); check box: a Boolean, or the on-state name /
+     *              "Off"; radio group: the on-state name of the kid to select; combo or list: an
+     *              export value or label, or a Collection of them for a multi-select list (an
+     *              editable combo also takes free text)
+     * @return false if there is no such field, or the value doesn't fit it (an unknown option, an
+     * unknown radio state, a signature or push button)
+     */
+    public boolean setFieldValue(String name, Object value) {
+        List<FormController.Located> widgets = fieldWidgets(name);
+        if (widgets.isEmpty()) return false;
+        FormController.Located first = widgets.get(0);
+        PdfViewSkin skin = getSkin() instanceof PdfViewSkin s ? s : null;
+        if (skin != null) skin.closeFieldEditor(false);
+        FormController forms = skin != null ? skin.forms() : new FormController((page, mutation) -> mutation.run());
+        java.awt.geom.AffineTransform toPage = skin != null ? skin.toPageSpace(first.page())
+                : first.page().getToPageSpaceTransform(getPageBoundary(), 0, 1f);
+        AnnotationEdits.Edit edit;
+        switch (FormController.kindOf(first.widget())) {
+            case TEXT, PASSWORD -> edit = forms.setText(first, value == null ? "" : value.toString(), toPage);
+            case CHECK -> {
+                boolean on = value instanceof Boolean b ? b : value != null && !"Off".equals(value.toString());
+                org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation box =
+                        (org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) first.widget();
+                edit = box.isOn() == on ? null : forms.toggleCheck(first, toPage);
+            }
+            case RADIO -> {
+                FormController.Located target = null;
+                for (FormController.Located kid : widgets) {
+                    Name onName = FormController.onNameOf(
+                            (org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) kid.widget());
+                    if (onName != null && value != null && onName.getName().equals(value.toString())) target = kid;
+                }
+                if (target == null) return false;
+                edit = ((org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) target.widget()).isOn()
+                        ? null : forms.selectRadio(target, widgets, toPage);
+            }
+            case COMBO, LIST -> {
+                org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary choice =
+                        ((org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation) first.widget()).getFieldDictionary();
+                List<String> wanted = new ArrayList<>();
+                if (value instanceof Collection<?> many) {
+                    if (!choice.isMultiSelect() && many.size() > 1) return false;
+                    for (Object o : many) wanted.add(String.valueOf(o));
+                } else if (value != null) {
+                    wanted.add(value.toString());
+                }
+                List<Integer> indexes = FormController.indexesOf(choice.getOptions(), wanted);
+                if (indexes.size() == wanted.size()) {
+                    edit = forms.chooseIndexes(first, indexes, toPage);
+                } else if (wanted.size() == 1 && choice.getChoiceFieldType()
+                        == org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary.ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
+                    edit = forms.choose(first, wanted.get(0), toPage);
+                } else {
+                    return false;
+                }
+            }
+            default -> {
+                return false;
+            }
+        }
+        recordEdit(edit);
+        return true;
+    }
+
+    /** Resets every fillable form field to its default value (/DV), as one undoable edit. */
+    public void resetForm() {
+        if (getSkin() instanceof PdfViewSkin skin) {
+            skin.resetFields(null);
+            return;
+        }
+        List<FormController.Located> fields = new ArrayList<>();
+        forEachWidget(w -> {
+            FormController.FieldKind kind = FormController.kindOf(w.widget());
+            if (FormController.isFillable(w.widget()) && kind != FormController.FieldKind.PUSH) fields.add(w);
+        });
+        if (fields.isEmpty()) return;
+        recordEdit(new FormController((page, mutation) -> mutation.run()).reset(fields,
+                fields.get(0).page().getToPageSpaceTransform(getPageBoundary(), 0, 1f)));
+    }
+
+    /** Every widget of a field, by fully-qualified name (read-only and hidden ones too). */
+    private List<FormController.Located> fieldWidgets(String name) {
+        List<FormController.Located> out = new ArrayList<>();
+        if (name == null) return out;
+        forEachWidget(w -> {
+            if (name.equals(FormController.fieldNameOf(w.widget()))) out.add(w);
+        });
+        return out;
+    }
+
+    private void forEachWidget(Consumer<FormController.Located> action) {
+        Document document = getDocument();
+        if (document == null || document.getCatalog().getInteractiveForm() == null) return;
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            Page page = document.getPageTree().getPage(i);
+            List<Annotation> annotations = page.getAnnotations();
+            if (annotations == null) continue;
+            for (Annotation a : annotations) {
+                if (a instanceof AbstractWidgetAnnotation w && !w.isDeleted()) {
+                    action.accept(new FormController.Located(i, page, w));
+                }
+            }
+        }
+    }
+
+    private void fireFieldChanges(AnnotationEdits.Edit edit, boolean undone) {
+        Consumer<FormFieldChangeEvent> handler = getOnFormFieldChanged();
+        if (handler == null || !(edit instanceof FormController.FieldEdit fieldEdit)) return;
+        for (FormController.FieldChange c : fieldEdit.changes()) {
+            handler.accept(undone ? new FormFieldChangeEvent(c.widget(), c.name(), c.newValue(), c.oldValue())
+                    : new FormFieldChangeEvent(c.widget(), c.name(), c.oldValue(), c.newValue()));
+        }
+    }
+
     /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */
     public void deleteSelectedAnnotation() {
         if (!(getSkin() instanceof PdfViewSkin skin)) return;
@@ -392,12 +549,16 @@ public class PdfView extends Control {
 
     /** Undoes the last annotation edit (move, resize, delete, add). */
     public void undo() {
-        afterHistory(history.undo());
+        AnnotationEdits.Edit edit = history.undo();
+        afterHistory(edit);
+        fireFieldChanges(edit, true);
     }
 
     /** Redoes the last undone annotation edit. */
     public void redo() {
-        afterHistory(history.redo());
+        AnnotationEdits.Edit edit = history.redo();
+        afterHistory(edit);
+        fireFieldChanges(edit, false);
     }
 
     public final ReadOnlyBooleanProperty canUndoProperty() {
@@ -413,6 +574,7 @@ public class PdfView extends Control {
         if (edit == null) return;
         history.push(edit);
         afterHistory(edit);
+        fireFieldChanges(edit, false);
     }
 
     private void afterHistory(AnnotationEdits.Edit edit) {

@@ -45,6 +45,15 @@ final class FormController {
     record Located(int pageIndex, Page page, AbstractWidgetAnnotation widget) {
     }
 
+    /** One field's value before and after an edit (values as {@link #valueOf}). */
+    record FieldChange(AbstractWidgetAnnotation widget, String name, Object oldValue, Object newValue) {
+    }
+
+    /** An edit of field values: which fields it changed, from what to what. */
+    interface FieldEdit extends AnnotationEdits.Edit {
+        List<FieldChange> changes();
+    }
+
     private final AnnotationEdits.Locker locker;
 
     FormController(AnnotationEdits.Locker locker) {
@@ -102,6 +111,78 @@ final class FormController {
             value = widget.getFieldDictionary().getParent().getFieldValue();
         }
         return value instanceof String s ? s.replace('\r', '\n') : "";
+    }
+
+    /**
+     * A field's value as plain Java: the text of a text field; the on-state name of a check box or
+     * radio group ("Off" when off); a choice's export value, or a List of them for a multi-select
+     * list (null when nothing is chosen).
+     */
+    static Object valueOf(AbstractWidgetAnnotation widget) {
+        FieldDictionary dictionary = widget.getFieldDictionary();
+        switch (kindOf(widget)) {
+            case TEXT, PASSWORD -> {
+                return textOf((TextWidgetAnnotation) widget);
+            }
+            case CHECK, RADIO -> {
+                Object v = dictionary.getEntries().get(FieldDictionary.V_KEY) != null || dictionary.getParent() == null
+                        ? dictionary.getFieldValue() : dictionary.getParent().getFieldValue();
+                return v instanceof Name name ? name.getName() : v != null ? v.toString() : "Off";
+            }
+            case COMBO, LIST -> {
+                ChoiceFieldDictionary choice = ((ChoiceWidgetAnnotation) widget).getFieldDictionary();
+                List<Integer> indexes = selectedIndexes(choice);
+                List<ChoiceFieldDictionary.ChoiceOption> options = choice.getOptions();
+                if (choice.isMultiSelect()) {
+                    List<String> values = new ArrayList<>();
+                    for (int i : indexes) if (options != null && i < options.size()) values.add(options.get(i).getValue());
+                    return values;
+                }
+                if (!indexes.isEmpty() && options != null && indexes.get(0) < options.size()) {
+                    return options.get(indexes.get(0)).getValue();
+                }
+                Object v = choice.getFieldValue();
+                String typed = v == null ? null : text(v, choice);
+                return typed == null || typed.isEmpty() ? null : typed;
+            }
+            default -> {
+                return null;
+            }
+        }
+    }
+
+    /**
+     * A choice's selected option indexes: /I when present, else the options whose export value (or
+     * label) matches /V; many writers set only /V.
+     */
+    static List<Integer> selectedIndexes(ChoiceFieldDictionary field) {
+        if (field.getIndexes() != null && !field.getIndexes().isEmpty()) return field.getIndexes();
+        List<ChoiceFieldDictionary.ChoiceOption> options = field.getOptions();
+        Object v = field.getFieldValue();
+        if (options == null || v == null) return List.of();
+        List<String> values = new ArrayList<>();
+        if (v instanceof List<?> many) {
+            for (Object o : many) values.add(text(o, field));
+        } else {
+            values.add(text(v, field));
+        }
+        return indexesOf(options, values);
+    }
+
+    /** The indexes of the options whose export value or label is among {@code values}, in option order. */
+    static List<Integer> indexesOf(List<ChoiceFieldDictionary.ChoiceOption> options, Collection<String> values) {
+        List<Integer> out = new ArrayList<>();
+        if (options == null) return out;
+        for (int i = 0; i < options.size(); i++) {
+            ChoiceFieldDictionary.ChoiceOption option = options.get(i);
+            if (values.contains(option.getValue()) || values.contains(option.getLabel())) out.add(i);
+        }
+        return out;
+    }
+
+    private static String text(Object o, FieldDictionary field) {
+        return o instanceof org.icepdf.core.pobjects.StringObject str
+                ? str.getDecryptedLiteralString(field.getLibrary().getSecurityManager()) : String.valueOf(o);
     }
 
     // ---- changes --------------------------------------------------------------------------------
@@ -315,6 +396,11 @@ final class FormController {
     private AnnotationEdits.Edit change(List<Located> fields, AffineTransform toPageSpace, Runnable mutation) {
         List<State> before = new ArrayList<>();
         for (Located f : fields) before.add(State.of(f));
+        // one value per field name (a radio group's kids share one).
+        Map<String, Located> byName = new LinkedHashMap<>();
+        for (Located f : fields) byName.putIfAbsent(fieldNameOf(f.widget()), f);
+        Map<String, Object> oldValues = new HashMap<>();
+        byName.forEach((name, f) -> oldValues.put(name, valueOf(f.widget())));
         Set<Integer> pages = new TreeSet<>();
         for (Located f : fields) pages.add(f.pageIndex());
         AffineTransform toPage = new AffineTransform(toPageSpace);
@@ -325,9 +411,20 @@ final class FormController {
             for (Located f : fields) after[0].add(State.of(f));
             regenerate(fields, toPage);
         });
+        List<FieldChange> changes = new ArrayList<>();
+        byName.forEach((name, f) -> {
+            Object now = valueOf(f.widget());
+            if (!Objects.equals(oldValues.get(name), now)) {
+                changes.add(new FieldChange(f.widget(), name, oldValues.get(name), now));
+            }
+        });
         AbstractWidgetAnnotation first = fields.get(0).widget();
         int firstPage = fields.get(0).pageIndex();
-        return new AnnotationEdits.Edit() {
+        return new FieldEdit() {
+            public List<FieldChange> changes() {
+                return changes;
+            }
+
             public int pageIndex() {
                 return firstPage;
             }

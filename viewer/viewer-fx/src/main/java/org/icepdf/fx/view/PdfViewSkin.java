@@ -1002,9 +1002,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             default -> true;
         }).toList();
         if (fields.isEmpty()) return;
-        if (fieldEditor != null) fieldEditor.commitNow();
+        // a reset discards what is being typed (synchronously: a pending commit would land after it).
+        if (fieldEditor != null) fieldEditor.closeNow(false);
         // the transform is only used to regenerate appearances, which are page-local per field.
         getSkinnable().recordEdit(forms().reset(fields, toPageSpaceNow(fields.get(0).page())));
+    }
+
+    /** Closes an open field editor at once, committing or discarding what is typed. */
+    void closeFieldEditor(boolean commit) {
+        if (fieldEditor != null) fieldEditor.closeNow(commit);
+    }
+
+    AffineTransform toPageSpace(Page page) {
+        return toPageSpaceNow(page);
     }
 
     /** The fields a ResetForm action names: all, the /Fields listed, or all but those (Flags bit 1). */
@@ -1084,7 +1094,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 } else if (located.widget() instanceof ChoiceWidgetAnnotation choice) {
                     ChoiceFieldDictionary field = choice.getFieldDictionary();
                     if (value instanceof List<?> indexes) {
-                        List<Integer> current = FieldEditor.selectedIndexes(field);
+                        List<Integer> current = FormController.selectedIndexes(field);
                         if (!indexes.equals(current)) {
                             @SuppressWarnings("unchecked") List<Integer> chosen = (List<Integer>) indexes;
                             edit = forms().chooseIndexes(located, chosen, toPage);

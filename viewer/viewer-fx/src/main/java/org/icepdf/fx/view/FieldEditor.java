@@ -146,7 +146,7 @@ final class FieldEditor {
         if (field.getOptions() != null) {
             for (ChoiceFieldDictionary.ChoiceOption option : field.getOptions()) labels.add(option.getLabel());
         }
-        List<Integer> selected = selectedIndexes(field);
+        List<Integer> selected = FormController.selectedIndexes(field);
         ChoiceFieldDictionary.ChoiceFieldType type = field.getChoiceFieldType();
         boolean combo = type == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_COMBO
                 || type == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_EDITABLE_COMBO;
@@ -209,34 +209,6 @@ final class FieldEditor {
         return editor;
     }
 
-    /**
-     * The selected option indexes: /I when present, else the options whose export value (or label)
-     * matches /V; many writers set only /V.
-     */
-    static List<Integer> selectedIndexes(ChoiceFieldDictionary field) {
-        if (field.getIndexes() != null && !field.getIndexes().isEmpty()) return field.getIndexes();
-        List<ChoiceFieldDictionary.ChoiceOption> options = field.getOptions();
-        Object v = field.getFieldValue();
-        if (options == null || v == null) return List.of();
-        List<String> values = new ArrayList<>();
-        if (v instanceof List<?> many) {
-            for (Object o : many) values.add(text(o, field));
-        } else {
-            values.add(text(v, field));
-        }
-        List<Integer> out = new ArrayList<>();
-        for (int i = 0; i < options.size(); i++) {
-            ChoiceFieldDictionary.ChoiceOption option = options.get(i);
-            if (values.contains(option.getValue()) || values.contains(option.getLabel())) out.add(i);
-        }
-        return out;
-    }
-
-    private static String text(Object o, ChoiceFieldDictionary field) {
-        return o instanceof org.icepdf.core.pobjects.StringObject str
-                ? str.getDecryptedLiteralString(field.getLibrary().getSecurityManager()) : String.valueOf(o);
-    }
-
     /** A list cell with no vertical padding, so a field-sized row shows its text. */
     private static ListCell<String> compactCell() {
         ListCell<String> cell = new ListCell<>() {
@@ -266,6 +238,18 @@ final class FieldEditor {
         finished = true;
         if (control instanceof ComboBox<?> box && box.isShowing()) box.hide();
         javafx.application.Platform.runLater(action);
+    }
+
+    /**
+     * Ends the editor now, on this call (not later): a programmatic change (reset, a value set by
+     * the application) must not have a pending commit land after it.
+     */
+    void closeNow(boolean commit) {
+        if (finished) return;
+        finished = true;
+        if (control instanceof ComboBox<?> box && box.isShowing()) box.hide();
+        if (commit) listener.commit(value.get(), 0);
+        else listener.cancel();
     }
 
     Control control() {

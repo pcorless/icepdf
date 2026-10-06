@@ -648,6 +648,82 @@ public final class PdfViewSmoke {
         fx(view::clearFieldFocus);
         waitIdle(30_000);
         snapshot(out.resolve("forms_filled.png").toFile());
+        checkFormApi();
+    }
+
+    /** The public form API (step 5): change events, values by name, reset. */
+    private void checkFormApi() throws Exception {
+        java.util.List<org.icepdf.fx.view.FormFieldChangeEvent> events = new java.util.ArrayList<>();
+        fx(() -> view.setOnFormFieldChanged(events::add));
+
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation name = widgets("name").get(0);
+        fx(() -> view.focusField(name));
+        waitIdle(30_000);
+        javafx.scene.control.TextInputControl edit = editor();
+        if (edit != null) {
+            fx(() -> edit.setText("Typed"));
+            key(edit, javafx.scene.input.KeyCode.ENTER, false, false);
+        }
+        check("typing reports a field change", events.size() == 1 && "name".equals(events.get(0).name())
+                        && "Typed".equals(events.get(0).newValue()), events.toString());
+        String before = String.valueOf(events.isEmpty() ? null : events.get(0).oldValue());
+        fx(view::undo);
+        check("undo reports the change back", events.size() == 2 && before.equals(events.get(1).newValue())
+                        && "Typed".equals(events.get(1).oldValue()), events.toString());
+
+        check("getFieldValue reads each kind", onFx(() -> before.equals(view.getFieldValue("name"))
+                        && "Green".equals(view.getFieldValue("color")) && "Japan".equals(view.getFieldValue("country"))
+                        && java.util.List.of("Banana", "Cherry").equals(view.getFieldValue("toppings"))),
+                onFx(() -> view.getFieldValue("name") + " " + view.getFieldValue("color") + " "
+                        + view.getFieldValue("country") + " " + view.getFieldValue("toppings")));
+        check("getFieldNames lists the fields", onFx(() -> view.getFieldNames().containsAll(
+                java.util.List.of("name", "color", "pair", "toppings", "submit"))), onFx(() -> view.getFieldNames().toString()));
+
+        events.clear();
+        boolean set = onFx(() -> view.setFieldValue("name", "Set by app") && view.setFieldValue("agree", false)
+                && view.setFieldValue("color", "Blue") && view.setFieldValue("country", "Canada")
+                && view.setFieldValue("toppings", java.util.List.of("Apple")) && view.setFieldValue("city", "Paris"));
+        waitIdle(30_000);
+        check("setFieldValue sets each kind", set && onFx(() -> "Set by app".equals(view.getFieldValue("name"))
+                        && "Off".equals(view.getFieldValue("agree")) && "Blue".equals(view.getFieldValue("color"))
+                        && "Canada".equals(view.getFieldValue("country"))
+                        && java.util.List.of("Apple").equals(view.getFieldValue("toppings"))
+                        && "Paris".equals(view.getFieldValue("city"))),
+                set + " " + onFx(() -> view.getFieldValue("name") + " " + view.getFieldValue("agree") + " "
+                        + view.getFieldValue("color") + " " + view.getFieldValue("country") + " "
+                        + view.getFieldValue("toppings") + " " + view.getFieldValue("city")));
+        check("setFieldValue reports each change", events.size() == 6, events.size() + " events");
+        check("setFieldValue refuses what doesn't fit", onFx(() -> !view.setFieldValue("nope", "x")
+                        && !view.setFieldValue("color", "Purple") && !view.setFieldValue("country", "Atlantis")
+                        && !view.setFieldValue("fruit", java.util.List.of("Apple", "Cherry"))),
+                "accepted a bad value");
+        snapshot(out.resolve("forms_api_set.png").toFile());
+
+        events.clear();
+        fx(view::resetForm);
+        waitIdle(30_000);
+        check("resetForm restores defaults and reports them", onFx(() -> "".equals(view.getFieldValue("name"))
+                        && "Red".equals(view.getFieldValue("color")) && "Canada".equals(view.getFieldValue("country")))
+                        && !events.isEmpty(),
+                onFx(() -> view.getFieldValue("name") + " " + view.getFieldValue("color")) + ", " + events.size() + " events");
+        fx(() -> view.setOnFormFieldChanged(null));
+
+        // the edits survive a save and reopen.
+        fx(() -> view.setFieldValue("name", "Saved value"));
+        java.nio.file.Path saved = out.resolve("forms_saved.pdf");
+        try (java.io.OutputStream os = new java.io.BufferedOutputStream(java.nio.file.Files.newOutputStream(saved))) {
+            formDoc.saveToOutputStream(os);
+        }
+        Document reopened = new Document();
+        reopened.setFile(saved.toString());
+        Object savedName = null;
+        for (org.icepdf.core.pobjects.annotations.Annotation a : reopened.getPageTree().getPage(0).getAnnotations()) {
+            if (a instanceof org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w && "name".equals(nameOf(w))) {
+                savedName = fieldValue(w);
+            }
+        }
+        reopened.dispose();
+        check("values survive save and reopen", "Saved value".equals(String.valueOf(savedName)), String.valueOf(savedName));
     }
 
     private java.util.List<double[]> pixelsNear(int r, int g, int b, int tolerance) throws Exception {

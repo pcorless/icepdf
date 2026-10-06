@@ -247,7 +247,13 @@ public class PdfViewDemo extends Application {
                     : (lastQuery[0] == null ? "" : position);
         }, view.getSearchHits(), view.currentSearchHitIndexProperty(), view.searchingProperty(),
                 view.searchProgressProperty()));
-        return new ToolBar(field, previous, next, matchCase, wholeWord, accents, clear, count);
+        // forms: the public form API, as an application would use it.
+        CheckBox highlightFields = new CheckBox("Highlight fields");
+        highlightFields.selectedProperty().bindBidirectional(view.highlightFormFieldsProperty());
+        Button resetForm = new Button("Reset form");
+        resetForm.setOnAction(e -> view.resetForm());
+        return new ToolBar(field, previous, next, matchCase, wholeWord, accents, clear, count, new Separator(),
+                highlightFields, resetForm);
     }
 
     private Node buildStatusBar() {
@@ -268,7 +274,11 @@ public class PdfViewDemo extends Application {
             return s.startPage() == s.endPage() ? "selected p" + (s.startPage() + 1)
                     : "selected p" + (s.startPage() + 1) + "-" + (s.endPage() + 1);
         }, view.textSelectionProperty()));
-        HBox bar = new HBox(16, memory, selection);
+        // the last form field change, to show onFormFieldChanged in use.
+        Label fieldChange = new Label();
+        view.setOnFormFieldChanged(change ->
+                fieldChange.setText(change.name() + ": " + change.oldValue() + " → " + change.newValue()));
+        HBox bar = new HBox(16, memory, selection, fieldChange);
         bar.setPadding(new Insets(2, 8, 2, 8));
         return bar;
     }

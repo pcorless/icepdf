@@ -81,8 +81,9 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `view/AnnotationEdits` | viewer-awt `AbstractAnnotationComponent.mouseReleased`, `AnnotationState`, `MyAnnotationCallback.newAnnotation/removeAnnotation` | Commit-through-core semantics for move/resize/add/delete and undo. Deliberate change: `/Rect` is set directly, not via `syncBBoxToUserSpaceRectangle` (see the class comment). |
 | `view/AnnotationUiLayer`, `view/PopupNode` | viewer-awt `PageViewComponentImpl.addPopupAnnotationComponent`, `PopupAnnotationComponent`, `MarkupGlueComponent` | Behaviour: popups hosted above the pages and free of the page bounds, title/date/minimise, connector to the markup. New FX code. |
 | `view/TileRenderer` (blend layer) | viewer-awt `PageViewComponentImpl.paintBlendedAnnotation` | The approach: render blend-mode annotations over real page pixels. Here the backdrop is the cached content tiles. |
-
 | `view/FormController` | viewer-awt `acroform/TextWidgetComponent`, `CheckButtonComponent`, `RadioButtonComponent`, `ChoiceComboComponent`, `ChoiceListComponent` | The field value semantics: set/toggle/select/choose, radio siblings and unison, reset to /DV. Rewritten toolkit-free as before/after snapshot edits. |
+| `view/FieldEditor` | viewer-awt `acroform/TextWidgetComponent`, `ChoiceComboComponent`, `ChoiceListComponent` | Which editor per field type, /MaxLen, quadding, /DA size, commit on focus loss. Rebuilt on JavaFX controls (TextField/TextArea/PasswordField, ComboBox, ListView); no Swing code carried over. |
+| `view/FieldOrder` | ISO 32000-1 12.5.1 (/Tabs) | Written from the spec; the Swing viewer has no tab-order logic to port. |
 
 Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest`, `DocumentSearchTest` and `AnnotationRoundTripTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and
