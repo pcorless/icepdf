@@ -37,6 +37,8 @@ import javafx.util.Duration;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.fx.view.DocumentLayout.PageSlot;
 
 import java.awt.geom.AffineTransform;
@@ -67,6 +69,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
     private final TileRenderer renderer;
+    private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> scheduleRefresh());
     private final Map<Integer, PageLayer> layers = new HashMap<>();
 
     private Document document;
@@ -170,7 +173,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             refresh();
         });
         registerChangeListener(control.sceneProperty(), o -> watchWindow());
-        registerChangeListener(control.toolModeProperty(), o -> installTool());
+        registerChangeListener(control.toolModeProperty(), o -> {
+            installTool();
+            refresh();
+        });
+        registerChangeListener(control.textSelectionProperty(), o -> refresh());
 
         control.addEventHandler(ScrollEvent.SCROLL, scrollHandler);
         control.addEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -191,6 +198,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     public void dispose() {
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         renderer.shutdown();
+        textLoader.shutdown();
         cache.clear();
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
         getSkinnable().removeEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -230,6 +238,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private void onDocument() {
         document = getSkinnable().getDocument();
         renderer.setDocument(document);
+        textLoader.setDocument(document);
         resetRasters();
         scrollX = 0;
         scrollY = 0;
@@ -496,6 +505,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 }
             }
             incomplete |= !updateTiles(layer, slot, params, wanted);
+            updateText(layer);
         }
         layers.entrySet().removeIf(e -> {
             if (keep.contains(e.getKey())) return false;
@@ -503,6 +513,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             return true;
         });
         cache.pin(wanted);
+        textLoader.retain(needsText() ? keep::contains : page -> false);
         renderer.retain(wanted::contains);
         control.setRendering(zoomSettling || incomplete);
         publishCurrentPage();
@@ -562,6 +573,36 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private double snap(double v) {
         return Math.round(v * outputScale) / outputScale;
+    }
+
+    /** Page text is needed to select, or to draw a selection. */
+    private boolean needsText() {
+        return getSkinnable().getToolMode() == ToolMode.TEXT_SELECT || getSkinnable().getTextSelection() != null;
+    }
+
+    private void updateText(PageLayer layer) {
+        if (!needsText()) {
+            layer.setSelection(null, null);
+            return;
+        }
+        int index = layer.getPageIndex();
+        textLoader.request(index);
+        TextSequence sequence = textLoader.get(index);
+        DocumentSelection selection = getSkinnable().getTextSelection();
+        layer.setSelection(sequence, selection != null ? selection.rangeForPage(index, sequence) : null);
+    }
+
+    /** The page's loaded text, or null if it isn't loaded (or has none). */
+    TextSequence textSequence(int pageIndex) {
+        return textLoader.get(pageIndex);
+    }
+
+    /** True if the viewport point is over a glyph of a page whose text is loaded. */
+    boolean isOverText(double vx, double vy) {
+        PagePoint point = pageAtViewport(vx, vy);
+        if (point == null) return false;
+        TextSequence sequence = textLoader.get(point.pageIndex());
+        return sequence != null && sequence.hitsText(point.toAwt());
     }
 
     private void clearLayers() {

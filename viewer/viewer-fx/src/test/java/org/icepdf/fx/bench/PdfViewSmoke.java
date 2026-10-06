@@ -175,6 +175,7 @@ public final class PdfViewSmoke {
         System.out.println("tool checks:");
         checkHitTesting(document);
         checkPanning();
+        checkSelectionLayer(document);
         System.out.println(failures == 0 ? "tool checks: all passed" : "tool checks: " + failures + " FAILED");
     }
 
@@ -369,6 +370,150 @@ public final class PdfViewSmoke {
         boolean ok = after.pageIndex() == before.pageIndex()
                 && Math.abs(movedX - expectX) < 2 / zoom + 0.5 && Math.abs(movedY - expectY) < 2 / zoom + 0.5;
         check(name, ok, String.format("moved (%.1f, %.1f)pt, expected (%.1f, %.1f)pt", movedX, movedY, expectX, expectY));
+    }
+
+    /**
+     * A programmatic selection is drawn exactly over the core's selection rectangles, stays aligned
+     * through zoom and rotation, never triggers a tile render, and clears; the cursor is an I-beam
+     * over text and an arrow off the page.
+     */
+    private void checkSelectionLayer(Document document) throws Exception {
+        int pageIndex = Math.min(document.getNumberOfPages() - 1, 99);
+        org.icepdf.core.pobjects.graphics.text.TextSequence sequence =
+                document.getPageViewText(pageIndex).getTextSequence();
+        int end = Math.min(sequence.length(), 400);
+        java.util.List<java.awt.geom.Rectangle2D.Double> rects =
+                sequence.rectsFor(org.icepdf.core.pobjects.graphics.text.OffsetRange.of(0, end));
+
+        act("selection setup: page " + (pageIndex + 1) + " fit width", v -> {
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setCurrentPageIndex(pageIndex);
+            v.setFitMode(FitMode.WIDTH);
+        });
+        int[] renders = {0};
+        javafx.beans.value.ChangeListener<Boolean> counter = (obs, o, n) -> {
+            if (n) renders[0]++;
+        };
+        fx(() -> view.renderingProperty().addListener(counter));
+        act("select offsets 0-" + end, v -> v.setTextSelection(
+                org.icepdf.core.pobjects.graphics.text.DocumentSelection.of(pageIndex, 0, pageIndex, end)));
+        fx(() -> view.renderingProperty().removeListener(counter));
+        check("selection change renders no tiles", renders[0] == 0, renders[0] + " render cycles");
+        checkHighlightAligned("highlight aligned (fit width)", pageIndex, rects);
+
+        act("selection at 400%", v -> {
+            v.setFitMode(FitMode.NONE);
+            v.setZoom(4);
+        });
+        checkHighlightAligned("highlight aligned (400%)", pageIndex, rects);
+        act("selection rotated 90", PdfView::rotateClockwise);
+        checkHighlightAligned("highlight aligned (rotated 90)", pageIndex, rects);
+
+        act("selection: fit page, rotation 0", v -> {
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+        });
+        checkCursor(pageIndex, sequence);
+
+        act("clear selection", PdfView::clearSelection);
+        check("cleared selection draws nothing", highlightPixels().isEmpty(), "");
+    }
+
+    /** Every highlight pixel maps (via pageAt) into one of the core's selection rectangles. */
+    private void checkHighlightAligned(String name, int pageIndex,
+                                       java.util.List<java.awt.geom.Rectangle2D.Double> rects) throws Exception {
+        java.util.List<double[]> pixels = highlightPixels();
+        if (pixels.size() < 200) {
+            check(name, false, "only " + pixels.size() + " highlight pixels");
+            return;
+        }
+        int sampled = 0;
+        int inside = 0;
+        for (int i = 0; i < pixels.size(); i += Math.max(1, pixels.size() / 2000)) {
+            double[] p = pixels.get(i);
+            java.util.Optional<org.icepdf.fx.view.PagePoint> hit = onFx(() -> view.pageAt(p[0], p[1]));
+            sampled++;
+            if (hit.isEmpty() || hit.get().pageIndex() != pageIndex) continue;
+            double x = hit.get().x();
+            double y = hit.get().y();
+            for (java.awt.geom.Rectangle2D.Double r : rects) {
+                // a pixel straddling a rect edge maps up to a pixel outside it.
+                double tolerance = 1.5;
+                if (x >= r.x - tolerance && x <= r.getMaxX() + tolerance
+                        && y >= r.y - tolerance && y <= r.getMaxY() + tolerance) {
+                    inside++;
+                    break;
+                }
+            }
+        }
+        double fraction = inside / (double) sampled;
+        check(name, fraction > 0.995, String.format("%d highlight px, %.2f%% of %d sampled inside core rects",
+                pixels.size(), fraction * 100, sampled));
+    }
+
+    /** View coordinates of pixels tinted by the selection fill (#0077FF at 30% over white). */
+    private java.util.List<double[]> highlightPixels() throws Exception {
+        double scale = onFx(() -> stage.getOutputScaleX());
+        WritableImage image = onFx(() -> {
+            SnapshotParameters params = new SnapshotParameters();
+            params.setTransform(new Scale(scale, scale));
+            return view.snapshot(params, null);
+        });
+        int w = (int) image.getWidth();
+        int h = (int) image.getHeight();
+        int[] argb = new int[w * h];
+        image.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), argb, 0, w);
+        java.util.List<double[]> out = new java.util.ArrayList<>();
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int c = argb[y * w + x];
+                int r = (c >> 16) & 0xff, g = (c >> 8) & 0xff, b = c & 0xff;
+                if (Math.abs(r - 178) <= 8 && Math.abs(g - 214) <= 8 && b >= 245) {
+                    out.add(new double[]{(x + 0.5) / scale, (y + 0.5) / scale});
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Robot moves to a glyph (found through pageAt + hitsText), then off the page. */
+    private void checkCursor(int pageIndex, org.icepdf.core.pobjects.graphics.text.TextSequence sequence)
+            throws Exception {
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        double[] overText = null;
+        double[] offPage = null;
+        for (double y = 20; y < size[1] - 20 && (overText == null || offPage == null); y += 7) {
+            for (double x = 4; x < size[0] - 30; x += 7) {
+                double px = x, py = y;
+                java.util.Optional<org.icepdf.fx.view.PagePoint> hit = onFx(() -> view.pageAt(px, py));
+                if (hit.isEmpty()) {
+                    if (offPage == null) offPage = new double[]{x, y};
+                } else if (overText == null && hit.get().pageIndex() == pageIndex
+                        && sequence.hitsText(hit.get().toAwt())) {
+                    overText = new double[]{x, y};
+                }
+            }
+        }
+        if (overText == null || offPage == null) {
+            check("I-beam over text", false, "no probe points found");
+            return;
+        }
+        javafx.scene.Node viewport = onFx(() -> view.getChildrenUnmodifiable().get(0));
+        javafx.scene.robot.Robot robot = onFx(javafx.scene.robot.Robot::new);
+        for (double[] target : new double[][]{overText, offPage}) {
+            javafx.geometry.Point2D screen = onFx(() -> view.localToScreen(target[0], target[1]));
+            fx(() -> robot.mouseMove(screen));
+            Thread.sleep(80);
+            fx(() -> robot.mouseMove(screen.getX() + 1, screen.getY()));
+            Thread.sleep(120);
+            javafx.scene.Cursor cursor = onFx(viewport::getCursor);
+            boolean text = target == overText;
+            check(text ? "I-beam over text" : "arrow off the page",
+                    cursor == (text ? javafx.scene.Cursor.TEXT : javafx.scene.Cursor.DEFAULT),
+                    "cursor " + cursor + " at view " + target[0] + "," + target[1]);
+        }
     }
 
     private static void fx(Runnable runnable) throws Exception {

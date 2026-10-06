@@ -20,6 +20,7 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 
 import java.util.Optional;
 
@@ -79,6 +80,8 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
     private final ReadOnlyIntegerWrapper pageCount = new ReadOnlyIntegerWrapper(this, "pageCount", 0);
     private final ReadOnlyBooleanWrapper rendering = new ReadOnlyBooleanWrapper(this, "rendering", false);
+    private final ObjectProperty<DocumentSelection> textSelection =
+            new SimpleObjectProperty<>(this, "textSelection");
     private final ObjectProperty<ToolMode> toolMode = new SimpleObjectProperty<>(this, "toolMode",
             ToolMode.TEXT_SELECT) {
         @Override
@@ -91,6 +94,7 @@ public class PdfView extends Control {
         getStyleClass().add("pdf-view");
         setFocusTraversable(true);
         document.addListener((obs, old, doc) -> {
+            setTextSelection(null);
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
         });
@@ -157,6 +161,15 @@ public class PdfView extends Control {
      */
     public Optional<PagePoint> pageAt(double x, double y) {
         return getSkin() instanceof PdfViewSkin skin ? Optional.ofNullable(skin.pageAt(x, y)) : Optional.empty();
+    }
+
+    /** Selects every page's text; no-op without a document. */
+    public void selectAll() {
+        if (getPageCount() > 0) setTextSelection(DocumentSelection.all(getPageCount()));
+    }
+
+    public void clearSelection() {
+        setTextSelection(null);
     }
 
     public void nextPage() {
@@ -295,6 +308,22 @@ public class PdfView extends Control {
 
     public final void setPaintAnnotations(boolean value) {
         paintAnnotations.set(value);
+    }
+
+    /**
+     * The text selection, null for none.  Offsets index each page's reading-order
+     * {@code TextSequence}; set it to select programmatically (e.g. a search hit).
+     */
+    public final ObjectProperty<DocumentSelection> textSelectionProperty() {
+        return textSelection;
+    }
+
+    public final DocumentSelection getTextSelection() {
+        return textSelection.get();
+    }
+
+    public final void setTextSelection(DocumentSelection value) {
+        textSelection.set(value);
     }
 
     /** What a primary-button drag does; text selection by default. */

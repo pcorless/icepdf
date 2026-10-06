@@ -19,13 +19,21 @@ import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 
 /**
- * Text selection tool.  Selection gestures arrive with the selection controller and page-text
- * loading (JAVAFX-SELECTION-PLAN.md steps 3-4); until then the tool is inert, so panning is via the
- * middle button or Space+drag.
+ * Text selection tool: an I-beam over text.  Selection gestures arrive with the selection controller
+ * (JAVAFX-SELECTION-PLAN.md step 4); until then drags do nothing, so pan via the middle button or
+ * Space+drag.
  */
 final class TextSelectHandler implements ToolHandler {
 
+    private final PdfViewSkin skin;
+
     TextSelectHandler(PdfViewSkin skin) {
+        this.skin = skin;
+    }
+
+    @Override
+    public void moved(MouseEvent e) {
+        skin.setViewportCursor(skin.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
     }
 
     @Override

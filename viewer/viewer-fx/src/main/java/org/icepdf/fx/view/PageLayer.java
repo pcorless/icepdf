@@ -19,11 +19,14 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.*;
 import javafx.scene.transform.Affine;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.graphics.text.OffsetRange;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 
 /**
@@ -34,8 +37,13 @@ import java.util.*;
  *     <li>stale tiles - tiles from the previous zoom/rotation, mapped the same way, until the
  *     current tiles cover the viewport;</li>
  *     <li>tiles - current tiles at 1:1 device pixels;</li>
- *     <li>overlay - optional native content in PDF user space ({@link PageOverlayFactory}).</li>
+ *     <li>overlay, in PDF user space: the text selection highlight, then the application's
+ *     {@link PageOverlayFactory} content;</li>
+ *     <li>caret, in page view space so it stays one device pixel wide at any zoom.</li>
  * </ol>
+ * Selection and caret are plain fills and lines with no blend mode: Prism renders a blended or
+ * effected node through an intermediate texture sized to its bounds, which for a page-sized
+ * selection at deep zoom is the O(zoom²) trap again.
  * Nothing here is sized by zoom into a texture: no effects, no node caching, so a 4000% page costs
  * only the tiles on screen.  Effects or {@code setCache(true)} on a page-sized node would rasterise
  * the whole zoomed page - the same O(zoom²) trap the Swing viewer hit in GH-495.
@@ -53,6 +61,9 @@ final class PageLayer extends Group {
     private final Group tiles = new Group();
     private final Group overlay = new Group();
     private final Affine overlayTransform = new Affine();
+    private final Path selection = new Path();
+    private final Group appOverlay = new Group();
+    private final Line caret = new Line();
 
     private CacheKey.Params params;
     private AffineTransform pageToView;
@@ -61,6 +72,10 @@ final class PageLayer extends Group {
     private AffineTransform previewPageToView;
     private boolean hasPreview;
     private boolean overlayCreated;
+    // what the selection path currently shows, to rebuild only on change.
+    private TextSequence selectionSequence;
+    private OffsetRange selectionRange;
+    private Rectangle2D.Double caretRect;
 
     PageLayer(int pageIndex, Page page) {
         this.pageIndex = pageIndex;
@@ -72,7 +87,15 @@ final class PageLayer extends Group {
         preview.setVisible(false);
         staleTiles.getTransforms().add(staleTransform);
         overlay.getTransforms().add(overlayTransform);
-        getChildren().addAll(paper, preview, staleTiles, tiles, overlay);
+        java.awt.Color c = Page.selectionColor;
+        selection.setFill(Color.rgb(c.getRed(), c.getGreen(), c.getBlue(), Page.SELECTION_ALPHA));
+        selection.setStroke(null);
+        selection.setMouseTransparent(true);
+        overlay.getChildren().addAll(selection, appOverlay);
+        caret.setStroke(Color.BLACK);
+        caret.setMouseTransparent(true);
+        caret.setVisible(false);
+        getChildren().addAll(paper, preview, staleTiles, tiles, overlay, caret);
         setClip(clip);
     }
 
@@ -122,6 +145,8 @@ final class PageLayer extends Group {
             PageTransforms.setFx(previewTransform, PageTransforms.between(previewPageToView, pageToView));
         }
         PageTransforms.setFx(overlayTransform, pageToView);
+        caret.setStrokeWidth(1 / params.scale());
+        placeCaret();
     }
 
     boolean hasTile(CacheKey.Tile key) {
@@ -177,11 +202,74 @@ final class PageLayer extends Group {
         if (overlayCreated || factory == null) return;
         overlayCreated = true;
         Node node = factory.createOverlay(pageIndex, page);
-        if (node != null) overlay.getChildren().setAll(node);
+        if (node != null) appOverlay.getChildren().setAll(node);
     }
 
     void resetOverlay() {
-        overlay.getChildren().clear();
+        appOverlay.getChildren().clear();
         overlayCreated = false;
+    }
+
+    /**
+     * Shows {@code range} of the page's text highlighted; null or empty clears.  Rebuilt only when
+     * the sequence or range changes - zoom and rotation are carried by the overlay transform.
+     */
+    void setSelection(TextSequence sequence, OffsetRange range) {
+        if (range != null && range.isEmpty()) range = null;
+        if (sequence == null) range = null;
+        if (Objects.equals(range, selectionRange) && (range == null || sequence == selectionSequence)) return;
+        selectionSequence = sequence;
+        selectionRange = range;
+        List<PathElement> elements = new ArrayList<>();
+        if (range != null) {
+            for (Rectangle2D.Double r : sequence.rectsFor(range)) {
+                elements.add(new MoveTo(r.x, r.y));
+                elements.add(new LineTo(r.x + r.width, r.y));
+                elements.add(new LineTo(r.x + r.width, r.y + r.height));
+                elements.add(new LineTo(r.x, r.y + r.height));
+                elements.add(new ClosePath());
+            }
+        }
+        selection.getElements().setAll(elements);
+    }
+
+    /** True if the layer currently highlights something; for tests and diagnostics. */
+    boolean hasSelection() {
+        return selectionRange != null;
+    }
+
+    /**
+     * Places the caret at a user-space caret rectangle (from {@code TextSequence.caretRect}); null
+     * hides it.  Drawn as the rectangle's centre line, mapped to view space.
+     */
+    void setCaret(Rectangle2D.Double userRect) {
+        caretRect = userRect;
+        placeCaret();
+    }
+
+    /** Blink phase; the caret only shows if one is placed. */
+    void setCaretVisible(boolean visible) {
+        caret.setVisible(visible && caretRect != null);
+    }
+
+    private void placeCaret() {
+        if (caretRect == null || pageToView == null) {
+            caret.setVisible(false);
+            return;
+        }
+        // the long axis is the line's height for horizontal text, its width for vertical text.
+        boolean tall = caretRect.height >= caretRect.width;
+        double cx = caretRect.getCenterX();
+        double cy = caretRect.getCenterY();
+        javafx.geometry.Point2D a = tall
+                ? PageTransforms.pageToView(pageToView, cx, caretRect.getMinY())
+                : PageTransforms.pageToView(pageToView, caretRect.getMinX(), cy);
+        javafx.geometry.Point2D b = tall
+                ? PageTransforms.pageToView(pageToView, cx, caretRect.getMaxY())
+                : PageTransforms.pageToView(pageToView, caretRect.getMaxX(), cy);
+        caret.setStartX(a.getX());
+        caret.setStartY(a.getY());
+        caret.setEndX(b.getX());
+        caret.setEndY(b.getY());
     }
 }
