@@ -71,6 +71,12 @@ final class TextSelectHandler implements ToolHandler {
 
     @Override
     public void moved(MouseEvent e) {
+        PdfViewSkin.AnnotationHit field = skin.fieldAtViewport(e.getX(), e.getY());
+        if (field != null) {
+            skin.setHovered(null);
+            skin.setViewportCursor(PdfViewSkin.fieldCursor((org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation) field.annotation()));
+            return;
+        }
         int handle = skin.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {
             skin.setHovered(null);
@@ -113,6 +119,15 @@ final class TextSelectHandler implements ToolHandler {
         pendingLink = null;
         pendingMove = null;
         draggingAnnotation = false;
+        // a form field: give it focus (its editor opens); no text selection for this gesture.
+        PdfViewSkin.AnnotationHit field = markupSubtype == null ? skin.fieldAtViewport(e.getX(), e.getY()) : null;
+        if (field != null) {
+            view.clearAnnotationSelection();
+            skin.pressField(field, e);
+            annotationGesture = true;
+            return;
+        }
+        if (view.getFocusedField() != null) view.clearFieldFocus();
         // a handle of the selected annotation: resize straight away.
         int handle = skin.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {

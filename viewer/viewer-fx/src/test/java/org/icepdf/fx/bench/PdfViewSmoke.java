@@ -95,6 +95,11 @@ public final class PdfViewSmoke {
             annotationSnapshots(file);
             return;
         }
+        if ("forms".equals(System.getProperty("smoke.only"))) {
+            checkForms(file);
+            System.out.println(failures == 0 ? "form checks: all passed" : "form checks: " + failures + " FAILED");
+            return;
+        }
         if ("annotation-ui".equals(System.getProperty("smoke.only"))) {
             checkAnnotationUi(file);
             System.out.println(failures == 0 ? "annotation UI checks: all passed"
@@ -180,6 +185,149 @@ public final class PdfViewSmoke {
         String state = onFx(() -> String.format("page %d/%d zoom %.0f%% rot %.0f",
                 view.getCurrentPageIndex() + 1, view.getPageCount(), view.getZoom() * 100, view.getRotation()));
         System.out.printf("%-32s %s %8.0fms  heap %4dMB  %s%n", name, idle ? "idle   " : "TIMEOUT", ms, heap, state);
+    }
+
+    // ---- forms --------------------------------------------------------------------------------
+
+    private Document formDoc;
+
+    /** The widget(s) of a field by name in the open form document. */
+    private java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> widgets(String name) {
+        java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> out = new java.util.ArrayList<>();
+        for (org.icepdf.core.pobjects.annotations.Annotation a : formDoc.getPageTree().getPage(0).getAnnotations()) {
+            if (a instanceof org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
+                org.icepdf.core.pobjects.acroform.FieldDictionary f = w.getFieldDictionary();
+                String partial = f.getPartialFieldName();
+                String full = (partial == null || partial.isEmpty()) && f.getParent() != null
+                        ? f.getParent().getFullyQualifiedFieldName() : f.getFullyQualifiedFieldName();
+                if (name.equals(full)) out.add(w);
+            }
+        }
+        return out;
+    }
+
+    private String nameOf(org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
+        if (w == null) return "null";
+        org.icepdf.core.pobjects.acroform.FieldDictionary f = w.getFieldDictionary();
+        String partial = f.getPartialFieldName();
+        return (partial == null || partial.isEmpty()) && f.getParent() != null
+                ? f.getParent().getFullyQualifiedFieldName() : f.getFullyQualifiedFieldName();
+    }
+
+    /** Form filling on the project fixture all_fields.pdf (step-by-step checks are appended per phase step). */
+    private void checkForms(Path fixture) throws Exception {
+        javafx.scene.robot.Robot robot = onFx(javafx.scene.robot.Robot::new);
+        formDoc = new Document();
+        formDoc.setFile(fixture.toString());
+        act("forms: all_fields fit page", v -> {
+            v.setDocument(formDoc);
+            v.setViewMode(ViewMode.SINGLE_PAGE);
+            v.setRotation(0);
+            v.setFitMode(FitMode.PAGE);
+            v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+        });
+        javafx.scene.Node viewport = onFx(() -> view.getChildrenUnmodifiable().get(0));
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation name = widgets("name").get(0);
+        org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation agree = widgets("agree").get(0);
+
+        double[] namePoint = viewPointIn(0, name.getUserSpaceRectangle());
+        robotMove(robot, namePoint);
+        check("I-beam over a text field", onFx(viewport::getCursor) == javafx.scene.Cursor.TEXT,
+                String.valueOf(onFx(viewport::getCursor)));
+        robotMove(robot, viewPointIn(0, agree.getUserSpaceRectangle()));
+        check("hand over a check box", onFx(viewport::getCursor) == javafx.scene.Cursor.HAND,
+                String.valueOf(onFx(viewport::getCursor)));
+
+        robotClick(robot, namePoint);
+        check("click focuses the field", onFx(view::getFocusedField) == name, nameOf(onFx(view::getFocusedField)));
+        int ring = countPixels(0, 119, 255, 12);
+        check("focus ring drawn", ring > 40, ring + " px");
+
+        // tab order through the API: the fixture has no /Tabs, so /Annots order.
+        java.util.List<String> expected = java.util.List.of("notes", "secret", "code", "agree", "color", "color",
+                "color", "pair", "pair", "pair", "country", "city", "fruit", "toppings", "reset", "submit", "name");
+        java.util.List<String> seen = new java.util.ArrayList<>();
+        for (int i = 0; i < expected.size(); i++) {
+            fx(view::focusNextField);
+            seen.add(nameOf(onFx(view::getFocusedField)));
+        }
+        check("Tab order walks every field and wraps", seen.equals(expected), String.valueOf(seen));
+        fx(view::focusPreviousField);
+        check("Shift+Tab goes back", "submit".equals(nameOf(onFx(view::getFocusedField))),
+                nameOf(onFx(view::getFocusedField)));
+        // the key handling itself, deterministically: a synthetic Tab through the control's event chain
+        fx(() -> {
+            view.focusField(name);
+            javafx.event.Event.fireEvent(view, new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                    "", "", javafx.scene.input.KeyCode.TAB, false, false, false, false));
+        });
+        check("Tab handler moves focus (synthetic key event)", "notes".equals(nameOf(onFx(view::getFocusedField))),
+                nameOf(onFx(view::getFocusedField)));
+        fx(() -> javafx.event.Event.fireEvent(view, new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                "", "", javafx.scene.input.KeyCode.TAB, true, false, false, false)));
+        check("Shift+Tab handler goes back (synthetic key event)", "name".equals(nameOf(onFx(view::getFocusedField))),
+                nameOf(onFx(view::getFocusedField)));
+        // and with the real key (needs desktop keyboard focus)
+        fx(() -> {
+            stage.toFront();
+            view.requestFocus();
+            view.focusField(name);
+        });
+        keys(robot, javafx.scene.input.KeyCode.TAB);
+        check("Tab key moves focus (real key; needs desktop focus)", "notes".equals(nameOf(onFx(view::getFocusedField))),
+                nameOf(onFx(view::getFocusedField)));
+        fx(view::clearFieldFocus);
+
+        // field highlight: light blue only on the fields
+        act("forms: highlight fields", v -> v.setHighlightFormFields(true));
+        java.util.List<double[]> tint = pixelsNear(225, 232, 255, 10);
+        int inside = 0;
+        for (double[] p : tint) {
+            java.util.Optional<org.icepdf.fx.view.PagePoint> hit = onFx(() -> view.pageAt(p[0], p[1]));
+            if (hit.isEmpty()) continue;
+            for (org.icepdf.core.pobjects.annotations.Annotation a : formDoc.getPageTree().getPage(0).getAnnotations()) {
+                java.awt.geom.Rectangle2D r = a.getUserSpaceRectangle();
+                if (a instanceof org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation
+                        && hit.get().x() >= r.getMinX() - 1.5 && hit.get().x() <= r.getMaxX() + 1.5
+                        && hit.get().y() >= r.getMinY() - 1.5 && hit.get().y() <= r.getMaxY() + 1.5) {
+                    inside++;
+                    break;
+                }
+            }
+        }
+        check("field highlight only on fields", tint.size() > 500 && inside >= tint.size() * 0.99,
+                tint.size() + " tint px, " + inside + " inside field rects");
+        snapshot(out.resolve("forms_highlight.png").toFile());
+        act("forms: highlight off", v -> v.setHighlightFormFields(false));
+        checkFormFilling(robot);
+        fx(() -> view.setDocument(null));
+        formDoc.dispose();
+    }
+
+    /** Filled in by later form steps. */
+    private void checkFormFilling(javafx.scene.robot.Robot robot) throws Exception {
+    }
+
+    private java.util.List<double[]> pixelsNear(int r, int g, int b, int tolerance) throws Exception {
+        double scale = onFx(() -> stage.getOutputScaleX());
+        WritableImage image = onFx(() -> {
+            SnapshotParameters params = new SnapshotParameters();
+            params.setTransform(new Scale(scale, scale));
+            return view.snapshot(params, null);
+        });
+        int w = (int) image.getWidth();
+        int h = (int) image.getHeight();
+        int[] argb = new int[w * h];
+        image.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), argb, 0, w);
+        java.util.List<double[]> out = new java.util.ArrayList<>();
+        for (int i = 0; i < argb.length; i++) {
+            int c = argb[i];
+            if (Math.abs((c >> 16 & 0xff) - r) <= tolerance && Math.abs((c >> 8 & 0xff) - g) <= tolerance
+                    && Math.abs((c & 0xff) - b) <= tolerance) {
+                out.add(new double[]{(i % w + 0.5) / scale, (i / w + 0.5) / scale});
+            }
+        }
+        return out;
     }
 
     // ---- annotation interaction -------------------------------------------------------------

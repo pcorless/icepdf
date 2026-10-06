@@ -30,6 +30,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.NamedAction;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -117,6 +118,10 @@ public class PdfView extends Control {
     private final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationAction =
             new SimpleObjectProperty<>(this, "onAnnotationAction");
     private final AnnotationEdits.History history = new AnnotationEdits.History();
+    private final BooleanProperty formFieldsEditable = new SimpleBooleanProperty(this, "formFieldsEditable", true);
+    private final BooleanProperty highlightFormFields = new SimpleBooleanProperty(this, "highlightFormFields", false);
+    private final ReadOnlyObjectWrapper<AbstractWidgetAnnotation> focusedField =
+            new ReadOnlyObjectWrapper<>(this, "focusedField");
     private final StringProperty annotationAuthor =
             new SimpleStringProperty(this, "annotationAuthor", System.getProperty("user.name", ""));
     private final ObjectProperty<javafx.scene.paint.Color> annotationColor =
@@ -140,6 +145,7 @@ public class PdfView extends Control {
         document.addListener((obs, old, doc) -> {
             clearSearch();
             selectedAnnotation.set(null);
+            focusedField.set(null);
             history.clear();
             updateHistoryState();
             setTextSelection(null);
@@ -307,6 +313,63 @@ public class PdfView extends Control {
     /** Strikes out the selected text; see {@link #highlightSelection()}. */
     public int strikeOutSelection() {
         return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) : 0;
+    }
+
+    // ---- forms ----------------------------------------------------------------------------
+
+    /** Whether form fields can be filled in (in the text-select and hand tools).  True by default. */
+    public final BooleanProperty formFieldsEditableProperty() {
+        return formFieldsEditable;
+    }
+
+    public final boolean isFormFieldsEditable() {
+        return formFieldsEditable.get();
+    }
+
+    public final void setFormFieldsEditable(boolean editable) {
+        formFieldsEditable.set(editable);
+    }
+
+    /** Tints fillable fields (as Acrobat's "highlight existing fields"); drawn over the page, never in it. */
+    public final BooleanProperty highlightFormFieldsProperty() {
+        return highlightFormFields;
+    }
+
+    public final boolean isHighlightFormFields() {
+        return highlightFormFields.get();
+    }
+
+    public final void setHighlightFormFields(boolean highlight) {
+        highlightFormFields.set(highlight);
+    }
+
+    /** The form field with input focus, or null. */
+    public final ReadOnlyObjectProperty<AbstractWidgetAnnotation> focusedFieldProperty() {
+        return focusedField.getReadOnlyProperty();
+    }
+
+    public final AbstractWidgetAnnotation getFocusedField() {
+        return focusedField.get();
+    }
+
+    /** Gives a field input focus and scrolls it into view; null clears. */
+    public void focusField(AbstractWidgetAnnotation widget) {
+        focusedField.set(widget);
+        if (widget != null && getSkin() instanceof PdfViewSkin skin) skin.revealField(widget);
+    }
+
+    public void clearFieldFocus() {
+        focusedField.set(null);
+    }
+
+    /** Moves focus to the next fillable field in tab order (across pages), wrapping. */
+    public void focusNextField() {
+        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.adjacentField(getFocusedField(), false));
+    }
+
+    /** Moves focus to the previous fillable field in tab order, wrapping. */
+    public void focusPreviousField() {
+        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.adjacentField(getFocusedField(), true));
     }
 
     /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */

@@ -57,7 +57,10 @@ final class PanHandler implements ToolHandler {
         // a click (not a drag) with the hand tool follows a link, as in Acrobat.
         if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY
                 && Math.hypot(e.getX() - pressX, e.getY() - pressY) <= 4) {
-            skin.activateLinkAtViewport(e.getX(), e.getY());
+            // a click with the hand tool fills a form field or follows a link, as in Acrobat.
+            PdfViewSkin.AnnotationHit field = skin.fieldAtViewport(e.getX(), e.getY());
+            if (field != null) skin.pressField(field, e);
+            else skin.activateLinkAtViewport(e.getX(), e.getY());
         }
     }
 

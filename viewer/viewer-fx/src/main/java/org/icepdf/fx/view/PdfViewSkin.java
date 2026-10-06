@@ -215,6 +215,15 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         control.getSearchHits().addListener((javafx.collections.ListChangeListener<SearchHit>) c -> scheduleRefresh());
         registerChangeListener(control.selectedAnnotationProperty(), o ->
                 uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null)));
+        registerChangeListener(control.focusedFieldProperty(), o -> {
+            uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null));
+            onFieldFocusChanged();
+        });
+        registerChangeListener(control.highlightFormFieldsProperty(), o -> refresh());
+        registerChangeListener(control.formFieldsEditableProperty(), o -> {
+            if (!control.isFormFieldsEditable()) control.clearFieldFocus();
+            refresh();
+        });
         registerChangeListener(control.textSelectionProperty(), o -> {
             // solid again whenever the caret moves, so it is visible straight after interaction.
             caretOn = true;
@@ -586,6 +595,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             ui.setLayoutY(layer.getLayoutY());
             ui.setPageToView(layer.getPageToView());
             updateAnnotationChrome(ui, layer.getPage());
+            layer.setFieldHighlights(control.isHighlightFormFields() && control.isFormFieldsEditable()
+                    ? fieldRects(layer.getPage()) : List.of());
             if (layer.getPage() != null && layer.getPage().isInitiated() && control.isPaintAnnotations()) {
                 ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, popupListener);
             } else {
@@ -778,6 +789,112 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             }
         }
         return -1;
+    }
+
+    // ---- form fields -------------------------------------------------------------------------
+
+    /** Fillable widgets of an initialised page, in /Annots order. */
+    private List<AbstractWidgetAnnotation> fillable(Page page) {
+        List<AbstractWidgetAnnotation> out = new ArrayList<>();
+        if (page == null || !page.isInitiated() || page.getAnnotations() == null) return out;
+        for (Annotation a : page.getAnnotations()) {
+            if (a instanceof AbstractWidgetAnnotation w && !w.isDeleted() && !w.getFlagHidden()
+                    && FormController.isFillable(w)) {
+                out.add(w);
+            }
+        }
+        return out;
+    }
+
+    private List<java.awt.geom.Rectangle2D> fieldRects(Page page) {
+        List<java.awt.geom.Rectangle2D> rects = new ArrayList<>();
+        for (AbstractWidgetAnnotation w : fillable(page)) rects.add(w.getUserSpaceRectangle());
+        return rects;
+    }
+
+    /** The fillable widget under a viewport point (top-most), or null; never parses on the FX thread. */
+    AnnotationHit fieldAtViewport(double vx, double vy) {
+        if (!getSkinnable().isFormFieldsEditable()) return null;
+        PagePoint point = pageAtViewport(vx, vy);
+        if (point == null) return null;
+        List<AbstractWidgetAnnotation> widgets = fillable(document.getPageTree().getPage(point.pageIndex()));
+        for (int i = widgets.size() - 1; i >= 0; i--) {
+            if (widgets.get(i).getUserSpaceRectangle().contains(point.x(), point.y())) {
+                return new AnnotationHit(point.pageIndex(), widgets.get(i));
+            }
+        }
+        return null;
+    }
+
+    /** Cursor over a fillable field: an I-beam for text, a hand for buttons and lists. */
+    static Cursor fieldCursor(AbstractWidgetAnnotation widget) {
+        FormController.FieldKind kind = FormController.kindOf(widget);
+        return kind == FormController.FieldKind.TEXT || kind == FormController.FieldKind.PASSWORD
+                ? Cursor.TEXT : Cursor.HAND;
+    }
+
+    /**
+     * All fillable fields of the document in tab order: pages in order, each page's fields by its
+     * /Tabs entry (see {@link FieldOrder}).  Reads annotations of pages not yet shown (annotation
+     * dictionaries only, not content); empty for a document without an AcroForm.
+     */
+    List<FormController.Located> fieldsInTabOrder() {
+        List<FormController.Located> out = new ArrayList<>();
+        if (document == null || document.getCatalog().getInteractiveForm() == null) return out;
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            Page page = document.getPageTree().getPage(i);
+            List<Annotation> annotations = page.getAnnotations();
+            if (annotations == null) continue;
+            List<AbstractWidgetAnnotation> widgets = new ArrayList<>();
+            for (Annotation a : annotations) {
+                if (a instanceof AbstractWidgetAnnotation w && !w.isDeleted() && !w.getFlagHidden()
+                        && FormController.isFillable(w)) {
+                    widgets.add(w);
+                }
+            }
+            Object tabs = page.getEntries().get(new org.icepdf.core.pobjects.Name("Tabs"));
+            for (AbstractWidgetAnnotation w : FieldOrder.order(widgets, AbstractWidgetAnnotation::getUserSpaceRectangle,
+                    tabs instanceof org.icepdf.core.pobjects.Name n ? n.getName() : null)) {
+                out.add(new FormController.Located(i, page, w));
+            }
+        }
+        return out;
+    }
+
+    /** The field after (or before) {@code current} in tab order, wrapping; null if there are none. */
+    AbstractWidgetAnnotation adjacentField(AbstractWidgetAnnotation current, boolean backwards) {
+        List<FormController.Located> fields = fieldsInTabOrder();
+        int index = -1;
+        for (int i = 0; i < fields.size(); i++) {
+            if (fields.get(i).widget() == current) index = i;
+        }
+        int next = FieldOrder.next(fields.size(), index, backwards);
+        return next < 0 ? null : fields.get(next).widget();
+    }
+
+    /** Scrolls a field into view, switching page in the non-continuous modes. */
+    void revealField(AbstractWidgetAnnotation widget) {
+        for (int i = 0; i < document.getNumberOfPages(); i++) {
+            Page page = document.getPageTree().getPage(i);
+            List<Annotation> annotations = page.isInitiated() || page.getAnnotations() != null ? page.getAnnotations() : null;
+            if (annotations != null && annotations.contains(widget)) {
+                if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(i) == null) {
+                    getSkinnable().setCurrentPageIndex(i);
+                }
+                java.awt.geom.Rectangle2D r = widget.getUserSpaceRectangle();
+                ensureVisible(new PagePoint(i, r.getCenterX(), r.getCenterY()), 48);
+                return;
+            }
+        }
+    }
+
+    /** Hook for the editors (steps 3-4): the focused field changed. */
+    private void onFieldFocusChanged() {
+    }
+
+    /** A press (or hand-tool click) on a field: focus it; the editors take it from there. */
+    void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
+        getSkinnable().focusField((AbstractWidgetAnnotation) field.annotation());
     }
 
     /** The page an annotation is on (among visible pages), or null. */
@@ -1268,6 +1385,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private void updateAnnotationChrome(AnnotationUiLayer ui, Page page) {
         int index = ui.getPageIndex();
+        AbstractWidgetAnnotation field = getSkinnable().getFocusedField();
+        ui.setFocusedField(field != null && isOnPage(field, index) ? field : null);
         ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
         Annotation selected = getSkinnable().getSelectedAnnotation();
         Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
@@ -1544,6 +1663,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 spacePanned = false;
                 if (gestureHandler == null) restoreViewportCursor();
             }
+            e.consume();
+            return;
+        }
+        if (e.getCode() == KeyCode.TAB && getSkinnable().isFormFieldsEditable()
+                && getSkinnable().getToolMode() != null && !getSkinnable().getToolMode().createsAnnotations()
+                && !fieldsInTabOrder().isEmpty()) {
+            if (e.isShiftDown()) getSkinnable().focusPreviousField();
+            else getSkinnable().focusNextField();
+            e.consume();
+            return;
+        }
+        if (e.getCode() == KeyCode.ESCAPE && getSkinnable().getFocusedField() != null) {
+            getSkinnable().clearFieldFocus();
             e.consume();
             return;
         }

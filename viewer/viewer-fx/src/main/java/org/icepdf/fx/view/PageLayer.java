@@ -64,6 +64,7 @@ final class PageLayer extends Group {
     private final TileSet blendAnnotations = new TileSet();
     private final Group overlay = new Group();
     private final Affine overlayTransform = new Affine();
+    private final Path fieldHighlights = new Path();
     private final Path searchHits = new Path();
     private final Path selection = new Path();
     private final Group appOverlay = new Group();
@@ -98,7 +99,10 @@ final class PageLayer extends Group {
         searchHits.setFill(Color.rgb(h.getRed(), h.getGreen(), h.getBlue(), Page.SELECTION_ALPHA));
         searchHits.setStroke(null);
         searchHits.setMouseTransparent(true);
-        overlay.getChildren().addAll(searchHits, selection, appOverlay);
+        fieldHighlights.setFill(Color.rgb(204, 215, 255, 0.55));
+        fieldHighlights.setStroke(null);
+        fieldHighlights.setMouseTransparent(true);
+        overlay.getChildren().addAll(fieldHighlights, searchHits, selection, appOverlay);
         caret.setStroke(Color.BLACK);
         caret.setMouseTransparent(true);
         caret.setVisible(false);
@@ -319,6 +323,23 @@ final class PageLayer extends Group {
             }
         }
         searchHits.getElements().setAll(elements);
+    }
+
+    private List<java.awt.geom.Rectangle2D> fieldRects = List.of();
+
+    /** Tints these user-space rectangles (fillable form fields); empty clears.  Rebuilt on change only. */
+    void setFieldHighlights(List<java.awt.geom.Rectangle2D> rects) {
+        if (rects.equals(fieldRects)) return;
+        fieldRects = rects;
+        List<PathElement> elements = new ArrayList<>();
+        for (java.awt.geom.Rectangle2D r : rects) {
+            elements.add(new MoveTo(r.getX(), r.getY()));
+            elements.add(new LineTo(r.getMaxX(), r.getY()));
+            elements.add(new LineTo(r.getMaxX(), r.getMaxY()));
+            elements.add(new LineTo(r.getX(), r.getMaxY()));
+            elements.add(new ClosePath());
+        }
+        fieldHighlights.getElements().setAll(elements);
     }
 
     /** True if the layer currently highlights something; for tests and diagnostics. */

@@ -43,6 +43,8 @@ final class AnnotationUiLayer extends Group {
     private final int pageIndex;
     private final Rectangle hover = new Rectangle();
     private final Rectangle selection = new Rectangle();
+    private final Rectangle fieldFocus = new Rectangle();
+    private Annotation focused;
     private final List<Rectangle> handles = new ArrayList<>(8);
     private final Group popups = new Group();
     // live drag: the annotation rendered alone, mapped from where it was to where it is being put.
@@ -71,6 +73,12 @@ final class AnnotationUiLayer extends Group {
         hover.getStrokeDashArray().setAll(3.0, 3.0);
         hover.setVisible(false);
         hover.setMouseTransparent(true);
+        fieldFocus.setFill(null);
+        fieldFocus.setStroke(CHROME);
+        fieldFocus.setStrokeWidth(2);
+        fieldFocus.setVisible(false);
+        fieldFocus.setMouseTransparent(true);
+        fieldFocus.getStyleClass().add("pdf-field-focus");
         selection.setFill(null);
         selection.setStroke(CHROME);
         selection.setStrokeWidth(1.5);
@@ -88,7 +96,7 @@ final class AnnotationUiLayer extends Group {
         proxy.setVisible(false);
         glueLines.setMouseTransparent(true);
         getChildren().addAll(glueLines, popups, proxy);
-        getChildren().addAll(hover, selection);
+        getChildren().addAll(hover, selection, fieldFocus);
         getChildren().addAll(handles);
     }
 
@@ -109,6 +117,13 @@ final class AnnotationUiLayer extends Group {
     void setHovered(Annotation annotation) {
         if (annotation == hovered) return;
         hovered = annotation;
+        place();
+    }
+
+    /** The form field with input focus on this page (focus ring), or null. */
+    void setFocusedField(Annotation annotation) {
+        if (annotation == focused) return;
+        focused = annotation;
         place();
     }
 
@@ -193,6 +208,9 @@ final class AnnotationUiLayer extends Group {
         boolean showHover = hovered != null && hovered != selected && pageToView != null;
         hover.setVisible(showHover);
         if (showHover) setRect(hover, viewBounds(hovered), 1);
+        boolean showFocus = focused != null && pageToView != null;
+        fieldFocus.setVisible(showFocus);
+        if (showFocus) setRect(fieldFocus, viewBounds(focused), 2);
         boolean showSelection = selected != null && pageToView != null;
         selection.setVisible(showSelection);
         Rectangle2D b = showSelection ? (dragBounds != null ? dragBounds : viewBounds(selected)) : null;
