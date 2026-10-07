@@ -710,10 +710,16 @@ public class Page extends Dictionary {
             // several threads can paint this same cached display list concurrently,
             // and the reset-to-null raced (nulling the parent mid-paint of another
             // thread dropped form content -- missing content on the page).
-            if (isPageGroupBufferCandidate()) {
-                paintPageGroupBuffered(g2, viewportClip);
-            } else {
-                shapes.paint(g2, this);
+            // the caller's clip, for code sizing offscreen buffers (paint() widened the clip above).
+            Object previousViewport = viewportClip != null ? PaintViewport.set(g2, viewportClip) : null;
+            try {
+                if (isPageGroupBufferCandidate()) {
+                    paintPageGroupBuffered(g2, viewportClip);
+                } else {
+                    shapes.paint(g2, this);
+                }
+            } finally {
+                if (viewportClip != null) PaintViewport.restore(previousViewport);
             }
 
             g2.setTransform(pageTransform);
