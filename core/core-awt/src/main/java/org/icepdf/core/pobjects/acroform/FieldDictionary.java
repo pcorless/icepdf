@@ -152,6 +152,8 @@ public class FieldDictionary extends Dictionary {
 
     protected Name fieldType;
     protected FieldDictionary parentField;
+    // guards the parent walk against a malformed /Parent cycle.
+    private static final int MAX_FIELD_DEPTH = 64;
     protected ArrayList<Object> kids;
 
     protected String partialFieldName;
@@ -245,7 +247,10 @@ public class FieldDictionary extends Dictionary {
             Object value = library.getObject(entries, PARENT_KEY);
             if (value instanceof DictionaryEntries) {
                 parentField = FieldDictionaryFactory.buildField(library, (DictionaryEntries) value);
-                parentField.setPObjectReference((Reference) entries.get(PARENT_KEY));
+                Object parentReference = entries.get(PARENT_KEY);
+                if (parentReference instanceof Reference) {
+                    parentField.setPObjectReference((Reference) parentReference);
+                }
             }
         }
         return parentField;
@@ -332,12 +337,30 @@ public class FieldDictionary extends Dictionary {
      *
      * @return fully quality name of the field.
      */
+    /**
+     * The field's fully qualified name (ISO 32000-1 12.7.3.2): its ancestors' partial names and its own,
+     * joined by periods.  A widget kid with no /T of its own is not a field but a widget of its parent
+     * (12.7.3.1), so it takes the parent's name rather than the parent's name plus an empty part.
+     *
+     * @return fully qualified name, or null when neither the field nor any ancestor is named
+     */
     public String getFullyQualifiedFieldName() {
-        String qualifiedFieldName = partialFieldName;
-        if (parentField != null) {
-            return parentField.getFullyQualifiedFieldName().concat(".").concat(partialFieldName);
+        return qualifiedName(0);
+    }
+
+    private String qualifiedName(int depth) {
+        FieldDictionary parent = depth < MAX_FIELD_DEPTH ? getParent() : null;
+        if (parent == null) {
+            return partialFieldName;
         }
-        return qualifiedFieldName;
+        String parentName = parent.qualifiedName(depth + 1);
+        if (partialFieldName == null || partialFieldName.isEmpty()) {
+            return parentName;
+        }
+        if (parentName == null || parentName.isEmpty()) {
+            return partialFieldName;
+        }
+        return parentName + "." + partialFieldName;
     }
 
     public Object getFieldValue() {

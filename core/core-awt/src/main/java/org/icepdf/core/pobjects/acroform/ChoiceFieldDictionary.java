@@ -224,19 +224,25 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
             selectedValue = tmp.getValue();
             super.setFieldValue(selectedValue, parentReference);
         }
-        if (indexes != null) {
-            indexes.clear();
-        }else{
-            indexes = new ArrayList<>();
-        }
-        for (int i = 0, j = 0, max = options.size(); i < max; i++) {
-            if (options.get(i).getLabel().equals(selectedValue)) {
-                indexes.add(j, i);
+        // V holds an option's export value (12.7.4.4); options written as [export display] pairs
+        // differ in the two, so match the export value first and fall back to the label for
+        // callers that pass the displayed text.
+        ArrayList<Integer> selected = new ArrayList<>();
+        if (selectedValue != null && options != null) {
+            for (int i = 0, max = options.size(); i < max; i++) {
+                if (selectedValue.equals(options.get(i).getValue())) {
+                    selected.add(i);
+                }
+            }
+            if (selected.isEmpty()) {
+                for (int i = 0, max = options.size(); i < max; i++) {
+                    if (selectedValue.equals(options.get(i).getLabel())) {
+                        selected.add(i);
+                    }
+                }
             }
         }
-        indexes.trimToSize();
-        // store the new indexes in the dictionary.
-        entries.put(I_KEY, indexes);
+        setIndexes(selected);
     }
 
     public ChoiceOption buildChoiceOption(String label, String value) {
@@ -277,6 +283,12 @@ public class ChoiceFieldDictionary extends VariableTextFieldDictionary {
      */
     public void setIndexes(ArrayList<Integer> indexes) {
         this.indexes = indexes;
+        // keep /I in step, or a selection would not survive a save.
+        if (indexes == null || indexes.isEmpty()) {
+            entries.remove(I_KEY);
+        } else {
+            entries.put(I_KEY, new ArrayList<>(indexes));
+        }
     }
 
     /**

@@ -1,0 +1,293 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 3 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Fields [11 0 R 13 0 R 15 0 R 17 0 R 20 0 R 21 0 R 31 0 R 42 0 R 44 0 R 46 0 R 48 0 R 50 0 R 52 0 R] /DR << /Font << /Helv 5 0 R >> >> /DA (/Helv 0 Tf 0 g) >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /Helv 5 0 R >> >> /Contents 6 0 R /Annots [11 0 R 13 0 R 15 0 R 17 0 R 20 0 R 24 0 R 27 0 R 30 0 R 34 0 R 37 0 R 40 0 R 42 0 R 44 0 R 46 0 R 48 0 R 50 0 R 52 0 R] >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<<  /Length 339 >>
+stream
+BT /Helv 11 Tf 1 0 0 1 60 728 Tm (Name) Tj 1 0 0 1 60 686 Tm (Notes) Tj 1 0 0 1 60 606 Tm (Secret) Tj 1 0 0 1 60 576 Tm (Code) Tj 1 0 0 1 60 539 Tm (Agree) Tj 1 0 0 1 60 499 Tm (Colour) Tj 1 0 0 1 60 464 Tm (Pair) Tj 1 0 0 1 60 426 Tm (Country) Tj 1 0 0 1 60 396 Tm (City) Tj 1 0 0 1 60 366 Tm (Fruit) Tj 1 0 0 1 60 296 Tm (Toppings) Tj ET
+endstream
+endobj
+7 0 obj
+null
+endobj
+8 0 obj
+null
+endobj
+9 0 obj
+null
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 250 22] /Resources << /Font << /Helv 5 0 R >> >> /Length 49 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 7 Td (Ada) Tj ET EMC
+endstream
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (name) /V (Ada) /DV () /Ff 0 /DA (/Helv 11 Tf 0 g) /Rect [150 720 400 742] /F 4 /P 4 0 R /AP << /N 10 0 R >> /MK << /BC [0.5 0.5 0.5] >>  >>
+endobj
+12 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 250 70] /Resources << /Font << /Helv 5 0 R >> >> /Length 55 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 31 Td (line one) Tj ET EMC
+endstream
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (notes) /V (line one) /DV () /Ff 4096 /DA (/Helv 11 Tf 0 g) /Rect [150 640 400 710] /F 4 /P 4 0 R /AP << /N 12 0 R >> /MK << /BC [0.5 0.5 0.5] >>  >>
+endobj
+14 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 250 20] /Resources << /Font << /Helv 5 0 R >> >> /Length 46 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 6 Td () Tj ET EMC
+endstream
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (secret) /V () /DV () /Ff 8192 /DA (/Helv 11 Tf 0 g) /Rect [150 610 400 630] /F 4 /P 4 0 R /AP << /N 14 0 R >> /MK << /BC [0.5 0.5 0.5] >>  >>
+endobj
+16 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 100 20] /Resources << /Font << /Helv 5 0 R >> >> /Length 48 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 6 Td (AB) Tj ET EMC
+endstream
+endobj
+17 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (code) /V (AB) /DV () /Ff 16777216 /DA (/Helv 11 Tf 0 g) /Rect [150 580 250 600] /F 4 /P 4 0 R /AP << /N 16 0 R >> /MK << /BC [0.5 0.5 0.5] >> /MaxLen 5 >>
+endobj
+18 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+19 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+20 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (agree) /V /Off /DV /Off /AS /Off /Rect [150 545 166 561] /F 4 /P 4 0 R /AP << /N << /Yes 18 0 R /Off 19 0 R >> >> >>
+endobj
+21 0 obj
+<< /FT /Btn /T (color) /Ff 49152 /V /Red /DV /Red /Kids [24 0 R 27 0 R 30 0 R] >>
+endobj
+22 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+23 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+24 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 21 0 R /AS /Red /Rect [150 505 166 521] /F 4 /P 4 0 R /AP << /N << /Red 22 0 R /Off 23 0 R >> >> >>
+endobj
+25 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+26 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+27 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 21 0 R /AS /Off /Rect [190 505 206 521] /F 4 /P 4 0 R /AP << /N << /Green 25 0 R /Off 26 0 R >> >> >>
+endobj
+28 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+29 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+30 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 21 0 R /AS /Off /Rect [230 505 246 521] /F 4 /P 4 0 R /AP << /N << /Blue 28 0 R /Off 29 0 R >> >> >>
+endobj
+31 0 obj
+<< /FT /Btn /T (pair) /Ff 33603584 /V /Off /DV /Off /Kids [34 0 R 37 0 R 40 0 R] >>
+endobj
+32 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+33 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+34 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 31 0 R /AS /Off /Rect [150 470 166 486] /F 4 /P 4 0 R /AP << /N << /A 32 0 R /Off 33 0 R >> >> >>
+endobj
+35 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+36 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+37 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 31 0 R /AS /Off /Rect [190 470 206 486] /F 4 /P 4 0 R /AP << /N << /A 35 0 R /Off 36 0 R >> >> >>
+endobj
+38 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 23 >>
+stream
+0 0 1 rg 3 3 10 10 re f
+endstream
+endobj
+39 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 16 16] /Resources << /Font << /Helv 5 0 R >> >> /Length 24 >>
+stream
+0.6 g 0.5 0.5 15 15 re S
+endstream
+endobj
+40 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 31 0 R /AS /Off /Rect [230 470 246 486] /F 4 /P 4 0 R /AP << /N << /B 38 0 R /Off 39 0 R >> >> >>
+endobj
+41 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 20] /Resources << /Font << /Helv 5 0 R >> >> /Length 52 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 6 Td (France) Tj ET EMC
+endstream
+endobj
+42 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (country) /Ff 131072 /Opt [(Canada) (France) (Japan)] /V (France) /DA (/Helv 11 Tf 0 g) /Rect [150 430 300 450] /F 4 /P 4 0 R /AP << /N 41 0 R >> /DV (Canada) >>
+endobj
+43 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 20] /Resources << /Font << /Helv 5 0 R >> >> /Length 50 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 6 Td (Lyon) Tj ET EMC
+endstream
+endobj
+44 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (city) /Ff 393216 /Opt [(Calgary) (Lyon) (Osaka)] /V (Lyon) /DA (/Helv 11 Tf 0 g) /Rect [150 400 300 420] /F 4 /P 4 0 R /AP << /N 43 0 R >>  >>
+endobj
+45 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 60] /Resources << /Font << /Helv 5 0 R >> >> /Length 53 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 26 Td (Banana) Tj ET EMC
+endstream
+endobj
+46 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (fruit) /Ff 0 /Opt [(Apple) (Banana) (Cherry)] /V (Banana) /DA (/Helv 11 Tf 0 g) /Rect [150 330 300 390] /F 4 /P 4 0 R /AP << /N 45 0 R >>  >>
+endobj
+47 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 60] /Resources << /Font << /Helv 5 0 R >> >> /Length 47 >>
+stream
+/Tx BMC BT /Helv 11 Tf 0 g 2 26 Td () Tj ET EMC
+endstream
+endobj
+48 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (toppings) /Ff 2097152 /Opt [(Apple) (Banana) (Cherry)] /V [(Apple) (Cherry)] /DA (/Helv 11 Tf 0 g) /Rect [150 260 300 320] /F 4 /P 4 0 R /AP << /N 47 0 R >> /I [0 2] >>
+endobj
+49 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 80 24] /Resources << /Font << /Helv 5 0 R >> >> /Length 61 >>
+stream
+0.85 g 0 0 80 24 re f BT /Helv 10 Tf 0 g 6 6 Td (Reset) Tj ET
+endstream
+endobj
+50 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (reset) /Rect [150 220 230 244] /F 4 /P 4 0 R /AP << /N 49 0 R >> /A << /S /ResetForm >> >>
+endobj
+51 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 80 24] /Resources << /Font << /Helv 5 0 R >> >> /Length 62 >>
+stream
+0.85 g 0 0 80 24 re f BT /Helv 10 Tf 0 g 6 6 Td (Submit) Tj ET
+endstream
+endobj
+52 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (submit) /Rect [250 220 330 244] /F 4 /P 4 0 R /AP << /N 51 0 R >> /A << /S /SubmitForm /F (http://example.invalid/submit) >> >>
+endobj
+xref
+0 53
+0000000000 65535 f 
+0000000015 00000 n 
+0000000080 00000 n 
+0000000137 00000 n 
+0000000314 00000 n 
+0000000571 00000 n 
+0000000668 00000 n 
+0000001059 00000 n 
+0000001079 00000 n 
+0000001099 00000 n 
+0000001119 00000 n 
+0000001309 00000 n 
+0000001510 00000 n 
+0000001706 00000 n 
+0000001916 00000 n 
+0000002103 00000 n 
+0000002306 00000 n 
+0000002495 00000 n 
+0000002711 00000 n 
+0000002874 00000 n 
+0000003038 00000 n 
+0000003217 00000 n 
+0000003315 00000 n 
+0000003478 00000 n 
+0000003642 00000 n 
+0000003799 00000 n 
+0000003962 00000 n 
+0000004126 00000 n 
+0000004285 00000 n 
+0000004448 00000 n 
+0000004612 00000 n 
+0000004770 00000 n 
+0000004870 00000 n 
+0000005033 00000 n 
+0000005197 00000 n 
+0000005352 00000 n 
+0000005515 00000 n 
+0000005679 00000 n 
+0000005834 00000 n 
+0000005997 00000 n 
+0000006161 00000 n 
+0000006316 00000 n 
+0000006509 00000 n 
+0000006731 00000 n 
+0000006922 00000 n 
+0000007126 00000 n 
+0000007320 00000 n 
+0000007523 00000 n 
+0000007711 00000 n 
+0000007941 00000 n 
+0000008142 00000 n 
+0000008305 00000 n 
+0000008507 00000 n 
+trailer
+<< /Size 53 /Root 1 0 R >>
+startxref
+8707
+%%EOF
