@@ -414,12 +414,15 @@ public class ImageUtility {
 
     /**
      * Returns a memory-compact equivalent of {@code image} when its content
-     * allows it: an <em>opaque, effectively-grayscale</em> {@code INT_ARGB}/
-     * {@code INT_RGB} image is repacked as an 8-bit gray-indexed image (1/4 the
-     * memory).  Anything with transparency, real colour, an unsupported type, or
-     * preserved CMYK samples (keyed by the exact image instance) is returned
-     * unchanged.  The single pass bails on the first non-grey/translucent pixel,
-     * so colour images pay only a cheap scan.
+     * allows it: an <em>opaque</em> {@code INT_ARGB}/{@code INT_RGB} image with at
+     * most 256 distinct colours is repacked as an 8-bit indexed image (1/4 the
+     * memory, pixel-exact).  Effectively-grayscale images use a fixed gray ramp;
+     * others (a one-component Separation/DeviceN/Indexed image tinted to a colour,
+     * a flat-colour graphic) get a palette of their own colours.  Anything with
+     * transparency, more than 256 colours, an unsupported type, or preserved CMYK
+     * samples (keyed by the exact image instance) is returned unchanged.  The scan
+     * bails on the first translucent pixel or the 257th colour, so photographs pay
+     * only for a short prefix.
      *
      * @param image decoded image to (possibly) compact.
      * @return a compacted copy, or {@code image} unchanged when no gain is safe.
@@ -443,20 +446,112 @@ public class ImageUtility {
             return image;
         }
         int[] px = ((DataBufferInt) db).getData();
-        for (int p : px) {
+        // pass 1: opaque?  gray?  at most 256 colours?  An open-addressed set of the
+        // RGB values seen (opaque, so stored as 0xFF...... and never 0 = empty).
+        int[] slots = new int[1024];
+        int[] palette = new int[256];
+        int colours = 0;
+        boolean gray = true;
+        boolean rgbOnly = type == BufferedImage.TYPE_INT_RGB;
+        if (px.length == 0) {
+            return image;
+        }
+        // "same as the previous pixel" skips the checks, so start from a value that can't
+        // match the first pixel (0 would: it is a fully transparent pixel).
+        int last = ~(rgbOnly ? px[0] | 0xFF000000 : px[0]);
+        for (int raw : px) {
+            int p = rgbOnly ? raw | 0xFF000000 : raw;
+            if (p == last) {
+                continue; // runs of one colour are the common case
+            }
+            if ((p >>> 24) != 0xFF) {
+                return image; // translucent: no safe repack
+            }
+            last = p;
             int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
-            if (((p >>> 24) & 0xFF) != 0xFF || r != g || g != b) {
-                // translucent or coloured -> no safe 8-bit gray repack.
-                return image;
+            if (r != g || g != b) {
+                gray = false;
+            }
+            int slot = slotOf(slots, p);
+            if (slots[slot] == 0) {
+                if (colours == 256) {
+                    return image; // more than 256 colours
+                }
+                slots[slot] = p;
+                palette[colours++] = p;
             }
         }
         int w = image.getWidth(), h = image.getHeight();
-        BufferedImage gray = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_INDEXED, GRAY_256);
-        byte[] gp = ((DataBufferByte) gray.getRaster().getDataBuffer()).getData();
-        for (int i = 0; i < px.length; i++) {
-            gp[i] = (byte) (px[i] & 0xFF); // R==G==B, any channel is the grey level
+        if (gray) {
+            BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_INDEXED, GRAY_256);
+            byte[] gp = ((DataBufferByte) out.getRaster().getDataBuffer()).getData();
+            for (int i = 0; i < px.length; i++) {
+                gp[i] = (byte) (px[i] & 0xFF); // R==G==B, any channel is the grey level
+            }
+            return out;
         }
-        return gray;
+        // pass 2: map each pixel to its palette index (a parallel slot -> index table).
+        int[] indexOfSlot = new int[slots.length];
+        for (int i = 0; i < colours; i++) {
+            indexOfSlot[slotOf(slots, palette[i])] = i;
+        }
+        IndexColorModel model = new IndexColorModel(8, colours, palette, 0, false, -1, DataBuffer.TYPE_BYTE);
+        BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_INDEXED, model);
+        byte[] ip = ((DataBufferByte) out.getRaster().getDataBuffer()).getData();
+        last = ~(rgbOnly ? px[0] | 0xFF000000 : px[0]);
+        byte lastIndex = 0;
+        for (int i = 0; i < px.length; i++) {
+            int p = rgbOnly ? px[i] | 0xFF000000 : px[i];
+            if (p != last) {
+                last = p;
+                lastIndex = (byte) indexOfSlot[slotOf(slots, p)];
+            }
+            ip[i] = lastIndex;
+        }
+        return out;
+    }
+
+    /**
+     * The inverse of {@link #compactImage} for code that reads samples rather than drawing: an
+     * 8-bit indexed image comes back as 8-bit grey when its palette is the grey ramp, otherwise as
+     * {@code INT_RGB} (or {@code INT_ARGB} when the palette has alpha).  Exact either way.  Any
+     * other image is returned as it is.
+     */
+    public static BufferedImage unpackIndexed(BufferedImage image) {
+        if (image == null || image.getType() != BufferedImage.TYPE_BYTE_INDEXED
+                || !(image.getColorModel() instanceof IndexColorModel)) {
+            return image;
+        }
+        IndexColorModel model = (IndexColorModel) image.getColorModel();
+        int w = image.getWidth(), h = image.getHeight();
+        boolean greyRamp = model.getMapSize() == 256 && !model.hasAlpha();
+        for (int i = 0; greyRamp && i < 256; i++) {
+            greyRamp = model.getRGB(i) == (0xFF000000 | i * 0x010101);
+        }
+        if (greyRamp && image.getRaster().getDataBuffer() instanceof DataBufferByte) {
+            BufferedImage grey = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+            image.getRaster().getDataElements(0, 0, w, h,
+                    ((DataBufferByte) grey.getRaster().getDataBuffer()).getData());
+            return grey;
+        }
+        BufferedImage out = new BufferedImage(w, h,
+                model.hasAlpha() ? BufferedImage.TYPE_INT_ARGB : BufferedImage.TYPE_INT_RGB);
+        int[] row = new int[w];
+        for (int y = 0; y < h; y++) {
+            image.getRGB(0, y, w, 1, row, 0, w);
+            out.setRGB(0, y, w, 1, row, 0, w);
+        }
+        return out;
+    }
+
+    /** The slot of {@code colour} in an open-addressed set (linear probing; 0 marks empty). */
+    private static int slotOf(int[] slots, int colour) {
+        int mask = slots.length - 1;
+        int slot = (colour * 0x9E3779B9) >>> 22 & mask;
+        while (slots[slot] != 0 && slots[slot] != colour) {
+            slot = (slot + 1) & mask;
+        }
+        return slot;
     }
 
     /**

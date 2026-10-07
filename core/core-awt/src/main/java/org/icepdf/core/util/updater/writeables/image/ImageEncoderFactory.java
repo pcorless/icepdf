@@ -16,6 +16,9 @@
 package org.icepdf.core.util.updater.writeables.image;
 
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
+
+import java.awt.image.BufferedImage;
 
 import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.*;
 
@@ -41,6 +44,13 @@ public class ImageEncoderFactory {
         // whatever it was filtered with, or the dictionary stops describing the samples.
         if (imageStream.getImageParams().isImageMask()) {
             return new StencilEncoder(imageStream);
+        }
+        // A decoded image may be held 8-bit indexed to save memory (ImageUtility.compactImage); the
+        // encoders read samples by raster type, so hand them the plain grey or RGB equivalent.
+        BufferedImage decoded = imageStream.getDecodedImage();
+        BufferedImage unpacked = ImageUtility.unpackIndexed(decoded);
+        if (unpacked != decoded) {
+            imageStream.setDecodedImage(unpacked);
         }
         // A newly authored image - an annotation or signature appearance - has no original stream to
         // match, so there is no filter to route on.  The predictor encoder is the better of the two
