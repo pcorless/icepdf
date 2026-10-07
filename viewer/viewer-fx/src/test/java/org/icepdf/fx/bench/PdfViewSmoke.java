@@ -100,6 +100,11 @@ public final class PdfViewSmoke {
             System.out.println(failures == 0 ? "form checks: all passed" : "form checks: " + failures + " FAILED");
             return;
         }
+        if ("pan-fps".equals(System.getProperty("smoke.only"))) {
+            // file may list several documents separated by '|'.
+            for (String doc : file.toString().split("\\|")) panFrameTimes(Paths.get(doc));
+            return;
+        }
         if ("forms-corpus".equals(System.getProperty("smoke.only"))) {
             // file is the corpus directory; smoke.forms lists the documents (comma separated).
             for (String name : System.getProperty("smoke.forms",
@@ -186,7 +191,8 @@ public final class PdfViewSmoke {
             action.accept(view);
             return null;
         });
-        boolean idle = waitIdle(120_000);
+        boolean idle = waitIdle(Long.getLong("smoke.idleTimeout", 120_000));
+        if (!idle) dumpSkinState();
         double ms = (System.nanoTime() - t0) / 1e6;
         System.gc();
         long heap = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) >> 20;
@@ -307,6 +313,108 @@ public final class PdfViewSmoke {
                 errors.isEmpty() ? "" : errors.get(0).toString());
         fx(() -> view.setDocument(null));
         doc.dispose();
+    }
+
+    // ---- pan frame times (B2) ---------------------------------------------------------------
+
+    /**
+     * Frame times while panning: a warm pass first steps through a region until each viewport is
+     * rendered (so its tiles are cached), then an AnimationTimer pans through that region at a
+     * fixed speed and records every pulse: the interval between pulses (what the user sees) and
+     * the FX thread's own work up to the end of layout.  A cold pan over unvisited pages follows
+     * for comparison (tiles render asynchronously; previews cover the gaps).
+     */
+    private void panFrameTimes(Path file) throws Exception {
+        Document doc = new Document();
+        doc.setFile(file.toString());
+        act("pan-fps open " + file.getFileName(), v -> {
+            v.setViewMode(ViewMode.CONTINUOUS);
+            v.setRotation(0);
+            v.setFitMode(FitMode.WIDTH);
+            v.setDocument(doc);
+        });
+        double viewportHeight = onFx(view::getHeight);
+        int step = 12; // px per pulse: 720 px/s at 60 Hz, a brisk scroll
+        double range = viewportHeight * 4;
+        // warm: walk the range a viewport at a time, waiting for each to finish rendering
+        for (double y = 0; y < range + viewportHeight; y += viewportHeight * 0.5) {
+            fx(() -> view.scrollBy(0, viewportHeight * 0.5));
+            waitIdle(60_000);
+        }
+        fx(() -> view.scrollBy(0, -(range + viewportHeight)));
+        waitIdle(60_000);
+        System.gc();
+        Thread.sleep(300);
+        report(file.getFileName() + " warm", pan(step, (int) (range / step)));
+        // cold: further down, never visited
+        fx(() -> view.scrollBy(0, range * 2));
+        waitIdle(60_000);
+        report(file.getFileName() + " cold", pan(step, (int) (range / step)));
+        fx(() -> view.setDocument(null));
+        doc.dispose();
+    }
+
+    private record PanStats(double[] intervals, double[] layout, long renders) {
+    }
+
+    /** Pans {@code frames} pulses of {@code step} px; returns per-pulse intervals and layout times (ms). */
+    private PanStats pan(int step, int frames) throws Exception {
+        double[] intervals = new double[frames];
+        double[] layout = new double[frames];
+        long[] pulseStart = new long[1];
+        int[] frame = {-1};
+        java.util.concurrent.CountDownLatch done = new java.util.concurrent.CountDownLatch(1);
+        Runnable postLayout = () -> {
+            if (frame[0] >= 0 && frame[0] < frames && pulseStart[0] != 0) {
+                layout[frame[0]] = (System.nanoTime() - pulseStart[0]) / 1e6;
+            }
+        };
+        long rendersBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+        javafx.animation.AnimationTimer timer = new javafx.animation.AnimationTimer() {
+            long last;
+
+            @Override
+            public void handle(long now) {
+                pulseStart[0] = System.nanoTime();
+                if (frame[0] >= 0 && frame[0] < frames) intervals[frame[0]] = (now - last) / 1e6;
+                last = now;
+                frame[0]++;
+                if (frame[0] >= frames) {
+                    stop();
+                    done.countDown();
+                    return;
+                }
+                view.scrollBy(0, step);
+            }
+        };
+        fx(() -> {
+            view.getScene().addPostLayoutPulseListener(postLayout);
+            timer.start();
+        });
+        done.await(120, java.util.concurrent.TimeUnit.SECONDS);
+        fx(() -> view.getScene().removePostLayoutPulseListener(postLayout));
+        long renders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - rendersBefore;
+        waitIdle(60_000);
+        // the first interval is from timer start, not a pan frame
+        return new PanStats(java.util.Arrays.copyOfRange(intervals, 1, frames),
+                java.util.Arrays.copyOfRange(layout, 1, frames), renders);
+    }
+
+    private static double pct(double[] sorted, double p) {
+        return sorted[Math.min(sorted.length - 1, (int) Math.ceil(p * sorted.length) - 1)];
+    }
+
+    private static void report(String label, PanStats stats) {
+        double[] iv = stats.intervals().clone();
+        double[] ly = stats.layout().clone();
+        java.util.Arrays.sort(iv);
+        java.util.Arrays.sort(ly);
+        double mean = java.util.Arrays.stream(iv).average().orElse(0);
+        long slow = java.util.Arrays.stream(iv).filter(v -> v > 1000.0 / 60 * 1.5).count();
+        System.out.printf("PAN %-36s frames %4d  fps %5.1f  interval p50 %5.1f p95 %5.1f p99 %5.1f max %6.1f ms"
+                        + "  >25ms %3d (%4.1f%%)  fx-layout p50 %4.1f p95 %4.1f max %5.1f ms  tile renders %d%n",
+                label, iv.length, 1000 / mean, pct(iv, .5), pct(iv, .95), pct(iv, .99), iv[iv.length - 1],
+                slow, 100.0 * slow / iv.length, pct(ly, .5), pct(ly, .95), ly[ly.length - 1], stats.renders());
     }
 
     /** Form filling on the project fixture all_fields.pdf (step-by-step checks are appended per phase step). */
@@ -2190,6 +2298,27 @@ public final class PdfViewSmoke {
             runnable.run();
             return null;
         });
+    }
+
+    /** On a stuck act: the skin's render gates, read reflectively (diagnostic). */
+    private void dumpSkinState() throws Exception {
+        System.out.println("STALL " + onFx(() -> {
+            StringBuilder out = new StringBuilder();
+            Object skin = view.getSkin();
+            for (String name : new String[]{"zoomSettling", "zoomSettle", "refreshQueued", "layoutZoom", "viewportW",
+                    "viewportH", "scrollX", "scrollY"}) {
+                try {
+                    java.lang.reflect.Field f = skin.getClass().getDeclaredField(name);
+                    f.setAccessible(true);
+                    Object v = f.get(skin);
+                    if (v instanceof javafx.animation.Animation a) v = a.getStatus() + " t=" + a.getCurrentTime();
+                    out.append(name).append('=').append(v).append("  ");
+                } catch (ReflectiveOperationException e) {
+                    out.append(name).append("=?  ");
+                }
+            }
+            return out.toString();
+        }));
     }
 
     private boolean waitIdle(long timeoutMs) throws Exception {

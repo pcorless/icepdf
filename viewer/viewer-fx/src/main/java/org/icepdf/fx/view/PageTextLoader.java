@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 final class PageTextLoader {
 
-    private static final Logger logger = Logger.getLogger(PageTextLoader.class.toString());
+    private static final Logger logger = Logger.getLogger(PageTextLoader.class.getName());
 
     interface Sink {
         /** On the FX thread; {@code sequence} is null for a page with no text layer. */

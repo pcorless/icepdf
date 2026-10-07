@@ -171,9 +171,16 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             }
 
             @Override
-            public void failed(boolean outOfMemory) {
+            public void failed(boolean outOfMemory, long retryAfterMs) {
                 if (outOfMemory) cache.trimToPinned();
-                scheduleRefresh();
+                if (retryAfterMs > 0) {
+                    // the keys stay requestable; ask again once the heap has had a moment.
+                    PauseTransition retry = new PauseTransition(Duration.millis(retryAfterMs));
+                    retry.setOnFinished(e -> scheduleRefresh());
+                    retry.play();
+                } else {
+                    scheduleRefresh();
+                }
             }
         });
         renderer.setPaintAnnotations(control.isPaintAnnotations());

@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  */
 public final class TileRenderer {
 
-    private static final Logger logger = Logger.getLogger(TileRenderer.class.toString());
+    private static final Logger logger = Logger.getLogger(TileRenderer.class.getName());
 
     private static final java.util.concurrent.atomic.AtomicLong CONTENT_RENDERS = new java.util.concurrent.atomic.AtomicLong();
 
@@ -98,11 +98,16 @@ public final class TileRenderer {
         void previewReady(CacheKey.Preview key, RasterBuffer buffer, float zoom);
 
         /**
-         * A job failed; its keys are now {@link #hasFailed failed}.
+         * A job failed.  A genuine failure marks its keys {@link #hasFailed failed}, so they are not
+         * asked for again.  Running out of memory is usually momentary (a document switch, a preview
+         * and tiles painting at once), so those keys stay requestable: the sink should shed what it
+         * can and ask again after {@code retryAfterMs}.  A key that keeps running out of memory is
+         * marked failed after {@link #OOM_RETRIES} attempts (then {@code retryAfterMs} is 0).
          *
-         * @param outOfMemory the render ran out of heap; caches should shed what they can
+         * @param outOfMemory  the render ran out of heap
+         * @param retryAfterMs when to request the job's tiles again; 0 for no retry
          */
-        void failed(boolean outOfMemory);
+        void failed(boolean outOfMemory, long retryAfterMs);
     }
 
     private final class Job {
@@ -123,6 +128,10 @@ public final class TileRenderer {
     // keys whose render threw; not retried until the document or rasters are reset, so a page the
     // core can't paint doesn't become a render loop.
     private final Set<CacheKey> failed = new HashSet<>();
+    // out-of-memory attempts per key (FX thread); cleared when the key renders or on cancelAll.
+    private final Map<CacheKey, Integer> outOfMemoryAttempts = new HashMap<>();
+    /** How many times a key that runs out of memory is retried before it counts as failed. */
+    static final int OOM_RETRIES = 3;
     private volatile Document document;
     private volatile boolean paintAnnotations = true;
     // annotation rendering is serialised per page: render() may lazily build appearance state.
@@ -367,6 +376,7 @@ public final class TileRenderer {
     public void cancelAll() {
         new ArrayList<>(jobs).forEach(this::cancel);
         failed.clear();
+        outOfMemoryAttempts.clear();
     }
 
     public void shutdown() {
@@ -412,6 +422,7 @@ public final class TileRenderer {
             }
             Graphics2D g = scratch.createGraphics();
             PaintResult result;
+            long start = System.nanoTime();
             try {
                 g.setClip(0, 0, region.width(), region.height());
                 g.translate(-region.x(), -region.y());
@@ -419,6 +430,11 @@ public final class TileRenderer {
                 result = painter.paint(g, page);
             } finally {
                 g.dispose();
+            }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("page %d region %dx%d at %d,%d (%d tiles, %s) painted in %d ms",
+                        pageIndex + 1, region.width(), region.height(), region.x(), region.y(), tiles.size(),
+                        keys.get(0).getClass().getSimpleName(), (System.nanoTime() - start) / 1_000_000));
             }
             if (Thread.currentThread().isInterrupted()) return;
             Map<CacheKey, RasterBuffer> out = new LinkedHashMap<>();
@@ -435,6 +451,7 @@ public final class TileRenderer {
                 if (!jobs.contains(job)) return; // cancelled after the paint finished
                 untrack(job);
                 if (nothing && onNothingToPaint != null) onNothingToPaint.run();
+                out.keySet().forEach(outOfMemoryAttempts::remove);
                 out.forEach(sink::tileReady);
             });
         } catch (InterruptedException e) {
@@ -463,6 +480,7 @@ public final class TileRenderer {
             int h = Math.max(1, (int) Math.ceil(size.getHeight()));
             RasterBuffer buffer = new RasterBuffer(w, h);
             Graphics2D g = buffer.getBufferedImage().createGraphics();
+            long start = System.nanoTime();
             try {
                 g.setClip(0, 0, w, h);
                 // without annotations: those live in their own layers, so an edit never stales a preview.
@@ -471,10 +489,15 @@ public final class TileRenderer {
             } finally {
                 g.dispose();
             }
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("page %d preview %dx%d painted in %d ms",
+                        key.pageIndex() + 1, w, h, (System.nanoTime() - start) / 1_000_000));
+            }
             if (Thread.currentThread().isInterrupted()) return;
             Platform.runLater(() -> {
                 if (!jobs.contains(job)) return;
                 untrack(job);
+                outOfMemoryAttempts.remove(key);
                 sink.previewReady(key, buffer, zoom);
             });
         } catch (InterruptedException e) {
@@ -493,8 +516,19 @@ public final class TileRenderer {
         Platform.runLater(() -> {
             if (!jobs.contains(job)) return;
             untrack(job);
-            failed.addAll(job.keys);
-            sink.failed(e instanceof OutOfMemoryError);
+            if (!(e instanceof OutOfMemoryError)) {
+                failed.addAll(job.keys);
+                sink.failed(false, 0);
+                return;
+            }
+            int attempt = 0;
+            for (CacheKey key : job.keys) {
+                int n = outOfMemoryAttempts.merge(key, 1, Integer::sum);
+                if (n > OOM_RETRIES) failed.add(key);
+                else attempt = Math.max(attempt, n);
+            }
+            // back off 250, 500, 1000 ms: give the heap (and any other in-flight paint) time to clear.
+            sink.failed(true, attempt == 0 ? 0 : 250L << (attempt - 1));
         });
     }
 }
