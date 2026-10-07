@@ -527,38 +527,84 @@ public class TilingPattern extends Stream implements Pattern {
 
     /**
      * Paints a pattern that appears at most once in the current clip (its step
-     * exceeds the fill) as a single stamp: the BBox content is rendered at BBox
-     * resolution and blitted once, instead of squeezing it into a mostly-empty
-     * cell-sized {@link TexturePaint} buffer that would badly alias the content.
-     * Memory scales with the BBox (the visible content), not the giant cell.
+     * exceeds the fill) as a single stamp, blitted once instead of squeezed into a
+     * mostly-empty cell-sized {@link TexturePaint} buffer that would badly alias it.
+     * <p>
+     * Only the part of the stamp inside the clip is rendered, at the device's own
+     * resolution: the buffer is bounded by what is visible, whatever the stamp's
+     * size or the zoom.  A page-sized stamp (CanmoreAlberta: BBox 11305x5060, step
+     * 32730) used to get a 9000x5060 buffer - 182 MB - at every zoom, rendered in
+     * user-space units (wasteful zoomed out, soft zoomed in).
      *
-     * @param stampW,stampH device size of the BBox (the cell scaled by BBox/step).
+     * @param stampW,stampH size of the BBox in the current user space (the cell
+     *                      scaled by BBox/step).
      */
     private void paintSingleStamp(Graphics2D g, AffineTransform originalPageSpace,
                                   double xOffset, double yOffset, double stampW, double stampH) {
         int sw = Math.max(1, (int) Math.round(Math.abs(stampW)));
         int sh = Math.max(1, (int) Math.round(Math.abs(stampH)));
-        int bufW = Math.min(sw, MAX_BUFFER_SIZE);
-        int bufH = Math.min(sh, MAX_BUFFER_SIZE);
+        double x0 = Math.round(xOffset);
+        double y0 = Math.round(yOffset);
+        Rectangle2D visible = new Rectangle2D.Double(x0, y0, sw, sh);
+        // the page's viewport, when painting straight into the page's graphics: its clip was widened
+        // to the whole page, which would size this buffer to the whole page at the current zoom.
+        Rectangle2D viewport = PaintViewport.inUserSpace(g);
+        if (viewport != null) {
+            visible = visible.createIntersection(viewport);
+            if (visible.isEmpty()) {
+                g.setPaint(TRANSPARENT);
+                return;
+            }
+        }
+        Shape clip = g.getClip();
+        if (clip != null) {
+            Rectangle2D clipBounds = clip.getBounds2D();
+            // a unit of slack so edge pixels have neighbours to interpolate from.
+            clipBounds.setRect(clipBounds.getX() - 1, clipBounds.getY() - 1,
+                    clipBounds.getWidth() + 2, clipBounds.getHeight() + 2);
+            visible = visible.createIntersection(clipBounds);
+            if (visible.isEmpty()) {
+                g.setPaint(TRANSPARENT);
+                return;
+            }
+        }
+        // buffer pixels per user-space unit: the device's, along each axis.
+        AffineTransform device = g.getTransform();
+        double kx = Math.hypot(device.getScaleX(), device.getShearY());
+        double ky = Math.hypot(device.getShearX(), device.getScaleY());
+        if (!(kx > 0) || Double.isInfinite(kx)) kx = 1;
+        if (!(ky > 0) || Double.isInfinite(ky)) ky = 1;
+        int bufW = Math.max(1, (int) Math.ceil(visible.getWidth() * kx));
+        int bufH = Math.max(1, (int) Math.ceil(visible.getHeight() * ky));
+        if (bufW > MAX_BUFFER_SIZE) {
+            kx *= (double) MAX_BUFFER_SIZE / bufW;
+            bufW = MAX_BUFFER_SIZE;
+        }
+        if (bufH > MAX_BUFFER_SIZE) {
+            ky *= (double) MAX_BUFFER_SIZE / bufH;
+            bufH = MAX_BUFFER_SIZE;
+        }
         BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufW, bufH);
         Graphics2D canvas = bi.createGraphics();
         canvas.setRenderingHints(renderingHints);
         canvas.setClip(0, 0, bufW, bufH);
-        // Render the BBox content once to fill the buffer (renderScale maps BBox
-        // -> buffer).  singleTile skips the neighbour ring: the step is many times
-        // the BBox, so neighbours land far outside this small buffer.
+        // Render the BBox content into the buffer, shifted so the visible part lands
+        // at its origin.  singleTile skips the neighbour ring: the step is many times
+        // the BBox, so neighbours land far outside this buffer.
+        AffineTransform shift = AffineTransform.getTranslateInstance(
+                -(visible.getX() - x0) * kx, -(visible.getY() - y0) * ky);
         try {
-            paintPattern(canvas, getShapes(), matrix, originalPageSpace,
-                    (double) bufW / sw, (double) bufH / sh, true);
+            paintPattern(canvas, getShapes(), matrix, originalPageSpace, kx, ky, true, shift);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting single-stamp tiling pattern.");
         }
-        // Blit the stamp once at the tile origin (the rect one cell's BBox would
-        // occupy) and neutralise the follow-on fill.
+        // Blit the visible part over the rect it covers and neutralise the follow-on fill.
         Object prevInterp = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.drawImage(bi, (int) Math.round(xOffset), (int) Math.round(yOffset), sw, sh, null);
+        AffineTransform place = AffineTransform.getTranslateInstance(visible.getX(), visible.getY());
+        place.scale(visible.getWidth() / bufW, visible.getHeight() / bufH);
+        g.drawImage(bi, place, null);
         if (prevInterp != null) {
             g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, prevInterp);
         }
@@ -569,6 +615,15 @@ public class TilingPattern extends Stream implements Pattern {
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
                               double scaleX, double scaleY, boolean singleTile) throws InterruptedException {
+        paintPattern(g2d, tilingShapes, matrix, base, scaleX, scaleY, singleTile, null);
+    }
+
+    /**
+     * @param shift applied before the pattern's own transform (buffer-pixel offset), or null
+     */
+    private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
+                              double scaleX, double scaleY, boolean singleTile, AffineTransform shift)
+            throws InterruptedException {
 
         // store previous state so we can draw bounds
         AffineTransform preAf = g2d.getTransform();
@@ -584,6 +639,11 @@ public class TilingPattern extends Stream implements Pattern {
                 af2.getScaleY(),
                 0,
                 0);
+        if (shift != null) {
+            AffineTransform shifted = new AffineTransform(shift);
+            shifted.concatenate(af2);
+            af2 = shifted;
+        }
         g2d.setTransform(af2);
         g2d.scale(scaleX, scaleY);
         // Paint the key tile into the (one-cell) buffer.
