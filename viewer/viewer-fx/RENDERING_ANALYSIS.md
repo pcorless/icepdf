@@ -47,8 +47,50 @@ FX-side memory: a 512² tile is 1 MB. The tile cache is byte-budgeted (an eighth
 | Hand-off < ~2 ms per tile | ✅ 0.1 ms FX thread; ~2.4 ms to the next-but-one pulse |
 | 4000% on 512 MB without OOM | ✅ text/vector documents (1× and 2×); ❌ 1.pdf, blocked by core retention (passes at 1 GB) |
 | Rotation, facing/cover/single modes, HiDPI 2× | ✅ visually checked from snapshots; rotation is clockwise, overlay stays locked to the page |
-| First paint within ~1.2× of Swing | ⚠️ not measured side by side. Same `page.paint` call; the FX overhead is the 0.1 ms hand-off and the GPU upload. |
-| 60 fps panning from cache | ⚠️ not measured; needs a frame-time probe |
+| First paint within ~1.2× of Swing | ✅ measured 2026-10-07 (table below): 0.8–1.26× on text, scans, images and vector maps; 1.5× only on a very fast page (+60 ms). |
+| 60 fps panning from cache | ✅ measured 2026-10-07 (table below): no frame over 25 ms panning warm or cold; FX-thread layout ≤ 2 ms a pulse. |
+
+### First paint against the Swing viewer (2026-10-07)
+
+**Method.** Same window (1200×900), fit width, page 1, a fresh JVM per document, 512 MB heap.
+Both harnesses first open and close a small document to warm up. Times run from the open call to
+the last change before the view holds still for 1.5 s ("visually complete"). The view is captured
+in-process: an FX snapshot, and the Swing component painted into an image. On Wayland a
+`Robot` screen grab triggers the screen-share portal. Two runs each:
+
+| Document | FX | Swing | FX ÷ Swing |
+|---|---|---|---|
+| PDF32000 (text, 756 pp) | 209–230 ms | 259–268 ms | 0.8× |
+| 1.pdf (50 DeviceN images) | 1310–1459 ms | 1352–1371 ms | 1.0× |
+| Canmore map (dense vector) | 1493–1637 ms | 1293–1296 ms | 1.15–1.26× |
+| DissFPampaloni (scans, 145 pp) | 227–244 ms | 199–207 ms | 1.15× |
+| 2009CAT (catalogue) | 174–183 ms | 111–121 ms | 1.5× (+60 ms) |
+
+Finding while measuring: opening applied fit-width, which started the 150 ms interactive
+zoom-settle hold, even with no tiles on screen to scale. Removing that hold took ~150–300 ms off
+every open.
+
+### Panning frame times (2026-10-07)
+
+Panning is 12 px per pulse through a region, after a warm pass (tiles cached), then over
+unvisited pages ("cold"). `PdfViewSmoke -Dsmoke.only=pan-fps`, 512 MB:
+
+| Document (zoom) | Pulse p99 warm / cold | Frames > 25 ms | FX-thread layout p95 | Tile renders warm / cold |
+|---|---|---|---|---|
+| PDF32000 (200%) | 2.7 / 2.1 ms | 0 | 0.3 ms | 0 / 8 |
+| DissFPampaloni (fit width) | 2.1 / 2.8 ms | 0 | 0.2 ms | 0 / 8 |
+| 2009CAT (fit width) | 2.0 / 3.7 ms | 0 | 0.1 ms | 0 / 5 |
+| Canmore (200%) | 3.8 / 16.3 ms | 0 | 0.1 ms | 3 / 0 |
+
+Pulses here aren't vsync-locked, so the intervals show cost against the 16.7 ms budget, not a frame
+rate. Cold pans hold frame rate because tiles render off the FX thread and previews cover the gaps.
+
+Two bugs found while measuring:
+- A render that ran out of memory marked its tiles failed for good. The view sat blank with
+  `rendering` true and the CPU idle until an unrelated event; the Canmore map after 1.pdf at 512 MB
+  stalled for minutes. Such renders now retry with backoff.
+- After the first out-of-memory error, paints run one at a time for that document. Dense vector
+  content can need ~250 MB per paint, and several render threads at once multiplied that.
 
 **Verdict: go.** The Java2D → zero-copy `PixelBuffer` → tiles design meets the criteria the FX layer
 controls. The remaining memory ceiling is in the core, which is shared with the Swing viewer.

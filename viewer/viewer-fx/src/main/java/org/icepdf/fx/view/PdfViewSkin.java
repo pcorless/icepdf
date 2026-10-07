@@ -361,9 +361,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         Point2D focus = zoomFocus != null ? zoomFocus : new Point2D(viewportW / 2, viewportH / 2);
         zoomFocus = null;
         Anchor anchor = captureAnchor(focus.getX(), focus.getY());
-        // hold re-rendering until the zoom stops changing; existing tiles are scaled meanwhile.
-        zoomSettling = true;
-        zoomSettle.playFromStart();
+        // hold re-rendering until the zoom stops changing; existing tiles are scaled meanwhile.  With
+        // nothing on screen to scale (a document just opened, fitted), there is nothing to wait for.
+        if (!layers.isEmpty()) {
+            zoomSettling = true;
+            zoomSettle.playFromStart();
+        }
         relayout(anchor);
     }
 

@@ -100,6 +100,10 @@ public final class PdfViewSmoke {
             System.out.println(failures == 0 ? "form checks: all passed" : "form checks: " + failures + " FAILED");
             return;
         }
+        if ("first-paint".equals(System.getProperty("smoke.only"))) {
+            firstPaint(file);
+            return;
+        }
         if ("pan-fps".equals(System.getProperty("smoke.only"))) {
             // file may list several documents separated by '|'.
             for (String doc : file.toString().split("\\|")) panFrameTimes(Paths.get(doc));
@@ -313,6 +317,95 @@ public final class PdfViewSmoke {
                 errors.isEmpty() ? "" : errors.get(0).toString());
         fx(() -> view.setDocument(null));
         doc.dispose();
+    }
+
+    // ---- first paint (B1) ---------------------------------------------------------------------
+
+    /**
+     * Time to first content and to visually complete after opening, by in-process snapshots of the
+     * view (the same measure the Swing harness takes): first change, and the last change before the view
+     * holds still for 1.5 s.  Opening includes Document.setFile, as SwingController.openDocument does.
+     */
+    private void firstPaint(Path file) throws Exception {
+        fx(() -> {
+            view.setViewMode(ViewMode.CONTINUOUS);
+            view.setFitMode(FitMode.WIDTH);
+        });
+        // warm up: open and close a small document, as the Swing harness does.
+        String warmup = System.getProperty("warmup");
+        if (warmup != null) {
+            Document w = new Document();
+            w.setFile(warmup);
+            fx(() -> view.setDocument(w));
+            Thread.sleep(1000);
+            fx(() -> view.setDocument(null));
+            w.dispose();
+        }
+        Thread.sleep(1500);
+        // FX-thread health through the open: the longest gap between pulses, and when it began.
+        long[] gap = new long[2];
+        javafx.animation.AnimationTimer pulses = new javafx.animation.AnimationTimer() {
+            long last;
+
+            @Override
+            public void handle(long now) {
+                if (last != 0 && now - last > gap[0]) {
+                    gap[0] = now - last;
+                    gap[1] = last;
+                }
+                last = now;
+            }
+        };
+        fx(pulses::start);
+        long t0 = System.nanoTime();
+        long[] phases = new long[3];
+        fx(() -> {
+            phases[0] = System.nanoTime();
+            Document doc = new Document();
+            try {
+                doc.setFile(file.toString());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            phases[1] = System.nanoTime();
+            view.setDocument(doc);
+            phases[2] = System.nanoTime();
+        });
+        System.out.printf("FX-PHASES runLater %d ms, setFile %d ms, setDocument %d ms%n",
+                (phases[0] - t0) / 1_000_000, (phases[1] - phases[0]) / 1_000_000, (phases[2] - phases[1]) / 1_000_000);
+        long opened = System.nanoTime();
+        int[] first = null, last = null;
+        long firstChange = -1, lastChange = -1, lastChangeAt = System.nanoTime();
+        while (true) {
+            long now = System.nanoTime();
+            // in-process snapshot: a screen grab on Wayland goes through the screen-share portal.
+            int[] px = onFx(() -> {
+                javafx.scene.image.WritableImage img = view.snapshot(null, null);
+                int w = (int) img.getWidth(), h = (int) img.getHeight();
+                int[] out = new int[w * h];
+                img.getPixelReader().getPixels(0, 0, w, h, javafx.scene.image.PixelFormat.getIntArgbInstance(), out, 0, w);
+                return out;
+            });
+            if (first == null) {
+                first = px;
+                last = px;
+            } else if (!java.util.Arrays.equals(px, last)) {
+                long ms = (now - t0) / 1_000_000;
+                if (firstChange < 0) firstChange = ms;
+                lastChange = ms;
+                lastChangeAt = now;
+                last = px;
+            }
+            if (now - lastChangeAt > 1_500_000_000L && firstChange >= 0) break;
+            if (now - t0 > 90_000_000_000L) break;
+            Thread.sleep(20);
+        }
+        fx(pulses::stop);
+        System.out.printf("FX-PULSE longest gap %d ms, starting %d ms after open%n", gap[0] / 1_000_000,
+                (gap[1] - t0) / 1_000_000);
+        System.out.printf("FX    %-40s open() %5d ms  first content %6d ms  visually complete %6d ms  heap %d MB%n",
+                file.getFileName(), (opened - t0) / 1_000_000, firstChange, lastChange,
+                (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) >> 20);
     }
 
     // ---- pan frame times (B2) ---------------------------------------------------------------
