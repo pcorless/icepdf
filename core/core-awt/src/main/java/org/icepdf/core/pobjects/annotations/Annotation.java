@@ -2203,4 +2203,15 @@ public abstract class Annotation extends Dictionary {
             changeSupport.addPropertyChangeListener(listener);
         }
     }
+
+    /**
+     * Notifies property change listeners, if any.  Listeners exist only when a UI component has
+     * registered one (the Swing viewer does); core code that changes a value must not assume so.
+     */
+    protected void firePropertyChange(String property, Object oldValue, Object newValue) {
+        PropertyChangeSupport support = changeSupport;
+        if (support != null) {
+            support.firePropertyChange(property, oldValue, newValue);
+        }
+    }
 }

@@ -95,14 +95,14 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         FieldDictionary parentFaultFieldValue = fieldDictionary.getParent();
         if (defaultFieldValue != null) {
             // apply the default value
-            changeSupport.firePropertyChange("valueFieldReset", oldValue, defaultFieldValue);
+            firePropertyChange("valueFieldReset", oldValue, defaultFieldValue);
         }else if (parentFaultFieldValue != null) {
             // apply the default value
-            changeSupport.firePropertyChange("valueFieldReset", oldValue,
+            firePropertyChange("valueFieldReset", oldValue,
                     parentFaultFieldValue.getDefaultFieldValue());
         }else{
             // otherwise we remove the key
-            changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
+            firePropertyChange("valueFieldReset", oldValue, "");
         }
     }
 
