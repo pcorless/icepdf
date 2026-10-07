@@ -132,6 +132,11 @@ public final class TileRenderer {
     private final Map<CacheKey, Integer> outOfMemoryAttempts = new HashMap<>();
     /** How many times a key that runs out of memory is retried before it counts as failed. */
     static final int OOM_RETRIES = 3;
+    // after a render runs out of memory, paints (tiles and previews) run one at a time for the rest
+    // of the document: content like a dense vector map can need hundreds of MB per paint, and N
+    // render threads at once multiply that.
+    private volatile boolean lowMemory;
+    private final Semaphore serialPaint = new Semaphore(1);
     private volatile Document document;
     private volatile boolean paintAnnotations = true;
     // annotation rendering is serialised per page: render() may lazily build appearance state.
@@ -184,7 +189,31 @@ public final class TileRenderer {
     /** Switches document, cancelling all work for the previous one. */
     public void setDocument(Document document) {
         cancelAll();
+        lowMemory = false;
         this.document = document;
+    }
+
+    /** Runs a paint, alone if an earlier one ran out of memory (see {@link #lowMemory}). */
+    private <T> T paintGated(Paint<T> paint) throws InterruptedException {
+        if (!lowMemory) {
+            try {
+                return paint.run();
+            } catch (OutOfMemoryError e) {
+                lowMemory = true;
+                throw e;
+            }
+        }
+        serialPaint.acquire();
+        try {
+            return paint.run();
+        } finally {
+            serialPaint.release();
+        }
+    }
+
+    @FunctionalInterface
+    private interface Paint<T> {
+        T run() throws InterruptedException;
     }
 
     /**
@@ -427,7 +456,7 @@ public final class TileRenderer {
                 g.setClip(0, 0, region.width(), region.height());
                 g.translate(-region.x(), -region.y());
                 g.scale(params.scale(), params.scale());
-                result = painter.paint(g, page);
+                result = paintGated(() -> painter.paint(g, page));
             } finally {
                 g.dispose();
             }
@@ -484,8 +513,11 @@ public final class TileRenderer {
             try {
                 g.setClip(0, 0, w, h);
                 // without annotations: those live in their own layers, so an edit never stales a preview.
-                page.paint(g, GraphicsRenderingHints.SCREEN, key.boundary(), 0f, zoom,
+                paintGated(() -> {
+                    page.paint(g, GraphicsRenderingHints.SCREEN, key.boundary(), 0f, zoom,
                         paintAnnotations && SINGLE_PASS_ANNOTATIONS, false);
+                    return null;
+                });
             } finally {
                 g.dispose();
             }

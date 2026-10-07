@@ -330,7 +330,9 @@ public final class PdfViewSmoke {
         act("pan-fps open " + file.getFileName(), v -> {
             v.setViewMode(ViewMode.CONTINUOUS);
             v.setRotation(0);
-            v.setFitMode(FitMode.WIDTH);
+            String zoom = System.getProperty("smoke.panZoom");
+            v.setFitMode(zoom == null ? FitMode.WIDTH : FitMode.NONE);
+            if (zoom != null) v.setZoom(Double.parseDouble(zoom));
             v.setDocument(doc);
         });
         double viewportHeight = onFx(view::getHeight);
