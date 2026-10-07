@@ -206,11 +206,7 @@ public final class PdfViewSmoke {
         java.util.List<org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation> out = new java.util.ArrayList<>();
         for (org.icepdf.core.pobjects.annotations.Annotation a : formDoc.getPageTree().getPage(0).getAnnotations()) {
             if (a instanceof org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
-                org.icepdf.core.pobjects.acroform.FieldDictionary f = w.getFieldDictionary();
-                String partial = f.getPartialFieldName();
-                String full = (partial == null || partial.isEmpty()) && f.getParent() != null
-                        ? f.getParent().getFullyQualifiedFieldName() : f.getFullyQualifiedFieldName();
-                if (name.equals(full)) out.add(w);
+                if (name.equals(w.getFieldDictionary().getFullyQualifiedFieldName())) out.add(w);
             }
         }
         return out;
@@ -218,10 +214,7 @@ public final class PdfViewSmoke {
 
     private String nameOf(org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation w) {
         if (w == null) return "null";
-        org.icepdf.core.pobjects.acroform.FieldDictionary f = w.getFieldDictionary();
-        String partial = f.getPartialFieldName();
-        return (partial == null || partial.isEmpty()) && f.getParent() != null
-                ? f.getParent().getFullyQualifiedFieldName() : f.getFullyQualifiedFieldName();
+        return w.getFieldDictionary().getFullyQualifiedFieldName();
     }
 
     /**

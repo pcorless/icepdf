@@ -981,9 +981,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /**
-     * A push button: a ResetForm action resets the form in the view (honouring its /Fields
-     * include/exclude list, which core's ResetFormAction ignores); anything else (SubmitForm,
-     * JavaScript, URI, ...) goes where a link's action goes.
+     * A push button: a ResetForm action resets the form in the view, honouring its /Fields
+     * include/exclude list as core's ResetFormAction does, but through FormController so the reset
+     * is one undoable edit with regenerated appearances (core's button reset() leaves the model to
+     * a listening Swing component).  Anything else (SubmitForm, JavaScript, URI, ...) goes where a
+     * link's action goes.
      */
     private void push(FormController.Located button) {
         if (button.widget().getAction() instanceof ResetFormAction reset) {

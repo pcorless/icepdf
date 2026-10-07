@@ -81,18 +81,9 @@ final class FormController {
         return FieldKind.OTHER;
     }
 
-    /**
-     * The field's fully-qualified name.  A widget kid with no /T is the parent field itself (PDF
-     * 12.7.3.1), but core's {@code getFullyQualifiedFieldName} gives it the parent's name plus a
-     * trailing dot ("color."); this returns the parent's name for it.
-     */
+    /** The field's fully-qualified name (a widget kid without /T takes its parent's, per core). */
     static String fieldNameOf(AbstractWidgetAnnotation widget) {
-        FieldDictionary field = widget.getFieldDictionary();
-        String partial = field.getPartialFieldName();
-        if ((partial == null || partial.isEmpty()) && field.getParent() != null) {
-            return field.getParent().getFullyQualifiedFieldName();
-        }
-        return field.getFullyQualifiedFieldName();
+        return widget.getFieldDictionary().getFullyQualifiedFieldName();
     }
 
     /** True if the user may change the field's value. */
@@ -261,8 +252,8 @@ final class FormController {
             } else {
                 dictionary.getEntries().put(FieldDictionary.V_KEY, values);
             }
-            // core matches V against the option labels, which misses [export display] pairs: set /I here.
-            setIndexes(dictionary, valid);
+            // the chosen indexes exactly (several options may share an export value); writes /I.
+            dictionary.setIndexes(new ArrayList<>(valid));
         });
     }
 
@@ -302,7 +293,7 @@ final class FormController {
                     choice.setFieldValue(defaultValue, widget.getPObjectReference());
                 } else {
                     choice.getEntries().remove(FieldDictionary.V_KEY);
-                    setIndexes(choice, null);
+                    choice.setIndexes(null);
                 }
             }
             default -> {
@@ -310,19 +301,6 @@ final class FormController {
         }
     }
 
-    /**
-     * Sets a choice's selected indexes and writes them as /I: core's {@code setIndexes} only updates
-     * its in-memory list, so a multi-selection would not survive a save.
-     */
-    private static void setIndexes(ChoiceFieldDictionary dictionary, List<Integer> indexes) {
-        if (indexes == null) {
-            dictionary.setIndexes(null);
-            dictionary.getEntries().remove(ChoiceFieldDictionary.I_KEY);
-        } else {
-            dictionary.setIndexes(new ArrayList<>(indexes));
-            dictionary.getEntries().put(ChoiceFieldDictionary.I_KEY, new ArrayList<>(indexes));
-        }
-    }
 
     // ---- snapshots ------------------------------------------------------------------------------
 
@@ -370,7 +348,7 @@ final class FormController {
                 if (appearance != null) appearance.setSelectedName(selected);
             }
             if (w instanceof ChoiceWidgetAnnotation choice) {
-                setIndexes(choice.getFieldDictionary(), indexes);
+                choice.getFieldDictionary().setIndexes(indexes == null ? null : new ArrayList<>(indexes));
             }
         }
 
