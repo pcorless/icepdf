@@ -18,9 +18,12 @@ package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.FileSpecification;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.acroform.InteractiveForm;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.util.Library;
 
 import java.io.BufferedReader;
@@ -29,6 +32,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +57,9 @@ public class SubmitFormAction extends FormAction {
             Logger.getLogger(SubmitFormAction.class.getName());
 
     private static final String USER_AGENT = "Mozilla/5.0";
+
+    // guards the field walk against a malformed /Kids cycle.
+    private static final int MAX_FIELD_DEPTH = 64;
 
     // Table 236 flags, Additional entries specific to a submit-form action.
 
@@ -85,7 +93,7 @@ public class SubmitFormAction extends FormAction {
      * using a POST request. This flag is meaningful only when the ExportFormat flag is set; if ExportFormat is clear,
      * this flag shall also be clear.
      */
-    public final int GET_METHOD_BIT = 0X0000010;  // bit 4
+    public final int GET_METHOD_BIT = 0x0000008;  // bit 4
 
     /**
      * If set, the coordinates of the mouse click that caused the submit-form action shall be transmitted as part of
@@ -103,7 +111,7 @@ public class SubmitFormAction extends FormAction {
      * This flag shall be used only when the ExportFormat flag is set. If ExportFormat is clear, this flag shall also
      * be clear
      */
-    public final int SUBMIT_COORDINATES_BIT = 0X0000004;  // bit 5
+    public final int SUBMIT_COORDINATES_BIT = 0x0000010;  // bit 5
 
     /**
      * (PDF 1.4) shall be used only if the SubmitPDF flags are clear. If set, field names and values shall be
@@ -125,7 +133,7 @@ public class SubmitFormAction extends FormAction {
      * annotations in the underlying PDF document (see 12.5.6.2, "Markup Annotations"). If clear, markup annotations
      * shall not be included.
      */
-    public final int INCLUDE_ANNOTATIONS_BIT = 0X0000040;  // bit 8
+    public final int INCLUDE_ANNOTATIONS_BIT = 0x0000080;  // bit 8
 
     /**
      * (PDF 1.4) If set, the document shall be submitted as PDF, using the MIME content type application/pdf (described
@@ -142,7 +150,7 @@ public class SubmitFormAction extends FormAction {
      * The interpretation of a form field as a date is not specified explicitly in the field itself but only in the
      * JavaScript code that processes it.
      */
-    public final int CANONICAL_FORMAT_BIT = 0X0000512;  // bit 10
+    public final int CANONICAL_FORMAT_BIT = 0x0000200;  // bit 10
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
@@ -156,20 +164,20 @@ public class SubmitFormAction extends FormAction {
      * <b>NOTE 2</b><br>This allows multiple users to collaborate in annotating a single remote PDF document without
      * affecting one another’s annotations.
      */
-    public final int EXCL_NON_USER_ANNOTS_BIT = 0X0001024;  // bit 11
+    public final int EXCL_NON_USER_ANNOTS_BIT = 0x0000400;  // bit 11
 
     /**
      * (PDF 1.4) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
      * and ExportFormat flags are clear). If set, the submitted FDF shall exclude the F entry.
      */
-    public final int EXCL_F_KEY_BIT = 0X0002048;  // bit 12
+    public final int EXCL_F_KEY_BIT = 0x0000800;  // bit 12
 
     /**
      * (PDF 1.5) shall be used only when the form is being submitted in Forms Data Format (that is, when both the XFDF
      * and ExportFormat flags are clear). If set, the F entry of the submitted FDF shall be a file specification
      * containing an embedded file stream representing the PDF file from which the FDF is being submitted.
      */
-    public final int EMBED_FORM_BIT = 0X0008192;  // bit 14
+    public final int EMBED_FORM_BIT = 0x0002000;  // bit 14
 
     public SubmitFormAction(Library l, DictionaryEntries h) {
         super(l, h);
@@ -241,60 +249,135 @@ public class SubmitFormAction extends FormAction {
      * @return submit response code.
      */
     private int executeHTMLSubmission(int x, int y) {
-
-
-        FileSpecification fileSpecification = getFileSpecification();
-        if (fileSpecification != null) {
-
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest("HTML Submit form action: " + fileSpecification.getFileSpecification());
-            }
-
-            // value pairs to submit.
-            HashMap<String, String> params = new HashMap<>();
-
-            // check for a fields entry
-//            List fields = getFields();
-//            if (!isIncludeExclude() && fields != null){
-//                // pick out the specified fields.
-//                if (logger.isLoggable(Level.FINEST)){
-//                    logger.finest("Specified Fields for submit. ");
-//                }
-//            }else{
-            // NOTE  we use them all have no examples yet of fields selection so we are going to submit all
-            // values for the time being.
-            InteractiveForm form = library.getCatalog().getInteractiveForm();
-            ArrayList<Object> fields = form.getFields();
-            for (Object field : fields) {
-                descendFormTree(field, params);
-            }
-//            }
-
-            // append coordinates.
-            if (isSubmitCoordinates()) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("Including coordinates in submit.");
-                }
-                params.put("x", String.valueOf(x));
-                params.put("y", String.valueOf(y));
-            }
-
-            // todo once we get an example: dates format
-            if (isCanonicalFormat()) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("Uses canonical date format.");
-                }
-            }
-
-            // submit the data.
-            if (isGetMethod()){
-                return sendGET(fileSpecification.getFileSpecification(), formatParams(params));
-            }else{
-                return sendPOST(fileSpecification.getFileSpecification(), formatParams(params));
-            }
-
+        String url = getSubmitUrl();
+        if (url == null) {
+            return 0;
         }
-        return 0;
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.finest("HTML Submit form action: " + url);
+        }
+        List<String[]> params = collectFields();
+        if (isSubmitCoordinates()) {
+            params.add(new String[]{"x", String.valueOf(x)});
+            params.add(new String[]{"y", String.valueOf(y)});
+        }
+        // todo once we get an example: dates format
+        if (isCanonicalFormat() && logger.isLoggable(Level.FINEST)) {
+            logger.finest("Uses canonical date format.");
+        }
+        String body = formatParams(params);
+        return isGetMethod() ? sendGET(url, body) : sendPOST(url, body);
+    }
+
+    /**
+     * The URL to submit to: /F as a URL file specification, or (as some writers do) a plain string.
+     *
+     * @return the URL, or null when there is none
+     */
+    public String getSubmitUrl() {
+        Object f = library.getObject(entries, F_KEY);
+        if (f instanceof DictionaryEntries) {
+            return new FileSpecification(library, (DictionaryEntries) f).getFileSpecification();
+        } else if (f instanceof StringObject) {
+            return ((StringObject) f).getDecryptedLiteralString(library.getSecurityManager());
+        } else if (f instanceof String) {
+            return (String) f;
+        }
+        return null;
+    }
+
+    /**
+     * The name/value pairs this action submits, in form order (12.7.5.2): every terminal field the
+     * /Fields array and Include/Exclude flag select, by fully qualified name, except NoExport fields,
+     * push buttons and signatures; fields without a value only with IncludeNoValueFields (as the name
+     * alone).  A multi-select list gives one pair per selected value.
+     *
+     * @return pairs of {name, value}; value is null for a field submitted without one
+     */
+    public List<String[]> collectFields() {
+        List<String[]> params = new ArrayList<>();
+        FieldSelection selection = new FieldSelection(library, entries, isIncludeExclude());
+        for (FieldNode field : rootFields()) {
+            collect(field, selection, false, params, 0);
+        }
+        return params;
+    }
+
+    private void collect(FieldNode node, FieldSelection selection, boolean listed, List<String[]> params, int depth) {
+        FieldDictionary field = node.field();
+        if (depth > MAX_FIELD_DEPTH || field == null) {
+            return;
+        }
+        listed = listed || selection.lists(node.reference, field);
+        // a field whose kids carry names of their own is a parent: its fields are the kids.  Kids
+        // without a /T are widgets of this field (radio buttons, a text field shown twice).
+        boolean parent = false;
+        for (FieldNode kid : kidsOf(field)) {
+            if (kid.isNamed()) {
+                parent = true;
+                collect(kid, selection, listed, params, depth + 1);
+            }
+        }
+        if (parent || field.isNoExport() || !selection.applies(listed) || !hasSubmittableValue(field)) {
+            return;
+        }
+        String name = field.getFullyQualifiedFieldName();
+        if (name == null || name.isEmpty()) {
+            return;
+        }
+        List<String> values = valuesOf(field);
+        if (values.isEmpty()) {
+            if (isIncludeNoValueFields()) {
+                params.add(new String[]{name, null});
+            }
+            return;
+        }
+        for (String value : values) {
+            params.add(new String[]{name, value});
+        }
+    }
+
+    /** Push buttons hold no value and signatures a dictionary: neither is form data. */
+    private static boolean hasSubmittableValue(FieldDictionary field) {
+        if (field instanceof ButtonFieldDictionary) {
+            return ((ButtonFieldDictionary) field).getButtonFieldType()
+                    != ButtonFieldDictionary.ButtonFieldType.PUSH_BUTTON;
+        }
+        return !(field instanceof SignatureFieldDictionary);
+    }
+
+    /** The field's /V as text: a name, a string, a number, or each entry of an array. */
+    private List<String> valuesOf(FieldDictionary field) {
+        List<String> values = new ArrayList<>();
+        Object value = library.getObject(field.getEntries(), FieldDictionary.V_KEY);
+        if (value instanceof List) {
+            for (Object entry : (List<?>) value) {
+                String text = textOf(entry);
+                if (text != null) {
+                    values.add(text);
+                }
+            }
+        } else {
+            String text = textOf(value);
+            if (text != null) {
+                values.add(text);
+            }
+        }
+        return values;
+    }
+
+    private String textOf(Object value) {
+        if (value instanceof Reference) {
+            value = library.getObject((Reference) value);
+        }
+        if (value instanceof Name) {
+            return ((Name) value).getName();
+        } else if (value instanceof StringObject) {
+            return ((StringObject) value).getDecryptedLiteralString(library.getSecurityManager());
+        } else if (value instanceof String || value instanceof Number || value instanceof Boolean) {
+            return value.toString();
+        }
+        return null;
     }
 
     //
@@ -313,32 +396,20 @@ public class SubmitFormAction extends FormAction {
     }
 
     /**
-     * Dive into the hierarchy to get the name value pairs of the fields.  Currently not recursive as
-     * we don't have any example to test against.
+     * Collects the name/value pairs under a form node into {@code params}, by fully qualified name.
+     * A multi-valued field keeps its last value here; {@link #collectFields()} keeps them all.
      *
-     * @param formNode root form node.
-     * @param params   name value pars of form fields.
+     * @param formNode form node: a field, a widget or a reference to one.
+     * @param params   name value pairs of form fields.
      */
     protected void descendFormTree(Object formNode, HashMap<String, String> params) {
-        if (formNode instanceof AbstractWidgetAnnotation) {
-//            FieldDictionary fieldDictionary = ((AbstractWidgetAnnotation) formNode).getFieldDictionary();
-        } else if (formNode instanceof FieldDictionary) {
-            // iterate over the kid's array.
-            FieldDictionary child = (FieldDictionary) formNode;
-            Object value = child.getFieldValue();
-            if ((value == null || value.equals("")) && child.getKids() != null && child.getKids().size() == 1) {
-                value = child.getKids().get(0);
-                if (value instanceof AbstractWidgetAnnotation) {
-                    value = ((AbstractWidgetAnnotation<?>) value).getFieldDictionary().getFieldValue();
-                } else if (value instanceof FieldDictionary) {
-                    value = ((FieldDictionary) value).getFieldValue();
-                }
-            }
-            if (value != null && !value.equals("")) {
-                params.put(child.getPartialFieldName(), value.toString());
-            }else if(isIncludeNoValueFields()){
-                params.put(child.getPartialFieldName(), value == null?null:value.toString());
-            }
+        List<String[]> pairs = new ArrayList<>();
+        FieldNode node = fieldNode(formNode);
+        if (node != null) {
+            collect(node, new FieldSelection(library, new DictionaryEntries(), false), false, pairs, 0);
+        }
+        for (String[] pair : pairs) {
+            params.put(pair[0], pair[1]);
         }
     }
 
@@ -346,7 +417,7 @@ public class SubmitFormAction extends FormAction {
     private static int sendGET(String url, String params) {
         int responseCode = HttpURLConnection.HTTP_SEE_OTHER;
         try {
-            URL obj = new URL(url + "?" + params);
+            URL obj = new URL(params.isEmpty() ? url : url + (url.contains("?") ? "&" : "?") + params);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
             con.setRequestMethod("GET");
             con.setRequestProperty("User-Agent", USER_AGENT);
@@ -383,9 +454,10 @@ public class SubmitFormAction extends FormAction {
             urlConnection.setRequestMethod("POST");
             urlConnection.setRequestProperty("User-Agent", USER_AGENT);
 
+            urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             urlConnection.setDoOutput(true);
             OutputStream outputStream = urlConnection.getOutputStream();
-            outputStream.write(params.getBytes());
+            outputStream.write(params.getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
             outputStream.close();
             responseCode = urlConnection.getResponseCode();
@@ -414,17 +486,19 @@ public class SubmitFormAction extends FormAction {
         return responseCode;
     }
 
-    private String formatParams(HashMap<String, String> params){
+    /** application/x-www-form-urlencoded: each name and value URL-encoded (UTF-8), joined by '&'. */
+    private static String formatParams(List<String[]> params) {
         StringBuilder submitParams = new StringBuilder();
-        for (String key : params.keySet()) {
-            submitParams.append(key).append("=").append(params.get(key));
-            submitParams.append("&");
+        for (String[] pair : params) {
+            if (submitParams.length() > 0) {
+                submitParams.append('&');
+            }
+            submitParams.append(URLEncoder.encode(pair[0], StandardCharsets.UTF_8)).append('=');
+            if (pair[1] != null) {
+                submitParams.append(URLEncoder.encode(pair[1], StandardCharsets.UTF_8));
+            }
         }
-        if (submitParams.length() > 1) {
-            return submitParams.subSequence(0, submitParams.length() - 1).toString();
-        }else{
-            return "";
-        }
+        return submitParams.toString();
     }
 
     /**
