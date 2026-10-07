@@ -44,34 +44,55 @@ public abstract class CachedImageReference extends ImageReference {
         this.reference = imageStream.getPObjectReference();
     }
 
+    /**
+     * The decoded image, from the pool when it is there.  A pooled image is not kept in
+     * this reference: the page's draw commands hold their references for as long as the
+     * page is initialised, so a strong field here would pin every decoded image of every
+     * open page and defeat the pool's soft references (1.pdf: ~300 MB that could never be
+     * reclaimed).  An image without a pool key (an unnamed stream) is still held here.
+     */
     public BufferedImage getImage() throws InterruptedException {
         if (isNull) {
             return null;
         }
-        if (image != null && reference != null) {
-            imagePool.put(reference, image);
+        if (reference == null) {
+            if (image == null && !isInTransientBackoff()) {
+                image = createImage();
+                if (image == null && !transientFailure) {
+                    isNull = true;
+                }
+            }
             return image;
         }
         BufferedImage cached = imagePool.get(reference);
         if (cached != null) {
+            image = null;
             return cached;
-        } else if (isInTransientBackoff()) {
+        }
+        if (image != null) {
+            // decoded before a pool entry existed (a constructor's eager decode).
+            BufferedImage decoded = image;
+            image = null;
+            imagePool.put(reference, decoded);
+            return decoded;
+        }
+        if (isInTransientBackoff()) {
             // a very recent decode ran out of memory; skip this frame's re-decode so
             // rapid repaints don't thrash the heap.  The image reappears once the
             // backoff window passes and memory has had a chance to free up.
             return null;
-        } else {
-            BufferedImage im = createImage();
-            if (im != null && reference != null) {
-                imagePool.put(reference, im);
-            } else if (reference != null && !transientFailure) {
-                // Only latch the image permanently off when it is genuinely
-                // undecodable.  A transient failure (out of memory) must stay
-                // retryable so the image reappears once the heap recovers.
-                isNull = true;
-            }
-            return im;
         }
+        BufferedImage im = createImage();
+        image = null;
+        if (im != null) {
+            imagePool.put(reference, im);
+        } else if (!transientFailure) {
+            // Only latch the image permanently off when it is genuinely
+            // undecodable.  A transient failure (out of memory) must stay
+            // retryable so the image reappears once the heap recovers.
+            isNull = true;
+        }
+        return im;
     }
 
 }
