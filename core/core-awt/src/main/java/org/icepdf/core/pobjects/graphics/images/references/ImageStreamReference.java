@@ -51,7 +51,12 @@ public class ImageStreamReference extends CachedImageReference {
         if (useProxy && imagePool.get(reference) == null) {
             submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {
-            image = call();
+            BufferedImage decoded = call();
+            if (decoded != null && reference != null) {
+                imagePool.put(reference, decoded);
+            } else {
+                image = decoded;
+            }
         }
     }
 

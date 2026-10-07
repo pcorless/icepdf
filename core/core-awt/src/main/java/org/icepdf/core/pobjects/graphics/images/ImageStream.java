@@ -251,6 +251,12 @@ public class ImageStream extends Stream {
         // the sRGB ARGB path) is repacked to 8-bit, 1/4 the memory, no visual
         // change.  No-op for coloured/translucent/CMYK-preserving images.
         decodedImage = ImageUtility.compactImage(decodedImage);
+        if (decodedImage != null && pObjectReference != null) {
+            // the image goes to the pool; the inflated samples behind it are only a cache
+            // (re-inflated from the compressed stream if the pool ever lets the image go),
+            // and for a large scan they are as big as the image itself.
+            disposeDecompressed();
+        }
         return decodedImage;
     }
 

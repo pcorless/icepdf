@@ -184,19 +184,21 @@ public abstract class ImageReference implements Callable<BufferedImage> {
 
     protected void submitDecode() {
         final ImagePool imagePool = imageStream.getLibrary().getImagePool();
-        FutureTask<BufferedImage> mine = new FutureTask<BufferedImage>(this) {
+        // A pooled image is handed over through the pool only: the task publishes it and
+        // completes with null, so the future (held by every reference waiting on it, painted
+        // or not) never pins the decoded raster.  The pool holds it softly, which lets the
+        // heap reclaim it under pressure and a later paint re-decode it.
+        FutureTask<BufferedImage> mine = new FutureTask<BufferedImage>(() -> {
+            BufferedImage result = call();
+            if (result != null && reference != null) {
+                imagePool.put(reference, result);
+                return null;
+            }
+            return result;
+        }) {
             @Override
             protected void done() {
-                try {
-                    BufferedImage result = get();
-                    if (result != null && reference != null) {
-                        imagePool.put(reference, result);
-                    }
-                } catch (Exception e) {
-                    // decode failed/cancelled; nothing to publish.
-                } finally {
-                    imagePool.removeInProgress(reference);
-                }
+                imagePool.removeInProgress(reference);
             }
         };
         FutureTask<BufferedImage> existing = imagePool.registerInProgress(reference, mine);
@@ -210,6 +212,11 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     }
 
     public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) throws InterruptedException {
+        // an image wholly outside the clip is not decoded at all: at high zoom, or when a
+        // viewer renders a tile/viewport, most of a page's images are off-screen.
+        if (isOutsideClip(aG, aX, aY, aW, aH)) {
+            return;
+        }
         BufferedImage image = getImage();
         if (image != null) {
             try {
@@ -275,6 +282,29 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * the clip and skipped); {@code false} if the caller should fall back to a normal
      * full-image {@code drawImage}.
      */
+    /**
+     * True when the image's placement, in device space, misses the graphics' clip, so
+     * drawing it would paint nothing.  Conservative (bounding boxes, a pixel of slack);
+     * false when there is no clip, and while a CMYK group is being rasterised, as
+     * captureCmykInk expects every image of the group to be drawn.
+     */
+    static boolean isOutsideClip(Graphics2D aG, int aX, int aY, int aW, int aH) {
+        if (ImageUtility.isCmykInkCapturing()) {
+            return false;
+        }
+        Shape clip = aG.getClip();
+        if (clip == null) {
+            return false;
+        }
+        AffineTransform transform = aG.getTransform();
+        Rectangle2D deviceClip = transform.createTransformedShape(clip).getBounds2D();
+        Rectangle2D deviceImage = transform.createTransformedShape(
+                new Rectangle2D.Double(aX, aY, aW, aH)).getBounds2D();
+        deviceImage.setRect(deviceImage.getX() - 1, deviceImage.getY() - 1,
+                deviceImage.getWidth() + 2, deviceImage.getHeight() + 2);
+        return !deviceClip.intersects(deviceImage);
+    }
+
     private boolean drawClippedToViewport(Graphics2D aG, BufferedImage image,
                                           int aX, int aY, int aW, int aH) {
         // captureCmykInk assumes the whole image was drawn -> don't trim under it.
@@ -345,10 +375,17 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         try {
             // block until thread comes back, but only for a bounded time so a slow or
             // stuck decode can't freeze the whole page capture (see decodeGetTimeoutMs).
-            if (futureTask != null) {
-                image = futureTask.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
+            FutureTask<BufferedImage> task = futureTask;
+            if (task != null) {
+                image = task.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
+                if (image == null && reference != null) {
+                    // the decode published to the pool (see submitDecode).
+                    image = imageStream.getLibrary().getImagePool().get(reference);
+                }
+                futureTask = null;
             }
             if (image == null) {
+                // no proxy, a failed decode, or the pool already let it go: decode here.
                 image = call();
             }
         } catch (TimeoutException e) {

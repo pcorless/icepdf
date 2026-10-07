@@ -205,14 +205,12 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         if (tmp != null) {
             // apply the default value
             fieldDictionary.setFieldValue(fieldDictionary.getDefaultFieldValue(), getPObjectReference());
-            changeSupport.firePropertyChange("valueFieldReset", oldValue, fieldDictionary.getFieldValue());
+            firePropertyChange("valueFieldReset", oldValue, fieldDictionary.getFieldValue());
         } else {
             // otherwise we remove the key
             fieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
             fieldDictionary.setFieldValue("", getPObjectReference());
-            if (changeSupport != null) {
-                changeSupport.firePropertyChange("valueFieldReset", oldValue, "");
-            }
+            firePropertyChange("valueFieldReset", oldValue, "");
         }
     }
 

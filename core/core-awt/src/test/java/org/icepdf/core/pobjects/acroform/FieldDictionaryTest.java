@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.acroform;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.LiteralStringObject;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -251,5 +252,101 @@ public class FieldDictionaryTest {
         assertEquals("Blue", option.getLabel());
         assertEquals("B", option.getValue());
         assertFalse(option.isSelected());
+    }
+
+    // ------------------------------------------------------------------
+    // fully qualified names
+    // ------------------------------------------------------------------
+
+    private Reference addParent(int number, String partialName) {
+        DictionaryEntries parent = fieldEntries(FieldDictionaryFactory.TYPE_BUTTON);
+        if (partialName == null) {
+            parent.remove(FieldDictionary.T_KEY);
+        } else {
+            parent.put(FieldDictionary.T_KEY, new LiteralStringObject(partialName));
+        }
+        Reference reference = new Reference(number, 0);
+        library.addObject(parent, reference);
+        return reference;
+    }
+
+    @DisplayName("a child is qualified by its parent's name, without asking for the parent first")
+    @Test
+    public void qualifiedByParent() {
+        DictionaryEntries child = fieldEntries(FieldDictionaryFactory.TYPE_BUTTON);
+        child.put(FieldDictionary.T_KEY, new LiteralStringObject("street"));
+        child.put(FieldDictionary.PARENT_KEY, addParent(900, "address"));
+        // getParent() is lazy; the name must not depend on someone having called it.
+        assertEquals("address.street", build(child).getFullyQualifiedFieldName());
+    }
+
+    @DisplayName("a widget kid with no name of its own takes its parent's name")
+    @Test
+    public void unnamedKidIsItsParent() {
+        // a radio group's kids carry no /T: they are widgets of the group, not fields under it.
+        DictionaryEntries kid = fieldEntries(FieldDictionaryFactory.TYPE_BUTTON);
+        kid.remove(FieldDictionary.T_KEY);
+        kid.put(FieldDictionary.PARENT_KEY, addParent(901, "colour"));
+        assertEquals("colour", build(kid).getFullyQualifiedFieldName());
+    }
+
+    @DisplayName("an unnamed parent adds nothing to its child's name")
+    @Test
+    public void unnamedParent() {
+        DictionaryEntries child = fieldEntries(FieldDictionaryFactory.TYPE_BUTTON);
+        child.put(FieldDictionary.T_KEY, new LiteralStringObject("agree"));
+        child.put(FieldDictionary.PARENT_KEY, addParent(902, null));
+        assertEquals("agree", build(child).getFullyQualifiedFieldName());
+    }
+
+    // ------------------------------------------------------------------
+    // choice values
+    // ------------------------------------------------------------------
+
+    private ChoiceFieldDictionary pairedChoice() {
+        List<Object> options = new ArrayList<>();
+        for (String[] pair : new String[][]{{"R", "Red"}, {"G", "Green"}, {"B", "Blue"}}) {
+            options.add(new ArrayList<>(Arrays.asList(
+                    new LiteralStringObject(pair[0]), new LiteralStringObject(pair[1]))));
+        }
+        return choice(0, options);
+    }
+
+    @DisplayName("choice - setting the export value selects that option")
+    @Test
+    public void choiceValueSelectsByExportValue() {
+        // the Swing combo passes option.getValue(); matching only labels left nothing selected.
+        ChoiceFieldDictionary field = pairedChoice();
+        field.setFieldValue("G", null);
+        assertEquals(List.of(1), field.getIndexes());
+        assertEquals(List.of(1), field.getEntries().get(ChoiceFieldDictionary.I_KEY));
+    }
+
+    @DisplayName("choice - setting the displayed label still selects that option")
+    @Test
+    public void choiceValueSelectsByLabel() {
+        ChoiceFieldDictionary field = pairedChoice();
+        field.setFieldValue("Blue", null);
+        assertEquals(List.of(2), field.getIndexes());
+    }
+
+    @DisplayName("choice - a value matching no option selects nothing and writes no /I")
+    @Test
+    public void choiceValueMatchingNothing() {
+        ChoiceFieldDictionary field = pairedChoice();
+        field.setFieldValue("G", null);
+        field.setFieldValue("Purple", null);
+        assertTrue(field.getIndexes().isEmpty());
+        assertNull(field.getEntries().get(ChoiceFieldDictionary.I_KEY));
+    }
+
+    @DisplayName("choice - setIndexes keeps /I in step so the selection is saved")
+    @Test
+    public void setIndexesWritesI() {
+        ChoiceFieldDictionary field = choice(ChoiceFieldDictionary.MULTI_SELECT_BIT_FLAG, null);
+        field.setIndexes(new ArrayList<>(Arrays.asList(0, 2)));
+        assertEquals(Arrays.asList(0, 2), field.getEntries().get(ChoiceFieldDictionary.I_KEY));
+        field.setIndexes(null);
+        assertNull(field.getEntries().get(ChoiceFieldDictionary.I_KEY));
     }
 }
