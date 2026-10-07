@@ -34,7 +34,7 @@ Run & Gun p3 (soft mask), 1.pdf (DeviceN images). Each at 100/400/1600/4000% and
 | PDF spec, `-Xmx512m`, 1× | All steps idle, no timeouts. 4000% renders in ~200 ms; panning at 4000% ~50 ms/step. |
 | PDF spec, `-Xmx512m`, **2× (`glass.gtk.uiScale=2`)** | All steps idle. Heap **flat at ~328 MB through six pans at 4000%**. |
 | 1.pdf, `-Xmx1g` | All steps idle, including 4000% and panning. |
-| 1.pdf, `-Xmx512m` | **OOM.** The core alone retains ~460 MB after one 1200×900 paint (50 decoded DeviceN images, measured without JavaFX), so no UI fits this page in 512 MB. This is the GH-495 core image-retention issue, not the FX layer. |
+| 1.pdf, `-Xmx512m` | ~~OOM~~ (2026-10-05). **Passes since GH-571 (#573)**: zoom to 4000%, pan, rotate and view modes, heap ≤ ~300 MB. The core had held ~460 MB after one paint: decoded images were strongly pinned by the page despite the soft image pool. They are now reclaimable, culled when off-screen, and stored 8-bit when they have ≤ 256 colours (core resident 460 → 163 MB). |
 
 FX-side memory: a 512² tile is 1 MB. The tile cache is byte-budgeted (an eighth of the heap,
 32–256 MB) with on-screen tiles pinned. On 1.pdf it held 134 tiles at the 128 MB budget, alongside
@@ -45,7 +45,7 @@ FX-side memory: a 512² tile is 1 MB. The tile cache is byte-budgeted (an eighth
 | Criterion | Status |
 |---|---|
 | Hand-off < ~2 ms per tile | ✅ 0.1 ms FX thread; ~2.4 ms to the next-but-one pulse |
-| 4000% on 512 MB without OOM | ✅ text/vector documents (1× and 2×); ❌ 1.pdf, blocked by core retention (passes at 1 GB) |
+| 4000% on 512 MB without OOM | ✅ text/vector documents (1× and 2×); ✅ 1.pdf since GH-571 (core image retention). Dense vector maps: Canmore's 182 MB per-paint stamp buffer fixed in GH-577 (#578, now 7–30 MB). |
 | Rotation, facing/cover/single modes, HiDPI 2× | ✅ visually checked from snapshots; rotation is clockwise, overlay stays locked to the page |
 | First paint within ~1.2× of Swing | ✅ measured 2026-10-07 (table below): 0.8–1.26× on text, scans, images and vector maps; 1.5× only on a very fast page (+60 ms). |
 | 60 fps panning from cache | ✅ measured 2026-10-07 (table below): no frame over 25 ms panning warm or cold; FX-thread layout ≤ 2 ms a pulse. |
@@ -91,6 +91,15 @@ Two bugs found while measuring:
   stalled for minutes. Such renders now retry with backoff.
 - After the first out-of-memory error, paints run one at a time for that document. Dense vector
   content can need ~250 MB per paint, and several render threads at once multiplied that.
+
+### Core fixes found through the FX work (all merged to main, 2026-10-07)
+
+| Issue | What the FX measurements exposed |
+|---|---|
+| GH-571 (#573) | Decoded images pinned by `ImageReference` despite the soft pool; no off-screen culling; inflated samples kept; colour 1-component images held as 32-bit. 1.pdf: 460 → 163 MB resident. |
+| GH-572 (#574) | AcroForm API: qualified names (and a lazy-parent bug), choice export-value indexes, `/I` not written, ResetForm `/Fields`, an NPE in widget `reset()` without Swing. |
+| GH-575 (#576) | HTML SubmitForm sent almost none of the form (terminal fields skipped, wrong flag bits, no URL encoding). |
+| GH-577 (#578) | A page-sized single-stamp tiling pattern allocated 182 MB on every paint at any zoom; now bounded by the viewport, at device resolution. |
 
 **Verdict: go.** The Java2D → zero-copy `PixelBuffer` → tiles design meets the criteria the FX layer
 controls. The remaining memory ceiling is in the core, which is shared with the Swing viewer.
