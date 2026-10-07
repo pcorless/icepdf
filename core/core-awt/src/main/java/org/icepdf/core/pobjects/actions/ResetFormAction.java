@@ -17,16 +17,9 @@
 package org.icepdf.core.pobjects.actions;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.util.Library;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Upon invocation of a reset-form action, a conforming processor shall reset
@@ -57,6 +50,9 @@ public class ResetFormAction extends FormAction {
      */
     public final int INCLUDE_EXCLUDE_BIT = 0X0000001;
 
+    // guards the field walk against a malformed /Kids cycle.
+    private static final int MAX_FIELD_DEPTH = 64;
+
     public ResetFormAction(Library l, DictionaryEntries h) {
         super(l, h);
     }
@@ -75,14 +71,9 @@ public class ResetFormAction extends FormAction {
      * @return value of one if reset was successful, zero if not.
      */
     public int executeFormAction(int x, int y) {
-        // get a reference to the form data
-        InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
-        if (interactiveForm == null || interactiveForm.getFields() == null) {
-            return 0;
-        }
-        Selection selection = new Selection(library, entries, isIncludeExclude());
-        for (Object tmp : interactiveForm.getFields()) {
-            descendFormTree(tmp, selection, false);
+        FieldSelection selection = new FieldSelection(library, entries, isIncludeExclude());
+        for (FieldNode field : rootFields()) {
+            reset(field, selection, false, 0);
         }
         // update the annotation an component values.
         return 0;
@@ -94,84 +85,30 @@ public class ResetFormAction extends FormAction {
      * @param formNode root form node.
      */
     protected void descendFormTree(Object formNode) {
-        descendFormTree(formNode, Selection.ALL, false);
+        FieldNode node = fieldNode(formNode);
+        if (node != null) {
+            reset(node, new FieldSelection(library, new DictionaryEntries(), false), false, 0);
+        }
     }
 
     /**
-     * Resets the fields under {@code formNode} that the action selects.
+     * Resets the widgets under a field that the action selects.
      *
-     * @param named whether an ancestor of {@code formNode} is listed in /Fields (listing a field
-     *              covers its descendants)
+     * @param named whether an ancestor is listed in /Fields (listing a field covers its descendants)
      */
-    private void descendFormTree(Object formNode, Selection selection, boolean named) {
-        if (formNode instanceof Reference) {
-            formNode = library.getObject((Reference) formNode);
+    private void reset(FieldNode node, FieldSelection selection, boolean named, int depth) {
+        if (depth > MAX_FIELD_DEPTH) {
+            return;
         }
-        if (formNode instanceof AbstractWidgetAnnotation) {
-            AbstractWidgetAnnotation<?> widget = (AbstractWidgetAnnotation<?>) formNode;
-            boolean listed = named || selection.lists(widget.getPObjectReference(), widget.getFieldDictionary());
-            if (selection.resets(listed)) {
-                widget.reset();
+        boolean listed = named || selection.lists(node.reference, node.field());
+        if (node.node instanceof AbstractWidgetAnnotation) {
+            if (selection.applies(listed)) {
+                ((AbstractWidgetAnnotation<?>) node.node).reset();
             }
-        } else if (formNode instanceof FieldDictionary) {
-            // iterate over the kid's array.
-            FieldDictionary field = (FieldDictionary) formNode;
-            boolean listed = named || selection.lists(field.getPObjectReference(), field);
-            List<Object> kids = field.getKids();
-            if (kids != null) {
-                for (Object kid : kids) {
-                    descendFormTree(kid, selection, listed);
-                }
+        } else if (node.field() != null) {
+            for (FieldNode kid : kidsOf(node.field())) {
+                reset(kid, selection, listed, depth + 1);
             }
-        }
-    }
-
-    /**
-     * Which fields the action resets: all of them with no /Fields; with /Fields, the listed fields
-     * and their descendants, or (Include/Exclude flag set) everything else.  /Fields entries are
-     * indirect references to fields or fully qualified names.
-     */
-    private static final class Selection {
-        static final Selection ALL = new Selection(Set.of(), Set.of(), false);
-
-        private final Set<Reference> references;
-        private final Set<String> names;
-        private final boolean exclude;
-
-        private Selection(Set<Reference> references, Set<String> names, boolean exclude) {
-            this.references = references;
-            this.names = names;
-            this.exclude = exclude;
-        }
-
-        Selection(Library library, DictionaryEntries entries, boolean exclude) {
-            this(new HashSet<>(), new HashSet<>(), exclude);
-            Object fields = library.getObject(entries, FIELDS_KEY);
-            if (fields instanceof List) {
-                for (Object entry : (List<?>) fields) {
-                    if (entry instanceof Reference) {
-                        references.add((Reference) entry);
-                    } else if (entry instanceof StringObject) {
-                        names.add(((StringObject) entry).getDecryptedLiteralString(library.getSecurityManager()));
-                    } else if (entry instanceof String) {
-                        names.add((String) entry);
-                    }
-                }
-            }
-        }
-
-        boolean lists(Reference reference, FieldDictionary field) {
-            if (reference != null && references.contains(reference)) {
-                return true;
-            }
-            return field != null && !names.isEmpty() && names.contains(field.getFullyQualifiedFieldName());
-        }
-
-        boolean resets(boolean listed) {
-            if (references.isEmpty() && names.isEmpty()) {
-                return true;
-            }
-            return listed != exclude;
         }
     }
 
