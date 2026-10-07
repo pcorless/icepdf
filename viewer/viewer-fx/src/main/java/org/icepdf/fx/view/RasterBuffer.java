@@ -39,15 +39,14 @@ public final class RasterBuffer {
 
     private final BufferedImage image;
     private final int[] pixels;
-    private final WritableImage fxImage;
+    // created on first use, on the FX thread: a render worker never touches the toolkit, and the
+    // cache and slicing work (and their tests) without one.
+    private WritableImage fxImage;
 
     public RasterBuffer(int width, int height) {
         if (width <= 0 || height <= 0) throw new IllegalArgumentException(width + "x" + height);
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB_PRE);
         pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
-        PixelBuffer<IntBuffer> pixelBuffer = new PixelBuffer<>(width, height, IntBuffer.wrap(pixels),
-                PixelFormat.getIntArgbPreInstance());
-        fxImage = new WritableImage(pixelBuffer);
     }
 
     /** Copies a rectangle out of a larger ARGB_PRE raster: slices a region render into tiles. */
@@ -77,8 +76,14 @@ public final class RasterBuffer {
         return image;
     }
 
-    /** JavaFX side. */
+    /** JavaFX side; FX thread only (the image is created on first call). */
     public WritableImage getImage() {
+        if (fxImage == null) {
+            // zero-copy: the image shares this buffer's int[] through a PixelBuffer.
+            PixelBuffer<IntBuffer> pixelBuffer = new PixelBuffer<>(getWidth(), getHeight(), IntBuffer.wrap(pixels),
+                    PixelFormat.getIntArgbPreInstance());
+            fxImage = new WritableImage(pixelBuffer);
+        }
         return fxImage;
     }
 
