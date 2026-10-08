@@ -99,3 +99,4 @@ Project-authored fixture: `src/test/resources/forms/all_fields.pdf`, generated b
   Rendering in JavaFX": the BufferedImage/PixelBuffer shared-`int[]` technique. The API is
   public; our code is written independently.
 - PDFViewFX / GemsFX (Apache 2.0): looked at for feature comparison only.
+| `print/DocumentPrinter`, `print/PrintSettings` | viewer-awt `PrintHelperImpl.print(Graphics, PageFormat, int)` / `PrintHelper` | The Java2D print path: `page.init()`, then `page.paint(PRINT, …)` straight into the printer graphics with a fit-to-imageable-area zoom, and landscape for pages wider than tall. Rewritten as a `Pageable` with a page format per page, centring, shrink/actual-size modes, low-resolution printing and no Swing types. |

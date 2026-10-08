@@ -58,6 +58,8 @@ import java.util.List;
 public class PdfViewDemo extends Application {
 
     private final PdfView view = new PdfView();
+    // progress of the last print job.
+    private final Label printStatus = new Label();
     private Document document;
     private Stage stage;
 
@@ -73,6 +75,10 @@ public class PdfViewDemo extends Application {
         root.setBottom(buildStatusBar());
         Scene scene = new Scene(root, 1200, 900);
         acceptDroppedFiles(scene);
+        scene.getAccelerators().put(new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.P,
+                javafx.scene.input.KeyCombination.SHORTCUT_DOWN), () -> {
+            if (view.isPrintAllowed()) print();
+        });
         stage.setScene(scene);
         stage.setTitle("ICEpdf PdfView demo");
         stage.show();
@@ -108,6 +114,11 @@ public class PdfViewDemo extends Application {
         save.setTooltip(new Tooltip("Saves the document with your annotation changes (incremental update)."));
         save.disableProperty().bind(view.documentProperty().isNull());
         save.setOnAction(e -> saveAs());
+
+        Button print = new Button("Print…");
+        print.setTooltip(new Tooltip("Print the document (Ctrl+P)"));
+        print.disableProperty().bind(view.printAllowedProperty().not());
+        print.setOnAction(e -> print());
 
         Button previous = new Button("◀");
         previous.setOnAction(e -> view.previousPage());
@@ -226,7 +237,7 @@ public class PdfViewDemo extends Application {
                 + "to check native overlays stay locked to the content through zoom and rotation."));
         overlay.selectedProperty().addListener((obs, o, on) -> view.setPageOverlayFactory(on ? cropFrame() : null));
 
-        return new ToolBar(open, save, new Separator(), previous, pageField, pageCount, next, new Separator(),
+        return new ToolBar(open, save, print, new Separator(), previous, pageField, pageCount, next, new Separator(),
                 zoomOut, zoom, zoomIn, fitWidth, fitPage, new Separator(), rotateLeft, rotateRight,
                 new Separator(), mode, cover, new Separator(), tool, copy, selectAll,
                 new Separator(), highlight, underline, strikeOut, undo, redo, delete, new Separator(), overlay);
@@ -304,7 +315,7 @@ public class PdfViewDemo extends Application {
         Label fieldChange = new Label();
         view.setOnFormFieldChanged(change ->
                 fieldChange.setText(change.name() + ": " + change.oldValue() + " → " + change.newValue()));
-        HBox bar = new HBox(16, memory, selection, fieldChange);
+        HBox bar = new HBox(16, memory, selection, fieldChange, printStatus);
         bar.setPadding(new Insets(2, 8, 2, 8));
         return bar;
     }
@@ -365,6 +376,18 @@ public class PdfViewDemo extends Application {
             if (file.isFile() && file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) return file;
         }
         return null;
+    }
+
+    /** Print dialog, then the job in the background with its progress in the status bar. */
+    private void print() {
+        view.showPrintDialog().ifPresent(task -> {
+            printStatus.textProperty().bind(task.messageProperty());
+            task.setOnFailed(e -> {
+                printStatus.textProperty().unbind();
+                printStatus.setText("");
+                new Alert(Alert.AlertType.ERROR, "Printing failed: " + task.getException().getMessage()).showAndWait();
+            });
+        });
     }
 
     private void open(File file) {

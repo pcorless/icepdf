@@ -119,6 +119,12 @@ public final class PdfViewSmoke {
                     : "corpus form checks: " + failures + " FAILED");
             return;
         }
+        if ("print".equals(System.getProperty("smoke.only"))) {
+            // file is a multi-page document; smoke.encryption names the encryption corpus.
+            checkPrinting(file, Paths.get(System.getProperty("smoke.encryption", "/home/pcorless/dev/pdf-qa/encryption")));
+            System.out.println(failures == 0 ? "print checks: all passed" : "print checks: " + failures + " FAILED");
+            return;
+        }
         if ("encryption".equals(System.getProperty("smoke.only"))) {
             // file is the encryption corpus directory.
             checkEncryption(file);
@@ -1792,6 +1798,104 @@ public final class PdfViewSmoke {
                     && shown.getScene().getWindow().isShowing())) Thread.sleep(20);
         }
         return new Object[]{result.get(30, TimeUnit.SECONDS), prompt.isCancelled()};
+    }
+
+    /**
+     * The print dialog driven like a user (pick "Current page", 2 copies), the job printed through the
+     * view to a PostScript file, and the print permissions.
+     */
+    private void checkPrinting(Path file, Path encryption) throws Exception {
+        System.out.println("print checks:");
+        Document document = new Document();
+        document.setFile(file.toString());
+        fx(() -> {
+            view.setDocument(document);
+            view.setCurrentPageIndex(3);
+        });
+        waitIdle(60_000);
+        check("printing allowed for a plain document", onFx(view::isPrintAllowed), "");
+
+        Path ps = out.resolve("print-smoke.ps");
+        java.io.OutputStream stream = Files.newOutputStream(ps);
+        javax.print.StreamPrintService filePrinter = javax.print.StreamPrintServiceFactory
+                .lookupStreamPrintServiceFactories(javax.print.DocFlavor.SERVICE_FORMATTED.PAGEABLE,
+                        "application/postscript")[0].getPrintService(stream);
+        org.icepdf.fx.print.PdfPrintDialog dialog = onFx(() -> {
+            org.icepdf.fx.print.PdfPrintDialog d = new org.icepdf.fx.print.PdfPrintDialog(stage, document,
+                    view.getCurrentPageIndex());
+            d.setPrinters(java.util.List.of(filePrinter), filePrinter);
+            d.show();
+            return d;
+        });
+        Thread.sleep(1500);  // preview thumbnail
+        // as a user would: "Current page (4)", two copies.
+        fx(() -> {
+            javafx.scene.control.DialogPane pane = dialog.getDialogPane();
+            for (javafx.scene.Node n : pane.lookupAll(".radio-button")) {
+                if (n instanceof javafx.scene.control.RadioButton r && r.getText().startsWith("Current page")) r.fire();
+            }
+            ((javafx.scene.control.Spinner<?>) pane.lookup(".spinner")).increment(1);
+        });
+        Thread.sleep(800);
+        WritableImage shot = onFx(() -> dialog.getDialogPane().snapshot(null, null));
+        ImageIO.write(SwingFXUtils.fromFXImage(shot, null), "png", out.resolve("print-dialog.png").toFile());
+        fx(() -> ((javafx.scene.control.Button) dialog.getDialogPane().lookupButton(
+                dialog.getDialogPane().getButtonTypes().get(0))).fire());
+        org.icepdf.fx.print.PrintSettings settings = onFx(dialog::getResult);
+        check("dialog result: current page, 2 copies, the file printer", settings != null
+                        && java.util.Arrays.equals(settings.getPages(), new int[]{3}) && settings.getCopies() == 2
+                        && settings.getPrinter() == filePrinter,
+                String.valueOf(settings));
+        javafx.concurrent.Task<Void> task = onFx(() -> view.print(settings));
+        long deadline = System.currentTimeMillis() + 60_000;
+        while (!onFx(task::isDone) && System.currentTimeMillis() < deadline) Thread.sleep(50);
+        stream.close();
+        String taskState = onFx(() -> task.getState() + " " + task.getException() + " / " + task.getMessage());
+        check("print task succeeded", taskState.startsWith("SUCCEEDED"), taskState);
+        String postscript = Files.readString(ps, java.nio.charset.StandardCharsets.ISO_8859_1);
+        int sheets = postscript.split("%%Page:", -1).length - 1;
+        boolean copiesRequested = postscript.contains("#copies") || postscript.contains("NumCopies") || sheets == 2;
+        check("PostScript has the page, two copies", sheets >= 1 && copiesRequested,
+                sheets + " pages, copies " + copiesRequested + ", " + (postscript.length() >> 10) + " KB");
+        fx(() -> view.setDocument(null));
+        document.dispose();
+
+        // permissions: no printing at all, and low quality only.
+        Document noPrint = new Document();
+        noPrint.setFile(encryption.resolve("aes/perf_graphics_v9.0.pdf").toString());
+        fx(() -> view.setDocument(noPrint));
+        check("printing refused by the document", !onFx(view::isPrintAllowed), "");
+        boolean threw = onFx(() -> {
+            try {
+                view.print(new org.icepdf.fx.print.PrintSettings());
+                return false;
+            } catch (IllegalStateException e) {
+                return true;
+            }
+        });
+        check("print() refuses", threw, "");
+        fx(() -> view.setDocument(null));
+        noPrint.dispose();
+
+        Document lowQuality = new Document();
+        lowQuality.setFile(encryption.resolve("aes/256encryption_contentextractionOK.pdf").toString());
+        fx(() -> view.setDocument(lowQuality));
+        Path lowPs = out.resolve("print-low.ps");
+        java.io.OutputStream lowStream = Files.newOutputStream(lowPs);
+        org.icepdf.fx.print.PrintSettings low = new org.icepdf.fx.print.PrintSettings();
+        low.setPrinter(javax.print.StreamPrintServiceFactory.lookupStreamPrintServiceFactories(
+                javax.print.DocFlavor.SERVICE_FORMATTED.PAGEABLE, "application/postscript")[0].getPrintService(lowStream));
+        low.setPages(new int[]{0});
+        javafx.concurrent.Task<Void> lowTask = onFx(() -> view.print(low));
+        deadline = System.currentTimeMillis() + 60_000;
+        while (!onFx(lowTask::isDone) && System.currentTimeMillis() < deadline) Thread.sleep(50);
+        lowStream.close();
+        String lowText = Files.readString(lowPs, java.nio.charset.StandardCharsets.ISO_8859_1);
+        check("low-quality-only document prints as an image", low.isLowResolution()
+                        && onFx(lowTask::getState) == javafx.concurrent.Worker.State.SUCCEEDED && lowText.contains("colorimage"),
+                onFx(lowTask::getState) + ", " + (lowText.length() >> 10) + " KB");
+        fx(() -> view.setDocument(null));
+        lowQuality.dispose();
     }
 
     private static Object skinField(Object skin, String name) throws ReflectiveOperationException {

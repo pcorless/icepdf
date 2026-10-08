@@ -138,6 +138,8 @@ public class PdfView extends Control {
             new ReadOnlyBooleanWrapper(this, "annotationEditingAllowed", true);
     private final ReadOnlyBooleanWrapper formFillingAllowed =
             new ReadOnlyBooleanWrapper(this, "formFillingAllowed", true);
+    private final ReadOnlyBooleanWrapper printAllowed = new ReadOnlyBooleanWrapper(this, "printAllowed", false);
+    private boolean lowResolutionPrintOnly;
 
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
@@ -1099,6 +1101,77 @@ public class PdfView extends Control {
         return formFillingAllowed.get();
     }
 
+    /**
+     * Whether there is a document and it permits printing.  A document may also permit only
+     * low-quality printing; {@link #print} then prints pages as images (see
+     * {@link org.icepdf.fx.print.DocumentPrinter#LOW_RESOLUTION_DPI}).
+     */
+    public final ReadOnlyBooleanProperty printAllowedProperty() {
+        return printAllowed.getReadOnlyProperty();
+    }
+
+    public final boolean isPrintAllowed() {
+        return printAllowed.get();
+    }
+
+    // ---- printing -------------------------------------------------------------------------
+
+    /**
+     * Shows the print dialog for the document and prints what the user chooses.
+     *
+     * @return the running print task (progress, cancel), or empty if the user cancelled, there is no
+     * document, or it doesn't permit printing
+     */
+    public Optional<javafx.concurrent.Task<Void>> showPrintDialog() {
+        Document document = getDocument();
+        if (document == null || !isPrintAllowed()) return Optional.empty();
+        org.icepdf.fx.print.PdfPrintDialog dialog = new org.icepdf.fx.print.PdfPrintDialog(
+                getScene() != null ? getScene().getWindow() : null, document, getCurrentPageIndex());
+        dialog.setLowResolutionOnly(lowResolutionPrintOnly);
+        return dialog.showAndWait().map(this::print);
+    }
+
+    /**
+     * Prints the document on a background thread.  Pages are painted under the same lock as
+     * annotation edits, so an edit never shows half-made on paper.  A document that permits only
+     * low-quality printing prints as images whatever the settings say.
+     *
+     * @return the started task: progress is pages printed, the message names the page; cancel stops
+     * the job (pages already sent may still print)
+     * @throws IllegalStateException with no document, or one that doesn't permit printing
+     */
+    public javafx.concurrent.Task<Void> print(org.icepdf.fx.print.PrintSettings settings) {
+        Document document = getDocument();
+        if (document == null || !isPrintAllowed()) {
+            throw new IllegalStateException("The document can't be printed.");
+        }
+        if (lowResolutionPrintOnly) settings.setLowResolution(true);
+        org.icepdf.fx.print.DocumentPrinter printer = new org.icepdf.fx.print.DocumentPrinter(document, settings);
+        if (getSkin() instanceof PdfViewSkin skin) printer.setPageLock(skin.annotationLocker()::withAnnotationLock);
+        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                updateMessage("Printing\u2026");
+                printer.print((page, total) -> {
+                    updateProgress(page - 1, total);
+                    updateMessage("Printing page " + page + " of " + total);
+                });
+                updateProgress(1, 1);
+                updateMessage(printer.isCancelled() ? "Printing cancelled" : "Printed");
+                return null;
+            }
+
+            @Override
+            protected void cancelled() {
+                printer.cancel();
+            }
+        };
+        Thread thread = new Thread(task, "pdf-print");
+        thread.setDaemon(true);
+        thread.start();
+        return task;
+    }
+
     private void updatePermissions(Document doc) {
         SecurityManager security = doc != null ? doc.getSecurityManager() : null;
         Permissions permissions = security != null ? security.getPermissions() : null;
@@ -1106,6 +1179,8 @@ public class PdfView extends Control {
         copyAllowed.set(permissions == null || permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
         annotationEditingAllowed.set(annotate);
         formFillingAllowed.set(annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
+        printAllowed.set(doc != null && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT)));
+        lowResolutionPrintOnly = permissions != null && !permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY);
         if (!annotate && getToolMode().createsAnnotations()) setToolMode(ToolMode.TEXT_SELECT);
     }
 }
