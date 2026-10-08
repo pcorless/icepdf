@@ -428,8 +428,34 @@ public class SignatureDictionary extends Dictionary {
         entries.put(BYTE_RANGE_KEY, range);
     }
 
+    /**
+     * The signature reference dictionaries (/Reference): what a certification or field-lock
+     * signature covers.
+     *
+     * @return the references, resolved and typed; empty when the signature has none (an approval
+     * signature normally doesn't)
+     */
     public List<SignatureReferenceDictionary> getReferences() {
-        return library.getArray(entries, REFERENCE_KEY);
+        Object value = library.getObject(entries, REFERENCE_KEY);
+        List<SignatureReferenceDictionary> references = new ArrayList<>();
+        if (!(value instanceof List)) {
+            return references;
+        }
+        // as parsed, the array holds plain dictionaries or references to them; a signature made in
+        // this session holds SignatureReferenceDictionary objects.
+        for (Object item : (List<?>) value) {
+            if (item instanceof Reference) {
+                item = library.getObject((Reference) item);
+            }
+            if (item instanceof SignatureReferenceDictionary) {
+                references.add((SignatureReferenceDictionary) item);
+            } else if (item instanceof Dictionary) {
+                references.add(new SignatureReferenceDictionary(library, ((Dictionary) item).getEntries()));
+            } else if (item instanceof DictionaryEntries) {
+                references.add(new SignatureReferenceDictionary(library, (DictionaryEntries) item));
+            }
+        }
+        return references;
     }
 
     public ArrayList<Integer> getChanges() {

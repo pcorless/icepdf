@@ -15,7 +15,12 @@
  */
 package org.icepdf.core.util;
 
+import org.icepdf.core.pobjects.Catalog;
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.PObject;
+import org.icepdf.core.pobjects.Permissions;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -35,7 +40,21 @@ import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_V
  */
 public class SignatureManager {
 
+    private final Library library;
     private SignatureDictionary currentSignatureDictionary;
+
+    /** A manager that can't see the document's own signatures; prefer {@link #SignatureManager(Library)}. */
+    public SignatureManager() {
+        this(null);
+    }
+
+    /**
+     * @param library the document's library, so permission checks can see the signatures already in
+     *                the file
+     */
+    public SignatureManager(Library library) {
+        this.library = library;
+    }
     private final ArrayList<SignatureWidgetAnnotation> signatureWidgetAnnotations = new ArrayList<>();
 
     public void addSignature(SignatureDictionary signatureDictionary, SignatureWidgetAnnotation signatureAnnotation) {
@@ -89,49 +108,104 @@ public class SignatureManager {
     }
 
     /**
-     * Checks to see if a certifier signature already exists in the document.
+     * Checks to see if a certifier signature already exists in the document.  Looks at the
+     * signatures already in the file (and the catalog's /Perms /DocMDP), not the one being added in
+     * this session.
      *
      * @param library document library
      * @return true if there is already a certifier signature, otherwise false.
      */
     public boolean hasExistingCertifier(Library library) {
-        InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
-        if (interactiveForm != null) {
-            ArrayList<SignatureWidgetAnnotation> signatureWidgets = interactiveForm.getSignatureFields();
-            for (SignatureWidgetAnnotation signatureWidget : signatureWidgets) {
-                List<SignatureReferenceDictionary> signatureReferenceDictionary =
-                        signatureWidget.getSignatureDictionary().getReferences();
-                for (SignatureReferenceDictionary reference : signatureReferenceDictionary) {
-                    if (reference.getTransformMethod() == SignatureReferenceDictionary.TransformMethods.DocMDP) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return existingCertificationPermission(library) != 0;
     }
 
     /**
-     * Checks to see if the current signature dictionary has permission to sign the document.  Previous signature
-     * permissions may have flagged the document as unmodifiable.
+     * Checks whether a new signature may be added.  A certification signature already in the file
+     * with DocMDP permission 1 (no changes) forbids it (PDF 32000-1 12.8.2.2); so does a
+     * certification prepared in this session with that permission.
      *
      * @return true if signing is allowed, otherwise false.
      */
     public boolean hasPermissionToSignDocument() {
+        if (library != null && existingCertificationPermission(library) == PERMISSION_VALUE_NO_CHANGES) {
+            return false;
+        }
         if (currentSignatureDictionary != null) {
-            List<SignatureReferenceDictionary> references = currentSignatureDictionary.getReferences();
-            for (SignatureReferenceDictionary reference : references) {
-                if (reference.getTransformMethod() == SignatureReferenceDictionary.TransformMethods.DocMDP) {
-                    TransformParams transformParams = reference.getTransformParams();
-                    if (transformParams instanceof DocMDPTransferParam) {
-                        DocMDPTransferParam docMDPTransferParam = (DocMDPTransferParam) transformParams;
-                        int permission = docMDPTransferParam.getPermissions();
-                        // only permission 1 and 2 allow signing
-                        return permission != PERMISSION_VALUE_NO_CHANGES;
-                    }
-                }
+            Integer permission = docMdpPermission(currentSignatureDictionary);
+            if (permission != null) {
+                return permission != PERMISSION_VALUE_NO_CHANGES;
             }
         }
         return true;
+    }
+
+    /**
+     * The DocMDP permission of the document's certification signature already in the file: 0 when
+     * there is none, else 1 (no changes), 2 (form fill-in and signing) or 3 (also annotations).
+     * Found through the catalog's /Perms /DocMDP, or failing that the signature fields.  The
+     * signature prepared in this session doesn't count.
+     *
+     * @param library document library
+     * @return the permission, or 0 when the document isn't certified
+     */
+    public int existingCertificationPermission(Library library) {
+        Catalog catalog = library.getCatalog();
+        if (catalog == null) {
+            return 0;
+        }
+        DictionaryEntries perms = library.getDictionary(catalog.getEntries(), Catalog.PERMS_KEY);
+        if (perms != null) {
+            Object docMdp = perms.get(Permissions.DOC_MDP_KEY);
+            if (docMdp instanceof Reference && !isCurrent((Reference) docMdp)) {
+                Object signature = library.getObject((Reference) docMdp);
+                SignatureDictionary dictionary = signature instanceof SignatureDictionary
+                        ? (SignatureDictionary) signature
+                        : signature instanceof DictionaryEntries
+                        ? new SignatureDictionary(library, (DictionaryEntries) signature)
+                        : signature instanceof Dictionary
+                        ? new SignatureDictionary(library, ((Dictionary) signature).getEntries()) : null;
+                Integer permission = dictionary != null ? docMdpPermission(dictionary) : null;
+                if (permission != null) {
+                    return permission;
+                }
+            }
+        }
+        InteractiveForm interactiveForm = catalog.getInteractiveForm();
+        if (interactiveForm != null) {
+            for (SignatureWidgetAnnotation signatureWidget : interactiveForm.getSignatureFields()) {
+                // the field's own /V: the widget's copy is only set once its page has been initialised.
+                SignatureDictionary dictionary = signatureWidget.getFieldDictionary().getSignatureDictionary();
+                if (dictionary == null || dictionary == currentSignatureDictionary
+                        || dictionary.getEntries() == null || isCurrent(dictionary.getPObjectReference())) {
+                    continue;
+                }
+                Integer permission = docMdpPermission(dictionary);
+                if (permission != null) {
+                    return permission;
+                }
+            }
+        }
+        return 0;
+    }
+
+    private boolean isCurrent(Reference reference) {
+        return currentSignatureDictionary != null && reference != null
+                && reference.equals(currentSignatureDictionary.getPObjectReference());
+    }
+
+    /**
+     * @return the DocMDP permission of a certification signature (2 when it doesn't say, the
+     * default), or null for a signature that doesn't certify
+     */
+    private static Integer docMdpPermission(SignatureDictionary dictionary) {
+        for (SignatureReferenceDictionary reference : dictionary.getReferences()) {
+            if (reference.getTransformMethod() == SignatureReferenceDictionary.TransformMethods.DocMDP) {
+                TransformParams transformParams = reference.getTransformParams();
+                int permission = transformParams instanceof DocMDPTransferParam
+                        ? ((DocMDPTransferParam) transformParams).getPermissions() : 0;
+                return permission > 0 ? permission : DocMDPTransferParam.PERMISSION_VALUE_FORMS_SIGNING;
+            }
+        }
+        return null;
     }
 }
