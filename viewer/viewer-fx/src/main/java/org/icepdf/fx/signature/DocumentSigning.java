@@ -16,7 +16,6 @@
 package org.icepdf.fx.signature;
 
 import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
@@ -41,7 +40,6 @@ import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -184,7 +182,6 @@ public final class DocumentSigning {
         if (request.location() != null) dictionary.setLocation(request.location());
         dictionary.setReason(request.reason() != null && !request.reason().isBlank() ? request.reason()
                 : request.type().toString().toLowerCase());
-        dictionary.setDate(PDate.formatDateTime(new Date()));
 
         appearance.setSignatureType(request.type());
         appearance.setName(request.name());

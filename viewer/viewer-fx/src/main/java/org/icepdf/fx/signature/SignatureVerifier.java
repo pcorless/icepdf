@@ -98,6 +98,12 @@ public final class SignatureVerifier {
                     false, false, false, List.of(), e.getMessage() != null ? e.getMessage() : e.toString());
         }
 
+        // the best time available: a timestamp authority's, then the signature's own CMS signingTime,
+        // then /M (both of those are the signer's clock).
+        Date timeStamp = validator.getTimeStampTime();
+        Date cmsTime = validator.getSigningTime();
+        if (timeStamp != null) signingTime = timeStamp;
+        else if (cmsTime != null) signingTime = cmsTime;
         X509Certificate signer = validator.getSignerCertificate();
         String commonName = signer != null ? part(signer, "CN") : null;
         List<X509Certificate> chain = new ArrayList<>();
@@ -118,7 +124,7 @@ public final class SignatureVerifier {
                 commonName != null ? commonName : dictionary.getName(),
                 signer != null ? part(signer, "EMAILADDRESS", "E", "1.2.840.113549.1.9.1") : null,
                 signer != null ? part(signer, "O") : null,
-                reason, location, contact, signingTime, validator.isEmbeddedTimeStamp(), certification,
+                reason, location, contact, signingTime, timeStamp != null || validator.isEmbeddedTimeStamp(), certification,
                 validator.isSignedDataModified(), validator.isDocumentDataModified(), trusted,
                 validator.isSelfSigned(), revoked, dateValid, chain, null);
     }
