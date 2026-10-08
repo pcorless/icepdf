@@ -15,14 +15,12 @@
  */
 package org.icepdf.fx.signature;
 
-import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SignerHandler;
 import org.icepdf.core.pobjects.annotations.AnnotationFactory;
@@ -83,46 +81,16 @@ public final class DocumentSigning {
     /**
      * The DocMDP permission of the document's certification signature (PDF 32000-1 12.8.2.2): 0 when
      * the document isn't certified, else 1 (no changes), 2 (form fill-in and signing) or 3 (also
-     * annotations).  Read from the signatures already in the file: core's SignatureManager only knows
-     * the signature being added in this session.
+     * annotations).
      */
     public static int certificationPermission(Document document) {
-        return certificationPermission(document.getCatalog().getLibrary());
-    }
-
-    private static int certificationPermission(Library library) {
-        InteractiveForm form = library.getCatalog().getInteractiveForm();
-        if (form == null) return 0;
-        for (SignatureWidgetAnnotation field : form.getSignatureFields()) {
-            SignatureDictionary signature = field.getFieldDictionary().getSignatureDictionary();
-            if (signature == null || signature.getEntries() == null) continue;
-            Object references = library.getObject(signature.getEntries(), SignatureDictionary.REFERENCE_KEY);
-            if (!(references instanceof List<?> list)) continue;
-            for (Object item : list) {
-                DictionaryEntries reference = entries(library, item);
-                if (reference == null) continue;
-                Object method = library.getObject(reference, SignatureReferenceDictionary.TRANSFORM_METHOD_KEY);
-                if (method == null || !"DocMDP".equals(method.toString())) continue;
-                DictionaryEntries params = entries(library,
-                        library.getObject(reference, SignatureReferenceDictionary.TRANSFORM_PARAMS_KEY));
-                Object permission = params != null ? library.getObject(params, P_KEY) : null;
-                return permission instanceof Number n ? n.intValue() : 2;
-            }
-        }
-        return 0;
-    }
-
-    private static final org.icepdf.core.pobjects.Name P_KEY = new org.icepdf.core.pobjects.Name("P");
-
-    private static DictionaryEntries entries(Library library, Object value) {
-        Object resolved = value instanceof org.icepdf.core.pobjects.Reference r ? library.getObject(r) : value;
-        if (resolved instanceof org.icepdf.core.pobjects.Dictionary d) return d.getEntries();
-        return resolved instanceof DictionaryEntries e ? e : null;
+        Library library = document.getCatalog().getLibrary();
+        return library.getSignatureDictionaries().existingCertificationPermission(library);
     }
 
     /** Whether a new signature may be added: the document isn't certified "no changes". */
     public static boolean canSign(Document document) {
-        return certificationPermission(document) != 1;
+        return document.getCatalog().getLibrary().getSignatureDictionaries().hasPermissionToSignDocument();
     }
 
     /** Whether a certification signature may be added: the document isn't certified already. */
@@ -202,11 +170,10 @@ public final class DocumentSigning {
                                SignatureAppearance appearance) {
         Library library = field.getLibrary();
         SignatureManager manager = library.getSignatureDictionaries();
-        int permission = certificationPermission(library);
-        if (permission == 1) {
+        if (!manager.hasPermissionToSignDocument()) {
             throw new IllegalStateException("The document's certification doesn't permit more signatures.");
         }
-        if (request.type() == SignatureType.CERTIFIER && permission != 0) {
+        if (request.type() == SignatureType.CERTIFIER && manager.hasExistingCertifier(library)) {
             throw new IllegalStateException("The document is already certified; it can only be approved.");
         }
         SignatureDictionary dictionary = SignatureDictionary.getInstance(field, request.type());
