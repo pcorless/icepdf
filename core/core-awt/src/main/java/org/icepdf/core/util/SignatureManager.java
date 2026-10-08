@@ -18,6 +18,7 @@ package org.icepdf.core.util;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Permissions;
 import org.icepdf.core.pobjects.Reference;
@@ -26,6 +27,7 @@ import org.icepdf.core.pobjects.acroform.*;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.acroform.DocMDPTransferParam.PERMISSION_VALUE_NO_CHANGES;
@@ -76,6 +78,19 @@ public class SignatureManager {
         // add the new signature widget to the list
         if (!signatureWidgetAnnotations.contains(signatureAnnotation)) {
             signatureWidgetAnnotations.add(signatureAnnotation);
+        }
+    }
+
+    /**
+     * Gives the signature about to be written its signing time (/M) when the caller didn't set one:
+     * the moment the document is written, which is when it is signed.  Called by the updaters before
+     * the signature dictionary is first written; it can't change size after that, as the signature is
+     * filled into a placeholder in place.  The same instant goes into the signature's own CMS
+     * signingTime attribute (see {@link SignatureDictionary#getSignedData}).
+     */
+    public void stampSigningTime() {
+        if (currentSignatureDictionary != null && currentSignatureDictionary.getDate() == null) {
+            currentSignatureDictionary.setDate(PDate.formatDateTime(new Date()));
         }
     }
 

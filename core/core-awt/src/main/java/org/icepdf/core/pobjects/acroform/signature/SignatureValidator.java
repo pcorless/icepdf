@@ -135,4 +135,23 @@ public interface SignatureValidator {
      */
     Date getLastValidated();
 
+    /**
+     * The signing time the signer claims in the signature's CMS signingTime attribute (the signer's
+     * clock, like /M).
+     *
+     * @return the time, or null when the signature doesn't carry one
+     */
+    default Date getSigningTime() {
+        return null;
+    }
+
+    /**
+     * The time a timestamp authority vouches for, from a timestamp token embedded in the signature.
+     *
+     * @return the time, or null when there is no timestamp
+     */
+    default Date getTimeStampTime() {
+        return null;
+    }
+
 }

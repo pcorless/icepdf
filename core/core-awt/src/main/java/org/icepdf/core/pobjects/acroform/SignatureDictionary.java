@@ -343,7 +343,9 @@ public class SignatureDictionary extends Dictionary {
 
     public byte[] getSignedData(byte[] data) throws IOException, CMSException, UnrecoverableKeyException,
             CertificateException, KeyStoreException, NoSuchAlgorithmException, OperatorCreationException {
-        // move to signature
+        // the signature's CMS signingTime is the instant /M records, so the two always agree.
+        PDate date = getPDate();
+        signerHandler.setSigningTime(date != null ? date.asDateWithTimeZone() : null);
         return signerHandler.signData(data);
     }
 
