@@ -18,11 +18,13 @@ package org.icepdf.core.pobjects.actions;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.LiteralStringObject;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +36,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A ResetForm action resets the fields its /Fields array names (and their descendants), or with the
@@ -127,5 +131,88 @@ public class ResetFormActionTest {
         assertEquals("Grace", value("name"), "excluded");
         assertEquals("", value("code"));
         assertEquals("Canada", value("country"));
+    }
+
+    // ---- buttons: the model itself is reset, with no viewer listening -----------------------
+
+    /** Every widget of a field (a radio group's kids share the group's name). */
+    private List<ButtonWidgetAnnotation> buttons(String name) {
+        List<ButtonWidgetAnnotation> out = new ArrayList<>();
+        for (Annotation a : page.getAnnotations()) {
+            if (a instanceof ButtonWidgetAnnotation
+                    && name.equals(((ButtonWidgetAnnotation) a).getFieldDictionary().getFullyQualifiedFieldName())) {
+                out.add((ButtonWidgetAnnotation) a);
+            }
+        }
+        if (out.isEmpty()) throw new AssertionError("no field " + name);
+        return out;
+    }
+
+    private static Name onName(ButtonWidgetAnnotation button) {
+        return button.getAppearances().get(button.getCurrentAppearance()).getOnName();
+    }
+
+    /** The radio group's value lives on the parent field. */
+    private static Object groupValue(ButtonWidgetAnnotation kid) {
+        return kid.getFieldDictionary().getParent().getFieldValue();
+    }
+
+    /** Turns on the kids whose on-state is {@code on} and the rest off, as a click would. */
+    private void select(String group, String on) {
+        for (ButtonWidgetAnnotation kid : buttons(group)) {
+            if (onName(kid).getName().equals(on)) kid.turnOn();
+            else kid.turnOff();
+            kid.getFieldDictionary().getParent().setFieldValue(new Name(on), null);
+        }
+    }
+
+    @DisplayName("check box: reset turns it off (its /DV) and sets /V and /AS to match")
+    @Test
+    public void checkBox() {
+        ButtonWidgetAnnotation agree = buttons("agree").get(0);
+        agree.turnOn();
+        agree.getFieldDictionary().setFieldValue(onName(agree), null);
+        reset(0, new LiteralStringObject("agree"));
+        assertFalse(agree.isOn(), "appearance off");
+        assertEquals(new Name("Off"), agree.getFieldDictionary().getFieldValue());
+        assertEquals(new Name("Off"), agree.getEntries().get(Annotation.APPEARANCE_STATE_KEY));
+    }
+
+    @DisplayName("radio group: reset selects the /DV kid and turns the others off")
+    @Test
+    public void radioGroup() {
+        select("color", "Green");
+        reset(0, new LiteralStringObject("color"));
+        for (ButtonWidgetAnnotation kid : buttons("color")) {
+            boolean red = onName(kid).getName().equals("Red");
+            assertEquals(red, kid.isOn(), onName(kid) + " on");
+            assertEquals(red ? new Name("Red") : new Name("Off"), kid.getEntries().get(Annotation.APPEARANCE_STATE_KEY));
+        }
+        assertEquals(new Name("Red"), groupValue(buttons("color").get(0)));
+    }
+
+    @DisplayName("radios in unison: reset to /DV /Off turns every kid off")
+    @Test
+    public void radiosInUnison() {
+        select("pair", "A");
+        reset(0, new LiteralStringObject("pair"));
+        for (ButtonWidgetAnnotation kid : buttons("pair")) {
+            assertFalse(kid.isOn(), onName(kid) + " on");
+        }
+        assertEquals(new Name("Off"), groupValue(buttons("pair").get(0)));
+    }
+
+    @DisplayName("reset is recorded, so a save writes the reset state")
+    @Test
+    public void resetIsPersisted() {
+        ButtonWidgetAnnotation agree = buttons("agree").get(0);
+        agree.turnOn();
+        reset(0, new LiteralStringObject("agree"));
+        assertTrue(document.getStateManager().contains(agree.getPObjectReference()), "agree recorded");
+        ButtonWidgetAnnotation kid = buttons("color").get(0);
+        select("color", "Blue");
+        reset(0, new LiteralStringObject("color"));
+        assertTrue(document.getStateManager().contains(kid.getFieldDictionary().getParent().getPObjectReference()),
+                "color group recorded");
     }
 }

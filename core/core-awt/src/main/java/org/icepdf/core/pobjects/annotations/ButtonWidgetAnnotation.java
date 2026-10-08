@@ -34,6 +34,8 @@ import java.awt.geom.AffineTransform;
  */
 public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonFieldDictionary> {
 
+    private static final Name OFF_NAME = new Name("Off");
+
     private final ButtonFieldDictionary fieldDictionary;
 
     protected Name originalAppearance;
@@ -89,21 +91,48 @@ public class ButtonWidgetAnnotation extends AbstractWidgetAnnotation<ButtonField
         }
     }
 
+    /**
+     * Resets the button to its default value (/DV, or the parent field's): the widget shows its on
+     * state only when the default names it, the field's /V is set to match (a radio group's value
+     * lives on the group), and the change is recorded so a save writes it.  A push button has no
+     * value, so only the event fires.  Listeners get a "valueFieldReset" event after the model is
+     * reset; they only need to refresh what they show.
+     */
     public void reset() {
         Object oldValue = fieldDictionary.getFieldValue();
-        Object defaultFieldValue = fieldDictionary.getDefaultFieldValue();
-        FieldDictionary parentFaultFieldValue = fieldDictionary.getParent();
-        if (defaultFieldValue != null) {
-            // apply the default value
-            firePropertyChange("valueFieldReset", oldValue, defaultFieldValue);
-        }else if (parentFaultFieldValue != null) {
-            // apply the default value
-            firePropertyChange("valueFieldReset", oldValue,
-                    parentFaultFieldValue.getDefaultFieldValue());
-        }else{
-            // otherwise we remove the key
-            firePropertyChange("valueFieldReset", oldValue, "");
+        FieldDictionary parent = fieldDictionary.getParent();
+        Object defaultValue = fieldDictionary.getDefaultFieldValue();
+        if (defaultValue == null && parent != null) {
+            defaultValue = parent.getDefaultFieldValue();
         }
+        if (fieldDictionary.getButtonFieldType() == ButtonFieldDictionary.ButtonFieldType.PUSH_BUTTON) {
+            firePropertyChange("valueFieldReset", oldValue, defaultValue);
+            return;
+        }
+        Appearance appearance = appearances.get(currentAppearance);
+        Name offName = appearance != null && appearance.getOffName() != null ? appearance.getOffName() : OFF_NAME;
+        if (appearance != null && appearance.hasAlternativeAppearance()) {
+            if (defaultValue instanceof Name && defaultValue.equals(appearance.getOnName())) {
+                turnOn();
+            } else {
+                turnOff();
+            }
+            appearance.updateAppearanceDictionary(entries);
+        }
+        // a widget with no name of its own is a kid of its field (a radio button): the value is the field's.
+        FieldDictionary field = parent != null && fieldDictionary.getPartialFieldName() == null
+                ? parent : fieldDictionary;
+        Name value = defaultValue instanceof Name ? (Name) defaultValue : offName;
+        field.setFieldValue(value, field.getPObjectReference());
+
+        StateManager stateManager = library.getStateManager();
+        if (getPObjectReference() != null) {
+            stateManager.addChange(new PObject(this, getPObjectReference()));
+        }
+        if (field != fieldDictionary && field.getPObjectReference() != null) {
+            stateManager.addChange(new PObject(field, field.getPObjectReference()));
+        }
+        firePropertyChange("valueFieldReset", oldValue, value);
     }
 
     public void turnOff() {
