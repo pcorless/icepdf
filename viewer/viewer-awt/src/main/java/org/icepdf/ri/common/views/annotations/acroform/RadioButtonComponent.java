@@ -18,7 +18,6 @@ package org.icepdf.ri.common.views.annotations.acroform;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.ButtonFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -29,7 +28,6 @@ import java.awt.event.KeyEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static org.icepdf.core.util.SystemProperties.INTERACTIVE_ANNOTATIONS;
 
@@ -51,34 +49,9 @@ public class RadioButtonComponent extends AbstractButtonComponent implements Pro
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if ("valueFieldReset".equals(propertyName)) {
-            ButtonFieldDictionary fieldDictionary = annotation.getFieldDictionary();
-            ButtonFieldDictionary parentFieldDictionary = (ButtonFieldDictionary) fieldDictionary.getParent();
-            if (parentFieldDictionary != null && !parentFieldDictionary.hasFieldValue()) {
-                for (Object childWidget : parentFieldDictionary.getKids()) {
-                    if (childWidget instanceof ButtonWidgetAnnotation) {
-                        ((ButtonWidgetAnnotation) childWidget).turnOff();
-                    }
-                }
-            }
-            else if (parentFieldDictionary != null && parentFieldDictionary.hasFieldValue()) {
-                Name defaultValue = (Name) parentFieldDictionary.getDefaultFieldValue();
-                parentFieldDictionary.setFieldValue(defaultValue, parentFieldDictionary.getPObjectReference());
-                ButtonWidgetAnnotation buttonWidgetAnnotation;
-                for (Object childWidget : parentFieldDictionary.getKids()) {
-                    if (childWidget instanceof ButtonWidgetAnnotation) {
-                        buttonWidgetAnnotation = (ButtonWidgetAnnotation) childWidget;
-                        buttonWidgetAnnotation.turnOff();
-                        // update selected state
-                        Name currentAppearance = buttonWidgetAnnotation.getCurrentAppearance();
-                        HashMap<Name, Appearance> appearances = buttonWidgetAnnotation.getAppearances();
-                        Appearance appearance = appearances.get(currentAppearance);
-                        if (appearance.getOnName().equals(defaultValue)) {
-                            appearance.setSelectedName(appearance.getOnName());
-                        }
-                    }
-                }
-            }
+            // ButtonWidgetAnnotation.reset() has already reset the value and the on/off state.
             resetAppearanceShapes();
+            repaint();
         }
     }
 

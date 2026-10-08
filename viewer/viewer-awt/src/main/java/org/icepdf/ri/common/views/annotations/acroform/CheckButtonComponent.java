@@ -48,20 +48,9 @@ public class CheckButtonComponent extends AbstractButtonComponent implements Pro
     public void propertyChange(PropertyChangeEvent evt) {
         String propertyName = evt.getPropertyName();
         if ("valueFieldReset".equals(propertyName)) {
-            ButtonFieldDictionary fieldDictionary = annotation.getFieldDictionary();
-            ButtonFieldDictionary parentFieldDictionary = (ButtonFieldDictionary) fieldDictionary.getParent();
-            Object defaultFieldValue = fieldDictionary.getDefaultFieldValue();
-            if (defaultFieldValue instanceof Name) {
-                fieldDictionary.setFieldValue(defaultFieldValue, annotation.getPObjectReference());
-                return;
-            }
-            if (parentFieldDictionary != null && parentFieldDictionary.getDefaultFieldValue() != null) {
-                fieldDictionary.setFieldValue(parentFieldDictionary.getDefaultFieldValue(),
-                        parentFieldDictionary.getPObjectReference());
-                return;
-            }
-            annotation.turnOff();
+            // ButtonWidgetAnnotation.reset() has already reset the value and the on/off state.
             resetAppearanceShapes();
+            repaint();
         }
     }
 
