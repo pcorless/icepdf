@@ -45,6 +45,8 @@ public abstract class SignerHandler {
 
     protected String certAlias;
     protected String tsaUrl;
+    // the CMS signingTime attribute; null lets the CMS generator use the current time.
+    protected java.util.Date signingTime;
     protected KeyStore keystore;
     protected PasswordCallbackHandler callbackHandler;
 
@@ -77,6 +79,18 @@ public abstract class SignerHandler {
         return (X509Certificate) keystore.getCertificate(alias);
     }
 
+    /**
+     * The time the signature's CMS signingTime attribute records; the signature dictionary sets it to
+     * its /M before signing.  Null uses the current time.
+     */
+    public void setSigningTime(java.util.Date signingTime) {
+        this.signingTime = signingTime != null ? new java.util.Date(signingTime.getTime()) : null;
+    }
+
+    public java.util.Date getSigningTime() {
+        return signingTime != null ? new java.util.Date(signingTime.getTime()) : null;
+    }
+
     public byte[] signData(byte[] data) throws KeyStoreException, UnrecoverableKeyException, NoSuchAlgorithmException,
             CertificateException, OperatorCreationException, CMSException, IOException {
 
@@ -88,7 +102,7 @@ public abstract class SignerHandler {
         X509Certificate certificate = (X509Certificate) keystore.getCertificate(certAlias);
 
         CMSSignedDataGenerator signedDataGenerator = new Pkcs7Generator()
-                .createSignedDataGenerator(algorithm, new X509Certificate[]{certificate}, privateKey);
+                .createSignedDataGenerator(algorithm, new X509Certificate[]{certificate}, privateKey, signingTime);
 
         CMSProcessableByteArray message =
                 new CMSProcessableByteArray(new ASN1ObjectIdentifier(CMSObjectIdentifiers.data.getId()), data);

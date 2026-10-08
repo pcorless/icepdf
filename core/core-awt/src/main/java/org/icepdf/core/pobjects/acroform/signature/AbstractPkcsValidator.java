@@ -89,6 +89,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     protected byte[] messageDigest;
     protected byte[] signatureValue;
     protected TimeStampToken timeStampToken;
+    protected Date signingTime;
 
     // validity checks.
     private boolean isSignedDataModified = true;
@@ -225,6 +226,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         // SignatureValue ::= OCTET STRING
         int nextEntry = 3;
         messageDigest = null;
+        signingTime = null;
         ASN1TaggedObject signedAttributes;
         signedAttributesSequence = null;
         if (signerInfo.getObjectAt(nextEntry) instanceof ASN1TaggedObject) {
@@ -239,19 +241,16 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                     ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
                     messageDigest = ((ASN1OctetString) set.getObjectAt(0)).getOctets();
                 }
-                // try and pull out the signing time.
-                // currently not using this time.
-//                if (((ASN1ObjectIdentifier) attributePair.getObjectAt(0)).getId().equals(
-//                        PKCSObjectIdentifiers.pkcs_9_at_signingTime.getId())) {
-//                    ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
-//                    ASN1UTCTime signerTime = ((ASN1UTCTime) set.getObjectAt(0));
-//                    try {
-//                        // see if the signer time matches the certificate validity times.
-//                        System.out.println(" SignatureSigner Time " + signerTime.getDate());
-//                    } catch (ParseException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
+                // the signing time the signer claims (UTCTime or GeneralizedTime).
+                if (((ASN1ObjectIdentifier) attributePair.getObjectAt(0)).getId().equals(
+                        PKCSObjectIdentifiers.pkcs_9_at_signingTime.getId())) {
+                    ASN1Set set = (ASN1Set) attributePair.getObjectAt(1);
+                    try {
+                        signingTime = org.bouncycastle.asn1.cms.Time.getInstance(set.getObjectAt(0)).getDate();
+                    } catch (RuntimeException e) {
+                        logger.log(Level.FINE, "Unreadable signingTime attribute", e);
+                    }
+                }
                 // more attributes to come.
             }
             if (messageDigest == null) {
@@ -754,6 +753,16 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      *
      * @return Date last validation cycle was executed
      */
+    @Override
+    public Date getSigningTime() {
+        return signingTime != null ? new Date(signingTime.getTime()) : null;
+    }
+
+    @Override
+    public Date getTimeStampTime() {
+        return timeStampToken != null ? timeStampToken.getTimeStampInfo().getGenTime() : null;
+    }
+
     public Date getLastValidated() {
         return lastVerified;
     }
