@@ -278,15 +278,8 @@ final class FormController {
                     dictionary.setFieldValue("", widget.getPObjectReference());
                 }
             }
-            case CHECK, RADIO -> {
-                ButtonWidgetAnnotation button = (ButtonWidgetAnnotation) widget;
-                Name onName = onNameOf(button);
-                if (defaultValue instanceof Name name && name.equals(onName)) button.turnOn();
-                else button.turnOff();
-                Name value = defaultValue instanceof Name name ? name : offName(button);
-                FieldDictionary holder = kindOf(widget) == FieldKind.RADIO && parent != null ? parent : dictionary;
-                holder.setFieldValue(value, widget.getPObjectReference());
-            }
+            // core sets the on/off state, /V on the field (the group, for a radio) and /AS (GH-579).
+            case CHECK, RADIO -> ((ButtonWidgetAnnotation) widget).reset();
             case COMBO, LIST -> {
                 ChoiceFieldDictionary choice = ((ChoiceWidgetAnnotation) widget).getFieldDictionary();
                 if (defaultValue != null) {
