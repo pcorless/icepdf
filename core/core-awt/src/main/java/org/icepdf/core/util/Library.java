@@ -171,7 +171,7 @@ public class Library {
         // set Catalog memory Manager and cache manager.
         imagePool = new ImagePool();
         signatureHandler = new SignatureHandler();
-        signatureManager = new SignatureManager();
+        signatureManager = new SignatureManager(this);
     }
 
     /**
