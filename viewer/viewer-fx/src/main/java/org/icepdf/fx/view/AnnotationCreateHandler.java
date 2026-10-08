@@ -86,10 +86,14 @@ final class AnnotationCreateHandler implements ToolHandler {
                 ink.lineTo(p.getX(), p.getY());
                 inkPreview.getElements().add(new LineTo(p.getX(), p.getY()));
             }
-            case RECTANGLE -> {
+            case RECTANGLE, SIGNATURE -> {
                 Rectangle2D r = rect();
                 Rectangle shape = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
                 style(shape);
+                if (mode == ToolMode.SIGNATURE) {
+                    shape.getStrokeDashArray().setAll(4.0, 3.0);
+                    shape.setFill(javafx.scene.paint.Color.rgb(21, 101, 192, 0.08));
+                }
                 showPreview(shape);
             }
             case ELLIPSE -> {
@@ -123,6 +127,9 @@ final class AnnotationCreateHandler implements ToolHandler {
             }
             case LINE -> {
                 if (!click) skin.createLine(page, start, end);
+            }
+            case SIGNATURE -> {
+                if (!click) skin.createSignatureField(page, rect());
             }
             case INK -> {
                 if (ink != null && ink.getBounds2D().getWidth() + ink.getBounds2D().getHeight() > 3) {

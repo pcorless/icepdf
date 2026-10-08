@@ -85,6 +85,12 @@ public class PdfViewDemo extends Application {
         view.requestFocus();
 
         // links that leave the document are the application's call; the demo opens URIs.
+        // signed fields show their properties; empty ones (clicked, or drawn with the signature tool)
+        // are signed: the sign dialog, then save to a new file, which core signs as it writes.
+        view.setOnSignatureClicked(status -> {
+            if (status.isSigned()) view.showSignatureProperties(status);
+            else sign(status.widget());
+        });
         view.setOnAnnotationAction(event -> {
             if (event.action() instanceof org.icepdf.core.pobjects.actions.URIAction uri && uri.getURI() != null) {
                 getHostServices().showDocument(uri.getURI());
@@ -180,7 +186,9 @@ public class PdfViewDemo extends Application {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.toString());
                 disableProperty().unbind();
-                if (item != null && item.createsAnnotations()) {
+                if (item == ToolMode.SIGNATURE) {
+                    disableProperty().bind(view.formFillingAllowedProperty().not());
+                } else if (item != null && item.createsAnnotations()) {
                     disableProperty().bind(view.annotationEditingAllowedProperty().not());
                 } else {
                     setDisable(false);
@@ -339,6 +347,52 @@ public class PdfViewDemo extends Application {
     }
 
     /** Writes the document, with every edit, as an incremental update - core's StateManager tracks them. */
+    /** Signs an empty signature field: details from the sign dialog, then saved as a new file. */
+    private void sign(org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation field) {
+        if (document == null) return;
+        org.icepdf.fx.signature.SignDialog dialog = new org.icepdf.fx.signature.SignDialog(stage, document, field);
+        org.icepdf.fx.signature.SignDialog.Result result = dialog.showAndWait().orElse(null);
+        if (result == null) return;
+        try {
+            org.icepdf.fx.signature.DocumentSigning.prepare(field, result.signer(), result.request(), result.appearance());
+        } catch (IllegalStateException e) {
+            org.icepdf.fx.signature.DocumentSigning.cancel(field);
+            new Alert(Alert.AlertType.ERROR, e.getMessage()).showAndWait();
+            return;
+        }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save signed document");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));
+        String title = stage.getTitle();
+        chooser.setInitialFileName((title.contains(" - ") ? title.substring(0, title.indexOf(" - ")) : "document")
+                .replaceFirst("(?i)\\.pdf$", "") + "-signed.pdf");
+        File target = chooser.showSaveDialog(stage);
+        if (target == null) {
+            org.icepdf.fx.signature.DocumentSigning.cancel(field);
+            return;
+        }
+        printStatus.textProperty().unbind();
+        printStatus.setText("Signing\u2026");
+        Document signing = document;
+        // signing may call a timestamp authority: off the FX thread.
+        Thread worker = new Thread(() -> {
+            try {
+                org.icepdf.fx.signature.DocumentSigning.saveSigned(signing, target.toPath());
+                Platform.runLater(() -> {
+                    printStatus.setText("Signed " + target.getName());
+                    open(target);
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    printStatus.setText("");
+                    new Alert(Alert.AlertType.ERROR, "Signing failed: " + e.getMessage()).showAndWait();
+                });
+            }
+        }, "pdf-sign");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
     private void saveAs() {
         FileChooser chooser = new FileChooser();
         chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF", "*.pdf"));

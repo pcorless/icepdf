@@ -119,6 +119,13 @@ public final class PdfViewSmoke {
                     : "corpus form checks: " + failures + " FAILED");
             return;
         }
+        if ("signing".equals(System.getProperty("smoke.only"))) {
+            // file is a PDF to sign (copied first); smoke.keystore is a PKCS#12 test keystore.
+            checkSigning(file, Paths.get(System.getProperty("smoke.keystore",
+                    "src/test/resources/signing/certificate.pfx")));
+            System.out.println(failures == 0 ? "signing checks: all passed" : "signing checks: " + failures + " FAILED");
+            return;
+        }
         if ("signatures".equals(System.getProperty("smoke.only"))) {
             // file is the signature corpus directory.
             checkSignatures(file);
@@ -1902,6 +1909,122 @@ public final class PdfViewSmoke {
                 onFx(lowTask::getState) + ", " + (lowText.length() >> 10) + " KB");
         fx(() -> view.setDocument(null));
         lowQuality.dispose();
+    }
+
+    /** A primary-button drag in the view's coordinates, delivered as JavaFX mouse events. */
+    private void syntheticDrag(double[] from, double[] to) throws Exception {
+        fx(() -> {
+            javafx.geometry.Point2D start = view.localToScene(from[0], from[1]);
+            javafx.scene.Node target = pickNode(start);
+            int steps = 8;
+            for (int i = 0; i <= steps + 1; i++) {
+                double t = Math.min(1, i / (double) steps);
+                double x = from[0] + (to[0] - from[0]) * t;
+                double y = from[1] + (to[1] - from[1]) * t;
+                javafx.geometry.Point2D scene = view.localToScene(x, y);
+                javafx.geometry.Point2D screen = view.localToScreen(x, y);
+                javafx.event.EventType<javafx.scene.input.MouseEvent> type = i == 0
+                        ? javafx.scene.input.MouseEvent.MOUSE_PRESSED : i <= steps
+                        ? javafx.scene.input.MouseEvent.MOUSE_DRAGGED : javafx.scene.input.MouseEvent.MOUSE_RELEASED;
+                javafx.event.Event.fireEvent(target, new javafx.scene.input.MouseEvent(type, scene.getX(), scene.getY(),
+                        screen.getX(), screen.getY(), javafx.scene.input.MouseButton.PRIMARY, 1, false, false, false,
+                        false, type != javafx.scene.input.MouseEvent.MOUSE_RELEASED, false, false, true, false, true,
+                        new javafx.scene.input.PickResult(target, scene.getX(), scene.getY())));
+            }
+        });
+        waitIdle(30_000);
+    }
+
+    /**
+     * Signing: the signature tool draws a field, the application is told, the sign dialog is filled
+     * in with the test keystore, the document is saved signed, reopened and verified.
+     */
+    private void checkSigning(Path source, Path keystore) throws Exception {
+        System.out.println("signing checks:");
+        Path copy = out.resolve("to-sign.pdf");
+        Files.copy(source, copy, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        Document document = new Document();
+        document.setFile(copy.toString());
+        java.util.List<org.icepdf.fx.signature.SignatureStatus> clicked = new java.util.concurrent.CopyOnWriteArrayList<>();
+        fx(() -> {
+            view.setOnSignatureClicked(clicked::add);
+            view.setFitMode(FitMode.PAGE);
+            view.setDocument(document);
+        });
+        waitIdle(60_000);
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.SIGNATURE));
+        check("signature tool available", onFx(view::getToolMode) == org.icepdf.fx.view.ToolMode.SIGNATURE, "");
+        double[] size = onFx(() -> new double[]{view.getWidth(), view.getHeight()});
+        double[] from = {size[0] * 0.55, size[1] * 0.78};
+        double[] to = {size[0] * 0.75, size[1] * 0.86};
+        syntheticDrag(from, to);
+        Thread.sleep(300);
+        org.icepdf.fx.signature.SignatureStatus created = clicked.isEmpty() ? null : clicked.get(0);
+        check("drawing a field tells the application", created != null && !created.isSigned(),
+                clicked.size() + " calls" + (created != null ? ", " + created.fieldName() : ""));
+        check("tool back to text select", onFx(view::getToolMode) == org.icepdf.fx.view.ToolMode.TEXT_SELECT, "");
+        check("the empty field shows a sign-here badge", badgeCount() == 1, badgeCount() + " badges");
+        if (created == null) {
+            fx(() -> view.setDocument(null));
+            document.dispose();
+            return;
+        }
+
+        org.icepdf.fx.signature.SignDialog dialog = onFx(() -> {
+            org.icepdf.fx.signature.SignDialog d = new org.icepdf.fx.signature.SignDialog(stage, document,
+                    created.widget());
+            d.show();
+            return d;
+        });
+        Thread.sleep(300);
+        fx(() -> {
+            javafx.scene.control.DialogPane pane = dialog.getDialogPane();
+            for (javafx.scene.Node n : pane.lookupAll(".text-field")) {
+                if (n instanceof javafx.scene.control.TextField t && "Keystore file (.p12, .pfx)".equals(t.getPromptText())) {
+                    t.setText(keystore.toAbsolutePath().toString());
+                }
+            }
+            ((javafx.scene.control.PasswordField) pane.lookup(".password-field")).setText("changeit");
+            for (javafx.scene.Node n : pane.lookupAll(".button")) {
+                if (n instanceof javafx.scene.control.Button b && "Open".equals(b.getText())) b.fire();
+            }
+        });
+        Thread.sleep(500);
+        int certificates = onFx(() -> dialog.getDialogPane().lookupAll(".list-view").stream()
+                .map(n -> ((javafx.scene.control.ListView<?>) n).getItems())
+                .filter(items -> !items.isEmpty() && items.get(0) instanceof org.icepdf.fx.signature.DocumentSigning.KeyEntry)
+                .mapToInt(java.util.List::size).sum());
+        check("the keystore lists its certificate", certificates == 1, certificates + " certificates");
+        WritableImage shot = onFx(() -> dialog.getDialogPane().snapshot(null, null));
+        ImageIO.write(SwingFXUtils.fromFXImage(shot, null), "png", out.resolve("sign-dialog.png").toFile());
+        fx(() -> ((javafx.scene.control.Button) dialog.getDialogPane().lookupButton(
+                dialog.getDialogPane().getButtonTypes().get(0))).fire());
+        org.icepdf.fx.signature.SignDialog.Result result = onFx(dialog::getResult);
+        check("sign returns the choices", result != null && result.request().name() != null,
+                result == null ? "null" : result.request().toString());
+        if (result == null) return;
+
+        Path signed = out.resolve("signed.pdf");
+        org.icepdf.fx.signature.DocumentSigning.prepare(created.widget(), result.signer(), result.request(),
+                result.appearance());
+        org.icepdf.fx.signature.DocumentSigning.saveSigned(document, signed);
+        fx(() -> view.setDocument(null));
+        document.dispose();
+
+        Document reopened = new Document();
+        reopened.setFile(signed.toString());
+        fx(() -> view.setOnSignatureClicked(null));
+        java.util.List<org.icepdf.fx.signature.SignatureStatus> statuses = openAndVerify(reopened);
+        org.icepdf.fx.signature.SignatureStatus status = statuses.stream()
+                .filter(org.icepdf.fx.signature.SignatureStatus::isSigned).findFirst().orElse(null);
+        check("the saved file verifies intact", status != null && !status.signedDataModified()
+                        && !status.modifiedAfterSigning(),
+                status == null ? statuses.toString() : status.verdict() + " " + status.signerName());
+        check("a badge on the new signature", badgeCount() == 1, badgeCount() + " badges");
+        WritableImage page = onFx(() -> view.snapshot(null, null));
+        ImageIO.write(SwingFXUtils.fromFXImage(page, null), "png", out.resolve("signed-page.png").toFile());
+        fx(() -> view.setDocument(null));
+        reopened.dispose();
     }
 
     /** A primary click at a point in the view's coordinates, delivered to the node under it. */

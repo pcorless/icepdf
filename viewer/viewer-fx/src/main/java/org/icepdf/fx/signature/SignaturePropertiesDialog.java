@@ -148,7 +148,7 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
                 ? new Check(SignatureStatus.Verdict.VALID, "The certificate was valid at the signing time.")
                 : new Check(SignatureStatus.Verdict.UNKNOWN,
                 "The certificate wasn't valid at the signing time (expired, or not yet valid)."));
-        out.add(new Check(s.timestamped() ? SignatureStatus.Verdict.VALID : SignatureStatus.Verdict.UNSIGNED,
+        out.add(new Check(s.timestamped() ? SignatureStatus.Verdict.VALID : SignatureStatus.Verdict.ERROR,
                 s.timestamped() ? "The signing time comes from an embedded timestamp."
                         : "The signing time comes from the signer's computer clock."));
         return out;

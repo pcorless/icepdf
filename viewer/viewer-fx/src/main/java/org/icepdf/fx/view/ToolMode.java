@@ -41,7 +41,12 @@ public enum ToolMode {
     /** Drag to draw an ellipse. */
     ELLIPSE,
     /** Drag to draw a straight line. */
-    LINE;
+    LINE,
+    /**
+     * Drag to place a signature field; the view then reports it to {@code onSignatureClicked} so the
+     * application can sign it.  Needs the document's form fill-in and signing permission.
+     */
+    SIGNATURE;
 
     /** The tool selects text (plain selection or a text-markup tool). */
     public boolean selectsText() {

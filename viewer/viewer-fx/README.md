@@ -56,6 +56,9 @@ parent.getChildren().add(view);
   field's `SignatureStatus` (valid / unknown identity / invalid, the checks, the certificate chain),
   signed fields get a validity badge, and a click opens `SignaturePropertiesDialog` or your
   `onSignatureClicked` handler (`org.icepdf.fx.signature`);
+- signing: `ToolMode.SIGNATURE` draws a field, `SignDialog` collects the keystore (.p12/.pfx),
+  certificate, details and appearance, `DocumentSigning.prepare` + `saveSigned` sign as the document
+  is saved (incremental update); `DocumentSigning` works headless too;
 - encrypted documents: the view follows the document's permissions. `copyAllowed`,
   `annotationEditingAllowed` and `formFillingAllowed` say what the user may do; bind toolbar
   buttons to them. Bouncy Castle (needed for AES and public-key encryption) comes with core.
@@ -65,7 +68,7 @@ parent.getChildren().add(view);
 | Command | What it does |
 |---|---|
 | `./gradlew :viewer:viewer-fx:test` | Unit tests: layout, tile grid and cache, selection, search, annotation edits, form controller and field order. No display needed. |
-| `./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="file.pdf;outdir" -PsmokeJvmArgs="-Dsmoke.only=MODE"` | Scripted view runs with snapshots. Modes: `tools`, `annotations`, `annotation-ui`, `forms`, `forms-corpus`, `pan-fps`, `first-paint`, `reopen` (`a.pdf\|b.pdf`), `encryption` (the encryption corpus directory), `print` (prints to PostScript files in the output directory, never to a printer), `signatures` (the signature corpus directory). Separate JVM args with `;` (for example `-PsmokeXmx=512m`, `-Dglass.gtk.uiScale=2`). |
+| `./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="file.pdf;outdir" -PsmokeJvmArgs="-Dsmoke.only=MODE"` | Scripted view runs with snapshots. Modes: `tools`, `annotations`, `annotation-ui`, `forms`, `forms-corpus`, `pan-fps`, `first-paint`, `reopen` (`a.pdf\|b.pdf`), `encryption` (the encryption corpus directory), `print` (prints to PostScript files in the output directory, never to a printer), `signatures` (the signature corpus directory), `signing` (a PDF to sign; `-Dsmoke.keystore=` a PKCS#12 test keystore). Separate JVM args with `;` (for example `-PsmokeXmx=512m`, `-Dglass.gtk.uiScale=2`). |
 | `./gradlew :viewer:viewer-fx:bench` | RasterBench: the raster hand-off paths. |
 
 Render jobs log their region and paint time at `FINE` on `org.icepdf.fx.view.TileRenderer`.

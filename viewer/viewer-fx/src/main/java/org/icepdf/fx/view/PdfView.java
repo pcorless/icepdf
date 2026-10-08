@@ -159,8 +159,7 @@ public class PdfView extends Control {
         @Override
         public void set(ToolMode value) {
             // annotation tools are unavailable when the document doesn't permit annotating.
-            super.set(value == null || (value.createsAnnotations() && !isAnnotationEditingAllowed())
-                    ? ToolMode.TEXT_SELECT : value);
+            super.set(value == null || !toolPermitted(value) ? ToolMode.TEXT_SELECT : value);
         }
     };
 
@@ -1290,6 +1289,20 @@ public class PdfView extends Control {
         return task;
     }
 
+    /**
+     * Whether the document permits a tool: annotation tools need annotating, the signature tool
+     * needs form fill-in and signing.
+     */
+    public final boolean toolPermitted(ToolMode mode) {
+        if (mode == ToolMode.SIGNATURE) return isFormFillingAllowed();
+        return !mode.createsAnnotations() || isAnnotationEditingAllowed();
+    }
+
+    /** A field created in this view (the signature tool), listed until the next check. */
+    void addSignatureStatus(org.icepdf.fx.signature.SignatureStatus status) {
+        signatures.add(status);
+    }
+
     private void updatePermissions(Document doc) {
         SecurityManager security = doc != null ? doc.getSecurityManager() : null;
         Permissions permissions = security != null ? security.getPermissions() : null;
@@ -1299,6 +1312,6 @@ public class PdfView extends Control {
         formFillingAllowed.set(annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
         printAllowed.set(doc != null && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT)));
         lowResolutionPrintOnly = permissions != null && !permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY);
-        if (!annotate && getToolMode().createsAnnotations()) setToolMode(ToolMode.TEXT_SELECT);
+        if (!toolPermitted(getToolMode())) setToolMode(ToolMode.TEXT_SELECT);
     }
 }

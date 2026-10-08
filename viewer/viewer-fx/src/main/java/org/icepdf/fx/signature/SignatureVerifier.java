@@ -70,6 +70,10 @@ public final class SignatureVerifier {
     public static SignatureStatus verify(SignatureWidgetAnnotation field) {
         int pageIndex = pageIndexOf(field);
         String name = field.getFieldDictionary().getFullyQualifiedFieldName();
+        if (name == null && field.getEntries().get(org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY) != null) {
+            // a field added this session: its dictionary read /T before it was set.
+            name = field.getLibrary().getString(field.getEntries(), org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY);
+        }
         // the field's own /V, as the validator reads it: the widget's copy is only set once its page
         // has been initialised.
         SignatureDictionary dictionary = field.getFieldDictionary().getSignatureDictionary();

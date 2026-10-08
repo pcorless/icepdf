@@ -821,7 +821,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         Map<Annotation, org.icepdf.fx.signature.SignatureStatus> out = new HashMap<>();
         for (Annotation a : page.getAnnotations()) {
             org.icepdf.fx.signature.SignatureStatus status = signatureStatusOf(a);
-            if (status != null && status.isSigned() && !a.isDeleted() && a.allowScreenNormalMode()) out.put(a, status);
+            // empty fields get a "sign here" badge when the application handles signing.
+            boolean shown = status != null && (status.isSigned() || getSkinnable().getOnSignatureClicked() != null);
+            if (shown && !a.isDeleted() && a.allowScreenNormalMode()) out.put(a, status);
         }
         return out;
     }
@@ -846,6 +848,24 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             if (r != null && r.contains(point.x(), point.y())) return new AnnotationHit(point.pageIndex(), a);
         }
         return null;
+    }
+
+    /**
+     * The signature tool: adds an empty signature field over a dragged view rectangle and reports it
+     * to the application's onSignatureClicked, as a click on an unsigned field does.
+     */
+    void createSignatureField(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        java.awt.Rectangle bounds = Annotation.commonBoundsNormalization(new java.awt.geom.GeneralPath(viewRect),
+                toPageSpaceNow(page));
+        org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation[] made =
+                new org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation[1];
+        renderer.withAnnotationLock(pageIndex, () ->
+                made[0] = org.icepdf.fx.signature.DocumentSigning.addSignatureField(document, pageIndex, bounds));
+        org.icepdf.fx.signature.SignatureStatus status = org.icepdf.fx.signature.SignatureVerifier.verify(made[0]);
+        getSkinnable().addSignatureStatus(status);
+        getSkinnable().setToolMode(ToolMode.TEXT_SELECT);
+        signatureClicked(status);
     }
 
     /** A click on a signature field or badge: the application's handler, else the properties dialog. */

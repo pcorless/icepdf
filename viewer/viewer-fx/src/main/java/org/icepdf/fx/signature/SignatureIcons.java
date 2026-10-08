@@ -35,6 +35,7 @@ public final class SignatureIcons {
     public static final Color UNKNOWN = Color.rgb(230, 160, 0);
     public static final Color INVALID = Color.rgb(198, 40, 40);
     public static final Color OTHER = Color.rgb(120, 120, 120);
+    public static final Color SIGN_HERE = Color.rgb(21, 101, 192);
 
     private SignatureIcons() {
     }
@@ -45,6 +46,7 @@ public final class SignatureIcons {
             case VALID -> VALID;
             case UNKNOWN -> UNKNOWN;
             case INVALID -> INVALID;
+            case UNSIGNED -> SIGN_HERE;
             default -> OTHER;
         };
     }
@@ -74,6 +76,9 @@ public final class SignatureIcons {
                     s * 0.73, s * 0.34), s));
             case INVALID -> icon.getChildren().addAll(stroke(new Line(s * 0.33, s * 0.33, s * 0.67, s * 0.67), s),
                     stroke(new Line(s * 0.67, s * 0.33, s * 0.33, s * 0.67), s));
+            // a pen over a signing line: "sign here".
+            case UNSIGNED -> icon.getChildren().addAll(stroke(new Line(s * 0.34, s * 0.62, s * 0.66, s * 0.30), s),
+                    stroke(new Line(s * 0.27, s * 0.72, s * 0.73, s * 0.72), s));
             default -> icon.getChildren().addAll(stroke(new Polyline(s * 0.36, s * 0.38, s * 0.42, s * 0.27,
                     s * 0.58, s * 0.27, s * 0.64, s * 0.38, s * 0.5, s * 0.5, s * 0.5, s * 0.6), s), dot(c, s * 0.76, s));
         }
