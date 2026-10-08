@@ -553,6 +553,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
         Library library = signatureFieldDictionary.getLibrary();
 
+        byte[] firstSection;
+        byte[] secondSection;
         synchronized (library.getMappedFileByteBufferLock()) {
             ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
             documentByteBuffer.position(0);
@@ -564,11 +566,11 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
                 isDocumentDataModified = true;
             }
             documentByteBuffer.position(byteRange.get(0));
-            byte[] firstSection = new byte[byteRange.get(1)];
+            firstSection = new byte[byteRange.get(1)];
             documentByteBuffer.get(firstSection);
             messageDigestAlgorithm.update(firstSection);
             documentByteBuffer.position(byteRange.get(2));
-            byte[] secondSection = new byte[byteRange.get(3)];
+            secondSection = new byte[byteRange.get(3)];
             documentByteBuffer.get(secondSection);
             messageDigestAlgorithm.update(secondSection);
         }
@@ -579,44 +581,56 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             // above. When the field is present, however, the result is the message digest of the complete DER encoding
             // of the SignedAttrs value contained in the signedAttrs field.
             byte[] documentDigestBytes = messageDigestAlgorithm.digest();
-            if (signedAttributesSequence != null) {
-                boolean encapsulatedDigestCheck = true;
-                boolean verifyEncContentInfoData = true;
-                if (encapsulatedContentInfoData != null) {
-                    verifyEncContentInfoData = Arrays.equals(documentDigestBytes, encapsulatedContentInfoData);
-                    eConMessageDigestAlgorithm.update(encapsulatedContentInfoData);
-                    encapsulatedDigestCheck = Arrays.equals(eConMessageDigestAlgorithm.digest(), messageDigest);
-                }
-                boolean nonEncapsulatedDigestCheck = Arrays.equals(documentDigestBytes, messageDigest);
-                // When the field is present, however, the result is the message digest of the complete DER encoding of
-                // the SignedAttrs value contained in the signedAttrs field
-                boolean isSignatureValid =
-                        verifySignedAttributes(signatureDictionary.getFilter().getName(), signerCertificate,
-                                signatureValue,
-                                signatureAlgorithmIdentifier,
-                                digestAlgorithmIdentifier,
-                                signedAttributesSequence.getEncoded(ASN1Encoding.DER));
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.finest("Encapsulated Digest verified: " + encapsulatedDigestCheck);
-                    logger.finest("Non-encapsulated Digest verified: " + nonEncapsulatedDigestCheck);
-                    logger.finest("Signature verified: " + isSignatureValid);
-                    logger.finest("Encapsulated data verified: " + verifyEncContentInfoData);
-                }
-                // verify the attributes.
-                if (encapsulatedDigestCheck && nonEncapsulatedDigestCheck && verifyEncContentInfoData) {
-                    isSignedDataModified = false;
-                }
-            } else {
-                if (encapsulatedContentInfoData != null) {
-                    signature.update(messageDigestAlgorithm.digest());
-                }
-                boolean nonEncapsulatedDigestCheck = Arrays.equals(documentDigestBytes, messageDigest);
-                if (nonEncapsulatedDigestCheck) {
-                    isSignedDataModified = false;
-                }
+
+            // What was signed.  adbe.pkcs7.sha1 encapsulates the SHA-1 digest of the byte range as the
+            // signed content (PDF 32000-1 12.8.3.3.1), so that content must match the document and is
+            // itself what the signer's digest covers; otherwise the content is the byte range.
+            boolean contentMatches = true;
+            byte[] signedContentDigest = documentDigestBytes;
+            if (encapsulatedContentInfoData != null) {
+                MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+                sha1.update(firstSection);
+                sha1.update(secondSection);
+                contentMatches = Arrays.equals(sha1.digest(), encapsulatedContentInfoData);
+                eConMessageDigestAlgorithm.update(encapsulatedContentInfoData);
+                signedContentDigest = eConMessageDigestAlgorithm.digest();
             }
+
+            boolean digestMatches;
+            boolean signatureVerified;
+            if (signedAttributesSequence != null) {
+                // RFC 5652 5.4: with signed attributes, their messageDigest is the content's digest and
+                // the signature is over the DER encoding of the attributes.
+                digestMatches = Arrays.equals(signedContentDigest, messageDigest);
+                signatureVerified = verifySignedAttributes(signatureDictionary.getFilter().getName(),
+                        signerCertificate, signatureValue, signatureAlgorithmIdentifier, digestAlgorithmIdentifier,
+                        signedAttributesSequence.getEncoded(ASN1Encoding.DL));
+            } else if (signatureValue != null) {
+                // PKCS#7 without signed attributes: the signature is over the content itself.
+                if (encapsulatedContentInfoData != null) {
+                    signature.update(encapsulatedContentInfoData);
+                } else {
+                    signature.update(firstSection);
+                    signature.update(secondSection);
+                }
+                digestMatches = true;
+                signatureVerified = signature.verify(signatureValue);
+            } else {
+                // adbe.x509.rsa_sha1: init() recovered the signed digest from the PKCS#1 signature with
+                // the signer's public key, so a match is also the signature check.
+                digestMatches = Arrays.equals(documentDigestBytes, messageDigest);
+                signatureVerified = digestMatches;
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Encapsulated content matches the document: " + contentMatches);
+                logger.finest("Content digest verified: " + digestMatches);
+                logger.finest("Signature verified: " + signatureVerified);
+            }
+            // every check, including the signature itself: matching digests alone prove nothing, as
+            // anyone can recompute them after changing the document.
+            isSignedDataModified = !(contentMatches && digestMatches && signatureVerified);
             lastVerified = new Date();
-        } catch (SignatureException | IOException e) {
+        } catch (SignatureException | IOException | NoSuchAlgorithmException e) {
             throw new SignatureIntegrityException(e);
         }
 
