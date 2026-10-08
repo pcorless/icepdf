@@ -349,9 +349,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         renderer.setDocument(document);
         textLoader.setDocument(document);
         caretNavigator = null;
-        resetRasters();
+        // drop the previous document's layout before anything refreshes: its slots index pages the
+        // new document may not have.
+        layout = null;
         scrollX = 0;
         scrollY = 0;
+        resetRasters();
         loadUnitSizes();
         if (getSkinnable().getFitMode() != FitMode.NONE) applyFit();
         relayout(null);

@@ -18,11 +18,14 @@ package org.icepdf.fx.demo;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
@@ -67,7 +70,9 @@ public class PdfViewDemo extends Application {
         BorderPane root = new BorderPane(view);
         root.setTop(new javafx.scene.layout.VBox(buildToolBar(), buildSearchBar()));
         root.setBottom(buildStatusBar());
-        stage.setScene(new Scene(root, 1200, 900));
+        Scene scene = new Scene(root, 1200, 900);
+        acceptDroppedFiles(scene);
+        stage.setScene(scene);
         stage.setTitle("ICEpdf PdfView demo");
         stage.show();
         view.requestFocus();
@@ -312,6 +317,33 @@ public class PdfViewDemo extends Application {
         } catch (Exception e) {
             new Alert(Alert.AlertType.ERROR, "Could not save " + file + ":\n" + e.getMessage()).showAndWait();
         }
+    }
+
+    /**
+     * Opens a PDF dropped anywhere on the window.  Loading files is the application's job - the view
+     * shows a document but never owns one - so the drop target is the scene, not the control.
+     */
+    private void acceptDroppedFiles(Scene scene) {
+        scene.setOnDragOver(event -> {
+            if (droppedPdf(event.getDragboard()) != null) event.acceptTransferModes(TransferMode.COPY);
+            event.consume();
+        });
+        scene.setOnDragDropped(event -> {
+            File file = droppedPdf(event.getDragboard());
+            event.setDropCompleted(file != null);
+            event.consume();
+            // open after the drop gesture finishes: open() may show a modal error dialog.
+            if (file != null) Platform.runLater(() -> open(file));
+        });
+    }
+
+    /** The first dropped file that looks like a PDF, or null. */
+    private static File droppedPdf(Dragboard dragboard) {
+        if (!dragboard.hasFiles()) return null;
+        for (File file : dragboard.getFiles()) {
+            if (file.isFile() && file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) return file;
+        }
+        return null;
     }
 
     private void open(File file) {

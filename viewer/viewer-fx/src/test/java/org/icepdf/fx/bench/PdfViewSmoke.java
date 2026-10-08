@@ -119,6 +119,13 @@ public final class PdfViewSmoke {
                     : "corpus form checks: " + failures + " FAILED");
             return;
         }
+        if ("reopen".equals(System.getProperty("smoke.only"))) {
+            // file lists two documents separated by '|': a multi-page one, then a different one.
+            String[] docs = file.toString().split("\\|");
+            checkReopen(Paths.get(docs[0]), Paths.get(docs[1]));
+            System.out.println(failures == 0 ? "reopen checks: all passed" : "reopen checks: " + failures + " FAILED");
+            return;
+        }
         if ("annotation-ui".equals(System.getProperty("smoke.only"))) {
             checkAnnotationUi(file);
             System.out.println(failures == 0 ? "annotation UI checks: all passed"
@@ -1587,6 +1594,63 @@ public final class PdfViewSmoke {
     private void check(String name, boolean ok, String detail) {
         if (!ok) failures++;
         System.out.printf("  %-4s %-44s %s%n", ok ? "PASS" : "FAIL", name, detail);
+    }
+
+    /**
+     * Opening a second document must show only that document: its page count, its page sizes and
+     * nothing left over from the first (page layers, layout, scroll position, current page).
+     */
+    private void checkReopen(Path first, Path second) throws Exception {
+        System.out.println("reopen checks:");
+        Document a = new Document();
+        a.setFile(first.toString());
+        Document b = new Document();
+        b.setFile(second.toString());
+        int lastOfA = a.getNumberOfPages() - 1;
+        for (org.icepdf.fx.view.ViewMode mode : new org.icepdf.fx.view.ViewMode[]{
+                org.icepdf.fx.view.ViewMode.CONTINUOUS, org.icepdf.fx.view.ViewMode.SINGLE_PAGE}) {
+            for (FitMode fit : new FitMode[]{FitMode.WIDTH, FitMode.NONE}) {
+                fx(() -> {
+                    view.setViewMode(mode);
+                    view.setFitMode(fit);
+                    view.setDocument(a);
+                    view.setCurrentPageIndex(lastOfA);
+                });
+                waitIdle(60_000);
+                fx(() -> view.setDocument(b));
+                waitIdle(60_000);
+                String label = mode + " " + fit + " ";
+                Object[] state = onFx(() -> {
+                    Object skin = view.getSkin();
+                    java.util.Map<?, ?> layers = (java.util.Map<?, ?>) skinField(skin, "layers");
+                    double[] widths = (double[]) skinField(skin, "unitWidths");
+                    Object layout = skinField(skin, "layout");
+                    Object slot = layout.getClass().getMethod("getSlot", int.class).invoke(layout, 0);
+                    double height = (double) slot.getClass().getMethod("height").invoke(slot);
+                    return new Object[]{view.getPageCount(), view.getCurrentPageIndex(),
+                            new java.util.TreeSet<>(layers.keySet()), widths.length, height};
+                });
+                int pages = b.getNumberOfPages();
+                double expected = b.getPageTree().getPage(0).getSize(view.getPageBoundary(), 0, 1f).getHeight()
+                        * onFx(view::getZoom);
+                check(label + "page count", (int) state[0] == pages, "pageCount " + state[0] + ", want " + pages);
+                check(label + "current page reset", (int) state[1] == 0, "current " + state[1]);
+                check(label + "only the new pages laid out", (int) state[3] == pages
+                        && ((java.util.Set<?>) state[2]).stream().allMatch(k -> (int) k < pages),
+                        "unit sizes " + state[3] + ", page layers " + state[2]);
+                check(label + "page 1 sized as the new page", Math.abs((double) state[4] - expected) < 1,
+                        String.format("slot height %.1f, want %.1f", (double) state[4], expected));
+            }
+        }
+        fx(() -> view.setDocument(null));
+        a.dispose();
+        b.dispose();
+    }
+
+    private static Object skinField(Object skin, String name) throws ReflectiveOperationException {
+        java.lang.reflect.Field f = skin.getClass().getDeclaredField(name);
+        f.setAccessible(true);
+        return f.get(skin);
     }
 
     private void checkTools(Document document) throws Exception {
