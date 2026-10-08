@@ -103,6 +103,8 @@ public class FullUpdater {
         Path tmpRedactionFilePath = Files.createTempFile(null, null);
         OutputStream tmpOutputStream = new FileOutputStream(tmpFilePath.toFile());
         OutputStream tmpRedactionOutputStream = null;
+        // the signing time, before the signature dictionary is written and its size fixed.
+        document.getCatalog().getLibrary().getSignatureDictionaries().stampSigningTime();
         long bytesWritten = writeDocument(document, tmpOutputStream, false);
         tmpOutputStream.close();
 

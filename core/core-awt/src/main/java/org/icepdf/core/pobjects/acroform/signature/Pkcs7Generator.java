@@ -41,10 +41,28 @@ public class Pkcs7Generator {
 
     public CMSSignedDataGenerator createSignedDataGenerator(String algorithmName, X509Certificate[] certs,
                                                             PrivateKey privateKey) throws CertificateEncodingException, OperatorCreationException, CMSException {
+        return createSignedDataGenerator(algorithmName, certs, privateKey, null);
+    }
+
+    /**
+     * @param signingTime the CMS signingTime signed attribute; null uses the current time
+     */
+    public CMSSignedDataGenerator createSignedDataGenerator(String algorithmName, X509Certificate[] certs,
+                                                            PrivateKey privateKey, java.util.Date signingTime)
+            throws CertificateEncodingException, OperatorCreationException, CMSException {
         signedDataGenerator = new CMSSignedDataGenerator();
         X509Certificate cert = certs[0];
         ContentSigner sha1Signer = new JcaContentSignerBuilder(algorithmName).build(privateKey);
-        signedDataGenerator.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build()).build(sha1Signer, cert));
+        JcaSignerInfoGeneratorBuilder builder =
+                new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build());
+        if (signingTime != null) {
+            // DefaultSignedAttributeTableGenerator keeps a signingTime it is given rather than its own clock.
+            builder.setSignedAttributeGenerator(new org.bouncycastle.cms.DefaultSignedAttributeTableGenerator(
+                    new org.bouncycastle.asn1.cms.AttributeTable(new org.bouncycastle.asn1.cms.Attribute(
+                            org.bouncycastle.asn1.cms.CMSAttributes.signingTime,
+                            new org.bouncycastle.asn1.DERSet(new org.bouncycastle.asn1.cms.Time(signingTime))))));
+        }
+        signedDataGenerator.addSignerInfoGenerator(builder.build(sha1Signer, cert));
         signedDataGenerator.addCertificates(new JcaCertStore(Arrays.asList(certs)));
         return signedDataGenerator;
     }

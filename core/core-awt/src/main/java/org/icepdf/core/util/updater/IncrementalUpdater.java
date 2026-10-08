@@ -91,6 +91,8 @@ public class IncrementalUpdater {
 
         SecurityManager securityManager = document.getSecurityManager();
         CountingOutputStream output = new CountingOutputStream(newDocumentOutputStream);
+        // the signing time, before the signature dictionary is written and its size fixed.
+        signatureManager.stampSigningTime();
 
         BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, output, documentLength);
         writer.initializeWriters();
