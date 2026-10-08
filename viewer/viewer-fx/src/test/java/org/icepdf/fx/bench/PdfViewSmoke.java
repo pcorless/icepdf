@@ -119,6 +119,12 @@ public final class PdfViewSmoke {
                     : "corpus form checks: " + failures + " FAILED");
             return;
         }
+        if ("signatures".equals(System.getProperty("smoke.only"))) {
+            // file is the signature corpus directory.
+            checkSignatures(file);
+            System.out.println(failures == 0 ? "signature checks: all passed" : "signature checks: " + failures + " FAILED");
+            return;
+        }
         if ("print".equals(System.getProperty("smoke.only"))) {
             // file is a multi-page document; smoke.encryption names the encryption corpus.
             checkPrinting(file, Paths.get(System.getProperty("smoke.encryption", "/home/pcorless/dev/pdf-qa/encryption")));
@@ -1896,6 +1902,154 @@ public final class PdfViewSmoke {
                 onFx(lowTask::getState) + ", " + (lowText.length() >> 10) + " KB");
         fx(() -> view.setDocument(null));
         lowQuality.dispose();
+    }
+
+    /** A primary click at a point in the view's coordinates, delivered to the node under it. */
+    private void syntheticClick(double[] p) throws Exception {
+        fx(() -> {
+            javafx.geometry.Point2D scene = view.localToScene(p[0], p[1]);
+            javafx.geometry.Point2D screen = view.localToScreen(p[0], p[1]);
+            javafx.scene.Node target = pickNode(scene);
+            javafx.scene.input.PickResult pick = new javafx.scene.input.PickResult(target, scene.getX(), scene.getY());
+            for (javafx.event.EventType<javafx.scene.input.MouseEvent> type : java.util.List.of(
+                    javafx.scene.input.MouseEvent.MOUSE_PRESSED, javafx.scene.input.MouseEvent.MOUSE_RELEASED,
+                    javafx.scene.input.MouseEvent.MOUSE_CLICKED)) {
+                javafx.scene.input.MouseEvent event = new javafx.scene.input.MouseEvent(type, scene.getX(), scene.getY(),
+                        screen.getX(), screen.getY(), javafx.scene.input.MouseButton.PRIMARY, 1, false, false, false,
+                        false, type != javafx.scene.input.MouseEvent.MOUSE_RELEASED
+                        && type != javafx.scene.input.MouseEvent.MOUSE_CLICKED, false, false, true, false, true, pick);
+                javafx.event.Event.fireEvent(target, event);
+            }
+        });
+        waitIdle(30_000);
+    }
+
+    /** The deepest node under a scene point (what a real click would target). */
+    private javafx.scene.Node pickNode(javafx.geometry.Point2D scene) {
+        javafx.scene.Node best = view;
+        java.util.Deque<javafx.scene.Node> stack = new java.util.ArrayDeque<>(java.util.List.of(view));
+        while (!stack.isEmpty()) {
+            javafx.scene.Node n = stack.pop();
+            if (!n.isVisible() || n.isMouseTransparent()) continue;
+            javafx.geometry.Point2D local = n.sceneToLocal(scene);
+            if (local == null || !n.contains(local)) continue;
+            best = n;
+            if (n instanceof javafx.scene.Parent parent) {
+                for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) stack.push(child);
+            }
+        }
+        return best;
+    }
+
+    /** Opens a document in the view and waits for its signature check. */
+    private java.util.List<org.icepdf.fx.signature.SignatureStatus> openAndVerify(Document document) throws Exception {
+        fx(() -> {
+            view.setFitMode(FitMode.PAGE);
+            view.setDocument(document);
+        });
+        long deadline = System.currentTimeMillis() + 120_000;
+        Thread.sleep(200);
+        while (onFx(view::isVerifyingSignatures) && System.currentTimeMillis() < deadline) Thread.sleep(50);
+        waitIdle(60_000);
+        return onFx(() -> java.util.List.copyOf(view.getSignatures()));
+    }
+
+    private int badgeCount() throws Exception {
+        return onFx(() -> view.lookupAll(".pdf-signature-badge").stream().filter(javafx.scene.Node::isVisible)
+                .toList().size());
+    }
+
+    /**
+     * Signatures: statuses and badges after opening, a click on a signed field reaching the
+     * application's handler, the default properties dialog, a broken signature, and turning the check
+     * on open off.
+     */
+    private void checkSignatures(Path corpus) throws Exception {
+        System.out.println("signature checks:");
+
+        Document signedDoc = new Document();
+        signedDoc.setFile(corpus.resolve("sig-doc.pdf").toString());
+        java.util.List<org.icepdf.fx.signature.SignatureStatus> statuses = openAndVerify(signedDoc);
+        org.icepdf.fx.signature.SignatureStatus first = statuses.stream()
+                .filter(org.icepdf.fx.signature.SignatureStatus::isSigned).findFirst().orElse(null);
+        check("signatures checked on open", first != null
+                        && first.verdict() == org.icepdf.fx.signature.SignatureStatus.Verdict.UNKNOWN
+                        && !first.signedDataModified(),
+                statuses.stream().map(st -> st.verdict() + " " + st.signerName()).toList().toString());
+        fx(() -> view.revealSignature(first));
+        waitIdle(30_000);
+        check("a badge on the signed field", badgeCount() == 1, badgeCount() + " badges");
+        WritableImage shot = onFx(() -> view.snapshot(null, null));
+        ImageIO.write(SwingFXUtils.fromFXImage(shot, null), "png", out.resolve("signature-badge.png").toFile());
+
+        // the application's handler gets the click.
+        java.util.List<org.icepdf.fx.signature.SignatureStatus> clicked = new java.util.concurrent.CopyOnWriteArrayList<>();
+        fx(() -> view.setOnSignatureClicked(clicked::add));
+        double[] at = viewPointIn(first.pageIndex(), first.widget().getUserSpaceRectangle());
+        // delivered as JavaFX mouse events: screen input (Robot) can be covered by other windows.
+        if (at != null) syntheticClick(at);
+        Thread.sleep(400);
+        check("clicking the field calls onSignatureClicked", clicked.size() == 1 && clicked.get(0) == first,
+                at == null ? "field not on screen" : clicked.size() + " calls");
+
+        // no handler: the properties dialog opens.
+        fx(() -> view.setOnSignatureClicked(null));
+        if (at != null) syntheticClick(at);
+        javafx.scene.control.DialogPane pane = null;
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (pane == null && System.currentTimeMillis() < deadline) {
+            Thread.sleep(100);
+            pane = onFx(() -> {
+                for (javafx.stage.Window w : javafx.stage.Window.getWindows()) {
+                    if (w.isShowing() && w.getScene() != null && w.getScene().getRoot()
+                            instanceof javafx.scene.control.DialogPane p && p.getStyleClass().contains("pdf-signature-dialog")) {
+                        return p;
+                    }
+                }
+                return null;
+            });
+        }
+        check("by default a click opens the properties dialog", pane != null, "");
+        if (pane != null) {
+            javafx.scene.control.DialogPane shown = pane;
+            Thread.sleep(300);
+            WritableImage dialog = onFx(() -> shown.snapshot(null, null));
+            ImageIO.write(SwingFXUtils.fromFXImage(dialog, null), "png", out.resolve("signature-dialog.png").toFile());
+            fx(() -> ((javafx.scene.control.Button) shown.lookupButton(javafx.scene.control.ButtonType.CLOSE)).fire());
+        }
+        fx(() -> view.setDocument(null));
+        signedDoc.dispose();
+
+        Document broken = new Document();
+        broken.setFile(corpus.resolve("sf-1700_time_error.pdf").toString());
+        statuses = openAndVerify(broken);
+        check("an altered document reads invalid", statuses.stream().anyMatch(st ->
+                        st.verdict() == org.icepdf.fx.signature.SignatureStatus.Verdict.INVALID && st.signedDataModified()),
+                statuses.stream().map(st -> st.verdict().toString()).toList().toString());
+        fx(() -> view.setDocument(null));
+        broken.dispose();
+
+        Document many = new Document();
+        many.setFile(corpus.resolve("Seller signed offer and Seller Counter Offer.pdf.pdf").toString());
+        statuses = openAndVerify(many);
+        check("several signatures, later revisions noted", statuses.stream().filter(
+                        org.icepdf.fx.signature.SignatureStatus::isSigned).count() == 4
+                        && statuses.stream().anyMatch(org.icepdf.fx.signature.SignatureStatus::modifiedAfterSigning),
+                statuses.stream().map(st -> st.verdict() + (st.modifiedAfterSigning() ? "+later" : "")).toList().toString());
+        fx(() -> view.setDocument(null));
+
+        fx(() -> view.setVerifySignaturesOnOpen(false));
+        statuses = openAndVerify(many);
+        check("no check when verifySignaturesOnOpen is off", statuses.isEmpty() && badgeCount() == 0,
+                statuses.size() + " statuses");
+        java.util.List<org.icepdf.fx.signature.SignatureStatus> later = onFx(view::verifySignatures).get(120, TimeUnit.SECONDS);
+        check("verifySignatures() on demand", later.size() == onFx(() -> view.getSignatures().size()) && !later.isEmpty(),
+                later.size() + " statuses");
+        fx(() -> {
+            view.setVerifySignaturesOnOpen(true);
+            view.setDocument(null);
+        });
+        many.dispose();
     }
 
     private static Object skinField(Object skin, String name) throws ReflectiveOperationException {

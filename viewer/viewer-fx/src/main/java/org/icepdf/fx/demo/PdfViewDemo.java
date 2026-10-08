@@ -71,7 +71,7 @@ public class PdfViewDemo extends Application {
     public void start(Stage stage) {
         this.stage = stage;
         BorderPane root = new BorderPane(view);
-        root.setTop(new javafx.scene.layout.VBox(buildToolBar(), buildSearchBar()));
+        root.setTop(new javafx.scene.layout.VBox(buildToolBar(), buildSearchBar(), buildSignatureBanner(root)));
         root.setBottom(buildStatusBar());
         Scene scene = new Scene(root, 1200, 900);
         acceptDroppedFiles(scene);
@@ -376,6 +376,86 @@ public class PdfViewDemo extends Application {
             if (file.isFile() && file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) return file;
         }
         return null;
+    }
+
+    /**
+     * The signature banner (as Acrobat's): the overall verdict once the view has checked the
+     * document's signatures, and a button showing the signatures panel on the left.
+     */
+    private Node buildSignatureBanner(BorderPane root) {
+        javafx.scene.layout.StackPane icon = new javafx.scene.layout.StackPane();
+        Label text = new Label();
+        ToggleButton panel = new ToggleButton("Signature panel");
+        javafx.scene.layout.Region spacer = new javafx.scene.layout.Region();
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+        HBox banner = new HBox(8, icon, text, spacer, panel);
+        banner.setAlignment(Pos.CENTER_LEFT);
+        banner.setPadding(new Insets(4, 8, 4, 8));
+        banner.setStyle("-fx-background-color: #e8eef7; -fx-border-color: #c5d3e8; -fx-border-width: 0 0 1 0;");
+        banner.managedProperty().bind(banner.visibleProperty());
+
+        ListView<org.icepdf.fx.signature.SignatureStatus> list = new ListView<>();
+        list.setPrefWidth(280);
+        list.setCellFactory(v -> new ListCell<>() {
+            @Override
+            protected void updateItem(org.icepdf.fx.signature.SignatureStatus item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setTooltip(null);
+                    return;
+                }
+                String who = item.isSigned() ? (item.signerName() != null ? item.signerName() : "Unknown signer")
+                        : "Empty field " + item.fieldName();
+                String when = item.signingTime() != null ? java.text.DateFormat.getDateTimeInstance(
+                        java.text.DateFormat.SHORT, java.text.DateFormat.SHORT).format(item.signingTime()) : "";
+                setText(who + (when.isEmpty() ? "" : "\n" + when) + (item.pageIndex() >= 0 ? "  (page "
+                        + (item.pageIndex() + 1) + ")" : ""));
+                setGraphic(item.isSigned() ? org.icepdf.fx.signature.SignatureIcons.icon(item.verdict(), 16) : null);
+                setTooltip(new Tooltip(item.summary()));
+            }
+        });
+        list.setItems(view.getSignatures());
+        list.getSelectionModel().selectedItemProperty().addListener((obs, was, now) -> view.revealSignature(now));
+        list.setOnMouseClicked(e -> {
+            if (e.getClickCount() == 2 && list.getSelectionModel().getSelectedItem() != null) {
+                view.showSignatureProperties(list.getSelectionModel().getSelectedItem());
+            }
+        });
+        panel.selectedProperty().addListener((obs, was, now) -> root.setLeft(now ? list : null));
+
+        Runnable update = () -> {
+            List<org.icepdf.fx.signature.SignatureStatus> signed = view.getSignatures().stream()
+                    .filter(org.icepdf.fx.signature.SignatureStatus::isSigned).toList();
+            banner.setVisible(view.isVerifyingSignatures() || !signed.isEmpty());
+            if (view.isVerifyingSignatures()) {
+                icon.getChildren().clear();
+                text.setText("Checking signatures\u2026");
+                return;
+            }
+            org.icepdf.fx.signature.SignatureStatus.Verdict worst = org.icepdf.fx.signature.SignatureStatus.Verdict.VALID;
+            for (org.icepdf.fx.signature.SignatureStatus st : signed) {
+                if (st.verdict() == org.icepdf.fx.signature.SignatureStatus.Verdict.INVALID
+                        || st.verdict() == org.icepdf.fx.signature.SignatureStatus.Verdict.ERROR) {
+                    worst = org.icepdf.fx.signature.SignatureStatus.Verdict.INVALID;
+                } else if (st.verdict() == org.icepdf.fx.signature.SignatureStatus.Verdict.UNKNOWN
+                        && worst == org.icepdf.fx.signature.SignatureStatus.Verdict.VALID) {
+                    worst = org.icepdf.fx.signature.SignatureStatus.Verdict.UNKNOWN;
+                }
+            }
+            icon.getChildren().setAll(org.icepdf.fx.signature.SignatureIcons.icon(worst, 18));
+            text.setText(switch (worst) {
+                case VALID -> "Signed and all signatures are valid.";
+                case UNKNOWN -> "At least one signature's identity can't be verified.";
+                default -> "At least one signature has problems.";
+            });
+            if (signed.isEmpty() && panel.isSelected()) panel.setSelected(false);
+        };
+        view.getSignatures().addListener((javafx.collections.ListChangeListener<org.icepdf.fx.signature.SignatureStatus>) c -> update.run());
+        view.verifyingSignaturesProperty().addListener((obs, was, now) -> update.run());
+        update.run();
+        return banner;
     }
 
     /** Print dialog, then the job in the background with its progress in the status bar. */

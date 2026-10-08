@@ -139,6 +139,17 @@ public class PdfView extends Control {
     private final ReadOnlyBooleanWrapper formFillingAllowed =
             new ReadOnlyBooleanWrapper(this, "formFillingAllowed", true);
     private final ReadOnlyBooleanWrapper printAllowed = new ReadOnlyBooleanWrapper(this, "printAllowed", false);
+    // signatures: checked off the FX thread when a document opens (verifySignaturesOnOpen).
+    private final ObservableList<org.icepdf.fx.signature.SignatureStatus> signatures = FXCollections.observableArrayList();
+    private final ObservableList<org.icepdf.fx.signature.SignatureStatus> signaturesView =
+            FXCollections.unmodifiableObservableList(signatures);
+    private final ReadOnlyBooleanWrapper verifyingSignatures =
+            new ReadOnlyBooleanWrapper(this, "verifyingSignatures", false);
+    private final BooleanProperty verifySignaturesOnOpen =
+            new SimpleBooleanProperty(this, "verifySignaturesOnOpen", true);
+    private final ObjectProperty<Consumer<org.icepdf.fx.signature.SignatureStatus>> onSignatureClicked =
+            new SimpleObjectProperty<>(this, "onSignatureClicked");
+    private int signatureGeneration;
     private boolean lowResolutionPrintOnly;
 
     private final ObjectProperty<DocumentSelection> textSelection =
@@ -166,6 +177,10 @@ public class PdfView extends Control {
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
             updatePermissions(doc);
+            signatureGeneration++;
+            signatures.clear();
+            verifyingSignatures.set(false);
+            if (doc != null && isVerifySignaturesOnOpen()) verifySignatures();
         });
     }
 
@@ -1112,6 +1127,109 @@ public class PdfView extends Control {
 
     public final boolean isPrintAllowed() {
         return printAllowed.get();
+    }
+
+    // ---- signatures -----------------------------------------------------------------------
+
+    /**
+     * The document's signature fields and what checking them found, in form order; empty until a
+     * check completes (see {@link #verifySignatures()}).  Signed fields also show a validity badge.
+     */
+    public final ObservableList<org.icepdf.fx.signature.SignatureStatus> getSignatures() {
+        return signaturesView;
+    }
+
+    /** True while a signature check is running. */
+    public final ReadOnlyBooleanProperty verifyingSignaturesProperty() {
+        return verifyingSignatures.getReadOnlyProperty();
+    }
+
+    public final boolean isVerifyingSignatures() {
+        return verifyingSignatures.get();
+    }
+
+    /**
+     * Whether signatures are checked as soon as a document is set.  True by default.  Checking can
+     * reach the network (revocation lists, OCSP), so an application may turn it off and call
+     * {@link #verifySignatures()} itself.
+     */
+    public final BooleanProperty verifySignaturesOnOpenProperty() {
+        return verifySignaturesOnOpen;
+    }
+
+    public final boolean isVerifySignaturesOnOpen() {
+        return verifySignaturesOnOpen.get();
+    }
+
+    public final void setVerifySignaturesOnOpen(boolean value) {
+        verifySignaturesOnOpen.set(value);
+    }
+
+    /**
+     * Called when the user clicks a signature field or its badge.  Null (the default) opens the
+     * signature properties dialog for a signed field.
+     */
+    public final ObjectProperty<Consumer<org.icepdf.fx.signature.SignatureStatus>> onSignatureClickedProperty() {
+        return onSignatureClicked;
+    }
+
+    public final Consumer<org.icepdf.fx.signature.SignatureStatus> getOnSignatureClicked() {
+        return onSignatureClicked.get();
+    }
+
+    public final void setOnSignatureClicked(Consumer<org.icepdf.fx.signature.SignatureStatus> handler) {
+        onSignatureClicked.set(handler);
+    }
+
+    /**
+     * Checks the document's signatures on a background thread; the results replace
+     * {@link #getSignatures()} on the FX thread.  A newer check or document supersedes this one.
+     *
+     * @return completes with the results (on the FX thread)
+     */
+    public CompletableFuture<List<org.icepdf.fx.signature.SignatureStatus>> verifySignatures() {
+        Document document = getDocument();
+        int generation = ++signatureGeneration;
+        if (document == null) {
+            signatures.clear();
+            return CompletableFuture.completedFuture(List.of());
+        }
+        verifyingSignatures.set(true);
+        CompletableFuture<List<org.icepdf.fx.signature.SignatureStatus>> result = new CompletableFuture<>();
+        Thread worker = new Thread(() -> {
+            List<org.icepdf.fx.signature.SignatureStatus> found;
+            try {
+                found = org.icepdf.fx.signature.SignatureVerifier.verifyAll(document);
+            } catch (RuntimeException e) {
+                found = List.of();
+            }
+            List<org.icepdf.fx.signature.SignatureStatus> done = found;
+            Platform.runLater(() -> {
+                if (generation == signatureGeneration && document == getDocument()) {
+                    signatures.setAll(done);
+                    verifyingSignatures.set(false);
+                }
+                result.complete(done);
+            });
+        }, "pdf-signature-check");
+        worker.setDaemon(true);
+        worker.start();
+        return result;
+    }
+
+    /** Opens the signature properties dialog (verdict, checks, certificate chain). */
+    public void showSignatureProperties(org.icepdf.fx.signature.SignatureStatus status) {
+        if (status == null) return;
+        new org.icepdf.fx.signature.SignaturePropertiesDialog(getScene() != null ? getScene().getWindow() : null,
+                status).showAndWait();
+    }
+
+    /** Scrolls a signature field into view (its page becomes current in the single-page modes). */
+    public void revealSignature(org.icepdf.fx.signature.SignatureStatus status) {
+        if (status == null || status.pageIndex() < 0 || status.pageIndex() >= getPageCount()) return;
+        java.awt.geom.Rectangle2D r = status.widget().getUserSpaceRectangle();
+        if (!getViewMode().isContinuous()) setCurrentPageIndex(status.pageIndex());
+        ensureVisible(new PagePoint(status.pageIndex(), r.getCenterX(), r.getCenterY()));
     }
 
     // ---- printing -------------------------------------------------------------------------

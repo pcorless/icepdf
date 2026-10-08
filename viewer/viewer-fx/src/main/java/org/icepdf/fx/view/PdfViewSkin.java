@@ -228,6 +228,16 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             refresh();
         });
         control.getSearchHits().addListener((javafx.collections.ListChangeListener<SearchHit>) c -> scheduleRefresh());
+        control.getSignatures().addListener(
+                (javafx.collections.ListChangeListener<org.icepdf.fx.signature.SignatureStatus>) c -> {
+                    signatureByReference.clear();
+                    for (org.icepdf.fx.signature.SignatureStatus status : control.getSignatures()) {
+                        if (status.widget().getPObjectReference() != null) {
+                            signatureByReference.put(status.widget().getPObjectReference(), status);
+                        }
+                    }
+                    scheduleRefresh();
+                });
         registerChangeListener(control.selectedAnnotationProperty(), o ->
                 uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null)));
         registerChangeListener(control.focusedFieldProperty(), o -> {
@@ -618,6 +628,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             ui.setLayoutY(layer.getLayoutY());
             ui.setPageToView(layer.getPageToView());
             updateAnnotationChrome(ui, layer.getPage());
+            ui.setSignatureBadges(signatureBadges(layer.getPage()), this::signatureClicked);
             layer.setFieldHighlights(control.isHighlightFormFields() && fieldsEditable()
                     ? fieldRects(layer.getPage()) : List.of());
             if (layer.getPage() != null && layer.getPage().isInitiated() && control.isPaintAnnotations()) {
@@ -787,6 +798,65 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     static boolean isEditable(Annotation annotation) {
         return annotation != null && !(annotation instanceof LinkAnnotation)
                 && annotation.allowAlterProperties() && !annotation.getFlagReadOnly();
+    }
+
+    // ---- signatures -----------------------------------------------------------------------
+
+    // checked signatures by their field's object reference: the form's widget objects need not be
+    // the page's own annotation objects.
+    private final Map<org.icepdf.core.pobjects.Reference, org.icepdf.fx.signature.SignatureStatus>
+            signatureByReference = new HashMap<>();
+
+    org.icepdf.fx.signature.SignatureStatus signatureStatusOf(Annotation annotation) {
+        if (!(annotation instanceof org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation)
+                || annotation.getPObjectReference() == null) return null;
+        return signatureByReference.get(annotation.getPObjectReference());
+    }
+
+    /** The signed fields of a rendered page and their status, for badges. */
+    private Map<Annotation, org.icepdf.fx.signature.SignatureStatus> signatureBadges(Page page) {
+        if (signatureByReference.isEmpty() || page == null || !page.isInitiated() || page.getAnnotations() == null) {
+            return Map.of();
+        }
+        Map<Annotation, org.icepdf.fx.signature.SignatureStatus> out = new HashMap<>();
+        for (Annotation a : page.getAnnotations()) {
+            org.icepdf.fx.signature.SignatureStatus status = signatureStatusOf(a);
+            if (status != null && status.isSigned() && !a.isDeleted() && a.allowScreenNormalMode()) out.put(a, status);
+        }
+        return out;
+    }
+
+    /**
+     * The signature field under a viewport point with a checked status (signed, or an empty field
+     * when the application handles clicks), or null.
+     */
+    AnnotationHit signatureAtViewport(double vx, double vy) {
+        if (signatureByReference.isEmpty()) return null;
+        PagePoint point = pageAtViewport(vx, vy);
+        if (point == null) return null;
+        Page page = document.getPageTree().getPage(point.pageIndex());
+        if (page == null || !page.isInitiated() || page.getAnnotations() == null) return null;
+        List<Annotation> annotations = page.getAnnotations();
+        for (int i = annotations.size() - 1; i >= 0; i--) {
+            Annotation a = annotations.get(i);
+            org.icepdf.fx.signature.SignatureStatus status = signatureStatusOf(a);
+            if (status == null || a.isDeleted() || !a.allowScreenNormalMode()) continue;
+            if (!status.isSigned() && getSkinnable().getOnSignatureClicked() == null) continue;
+            java.awt.geom.Rectangle2D.Float r = a.getUserSpaceRectangle();
+            if (r != null && r.contains(point.x(), point.y())) return new AnnotationHit(point.pageIndex(), a);
+        }
+        return null;
+    }
+
+    /** A click on a signature field or badge: the application's handler, else the properties dialog. */
+    void signatureClicked(org.icepdf.fx.signature.SignatureStatus status) {
+        java.util.function.Consumer<org.icepdf.fx.signature.SignatureStatus> handler =
+                getSkinnable().getOnSignatureClicked();
+        // after the gesture: a modal dialog opened inside a mouse handler takes the release.
+        Platform.runLater(() -> {
+            if (handler != null) handler.accept(status);
+            else if (status.isSigned()) getSkinnable().showSignatureProperties(status);
+        });
     }
 
     /** {@link #isEditable}, and the document permits annotating. */

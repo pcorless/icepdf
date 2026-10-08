@@ -83,6 +83,11 @@ final class TextSelectHandler implements ToolHandler {
             skin.setViewportCursor(resizeCursor(handle));
             return;
         }
+        if (skin.signatureAtViewport(e.getX(), e.getY()) != null) {
+            skin.setHovered(null);
+            skin.setViewportCursor(Cursor.HAND);
+            return;
+        }
         PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
         skin.setHovered(hit != null && !PdfViewSkin.isActionable(hit.annotation()) ? hit : null);
         if (hit != null) {
@@ -128,6 +133,15 @@ final class TextSelectHandler implements ToolHandler {
             return;
         }
         if (view.getFocusedField() != null) view.clearFieldFocus();
+        // a signature field: its properties (or the application's handler); no text selection.
+        PdfViewSkin.AnnotationHit signature = markupSubtype == null && e.getClickCount() == 1
+                ? skin.signatureAtViewport(e.getX(), e.getY()) : null;
+        if (signature != null) {
+            view.clearAnnotationSelection();
+            annotationGesture = true;
+            skin.signatureClicked(skin.signatureStatusOf(signature.annotation()));
+            return;
+        }
         // a handle of the selected annotation: resize straight away.
         int handle = skin.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {

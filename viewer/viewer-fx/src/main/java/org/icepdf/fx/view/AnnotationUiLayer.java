@@ -16,6 +16,7 @@
 package org.icepdf.fx.view;
 
 import javafx.scene.Group;
+import javafx.scene.control.Tooltip;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -40,6 +41,7 @@ final class AnnotationUiLayer extends Group {
     static final double HANDLE = 7;
     private static final Color CHROME = Color.rgb(0, 119, 255);
 
+    private static final double BADGE = 16;
     private final int pageIndex;
     private final Rectangle hover = new Rectangle();
     private final Rectangle selection = new Rectangle();
@@ -57,6 +59,10 @@ final class AnnotationUiLayer extends Group {
             new java.util.LinkedHashMap<>();
     private final java.util.Map<PopupNode, javafx.scene.shape.Line> glue = new java.util.HashMap<>();
     private final Group glueLines = new Group();
+    // signature validity badges, top-left of each signed field on this page.
+    private final Group badges = new Group();
+    private java.util.Map<Annotation, org.icepdf.fx.signature.SignatureStatus> badgeStatuses = java.util.Map.of();
+    private final java.util.Map<Annotation, Node> badgeNodes = new java.util.HashMap<>();
     // a popup being dragged/resized: placed from the live gesture, not its /Rect.
     private PopupNode reshaping;
     private double[] reshape;
@@ -95,7 +101,7 @@ final class AnnotationUiLayer extends Group {
         proxy.setMouseTransparent(true);
         proxy.setVisible(false);
         glueLines.setMouseTransparent(true);
-        getChildren().addAll(glueLines, popups, proxy);
+        getChildren().addAll(badges, glueLines, popups, proxy);
         getChildren().addAll(hover, selection, fieldFocus);
         getChildren().addAll(handles);
     }
@@ -204,7 +210,48 @@ final class AnnotationUiLayer extends Group {
         return -1;
     }
 
+    /**
+     * Shows a validity badge on each signed field of this page; a click on one reports its status.
+     *
+     * @param statuses the page's signature widgets (this page's annotation objects) and their status
+     */
+    void setSignatureBadges(java.util.Map<Annotation, org.icepdf.fx.signature.SignatureStatus> statuses,
+                            java.util.function.Consumer<org.icepdf.fx.signature.SignatureStatus> clicked) {
+        if (statuses.equals(badgeStatuses)) {
+            place();
+            return;
+        }
+        badgeStatuses = java.util.Map.copyOf(statuses);
+        badges.getChildren().clear();
+        badgeNodes.clear();
+        for (java.util.Map.Entry<Annotation, org.icepdf.fx.signature.SignatureStatus> e : badgeStatuses.entrySet()) {
+            org.icepdf.fx.signature.SignatureStatus status = e.getValue();
+            Node icon = org.icepdf.fx.signature.SignatureIcons.icon(status.verdict(), BADGE);
+            javafx.scene.Group badge = new javafx.scene.Group(icon);
+            badge.getStyleClass().add("pdf-signature-badge");
+            badge.setCursor(javafx.scene.Cursor.HAND);
+            Tooltip.install(badge, new Tooltip(status.summary()
+                    + (status.signerName() != null ? "\nSigned by " + status.signerName() : "")));
+            badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_PRESSED, javafx.scene.input.MouseEvent::consume);
+            badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_RELEASED, javafx.scene.input.MouseEvent::consume);
+            badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, ev -> {
+                ev.consume();
+                clicked.accept(status);
+            });
+            badgeNodes.put(e.getKey(), badge);
+            badges.getChildren().add(badge);
+        }
+        place();
+    }
+
     private void place() {
+        for (java.util.Map.Entry<Annotation, Node> e : badgeNodes.entrySet()) {
+            e.getValue().setVisible(pageToView != null);
+            if (pageToView == null) continue;
+            Rectangle2D b = viewBounds(e.getKey());
+            e.getValue().setLayoutX(Math.round(b.getMinX() - BADGE / 2));
+            e.getValue().setLayoutY(Math.round(b.getMinY() - BADGE / 2));
+        }
         boolean showHover = hovered != null && hovered != selected && pageToView != null;
         hover.setVisible(showHover);
         if (showHover) setRect(hover, viewBounds(hovered), 1);
