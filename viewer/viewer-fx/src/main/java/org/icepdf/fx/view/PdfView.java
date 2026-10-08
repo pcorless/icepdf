@@ -38,6 +38,8 @@ import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.security.Permissions;
+import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.search.SearchTerm;
 
 import java.util.*;
@@ -130,6 +132,12 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
+    // what an encrypted document's permissions (/P) allow the user; all true for an unencrypted one.
+    private final ReadOnlyBooleanWrapper copyAllowed = new ReadOnlyBooleanWrapper(this, "copyAllowed", true);
+    private final ReadOnlyBooleanWrapper annotationEditingAllowed =
+            new ReadOnlyBooleanWrapper(this, "annotationEditingAllowed", true);
+    private final ReadOnlyBooleanWrapper formFillingAllowed =
+            new ReadOnlyBooleanWrapper(this, "formFillingAllowed", true);
 
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
@@ -137,7 +145,9 @@ public class PdfView extends Control {
             ToolMode.TEXT_SELECT) {
         @Override
         public void set(ToolMode value) {
-            super.set(value == null ? ToolMode.TEXT_SELECT : value);
+            // annotation tools are unavailable when the document doesn't permit annotating.
+            super.set(value == null || (value.createsAnnotations() && !isAnnotationEditingAllowed())
+                    ? ToolMode.TEXT_SELECT : value);
         }
     };
 
@@ -153,6 +163,7 @@ public class PdfView extends Control {
             setTextSelection(null);
             pageCount.set(doc != null ? doc.getNumberOfPages() : 0);
             setCurrentPageIndex(0);
+            updatePermissions(doc);
         });
     }
 
@@ -537,11 +548,14 @@ public class PdfView extends Control {
         }
     }
 
-    /** Deletes the selected annotation (and its popup); undoable.  No-op if none or it's locked. */
+    /**
+     * Deletes the selected annotation (and its popup); undoable.  No-op if none, it's locked, or the
+     * document doesn't permit annotating.
+     */
     public void deleteSelectedAnnotation() {
         if (!(getSkin() instanceof PdfViewSkin skin)) return;
         PdfViewSkin.AnnotationHit hit = skin.selectedHit();
-        if (hit == null || !PdfViewSkin.isEditable(hit.annotation())) return;
+        if (hit == null || !skin.canEdit(hit.annotation())) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, hit.pageIndex(), hit.annotation()));
         clearAnnotationSelection();
@@ -819,8 +833,12 @@ public class PdfView extends Control {
         return skin.selectedTextAsync(selection);
     }
 
-    /** Copies the selected text to the system clipboard once extracted; no-op with nothing selected. */
+    /**
+     * Copies the selected text to the system clipboard once extracted; no-op with nothing selected,
+     * or when the document doesn't permit copying ({@link #copyAllowedProperty()}).
+     */
     public void copySelection() {
+        if (!isCopyAllowed()) return;
         selectedTextAsync().thenAccept(text -> {
             if (text.isEmpty()) return;
             Platform.runLater(() -> {
@@ -1036,5 +1054,58 @@ public class PdfView extends Control {
 
     void setRendering(boolean value) {
         rendering.set(value);
+    }
+
+    // ---- document permissions -------------------------------------------------------------
+
+    /**
+     * Whether the document permits copying its text (permission "copy or extract content").  When
+     * false, {@link #copySelection()} and the copy shortcut do nothing; text can still be selected
+     * and searched.  {@link #selectedTextAsync()} is not restricted: what an application does with
+     * the text it asks for is its own call.
+     */
+    public final ReadOnlyBooleanProperty copyAllowedProperty() {
+        return copyAllowed.getReadOnlyProperty();
+    }
+
+    public final boolean isCopyAllowed() {
+        return copyAllowed.get();
+    }
+
+    /**
+     * Whether the document permits adding and changing annotations (permission "add or modify
+     * annotations and fill in forms").  When false, the annotation tools fall back to text
+     * selection and existing annotations can't be moved, resized or deleted.
+     */
+    public final ReadOnlyBooleanProperty annotationEditingAllowedProperty() {
+        return annotationEditingAllowed.getReadOnlyProperty();
+    }
+
+    public final boolean isAnnotationEditingAllowed() {
+        return annotationEditingAllowed.get();
+    }
+
+    /**
+     * Whether the document permits filling in its form fields (either "add or modify annotations and
+     * fill in forms" or "fill in form fields").  When false, fields can't be focused or edited by the
+     * user, as if {@link #formFieldsEditableProperty()} were false.  {@link #setFieldValue} and
+     * {@link #resetForm()} are not restricted: they are the application's own calls.
+     */
+    public final ReadOnlyBooleanProperty formFillingAllowedProperty() {
+        return formFillingAllowed.getReadOnlyProperty();
+    }
+
+    public final boolean isFormFillingAllowed() {
+        return formFillingAllowed.get();
+    }
+
+    private void updatePermissions(Document doc) {
+        SecurityManager security = doc != null ? doc.getSecurityManager() : null;
+        Permissions permissions = security != null ? security.getPermissions() : null;
+        boolean annotate = permissions == null || permissions.getPermissions(Permissions.AUTHORING_FORM_FIELDS);
+        copyAllowed.set(permissions == null || permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
+        annotationEditingAllowed.set(annotate);
+        formFillingAllowed.set(annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
+        if (!annotate && getToolMode().createsAnnotations()) setToolMode(ToolMode.TEXT_SELECT);
     }
 }

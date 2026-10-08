@@ -119,6 +119,13 @@ public final class PdfViewSmoke {
                     : "corpus form checks: " + failures + " FAILED");
             return;
         }
+        if ("encryption".equals(System.getProperty("smoke.only"))) {
+            // file is the encryption corpus directory.
+            checkEncryption(file);
+            System.out.println(failures == 0 ? "encryption checks: all passed"
+                    : "encryption checks: " + failures + " FAILED");
+            return;
+        }
         if ("reopen".equals(System.getProperty("smoke.only"))) {
             // file lists two documents separated by '|': a multi-page one, then a different one.
             String[] docs = file.toString().split("\\|");
@@ -1645,6 +1652,146 @@ public final class PdfViewSmoke {
         fx(() -> view.setDocument(null));
         a.dispose();
         b.dispose();
+    }
+
+    /**
+     * Encrypted documents: the password prompt (asked from a loader thread, a wrong password asks
+     * again, cancel gives up) and the permissions the view enforces.
+     */
+    private void checkEncryption(Path corpus) throws Exception {
+        System.out.println("encryption checks:");
+        Path maltby = corpus.resolve("rev6/encrypted-maltby.pdf");
+
+        // wrong password, then the right one: two prompts, the second saying the first was wrong.
+        java.util.List<String> headers = new java.util.ArrayList<>();
+        Object[] opened = openWithAnswers(maltby, headers, "wrong", "maltby");
+        check("wrong then right password opens", opened[0] instanceof Document d && d.getNumberOfPages() > 0,
+                String.valueOf(opened[0]));
+        check("second prompt says the password was wrong", headers.size() == 2
+                && headers.get(1).startsWith("Incorrect"), String.valueOf(headers));
+        if (opened[0] instanceof Document d) d.dispose();
+
+        headers.clear();
+        opened = openWithAnswers(maltby, headers, (String) null);
+        check("cancel gives up quietly", opened[0] instanceof org.icepdf.core.exceptions.PDFSecurityException
+                && (boolean) opened[1], opened[0] + " cancelled " + opened[1]);
+
+        // rev6/encrypted.pdf: forms may be filled, but no copying and no annotating.
+        Document restricted = new Document();
+        restricted.setFile(corpus.resolve("rev6/encrypted.pdf").toString());
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.HIGHLIGHT));
+        fx(() -> view.setDocument(restricted));
+        waitIdle(60_000);
+        boolean[] allowed = onFx(() -> new boolean[]{view.isCopyAllowed(), view.isAnnotationEditingAllowed(),
+                view.isFormFillingAllowed()});
+        check("permissions read from the document", !allowed[0] && !allowed[1] && allowed[2],
+                "copy " + allowed[0] + " annotate " + allowed[1] + " fill " + allowed[2]);
+        check("opening drops an annotation tool", onFx(view::getToolMode) == org.icepdf.fx.view.ToolMode.TEXT_SELECT,
+                String.valueOf(onFx(view::getToolMode)));
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.INK));
+        check("annotation tools refused", onFx(view::getToolMode) == org.icepdf.fx.view.ToolMode.TEXT_SELECT,
+                String.valueOf(onFx(view::getToolMode)));
+        fx(view::selectAll);
+        int marked = onFx(view::highlightSelection);
+        check("highlighting the selection refused", marked == 0, marked + " created");
+        String sentinel = "clipboard-sentinel-" + System.nanoTime();
+        fx(() -> {
+            javafx.scene.input.ClipboardContent c = new javafx.scene.input.ClipboardContent();
+            c.putString(sentinel);
+            javafx.scene.input.Clipboard.getSystemClipboard().setContent(c);
+            view.copySelection();
+        });
+        Thread.sleep(1500);
+        String clip = onFx(() -> javafx.scene.input.Clipboard.getSystemClipboard().getString());
+        check("copy refused", sentinel.equals(clip), clip == null ? "null" : clip.length() + " chars");
+        String text = onFx(view::selectedTextAsync).get(30, TimeUnit.SECONDS);
+        check("selectedTextAsync still extracts (application's call)", !text.isEmpty(), text.length() + " chars");
+        fx(view::clearSelection);
+        fx(view::focusNextField);
+        check("fields can be filled", onFx(view::getFocusedField) != null, String.valueOf(onFx(view::getFocusedField)));
+        fx(view::clearFieldFocus);
+        fx(() -> view.setDocument(null));
+        restricted.dispose();
+
+        // chap4_pg1thru7.pdf: a form whose fields may not be filled.
+        Document noFill = new Document();
+        noFill.setFile(corpus.resolve("chap4_pg1thru7.pdf").toString());
+        fx(() -> view.setDocument(noFill));
+        waitIdle(60_000);
+        check("filling refused by the document", !onFx(view::isFormFillingAllowed), "");
+        fx(view::focusNextField);
+        check("no field takes focus", onFx(view::getFocusedField) == null, String.valueOf(onFx(view::getFocusedField)));
+        fx(() -> view.setDocument(null));
+        noFill.dispose();
+
+        // an unencrypted document allows everything again.
+        Document plain = new Document();
+        plain.setFile(corpus.resolve("doc1_security_exception.pdf").toString());
+        fx(() -> view.setDocument(plain));
+        waitIdle(60_000);
+        allowed = onFx(() -> new boolean[]{view.isCopyAllowed(), view.isAnnotationEditingAllowed(),
+                view.isFormFillingAllowed()});
+        check("unencrypted document allows everything", allowed[0] && allowed[1] && allowed[2], "");
+        fx(() -> view.setToolMode(org.icepdf.fx.view.ToolMode.INK));
+        check("annotation tools available again", onFx(view::getToolMode) == org.icepdf.fx.view.ToolMode.INK, "");
+        fx(() -> {
+            view.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);
+            view.setDocument(null);
+        });
+        plain.dispose();
+    }
+
+    /**
+     * Opens a document on a loader thread with a {@link org.icepdf.fx.view.PasswordPrompt}, answering
+     * each prompt in turn (null cancels).  Records each prompt's header.
+     *
+     * @return {document or the exception thrown, whether the prompt reports cancelled}
+     */
+    private Object[] openWithAnswers(Path file, java.util.List<String> headers, String... answers) throws Exception {
+        org.icepdf.fx.view.PasswordPrompt prompt = onFx(() -> new org.icepdf.fx.view.PasswordPrompt(stage,
+                file.getFileName().toString()));
+        CompletableFuture<Object> result = new CompletableFuture<>();
+        Thread loader = new Thread(() -> {
+            Document d = new Document();
+            d.setSecurityCallback(prompt);
+            try {
+                d.setFile(file.toString());
+                result.complete(d);
+            } catch (Throwable t) {
+                d.dispose();
+                result.complete(t);
+            }
+        }, "loader");
+        loader.start();
+        for (String answer : answers) {
+            javafx.scene.control.DialogPane pane = null;
+            long deadline = System.currentTimeMillis() + 15_000;
+            while (pane == null && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+                pane = onFx(() -> {
+                    for (javafx.stage.Window w : javafx.stage.Window.getWindows()) {
+                        if (w.isShowing() && w.getScene() != null
+                                && w.getScene().getRoot() instanceof javafx.scene.control.DialogPane p) return p;
+                    }
+                    return null;
+                });
+            }
+            if (pane == null) break;
+            javafx.scene.control.DialogPane shown = pane;
+            headers.add(onFx(shown::getHeaderText));
+            fx(() -> {
+                if (answer == null) {
+                    ((javafx.scene.control.Button) shown.lookupButton(javafx.scene.control.ButtonType.CANCEL)).fire();
+                } else {
+                    ((javafx.scene.control.PasswordField) shown.lookup(".password-field")).setText(answer);
+                    ((javafx.scene.control.Button) shown.lookupButton(javafx.scene.control.ButtonType.OK)).fire();
+                }
+            });
+            // wait for this dialog to close before looking for the next one.
+            while (onFx(() -> shown.getScene() != null && shown.getScene().getWindow() != null
+                    && shown.getScene().getWindow().isShowing())) Thread.sleep(20);
+        }
+        return new Object[]{result.get(30, TimeUnit.SECONDS), prompt.isCancelled()};
     }
 
     private static Object skinField(Object skin, String name) throws ReflectiveOperationException {

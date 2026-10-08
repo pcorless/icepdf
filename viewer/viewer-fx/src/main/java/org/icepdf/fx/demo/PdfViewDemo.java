@@ -40,6 +40,7 @@ import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.search.SearchTerm;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
+import org.icepdf.fx.view.PasswordPrompt;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
 import org.icepdf.fx.view.ViewMode;
@@ -160,6 +161,24 @@ public class PdfViewDemo extends Application {
         ComboBox<ToolMode> tool = new ComboBox<>();
         tool.getItems().setAll(ToolMode.values());
         tool.valueProperty().bindBidirectional(view.toolModeProperty());
+        // annotation tools are greyed out when the document doesn't permit annotating; the view
+        // refuses them anyway, so put the box back if one is picked.
+        tool.setCellFactory(list -> new ListCell<>() {
+            @Override
+            protected void updateItem(ToolMode item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.toString());
+                disableProperty().unbind();
+                if (item != null && item.createsAnnotations()) {
+                    disableProperty().bind(view.annotationEditingAllowedProperty().not());
+                } else {
+                    setDisable(false);
+                }
+            }
+        });
+        tool.valueProperty().addListener((obs, was, now) -> {
+            if (now != view.getToolMode()) Platform.runLater(() -> tool.setValue(view.getToolMode()));
+        });
         tool.setTooltip(new Tooltip("TEXT_SELECT selects text and annotations; PAN drags the page; the rest create "
                 + "annotations.  Middle-drag or Space+drag pans in any tool."));
         Button highlight = new Button("Highlight");
@@ -170,15 +189,16 @@ public class PdfViewDemo extends Application {
         strikeOut.setOnAction(e -> view.strikeOutSelection());
         for (Button b : new Button[]{highlight, underline, strikeOut}) {
             b.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
-                    () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed(),
-                    view.textSelectionProperty()));
+                    () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed()
+                            || !view.isAnnotationEditingAllowed(),
+                    view.textSelectionProperty(), view.annotationEditingAllowedProperty()));
         }
 
         Button copy = new Button("Copy");
         copy.setTooltip(new Tooltip("Copy the selected text (Ctrl+C)"));
         copy.disableProperty().bind(javafx.beans.binding.Bindings.createBooleanBinding(
-                () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed(),
-                view.textSelectionProperty()));
+                () -> view.getTextSelection() == null || view.getTextSelection().isCollapsed() || !view.isCopyAllowed(),
+                view.textSelectionProperty(), view.copyAllowedProperty()));
         copy.setOnAction(e -> view.copySelection());
         Button selectAll = new Button("Select all");
         selectAll.setTooltip(new Tooltip("Select all text (Ctrl+A)"));
@@ -197,7 +217,8 @@ public class PdfViewDemo extends Application {
         redo.setOnAction(e -> view.redo());
         Button delete = new Button("Delete");
         delete.setTooltip(new Tooltip("Delete the selected annotation (Del)"));
-        delete.disableProperty().bind(view.selectedAnnotationProperty().isNull());
+        delete.disableProperty().bind(view.selectedAnnotationProperty().isNull()
+                .or(view.annotationEditingAllowedProperty().not()));
         delete.setOnAction(e -> view.deleteSelectedAnnotation());
 
         CheckBox overlay = new CheckBox("Overlay test");
@@ -348,9 +369,20 @@ public class PdfViewDemo extends Application {
 
     private void open(File file) {
         Document next = new Document();
+        // encrypted documents with a user password ask for it while opening.
+        PasswordPrompt prompt = new PasswordPrompt(stage, file.getName());
+        next.setSecurityCallback(prompt);
         try {
             next.setFile(file.getAbsolutePath());
+        } catch (org.icepdf.core.exceptions.PDFSecurityException e) {
+            next.dispose();
+            if (!prompt.isCancelled()) {
+                new Alert(Alert.AlertType.ERROR, "Could not open " + file.getName() + ": incorrect password.")
+                        .showAndWait();
+            }
+            return;
         } catch (Exception e) {
+            next.dispose();
             new Alert(Alert.AlertType.ERROR, "Could not open " + file + ":\n" + e.getMessage()).showAndWait();
             return;
         }

@@ -67,6 +67,10 @@ final class PopupNode extends BorderPane {
     private double pressX;
     private double pressY;
     private boolean resizing;
+    private boolean dragging;
+    private boolean editable = true;
+    private final HBox header;
+    private final Region grip = new Region();
 
     PopupNode(PopupAnnotation popup, MarkupAnnotation markup, Listener listener) {
         this.popup = popup;
@@ -90,7 +94,7 @@ final class PopupNode extends BorderPane {
         minimise.setStyle("-fx-font-size: 8px; -fx-padding: 0 4 0 4;");
         minimise.setFocusTraversable(false);
         minimise.setOnAction(e -> listener.minimised(this));
-        HBox header = new HBox(4, title, spacer, date, minimise);
+        header = new HBox(4, title, spacer, date, minimise);
         header.getStyleClass().add("pdf-annotation-popup-header");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(1, 2, 1, 2));
@@ -105,7 +109,6 @@ final class PopupNode extends BorderPane {
         });
         setCenter(text);
 
-        Region grip = new Region();
         grip.setPrefSize(8, 8);
         grip.setCursor(Cursor.SE_RESIZE);
         grip.getStyleClass().add("pdf-annotation-popup-grip");
@@ -118,16 +121,19 @@ final class PopupNode extends BorderPane {
         grip.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> begin(e, true));
         for (javafx.scene.Node handle : new javafx.scene.Node[]{header, grip}) {
             handle.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
+                e.consume();
+                if (!dragging) return;
                 double[] d = delta(e);
                 if (resizing) listener.reshaping(this, 0, 0, d[0], d[1]);
                 else listener.reshaping(this, d[0], d[1], 0, 0);
-                e.consume();
             });
             handle.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> {
+                e.consume();
+                if (!dragging) return;
+                dragging = false;
                 double[] d = delta(e);
                 if (resizing) listener.reshaped(this, 0, 0, d[0], d[1]);
                 else listener.reshaped(this, d[0], d[1], 0, 0);
-                e.consume();
             });
         }
         // nothing on the popup reaches the page tools underneath.
@@ -135,15 +141,28 @@ final class PopupNode extends BorderPane {
     }
 
     private void begin(MouseEvent e, boolean resize) {
+        e.consume();
+        dragging = editable;
         resizing = resize;
         pressX = e.getSceneX();
         pressY = e.getSceneY();
-        e.consume();
     }
 
     /** Scene delta since the press: view px (the viewport isn't scaled). */
     private double[] delta(MouseEvent e) {
         return new double[]{e.getSceneX() - pressX, e.getSceneY() - pressY};
+    }
+
+    /**
+     * Read-only popups (the document doesn't permit annotating) show their note but can't be
+     * edited, moved or resized; they can still be minimised.
+     */
+    void setEditable(boolean editable) {
+        if (this.editable == editable) return;
+        this.editable = editable;
+        text.setEditable(editable);
+        grip.setVisible(editable);
+        header.setCursor(editable ? Cursor.MOVE : Cursor.DEFAULT);
     }
 
     PopupAnnotation getPopup() {

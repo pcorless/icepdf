@@ -255,7 +255,7 @@ final class AnnotationUiLayer extends Group {
      * clipped to the page and are placed exactly from their /Rect, so one can sit past the page edge.
      */
     void updatePopups(java.util.List<org.icepdf.core.pobjects.annotations.Annotation> annotations, double zoom,
-                      PopupNode.Listener listener) {
+                      PopupNode.Listener listener, boolean editable) {
         java.util.Set<org.icepdf.core.pobjects.annotations.PopupAnnotation> open = new java.util.HashSet<>();
         if (annotations != null && pageToView != null) {
             for (org.icepdf.core.pobjects.annotations.Annotation a : annotations) {
@@ -274,6 +274,7 @@ final class AnnotationUiLayer extends Group {
                     glue.put(node, line);
                     glueLines.getChildren().add(line);
                 }
+                node.setEditable(editable);
                 placePopup(node, zoom);
             }
         }

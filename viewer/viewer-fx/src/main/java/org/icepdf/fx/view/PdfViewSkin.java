@@ -618,12 +618,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             ui.setLayoutY(layer.getLayoutY());
             ui.setPageToView(layer.getPageToView());
             updateAnnotationChrome(ui, layer.getPage());
-            layer.setFieldHighlights(control.isHighlightFormFields() && control.isFormFieldsEditable()
+            layer.setFieldHighlights(control.isHighlightFormFields() && fieldsEditable()
                     ? fieldRects(layer.getPage()) : List.of());
             if (layer.getPage() != null && layer.getPage().isInitiated() && control.isPaintAnnotations()) {
-                ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, popupListener);
+                ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, popupListener,
+                        control.isAnnotationEditingAllowed());
             } else {
-                ui.updatePopups(null, layoutZoom, popupListener);
+                ui.updatePopups(null, layoutZoom, popupListener, false);
             }
 
             CacheKey.Preview previewKey = new CacheKey.Preview(index, params.boundary());
@@ -788,6 +789,16 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 && annotation.allowAlterProperties() && !annotation.getFlagReadOnly();
     }
 
+    /** {@link #isEditable}, and the document permits annotating. */
+    boolean canEdit(Annotation annotation) {
+        return getSkinnable().isAnnotationEditingAllowed() && isEditable(annotation);
+    }
+
+    /** The application allows filling fields and so does the document. */
+    boolean fieldsEditable() {
+        return getSkinnable().isFormFieldsEditable() && getSkinnable().isFormFillingAllowed();
+    }
+
     /** View bounds of an annotation in its page's view space, or null if the page isn't visible. */
     java.awt.geom.Rectangle2D annotationViewBounds(AnnotationHit hit) {
         AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
@@ -837,7 +848,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     /** The fillable widget under a viewport point (top-most), or null; never parses on the FX thread. */
     AnnotationHit fieldAtViewport(double vx, double vy) {
-        if (!getSkinnable().isFormFieldsEditable()) return null;
+        if (!fieldsEditable()) return null;
         PagePoint point = pageAtViewport(vx, vy);
         if (point == null) return null;
         List<AbstractWidgetAnnotation> widgets = fillable(document.getPageTree().getPage(point.pageIndex()));
@@ -937,6 +948,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** The focused field changed: commit an open editor elsewhere; open one on a text or choice field. */
     private void onFieldFocusChanged() {
         AbstractWidgetAnnotation focused = getSkinnable().getFocusedField();
+        if (focused != null && !fieldsEditable()) {
+            getSkinnable().clearFieldFocus();
+            return;
+        }
         if (fieldEditor != null && (editing == null || editing.widget() != focused)) {
             fieldEditor.commitNow();
         }
@@ -1399,7 +1414,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     /** Opens the inline editor over a free text annotation; the text commits as an undoable edit. */
     void editFreeText(AnnotationHit hit) {
-        if (!(hit.annotation() instanceof FreeTextAnnotation freeText)) return;
+        if (!(hit.annotation() instanceof FreeTextAnnotation freeText) || !canEdit(freeText)) return;
         AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
         if (ui == null) return;
         Page page = document.getPageTree().getPage(hit.pageIndex());
@@ -1419,7 +1434,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      */
     int markupSelection(org.icepdf.core.pobjects.Name subtype) {
         DocumentSelection selection = getSkinnable().getTextSelection();
-        if (selection == null || selection.isCollapsed() || document == null) return 0;
+        if (selection == null || selection.isCollapsed() || document == null
+                || !getSkinnable().isAnnotationEditingAllowed()) return 0;
         ToolMode mode = TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) ? ToolMode.HIGHLIGHT
                 : TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) ? ToolMode.UNDERLINE : ToolMode.STRIKE_OUT;
         int created = 0;
@@ -1642,7 +1658,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
         Annotation selected = getSkinnable().getSelectedAnnotation();
         Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
-        ui.setSelected(onPage, isEditable(onPage));
+        ui.setSelected(onPage, canEdit(onPage));
     }
 
     private boolean isOnPage(Annotation annotation, int pageIndex) {
@@ -1936,7 +1952,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             e.consume();
             return;
         }
-        if (e.getCode() == KeyCode.TAB && getSkinnable().isFormFieldsEditable()
+        if (e.getCode() == KeyCode.TAB && fieldsEditable()
                 && getSkinnable().getToolMode() != null && !getSkinnable().getToolMode().createsAnnotations()
                 && !fieldsInTabOrder().isEmpty()) {
             if (e.isShiftDown()) getSkinnable().focusPreviousField();
