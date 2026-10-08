@@ -18,6 +18,9 @@ package org.icepdf.fx.print;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation;
+import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.PrintService;
@@ -38,6 +41,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterAbortException;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.util.List;
 
 /**
  * Prints a document with Java2D: each page is painted by core straight into the printer's graphics,
@@ -154,6 +158,36 @@ public class DocumentPrinter {
         return title != null && !title.isBlank() ? title : "PDF document";
     }
 
+    /**
+     * Paints a page as it prints.  Annotations print when flagged for printing, as core decides,
+     * except popup notes: like Acrobat, an open popup's window (and the glue core draws to it) stays
+     * on screen; core would print it when its parent prints.  The note's icon still prints.
+     */
+    public static void paintPage(Graphics2D g, Page page, int boundary, float zoom, boolean annotations)
+            throws InterruptedException {
+        Graphics2D content = (Graphics2D) g.create();
+        try {
+            page.paint(content, GraphicsRenderingHints.PRINT, boundary, 0f, zoom, false, false);
+        } finally {
+            content.dispose();
+        }
+        List<Annotation> list = annotations ? page.getAnnotations() : null;
+        if (list == null) return;
+        Graphics2D a = (Graphics2D) g.create();
+        try {
+            a.transform(page.getPageTransform(boundary, 0f, zoom));
+            float rotation = page.getTotalRotation(0f);
+            for (Annotation annotation : list) {
+                // the popup window and the glue core draws from its note to it.
+                if (annotation instanceof PopupAnnotation || annotation instanceof MarkupGlueAnnotation
+                        || annotation.isDeleted()) continue;
+                annotation.render(a, GraphicsRenderingHints.PRINT, rotation, zoom, false);
+            }
+        } finally {
+            a.dispose();
+        }
+    }
+
     /** Where a page goes on the sheet: its scale and top-left corner, in printer points. */
     record Placement(double scale, double x, double y) {
     }
@@ -236,7 +270,7 @@ public class DocumentPrinter {
             PrinterException[] failure = new PrinterException[1];
             pageLock.withPage(pageIndex, () -> {
                 try {
-                    paintPage((Graphics2D) graphics.create(), format, page);
+                    printPage((Graphics2D) graphics.create(), format, page);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     failure[0] = new PrinterAbortException();
@@ -246,7 +280,7 @@ public class DocumentPrinter {
             return PAGE_EXISTS;
         }
 
-        private void paintPage(Graphics2D g, PageFormat format, Page page) throws InterruptedException {
+        private void printPage(Graphics2D g, PageFormat format, Page page) throws InterruptedException {
             try {
                 page.init();
                 PDimension size = page.getSize(settings.getBoundary(), 0, 1f);
@@ -262,12 +296,16 @@ public class DocumentPrinter {
                 if (settings.isLowResolution()) {
                     paintAsImage(g, page, size, at.scale());
                 } else {
-                    page.paint(g, GraphicsRenderingHints.PRINT, settings.getBoundary(), 0f, (float) at.scale(),
-                            settings.isAnnotations(), false);
+                    paint(g, page, (float) at.scale());
                 }
             } finally {
                 g.dispose();
             }
+        }
+
+        /** Page content, then its printable annotations, origin at the page's top-left. */
+        private void paint(Graphics2D g, Page page, float zoom) throws InterruptedException {
+            DocumentPrinter.paintPage(g, page, settings.getBoundary(), zoom, settings.isAnnotations());
         }
 
         /** Low-quality printing: the page as a {@value #LOW_RESOLUTION_DPI} dpi image. */
@@ -282,8 +320,7 @@ public class DocumentPrinter {
                 ig.setColor(Color.WHITE);
                 ig.fillRect(0, 0, w, h);
                 ig.setClip(0, 0, w, h);
-                page.paint(ig, GraphicsRenderingHints.PRINT, settings.getBoundary(), 0f, (float) imageZoom,
-                        settings.isAnnotations(), false);
+                paint(ig, page, (float) imageZoom);
             } finally {
                 ig.dispose();
             }

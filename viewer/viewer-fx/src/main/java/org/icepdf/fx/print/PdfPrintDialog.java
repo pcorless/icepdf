@@ -34,7 +34,6 @@ import javafx.stage.Window;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.util.GraphicsRenderingHints;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -472,7 +471,7 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
                 g.setColor(java.awt.Color.WHITE);
                 g.fillRect(0, 0, w, h);
                 g.setClip(0, 0, w, h);
-                page.paint(g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX, 0f, zoom, withAnnotations, false);
+                DocumentPrinter.paintPage(g, page, Page.BOUNDARY_CROPBOX, zoom, withAnnotations);
             } finally {
                 g.dispose();
             }
