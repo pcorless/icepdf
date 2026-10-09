@@ -269,10 +269,16 @@ public class InteractiveForm extends Dictionary {
         ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<>();
         if (fields != null && !fields.isEmpty()) {
             collectSignatureWidgets(fields, signatures, 0);
-        } else {
-            // a form without /Fields (some writers point /AcroForm somewhere else entirely): find the
-            // signature widgets on the pages, as Acrobat and other readers do.
-            signatures.addAll(pageSignatureWidgets());
+        }
+        // a form without /Fields (some writers point /AcroForm somewhere else entirely), or one that
+        // says signatures exist (SigFlags), may hold signature widgets only on its pages - a writer
+        // that left a signed widget out of /Fields.  Find them there too, as other readers do.
+        if (signatures.isEmpty() || signatureExists()) {
+            for (SignatureWidgetAnnotation widget : pageSignatureWidgets()) {
+                if (!signatures.contains(widget) && !listedByReference(signatures, widget)) {
+                    signatures.add(widget);
+                }
+            }
         }
         return signatures;
     }
@@ -293,7 +299,20 @@ public class InteractiveForm extends Dictionary {
         }
     }
 
-    // signature widgets found on the pages when the form has no /Fields; scanned once.
+    private static boolean listedByReference(List<SignatureWidgetAnnotation> listed, SignatureWidgetAnnotation widget) {
+        Reference reference = widget.getPObjectReference();
+        if (reference == null) {
+            return false;
+        }
+        for (SignatureWidgetAnnotation other : listed) {
+            if (reference.equals(other.getPObjectReference())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // signature widgets found on the pages; scanned once.
     private List<SignatureWidgetAnnotation> pageSignatureWidgets;
 
     private synchronized List<SignatureWidgetAnnotation> pageSignatureWidgets() {

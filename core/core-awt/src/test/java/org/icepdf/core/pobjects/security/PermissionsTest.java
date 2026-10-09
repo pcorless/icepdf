@@ -141,14 +141,21 @@ public class PermissionsTest {
     @DisplayName("revision 2 has fewer bits, and derives the rest from the ones it has")
     @Test
     public void revisionTwo() {
-        // Revision 2 has no separate bits for form filling, accessibility or assembly, so they
-        // follow from extraction and modification respectively.
+        // Revision 2 has no separate bits for fill-in, accessibility, assembly or print quality:
+        // fill-in comes with bit 6 (annotations and forms), accessibility with extraction,
+        // assembly with modification, and quality with printing.  Annotating and fill-in used to
+        // follow extraction, which the specification's own -44 example contradicts.
         Permissions extraction = permissions(2, NOTHING_ALLOWED | EXTRACT_BIT);
         assertTrue(extraction.getPermissions(Permissions.CONTENT_EXTRACTION));
-        assertTrue(extraction.getPermissions(Permissions.AUTHORING_FORM_FIELDS));
-        assertTrue(extraction.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
+        assertFalse(extraction.getPermissions(Permissions.AUTHORING_FORM_FIELDS));
+        assertFalse(extraction.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
         assertTrue(extraction.getPermissions(Permissions.CONTENT_ACCESSABILITY));
         assertFalse(extraction.getPermissions(Permissions.DOCUMENT_ASSEMBLY));
+
+        Permissions annotate = permissions(2, NOTHING_ALLOWED | MODIFY_TEXT_BIT);
+        assertTrue(annotate.getPermissions(Permissions.AUTHORING_FORM_FIELDS));
+        assertTrue(annotate.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
+        assertFalse(annotate.getPermissions(Permissions.CONTENT_EXTRACTION));
 
         Permissions modify = permissions(2, NOTHING_ALLOWED | MODIFY_BIT);
         assertTrue(modify.getPermissions(Permissions.MODIFY_DOCUMENT));
@@ -205,6 +212,7 @@ public class PermissionsTest {
         assertTrue(permissions.getPermissions(Permissions.PRINT_DOCUMENT));
         assertTrue(permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
         assertFalse(permissions.getPermissions(Permissions.MODIFY_DOCUMENT));
+        assertFalse(permissions.getPermissions(Permissions.AUTHORING_FORM_FIELDS), "nor annotations");
     }
 
     @DisplayName("an index outside the permission set answers false rather than throwing")

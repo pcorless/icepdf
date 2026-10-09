@@ -98,6 +98,11 @@ import java.util.logging.Logger;
  */
 public class StandardSecurityHandler extends SecurityHandler {
 
+    // opened with the owner password: no restrictions.
+    private volatile boolean ownerAuthorized;
+    private Permissions ownerPermissions;
+
+
     private static final Logger logger = Logger.getLogger(StandardSecurityHandler.class.getName());
     public static final Name NAME_KEY = new Name("Name");
     public static final Name IDENTITY_KEY = new Name("Identity");
@@ -125,21 +130,24 @@ public class StandardSecurityHandler extends SecurityHandler {
     public boolean isAuthorized(String password) {
         final int revision = encryptionDictionary.getRevisionNumber();
         if (revision < 5) {
+            // an entered owner password first: it grants everything.  Not the empty password a
+            // document is first tried with - a file made without a permissions password would then
+            // open with its restrictions lifted, which other readers (poppler) don't do either.
+            // Checked before the user password because a user match would be disturbed by it.
+            if (password != null && !password.isEmpty() && standardEncryption.authenticateOwnerPassword(password)) {
+                // the user password, derived from the owner's, is what generates the keys
+                this.password = standardEncryption.getUserPassword();
+                this.encryptionKey = null; // invalidate cached key on (re)auth
+                ownerAuthorized = true;
+                return true;
+            }
             boolean value = standardEncryption.authenticateUserPassword(password);
-            // check password against user password
-            if (!value) {
-                // check password against owner password
-                value = standardEncryption.authenticateOwnerPassword(password);
-                // Get user, password, as it is used for generating encryption keys
-                if (value) {
-                    this.password = standardEncryption.getUserPassword();
-                    this.encryptionKey = null; // invalidate cached key on (re)auth
-                }
-            } else {
+            if (value) {
                 // assign password for future use
                 this.password = password;
                 this.encryptionKey = null; // invalidate cached key on (re)auth
             }
+            ownerAuthorized = false;
             return value;
         } else if (revision == 5 || revision == 6) {
             // try and calculate the document key.
@@ -148,6 +156,8 @@ public class StandardSecurityHandler extends SecurityHandler {
                     encryptionDictionary.getKeyLength());
             this.password = password;
             this.encryptionKey = null; // invalidate cached key on (re)auth
+            ownerAuthorized = encryptionKey != null && password != null && !password.isEmpty()
+                    && encryptionDictionary.isAuthenticatedOwnerPassword();
             return encryptionKey != null;
         } else {
             logger.warning("Unknown encryption revision : " + revision);
@@ -332,7 +342,7 @@ public class StandardSecurityHandler extends SecurityHandler {
             // make sure class instance var have been setup
             this.init();
         }
-        return permissions;
+        return ownerAuthorized ? ownerPermissions : permissions;
     }
 
     public String getHandlerName() {
@@ -345,6 +355,8 @@ public class StandardSecurityHandler extends SecurityHandler {
         // initiate permissions
         permissions = new Permissions(encryptionDictionary);
         permissions.init();
+        ownerPermissions = new Permissions(encryptionDictionary);
+        ownerPermissions.grantAll();
         // update flag
         initiated = true;
     }
@@ -353,6 +365,8 @@ public class StandardSecurityHandler extends SecurityHandler {
         standardEncryption = null;
         encryptionKey = null;
         permissions = null;
+        ownerPermissions = null;
+        ownerAuthorized = false;
         // update flag
         initiated = false;
     }

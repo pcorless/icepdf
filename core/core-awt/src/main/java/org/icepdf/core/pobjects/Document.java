@@ -187,6 +187,15 @@ public class Document {
     }
 
     /**
+     * A failure to open the document, which the caller also gets as the exception.  A security
+     * exception is the expected outcome of a missing, wrong or cancelled password, so it is logged
+     * quietly; anything else is an error worth logging loudly.
+     */
+    private static void logLoadFailure(String message, Exception e) {
+        logger.log(e instanceof PDFSecurityException ? Level.FINE : Level.SEVERE, message, e);
+    }
+
+    /**
      * Load a PDF file from the given path and initiates the document's Catalog.
      *
      * @param filepath path of PDF document.
@@ -202,7 +211,7 @@ public class Document {
         try {
             setInputStream(copyFileToByteBuffer(file));
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Failed to set document file path", e);
+            logLoadFailure("Failed to set document file path", e);
             throw e;
         }
     }
@@ -284,7 +293,7 @@ public class Document {
             try {
                 setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to set document input stream", e);
+                logLoadFailure("Failed to set document input stream", e);
                 throw e;
             }
         }
@@ -336,7 +345,7 @@ public class Document {
             try {
                 setInputStream(copyFileToByteBuffer(tempFile));
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Failed to set document input stream", e);
+                logLoadFailure("Failed to set document input stream", e);
                 throw e;
             }
         }
@@ -409,7 +418,7 @@ public class Document {
             library.setStateManager(stateManager);
         } catch (PDFSecurityException | IOException e) {
             dispose();
-            logger.log(Level.SEVERE, "Failed to load PDF Document.", e);
+            logLoadFailure("Failed to load PDF Document.", e);
             throw e;
         } catch (Exception e) {
             dispose();
