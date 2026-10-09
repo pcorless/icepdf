@@ -163,4 +163,52 @@ public class SignatureFieldShapesTest {
             document.dispose();
         }
     }
+
+    @DisplayName("SigFlags says signatures exist: a signed widget left out of /Fields is found on the page")
+    @Test
+    void signedWidgetMissingFromFields() throws Exception {
+        Path file = pdf("missing-from-fields",
+                "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] /SigFlags 3 >> >>",
+                PAGES,
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Annots [4 0 R 5 0 R] >>",
+                "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Listed) /Rect [10 10 90 40] /F 4 /P 3 0 R >>",
+                "<< /Type /Annot /Subtype /Widget /FT /Sig /T (OnPageOnly) /Rect [10 60 90 90] /F 4 /P 3 0 R >>");
+        List<SignatureWidgetAnnotation> fields = signatureFields(file, false);
+        assertEquals(2, fields.size(), "the listed field and the page-only widget");
+    }
+
+    @DisplayName("no SigFlags: a form with fields isn't scanned page by page")
+    @Test
+    void noSigFlagsNoPageScan() throws Exception {
+        Path file = pdf("no-sigflags",
+                "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] >> >>",
+                PAGES,
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Annots [4 0 R 5 0 R] >>",
+                "<< /Type /Annot /Subtype /Widget /FT /Sig /T (Listed) /Rect [10 10 90 40] /F 4 /P 3 0 R >>",
+                "<< /Type /Annot /Subtype /Widget /FT /Sig /T (OnPageOnly) /Rect [10 60 90 90] /F 4 /P 3 0 R >>");
+        assertEquals(1, signatureFields(file, false).size());
+    }
+
+    @DisplayName("/V is inherited: a kid widget reads its field's value")
+    @Test
+    void kidInheritsValue() throws Exception {
+        Path file = pdf("inherit-value",
+                "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R] >> >>",
+                PAGES,
+                "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Annots [5 0 R] >>",
+                "<< /FT /Tx /T (Name) /V (Ada) /Kids [5 0 R] >>",
+                "<< /Type /Annot /Subtype /Widget /Parent 4 0 R /Rect [10 10 110 30] /F 4 /P 3 0 R >>");
+        Document document = new Document();
+        document.setFile(file.toString());
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation<?> kid =
+                    (org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation<?>) page.getAnnotations().get(0);
+            assertEquals("Ada", kid.getFieldDictionary().getFieldValue(), "was empty: only the kid's own /V was read");
+            assertFalse(kid.getFieldDictionary().hasFieldValue(), "the kid itself still has no /V");
+        } finally {
+            document.dispose();
+        }
+    }
 }

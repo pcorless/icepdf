@@ -365,7 +365,18 @@ public class FieldDictionary extends Dictionary {
     }
 
     public Object getFieldValue() {
+        // /V is inheritable (PDF 32000-1 12.7.3.1): a widget kid without its own takes its field's.
         Object value = library.getObject(entries, V_KEY);
+        if (value == null && !entries.containsKey(V_KEY)) {
+            FieldDictionary ancestor = getParent();
+            for (int depth = 0; ancestor != null && depth < 32; depth++) {
+                value = library.getObject(ancestor.getEntries(), V_KEY);
+                if (value != null) {
+                    break;
+                }
+                ancestor = ancestor.getParent();
+            }
+        }
         if (value instanceof Name) {
             fieldValue = value;
         } else if (value instanceof StringObject) {
