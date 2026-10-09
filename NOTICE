@@ -8,6 +8,11 @@ The Apache Software Foundation (http://www.apache.org/):
 
   - org.icepdf.core.pobjects.fonts.zfont.fontFiles.GlyphCache is derived from
     org.apache.pdfbox.rendering.GlyphCache of Apache PDFBox 3.0.6.
+  - org.icepdf.core.pobjects.annotations.FieldAppearanceGenerator and PlainTextLayout
+    follow the form field layout of org.apache.pdfbox.pdmodel.interactive.form.
+    AppearanceGeneratorHelper and org.apache.pdfbox.pdmodel.interactive.PlainText /
+    PlainTextFormatter of Apache PDFBox 4.0.0 (development, commit cd53a45cb2),
+    rewritten for ICEpdf's object model.
 
 Apache PDFBox
 Copyright 2014 The Apache Software Foundation
