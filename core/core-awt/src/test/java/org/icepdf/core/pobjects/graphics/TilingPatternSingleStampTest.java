@@ -87,9 +87,9 @@ public class TilingPatternSingleStampTest {
             g.translate(-(centre - 50), -(centre - 50));
             com.sun.management.ThreadMXBean threads =
                     (com.sun.management.ThreadMXBean) ManagementFactory.getThreadMXBean();
-            long before = threads.getCurrentThreadAllocatedBytes();
+            long before = threads.getThreadAllocatedBytes(Thread.currentThread().getId());
             page.paint(g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX, 0f, zoom);
-            long allocated = threads.getCurrentThreadAllocatedBytes() - before;
+            long allocated = threads.getThreadAllocatedBytes(Thread.currentThread().getId()) - before;
             g.dispose();
             return new long[]{allocated, image.getRGB(50, 50) & 0xFFFFFF};
         } finally {
