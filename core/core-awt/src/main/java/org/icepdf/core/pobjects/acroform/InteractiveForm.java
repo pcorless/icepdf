@@ -193,7 +193,8 @@ public class InteractiveForm extends Dictionary {
                     // add them all as we find them.
                     annotObj = library.getObject((Reference) fieldRef);
                     if (annotObj instanceof DictionaryEntries) {
-                        annotObj = FieldDictionaryFactory.buildField(library, (DictionaryEntries) annotObj);
+                        annotObj = FieldDictionaryFactory.buildFieldOrWidget(library, (DictionaryEntries) annotObj,
+                                (Reference) fieldRef);
                     }
                     if (annotObj != null) {
                         fields.add(annotObj);
@@ -266,14 +267,64 @@ public class InteractiveForm extends Dictionary {
     public ArrayList<SignatureWidgetAnnotation> getSignatureFields() {
         // capture the document signatures.
         ArrayList<SignatureWidgetAnnotation> signatures = new ArrayList<>();
-        if (fields != null) {
-            for (Object field : fields) {
-                if (field instanceof SignatureWidgetAnnotation) {
-                    signatures.add((SignatureWidgetAnnotation) field);
+        if (fields != null && !fields.isEmpty()) {
+            collectSignatureWidgets(fields, signatures, 0);
+        } else {
+            // a form without /Fields (some writers point /AcroForm somewhere else entirely): find the
+            // signature widgets on the pages, as Acrobat and other readers do.
+            signatures.addAll(pageSignatureWidgets());
+        }
+        return signatures;
+    }
+
+    /** Signature widgets among fields, including the kids of fields kept apart from their widgets. */
+    private static void collectSignatureWidgets(List<?> items, List<SignatureWidgetAnnotation> out, int depth) {
+        for (Object item : items) {
+            if (item instanceof SignatureWidgetAnnotation) {
+                if (!out.contains(item)) {
+                    out.add((SignatureWidgetAnnotation) item);
+                }
+            } else if (item instanceof FieldDictionary && depth < 32) {
+                List<Object> kids = ((FieldDictionary) item).getKids();
+                if (kids != null) {
+                    collectSignatureWidgets(kids, out, depth + 1);
                 }
             }
         }
-        return signatures;
+    }
+
+    // signature widgets found on the pages when the form has no /Fields; scanned once.
+    private List<SignatureWidgetAnnotation> pageSignatureWidgets;
+
+    private synchronized List<SignatureWidgetAnnotation> pageSignatureWidgets() {
+        if (pageSignatureWidgets != null) {
+            return pageSignatureWidgets;
+        }
+        List<SignatureWidgetAnnotation> found = new ArrayList<>();
+        Catalog catalog = library.getCatalog();
+        PageTree pageTree = catalog != null ? catalog.getPageTree() : null;
+        if (pageTree != null) {
+            for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
+                Page page = pageTree.getPage(i);
+                Object annots = page != null ? library.getObject(page.getEntries(), Page.ANNOTS_KEY) : null;
+                if (!(annots instanceof List)) {
+                    continue;
+                }
+                for (Object item : (List<?>) annots) {
+                    Reference reference = item instanceof Reference ? (Reference) item : null;
+                    Object annotation = reference != null ? library.getObject(reference) : item;
+                    if (annotation instanceof DictionaryEntries) {
+                        annotation = FieldDictionaryFactory.buildFieldOrWidget(library,
+                                (DictionaryEntries) annotation, reference);
+                    }
+                    if (annotation instanceof SignatureWidgetAnnotation && !found.contains(annotation)) {
+                        found.add((SignatureWidgetAnnotation) annotation);
+                    }
+                }
+            }
+        }
+        pageSignatureWidgets = found;
+        return found;
     }
 
     /**
@@ -285,23 +336,19 @@ public class InteractiveForm extends Dictionary {
      * or there are no signatures.
      */
     public boolean isSignaturesCoverDocumentLength() {
-        SignatureWidgetAnnotation signatureWidgetAnnotation;
-        if (fields != null) {
+        List<SignatureWidgetAnnotation> signatureFields = getSignatureFields();
+        if (!signatureFields.isEmpty()) {
             boolean isValidByteRange = false;
-            for (Object field : fields) {
-                if (field instanceof SignatureWidgetAnnotation) {
-                    signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
-                    if (signatureWidgetAnnotation.getSignatureValidator() != null &&
-                            signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
-                        isValidByteRange = true;
-                        break;
-                    }
+            for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatureFields) {
+                if (signatureWidgetAnnotation.getSignatureValidator() != null &&
+                        signatureWidgetAnnotation.getSignatureValidator().checkByteRange()) {
+                    isValidByteRange = true;
+                    break;
                 }
             }
             if (isValidByteRange) {
-                for (Object field : fields) {
-                    if (field instanceof SignatureWidgetAnnotation) {
-                        signatureWidgetAnnotation = (SignatureWidgetAnnotation) field;
+                for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatureFields) {
+                    if (signatureWidgetAnnotation.getSignatureValidator() != null) {
                         signatureWidgetAnnotation.getSignatureValidator().setSignaturesCoverDocumentLength(true);
                     }
                 }
@@ -321,17 +368,7 @@ public class InteractiveForm extends Dictionary {
      * @return true if there are any signatures, otherwise false.
      */
     public boolean isSignatureFields() {
-        boolean foundSignature = false;
-        ArrayList<Object> fields = getFields();
-        if (fields != null) {
-            for (Object field : fields) {
-                if (field instanceof SignatureWidgetAnnotation) {
-                    foundSignature = true;
-                    break;
-                }
-            }
-        }
-        return foundSignature;
+        return !getSignatureFields().isEmpty();
     }
 
     /**

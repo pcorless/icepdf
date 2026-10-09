@@ -230,7 +230,8 @@ public class FieldDictionary extends Dictionary {
                         tmp = ((PObject) tmp).getObject();
                     }
                     if (tmp instanceof DictionaryEntries) {
-                        kids.add(FieldDictionaryFactory.buildField(library, (DictionaryEntries) tmp));
+                        kids.add(FieldDictionaryFactory.buildFieldOrWidget(library, (DictionaryEntries) tmp,
+                                aChildren));
                     } else if (tmp instanceof AbstractWidgetAnnotation) {
                         kids.add(tmp);
                     }
