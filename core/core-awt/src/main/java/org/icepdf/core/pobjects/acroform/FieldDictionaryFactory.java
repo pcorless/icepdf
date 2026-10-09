@@ -18,6 +18,9 @@ package org.icepdf.core.pobjects.acroform;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.util.Library;
 
 /**
@@ -42,6 +45,30 @@ public class FieldDictionaryFactory {
      * @param entries field name value pairs.
      * @return new field dictionary object of the specified field type.
      */
+    /**
+     * A form field, or its widget annotation when the dictionary is a field merged with its widget
+     * (it has /Subtype /Widget).  /Type /Annot is optional on a widget, and without it the parser
+     * leaves the dictionary as plain entries, so the field list held a bare field dictionary where a
+     * typed one gives a widget: a signature field showed no signature.  The widget is registered with
+     * the library under its reference, so the page that shows it uses the same object.
+     *
+     * @param reference the dictionary's object reference, or null for a direct object
+     * @return the widget annotation, or a field dictionary
+     */
+    public static Object buildFieldOrWidget(Library library, DictionaryEntries entries, Reference reference) {
+        if (Annotation.SUBTYPE_WIDGET.equals(library.getName(entries, Annotation.SUBTYPE_KEY))) {
+            Annotation widget = Annotation.buildAnnotation(library, entries);
+            if (widget instanceof AbstractWidgetAnnotation) {
+                if (reference != null) {
+                    widget.setPObjectReference(reference);
+                    library.addObject(widget, reference);
+                }
+                return widget;
+            }
+        }
+        return buildField(library, entries);
+    }
+
     public static FieldDictionary buildField(Library library,
                                              DictionaryEntries entries) {
         FieldDictionary fieldDictionary;
