@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationStatus;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.PDate;
@@ -169,47 +170,25 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
     // set one of the three icon's to represent the validity status of the signature node.
     protected Icon getRootNodeValidityIcon() {
-        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
-                && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.MINI);
-        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.MINI);
-        } else {
-            return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.MINI);
-        }
+        return Images.getSingleIcon(SignatureValidationStatus.validityOf(signatureValidator).icon,
+                IconPack.Variant.NONE, Images.IconSize.MINI);
     }
 
     // builds otu the validity tree node.
     private void buildSignatureValidity(DefaultMutableTreeNode root) {
         // figure out the opening messages.
-        String validity = "viewer.utilityPane.signatures.tab.certTree.cert.invalid.label";
-        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()) {
-            validity = "viewer.utilityPane.signatures.tab.certTree.cert.unknown.label";
-        } else if (!signatureValidator.isSignedDataModified() && !signatureValidator.isCertificateChainTrusted()) {
-            validity = "viewer.utilityPane.signatures.tab.certTree.cert.valid.label";
-        }
+        String validity = "viewer.utilityPane.signatures.tab.certTree.cert."
+                + SignatureValidationStatus.validityOf(signatureValidator).key + ".label";
         SigPropertyTreeNode rootValidityDetails = new SigPropertyTreeNode(
                 messageBundle.getString(validity));
 
         // document modification
-        String documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.modified.label";
-        if (!signatureValidator.isSignedDataModified() && !signatureValidator.isDocumentDataModified()) {
-            documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.unmodified.label";
-        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.modified.label";
-        } else if (!signatureValidator.isSignaturesCoverDocumentLength()) {
-            documentModified = "viewer.utilityPane.signatures.tab.certTree.doc.major.label";
-        }
+        String documentModified = "viewer.utilityPane.signatures.tab.certTree.doc."
+                + SignatureValidationStatus.documentStateOf(signatureValidator).key + ".label";
         rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(documentModified)));
         // trusted certification
-        String certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unknown.label";
-        if (signatureValidator.isCertificateChainTrusted()) {
-            if (signatureValidator.isRevocation()) {
-                certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.unchecked.label";
-            } else {
-                certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity.valid.label";
-            }
-        }
+        String certificateTrusted = "viewer.utilityPane.signatures.tab.certTree.signature.identity."
+                + SignatureValidationStatus.identityOf(signatureValidator).key + ".label";
         rootValidityDetails.add(new SigPropertyTreeNode(messageBundle.getString(certificateTrusted)));
         // signature time.
         String signatureTime = "viewer.utilityPane.signatures.tab.certTree.signature.time.local.label";
