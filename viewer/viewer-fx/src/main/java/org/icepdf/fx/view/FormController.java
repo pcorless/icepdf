@@ -264,31 +264,14 @@ final class FormController {
         });
     }
 
+    /**
+     * Core resets every fillable kind: the value from /DV (the field's, for a kid widget), check box
+     * and radio on/off state (GH-579), the rebuilt appearance and the change recorded for saving
+     * (GH-593).  Push buttons and signatures have nothing to reset.
+     */
     private static void resetOne(AbstractWidgetAnnotation widget) {
-        FieldDictionary dictionary = widget.getFieldDictionary();
-        FieldDictionary parent = dictionary.getParent();
-        Object defaultValue = dictionary.getDefaultFieldValue();
-        if (defaultValue == null && parent != null) defaultValue = parent.getDefaultFieldValue();
         switch (kindOf(widget)) {
-            case TEXT, PASSWORD -> {
-                if (defaultValue != null) {
-                    dictionary.setFieldValue(defaultValue, widget.getPObjectReference());
-                } else {
-                    dictionary.getEntries().remove(FieldDictionary.V_KEY);
-                    dictionary.setFieldValue("", widget.getPObjectReference());
-                }
-            }
-            // core sets the on/off state, /V on the field (the group, for a radio) and /AS (GH-579).
-            case CHECK, RADIO -> ((ButtonWidgetAnnotation) widget).reset();
-            case COMBO, LIST -> {
-                ChoiceFieldDictionary choice = ((ChoiceWidgetAnnotation) widget).getFieldDictionary();
-                if (defaultValue != null) {
-                    choice.setFieldValue(defaultValue, widget.getPObjectReference());
-                } else {
-                    choice.getEntries().remove(FieldDictionary.V_KEY);
-                    choice.setIndexes(null);
-                }
-            }
+            case TEXT, PASSWORD, CHECK, RADIO, COMBO, LIST -> widget.reset();
             default -> {
             }
         }

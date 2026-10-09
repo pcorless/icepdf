@@ -307,7 +307,13 @@ public final class PdfViewSmoke {
         }
         fx(view::clearFieldFocus);
         waitIdle(30_000);
-        check(file.getFileName() + ": Tab walks the fields " + kinds, walked.size() > 0, walked.size() + " fields");
+        if (onFx(view::isFormFillingAllowed)) {
+            check(file.getFileName() + ": Tab walks the fields " + kinds, walked.size() > 0, walked.size() + " fields");
+        } else {
+            // an encrypted document that forbids filling in forms: no field takes focus.
+            check(file.getFileName() + ": filling forbidden, no field takes focus", walked.isEmpty(),
+                    walked.size() + " fields");
+        }
         check(file.getFileName() + ": walking without typing changes nothing", !onFx(() -> view.canUndoProperty().get()),
                 "an edit was recorded");
         check(file.getFileName() + ": editors sit on their fields", misplaced == 0, misplaced + " off, e.g. " + misplacedDetail);
