@@ -222,13 +222,11 @@ public class Permissions {
                     == DATA_EXTRACTION_BIT_5) {
                 permissions[CONTENT_EXTRACTION] = true;
             }
-            // authoring forms, not in 2, but use CONTENT_EXTRACTION permission
-            if (permissions[CONTENT_EXTRACTION]) {
+            // add or modify annotations and fill in form fields: bit 6 in revision 2 too (PDF
+            // 32000-1 Table 22); it used to follow the copy bit.
+            if ((permissionFlags & MODIFY_TEXT_BIT_6) == MODIFY_TEXT_BIT_6) {
                 permissions[AUTHORING_FORM_FIELDS] = true;
-            }
-            // Fill in existing interactive form fields, not in 2, but use
-            // CONTENT_EXTRACTION permission
-            if (permissions[CONTENT_EXTRACTION]) {
+                // revision 2 has no separate fill-in bit (9): fill-in comes with bit 6.
                 permissions[FORM_FIELD_FILL_SIGNING] = true;
             }
             // document accessibility, not in 2, but use CONTENT_EXTRACTION
@@ -241,11 +239,8 @@ public class Permissions {
             if (permissions[MODIFY_DOCUMENT]) {
                 permissions[DOCUMENT_ASSEMBLY] = true;
             }
-            // Print document quality, if true, print low quality version
-            if ((permissionFlags & PRINT_QUALITY_BIT_12)
-                    == PRINT_QUALITY_BIT_12) {
-                permissions[PRINT_DOCUMENT_QUALITY] = true;
-            }
+            // revision 2 has no quality bit (12): printing, when allowed, is full quality.
+            permissions[PRINT_DOCUMENT_QUALITY] = permissions[PRINT_DOCUMENT];
 
             isInit = true;
 
@@ -304,6 +299,15 @@ public class Permissions {
      *                        specific user permission.
      * @return boolean value of the permission being called.
      */
+    /**
+     * Grants everything: a document opened with its owner password has no restrictions (PDF
+     * 32000-1 7.6.3.1).
+     */
+    void grantAll() {
+        Arrays.fill(permissions, true);
+        isInit = true;
+    }
+
     public boolean getPermissions(final int permissionIndex) {
         if (!isInit) {
             init();
