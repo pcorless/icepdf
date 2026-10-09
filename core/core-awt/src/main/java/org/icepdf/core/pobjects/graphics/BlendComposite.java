@@ -256,16 +256,21 @@ public final class BlendComposite implements Composite {
     public CompositeContext createContext(ColorModel srcColorModel,
                                           ColorModel dstColorModel,
                                           RenderingHints hints) {
-        return new BlendingContext(this);
+        // an opaque destination (a TYPE_INT_RGB page image) has no alpha channel; its raster still
+        // reads back an alpha byte, which is 0, so tell the context not to take that as a
+        // transparent backdrop.
+        return new BlendingContext(this, dstColorModel != null && !dstColorModel.hasAlpha());
     }
 
     private static final class BlendingContext implements CompositeContext {
         private final Blender blender;
         private final BlendComposite composite;
+        private final boolean opaqueDestination;
 
-        private BlendingContext(BlendComposite composite) {
+        private BlendingContext(BlendComposite composite, boolean opaqueDestination) {
             this.composite = composite;
             this.blender = Blender.getBlenderFor(composite);
+            this.opaqueDestination = opaqueDestination;
         }
 
         public void dispose() {
@@ -311,7 +316,7 @@ public final class BlendComposite implements Composite {
                     dstPixel[0] = (pixel >> 16) & 0xFF;
                     dstPixel[1] = (pixel >> 8) & 0xFF;
                     dstPixel[2] = (pixel) & 0xFF;
-                    dstPixel[3] = (pixel >> 24) & 0xFF;
+                    dstPixel[3] = opaqueDestination ? 0xFF : (pixel >> 24) & 0xFF;
 
                     blender.blend(srcPixel, dstPixel, result);
 
