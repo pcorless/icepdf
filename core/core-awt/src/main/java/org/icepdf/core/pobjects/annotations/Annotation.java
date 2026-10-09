@@ -1475,6 +1475,13 @@ public abstract class Annotation extends Dictionary {
             // backdrop (which is blank for an appearance stream).  Flag the paint so
             // FormDrawCmd takes the direct-composite path.
             FormDrawCmd.setAnnotationAppearance(true);
+            // A blend mode (a Multiply highlight) composites against what g already holds.  Over an
+            // opaque page that is the full blend; over a transparent layer - a viewer drawing its
+            // annotations on their own layer, an export without a page - the spec's formula leaves
+            // the source colour where there is no backdrop (Cs' = (1 - ab)Cs + ab B(Cb, Cs)), where the
+            // blend against nothing used to paint black.  Scoped to the appearance paint: page
+            // content keeps its own backdrop rules.
+            boolean previousBackdrop = org.icepdf.core.pobjects.graphics.BlendComposite.setTransparentBackdrop(true);
             // regular paint
             try {
                 appearanceState.getShapes().paint(g);
@@ -1497,6 +1504,7 @@ public abstract class Annotation extends Dictionary {
                 }
             }
             FormDrawCmd.setAnnotationAppearance(false);
+            org.icepdf.core.pobjects.graphics.BlendComposite.setTransparentBackdrop(previousBackdrop);
 
             g.setTransform(preAf);
         }

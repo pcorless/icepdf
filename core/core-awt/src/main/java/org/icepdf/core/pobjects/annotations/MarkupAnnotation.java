@@ -301,13 +301,23 @@ public abstract class MarkupAnnotation extends Annotation {
     }
 
     protected static void generateExternalGraphicsState(Form form, float opacity) {
+        generateExternalGraphicsState(form, opacity, null);
+    }
+
+    /**
+     * @param blendMode the /BM blend mode (Multiply for a highlight), or null for Normal
+     */
+    protected static void generateExternalGraphicsState(Form form, float opacity, Name blendMode) {
         // add the transparency graphic context settings.
         if (form != null) {
             Resources resources = form.getResources();
-            DictionaryEntries graphicsProperties = new DictionaryEntries(2);
+            DictionaryEntries graphicsProperties = new DictionaryEntries(3);
             DictionaryEntries graphicsState = new DictionaryEntries(1);
             graphicsProperties.put(GraphicsState.CA_STROKING_KEY, opacity);
             graphicsProperties.put(GraphicsState.CA_NON_STROKING_KEY, opacity);
+            if (blendMode != null) {
+                graphicsProperties.put(org.icepdf.core.pobjects.graphics.ExtGState.BM_KEY, blendMode);
+            }
             graphicsState.put(EXT_GSTATE_NAME, graphicsProperties);
             resources.getEntries().put(Resources.EXTGSTATE_KEY, graphicsState);
             form.setResources(resources);
