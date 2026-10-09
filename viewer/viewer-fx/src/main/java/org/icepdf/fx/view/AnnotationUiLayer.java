@@ -17,6 +17,7 @@ package org.icepdf.fx.view;
 
 import javafx.scene.Group;
 import javafx.scene.control.Tooltip;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -145,8 +146,11 @@ final class AnnotationUiLayer extends Group {
      * region whose top-left is (deviceX, deviceY); {@code from} is the annotation's view bounds when
      * the drag began.
      */
-    void setProxy(RasterBuffer buffer, double deviceX, double deviceY, double scale, Rectangle2D from) {
+    void setProxy(RasterBuffer buffer, double deviceX, double deviceY, double scale, Rectangle2D from,
+                  boolean multiply) {
         proxy.setImage(buffer.getImage());
+        // a highlight follows the pointer as it shows on the page: multiplied over it.
+        proxy.setBlendMode(multiply ? BlendMode.MULTIPLY : null);
         proxy.setX(deviceX / scale);
         proxy.setY(deviceY / scale);
         proxy.setFitWidth(buffer.getWidth() / scale);

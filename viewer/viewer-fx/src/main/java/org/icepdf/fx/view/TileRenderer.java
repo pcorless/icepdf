@@ -20,6 +20,13 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.Appearance;
+import org.icepdf.core.pobjects.annotations.AppearanceState;
+import org.icepdf.core.pobjects.graphics.BlendComposite;
+import org.icepdf.core.pobjects.graphics.Shapes;
+import org.icepdf.core.pobjects.graphics.commands.BlendCompositeDrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
+import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.util.GraphicsRenderingHints;
 
 import java.awt.*;
@@ -49,12 +56,12 @@ import java.util.logging.Logger;
  * <p>
  * Annotations are not part of the page tiles: they render into their own
  * {@link CacheKey.AnnotationTile}s, so editing an annotation re-renders that cheap layer and never
- * page content - the Swing viewer likewise paints page buffers without annotations.  Plain
- * appearances go on a transparent layer.  Blend-mode appearances (Multiply highlights) can't: core's
- * blend composite over a transparent backdrop multiplies by zero and paints black.  So, like the
- * Swing viewer's {@code paintBlendedAnnotation}, they are rendered over the real page pixels - the
- * cached content tiles, read-only once rendered, so still no page re-render - and shown as opaque
- * copies where blend annotations are.  {@code -Dorg.icepdf.fx.view.singlePassAnnotations=true}
+ * page content - the Swing viewer likewise paints page buffers without annotations.  Both layers are
+ * transparent.  Multiply appearances (highlights) go on their own layer, which core paints in their
+ * colour on the empty backdrop and the view composites onto the page with a Multiply blend, so the
+ * text under a highlight stays dark.  Other blend modes are rare in annotations (a Difference caret
+ * in a 2,500 file corpus) and ride the plain layer in their source colour.
+ * {@code -Dorg.icepdf.fx.view.singlePassAnnotations=true}
  * restores the single-pass render (annotations baked into the page tiles) for A/B comparison.
  * <p>
  * Requests, cancellation and delivery are all on the FX thread; only the paint runs on workers.
@@ -246,24 +253,22 @@ public final class TileRenderer {
                     page.paint(g, GraphicsRenderingHints.SCREEN, params.boundary(), params.rotation(),
                             params.zoom(), annotations, false);
                     return PaintResult.ALL;
-                }, null, null);
+                }, null);
     }
 
     /**
      * Queues tiles of one page's annotation layer: annotations only, on transparent, through the page
      * transform - no content stream, so cheap.
      *
-     * @param excluded  annotations to leave out (one being dragged as a live node); may be empty
-     * @param backdrops for {@link CacheKey.AnnotationLayer#BLEND}, the content tile under each requested
-     *                  tile (required: blend appearances composite against the page); null for NORMAL
+     * @param excluded annotations to leave out (one being dragged as a live node); may be empty
      */
     public void requestAnnotationTiles(int pageIndex, CacheKey.Params params, CacheKey.AnnotationLayer layer,
                                        int generation, TileGrid grid, List<TileGrid.Tile> tiles,
-                                       Set<Annotation> excluded, Map<TileGrid.Tile, RasterBuffer> backdrops) {
+                                       Set<Annotation> excluded) {
         submitRegions(pageIndex, grid, tiles,
                 t -> new CacheKey.AnnotationTile(pageIndex, params, layer, t.column(), t.row(), generation),
                 params, (g, page) -> paintAnnotations(g, page, pageIndex, params, layer, excluded),
-                () -> sink.annotationLayerEmpty(pageIndex, layer, generation), backdrops);
+                () -> sink.annotationLayerEmpty(pageIndex, layer, generation));
     }
 
     private PaintResult paintAnnotations(Graphics2D g, Page page, int pageIndex, CacheKey.Params params,
@@ -281,8 +286,7 @@ public final class TileRenderer {
             float totalRotation = page.getTotalRotation(params.rotation());
             for (Annotation annotation : annotations) {
                 if (annotation == null || annotation.isDeleted()) continue;
-                boolean blend = annotation.appearanceHasBlendMode();
-                if (blend != (layer == CacheKey.AnnotationLayer.BLEND)) continue;
+                if (multiplies(annotation) != (layer == CacheKey.AnnotationLayer.MULTIPLY)) continue;
                 any = true;
                 if (excluded.contains(annotation)) continue;
                 annotation.render(g, GraphicsRenderingHints.SCREEN, totalRotation, params.zoom(), false);
@@ -294,6 +298,31 @@ public final class TileRenderer {
             }
         }
         return any ? new PaintResult(true, areas) : PaintResult.NOTHING;
+    }
+
+    /**
+     * Whether an annotation's appearance draws with the Multiply blend mode, so it belongs on the
+     * {@link CacheKey.AnnotationLayer#MULTIPLY} layer.  Asks the composite itself: an ExtGState
+     * {@code /BM /Normal} also leaves a blend command in the appearance, holding a plain src-over.
+     */
+    static boolean multiplies(Annotation annotation) {
+        if (!annotation.appearanceHasBlendMode()) return false;
+        Appearance appearance = annotation.getAppearances().get(annotation.getCurrentAppearance());
+        AppearanceState state = appearance == null ? null : appearance.getSelectedAppearanceState();
+        return state != null && multiplies(state.getShapes());
+    }
+
+    private static boolean multiplies(Shapes shapes) {
+        if (shapes == null) return false;
+        for (DrawCmd cmd : shapes.getShapes()) {
+            if (cmd instanceof BlendCompositeDrawCmd blend
+                    && blend.getBlendComposite() instanceof BlendComposite composite
+                    && composite.getMode() == BlendComposite.BlendingMode.MULTIPLY) {
+                return true;
+            }
+            if (cmd instanceof ShapesDrawCmd nested && multiplies(nested.getShapes())) return true;
+        }
+        return false;
     }
 
     /**
@@ -349,8 +378,7 @@ public final class TileRenderer {
      */
     private void submitRegions(int pageIndex, TileGrid grid, List<TileGrid.Tile> tiles,
                                java.util.function.Function<TileGrid.Tile, CacheKey> keyOf, CacheKey.Params params,
-                               RegionPainter painter, Runnable onNothingToPaint,
-                               Map<TileGrid.Tile, RasterBuffer> backdrops) {
+                               RegionPainter painter, Runnable onNothingToPaint) {
         Document doc = document;
         if (doc == null || tiles.isEmpty()) return;
         int block = Math.max(1, MAX_REGION / grid.getTileSize());
@@ -367,7 +395,7 @@ public final class TileRenderer {
             Job job = new Job(keys);
             TileGrid.Region region = TileGrid.union(blockTiles);
             job.future = tileExecutor.submit(() -> renderRegion(doc, job, pageIndex, params, region, blockTiles,
-                    keys, painter, onNothingToPaint, backdrops));
+                    keys, painter, onNothingToPaint));
             track(job);
         }
     }
@@ -432,23 +460,12 @@ public final class TileRenderer {
 
     private void renderRegion(Document doc, Job job, int pageIndex, CacheKey.Params params,
                               TileGrid.Region region, List<TileGrid.Tile> tiles, List<CacheKey> keys,
-                              RegionPainter painter, Runnable onNothingToPaint,
-                              Map<TileGrid.Tile, RasterBuffer> backdrops) {
+                              RegionPainter painter, Runnable onNothingToPaint) {
         try {
             Page page = doc.getPageTree().getPage(pageIndex);
             page.init();
             BufferedImage scratch = new BufferedImage(region.width(), region.height(),
                     BufferedImage.TYPE_INT_ARGB_PRE);
-            if (backdrops != null) {
-                // seed with the page pixels under the region (content tiles never change once rendered).
-                int[] target = RasterBuffer.pixelsOf(scratch);
-                for (TileGrid.Tile t : tiles) {
-                    RasterBuffer backdrop = backdrops.get(t);
-                    if (backdrop != null) {
-                        backdrop.copyInto(target, region.width(), t.x() - region.x(), t.y() - region.y());
-                    }
-                }
-            }
             Graphics2D g = scratch.createGraphics();
             PaintResult result;
             long start = System.nanoTime();

@@ -65,10 +65,14 @@ final class AnnotationCreator {
      */
     static TextMarkupAnnotation textMarkup(Library library, Name subtype, List<Rectangle2D> viewRects, String contents,
                                            AffineTransform toPageSpace, Style style) {
-        ArrayList<Shape> bounds = new ArrayList<>(viewRects);
-        GeneralPath path = new GeneralPath();
-        for (Shape shape : bounds) path.append(shape, false);
-        Rectangle tBbox = Annotation.commonBoundsNormalization(new GeneralPath(path), toPageSpace);
+        GeneralPath viewPath = new GeneralPath();
+        for (Shape shape : viewRects) viewPath.append(shape, false);
+        Rectangle tBbox = Annotation.commonBoundsNormalization(new GeneralPath(viewPath), toPageSpace);
+        // as Swing (TextSelection.convertToPageSpace): the markup bounds and path are page space - they
+        // become the /QuadPoints and the appearance drawn in the page-space bbox.
+        ArrayList<Shape> bounds = new ArrayList<>(viewRects.size());
+        for (Shape shape : viewRects) bounds.add(toPageSpace.createTransformedShape(shape));
+        GeneralPath path = new GeneralPath(toPageSpace.createTransformedShape(viewPath));
         TextMarkupAnnotation annotation = (TextMarkupAnnotation) AnnotationFactory.buildAnnotation(library, subtype, tBbox);
         annotation.setContents(contents != null && !contents.isEmpty() ? contents : subtype.toString());
         annotation.setCreationDate(PDate.formatDateTime(new Date()));

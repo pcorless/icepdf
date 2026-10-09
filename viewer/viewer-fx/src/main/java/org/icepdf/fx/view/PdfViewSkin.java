@@ -709,28 +709,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 set.clear();
                 continue;
             }
-            boolean blend = kind == CacheKey.AnnotationLayer.BLEND;
             complete &= updateTileSet(set, visible, wanted,
                     t -> new CacheKey.AnnotationTile(page, params, kind, t.column(), t.row(), generation),
-                    missing -> {
-                        Map<TileGrid.Tile, RasterBuffer> backdrops = null;
-                        if (blend) {
-                            // blend appearances composite against the page: wait for its content tiles.
-                            backdrops = new HashMap<>();
-                            List<TileGrid.Tile> ready = new ArrayList<>();
-                            for (TileGrid.Tile t : missing) {
-                                RasterBuffer content = cache.get(new CacheKey.Tile(page, params, t.column(), t.row()));
-                                if (content == null || content == RasterBuffer.EMPTY) continue;
-                                backdrops.put(t, content);
-                                ready.add(t);
-                            }
-                            missing = ready;
-                        }
-                        if (!missing.isEmpty()) {
-                            renderer.requestAnnotationTiles(page, params, kind, generation, grid, missing,
-                                    excludedAnnotations(page), backdrops);
-                        }
-                    });
+                    missing -> renderer.requestAnnotationTiles(page, params, kind, generation, grid, missing,
+                            excludedAnnotations(page)));
         }
         return complete;
     }
@@ -1300,7 +1282,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         Drag started = drag;
         renderer.requestAnnotationProxy(hit.pageIndex(), params, hit.annotation(), region, buffer -> {
             if (drag != started) return;
-            ui.setProxy(buffer, region.x(), region.y(), scale, from);
+            ui.setProxy(buffer, region.x(), region.y(), scale, from, TileRenderer.multiplies(hit.annotation()));
             excluded.computeIfAbsent(hit.pageIndex(), k -> new HashSet<>()).add(hit.annotation());
             bumpAnnotationGeneration(hit.pageIndex());
         });

@@ -31,8 +31,11 @@ public sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile,
     record Tile(int pageIndex, Params params, int column, int row) implements CacheKey {
     }
 
-    /** Which annotation raster: plain src-over appearances, or those carrying a blend mode. */
-    enum AnnotationLayer {NORMAL, BLEND}
+    /**
+     * Which annotation raster: plain src-over appearances, or Multiply ones (highlights), which the
+     * view composites onto the page with a Multiply blend.
+     */
+    enum AnnotationLayer {NORMAL, MULTIPLY}
 
     /**
      * One device-pixel tile of a page's annotation raster - transparent, annotations only.

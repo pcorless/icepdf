@@ -17,6 +17,7 @@ package org.icepdf.fx.view;
 
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -61,7 +62,7 @@ final class PageLayer extends Group {
     private final Affine previewTransform = new Affine();
     private final TileSet content = new TileSet();
     private final TileSet annotations = new TileSet();
-    private final TileSet blendAnnotations = new TileSet();
+    private final TileSet multiplyAnnotations = new TileSet();
     private final Group overlay = new Group();
     private final Affine overlayTransform = new Affine();
     private final Path fieldHighlights = new Path();
@@ -106,7 +107,9 @@ final class PageLayer extends Group {
         caret.setStroke(Color.BLACK);
         caret.setMouseTransparent(true);
         caret.setVisible(false);
-        getChildren().addAll(paper, preview, content.root, blendAnnotations.root, annotations.root, overlay, caret);
+        // highlights: painted in their colour on transparent, multiplied over the page beneath.
+        multiplyAnnotations.root.setBlendMode(BlendMode.MULTIPLY);
+        getChildren().addAll(paper, preview, content.root, multiplyAnnotations.root, annotations.root, overlay, caret);
         setClip(clip);
     }
 
@@ -141,7 +144,7 @@ final class PageLayer extends Group {
         pageToView = PageTransforms.pageToView(page, newParams.boundary(), newParams.rotation(), newParams.zoom());
         content.setToken(newParams, newParams);
         annotations.setToken(new AnnotationToken(newParams, annotations.generation), newParams);
-        blendAnnotations.setToken(new AnnotationToken(newParams, blendAnnotations.generation), newParams);
+        multiplyAnnotations.setToken(new AnnotationToken(newParams, multiplyAnnotations.generation), newParams);
         if (previewPageToView != null) {
             PageTransforms.setFx(previewTransform, PageTransforms.between(previewPageToView, pageToView));
         }
@@ -156,7 +159,7 @@ final class PageLayer extends Group {
 
     /** The annotation tile set for a layer, moved to {@code generation} (older tiles go stale). */
     TileSet annotations(CacheKey.AnnotationLayer layer, int generation) {
-        TileSet set = layer == CacheKey.AnnotationLayer.BLEND ? blendAnnotations : annotations;
+        TileSet set = layer == CacheKey.AnnotationLayer.MULTIPLY ? multiplyAnnotations : annotations;
         if (set.generation != generation) {
             set.generation = generation;
             set.setToken(new AnnotationToken(params, generation), params);

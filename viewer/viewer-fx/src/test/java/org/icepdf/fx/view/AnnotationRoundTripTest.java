@@ -150,6 +150,65 @@ class AnnotationRoundTripTest {
         }
     }
 
+    @DisplayName("a highlight made at 200% sits on its text: rect, QuadPoints and painted appearance")
+    @Test
+    void highlightSitsOnItsText() throws Exception {
+        assumeTrue(Files.exists(FIXTURE), "fixture " + FIXTURE);
+        Document document = new Document();
+        document.setFile(FIXTURE.toString());
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            TextSequence sequence = page.getViewText().getTextSequence();
+            OffsetRange range = OffsetRange.of(0, Math.min(20, sequence.length()));
+            Rectangle2D text = null;
+            for (Rectangle2D r : sequence.rectsFor(range)) {
+                if (text == null) text = new Rectangle2D.Double(r.getX(), r.getY(), r.getWidth(), r.getHeight());
+                else text.add(r);
+            }
+            assertNotNull(text, "the fixture has text");
+            // made the way PdfViewSkin.markupSelection makes one, at 200%
+            AffineTransform pageToView = page.getPageTransform(Page.BOUNDARY_CROPBOX, 0, 2);
+            AffineTransform toPage = page.getToPageSpaceTransform(Page.BOUNDARY_CROPBOX, 0, 2);
+            List<Rectangle2D> viewRects = new ArrayList<>();
+            for (Rectangle2D r : sequence.rectsFor(range)) viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
+            TextMarkupAnnotation highlight = AnnotationCreator.textMarkup(page.getLibrary(),
+                    TextMarkupAnnotation.SUBTYPE_HIGHLIGHT, viewRects, "", toPage,
+                    new AnnotationCreator.Style(AUTHOR, Color.YELLOW, TextMarkupAnnotation.HIGHLIGHT_ALPHA, 1f));
+
+            assertRect(text, highlight.getUserSpaceRectangle(), "highlight /Rect");
+            List<?> quad = (List<?>) highlight.getObject(MarkupAnnotation.KEY_QUAD_POINTS);
+            Rectangle2D quadBounds = null;
+            for (int i = 0; i + 1 < quad.size(); i += 2) {
+                double x = ((Number) quad.get(i)).doubleValue(), y = ((Number) quad.get(i + 1)).doubleValue();
+                if (quadBounds == null) quadBounds = new Rectangle2D.Double(x, y, 0, 0);
+                else quadBounds.add(x, y);
+            }
+            assertRect(text, quadBounds, "highlight /QuadPoints (page space)");
+
+            // painted alone at 100%: yellow over the text's middle, nothing well outside it.
+            AffineTransform view1 = page.getPageTransform(Page.BOUNDARY_CROPBOX, 0, 1);
+            Rectangle2D viewText = view1.createTransformedShape(text).getBounds2D();
+            java.awt.Dimension size = page.getSize(Page.BOUNDARY_CROPBOX, 0, 1).toDimension();
+            java.awt.image.BufferedImage layer = new java.awt.image.BufferedImage(size.width, size.height,
+                    java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = layer.createGraphics();
+            g.transform(view1);
+            highlight.render(g, org.icepdf.core.util.GraphicsRenderingHints.SCREEN, page.getTotalRotation(0), 1, false);
+            g.dispose();
+            // the first selected rect's middle (the union's can fall between lines).
+            Rectangle2D first = view1.createTransformedShape(sequence.rectsFor(range).get(0)).getBounds2D();
+            Color middle = new Color(layer.getRGB((int) first.getCenterX(), (int) first.getCenterY()), true);
+            assertTrue(middle.getAlpha() > 200 && middle.getRed() > 200 && middle.getBlue() < 80,
+                    "yellow over the text: " + middle);
+            int below = (int) Math.min(size.height - 1, viewText.getMaxY() + 20);
+            assertEquals(0, new Color(layer.getRGB((int) viewText.getCenterX(), below), true).getAlpha(),
+                    "nothing below the text");
+        } finally {
+            document.dispose();
+        }
+    }
+
     private static void add(Page page, Annotation annotation, PopupAnnotation popup) {
         AnnotationEdits.add(NO_LOCK, page, 0, annotation, popup);
     }
