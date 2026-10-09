@@ -37,15 +37,16 @@ public class HexStringObjectWriter extends BaseWriter {
 
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
-        if (!pObject.isDoNotEncrypt() && securityManager != null && writeable.isModified()) {
-            // A string authored since the document was opened holds plain text, so it is the one
-            // case that needs encrypting on the way out.  The bytes the digits stand for are what
-            // gets encrypted, and the cipher text goes back out as digits.
+        if (!pObject.isDoNotEncrypt() && securityManager != null
+                && !writeable.isEncryptedFor(pObject.getReference())) {
+            // Plain text - authored since the document was opened, or read from an object stream -
+            // or enciphered for another object: encrypt it for this one.  The bytes the digits
+            // stand for are what gets encrypted, and the cipher text goes back out as digits.
             writeRaw(writeable.getEncryptedHexString(pObject.getReference(), securityManager), output);
         } else {
             // Everything else is already in the state it should be written in: a string read from
-            // the file is still exactly as encrypted as the file it came from, and where there is no
-            // security manager nothing is encrypted at all.
+            // this object in the file is still exactly as encrypted as it was there, and where there
+            // is no security manager nothing is encrypted at all.
             //
             // Note this writes the DIGITS.  Writing toString() here, as this used to, wrote the
             // decoded text between the angle brackets, and re-parsing kept only those characters

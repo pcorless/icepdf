@@ -36,6 +36,10 @@ public abstract class AbstractStringObject implements StringObject {
     // modified string need to be encrypted when writing to file.
     protected boolean isModified;
 
+    // read from inside an object stream, where strings are not encrypted on their own (the object
+    // stream is, as a whole, PDF 32000-1 7.5.7): plain text, though it was read from the file.
+    protected boolean inObjectStream;
+
     /**
      * The cipher text this string last produced, and the object number it was produced for.  See
      * {@link #getEncryptedRawBytes} for why it is remembered rather than computed each time.
@@ -105,8 +109,8 @@ public abstract class AbstractStringObject implements StringObject {
      * @return the decrypted bytes; never null, may be empty
      */
     public byte[] getDecryptedRawBytes(SecurityManager securityManager) {
-        if (isModified) {
-            // authored since the document was opened, so already plain
+        if (isModified || inObjectStream) {
+            // authored since the document was opened, or read from an object stream: already plain
             return getRawBytes();
         }
         return crypt(getRawBytes(), reference, securityManager);
@@ -128,6 +132,9 @@ public abstract class AbstractStringObject implements StringObject {
         if (securityManager == null || writeReference == null) {
             return getRawBytes();
         }
+        if (isEncryptedFor(writeReference)) {
+            return getRawBytes();
+        }
         // Encrypted once per object number and then remembered, so that asking twice gives the same
         // answer.  AES picks a fresh initialisation vector every time, so it does not otherwise:
         // the same string encrypts to different bytes, and - once the literal string writer has
@@ -137,10 +144,39 @@ public abstract class AbstractStringObject implements StringObject {
         if (encryptedBytes != null && writeReference.equals(encryptedReference)) {
             return encryptedBytes;
         }
+        // the plain bytes: as authored, as read from an object stream, or deciphered with the key of
+        // the object the string was read from.
         encryptedBytes = securityManager.encrypt(writeReference, securityManager.getEncryptionKey(),
-                getRawBytes());
+                getDecryptedRawBytes(securityManager));
         encryptedReference = writeReference;
         return encryptedBytes;
+    }
+
+    /**
+     * Whether this string's bytes are already what an encrypted document holds for it in the object
+     * {@code writeReference}: read from the file, enciphered with that same object's key.  Anything
+     * else is plain text that still needs enciphering - a string authored since the document was
+     * opened, or one read from inside an object stream (whose strings aren't encrypted on their own,
+     * the object stream is, PDF 32000-1 7.5.7) - or cipher text under another object's key.
+     *
+     * @param writeReference the reference of the object the string is being written in
+     * @return true when the bytes can be written as they are
+     */
+    public boolean isEncryptedFor(Reference writeReference) {
+        // a string built in code from raw bytes, with no object of its own (a signature's
+        // /Contents), is written as it is, as it always was.
+        return !isModified && !inObjectStream && (reference == null || reference.equals(writeReference));
+    }
+
+    /**
+     * Marks this string as read from inside an object stream: plain text in the file, so it is not
+     * deciphered when read, and is enciphered when its object is written as an object of its own.
+     * Set by the lexer.
+     *
+     * @param inObjectStream true if the string was read from an object stream
+     */
+    public void setInObjectStream(boolean inObjectStream) {
+        this.inObjectStream = inObjectStream;
     }
 
     /**

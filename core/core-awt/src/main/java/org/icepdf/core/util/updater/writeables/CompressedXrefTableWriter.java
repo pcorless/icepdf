@@ -94,7 +94,8 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         byte[] outputData = createXrefDataStream(entries);
 
         crossReferenceStream.setRawBytes(outputData);
-        streamWriter.write(crossReferenceStream, securityManager, output);
+        // never encrypted, even in an encrypted document: see writeCrossReferenceStream.
+        streamWriter.writeCrossReferenceStream(crossReferenceStream, output);
         output.write(STARTXREF);
         this.writeLong(xrefPos, output);
         output.write(NEWLINE);

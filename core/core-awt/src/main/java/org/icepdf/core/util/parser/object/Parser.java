@@ -227,6 +227,7 @@ public class Parser {
         // grab the pieces of the object
         streamObjectByteBuffer.position(objectOffsetStart);
         Lexer lexer = new Lexer(library);
+        lexer.setObjectStream(true);
         lexer.setByteBuffer(streamObjectByteBuffer);
         // dictionary or single value
         Object objectData = lexer.nextToken(null);
