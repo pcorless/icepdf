@@ -57,13 +57,8 @@ public class SignatureValidationStatus {
                                      SignatureValidator signatureValidator) {
 
         // build out the string that we need to display
-        validity = "viewer.annotation.signature.validation.common.invalid.label";
-        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()) {
-            validity = "viewer.annotation.signature.validation.common.unknown.label";
-        } else if (!signatureValidator.isSignedDataModified() && !signatureValidator.isCertificateChainTrusted()) {
-            validity = "viewer.annotation.signature.validation.common.valid.label";
-        }
-        validity = messageBundle.getString(validity);
+        validity = messageBundle.getString("viewer.annotation.signature.validation.common."
+                + validityOf(signatureValidator).key + ".label");
 
         // signed by
         singedBy = messageBundle.getString("viewer.annotation.signature.validation.common.notAvailable.label");
@@ -74,26 +69,12 @@ public class SignatureValidationStatus {
                 (emailAddress != null ? "<" + emailAddress + ">" : "")});
 
         // document modification
-        documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        if (!signatureValidator.isSignedDataModified() && !signatureValidator.isDocumentDataModified()) {
-            documentModified = "viewer.annotation.signature.validation.common.doc.unmodified.label";
-        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isDocumentDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            documentModified = "viewer.annotation.signature.validation.common.doc.modified.label";
-        } else if (signatureValidator.isSignaturesCoverDocumentLength() && signatureValidator.isSignedDataModified()) {
-            documentModified = "viewer.annotation.signature.validation.common.doc.major.label";
-        }
-        documentModified = messageBundle.getString(documentModified);
+        documentModified = messageBundle.getString("viewer.annotation.signature.validation.common.doc."
+                + documentStateOf(signatureValidator).key + ".label");
 
         // trusted certification
-        certificateTrusted = "viewer.annotation.signature.validation.common.identity.unknown.label";
-        if (signatureValidator.isCertificateChainTrusted()) {
-            if (signatureValidator.isRevocation()) {
-                certificateTrusted = "viewer.annotation.signature.validation.common.identity.unchecked.label";
-            } else {
-                certificateTrusted = "viewer.annotation.signature.validation.common.identity.valid.label";
-            }
-        }
-        certificateTrusted = messageBundle.getString(certificateTrusted);
+        certificateTrusted = messageBundle.getString("viewer.annotation.signature.validation.common.identity."
+                + identityOf(signatureValidator).key + ".label");
 
         // signature time.
         signatureTime = "viewer.annotation.signature.validation.common.time.local.label";
@@ -133,14 +114,77 @@ public class SignatureValidationStatus {
 
     // set one of the three icon's to represent the validity status of the signature node.
     protected Icon getLargeValidityIcon(SignatureValidator signatureValidator) {
-        if (!signatureValidator.isSignedDataModified() && signatureValidator.isCertificateChainTrusted()
-                && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_valid", IconPack.Variant.NONE, Images.IconSize.HUGE);
-        } else if (!signatureValidator.isSignedDataModified() && signatureValidator.isSignaturesCoverDocumentLength()) {
-            return Images.getSingleIcon("signature_caution", IconPack.Variant.NONE, Images.IconSize.HUGE);
-        } else {
-            return Images.getSingleIcon("signature_invalid", IconPack.Variant.NONE, Images.IconSize.HUGE);
+        return Images.getSingleIcon(validityOf(signatureValidator).icon, IconPack.Variant.NONE, Images.IconSize.HUGE);
+    }
+
+    /**
+     * A signature's overall validity, shared by the validation dialog, the signature properties and
+     * the signatures panel so the icon and the words always agree.
+     */
+    public enum Validity {
+        /** The signed content is intact and the signer's identity is trusted. */
+        VALID("valid", "signature_valid"),
+        /** The signed content is intact but the signer's identity can't be verified. */
+        UNKNOWN("unknown", "signature_caution"),
+        /** The signed content was altered, or the signer's certificate was revoked. */
+        INVALID("invalid", "signature_invalid");
+
+        /** Message key part and icon name. */
+        public final String key;
+        public final String icon;
+
+        Validity(String key, String icon) {
+            this.key = key;
+            this.icon = icon;
         }
+    }
+
+    /** What happened to the document after this signature. */
+    public enum DocumentState {
+        UNMODIFIED("unmodified"),
+        /** Later revisions (form fill-in, comments, more signatures); the signed version is intact. */
+        SUBSEQUENT_CHANGES("modified"),
+        /** The bytes this signature covers changed: the signature is broken. */
+        ALTERED("major");
+
+        public final String key;
+
+        DocumentState(String key) {
+            this.key = key;
+        }
+    }
+
+    /** What is known of the signer's identity. */
+    public enum Identity {
+        VALID("valid"),
+        UNKNOWN("unknown"),
+        REVOKED("revoked");
+
+        public final String key;
+
+        Identity(String key) {
+            this.key = key;
+        }
+    }
+
+    /**
+     * Validity from the signed content and the certificate, never from whether later signatures cover
+     * the rest of the file: later revisions (form fill-in, more signatures) don't break an earlier
+     * signature, they are reported by {@link #documentStateOf}.
+     */
+    public static Validity validityOf(SignatureValidator validator) {
+        if (validator.isSignedDataModified() || validator.isRevocation()) return Validity.INVALID;
+        return validator.isCertificateChainTrusted() ? Validity.VALID : Validity.UNKNOWN;
+    }
+
+    public static DocumentState documentStateOf(SignatureValidator validator) {
+        if (validator.isSignedDataModified()) return DocumentState.ALTERED;
+        return validator.isDocumentDataModified() ? DocumentState.SUBSEQUENT_CHANGES : DocumentState.UNMODIFIED;
+    }
+
+    public static Identity identityOf(SignatureValidator validator) {
+        if (validator.isRevocation()) return Identity.REVOKED;
+        return validator.isCertificateChainTrusted() ? Identity.VALID : Identity.UNKNOWN;
     }
 
     public Icon getValidityIcon() {
