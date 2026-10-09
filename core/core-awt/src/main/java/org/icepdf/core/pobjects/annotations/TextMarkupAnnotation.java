@@ -106,9 +106,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
     }
 
     /**
-     * Highlight transparency default
+     * Highlight opacity default, 0-255.  Highlights are drawn with the Multiply blend mode, as a
+     * highlighter pen (and Acrobat) does: text under the colour stays dark, so full opacity is the
+     * natural default.  It was 80 when highlights were a plain translucent fill over the text.
      */
-    public static final int HIGHLIGHT_ALPHA = 80;
+    public static final int HIGHLIGHT_ALPHA = 255;
 
     public TextMarkupAnnotation(Library library, DictionaryEntries dictionaryEntries) {
         super(library, dictionaryEntries);
@@ -211,8 +213,15 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         BasicStroke stroke = new BasicStroke(1f);
         shapes.add(new StrokeDrawCmd(stroke));
         shapes.add(new GraphicsStateCmd(EXT_GSTATE_NAME));
-        shapes.add(new AlphaDrawCmd(
-                AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
+        boolean highlight = SUBTYPE_HIGHLIGHT.equals(subtype);
+        if (highlight) {
+            // multiply, like a highlighter: the colour tints the page and the text stays dark.
+            shapes.add(new BlendCompositeDrawCmd(org.icepdf.core.pobjects.graphics.BlendComposite.MULTIPLY_VALUE,
+                    opacity));
+        } else {
+            shapes.add(new AlphaDrawCmd(
+                    AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity)));
+        }
         if (SUBTYPE_HIGHLIGHT.equals(subtype)) {
             shapes.add(new ShapeDrawCmd(markupPath));
             shapes.add(new ColorDrawCmd(color));
@@ -257,7 +266,8 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
         // create/update the appearance stream of the xObject.
         Form form = updateAppearanceStream(shapes, bbox, matrix,
                 PostScriptEncoder.generatePostScript(shapes.getShapes()));
-        generateExternalGraphicsState(form, opacity);
+        generateExternalGraphicsState(form, opacity,
+                highlight ? org.icepdf.core.pobjects.graphics.BlendComposite.MULTIPLY_VALUE : null);
     }
 
     @Override
