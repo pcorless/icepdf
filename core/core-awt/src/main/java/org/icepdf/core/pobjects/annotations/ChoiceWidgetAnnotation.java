@@ -175,6 +175,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
         if (tmp != null) {
             // apply the default value
             fieldDictionary.setFieldValue(tmp, getPObjectReference());
+            persistReset(tmp);
             firePropertyChange("valueFieldReset", oldValue, tmp);
         } else {
             // otherwise we remove the key
@@ -188,6 +189,7 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
                     ((ChoiceFieldDictionary) parentFieldDictionary).setIndexes(null);
                 }
             }
+            persistReset(null);
             firePropertyChange("valueFieldReset", oldValue, null);
         }
     }
