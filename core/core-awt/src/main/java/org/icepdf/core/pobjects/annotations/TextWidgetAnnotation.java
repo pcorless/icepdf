@@ -202,14 +202,20 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         // set the  fields value (V) to the default value defined by the DV key.
         Object oldValue = fieldDictionary.getFieldValue();
         Object tmp = fieldDictionary.getDefaultFieldValue();
+        if (tmp == null && fieldDictionary.getParent() != null) {
+            // /DV is inheritable: a kid widget's default is its field's.
+            tmp = fieldDictionary.getParent().getDefaultFieldValue();
+        }
         if (tmp != null) {
             // apply the default value
-            fieldDictionary.setFieldValue(fieldDictionary.getDefaultFieldValue(), getPObjectReference());
+            fieldDictionary.setFieldValue(tmp, getPObjectReference());
+            persistReset(tmp);
             firePropertyChange("valueFieldReset", oldValue, fieldDictionary.getFieldValue());
         } else {
             // otherwise we remove the key
             fieldDictionary.getEntries().remove(FieldDictionary.V_KEY);
             fieldDictionary.setFieldValue("", getPObjectReference());
+            persistReset("");
             firePropertyChange("valueFieldReset", oldValue, "");
         }
     }
