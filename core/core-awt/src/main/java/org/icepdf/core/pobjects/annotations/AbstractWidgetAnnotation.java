@@ -136,6 +136,41 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     public abstract void reset();
 
+    /**
+     * Finishes a reset() of a text or choice field so that it lasts: the value is mirrored to the
+     * field when this widget is a kid without a name of its own (the field holds the value readers
+     * use), the appearance is rebuilt to show the reset value, and the widget and field are recorded
+     * with the StateManager so a save writes them.  Without this a reset changed only the in-memory
+     * value; the Swing viewer's listener rebuilt and recorded the appearance, so a reset without it
+     * (headless, another viewer, the core API) was lost on save and still showed the old value.
+     *
+     * @param value the value the reset left on this widget's field dictionary, or null if removed
+     */
+    protected void persistReset(Object value) {
+        T dictionary = getFieldDictionary();
+        FieldDictionary parent = dictionary.getParent();
+        FieldDictionary field = parent != null && dictionary.getPartialFieldName() == null ? parent : dictionary;
+        if (field != dictionary) {
+            if (value != null) {
+                field.setFieldValue(value, field.getPObjectReference());
+            } else {
+                field.getEntries().remove(FieldDictionary.V_KEY);
+            }
+        }
+        try {
+            resetAppearanceStream(0, 0, new AffineTransform());
+        } catch (RuntimeException e) {
+            logger.log(Level.FINE, "Could not rebuild the appearance after a reset", e);
+        }
+        StateManager stateManager = library.getStateManager();
+        if (getPObjectReference() != null) {
+            stateManager.addChange(new PObject(this, getPObjectReference()));
+        }
+        if (field != dictionary && field.getPObjectReference() != null) {
+            stateManager.addChange(new PObject(field, field.getPObjectReference()));
+        }
+    }
+
     @Override
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
