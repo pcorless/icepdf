@@ -25,7 +25,8 @@ import org.icepdf.core.pobjects.annotations.Annotation;
  * handled by the view.  Opening links is left to the application on purpose - it decides whether to
  * confirm, which browser, and whether to allow it at all.
  *
- * @param annotation the annotation clicked (usually a link)
+ * @param annotation the annotation clicked (usually a link); null for an action that isn't an
+ *                   annotation's, such as a bookmark's ({@link PdfView#performAction})
  * @param action     its action, never null
  */
 public record AnnotationActionEvent(Annotation annotation, Action action) {

@@ -102,6 +102,7 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
     private final ReadOnlyIntegerWrapper pageCount = new ReadOnlyIntegerWrapper(this, "pageCount", 0);
     private final ReadOnlyBooleanWrapper rendering = new ReadOnlyBooleanWrapper(this, "rendering", false);
+    private final ReadOnlyIntegerWrapper contentVersion = new ReadOnlyIntegerWrapper(this, "contentVersion", 0);
     // search: hits arrive progressively from a worker; hitsByPage indexes them for drawing.
     private final ObservableList<SearchHit> searchHits = FXCollections.observableArrayList();
     private final ObservableList<SearchHit> searchHitsView = FXCollections.unmodifiableObservableList(searchHits);
@@ -643,7 +644,19 @@ public class PdfView extends Control {
      */
     public void performAnnotationAction(Annotation annotation) {
         if (annotation == null) return;
-        Action action = annotation.getAction();
+        performAction(annotation, annotation.getAction());
+    }
+
+    /**
+     * Performs an action that isn't an annotation's - a bookmark's, say - as
+     * {@link #performAnnotationAction} would: GoTo and the page named actions navigate, anything
+     * else goes to {@link #onAnnotationActionProperty()} with no annotation.
+     */
+    public void performAction(Action action) {
+        performAction(null, action);
+    }
+
+    private void performAction(Annotation annotation, Action action) {
         if (action instanceof GoToAction goTo) {
             navigateTo(goTo.getDestination());
         } else if (action instanceof NamedAction named && named.getNamedAction() != null) {
@@ -1070,6 +1083,27 @@ public class PdfView extends Control {
 
     void setRendering(boolean value) {
         rendering.set(value);
+    }
+
+    /**
+     * Re-renders every page, for when what the document draws has changed underneath the view -
+     * an optional content group (layer) switched on or off, say.  The pages already showing stay
+     * until their new rendering is ready.
+     */
+    public void refreshContent() {
+        contentVersion.set(contentVersion.get() + 1);
+    }
+
+    /**
+     * Counts {@link #refreshContent()} calls: anything else that draws the document's pages (page
+     * thumbnails) can watch it to know when to draw them again.
+     */
+    public final ReadOnlyIntegerProperty contentVersionProperty() {
+        return contentVersion.getReadOnlyProperty();
+    }
+
+    public final int getContentVersion() {
+        return contentVersion.get();
     }
 
     // ---- document permissions -------------------------------------------------------------

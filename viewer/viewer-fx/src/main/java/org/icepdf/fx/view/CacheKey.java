@@ -23,8 +23,11 @@ public sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile,
 
     int pageIndex();
 
-    /** Everything about how a page is rendered except which tile. */
-    record Params(float zoom, float rotation, double scale, int boundary) {
+    /**
+     * Everything about how a page is rendered except which tile.  {@code contentVersion} moves on
+     * when what the page draws changes without any of the rest changing - a layer switched on or off.
+     */
+    record Params(float zoom, float rotation, double scale, int boundary, int contentVersion) {
     }
 
     /** One device-pixel tile of a page. */

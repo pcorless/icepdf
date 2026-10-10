@@ -262,6 +262,11 @@ final class PageLayer extends Group {
         return hasPreview;
     }
 
+    /** Asks for a new preview; the old one stays on screen until it arrives. */
+    void clearPreview() {
+        hasPreview = false;
+    }
+
     void setPreview(RasterBuffer buffer, float previewZoom) {
         previewPageToView = PageTransforms.pageToView(page, params.boundary(), 0f, previewZoom);
         PageTransforms.setFx(previewTransform, PageTransforms.between(previewPageToView, pageToView));

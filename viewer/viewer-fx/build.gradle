@@ -17,8 +17,18 @@ repositories {
 description = 'ICEpdf FX viewer reference implementation project'
 
 application {
-    mainClass = "org.icepdf.fx.demo.PdfViewDemo"
+    mainClass = "org.icepdf.fx.viewer.PdfViewerApp"
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+}
+
+// the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf"
+tasks.register('runDemo', JavaExec) {
+    group = 'application'
+    description = 'Runs PdfViewDemo, the minimal PdfView host'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
+    jvmArgs = ["-Xmx1024m"]
+    if (project.hasProperty('args')) args project.property('args').toString().split(' ')
 }
 
 def sectionName = 'org/icepdf/fx/ri/viewer'
@@ -147,6 +157,19 @@ tasks.register('bench', JavaExec) {
 
 // PdfViewSmoke: scripted run of the control through the plan's verification steps, with snapshots.
 // ./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="/path/file.pdf;build/smoke" -PsmokeXmx=512m
+tasks.register('viewerSmoke', JavaExec) {
+    description = 'Drives the viewer window (side panels, dialogs, save) and snapshots each step.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.viewer.ViewerSmoke'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs = ["-Xmx${project.findProperty('smokeXmx') ?: '1g'}"]
+    if (project.hasProperty('smokeArgs')) {
+        args project.property('smokeArgs').toString().split(';')
+    }
+}
+
 tasks.register('smoke', JavaExec) {
     description = 'Drives PdfView through zoom/pan/rotate/view-mode steps and snapshots each.'
     group = 'verification'

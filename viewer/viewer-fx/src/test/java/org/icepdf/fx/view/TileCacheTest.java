@@ -28,7 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class TileCacheTest {
 
-    private static final CacheKey.Params PARAMS = new CacheKey.Params(1f, 0f, 1.0, 2);
+    private static final CacheKey.Params PARAMS = new CacheKey.Params(1f, 0f, 1.0, 2, 0);
     // a 16x16 ARGB tile is 1 KB
     private static final long TILE = 16 * 16 * 4;
 

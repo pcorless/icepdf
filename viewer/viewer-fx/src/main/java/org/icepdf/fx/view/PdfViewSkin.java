@@ -217,6 +217,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             renderer.setPaintAnnotations(control.isPaintAnnotations());
             resetRasters();
         });
+        // the pages draw differently (a layer toggled): new tiles, the old ones shown until they come;
+        // previews are rebuilt too.
+        registerChangeListener(control.contentVersionProperty(), o -> {
+            cache.removeIf(key -> key instanceof CacheKey.Preview);
+            layers.values().forEach(PageLayer::clearPreview);
+            refresh();
+        });
         registerChangeListener(control.pageOverlayFactoryProperty(), o -> {
             layers.values().forEach(PageLayer::resetOverlay);
             refresh();
@@ -598,7 +605,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         }
         PdfView control = getSkinnable();
         CacheKey.Params params = new CacheKey.Params((float) layoutZoom, layoutRotation, outputScale,
-                control.getPageBoundary());
+                control.getPageBoundary(), control.getContentVersion());
         double band = viewportH * PREFETCH;
         List<PageSlot> slots = layout.slotsIntersecting(scrollX, scrollY - band, viewportW, viewportH + 2 * band);
 
