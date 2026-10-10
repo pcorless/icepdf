@@ -81,85 +81,21 @@ public class ChoiceWidgetAnnotation extends AbstractWidgetAnnotation<ChoiceField
     }
 
     /**
-     * Resets the appearance stream for this instance using the current state.  The mark content section of the stream
-     * is found and the edit it make to best of our ability.
+     * Rebuilds the appearance from the field's state: a combo box shows its selected option's label
+     * like a single-line text field; a list box shows its options from the top index down, the
+     * selected ones highlighted.  Font, colour and size come from {@code /DA}, and border and
+     * background from {@code /MK}.
      *
      * @param dx            x offset of the annotation
      * @param dy            y offset of the annotation
      * @param pageTransform current page transform.
      */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-        ChoiceFieldType choiceFieldType =
-                fieldDictionary.getChoiceFieldType();
-
-        // get at the original postscript as well alter the marked content
-        Appearance appearance = appearances.get(currentAppearance);
-        AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-        Rectangle2D bbox = appearanceState.getBbox();
-        AffineTransform matrix = appearanceState.getMatrix();
-        String currentContentStream = appearanceState.getOriginalContentStream();
-
-        // alterations vary by choice type.
-        if (choiceFieldType == ChoiceFieldType.CHOICE_COMBO ||
-                choiceFieldType == ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
-            // relatively straight forward replace with new selected value.
-            if (currentContentStream != null) {
-                currentContentStream = buildChoiceComboContents(currentContentStream);
-            } else {
-                // todo no stream and we will need to build one.
-                currentContentStream = "";
-            }
-        } else {
-            // build out the complex choice list content stream
-            if (currentContentStream != null) {
-                currentContentStream = buildChoiceListContents(currentContentStream);
-            } else {
-                // todo no stream and we will need to build one.
-                currentContentStream = "";
-            }
+        if (fieldDictionary.getOptions() == null) {
+            // some choice fields lack /Opt: recover the options from the existing appearance.
+            fieldDictionary.setOptions(generateChoices());
         }
-        // finally create the shapes from the altered stream.
-        if (currentContentStream != null) {
-            appearanceState.setContentStream(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
-        }
-
-        // some widgets don't have AP dictionaries in such a case we need to create the form object
-        // and build out the default properties.
-        Form appearanceStream = getOrGenerateAppearanceForm();
-
-        if (appearanceStream != null) {
-            // update the content stream with the new stream data.
-            appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
-            // add the appearance stream
-            StateManager stateManager = library.getStateManager();
-            stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
-            // add an AP entry for the
-            DictionaryEntries appearanceRefs = new DictionaryEntries();
-            appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
-            entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-            Rectangle2D formBbox = new Rectangle2D.Float(0, 0,
-                    (float) bbox.getWidth(), (float) bbox.getHeight());
-            appearanceStream.setAppearance(null, matrix, formBbox);
-            // add link to resources on forum, if no resources exist.
-            if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null) {
-                appearanceStream.getEntries().put(Form.RESOURCES_KEY,
-                        library.getCatalog().getInteractiveForm().getResources().getEntries());
-            }
-            // add the annotation as changed as T entry has also been updated to reflect teh changed content.
-            stateManager.addChange(new PObject(this, this.getPObjectReference()));
-
-            // compress the form object stream.
-            if (compressAppearanceStream) {
-                appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-            } else {
-                appearanceStream.getEntries().remove(Stream.FILTER_KEY);
-            }
-            try {
-                appearanceStream.init();
-            } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "Could not initialized ChoiceWidgetAnnotation", e);
-            }
-        }
+        regenerateFieldAppearance();
     }
 
 

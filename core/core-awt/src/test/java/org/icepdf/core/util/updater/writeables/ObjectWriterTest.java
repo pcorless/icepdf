@@ -162,6 +162,20 @@ public class ObjectWriterTest {
         assertEquals("(back\\\\slash)", write(new LiteralStringObject("back\\slash")));
     }
 
+    @DisplayName("strings written unencrypted (a trailer /ID, an /Encrypt dictionary) are still escaped")
+    @Test
+    public void doNotEncryptStringsEscaped() throws IOException {
+        BaseWriter writer = new BaseWriter();
+        writer.initializeWriters();
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        CountingOutputStream output = new CountingOutputStream(bytes);
+        writer.writeValue(new PObject(new LiteralStringObject("a\\b(c)"), null, true), output);
+        output.flush();
+        String written = bytes.toString(StandardCharsets.ISO_8859_1.name());
+        assertEquals("(a\\\\b\\(c\\))", written);
+        assertEquals("a\\b(c)", ((org.icepdf.core.pobjects.StringObject) reparse(written)).getLiteralString());
+    }
+
     @DisplayName("literal strings - survive a round trip through the parser")
     @Test
     public void literalStringRoundTrip() throws IOException {

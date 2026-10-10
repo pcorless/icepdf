@@ -58,74 +58,26 @@ public class TextWidgetAnnotation extends AbstractWidgetAnnotation<TextFieldDict
         }
     }
 
+    /**
+     * Rebuilds the appearance from the field's value: font, colour and size from {@code /DA},
+     * quadding, padding and baseline as Acrobat lays them out, wrapping for multi-line fields, cells
+     * for comb fields, and {@code /MK} border and background.  A password field keeps its appearance.
+     */
     public void resetAppearanceStream(double dx, double dy, AffineTransform pageTransform) {
-
-        // we won't touch password fields, we'll used the original display
-        TextFieldDictionary.TextFieldType textFieldType = fieldDictionary.getTextFieldType();
-        if (textFieldType == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
+        if (fieldDictionary.getTextFieldType() == TextFieldDictionary.TextFieldType.TEXT_PASSWORD) {
             // nothing to do, let the password comp handle the look.
-        } else {
-            // get at the original postscript as well alter the marked content
-            Appearance appearance = appearances.get(currentAppearance);
-            AppearanceState appearanceState = appearance.getSelectedAppearanceState();
-            Rectangle2D bbox = appearanceState.getBbox();
-            //  putting in identity, as we trump any cm in the annotation stream.
-            AffineTransform matrix = new AffineTransform();//appearanceState.getMatrix();
-            String currentContentStream = appearanceState.getOriginalContentStream();
-            currentContentStream = buildTextWidgetContents(currentContentStream);
-
-            // finally create the shapes from the altered stream.
-            if (currentContentStream != null) {
-                appearanceState.setContentStream(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
-            }
-
-            // some widgets don't have AP dictionaries in such a case we need to create the form object
-            // and build out the default properties.
-            Form appearanceStream = getOrGenerateAppearanceForm();
-
-            if (appearanceStream != null) {
-                // update the content stream with the new stream data.
-                appearanceStream.setRawBytes(currentContentStream.getBytes(StandardCharsets.ISO_8859_1));
-                // add the appearance stream
-                StateManager stateManager = library.getStateManager();
-                stateManager.addChange(new PObject(appearanceStream, appearanceStream.getPObjectReference()));
-                // add an AP entry for the
-                DictionaryEntries appearanceRefs = new DictionaryEntries();
-                appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, appearanceStream.getPObjectReference());
-                entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
-                Rectangle2D formBbox = new Rectangle2D.Float(
-                        (float) bbox.getX(), (float) bbox.getY(), (float) bbox.getWidth(), (float) bbox.getHeight());
-                appearanceStream.setAppearance(null, matrix, formBbox);
-                // add link to resources on forum, if no resources exist.
-                if (library.getResources(appearanceStream.getEntries(), Form.RESOURCES_KEY) == null &&
-                        library.getCatalog().getInteractiveForm().getResources() != null) {
-                    appearanceStream.getEntries().put(Form.RESOURCES_KEY,
-                            library.getCatalog().getInteractiveForm().getResources().getEntries());
-                } else {
-                    // need to find some resources, try adding the parent page.
-                    Page page = getPage();
-                    if (page != null && page.getResources() != null) {
-                        appearanceStream.getEntries().put(Form.RESOURCES_KEY, page.getResources().getEntries());
-                    }
-                }
-                // add the annotation as changed as T entry has also been updated to reflect teh changed content.
-                stateManager.addChange(new PObject(this, this.getPObjectReference()));
-
-                // compress the form object stream.
-                if (compressAppearanceStream) {
-                    appearanceStream.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
-                } else {
-                    appearanceStream.getEntries().remove(Stream.FILTER_KEY);
-                }
-                try {
-                    appearanceStream.init();
-                } catch (InterruptedException e) {
-                    logger.log(Level.WARNING, "Could not initialized TextWidgetAnnotation", e);
-                }
-            }
+            return;
         }
+        regenerateFieldAppearance();
     }
 
+    /**
+     * The appearance content as the field used to build it, splicing a single text operator into the
+     * existing stream.  {@link #resetAppearanceStream} no longer uses it.
+     *
+     * @param currentContentStream the existing appearance content
+     * @return the content with the field's value
+     */
     public String buildTextWidgetContents(String currentContentStream) {
 
         // text widgets can be null, in this case we setup the default so we can add our own data.
