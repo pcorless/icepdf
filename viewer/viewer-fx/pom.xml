@@ -35,6 +35,17 @@
             <artifactId>icepdf-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- signature validation and signing (mirrors build.gradle; core has them too) -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>${bouncy.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>${bouncy.version}</version>
+        </dependency>
         <!-- RasterBench only (test scope, never shipped) - see PROVENANCE.md -->
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -67,7 +78,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.icepdf.fx.demo.PdfViewDemo</mainClass>
+                    <mainClass>org.icepdf.fx.viewer.PdfViewerApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

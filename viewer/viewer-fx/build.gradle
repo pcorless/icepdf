@@ -102,7 +102,7 @@ jar {
         manifest {
             attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
             // executable jar
-            attributes("Main-Class": 'org.icepdf.fx.demo.PdfViewDemo')
+            attributes("Main-Class": 'org.icepdf.fx.viewer.PdfViewerApp')
             if (!configurations.runtimeClasspath.isEmpty()) {
                 attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }

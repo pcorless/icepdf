@@ -3,68 +3,79 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>qa</artifactId>
-        <version>7.3.0-SNAPSHOT</version>
+        <version>7.5.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>qa-viewer</artifactId>
     <packaging>jar</packaging>
     <name>ICEpdf :: QA :: Viewer</name>
 
+    <properties>
+        <!-- mirrors qa/viewer-jfx/build.gradle: Java 11 toolchain, so JavaFX 11 -->
+        <javafx.version>11.0.2</javafx.version>
+    </properties>
+
+    <!-- mirrors build.gradle; versions are managed in ../pom.xml -->
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
-            <version>21</version>
+            <version>${javafx.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <!-- jackson json. -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.17.2</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.17.0</version>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.14.0</version>
         </dependency>
-        <!-- Bouncy castle is need for building the core bundles as well as digital signature support -->
-        <!--        <dependency>-->
-        <!--            <groupId>org.bouncycastle</groupId>-->
-        <!--            <artifactId>bcprov-jdk18on</artifactId>-->
-        <!--            <version>${bouncy.version}</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>org.bouncycastle</groupId>-->
-        <!--            <artifactId>bcpkix-jdk18on</artifactId>-->
-        <!--            <version>${bouncy.version}</version>-->
-        <!--        </dependency>-->
-        <!-- tiff, JPEG2000 and jbig2 image support -->
-        <!--        <dependency>-->
-        <!--            <groupId>com.twelvemonkeys.imageio</groupId>-->
-        <!--            <artifactId>imageio-tiff</artifactId>-->
-        <!--            <version>${twelve-monkey.version}</version>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.apache.pdfbox</groupId>-->
-        <!--            <artifactId>jbig2-imageio</artifactId>-->
-        <!--            <version>${jbig2.version}</version>-->
-        <!--        </dependency>-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.github.jai-imageio</groupId>-->
-        <!--            <artifactId>jai-imageio-jpeg2000</artifactId>-->
-        <!--            <version>${jai-imageio.version}</version>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
+        <!-- signature validation. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+        <!-- tiff, jpeg2000 and jbig decoding -->
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-tiff</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jai-imageio</groupId>
+            <artifactId>jai-imageio-jpeg2000</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>jbig2-imageio</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
