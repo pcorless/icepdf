@@ -16,7 +16,7 @@
     <modules>
         <!--<module>viewer-core</module>-->
         <module>viewer-awt</module>
-        <!--<module>viewer-fx</module>-->
+        <module>viewer-fx</module>
     </modules>
 
     <dependencyManagement>

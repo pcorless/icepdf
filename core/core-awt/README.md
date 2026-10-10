@@ -12,7 +12,9 @@ Swing/FX viewers.
 - Render pages to `BufferedImage` and export to PNG/JPEG/TIFF/SVG
 - Digital signatures via Bouncy Castle
 - Embedded font support with Apache PDFBox FontBox
-- Optional image format extensions (TIFF, JPEG2000, JBIG2) – included as optional Maven dependencies
+- Optional image format extensions (TIFF, JBIG2) – included as optional Maven dependencies
+- JPEG 2000 (`JPXDecode`) needs `com.github.jai-imageio:jai-imageio-jpeg2000`, which ICEpdf does not ship
+  because of its licence terms; add it to your application if you need it (core finds it through ImageIO)
 - Multi‑threaded rendering; the library exposes a thread pool that can be configured
 
 ## Maven Coordinates
