@@ -133,6 +133,7 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
+    private final ReadOnlyIntegerWrapper annotationsVersion = new ReadOnlyIntegerWrapper(this, "annotationsVersion", 0);
     // what an encrypted document's permissions (/P) allow the user; all true for an unencrypted one.
     private final ReadOnlyBooleanWrapper copyAllowed = new ReadOnlyBooleanWrapper(this, "copyAllowed", true);
     private final ReadOnlyBooleanWrapper annotationEditingAllowed =
@@ -596,6 +597,19 @@ public class PdfView extends Control {
         return canUndo.getReadOnlyProperty();
     }
 
+    /**
+     * Changes whenever an annotation or form field is added, removed or edited through the view
+     * (including undo and redo), so a list of the document's annotations knows to refresh.  Edits
+     * made straight on the core objects aren't seen.
+     */
+    public final ReadOnlyIntegerProperty annotationsVersionProperty() {
+        return annotationsVersion.getReadOnlyProperty();
+    }
+
+    public final int getAnnotationsVersion() {
+        return annotationsVersion.get();
+    }
+
     public final ReadOnlyBooleanProperty canRedoProperty() {
         return canRedo.getReadOnlyProperty();
     }
@@ -613,6 +627,7 @@ public class PdfView extends Control {
             edit.pages().forEach(skin::bumpAnnotationGeneration);
             skin.refreshAnnotationChrome();
         }
+        if (edit != null) annotationsVersion.set(annotationsVersion.get() + 1);
         updateHistoryState();
     }
 

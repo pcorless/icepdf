@@ -59,6 +59,8 @@ public class ViewerSmoke {
         ViewerPreferences preferences = ViewerPreferences.load(out.resolve("settings/viewer.properties"));
         ViewerWindow window = onFx(() -> {
             ViewerWindow w = new ViewerWindow(app, new Stage(), preferences);
+            // edits made by the checks are thrown away when the next document opens; no modal prompt.
+            w.askBeforeDiscard = false;
             w.show();
             return w;
         });
@@ -82,6 +84,8 @@ public class ViewerSmoke {
                 settle();
                 snapshot(window.getStage().getScene().getRoot(), tag + "_tab_" + id + ".png");
             }
+            commentSteps(window, tag);
+            if (i == 1) fullScreenSteps(window, tag);
             if (i == 1 && args.length > 1) {
                 searchSteps(window, side, tag);
                 printDefaults(window);
@@ -163,6 +167,119 @@ public class ViewerSmoke {
         });
         Platform.exit();
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    /** The comments panel: lists the markup annotations, picking one selects it in the view, filters work. */
+    private static void commentSteps(ViewerWindow window, String tag) throws Exception {
+        var panel = window.getCommentsPanel();
+        var view = window.getView();
+        for (int i = 0; i < 300 && !onFx(panel::hasComments); i++) Thread.sleep(100);
+        if (!onFx(panel::hasComments)) {
+            System.out.println("  comments: none");
+            return;
+        }
+        onFx(() -> {
+            window.showSideTab("comments");
+            return null;
+        });
+        settle();
+        var tree = (javafx.scene.control.TreeView<?>) onFx(() -> panel.lookup(".tree-view"));
+        int rows = onFx(tree::getExpandedItemCount);
+        String status = onFx(() -> statusLabel(panel));
+        System.out.println("  comments: " + rows + " rows, \"" + status + "\", side panel "
+                + Math.round(onFx(() -> panel.getWidth())) + "px");
+        check("comments listed", rows > 0 && status.contains("comment"));
+        snapshot(window.getStage().getScene().getRoot(), tag + "_tab_comments.png");
+        // the first comment row (row 0 is its page heading).
+        Object picked = onFx(() -> {
+            for (int r = 0; r < tree.getExpandedItemCount(); r++) {
+                var item = tree.getTreeItem(r);
+                if (item.getValue() instanceof org.icepdf.fx.panels.AnnotationSummary.Entry entry) {
+                    tree.getSelectionModel().select(r);
+                    return entry.annotation();
+                }
+            }
+            return null;
+        });
+        settle();
+        check("picking a comment selects it in the view", picked != null && onFx(view::getSelectedAnnotation) == picked);
+        // a filter nothing matches empties the tree, clearing it brings them back.
+        var filter = (javafx.scene.control.TextField) onFx(() -> panel.lookup(".text-field"));
+        onFx(() -> {
+            filter.setText("zzzz-no-such-comment");
+            return null;
+        });
+        check("filter hides what doesn't match", onFx(tree::getExpandedItemCount) == 0);
+        onFx(() -> {
+            filter.setText("");
+            return null;
+        });
+        check("clearing the filter shows them again", onFx(tree::getExpandedItemCount) == rows);
+        // the list follows edits made in the view: delete the picked comment, then undo.
+        if (picked != null && onFx(view::isAnnotationEditingAllowed)) {
+            String was = onFx(() -> statusLabel(panel));
+            onFx(() -> {
+                view.deleteSelectedAnnotation();
+                return null;
+            });
+            settle();
+            String afterDelete = onFx(() -> statusLabel(panel));
+            onFx(() -> {
+                view.undo();
+                return null;
+            });
+            settle();
+            String afterUndo = onFx(() -> statusLabel(panel));
+            check("list follows a delete and its undo (" + was + " -> " + afterDelete + " -> " + afterUndo + ")",
+                    !afterDelete.equals(was) && afterUndo.equals(was));
+        }
+    }
+
+    private static String statusLabel(Node panel) {
+        for (Node n : panel.lookupAll(".label")) {
+            if (n instanceof javafx.scene.control.Label l && l.getText() != null && l.getText().matches("(\\d+ of )?\\d+ comments?")) {
+                return l.getText();
+            }
+        }
+        return "";
+    }
+
+    /** Full screen: chrome hidden, one fitted page, keys turn pages, Esc-equivalent restores the layout. */
+    private static void fullScreenSteps(ViewerWindow window, String tag) throws Exception {
+        var view = window.getView();
+        var before = onFx(() -> List.of(view.getViewMode(), view.getFitMode(), window.isSidePanelVisible()));
+        double sideBefore = onFx(() -> ((Node) window.getStage().getScene().lookup(".tab-pane")).getLayoutBounds().getWidth());
+        onFx(() -> {
+            view.setCurrentPageIndex(0);
+            window.enterFullScreen();
+            return null;
+        });
+        settle();
+        check("full screen hides the menus, toolbar and panels", onFx(() -> window.isFullScreen()
+                && ((javafx.scene.layout.BorderPane) window.getStage().getScene().getRoot()).getTop() == null
+                && !window.isSidePanelVisible()));
+        check("full screen shows one fitted page", onFx(() -> view.getViewMode() == org.icepdf.fx.view.ViewMode.SINGLE_PAGE
+                && view.getFitMode() == org.icepdf.fx.view.FitMode.PAGE));
+        snapshot(window.getStage().getScene().getRoot(), tag + "_fullscreen.png");
+        onFx(() -> {
+            var press = new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED, "", "",
+                    javafx.scene.input.KeyCode.RIGHT, false, false, false, false);
+            javafx.event.Event.fireEvent(view, press);
+            return null;
+        });
+        Thread.sleep(300);
+        check("Right turns the page", onFx(view::getCurrentPageIndex) == 1);
+        onFx(() -> {
+            window.getStage().setFullScreen(false);   // as Esc does
+            return null;
+        });
+        settle();
+        var after = onFx(() -> List.of(view.getViewMode(), view.getFitMode(), window.isSidePanelVisible()));
+        double sideAfter = onFx(() -> ((Node) window.getStage().getScene().lookup(".tab-pane")).getLayoutBounds().getWidth());
+        check("side panel keeps its width (" + Math.round(sideBefore) + " -> " + Math.round(sideAfter) + "px)",
+                Math.abs(sideAfter - sideBefore) < 4);
+        check("leaving full screen puts the layout back " + after, !onFx(window::isFullScreen) && before.equals(after)
+                && onFx(() -> ((javafx.scene.layout.BorderPane) window.getStage().getScene().getRoot()).getTop() != null));
     }
 
     /** The search panel: text with context, plus bookmarks and comments; next-hit follows in the tree. */

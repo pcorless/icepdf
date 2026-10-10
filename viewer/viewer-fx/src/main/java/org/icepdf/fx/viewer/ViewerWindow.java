@@ -98,10 +98,16 @@ public class ViewerWindow {
     private LayersPanel layers;
     private SignaturePanel signatures;
     private SearchPanel search;
-    private Tab thumbnailsTab, outlineTab, attachmentsTab, layersTab, signaturesTab, searchTab;
+    private AnnotationListPanel comments;
+    private Tab thumbnailsTab, outlineTab, attachmentsTab, layersTab, signaturesTab, searchTab, commentsTab;
+    // full screen (presentation): the layout to go back to, null while not presenting.
+    private Presentation presentation;
+    private CheckMenuItem fullScreenItem;
 
     private Document document;
     private Path file;
+    // false only for scripted runs (ViewerSmoke): unsaved changes are dropped without asking.
+    boolean askBeforeDiscard = true;
     private ToggleButton sideToggle;
 
     ViewerWindow(PdfViewerApp app, Stage stage, ViewerPreferences preferences) {
@@ -212,7 +218,8 @@ public class ViewerWindow {
     }
 
     private void storeWindowState() {
-        if (!stage.isMaximized() && !stage.isIconified()) {
+        if (presentation != null) exitFullScreen();
+        if (!stage.isMaximized() && !stage.isIconified() && !stage.isFullScreen()) {
             preferences.putDouble(ViewerPreferences.WINDOW_X, stage.getX());
             preferences.putDouble(ViewerPreferences.WINDOW_Y, stage.getY());
             preferences.putDouble(ViewerPreferences.WINDOW_WIDTH, stage.getScene().getWidth());
@@ -237,6 +244,7 @@ public class ViewerWindow {
         layers = new LayersPanel(view);
         signatures = new SignaturePanel(view);
         search = new SearchPanel(view);
+        comments = new AnnotationListPanel(view);
         loadSearchOptions();
         bindSearchOption(search.caseSensitiveProperty(), ViewerPreferences.SEARCH_CASE);
         bindSearchOption(search.wholeWordProperty(), ViewerPreferences.SEARCH_WHOLE_WORD);
@@ -253,11 +261,13 @@ public class ViewerWindow {
         layersTab = tab("layers", "Layers", layers);
         signaturesTab = tab("signatures", "Signatures", signatures);
         searchTab = tab("search", "Search", search);
+        commentsTab = tab("comments", "Comments", comments);
         sideTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         sideTabs.setMinWidth(140);
         sideTabs.setSide(javafx.geometry.Side.TOP);
         outline.hasOutlineProperty().addListener((o, a, b) -> updateTabs());
         attachments.hasAttachmentsProperty().addListener((o, a, b) -> updateTabs());
+        comments.hasCommentsProperty().addListener((o, a, b) -> updateTabs());
         layers.hasLayersProperty().addListener((o, a, b) -> updateTabs());
         signatures.hasSignaturesBinding().addListener((o, a, b) -> updateTabs());
         updateTabs();
@@ -287,11 +297,12 @@ public class ViewerWindow {
         return tab;
     }
 
-    /** Pages and search always; bookmarks, attachments, layers and signatures only when the document has them. */
+    /** Pages and search always; bookmarks, comments, attachments, layers and signatures only when the document has them. */
     private void updateTabs() {
         Tab selected = sideTabs.getSelectionModel().getSelectedItem();
         List<Tab> tabs = new java.util.ArrayList<>(List.of(thumbnailsTab));
         if (outline.hasOutline()) tabs.add(outlineTab);
+        if (comments.hasComments()) tabs.add(commentsTab);
         if (attachments.hasAttachments()) tabs.add(attachmentsTab);
         if (layers.hasLayers()) tabs.add(layersTab);
         if (signatures.hasSignaturesBinding().get()) tabs.add(signaturesTab);
@@ -421,7 +432,17 @@ public class ViewerWindow {
         view.paintAnnotationsProperty().addListener((o, a, b) -> preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, b));
         CheckMenuItem fields = new CheckMenuItem("Highlight Form Fields");
         fields.selectedProperty().bindBidirectional(view.highlightFormFieldsProperty());
-        Menu viewMenu = new Menu("View", null, side, new SeparatorMenuItem(), zoomIn, zoomOut, actual, fitPage, fitWidth,
+        MenuItem commentsItem = item("Comments", "Shortcut+Shift+C", () -> showSideTab("comments"));
+        commentsItem.disableProperty().bind(comments.hasCommentsProperty().not());
+        fullScreenItem = new CheckMenuItem("Full Screen");
+        fullScreenItem.setAccelerator(KeyCombination.keyCombination("F11"));
+        fullScreenItem.setOnAction(e -> {
+            if (fullScreenItem.isSelected()) enterFullScreen();
+            else exitFullScreen();
+        });
+        fullScreenItem.disableProperty().bind(view.documentProperty().isNull());
+        Menu viewMenu = new Menu("View", null, side, commentsItem, new SeparatorMenuItem(), fullScreenItem,
+                new SeparatorMenuItem(), zoomIn, zoomOut, actual, fitPage, fitWidth,
                 new SeparatorMenuItem(), rotateRight, rotateLeft, new SeparatorMenuItem(), layout, annotationsShown, fields);
 
         MenuItem first = item("First Page", "Home", () -> view.setCurrentPageIndex(0));
@@ -649,6 +670,142 @@ public class ViewerWindow {
         search.focusQuery();
     }
 
+    // ---- full screen --------------------------------------------------------------------------
+
+    /** What full screen changed, to put back. */
+    private record Presentation(Node top, Node bottom, boolean sidePanel, double sideWidth, double splitWidth,
+                                ViewMode viewMode, FitMode fitMode,
+                                double zoom, String style, javafx.event.EventHandler<javafx.scene.input.KeyEvent> keys,
+                                javafx.event.EventHandler<javafx.scene.input.MouseEvent> mouse,
+                                javafx.animation.PauseTransition hideCursor) {
+    }
+
+    /** True while the document is shown full screen. */
+    public boolean isFullScreen() {
+        return presentation != null;
+    }
+
+    /**
+     * Shows the document full screen, one page at a time, fitted, on black, with the menus, toolbar
+     * and panels out of the way - as a presentation.  Arrow keys, Page Up/Down, Space and Backspace
+     * turn pages; Home/End go to the ends; Esc (or F11) comes back.  The pointer hides when idle.
+     */
+    public void enterFullScreen() {
+        if (presentation != null || view.getDocument() == null) return;
+        javafx.animation.PauseTransition hideCursor = new javafx.animation.PauseTransition(Duration.seconds(2));
+        hideCursor.setOnFinished(e -> view.setCursor(javafx.scene.Cursor.NONE));
+        javafx.event.EventHandler<javafx.scene.input.MouseEvent> mouse = e -> {
+            view.setCursor(null);
+            hideCursor.playFromStart();
+        };
+        javafx.event.EventHandler<javafx.scene.input.KeyEvent> keys = e -> {
+            // typing in a note or a form field keeps its keys.
+            if (e.getTarget() instanceof TextInputControl) return;
+            if (presentationKey(e.getCode(), e.isShiftDown())) e.consume();
+        };
+        presentation = new Presentation(root.getTop(), root.getBottom(), isSidePanelVisible(), sideTabs.getWidth(),
+                split.getWidth(), view.getViewMode(),
+                view.getFitMode(), view.getZoom(), view.getStyle(), keys, mouse, hideCursor);
+        if (isSidePanelVisible() && split.getDividerPositions().length > 0) {
+            preferences.putDouble(ViewerPreferences.SIDE_PANEL_DIVIDER, split.getDividerPositions()[0]);
+        }
+        root.setTop(null);
+        root.setBottom(null);
+        split.getItems().remove(sideTabs);
+        view.clearAnnotationSelection();
+        view.clearSelection();
+        view.setViewMode(ViewMode.SINGLE_PAGE);
+        view.setFitMode(FitMode.PAGE);
+        view.setStyle("-fx-background-color: black;");
+        stage.getScene().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, keys);
+        stage.getScene().addEventFilter(javafx.scene.input.MouseEvent.MOUSE_MOVED, mouse);
+        stage.setFullScreenExitHint("Press Esc to leave full screen");
+        stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("Esc"));
+        stage.fullScreenProperty().addListener(fullScreenListener);
+        stage.setFullScreen(true);
+        if (fullScreenItem != null) fullScreenItem.setSelected(true);
+        hideCursor.playFromStart();
+        view.requestFocus();
+    }
+
+    /** Leaves full screen, putting the window's layout back as it was. */
+    public void exitFullScreen() {
+        Presentation was = presentation;
+        if (was == null) return;
+        presentation = null;
+        stage.fullScreenProperty().removeListener(fullScreenListener);
+        stage.getScene().removeEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, was.keys());
+        stage.getScene().removeEventFilter(javafx.scene.input.MouseEvent.MOUSE_MOVED, was.mouse());
+        was.hideCursor().stop();
+        view.setCursor(null);
+        if (stage.isFullScreen()) stage.setFullScreen(false);
+        root.setTop(was.top());
+        root.setBottom(was.bottom());
+        if (was.sidePanel()) {
+            split.getItems().add(0, sideTabs);
+            SplitPane.setResizableWithParent(sideTabs, false);
+            keepSideWidth(was.sideWidth(), was.splitWidth());
+        }
+        view.setStyle(was.style());
+        view.setViewMode(was.viewMode());
+        view.setFitMode(was.fitMode());
+        if (was.fitMode() == FitMode.NONE) view.setZoom(was.zoom());
+        if (fullScreenItem != null) fullScreenItem.setSelected(false);
+        view.requestFocus();
+    }
+
+    /**
+     * Puts the side panel back at its width in pixels.  The window is still screen-sized when full
+     * screen ends and shrinks some time later, so a divider fraction set now would come out wrong:
+     * re-apply the width as the split resizes, until it is back to the width it had before.
+     */
+    private void keepSideWidth(double width, double splitWidth) {
+        javafx.animation.PauseTransition giveUp = new javafx.animation.PauseTransition(Duration.seconds(5));
+        javafx.beans.value.ChangeListener<Number> apply = new javafx.beans.value.ChangeListener<>() {
+            @Override
+            public void changed(javafx.beans.value.ObservableValue<? extends Number> o, Number was, Number now) {
+                double w = now.doubleValue();
+                if (w > 0) split.setDividerPositions(Math.min(0.9, width / w));
+                if (Math.abs(w - splitWidth) < 2) {
+                    split.widthProperty().removeListener(this);
+                    giveUp.stop();
+                }
+            }
+        };
+        split.widthProperty().addListener(apply);
+        apply.changed(split.widthProperty(), null, split.getWidth());
+        giveUp.setOnFinished(e -> split.widthProperty().removeListener(apply));
+        giveUp.play();
+    }
+
+    // Esc (the stage's own exit key) or the window manager can end full screen too.
+    private final javafx.beans.value.ChangeListener<Boolean> fullScreenListener = (o, was, now) -> {
+        if (!now) exitFullScreen();
+    };
+
+    /** Page turning while presenting; true when the key was used. */
+    private boolean presentationKey(KeyCode code, boolean shift) {
+        switch (code) {
+            case RIGHT, DOWN, PAGE_DOWN, ENTER, N -> view.nextPage();
+            case SPACE -> {
+                if (shift) view.previousPage();
+                else view.nextPage();
+            }
+            case LEFT, UP, PAGE_UP, BACK_SPACE, P -> view.previousPage();
+            case HOME -> view.setCurrentPageIndex(0);
+            case END -> view.setCurrentPageIndex(view.getPageCount() - 1);
+            case F11 -> exitFullScreen();
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    AnnotationListPanel getCommentsPanel() {
+        return comments;
+    }
+
     SearchPanel getSearchPanel() {
         return search;
     }
@@ -779,6 +936,7 @@ public class ViewerWindow {
         view.setDocument(null);
         if (old != null) old.dispose();
         thumbnails.dispose();
+        comments.dispose();
         stage.hide();
         app.windowClosed(this);
         return true;
@@ -790,6 +948,7 @@ public class ViewerWindow {
      * @return true to go ahead (saved or discarded), false to stay
      */
     private boolean confirmDiscard() {
+        if (!askBeforeDiscard) return true;
         if (document == null || !document.getStateManager().hasUnsavedUserChanges()) return true;
         ButtonType saveButton = new ButtonType("Save", ButtonBar.ButtonData.YES);
         ButtonType discard = new ButtonType("Don't Save", ButtonBar.ButtonData.NO);
