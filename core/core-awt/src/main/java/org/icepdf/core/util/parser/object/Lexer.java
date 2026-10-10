@@ -40,6 +40,8 @@ public class Lexer {
     // stream pointers
     private int pos;
     private int startTokenPos;
+    // parsing an object out of an object stream, whose strings are plain text (see setObjectStream)
+    private boolean objectStream;
 
     // lexer states
     private static final int
@@ -58,6 +60,16 @@ public class Lexer {
 
     public Lexer(Library library) {
         this.library = library;
+    }
+
+    /**
+     * Says the bytes are an object stream's: strings read from them are plain text, not encrypted
+     * on their own (PDF 32000-1 7.5.7), and are marked so.
+     *
+     * @param objectStream true when lexing an object out of an object stream
+     */
+    public void setObjectStream(boolean objectStream) {
+        this.objectStream = objectStream;
     }
 
     public void setByteBuffer(ByteBuffer byteBuffer) {
@@ -185,6 +197,7 @@ public class Lexer {
 
         HexStringObject hexStringObject = new HexStringObject(new String(hexData));
         hexStringObject.setReference(reference);
+        hexStringObject.setInObjectStream(objectStream);
         return hexStringObject;
     }
 
@@ -220,6 +233,7 @@ public class Lexer {
                 streamBytes.position(Math.min(pos, limit));
                 LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
                 literalStringObject.setReference(reference);
+                literalStringObject.setInObjectStream(objectStream);
                 return literalStringObject;
             }
         }
@@ -366,6 +380,7 @@ public class Lexer {
         streamBytes.position(Math.min(pos, limit));
         LiteralStringObject literalStringObject =  new LiteralStringObject(captured, true);
         literalStringObject.setReference(reference);
+        literalStringObject.setInObjectStream(objectStream);
         return literalStringObject;
     }
 

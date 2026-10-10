@@ -242,6 +242,23 @@ class StandardEncryption {
                 final SecretKeySpec key = new SecretKeySpec(encryptionKey, "AES");
                 final Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
 
+                if (encrypt) {
+                    // a fresh initialisation vector, written as the first 16 bytes.  This branch used
+                    // to decrypt whatever it was asked, so nothing could be written to an AES-256
+                    // document: a new string threw, and a new stream came out scrambled.
+                    final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
+                    aes.init(Cipher.ENCRYPT_MODE, key, iVParameterSpec);
+                    final byte[] cipherText = aes.doFinal(inputData);
+                    final byte[] output = new byte[BLOCK_SIZE + cipherText.length];
+                    System.arraycopy(iVParameterSpec.getIV(), 0, output, 0, BLOCK_SIZE);
+                    System.arraycopy(cipherText, 0, output, BLOCK_SIZE, cipherText.length);
+                    return output;
+                }
+                if (inputData.length < BLOCK_SIZE) {
+                    // too short to hold an initialisation vector: not AES cipher text.
+                    return inputData;
+                }
+
                 // calculate 16 byte initialization vector.
                 final byte[] initialisationVector = new byte[BLOCK_SIZE];
                 System.arraycopy(inputData, 0, initialisationVector, 0, BLOCK_SIZE);
@@ -390,6 +407,22 @@ class StandardEncryption {
                 // use above a key for the AES encryption function.
                 final SecretKeySpec key = new SecretKeySpec(encryptionKey, "AES");
                 final Cipher aes = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+                if (encrypt) {
+                    // as for versions 1-4: a fresh initialisation vector ahead of the cipher text.
+                    final IvParameterSpec iVParameterSpec = new IvParameterSpec(generateIv());
+                    aes.init(Cipher.ENCRYPT_MODE, key, iVParameterSpec);
+                    final ByteArrayOutputStream outputByteArray = new ByteArrayOutputStream();
+                    outputByteArray.write(iVParameterSpec.getIV());
+                    try (input; final CipherOutputStream cos = new CipherOutputStream(outputByteArray, aes)) {
+                        final byte[] data = new byte[4096];
+                        int read;
+                        while ((read = input.read(data)) != -1) {
+                            cos.write(data, 0, read);
+                        }
+                    }
+                    return new ByteArrayInputStream(outputByteArray.toByteArray());
+                }
 
                 // calculate 16 byte initialization vector.
                 final byte[] initialisationVector = new byte[BLOCK_SIZE];
