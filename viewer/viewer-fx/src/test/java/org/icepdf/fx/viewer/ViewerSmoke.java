@@ -85,7 +85,10 @@ public class ViewerSmoke {
                 snapshot(window.getStage().getScene().getRoot(), tag + "_tab_" + id + ".png");
             }
             commentSteps(window, tag);
-            if (i == 1) fullScreenSteps(window, tag);
+            if (i == 1) {
+                actionSteps(window);
+                fullScreenSteps(window, tag);
+            }
             if (i == 1 && args.length > 1) {
                 searchSteps(window, side, tag);
                 printDefaults(window);
@@ -169,6 +172,125 @@ public class ViewerSmoke {
         });
         Platform.exit();
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    /**
+     * Actions: every registered action is somewhere in the window (menu or tool bar); running
+     * actions changes the view, and the menu items and toggle buttons follow.
+     */
+    private static void actionSteps(ViewerWindow window) throws Exception {
+        var view = window.getView();
+        var controls = window.getActions();
+        java.util.Set<String> shown = onFx(() -> {
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            Node root = window.getStage().getScene().getRoot();
+            for (Node n : root.lookupAll(".menu-bar")) {
+                for (var menu : ((javafx.scene.control.MenuBar) n).getMenus()) collectIds(menu, ids);
+            }
+            for (Node n : root.lookupAll(".tool-bar")) {
+                for (Node item : ((javafx.scene.control.ToolBar) n).getItems()) {
+                    if (item.getId() != null) ids.add(item.getId());
+                    if (item instanceof javafx.scene.control.MenuButton mb) mb.getItems().forEach(mi -> collectIds(mi, ids));
+                }
+            }
+            return ids;
+        });
+        java.util.List<String> missing = new java.util.ArrayList<>();
+        for (var action : controls.registry().all()) {
+            if (!shown.contains(action.id())) missing.add(action.id());
+        }
+        check("every action is in a menu or the tool bar " + missing, missing.isEmpty());
+
+        double zoom = onFx(view::getZoom);
+        onFx(() -> {
+            controls.execute("view.fit-width");
+            controls.execute("view.zoom-in");
+            return null;
+        });
+        check("view.zoom-in zooms in", onFx(view::getZoom) > zoom);
+        onFx(() -> {
+            controls.execute("view.mode.facing");
+            return null;
+        });
+        check("view.mode.facing sets the layout and its radio item",
+                onFx(() -> view.getViewMode() == org.icepdf.fx.view.ViewMode.FACING
+                        && radioSelected(window, "view.mode.facing") && !radioSelected(window, "view.mode.continuous")));
+        onFx(() -> {
+            view.setViewMode(org.icepdf.fx.view.ViewMode.CONTINUOUS);   // changed elsewhere: the menu follows
+            return null;
+        });
+        check("the radio item follows a change made on the view", onFx(() -> radioSelected(window, "view.mode.continuous")));
+        onFx(() -> {
+            controls.execute("tool.pan");
+            return null;
+        });
+        check("tool.pan selects the tool and its toggle button", onFx(() -> view.getToolMode() == org.icepdf.fx.view.ToolMode.PAN
+                && toolBarToggle(window, "tool.pan").isSelected()));
+        onFx(() -> {
+            controls.execute("tool.select");
+            controls.execute("view.side-panel");
+            return null;
+        });
+        check("view.side-panel hides the panel", !onFx(window::isSidePanelVisible));
+        onFx(() -> {
+            controls.execute("view.side-panel");
+            view.setFitMode(org.icepdf.fx.view.FitMode.WIDTH);
+            return null;
+        });
+        check("view.side-panel shows it again", onFx(window::isSidePanelVisible));
+        check("edit.undo is disabled with nothing to undo", onFx(() -> !window.getActions().registry().get("edit.undo")
+                .enabled(contextOf(window)).get()));
+        // an application's own command, in its own menu.
+        String[] ran = {null};
+        onFx(() -> {
+            controls.registry().register(org.icepdf.fx.ri.actions.ViewerAction.of("custom.upload", "Upload",
+                    c -> ran[0] = c.view().getDocument() != null ? "with document" : "none"));
+            javafx.scene.control.MenuItem item = controls.menuItem("custom.upload");
+            item.fire();
+            controls.registry().remove("custom.upload");
+            return null;
+        });
+        check("a custom action runs from its menu item", "with document".equals(ran[0]));
+    }
+
+    private static org.icepdf.fx.ri.actions.ViewerContext contextOf(ViewerWindow window) {
+        return window.getActions().context();
+    }
+
+    private static javafx.scene.control.ToggleButton toolBarToggle(ViewerWindow window, String id) {
+        for (Node n : window.getStage().getScene().getRoot().lookupAll(".tool-bar")) {
+            for (Node item : ((javafx.scene.control.ToolBar) n).getItems()) {
+                if (id.equals(item.getId()) && item instanceof javafx.scene.control.ToggleButton toggle) return toggle;
+            }
+        }
+        throw new IllegalStateException("no tool bar toggle " + id);
+    }
+
+    private static void collectIds(javafx.scene.control.MenuItem item, java.util.Set<String> ids) {
+        if (item.getId() != null) ids.add(item.getId());
+        if (item instanceof javafx.scene.control.Menu menu) menu.getItems().forEach(child -> collectIds(child, ids));
+    }
+
+    private static boolean radioSelected(ViewerWindow window, String id) {
+        Node root = window.getStage().getScene().getRoot();
+        for (Node n : root.lookupAll(".menu-bar")) {
+            for (var menu : ((javafx.scene.control.MenuBar) n).getMenus()) {
+                var found = findItem(menu, id);
+                if (found instanceof javafx.scene.control.RadioMenuItem radio) return radio.isSelected();
+            }
+        }
+        return false;
+    }
+
+    private static javafx.scene.control.MenuItem findItem(javafx.scene.control.MenuItem item, String id) {
+        if (id.equals(item.getId())) return item;
+        if (item instanceof javafx.scene.control.Menu menu) {
+            for (var child : menu.getItems()) {
+                var found = findItem(child, id);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     /** The comments panel: lists the markup annotations, picking one selects it in the view, filters work. */

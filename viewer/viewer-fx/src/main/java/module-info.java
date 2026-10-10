@@ -21,6 +21,7 @@
  *     <li>{@code org.icepdf.fx.panels}: side panels for a {@code PdfView} (pages, bookmarks, comments,
  *     attachments, layers, signatures, search, properties);</li>
  *     <li>{@code org.icepdf.fx.print}, {@code org.icepdf.fx.signature}: printing, signature checks and signing;</li>
+ *     <li>{@code org.icepdf.fx.ri.actions}: the viewer's commands, as actions menus and bars are built from;</li>
  *     <li>{@code org.icepdf.fx.viewer}: the viewer application.</li>
  * </ul>
  * The rendering engine behind {@code PdfView} is not exported.
@@ -40,6 +41,15 @@ module org.icepdf.fx {
     exports org.icepdf.fx.print;
     exports org.icepdf.fx.signature;
     exports org.icepdf.fx.viewer;
+    exports org.icepdf.fx.ri.actions;
+    exports org.icepdf.fx.ri.actions.app;
+    exports org.icepdf.fx.ri.actions.document;
+    exports org.icepdf.fx.ri.actions.edit;
+    exports org.icepdf.fx.ri.actions.forms;
+    exports org.icepdf.fx.ri.actions.navigation;
+    exports org.icepdf.fx.ri.actions.search;
+    exports org.icepdf.fx.ri.actions.tools;
+    exports org.icepdf.fx.ri.actions.view;
     // the demo is launched, not used: JavaFX needs to reach its Application class.
     exports org.icepdf.fx.demo to javafx.graphics;
 }

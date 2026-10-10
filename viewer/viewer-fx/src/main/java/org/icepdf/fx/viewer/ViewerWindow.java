@@ -17,7 +17,9 @@ package org.icepdf.fx.viewer;
 
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -43,6 +45,17 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.panels.*;
+import org.icepdf.fx.ri.actions.ActionControls;
+import org.icepdf.fx.ri.actions.StandardActions;
+import org.icepdf.fx.ri.actions.ViewerContext;
+import org.icepdf.fx.ri.actions.app.*;
+import org.icepdf.fx.ri.actions.document.*;
+import org.icepdf.fx.ri.actions.edit.*;
+import org.icepdf.fx.ri.actions.forms.ResetFormAction;
+import org.icepdf.fx.ri.actions.navigation.*;
+import org.icepdf.fx.ri.actions.search.*;
+import org.icepdf.fx.ri.actions.tools.ToolModeAction;
+import org.icepdf.fx.ri.actions.view.*;
 import org.icepdf.fx.print.PrintDefaults;
 import org.icepdf.fx.print.PrintSettings;
 import org.icepdf.fx.signature.DocumentSigning;
@@ -98,13 +111,15 @@ public class ViewerWindow {
     private Tab thumbnailsTab, outlineTab, attachmentsTab, layersTab, signaturesTab, searchTab, commentsTab;
     // full screen (presentation): the layout to go back to, null while not presenting.
     private Presentation presentation;
-    private CheckMenuItem fullScreenItem;
+    // shown state of the side panel and full screen, as the actions see them.
+    private final BooleanProperty sidePanelVisible = new SimpleBooleanProperty(this, "sidePanelVisible");
+    private final BooleanProperty fullScreen = new SimpleBooleanProperty(this, "fullScreen");
+    private final ActionControls actions;
 
     private Document document;
     private Path file;
     // false only for scripted runs (ViewerSmoke): unsaved changes are dropped without asking.
     boolean askBeforeDiscard = true;
-    private ToggleButton sideToggle;
 
     ViewerWindow(PdfViewerApp app, Stage stage, ViewerPreferences preferences) {
         this.app = app;
@@ -112,6 +127,12 @@ public class ViewerWindow {
         this.preferences = preferences;
         applyPreferences();
         buildPanels();
+        actions = new ActionControls(StandardActions.registry(), new Context());
+        sidePanelVisible.addListener((o, was, now) -> setSidePanelVisible(now));
+        fullScreen.addListener((o, was, now) -> {
+            if (now) enterFullScreen();
+            else exitFullScreen();
+        });
 
         VBox top = new VBox(buildMenuBar(), buildToolBar());
         root.setTop(top);
@@ -318,7 +339,7 @@ public class ViewerWindow {
             }
             split.getItems().remove(sideTabs);
         }
-        if (sideToggle != null) sideToggle.setSelected(visible);
+        sidePanelVisible.set(isSidePanelVisible());
     }
 
     /** Shows the side panel at a tab, by id ("thumbnails", "bookmarks", ...) when it is there. */
@@ -350,142 +371,50 @@ public class ViewerWindow {
     // ---- menus and tool bar -------------------------------------------------------------------
 
     private MenuBar buildMenuBar() {
-        MenuItem open = item("Open…", "Shortcut+O", this::chooseAndOpen);
         recentMenu.setOnShowing(e -> rebuildRecentMenu());
         rebuildRecentMenu();
-        MenuItem newWindow = item("New Window", "Shortcut+N", () -> app.newWindow(null));
-        MenuItem save = item("Save", "Shortcut+S", this::save);
-        save.disableProperty().bind(view.modifiedProperty().not());
-        MenuItem saveAs = item("Save As…", "Shortcut+Shift+S", this::saveAs);
-        saveAs.disableProperty().bind(view.documentProperty().isNull());
-        MenuItem print = item("Print…", "Shortcut+P", this::print);
-        print.disableProperty().bind(view.printAllowedProperty().not());
-        MenuItem properties = item("Document Properties…", "Shortcut+D", this::showProperties);
-        properties.disableProperty().bind(view.documentProperty().isNull());
-        MenuItem closeDocument = item("Close Document", "Shortcut+W", this::closeDocument);
-        closeDocument.disableProperty().bind(view.documentProperty().isNull());
-        MenuItem exit = item("Exit", "Shortcut+Q", app::exit);
-        Menu file = new Menu("File", null, open, recentMenu, newWindow, new SeparatorMenuItem(), save, saveAs,
-                new SeparatorMenuItem(), print, new SeparatorMenuItem(), properties, new SeparatorMenuItem(),
-                closeDocument, exit);
-
-        MenuItem undo = item("Undo", "Shortcut+Z", view::undo);
-        undo.disableProperty().bind(view.canUndoProperty().not());
-        MenuItem redo = item("Redo", "Shortcut+Shift+Z", view::redo);
-        redo.disableProperty().bind(view.canRedoProperty().not());
-        MenuItem copy = item("Copy", "Shortcut+C", view::copySelection);
-        copy.disableProperty().bind(Bindings.createBooleanBinding(() -> view.getTextSelection() == null
-                || view.getTextSelection().isCollapsed() || !view.isCopyAllowed(),
-                view.textSelectionProperty(), view.copyAllowedProperty()));
-        MenuItem selectAll = item("Select All", "Shortcut+A", () -> {
-            view.setToolMode(ToolMode.TEXT_SELECT);
-            view.selectAll();
-        });
-        MenuItem find = item("Find…", "Shortcut+F", this::focusFind);
-        MenuItem advancedSearch = item("Search…", "Shortcut+Shift+F", this::showSearch);
-        MenuItem delete = item("Delete Annotation", null, view::deleteSelectedAnnotation);
-        delete.disableProperty().bind(view.selectedAnnotationProperty().isNull()
-                .or(view.annotationEditingAllowedProperty().not()));
-        MenuItem preferencesItem = item("Preferences…", "Shortcut+Comma", this::showPreferences);
-        Menu edit = new Menu("Edit", null, undo, redo, new SeparatorMenuItem(), copy, selectAll,
-                new SeparatorMenuItem(), find, advancedSearch, new SeparatorMenuItem(), delete, new SeparatorMenuItem(), preferencesItem);
-
-        CheckMenuItem side = new CheckMenuItem("Side Panel");
-        side.setAccelerator(KeyCombination.keyCombination("F4"));
-        side.setSelected(isSidePanelVisible());
-        side.setOnAction(e -> setSidePanelVisible(side.isSelected()));
-        split.getItems().addListener((javafx.collections.ListChangeListener<Node>) c -> side.setSelected(isSidePanelVisible()));
-        MenuItem zoomIn = item("Zoom In", "Shortcut+Equals", view::zoomIn);
-        MenuItem zoomOut = item("Zoom Out", "Shortcut+Minus", view::zoomOut);
-        MenuItem actual = item("Actual Size", "Shortcut+0", () -> {
-            view.setFitMode(FitMode.NONE);
-            view.setZoom(1);
-        });
-        MenuItem fitPage = item("Fit Page", "Shortcut+1", () -> view.setFitMode(FitMode.PAGE));
-        MenuItem fitWidth = item("Fit Width", "Shortcut+2", () -> view.setFitMode(FitMode.WIDTH));
-        MenuItem rotateRight = item("Rotate Clockwise", "Shortcut+Shift+Plus", view::rotateClockwise);
-        MenuItem rotateLeft = item("Rotate Counterclockwise", "Shortcut+Shift+Minus", view::rotateCounterClockwise);
-        Menu layout = new Menu("Page Display");
-        ToggleGroup layoutGroup = new ToggleGroup();
-        for (ViewMode mode : ViewMode.values()) {
-            RadioMenuItem modeItem = new RadioMenuItem(label(mode));
-            modeItem.setToggleGroup(layoutGroup);
-            modeItem.setSelected(view.getViewMode() == mode);
-            modeItem.setOnAction(e -> view.setViewMode(mode));
-            view.viewModeProperty().addListener((o, a, b) -> modeItem.setSelected(b == mode));
-            layout.getItems().add(modeItem);
-        }
-        CheckMenuItem cover = new CheckMenuItem("Show Cover Page");
-        cover.selectedProperty().bindBidirectional(view.coverPageProperty());
-        layout.getItems().addAll(new SeparatorMenuItem(), cover);
-        CheckMenuItem annotationsShown = new CheckMenuItem("Show Annotations");
-        annotationsShown.selectedProperty().bindBidirectional(view.paintAnnotationsProperty());
+        Menu file = actions.menu("File", OpenAction.ID, NewWindowAction.ID, null, SaveAction.ID, SaveAsAction.ID,
+                null, PrintAction.ID, null, PropertiesAction.ID, null, CloseAction.ID, ExitAction.ID);
+        file.getItems().add(1, recentMenu);
+        Menu edit = actions.menu("Edit", UndoAction.ID, RedoAction.ID, null, CopyAction.ID, SelectAllAction.ID, null,
+                FindAction.ID, SearchPanelAction.ID, null, DeleteAnnotationAction.ID, null, PreferencesAction.ID);
+        Menu pageDisplay = actions.menu("Page Display", viewModeIds());
+        pageDisplay.getItems().add(new SeparatorMenuItem());
+        pageDisplay.getItems().addAll(actions.items(CoverPageAction.ID));
+        Menu viewMenu = actions.menu("View", SidePanelAction.ID, ShowCommentsAction.ID, null, FullScreenAction.ID, null,
+                ZoomInAction.ID, ZoomOutAction.ID, ActualSizeAction.ID, FitPageAction.ID, FitWidthAction.ID, null,
+                RotateClockwiseAction.ID, RotateCounterclockwiseAction.ID, null);
+        viewMenu.getItems().add(pageDisplay);
+        viewMenu.getItems().addAll(actions.items(ShowAnnotationsAction.ID, HighlightFieldsAction.ID));
+        Menu documentMenu = actions.menu("Document", FirstPageAction.ID, PreviousPageAction.ID, NextPageAction.ID,
+                LastPageAction.ID, GoToPageAction.ID, null, ResetFormAction.ID);
+        Menu tools = actions.menu("Tools", toolIds(true));
+        Menu help = actions.menu("Help", AboutAction.ID);
+        // what's shown is remembered.
         view.paintAnnotationsProperty().addListener((o, a, b) -> preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, b));
-        CheckMenuItem fields = new CheckMenuItem("Highlight Form Fields");
-        fields.selectedProperty().bindBidirectional(view.highlightFormFieldsProperty());
-        MenuItem commentsItem = item("Comments", "Shortcut+Shift+C", () -> showSideTab("comments"));
-        commentsItem.disableProperty().bind(comments.hasCommentsProperty().not());
-        fullScreenItem = new CheckMenuItem("Full Screen");
-        fullScreenItem.setAccelerator(KeyCombination.keyCombination("F11"));
-        fullScreenItem.setOnAction(e -> {
-            if (fullScreenItem.isSelected()) enterFullScreen();
-            else exitFullScreen();
-        });
-        fullScreenItem.disableProperty().bind(view.documentProperty().isNull());
-        Menu viewMenu = new Menu("View", null, side, commentsItem, new SeparatorMenuItem(), fullScreenItem,
-                new SeparatorMenuItem(), zoomIn, zoomOut, actual, fitPage, fitWidth,
-                new SeparatorMenuItem(), rotateRight, rotateLeft, new SeparatorMenuItem(), layout, annotationsShown, fields);
-
-        MenuItem first = item("First Page", "Home", () -> view.setCurrentPageIndex(0));
-        MenuItem previous = item("Previous Page", null, view::previousPage);
-        MenuItem next = item("Next Page", null, view::nextPage);
-        MenuItem last = item("Last Page", "End", () -> view.setCurrentPageIndex(view.getPageCount() - 1));
-        MenuItem goTo = item("Go to Page…", "Shortcut+G", this::goToPage);
-        MenuItem resetForm = item("Reset Form", null, view::resetForm);
-        Menu documentMenu = new Menu("Document", null, first, previous, next, last, goTo, new SeparatorMenuItem(), resetForm);
-        for (MenuItem item : documentMenu.getItems()) {
-            if (!(item instanceof SeparatorMenuItem)) item.disableProperty().bind(view.documentProperty().isNull());
-        }
-
-        Menu tools = new Menu("Tools");
-        ToggleGroup toolGroup = new ToggleGroup();
-        for (ToolMode mode : ToolMode.values()) {
-            RadioMenuItem toolItem = new RadioMenuItem(label(mode));
-            toolItem.setToggleGroup(toolGroup);
-            toolItem.setSelected(view.getToolMode() == mode);
-            toolItem.setOnAction(e -> {
-                view.setToolMode(mode);
-                toolItem.setSelected(view.getToolMode() == mode);
-            });
-            view.toolModeProperty().addListener((o, a, b) -> toolItem.setSelected(b == mode));
-            if (mode == ToolMode.SIGNATURE) toolItem.disableProperty().bind(view.formFillingAllowedProperty().not());
-            else if (mode.createsAnnotations()) toolItem.disableProperty().bind(view.annotationEditingAllowedProperty().not());
-            if (mode == ToolMode.HIGHLIGHT || mode == ToolMode.NOTE || mode == ToolMode.SIGNATURE) {
-                tools.getItems().add(new SeparatorMenuItem());
-            }
-            tools.getItems().add(toolItem);
-        }
-
-        MenuItem about = item("About", null, () -> new Alert(Alert.AlertType.INFORMATION,
-                APP_NAME + "\nJavaFX viewer for ICEpdf " + org.icepdf.core.pobjects.Document.getLibraryVersion())
-                .showAndWait());
-        Menu help = new Menu("Help", null, about);
 
         MenuBar bar = new MenuBar(file, edit, viewMenu, documentMenu, tools, help);
         bar.setUseSystemMenuBar(true);
         return bar;
     }
 
-    private static MenuItem item(String text, String accelerator, Runnable action) {
-        MenuItem item = new MenuItem(text);
-        if (accelerator != null) item.setAccelerator(KeyCombination.keyCombination(accelerator));
-        item.setOnAction(e -> action.run());
-        return item;
+    private static String[] viewModeIds() {
+        return java.util.Arrays.stream(ViewMode.values()).map(ViewModeAction::id).toArray(String[]::new);
     }
 
-    private static String label(Enum<?> value) {
-        String name = value.name().replace('_', ' ').toLowerCase(Locale.ROOT);
-        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    /** The tools: select and hand, the annotation tools, the signature tool (separated when {@code grouped}). */
+    private static String[] toolIds(boolean grouped) {
+        List<String> ids = new java.util.ArrayList<>();
+        for (ToolMode mode : ToolMode.values()) {
+            if (grouped && (mode == ToolMode.HIGHLIGHT || mode == ToolMode.NOTE || mode == ToolMode.SIGNATURE)) ids.add(null);
+            ids.add(ToolModeAction.id(mode));
+        }
+        return ids.toArray(new String[0]);
+    }
+
+    /** The commands this window offers, as actions: for its menus and bars, and for an embedding application. */
+    public ActionControls getActions() {
+        return actions;
     }
 
     private void rebuildRecentMenu() {
@@ -514,19 +443,6 @@ public class ViewerWindow {
     private TextField findField;
 
     private ToolBar buildToolBar() {
-        Button open = button("Open", "Open a document (Ctrl+O)", this::chooseAndOpen);
-        Button save = button("Save", "Save (Ctrl+S)", this::save);
-        save.disableProperty().bind(view.modifiedProperty().not());
-        Button print = button("Print", "Print (Ctrl+P)", this::print);
-        print.disableProperty().bind(view.printAllowedProperty().not());
-
-        sideToggle = new ToggleButton("☰");
-        sideToggle.setTooltip(new Tooltip("Show or hide the side panel (F4)"));
-        sideToggle.setSelected(isSidePanelVisible());
-        sideToggle.setOnAction(e -> setSidePanelVisible(sideToggle.isSelected()));
-
-        Button previous = button("◀", "Previous page", view::previousPage);
-        Button next = button("▶", "Next page", view::nextPage);
         TextField pageField = new TextField();
         pageField.setPrefColumnCount(4);
         pageField.setAlignment(Pos.CENTER_RIGHT);
@@ -546,8 +462,6 @@ public class ViewerWindow {
         view.documentProperty().addListener((o, a, b) -> showPage.run());
         pageCount.textProperty().bind(Bindings.createStringBinding(() -> "of " + view.getPageCount(), view.pageCountProperty()));
 
-        Button zoomOut = button("−", "Zoom out (Ctrl+-)", view::zoomOut);
-        Button zoomIn = button("+", "Zoom in (Ctrl+=)", view::zoomIn);
         ComboBox<String> zoom = new ComboBox<>();
         zoom.setEditable(true);
         zoom.setPrefWidth(110);
@@ -574,38 +488,13 @@ public class ViewerWindow {
             Platform.runLater(view::requestFocus);
         });
 
-        Button rotate = button("⟳", "Rotate clockwise", view::rotateClockwise);
-
-        ToggleGroup tools = new ToggleGroup();
-        ToggleButton select = new ToggleButton("Select");
-        select.setTooltip(new Tooltip("Select text and annotations"));
-        ToggleButton pan = new ToggleButton("Hand");
-        pan.setTooltip(new Tooltip("Drag to scroll"));
-        select.setToggleGroup(tools);
-        pan.setToggleGroup(tools);
-        Runnable showTool = () -> {
-            select.setSelected(view.getToolMode() == ToolMode.TEXT_SELECT);
-            pan.setSelected(view.getToolMode() == ToolMode.PAN);
-        };
-        select.setOnAction(e -> {
-            view.setToolMode(ToolMode.TEXT_SELECT);
-            showTool.run();
-        });
-        pan.setOnAction(e -> {
-            view.setToolMode(ToolMode.PAN);
-            showTool.run();
-        });
-        view.toolModeProperty().addListener((o, a, b) -> showTool.run());
-        showTool.run();
+        // the annotation tools and the signature tool, under one button.
         MenuButton annotate = new MenuButton("Annotate");
-        for (ToolMode mode : ToolMode.values()) {
-            if (!mode.createsAnnotations()) continue;
-            MenuItem toolItem = new MenuItem(label(mode));
-            toolItem.setOnAction(e -> view.setToolMode(mode));
-            if (mode == ToolMode.SIGNATURE) toolItem.disableProperty().bind(view.formFillingAllowedProperty().not());
-            else toolItem.disableProperty().bind(view.annotationEditingAllowedProperty().not());
-            annotate.getItems().add(toolItem);
-        }
+        List<String> annotationTools = new java.util.ArrayList<>(actions.registry().idsStartingWith("annotation."));
+        annotationTools.add(null);
+        annotationTools.add(ToolModeAction.id(ToolMode.SIGNATURE));
+        annotate.getItems().setAll(actions.items(annotationTools.toArray(new String[0])));
+        annotate.disableProperty().bind(view.documentProperty().isNull());
 
         findField = new TextField();
         findField.setPromptText("Find");
@@ -628,30 +517,20 @@ public class ViewerWindow {
                 view.requestFocus();
             }
         });
-        Button findPrevious = button("▲", "Previous match", view::previousSearchHit);
-        Button findNext = button("▼", "Next match", view::nextSearchHit);
-        findPrevious.disableProperty().bind(Bindings.isEmpty(view.getSearchHits()));
-        findNext.disableProperty().bind(Bindings.isEmpty(view.getSearchHits()));
+        for (Control control : List.of(pageField, zoom, findField)) {
+            control.disableProperty().bind(view.documentProperty().isNull());
+        }
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        ToolBar bar = new ToolBar(open, save, print, new Separator(), sideToggle, new Separator(), previous, pageField,
-                pageCount, next, new Separator(), zoomOut, zoom, zoomIn, rotate, new Separator(), select, pan, annotate,
-                spacer, findField, findPrevious, findNext);
-        for (Node node : bar.getItems()) {
-            if (node == open || node == sideToggle || node instanceof Separator || node == spacer) continue;
-            if (node instanceof Control control && !control.disableProperty().isBound()) {
-                control.disableProperty().bind(view.documentProperty().isNull());
-            }
-        }
+        ToolBar bar = new ToolBar(actions.button(OpenAction.ID), actions.button(SaveAction.ID), actions.button(PrintAction.ID),
+                new Separator(), actions.button(SidePanelAction.ID), new Separator(),
+                actions.button(PreviousPageAction.ID), pageField, pageCount, actions.button(NextPageAction.ID),
+                new Separator(), actions.button(ZoomOutAction.ID), zoom, actions.button(ZoomInAction.ID),
+                actions.button(RotateClockwiseAction.ID), new Separator(),
+                actions.button(ToolModeAction.id(ToolMode.TEXT_SELECT)), actions.button(ToolModeAction.id(ToolMode.PAN)),
+                annotate, spacer, findField, actions.button(FindPreviousAction.ID), actions.button(FindNextAction.ID));
         return bar;
-    }
-
-    private static Button button(String text, String tooltip, Runnable action) {
-        Button button = new Button(text);
-        button.setTooltip(new Tooltip(tooltip));
-        button.setOnAction(e -> action.run());
-        return button;
     }
 
     /** Opens the side panel on the search tab, ready to type. */
@@ -714,7 +593,7 @@ public class ViewerWindow {
         stage.setFullScreenExitKeyCombination(KeyCombination.keyCombination("Esc"));
         stage.fullScreenProperty().addListener(fullScreenListener);
         stage.setFullScreen(true);
-        if (fullScreenItem != null) fullScreenItem.setSelected(true);
+        fullScreen.set(true);
         hideCursor.playFromStart();
         view.requestFocus();
     }
@@ -741,7 +620,7 @@ public class ViewerWindow {
         view.setViewMode(was.viewMode());
         view.setFitMode(was.fitMode());
         if (was.fitMode() == FitMode.NONE) view.setZoom(was.zoom());
-        if (fullScreenItem != null) fullScreenItem.setSelected(false);
+        fullScreen.set(false);
         view.requestFocus();
     }
 
@@ -1034,28 +913,29 @@ public class ViewerWindow {
         }
     }
 
-    private void print() {
-        view.showPrintDialog(dialog -> {
-            dialog.setDefaults(printDefaults());
-            // remember what was printed with, for next time.
-            dialog.resultProperty().addListener((o, was, settings) -> {
-                if (settings != null) savePrintDefaults(PrintDefaults.of(settings));
-            });
-        }).ifPresent(task -> {
-            status.textProperty().bind(task.messageProperty());
-            task.setOnSucceeded(e -> {
-                status.textProperty().unbind();
-                showStatus("Printed.");
-            });
-            task.setOnCancelled(e -> {
-                status.textProperty().unbind();
-                showStatus("Printing cancelled.");
-            });
-            task.setOnFailed(e -> {
-                status.textProperty().unbind();
-                showStatus("");
-                error("Printing failed: " + task.getException().getMessage());
-            });
+    /** The print dialog starts from the remembered choices, and remembers what was printed with. */
+    private void customisePrintDialog(org.icepdf.fx.print.PdfPrintDialog dialog) {
+        dialog.setDefaults(printDefaults());
+        dialog.resultProperty().addListener((o, was, settings) -> {
+            if (settings != null) savePrintDefaults(PrintDefaults.of(settings));
+        });
+    }
+
+    /** A print's progress in the status bar. */
+    private void printStarted(javafx.concurrent.Task<Void> task) {
+        status.textProperty().bind(task.messageProperty());
+        task.setOnSucceeded(e -> {
+            status.textProperty().unbind();
+            showStatus("Printed.");
+        });
+        task.setOnCancelled(e -> {
+            status.textProperty().unbind();
+            showStatus("Printing cancelled.");
+        });
+        task.setOnFailed(e -> {
+            status.textProperty().unbind();
+            showStatus("");
+            error("Printing failed: " + task.getException().getMessage());
         });
     }
 
@@ -1079,28 +959,9 @@ public class ViewerWindow {
         preferences.save();
     }
 
-    private void showProperties() {
-        if (document != null) new DocumentPropertiesDialog(stage, document).show();
-    }
-
     private void showPreferences() {
         new PreferencesDialog(stage, preferences, view).showAndWait();
         loadSearchOptions();
-    }
-
-    private void goToPage() {
-        TextInputDialog dialog = new TextInputDialog(String.valueOf(view.getCurrentPageIndex() + 1));
-        dialog.initOwner(stage);
-        dialog.setTitle("Go to Page");
-        dialog.setHeaderText(null);
-        dialog.setContentText("Page (1-" + view.getPageCount() + "):");
-        dialog.showAndWait().ifPresent(text -> {
-            try {
-                view.setCurrentPageIndex(Integer.parseInt(text.trim()) - 1);
-            } catch (NumberFormatException ignored) {
-                // not a page
-            }
-        });
     }
 
     private void openAttachment(Attachment attachment) {
@@ -1185,5 +1046,110 @@ public class ViewerWindow {
         alert.setHeaderText(null);
         alert.initOwner(stage);
         alert.showAndWait();
+    }
+
+    /** What the actions see of this window. */
+    private final class Context implements ViewerContext {
+        @Override
+        public PdfView view() {
+            return view;
+        }
+
+        @Override
+        public javafx.stage.Window window() {
+            return stage;
+        }
+
+        @Override
+        public boolean has(Capability capability) {
+            return true;
+        }
+
+        @Override
+        public String applicationName() {
+            return APP_NAME;
+        }
+
+        @Override
+        public void openDocument() {
+            chooseAndOpen();
+        }
+
+        @Override
+        public void saveDocument() {
+            save();
+        }
+
+        @Override
+        public void saveDocumentAs() {
+            saveAs();
+        }
+
+        @Override
+        public void closeDocument() {
+            ViewerWindow.this.closeDocument();
+        }
+
+        @Override
+        public void newWindow() {
+            app.newWindow(null);
+        }
+
+        @Override
+        public void exit() {
+            app.exit();
+        }
+
+        @Override
+        public void showPreferences() {
+            ViewerWindow.this.showPreferences();
+        }
+
+        @Override
+        public BooleanProperty sidePanelVisibleProperty() {
+            return sidePanelVisible;
+        }
+
+        @Override
+        public void showSidePanel(String panel) {
+            showSideTab(panel);
+        }
+
+        @Override
+        public javafx.beans.value.ObservableBooleanValue sidePanelAvailable(String panel) {
+            return switch (panel) {
+                case "comments" -> comments.hasCommentsProperty();
+                case "bookmarks" -> outline.hasOutlineProperty();
+                case "attachments" -> attachments.hasAttachmentsProperty();
+                case "layers" -> layers.hasLayersProperty();
+                case "signatures" -> signatures.hasSignaturesBinding();
+                default -> view.documentProperty().isNotNull();
+            };
+        }
+
+        @Override
+        public BooleanProperty fullScreenProperty() {
+            return fullScreen;
+        }
+
+        @Override
+        public void focusFind() {
+            ViewerWindow.this.focusFind();
+        }
+
+        @Override
+        public void showSearch() {
+            ViewerWindow.this.showSearch();
+        }
+
+        @Override
+        public void customisePrintDialog(org.icepdf.fx.print.PdfPrintDialog dialog) {
+            ViewerWindow.this.customisePrintDialog(dialog);
+        }
+
+        @Override
+        public void printStarted(javafx.concurrent.Task<Void> task) {
+            ViewerWindow.this.printStarted(task);
+        }
     }
 }

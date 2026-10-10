@@ -410,21 +410,26 @@ public class AnnotationListPanel extends BorderPane {
             swatch.setStroke(Color.gray(0.4));
             Label type = new Label(entry.type());
             type.setStyle("-fx-font-weight: bold;");
+            type.setMinWidth(Region.USE_PREF_SIZE);
             Label author = new Label(entry.author());
-            Label date = new Label(entry.date() != null ? DATES.format(entry.date()) : "");
-            date.setStyle("-fx-opacity: 0.7;");
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-            HBox heading = new HBox(6, swatch, type, author, spacer, date);
+            author.setMinWidth(0);
+            // first line: kind and author; second: date and the start of the text.
+            HBox heading = new HBox(6, swatch, type, author);
             heading.setAlignment(Pos.CENTER_LEFT);
+            String date = entry.date() != null ? DATES.format(entry.date()) : "";
+            String text = entry.contents().replaceAll("\\s+", " ");
+            if (text.length() > 120) text = text.substring(0, 120) + "\u2026";
+            String detail = date.isEmpty() ? text : text.isEmpty() ? date : date + " \u00b7 " + text;
             Node body = heading;
+            if (!detail.isEmpty()) {
+                Label second = new Label(detail);
+                second.setStyle("-fx-opacity: 0.75;");
+                second.setMinWidth(0);
+                body = new VBox(2, heading, second);
+            }
             if (!entry.contents().isEmpty()) {
-                String text = entry.contents().replaceAll("\\s+", " ");
-                Label contents = new Label(text.length() > 120 ? text.substring(0, 120) + "…" : text);
-                contents.setStyle("-fx-opacity: 0.85;");
-                body = new VBox(2, heading, contents);
                 setTooltip(new Tooltip(entry.contents().length() > 600
-                        ? entry.contents().substring(0, 600) + "…" : entry.contents()));
+                        ? entry.contents().substring(0, 600) + "\u2026" : entry.contents()));
             }
             setGraphic(body);
         }
