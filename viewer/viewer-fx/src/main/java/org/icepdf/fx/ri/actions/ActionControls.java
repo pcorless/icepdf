@@ -39,7 +39,11 @@ public final class ActionControls {
     private final ActionRegistry registry;
     private final ViewerContext context;
     private final java.util.function.Predicate<String> allowed;
+    private org.icepdf.fx.ri.icons.IconProvider icons = org.icepdf.fx.ri.icons.IconProvider.none();
+    private double buttonIconSize = 18;
+    private double menuIconSize = 16;
     // one toggle group per action group, shared by every radio item made here.
+
     private final Map<String, ToggleGroup> groups = new HashMap<>();
 
     public ActionControls(ActionRegistry registry, ViewerContext context) {
@@ -54,6 +58,24 @@ public final class ActionControls {
         this.registry = registry;
         this.context = context;
         this.allowed = allowed;
+    }
+
+    /**
+     * Icons for the controls made from now on: buttons show only the icon (the label becomes the
+     * tool tip), menu items show it beside their text.  None by default (text only).
+     */
+    public ActionControls setIcons(org.icepdf.fx.ri.icons.IconProvider icons, double buttonSize, double menuSize) {
+        this.icons = icons != null ? icons : org.icepdf.fx.ri.icons.IconProvider.none();
+        this.buttonIconSize = buttonSize;
+        this.menuIconSize = menuSize;
+        return this;
+    }
+
+    /** An action's icon: its own, else the provider's for its id; null when there's none. */
+    public javafx.scene.Node icon(String id, double size) {
+        ViewerAction action = registry.find(id).orElse(null);
+        javafx.scene.Node own = action != null ? action.icon(size) : null;
+        return own != null ? own : icons.icon(id, size);
     }
 
     public ActionRegistry registry() {
@@ -94,6 +116,8 @@ public final class ActionControls {
         }
         item.setId(id);
         item.setMnemonicParsing(false);
+        javafx.scene.Node graphic = icon(id, menuIconSize);
+        if (graphic != null) item.setGraphic(graphic);
         if (action.accelerator() != null) item.setAccelerator(action.accelerator());
         item.disableProperty().bind(not(action.enabled(context)));
         item.setOnAction(e -> run(action, item));
@@ -123,6 +147,13 @@ public final class ActionControls {
         button.setId(id);
         button.setMnemonicParsing(false);
         button.setTooltip(new Tooltip(action.tooltip()));
+        javafx.scene.Node graphic = icon(id, buttonIconSize);
+        if (graphic != null) {
+            button.setGraphic(graphic);
+            button.setText(null);
+            button.getStyleClass().add("icon-button");
+            button.setAccessibleText(action.label());
+        }
         button.disableProperty().bind(not(action.enabled(context)));
         return button;
     }

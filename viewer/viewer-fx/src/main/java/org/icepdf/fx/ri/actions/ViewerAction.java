@@ -48,6 +48,14 @@ public interface ViewerAction {
         return label();
     }
 
+    /**
+     * The action's own icon, {@code size} pixels square, or null to use the viewer's
+     * {@code IconProvider} (by this action's id).  For an application's hand-drawn icons.
+     */
+    default javafx.scene.Node icon(double size) {
+        return null;
+    }
+
     /** Keyboard shortcut, or null. */
     default KeyCombination accelerator() {
         return null;

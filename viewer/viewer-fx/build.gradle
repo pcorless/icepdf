@@ -170,6 +170,20 @@ tasks.register('viewerSmoke', JavaExec) {
     }
 }
 
+// IconSheet: a contact sheet of an icon set (placeholders by default), light and dark.
+// ./gradlew :viewer:viewer-fx:iconSheet -PiconArgs="outdir[;icons.properties]"
+tasks.register('iconSheet', JavaExec) {
+    description = 'Renders every icon of a set at 24 and 16 px, light and dark, to PNG.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.ri.icons.IconSheet'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    if (project.hasProperty('iconArgs')) {
+        args project.property('iconArgs').toString().split(';')
+    }
+}
+
 tasks.register('smoke', JavaExec) {
     description = 'Drives PdfView through zoom/pan/rotate/view-mode steps and snapshots each.'
     group = 'verification'

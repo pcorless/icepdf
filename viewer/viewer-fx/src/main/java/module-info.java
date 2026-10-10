@@ -43,6 +43,7 @@ module org.icepdf.fx {
     exports org.icepdf.fx.viewer;
     exports org.icepdf.fx.ri;
     exports org.icepdf.fx.ri.actions;
+    exports org.icepdf.fx.ri.icons;
     exports org.icepdf.fx.ri.actions.app;
     exports org.icepdf.fx.ri.actions.document;
     exports org.icepdf.fx.ri.actions.edit;
