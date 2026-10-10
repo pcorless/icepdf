@@ -30,7 +30,7 @@ adapted code.
 
 | Artifact | Version | License | Notes |
 |---|---|---|---|
-| `org.openjfx:javafx-base`, `javafx-graphics`, `javafx-controls` | 21.0.5 | GPLv2 + Classpath Exception | Linked only, not bundled in source. Apps supply their own JavaFX runtime. |
+| `org.openjfx:javafx-base`, `javafx-graphics`, `javafx-controls` | 22.0.2 | GPLv2 + Classpath Exception | Linked only, not bundled in source. Apps supply their own JavaFX runtime. |
 | `:core:core-awt` (icepdf-core) | project | Apache 2.0 | Brings its own transitive deps, listed below. |
 | `org.bouncycastle:bcprov-jdk18on`, `bcpkix-jdk18on` (+ `bcutil`) | 1.86 | Bouncy Castle Licence (MIT-style) | Also declared directly for signature validation. |
 
@@ -48,7 +48,7 @@ Transitive through core-awt. Already shipped by the Swing viewer, so not new to 
 | Artifact | Version | License | Why |
 |---|---|---|---|
 | `org.jfree:org.jfree.fxgraphics2d` | 2.1 | BSD-3-Clause | RasterBench path C (Graphics2D → `Canvas`). If it ever moves to runtime, add a NOTICE entry. |
-| `org.openjfx:javafx-swing` | 21.0.5 | GPLv2 + Classpath Exception | RasterBench path A (`SwingFXUtils`). The control itself must not need it. |
+| `org.openjfx:javafx-swing` | 22.0.2 | GPLv2 + Classpath Exception | RasterBench path A (`SwingFXUtils`). The control itself must not need it. |
 | `org.junit.jupiter:junit-jupiter` | BOM 5.14.4 | EPL-2.0 | Tests. |
 
 ## Adapted code

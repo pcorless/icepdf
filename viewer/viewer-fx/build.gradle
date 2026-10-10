@@ -3,7 +3,7 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
-// JavaFX 21 requires Java 17+, override parent toolchain for this module
+// JavaFX 22 (system colour scheme API) still runs on Java 17; 23+ would need Java 21.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
@@ -38,7 +38,7 @@ def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
 
 
 javafx {
-    version = "21.0.5"
+    version = "22.0.2"
     modules = [ 'javafx.base', 'javafx.controls', 'javafx.graphics' ]
 }
 

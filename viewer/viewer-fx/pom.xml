@@ -14,8 +14,8 @@
     </description>
 
     <properties>
-        <javafx.version>21.0.5</javafx.version>
-        <!-- JavaFX 21 requires Java 17+, mirrors the gradle toolchain override -->
+        <javafx.version>22.0.2</javafx.version>
+        <!-- JavaFX 22 runs on Java 17 (23+ needs 21); mirrors the gradle toolchain -->
         <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
