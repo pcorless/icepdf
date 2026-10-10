@@ -22,6 +22,7 @@ import org.icepdf.fx.ri.actions.app.PreferencesAction;
 import org.icepdf.fx.ri.actions.document.CloseAction;
 import org.icepdf.fx.ri.actions.document.NewTabAction;
 import org.icepdf.fx.ri.actions.document.OpenAction;
+import org.icepdf.fx.ri.actions.document.OpenInNewTabAction;
 import org.icepdf.fx.ri.actions.document.PrintAction;
 import org.icepdf.fx.ri.actions.document.PropertiesAction;
 import org.icepdf.fx.ri.actions.document.SaveAction;
@@ -56,7 +57,7 @@ public final class StandardActions {
     public static ActionRegistry registry() {
         ActionRegistry registry = new ActionRegistry();
         // document
-        registry.register(new OpenAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction())
+        registry.register(new OpenAction()).register(new OpenInNewTabAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction())
                 .register(new PrintAction()).register(new PropertiesAction()).register(new CloseAction());
         // application
         registry.register(new NewWindowAction()).register(new PreferencesAction()).register(new AboutAction())

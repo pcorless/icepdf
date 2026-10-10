@@ -31,6 +31,7 @@ import org.icepdf.fx.ri.icons.IconProvider;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -51,6 +52,8 @@ public final class TabStrip extends HBox {
     private final Map<DocumentPane, TabNode> tabs = new IdentityHashMap<>();
     private final TabRow row = new TabRow();
     private final MenuButton list = new MenuButton();
+    private BiConsumer<DocumentPane, javafx.scene.input.Dragboard> onDropOnTab = (pane, board) -> { };
+    private java.util.function.Predicate<javafx.scene.input.Dragboard> accepts = board -> false;
 
     public TabStrip(ObservableList<DocumentPane> documents, ObservableValue<DocumentPane> current,
                     Consumer<DocumentPane> select, Consumer<DocumentPane> close, Runnable add, IconProvider icons) {
@@ -92,6 +95,17 @@ public final class TabStrip extends HBox {
             row.requestLayout();
         });
         rebuild();
+    }
+
+    /**
+     * Files dropped on a tab: {@code accepts} says whether the dragboard is something to open, and
+     * {@code onDrop} gets the tab it landed on.  Elsewhere on the strip the drop passes through to
+     * the viewer (a new tab).
+     */
+    public void setOnFilesDropped(java.util.function.Predicate<javafx.scene.input.Dragboard> accepts,
+                                  BiConsumer<DocumentPane, javafx.scene.input.Dragboard> onDrop) {
+        this.accepts = accepts;
+        this.onDropOnTab = onDrop;
     }
 
     /** The tab for a document (for tests and drag handling). */
@@ -147,6 +161,23 @@ public final class TabStrip extends HBox {
             setOnMousePressed(e -> {
                 if (e.getButton() == MouseButton.PRIMARY) select.accept(pane);
                 else if (e.getButton() == MouseButton.MIDDLE) close.accept(pane);
+            });
+            setOnDragOver(e -> {
+                if (accepts.test(e.getDragboard())) {
+                    e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
+                    e.consume();
+                }
+            });
+            setOnDragEntered(e -> {
+                if (accepts.test(e.getDragboard())) getStyleClass().add("drop-target");
+            });
+            setOnDragExited(e -> getStyleClass().remove("drop-target"));
+            setOnDragDropped(e -> {
+                getStyleClass().remove("drop-target");
+                if (!accepts.test(e.getDragboard())) return;
+                onDropOnTab.accept(pane, e.getDragboard());
+                e.setDropCompleted(true);
+                e.consume();
             });
             ContextMenu menu = new ContextMenu();
             MenuItem closeThis = new MenuItem("Close");

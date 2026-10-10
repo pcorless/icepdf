@@ -69,7 +69,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.new-tab", "document.save-as", "document.print", null, "document.properties", null,
+            "document.open-new-tab", "document.new-tab", "document.save-as", "document.print", null, "document.properties", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -131,9 +131,18 @@ public class PdfViewer extends StackPane {
 
         header = new HeaderBar(actions, currentView, query -> pane().getSearchPanel().search(query), MENU);
         if (features.isMultipleDocuments()) {
-            header.setTabs(new TabStrip(documents, current, this::selectDocument, this::removeDocument,
-                    this::newTab, icons));
+            TabStrip strip = new TabStrip(documents, current, this::selectDocument, this::removeDocument,
+                    this::newTab, icons);
+            header.setTabs(strip);
             addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
+            strip.setOnFilesDropped(board -> !droppedPdfs(board).isEmpty(), (pane, board) -> {
+                java.util.List<Path> pdfs = droppedPdfs(board);
+                if (pdfs.isEmpty()) return;
+                javafx.application.Platform.runLater(() -> {
+                    open(pdfs.get(0), pane);
+                    pdfs.stream().skip(1).forEach(this::openInNewTab);
+                });
+            });
         }
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
@@ -149,32 +158,86 @@ public class PdfViewer extends StackPane {
         shell.setCenter(first.getView());
         buildDrawers();
         getChildren().addAll(shell, toast);
+        acceptDroppedFiles();
         rememberLayout();
         updateTitle();
     }
 
     // ---- API --------------------------------------------------------------------------------------
 
-    /** Opens a file (asking about unsaved changes first).  @return true if it opened */
+    /**
+     * Opens a file in the selected document, asking about unsaved changes first.  A file that is
+     * open in another tab shows that tab instead.  @return true if it opened
+     */
     public boolean open(Path file) {
+        return open(file, pane());
+    }
+
+    /** Opens a file in {@code target}, replacing what it shows (the target is selected). */
+    public boolean open(Path file, DocumentPane target) {
         if (!features.isMultipleDocuments()) return session().open(file);
-        // a file that is open already is shown, not opened twice.
+        DocumentPane existing = paneShowing(file);
+        if (existing != null && existing != target) {
+            selectDocument(existing);
+            return true;
+        }
+        selectDocument(target);
+        return target.getSession().open(file);
+    }
+
+    /**
+     * Opens a file in a new tab (an empty tab is used instead of adding one).  A file that is open
+     * already shows its tab.  Without tabs it replaces the document.  @return true if it opened
+     */
+    public boolean openInNewTab(Path file) {
+        if (!features.isMultipleDocuments()) return session().open(file);
+        DocumentPane existing = paneShowing(file);
+        if (existing != null) {
+            selectDocument(existing);
+            return true;
+        }
+        if (pane().getSession().getDocument() == null) return session().open(file);
+        // taken away again if the file doesn't open.
+        DocumentPane added = addDocument();
+        if (added.getSession().open(file)) return true;
+        if (added.getSession().getDocument() == null) removeDocument(added);
+        return false;
+    }
+
+    private DocumentPane paneShowing(Path file) {
         Path real = real(file);
         for (DocumentPane pane : documents) {
             Path open = pane.getSession().getFile();
-            if (open != null && real(open).equals(real)) {
-                selectDocument(pane);
-                return true;
+            if (open != null && real(open).equals(real)) return pane;
+        }
+        return null;
+    }
+
+    private static java.util.List<Path> droppedPdfs(javafx.scene.input.Dragboard board) {
+        java.util.List<Path> pdfs = new java.util.ArrayList<>();
+        if (board != null && board.hasFiles()) {
+            for (File f : board.getFiles()) {
+                if (f.isFile() && f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) pdfs.add(f.toPath());
             }
         }
-        // an empty tab is used; else a new one, taken away again if the file doesn't open.
-        if (pane().getSession().getDocument() != null) {
-            DocumentPane added = addDocument();
-            if (added.getSession().open(file)) return true;
-            if (added.getSession().getDocument() == null) removeDocument(added);
-            return false;
-        }
-        return session().open(file);
+        return pdfs;
+    }
+
+    /**
+     * PDFs dropped on the viewer open in new tabs (or replace the document, without tabs); dropped
+     * on a tab they replace that tab's document.
+     */
+    private void acceptDroppedFiles() {
+        setOnDragOver(e -> {
+            if (!droppedPdfs(e.getDragboard()).isEmpty()) e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
+            e.consume();
+        });
+        setOnDragDropped(e -> {
+            java.util.List<Path> pdfs = droppedPdfs(e.getDragboard());
+            e.setDropCompleted(!pdfs.isEmpty());
+            e.consume();
+            javafx.application.Platform.runLater(() -> pdfs.forEach(this::openInNewTab));
+        });
     }
 
     private static Path real(Path file) {
@@ -632,6 +695,12 @@ public class PdfViewer extends StackPane {
         public void openDocument() {
             File chosen = chooser("Open").showOpenDialog(window());
             if (chosen != null) open(chosen.toPath());
+        }
+
+        @Override
+        public void openDocumentInNewTab() {
+            File chosen = chooser("Open in New Tab").showOpenDialog(window());
+            if (chosen != null) openInNewTab(chosen.toPath());
         }
 
         @Override

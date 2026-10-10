@@ -261,3 +261,9 @@
 .icepdf-viewer .doc-tab .tab-close:hover {
     -fx-opacity: 1;
 }
+
+.icepdf-viewer .doc-tab.drop-target {
+    -fx-border-color: -icepdf-accent;
+    -fx-border-radius: 6;
+    -fx-background-color: -icepdf-hover;
+}

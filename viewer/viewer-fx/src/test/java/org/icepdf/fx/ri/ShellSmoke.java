@@ -273,11 +273,19 @@ public final class ShellSmoke {
             check("one tab for one document", onFx(() -> tabbed.getHeaderBar().lookupAll(".doc-tab").size()) == 1);
             onFx(() -> tabbed.open(other));
             settle();
-            check("a second file opens in a second tab", onFx(() -> tabbed.getDocuments().size()) == 2
+            check("Open replaces the current tab", onFx(() -> tabbed.getDocuments().size()) == 1
+                    && onFx(() -> tabbed.getCurrentDocument().getTitle()).equals(other.getFileName().toString()));
+            onFx(() -> tabbed.open(doc, tabbed.getCurrentDocument()));
+            settle();
+            check("a drop on a tab replaces that tab's document", onFx(() -> tabbed.getDocuments().size()) == 1
+                    && onFx(() -> tabbed.getCurrentDocument().getTitle()).equals(doc.getFileName().toString()));
+            onFx(() -> tabbed.openInNewTab(other));
+            settle();
+            check("Open in New Tab adds a second tab", onFx(() -> tabbed.getDocuments().size()) == 2
                     && onFx(() -> tabbed.getHeaderBar().lookupAll(".doc-tab").size()) == 2);
             check("and is the selected one", onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(1)));
             snapshot(tabbed, "shell-tabs.png");
-            onFx(() -> tabbed.open(doc));
+            onFx(() -> tabbed.openInNewTab(doc));
             settle();
             check("opening an open file selects its tab", onFx(() -> tabbed.getDocuments().size()) == 2
                     && onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(0)));
@@ -298,7 +306,7 @@ public final class ShellSmoke {
                 return null;
             });
             check("and only one empty tab at a time", onFx(() -> tabbed.getDocuments().size()) == 3);
-            onFx(() -> tabbed.open(Paths.get(args[1] + ".missing")));
+            onFx(() -> tabbed.openInNewTab(Paths.get(args[1] + ".missing")));
             settle();
             check("a failed open leaves no stray tab", onFx(() -> tabbed.getDocuments().size()) == 3);
             onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(2)));

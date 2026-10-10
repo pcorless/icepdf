@@ -71,6 +71,10 @@ public interface ViewerContext {
         throw new UnsupportedOperationException("close");
     }
 
+    default void openDocumentInNewTab() {
+        throw new UnsupportedOperationException("open in new tab");
+    }
+
     default void newTab() {
         throw new UnsupportedOperationException("new tab");
     }
