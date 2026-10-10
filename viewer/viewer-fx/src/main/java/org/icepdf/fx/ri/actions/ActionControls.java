@@ -45,6 +45,8 @@ public final class ActionControls {
     // one toggle group per action group, shared by every radio item made here.
 
     private final Map<String, ToggleGroup> groups = new HashMap<>();
+    // every control made here, so they can follow the context when its view changes.
+    private final List<Wiring> wirings = new java.util.ArrayList<>();
 
     public ActionControls(ActionRegistry registry, ViewerContext context) {
         this(registry, context, id -> true);
@@ -110,7 +112,6 @@ public final class ActionControls {
             } else {
                 item = new CheckMenuItem(action.label());
             }
-            followSelected(toggle, item);
         } else {
             item = new MenuItem(action.label());
         }
@@ -119,8 +120,8 @@ public final class ActionControls {
         javafx.scene.Node graphic = icon(id, menuIconSize);
         if (graphic != null) item.setGraphic(graphic);
         if (action.accelerator() != null) item.setAccelerator(action.accelerator());
-        item.disableProperty().bind(not(action.enabled(context)));
         item.setOnAction(e -> run(action, item));
+        wire(item, action);
         return item;
     }
 
@@ -131,12 +132,9 @@ public final class ActionControls {
         if (action instanceof ToggleAction toggle) {
             ToggleButton toggleButton = new ToggleButton(action.shortLabel());
             if (toggle.group() != null) toggleButton.setToggleGroup(group(toggle.group()));
-            ObservableBooleanValue selected = toggle.selected(context);
-            toggleButton.setSelected(selected.get());
-            selected.addListener((o, was, now) -> toggleButton.setSelected(now));
             toggleButton.setOnAction(e -> {
                 run(action, null);
-                toggleButton.setSelected(selected.get());
+                toggleButton.setSelected(toggle.selected(context).get());
             });
             button = toggleButton;
         } else {
@@ -154,7 +152,7 @@ public final class ActionControls {
             button.getStyleClass().add("icon-button");
             button.setAccessibleText(action.label());
         }
-        button.disableProperty().bind(not(action.enabled(context)));
+        wire(button, action);
         return button;
     }
 
@@ -194,9 +192,8 @@ public final class ActionControls {
             ViewerAction action = registry.get(id);
             KeyCombination key = action.accelerator();
             if (key == null) continue;
-            ObservableBooleanValue enabled = action.enabled(context);
             scene.getAccelerators().put(key, () -> {
-                if (enabled.get()) action.execute(context);
+                if (action.enabled(context).get()) action.execute(context);
             });
         }
     }
@@ -211,16 +208,63 @@ public final class ActionControls {
         }
     }
 
-    private void followSelected(ToggleAction toggle, MenuItem item) {
-        ObservableBooleanValue selected = toggle.selected(context);
-        Runnable show = () -> {
-            if (item instanceof CheckMenuItem check) check.setSelected(selected.get());
-            else if (item instanceof RadioMenuItem radio) radio.setSelected(selected.get());
-        };
-        show.run();
-        selected.addListener((o, was, now) -> show.run());
-        // keep the binding reachable as long as the item is.
-        item.getProperties().put(ToggleAction.class, selected);
+    private void wire(Object control, ViewerAction action) {
+        Wiring wiring = new Wiring(control, action);
+        wiring.bind();
+        wirings.add(wiring);
+    }
+
+    /**
+     * Points every control made here at the context's view as it is now.  Call it after the
+     * context's {@link ViewerContext#view()} starts answering with another view (the selected tab
+     * changed): enabled and selected states follow the new one.
+     */
+    public void refresh() {
+        wirings.removeIf(w -> !w.bind());
+    }
+
+    /** A control's enabled and selected state, bound to whatever the context's view is now. */
+    private final class Wiring {
+        private final java.lang.ref.WeakReference<Object> control;
+        private final ViewerAction action;
+        private ObservableBooleanValue enabled, selected;
+        private javafx.beans.value.ChangeListener<Boolean> selectedListener;
+
+        Wiring(Object control, ViewerAction action) {
+            this.control = new java.lang.ref.WeakReference<>(control);
+            this.action = action;
+        }
+
+        /** @return false once the control is gone */
+        boolean bind() {
+            Object target = control.get();
+            if (target == null) return false;
+            enabled = action.enabled(context);
+            if (target instanceof MenuItem item) {
+                item.disableProperty().unbind();
+                item.disableProperty().bind(not(enabled));
+            } else if (target instanceof ButtonBase button) {
+                button.disableProperty().unbind();
+                button.disableProperty().bind(not(enabled));
+            }
+            if (action instanceof ToggleAction toggle) {
+                if (selected != null && selectedListener != null) selected.removeListener(selectedListener);
+                selected = toggle.selected(context);
+                selectedListener = (o, was, now) -> show(target, now);
+                selected.addListener(selectedListener);
+                show(target, selected.get());
+                // the bindings are only weakly listened to: keep them reachable as long as the control is.
+                if (target instanceof MenuItem item) item.getProperties().put(ToggleAction.class, this);
+                else if (target instanceof ButtonBase button) button.getProperties().put(ToggleAction.class, this);
+            }
+            return true;
+        }
+
+        private void show(Object target, boolean on) {
+            if (target instanceof CheckMenuItem check) check.setSelected(on);
+            else if (target instanceof RadioMenuItem radio) radio.setSelected(on);
+            else if (target instanceof ToggleButton button) button.setSelected(on);
+        }
     }
 
     private ToggleGroup group(String name) {

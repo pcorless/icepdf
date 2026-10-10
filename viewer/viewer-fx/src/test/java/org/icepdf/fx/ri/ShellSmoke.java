@@ -224,6 +224,39 @@ public final class ShellSmoke {
             return null;
         });
 
+        // documents: the chrome follows the selected one.
+        org.icepdf.fx.ri.document.DocumentPane one = onFx(viewer::getCurrentDocument);
+        org.icepdf.fx.ri.document.DocumentPane two = onFx(viewer::addDocument);
+        settle();
+        check("a new document is selected and shown", onFx(() -> viewer.getCurrentDocument() == two
+                && viewer.getView() == two.getView() && viewer.getShell().lookup(".pdf-view") != null || viewer.getView() == two.getView()));
+        check("the empty document disables document actions", onFx(() -> ((javafx.scene.control.ButtonBase)
+                byId(viewer.getHeaderBar(), "view.zoom-in")).isDisabled()));
+        check("and the strip has nothing to offer", onFx(() -> viewer.getUtilityPanel().availablePanels().isEmpty()));
+        onFx(() -> {
+            viewer.open(doc);
+            return null;
+        });
+        settle();
+        onFx(() -> {
+            two.getView().setCurrentPageIndex(4);
+            return null;
+        });
+        settle();
+        check("opening fills the second document", onFx(() -> !((javafx.scene.control.ButtonBase)
+                byId(viewer.getHeaderBar(), "view.zoom-in")).isDisabled()
+                && viewer.getUtilityPanel().availablePanels().contains(SidePanel.THUMBNAILS)));
+        check("the page field follows it (5)", "5".equals(onFx(() -> ((javafx.scene.control.TextField)
+                viewer.getHeaderBar().lookup(".page-field .text-field")).getText())));
+        onFx(() -> {
+            viewer.selectDocument(one);
+            return null;
+        });
+        settle();
+        check("selecting the first brings its page back (1)", "1".equals(onFx(() -> ((javafx.scene.control.TextField)
+                viewer.getHeaderBar().lookup(".page-field .text-field")).getText())) && onFx(() -> viewer.getView() == one.getView()));
+        check("removing the second leaves one", onFx(() -> viewer.removeDocument(two) && viewer.getDocuments().size() == 1));
+
         // full screen.
         onFx(() -> {
             viewer.getActions().execute("view.full-screen");
@@ -261,6 +294,18 @@ public final class ShellSmoke {
         });
         Platform.exit();
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    /** CSS lookup can't match ids with dots: walk the nodes. */
+    private static Node byId(Node root, String id) {
+        if (id.equals(root.getId())) return root;
+        if (root instanceof javafx.scene.Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                Node found = byId(child, id);
+                if (found != null) return found;
+            }
+        }
+        return null;
     }
 
     private static MouseEvent pressed(javafx.geometry.Point2D scene) {

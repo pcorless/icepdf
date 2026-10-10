@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
@@ -45,7 +46,7 @@ public final class HeaderBar extends VBox {
      * @param search runs a search for the typed text (the viewer's search panel, so results list there)
      * @param menuIds the primary menu's actions; null for a separator
      */
-    public HeaderBar(ActionControls actions, PdfView view, Consumer<String> search, String... menuIds) {
+    public HeaderBar(ActionControls actions, ObservableValue<PdfView> view, Consumer<String> search, String... menuIds) {
         this.actions = actions;
         getStyleClass().add("header-bar-box");
         HBox bar = new HBox();
@@ -76,7 +77,14 @@ public final class HeaderBar extends VBox {
         searchToggle.getStyleClass().add("icon-button");
         searchToggle.setTooltip(new Tooltip("Search"));
         searchToggle.setId("ui.search");
-        searchToggle.disableProperty().bind(view.documentProperty().isNull());
+        Runnable followDocument = () -> {
+            searchToggle.disableProperty().unbind();
+            PdfView now = view.getValue();
+            if (now != null) searchToggle.disableProperty().bind(now.documentProperty().isNull());
+            else searchToggle.setDisable(true);
+        };
+        view.addListener((o, was, now) -> followDocument.run());
+        followDocument.run();
         if (actions.isAvailable("search.find")) bar.getChildren().add(searchToggle);
 
         MenuButton menu = new MenuButton();
@@ -97,7 +105,7 @@ public final class HeaderBar extends VBox {
         searchField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 searchToggle.setSelected(false);
-                view.requestFocus();
+                if (view.getValue() != null) view.getValue().requestFocus();
             }
         });
         searchBar = new HBox(searchField);

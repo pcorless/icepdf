@@ -17,6 +17,11 @@ package org.icepdf.fx.ri;
 
 import javafx.animation.PauseTransition;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.concurrent.Task;
@@ -31,13 +36,13 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.ActionRegistry;
 import org.icepdf.fx.ri.actions.StandardActions;
 import org.icepdf.fx.ri.actions.ViewerContext;
+import org.icepdf.fx.ri.document.DocumentPane;
 import org.icepdf.fx.ri.document.DocumentSession;
 import org.icepdf.fx.ri.icons.IconProvider;
 import org.icepdf.fx.ri.icons.SvgIcons;
@@ -72,8 +77,10 @@ public class PdfViewer extends StackPane {
 
     private final ViewerFeatures features;
     private final UserLayout layout;
-    private final PdfView view = new PdfView();
-    private final DocumentSession session = new DocumentSession(view);
+    private final ObservableList<DocumentPane> documents = FXCollections.observableArrayList();
+    private final ObjectProperty<DocumentPane> current = new SimpleObjectProperty<>(this, "current");
+    // the selected document's view: what the header, the actions and the shell follow.
+    private final ObjectProperty<PdfView> currentView = new SimpleObjectProperty<>(this, "currentView");
     private final ActionControls actions;
     private final IconProvider icons;
     private final ViewerShell shell = new ViewerShell();
@@ -82,17 +89,12 @@ public class PdfViewer extends StackPane {
     private final HeaderBar header;
     private final ToolRail rail;
     private final UtilityPanel utility;
-    private final SearchPanel searchPanel;
-    private final ThumbnailPanel thumbnails;
-    private final AnnotationListPanel comments;
-    private final OutlinePanel outline;
-    private final AttachmentPanel attachments;
-    private final LayersPanel layers;
-    private final SignaturePanel signatures;
     private final BooleanProperty sidePanelVisible = new SimpleBooleanProperty(this, "sidePanelVisible");
     private final BooleanProperty fullScreen = new SimpleBooleanProperty(this, "fullScreen");
     private final PauseTransition saveLayoutLater = new PauseTransition(Duration.millis(600));
     private Runnable onNewWindow, onExit, onPreferences;
+    private java.util.function.BooleanSupplier confirmDiscard;
+    private javafx.stage.Window owner;
     private Consumer<String> onError = this::showMessage;
     private Presenting presenting;
 
@@ -117,42 +119,32 @@ public class PdfViewer extends StackPane {
         theme = new Theme(this);
         actions = new ActionControls(registry, new Context(), features::allows).setIcons(icons, 20, 16);
 
-        session.setOnError(message -> onError.accept(message));
-        session.setOnLoaded(this::loaded);
-        sceneProperty().addListener((o, a, scene) -> session.setOwner(scene != null ? scene.getWindow() : null));
-        view.setOnAnnotationAction(event -> {
-            if (event.getAction() instanceof URIAction uri && uri.getURI() != null) showMessage("Link: " + uri.getURI());
+        sceneProperty().addListener((o, a, scene) -> {
+            owner = scene != null ? scene.getWindow() : null;
+            documents.forEach(d -> d.getSession().setOwner(owner));
         });
 
-        searchPanel = new SearchPanel(view);
-        thumbnails = new ThumbnailPanel(view);
-        comments = new AnnotationListPanel(view);
-        outline = new OutlinePanel(view);
-        attachments = new AttachmentPanel(view);
-        layers = new LayersPanel(view);
-        signatures = new SignaturePanel(view);
+        DocumentPane first = newPane();
+        documents.add(first);
+        current.set(first);
+        currentView.set(first.getView());
 
-        header = new HeaderBar(actions, view, searchPanel::search, MENU);
+        header = new HeaderBar(actions, currentView, query -> pane().getSearchPanel().search(query), MENU);
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
         // the layout is shared by every viewer in the application: follow its changes, wherever made.
         layout.addListener(layoutListener);
         utility = new UtilityPanel(layout.getPanelSide(), icons);
-        addPanel(SidePanel.THUMBNAILS, "Pages", thumbnails, view.documentProperty().isNotNull());
-        addPanel(SidePanel.BOOKMARKS, "Bookmarks", outline, outline.hasOutlineProperty());
-        addPanel(SidePanel.COMMENTS, "Comments", comments, comments.hasCommentsProperty());
-        addPanel(SidePanel.ATTACHMENTS, "Attachments", attachments, attachments.hasAttachmentsProperty());
-        addPanel(SidePanel.LAYERS, "Layers", layers, layers.hasLayersProperty());
-        addPanel(SidePanel.SIGNATURES, "Signatures", signatures, signatures.hasSignaturesBinding());
-        addPanel(SidePanel.SEARCH, "Search", searchPanel, view.documentProperty().isNotNull());
+        for (SidePanel panel : SidePanel.values()) {
+            if (features.allows(panel)) utility.addPanel(panel, panelLabel(panel), panelNode(first, panel), panelAvailable(first, panel));
+        }
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
 
         shell.setHeader(header);
-        shell.setCenter(view);
+        shell.setCenter(first.getView());
         buildDrawers();
         getChildren().addAll(shell, toast);
         rememberLayout();
-        view.modifiedProperty().addListener((o, a, b) -> updateTitle());
         updateTitle();
     }
 
@@ -160,16 +152,164 @@ public class PdfViewer extends StackPane {
 
     /** Opens a file (asking about unsaved changes first).  @return true if it opened */
     public boolean open(Path file) {
-        return session.open(file);
+        return session().open(file);
     }
 
+    /** The selected document's view. */
     public PdfView getView() {
-        return view;
+        return pane().getView();
     }
 
-    /** The open document and file; open, save, close. */
+    /** The selected document's file: open, save, close. */
     public DocumentSession getSession() {
-        return session;
+        return session();
+    }
+
+    // ---- documents --------------------------------------------------------------------------------
+
+    /** The open documents, in tab order.  Change it through {@link #addDocument} and {@link #removeDocument}. */
+    public ObservableList<DocumentPane> getDocuments() {
+        return FXCollections.unmodifiableObservableList(documents);
+    }
+
+    /** The selected document. */
+    public ReadOnlyObjectProperty<DocumentPane> currentDocumentProperty() {
+        return current;
+    }
+
+    public DocumentPane getCurrentDocument() {
+        return current.get();
+    }
+
+    /** Adds an empty document after the selected one and selects it. */
+    public DocumentPane addDocument() {
+        DocumentPane added = newPane();
+        documents.add(documents.indexOf(current.get()) + 1, added);
+        selectDocument(added);
+        return added;
+    }
+
+    /** Adds a document that already exists (one moved from another window) and selects it. */
+    public void addDocument(DocumentPane pane, int index) {
+        wire(pane);
+        documents.add(Math.max(0, Math.min(index, documents.size())), pane);
+        selectDocument(pane);
+    }
+
+    /**
+     * Shows another document: the page, the panels, and the header, rail and menus follow it.
+     * Leaves full screen first.
+     */
+    public void selectDocument(DocumentPane pane) {
+        if (pane == null || pane == current.get() || !documents.contains(pane)) return;
+        if (presenting != null) fullScreen.set(false);
+        current.set(pane);
+        currentView.set(pane.getView());
+        shell.setCenter(pane.getView());
+        for (SidePanel panel : SidePanel.values()) {
+            if (features.allows(panel)) utility.retarget(panel, panelNode(pane, panel), panelAvailable(pane, panel));
+        }
+        actions.refresh();
+        updateTitle();
+        pane.getView().requestFocus();
+    }
+
+    /**
+     * Closes a document, asking about unsaved changes first; the next one is selected.  The last
+     * one is not removed but emptied.
+     *
+     * @return false if the user kept it
+     */
+    public boolean removeDocument(DocumentPane pane) {
+        if (!documents.contains(pane) || !pane.getSession().confirmDiscard()) return false;
+        if (documents.size() == 1) {
+            pane.getSession().close();
+            pane.refreshTitle();
+            return true;
+        }
+        int at = documents.indexOf(pane);
+        if (pane == current.get()) selectDocument(documents.get(at > 0 ? at - 1 : 1));
+        documents.remove(pane);
+        pane.dispose();
+        return true;
+    }
+
+    /** Takes a document out without closing it, to put in another window; the last can't leave. */
+    public boolean detachDocument(DocumentPane pane) {
+        if (!documents.contains(pane) || documents.size() == 1) return false;
+        int at = documents.indexOf(pane);
+        if (pane == current.get()) selectDocument(documents.get(at > 0 ? at - 1 : 1));
+        documents.remove(pane);
+        pane.setOnMessage(null);
+        pane.getSession().setOnError(null);
+        pane.getSession().setOnLoaded(null);
+        return true;
+    }
+
+    private DocumentPane pane() {
+        return current.get();
+    }
+
+    private PdfView view() {
+        return current.get().getView();
+    }
+
+    private DocumentSession session() {
+        return current.get().getSession();
+    }
+
+    private DocumentPane newPane() {
+        DocumentPane pane = new DocumentPane();
+        wire(pane);
+        return pane;
+    }
+
+    /** Connects a document to this window's messages, errors, owner and discard rule. */
+    private void wire(DocumentPane pane) {
+        DocumentSession session = pane.getSession();
+        session.setOnError(message -> onError.accept(message));
+        session.setOnLoaded(file -> loaded(pane));
+        session.setOwner(owner);
+        if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
+        pane.setOnMessage(this::showMessage);
+        pane.titleProperty().addListener((o, a, b) -> {
+            if (pane == current.get()) updateTitle();
+        });
+    }
+
+    private static String panelLabel(SidePanel panel) {
+        return switch (panel) {
+            case THUMBNAILS -> "Pages";
+            case BOOKMARKS -> "Bookmarks";
+            case COMMENTS -> "Comments";
+            case ATTACHMENTS -> "Attachments";
+            case LAYERS -> "Layers";
+            case SIGNATURES -> "Signatures";
+            case SEARCH -> "Search";
+        };
+    }
+
+    private static javafx.scene.Node panelNode(DocumentPane pane, SidePanel panel) {
+        return switch (panel) {
+            case THUMBNAILS -> pane.getThumbnails();
+            case BOOKMARKS -> pane.getOutline();
+            case COMMENTS -> pane.getComments();
+            case ATTACHMENTS -> pane.getAttachments();
+            case LAYERS -> pane.getLayers();
+            case SIGNATURES -> pane.getSignatures();
+            case SEARCH -> pane.getSearchPanel();
+        };
+    }
+
+    private static ObservableBooleanValue panelAvailable(DocumentPane pane, SidePanel panel) {
+        return switch (panel) {
+            case BOOKMARKS -> pane.getOutline().hasOutlineProperty();
+            case COMMENTS -> pane.getComments().hasCommentsProperty();
+            case ATTACHMENTS -> pane.getAttachments().hasAttachmentsProperty();
+            case LAYERS -> pane.getLayers().hasLayersProperty();
+            case SIGNATURES -> pane.getSignatures().hasSignaturesBinding();
+            default -> pane.getView().documentProperty().isNotNull();
+        };
     }
 
     /** The commands, as controls - for an application's own menus. */
@@ -236,7 +376,8 @@ public class PdfViewer extends StackPane {
 
     /** Asked before unsaved changes are dropped; false to stay.  By default they're dropped. */
     public void setConfirmDiscard(java.util.function.BooleanSupplier confirm) {
-        session.setConfirmDiscard(confirm);
+        confirmDiscard = confirm;
+        documents.forEach(d -> d.getSession().setConfirmDiscard(confirm));
     }
 
     public BooleanProperty fullScreenProperty() {
@@ -246,9 +387,7 @@ public class PdfViewer extends StackPane {
     /** Closes the document without asking and stops background work. */
     public void dispose() {
         if (presenting != null) exitFullScreen();
-        session.dispose();
-        thumbnails.dispose();
-        comments.dispose();
+        documents.forEach(DocumentPane::dispose);
         theme.dispose();
         saveLayoutLater.stop();
         layout.removeListener(layoutListener);
@@ -257,10 +396,6 @@ public class PdfViewer extends StackPane {
     }
 
     // ---- layout ---------------------------------------------------------------------------------
-
-    private void addPanel(SidePanel panel, String label, javafx.scene.Node node, ObservableBooleanValue available) {
-        if (features.allows(panel)) utility.addPanel(panel, label, node, available);
-    }
 
     private final Runnable layoutListener = this::layoutChanged;
 
@@ -325,10 +460,12 @@ public class PdfViewer extends StackPane {
         saveLayoutLater.setOnFinished(e -> layout.save());
     }
 
-    private void loaded(Path file) {
+    private void loaded(DocumentPane pane) {
+        pane.refreshTitle();
+        if (pane != current.get()) return;
         updateTitle();
         // the document's /PageMode picks the panel it opens with, as Acrobat does.
-        Name mode = session.getDocument().getCatalog().getPageMode();
+        Name mode = pane.getSession().getDocument().getCatalog().getPageMode();
         SidePanel wanted = Catalog.PAGE_MODE_USE_OUTLINES_VALUE.equals(mode) ? SidePanel.BOOKMARKS
                 : Catalog.PAGE_MODE_USE_THUMBS_VALUE.equals(mode) ? SidePanel.THUMBNAILS
                 : Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE.equals(mode) ? SidePanel.ATTACHMENTS
@@ -337,8 +474,7 @@ public class PdfViewer extends StackPane {
     }
 
     private void updateTitle() {
-        Path file = session.getFile();
-        header.setTitle(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
+        header.setTitle(pane().getTitle());
     }
 
     // ---- full screen ----------------------------------------------------------------------------
@@ -347,18 +483,18 @@ public class PdfViewer extends StackPane {
     }
 
     private void enterFullScreen() {
-        if (presenting != null || view.getDocument() == null) return;
+        if (presenting != null || view().getDocument() == null) return;
         EventHandler<KeyEvent> keys = e -> {
             if (e.getTarget() instanceof javafx.scene.control.TextInputControl) return;
             switch (e.getCode()) {
-                case RIGHT, DOWN, PAGE_DOWN, ENTER, N -> view.nextPage();
+                case RIGHT, DOWN, PAGE_DOWN, ENTER, N -> view().nextPage();
                 case SPACE -> {
-                    if (e.isShiftDown()) view.previousPage();
-                    else view.nextPage();
+                    if (e.isShiftDown()) view().previousPage();
+                    else view().nextPage();
                 }
-                case LEFT, UP, PAGE_UP, BACK_SPACE, P -> view.previousPage();
-                case HOME -> view.setCurrentPageIndex(0);
-                case END -> view.setCurrentPageIndex(view.getPageCount() - 1);
+                case LEFT, UP, PAGE_UP, BACK_SPACE, P -> view().previousPage();
+                case HOME -> view().setCurrentPageIndex(0);
+                case END -> view().setCurrentPageIndex(view().getPageCount() - 1);
                 case ESCAPE, F11 -> fullScreen.set(false);
                 default -> {
                     return;
@@ -366,20 +502,20 @@ public class PdfViewer extends StackPane {
             }
             e.consume();
         };
-        presenting = new Presenting(view.getViewMode(), view.getFitMode(), view.getZoom(), keys);
+        presenting = new Presenting(view().getViewMode(), view().getFitMode(), view().getZoom(), keys);
         shell.closeOverlays();
         shell.setChromeVisible(false);
         getStyleClass().add("presenting");
-        view.clearAnnotationSelection();
-        view.setViewMode(ViewMode.SINGLE_PAGE);
-        view.setFitMode(FitMode.PAGE);
+        view().clearAnnotationSelection();
+        view().setViewMode(ViewMode.SINGLE_PAGE);
+        view().setFitMode(FitMode.PAGE);
         addEventFilter(KeyEvent.KEY_PRESSED, keys);
         if (getScene() != null && getScene().getWindow() instanceof Stage stage) {
             stage.setFullScreenExitHint("Press Esc to leave full screen");
             stage.setFullScreen(true);
             stage.fullScreenProperty().addListener(stageFullScreen);
         }
-        view.requestFocus();
+        view().requestFocus();
     }
 
     private final javafx.beans.value.ChangeListener<Boolean> stageFullScreen = (o, was, now) -> {
@@ -397,10 +533,10 @@ public class PdfViewer extends StackPane {
         }
         getStyleClass().remove("presenting");
         shell.setChromeVisible(true);
-        view.setViewMode(was.viewMode());
-        view.setFitMode(was.fitMode());
-        if (was.fitMode() == FitMode.NONE) view.setZoom(was.zoom());
-        view.requestFocus();
+        view().setViewMode(was.viewMode());
+        view().setFitMode(was.fitMode());
+        if (was.fitMode() == FitMode.NONE) view().setZoom(was.zoom());
+        view().requestFocus();
     }
 
     {
@@ -416,7 +552,7 @@ public class PdfViewer extends StackPane {
     private final class Context implements ViewerContext {
         @Override
         public PdfView view() {
-            return view;
+            return PdfViewer.this.view();
         }
 
         @Override
@@ -442,8 +578,8 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void saveDocument() {
-            if (session.canSaveInPlace()) {
-                if (session.save()) showMessage("Saved");
+            if (session().canSaveInPlace()) {
+                if (session().save()) showMessage("Saved");
             } else {
                 saveDocumentAs();
             }
@@ -452,15 +588,16 @@ public class PdfViewer extends StackPane {
         @Override
         public void saveDocumentAs() {
             FileChooser chooser = chooser("Save As");
-            Path file = session.getFile();
+            Path file = session().getFile();
             chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
             File chosen = chooser.showSaveDialog(window());
-            if (chosen != null && session.saveAs(chosen.toPath())) showMessage("Saved " + session.getFile().getFileName());
+            if (chosen != null && session().saveAs(chosen.toPath())) showMessage("Saved " + session().getFile().getFileName());
         }
 
         @Override
         public void closeDocument() {
-            session.close();
+            session().close();
+            pane().refreshTitle();
             updateTitle();
         }
 
@@ -492,12 +629,12 @@ public class PdfViewer extends StackPane {
         @Override
         public ObservableBooleanValue sidePanelAvailable(String panel) {
             return switch (panel) {
-                case "comments" -> comments.hasCommentsProperty();
-                case "bookmarks" -> outline.hasOutlineProperty();
-                case "attachments" -> attachments.hasAttachmentsProperty();
-                case "layers" -> layers.hasLayersProperty();
-                case "signatures" -> signatures.hasSignaturesBinding();
-                default -> view.documentProperty().isNotNull();
+                case "comments" -> panelAvailable(pane(), SidePanel.COMMENTS);
+                case "bookmarks" -> panelAvailable(pane(), SidePanel.BOOKMARKS);
+                case "attachments" -> panelAvailable(pane(), SidePanel.ATTACHMENTS);
+                case "layers" -> panelAvailable(pane(), SidePanel.LAYERS);
+                case "signatures" -> panelAvailable(pane(), SidePanel.SIGNATURES);
+                default -> PdfViewer.this.view().documentProperty().isNotNull();
             };
         }
 
@@ -514,7 +651,7 @@ public class PdfViewer extends StackPane {
         @Override
         public void showSearch() {
             utility.open(SidePanel.SEARCH);
-            searchPanel.focusQuery();
+            pane().getSearchPanel().focusQuery();
         }
 
         @Override
@@ -532,7 +669,7 @@ public class PdfViewer extends StackPane {
             chooser.setTitle(title);
             chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF documents", "*.pdf", "*.PDF"),
                     new FileChooser.ExtensionFilter("All files", "*.*"));
-            Path file = session.getFile();
+            Path file = session().getFile();
             if (file != null && file.getParent() != null) chooser.setInitialDirectory(file.getParent().toFile());
             return chooser;
         }

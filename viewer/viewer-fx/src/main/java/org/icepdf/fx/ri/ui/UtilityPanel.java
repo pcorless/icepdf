@@ -35,7 +35,8 @@ import java.util.Map;
  */
 public final class UtilityPanel {
 
-    private record Entry(SidePanel panel, Node node, ObservableBooleanValue available, ToggleButton button) {
+    private record Entry(SidePanel panel, Node node, ObservableBooleanValue available, ToggleButton button,
+                         javafx.beans.InvalidationListener listener) {
     }
 
     private final IconProvider icons;
@@ -103,9 +104,25 @@ public final class UtilityPanel {
             // looking (hover overlay), not clicked: the hovered icon's panel shows.
             if (drawer.getState() == EdgeDrawer.State.OVERLAY && !isClickOpened()) show(panel);
         });
-        Entry entry = new Entry(panel, node, available, button);
+        javafx.beans.InvalidationListener listener = o -> refreshStrip();
+        Entry entry = new Entry(panel, node, available, button, listener);
         entries.put(panel, entry);
-        available.addListener((o, was, now) -> refreshStrip());
+        available.addListener(listener);
+        refreshStrip();
+    }
+
+    /**
+     * Swaps what a panel shows and when it is offered - another document's pages, bookmarks and so
+     * on - keeping its icon, and the panel open if it is showing.
+     */
+    public void retarget(SidePanel panel, Node node, ObservableBooleanValue available) {
+        Entry old = entries.get(panel);
+        if (old == null) return;
+        old.available().removeListener(old.listener());
+        javafx.beans.InvalidationListener listener = o -> refreshStrip();
+        entries.put(panel, new Entry(panel, node, available, old.button(), listener));
+        available.addListener(listener);
+        if (shown == panel) show(panel);
         refreshStrip();
     }
 

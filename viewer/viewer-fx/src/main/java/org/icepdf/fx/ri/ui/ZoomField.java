@@ -25,17 +25,21 @@ public final class ZoomField extends ComboBox<String> {
 
     private static final String FIT_WIDTH = "Fit Width", FIT_PAGE = "Fit Page";
 
+    private final javafx.beans.value.ChangeListener<Object> listener = (o, a, b) -> showValue();
+    private PdfView view;
+
     public ZoomField(PdfView view) {
+        this(new javafx.beans.property.SimpleObjectProperty<>(view));
+    }
+
+    /** Follows whichever view {@code source} holds, now and as it changes. */
+    public ZoomField(javafx.beans.value.ObservableValue<PdfView> source) {
         getStyleClass().add("zoom-field");
         setEditable(true);
         setPrefWidth(104);
         getItems().addAll(FIT_WIDTH, FIT_PAGE, "50%", "75%", "100%", "125%", "150%", "200%", "300%", "400%", "800%");
-        Runnable show = () -> getEditor().setText(view.getFitMode() == FitMode.WIDTH ? FIT_WIDTH
-                : view.getFitMode() == FitMode.PAGE ? FIT_PAGE : Math.round(view.getZoom() * 100) + "%");
-        view.zoomProperty().addListener((o, a, b) -> show.run());
-        view.fitModeProperty().addListener((o, a, b) -> show.run());
-        show.run();
         setOnAction(e -> {
+            if (view == null) return;
             String value = getValue() != null ? getValue().trim() : "";
             if (FIT_WIDTH.equals(value)) view.setFitMode(FitMode.WIDTH);
             else if (FIT_PAGE.equals(value)) view.setFitMode(FitMode.PAGE);
@@ -48,9 +52,37 @@ public final class ZoomField extends ComboBox<String> {
                     // not a zoom
                 }
             }
-            show.run();
-            Platform.runLater(view::requestFocus);
+            showValue();
+            PdfView target = view;
+            Platform.runLater(target::requestFocus);
         });
-        disableProperty().bind(view.documentProperty().isNull());
+        source.addListener((o, was, now) -> follow(now));
+        follow(source.getValue());
+    }
+
+    private void follow(PdfView next) {
+        if (view != null) {
+            view.zoomProperty().removeListener(listener);
+            view.fitModeProperty().removeListener(listener);
+        }
+        view = next;
+        disableProperty().unbind();
+        if (view != null) {
+            view.zoomProperty().addListener(listener);
+            view.fitModeProperty().addListener(listener);
+            disableProperty().bind(view.documentProperty().isNull());
+        } else {
+            setDisable(true);
+        }
+        showValue();
+    }
+
+    private void showValue() {
+        if (view == null) {
+            getEditor().setText("");
+            return;
+        }
+        getEditor().setText(view.getFitMode() == FitMode.WIDTH ? FIT_WIDTH
+                : view.getFitMode() == FitMode.PAGE ? FIT_PAGE : Math.round(view.getZoom() * 100) + "%");
     }
 }
