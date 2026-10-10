@@ -258,19 +258,38 @@ public final class BlendComposite implements Composite {
                                           RenderingHints hints) {
         // an opaque destination (a TYPE_INT_RGB page image) has no alpha channel; its raster still
         // reads back an alpha byte, which is 0, so tell the context not to take that as a
-        // transparent backdrop.
-        return new BlendingContext(this, dstColorModel != null && !dstColorModel.hasAlpha());
+        // transparent backdrop.  A premultiplied source or destination (TYPE_INT_ARGB_PRE, a
+        // JavaFX tile) is converted to straight colour for the blend and back.
+        return new BlendingContext(this, dstColorModel != null && !dstColorModel.hasAlpha(),
+                srcColorModel != null && srcColorModel.isAlphaPremultiplied(),
+                dstColorModel != null && dstColorModel.hasAlpha() && dstColorModel.isAlphaPremultiplied());
     }
 
     private static final class BlendingContext implements CompositeContext {
         private final Blender blender;
         private final BlendComposite composite;
         private final boolean opaqueDestination;
+        private final boolean premultipliedSource;
+        private final boolean premultipliedDestination;
 
-        private BlendingContext(BlendComposite composite, boolean opaqueDestination) {
+        private BlendingContext(BlendComposite composite, boolean opaqueDestination,
+                                boolean premultipliedSource, boolean premultipliedDestination) {
             this.composite = composite;
             this.blender = Blender.getBlenderFor(composite);
             this.opaqueDestination = opaqueDestination;
+            this.premultipliedSource = premultipliedSource;
+            this.premultipliedDestination = premultipliedDestination;
+        }
+
+        /** Premultiplied [R,G,B,A] to straight colour, in place. */
+        private static void unpremultiply(int[] pixel) {
+            int a = pixel[3];
+            if (a == 255) return;
+            if (a == 0) {
+                pixel[0] = pixel[1] = pixel[2] = 0;
+                return;
+            }
+            for (int i = 0; i < 3; i++) pixel[i] = Math.min(255, (pixel[i] * 255 + a / 2) / a);
         }
 
         public void dispose() {
@@ -311,52 +330,60 @@ public final class BlendComposite implements Composite {
                     srcPixel[1] = (pixel >> 8) & 0xFF;
                     srcPixel[2] = (pixel) & 0xFF;
                     srcPixel[3] = (pixel >> 24) & 0xFF;
+                    if (premultipliedSource) unpremultiply(srcPixel);
 
                     pixel = dstPixels[x];
                     dstPixel[0] = (pixel >> 16) & 0xFF;
                     dstPixel[1] = (pixel >> 8) & 0xFF;
                     dstPixel[2] = (pixel) & 0xFF;
                     dstPixel[3] = opaqueDestination ? 0xFF : (pixel >> 24) & 0xFF;
+                    if (premultipliedDestination) unpremultiply(dstPixel);
 
                     blender.blend(srcPixel, dstPixel, result);
 
-                    // Inside an isolated group's buffer the backdrop alpha is
-                    // genuine, so weight the blend by it per the PDF spec:
-                    //   Cs' = (1 - ab)*Cs + ab*B(Cb, Cs)
-                    // ab=0 (transparent backdrop) -> source colour (no black);
-                    // ab=1 (opaque) -> full blend, i.e. today's behaviour;
-                    // partial ab -> interpolated (anti-aliased edges, overlap).
-                    // `result` holds B(Cb,Cs); reweight the colour in place,
-                    // leaving result[3] (the blended alpha).
-                    // colour weight for the backdrop<->blend lerp below.  Normally
-                    // the group constant alpha; inside a group buffer we also fold
-                    // in per-pixel source coverage so a faint (low-alpha) blend
-                    // pixel does not fully overwrite the backdrop.  Ignoring src
-                    // coverage let an Overlay/Multiply of a dark, low-alpha source
-                    // crush an opaque backdrop to black (pattern_and_CYMK shadows).
                     float colourWeight = alpha;
+                    int outAlpha;
                     if (transparentBackdrop) {
+                        // Inside an isolated group's buffer (or an appearance on its own layer) the
+                        // backdrop alpha is genuine, so composite per PDF 32000-1 11.3.6, in straight
+                        // colour:
+                        //   Cs' = (1 - ab)*Cs + ab*B(Cb, Cs)        the backdrop-weighted blend
+                        //   as  = src coverage * constant alpha
+                        //   ar  = ab + as - ab*as                   the result alpha
+                        //   Cr  = (1 - as/ar)*Cb + (as/ar)*Cs'
+                        // ab=0 (transparent backdrop) gives the source colour (no black) at alpha as;
+                        // ab=1 (opaque) gives the full blend weighted by as.  An opaque source at full
+                        // alpha (as=1) replaces the pixel with Cs' for any ab, so opaque-fill groups
+                        // are unchanged.  `result` holds B(Cb,Cs); reweight it in place.
                         int ab = dstPixel[3];
                         int ia = 255 - ab;
                         result[0] = (srcPixel[0] * ia + result[0] * ab) / 255;
                         result[1] = (srcPixel[1] * ia + result[1] * ab) / 255;
                         result[2] = (srcPixel[2] * ia + result[2] * ab) / 255;
-                        // Interpolate the weight by backdrop opacity so the extremes
-                        // stay exactly as before: over a transparent backdrop (ab=0)
-                        // the source passes through at full coverage (gaps reveal the
-                        // source, unchanged); over an opaque backdrop (ab=255) the
-                        // blend contributes only src[3]/255 (no crush).  An opaque
-                        // source (src[3]=255) yields colourWeight==alpha for any ab,
-                        // so opaque-fill groups (978) are byte-identical.
-                        colourWeight = alpha * (ia + ab * srcPixel[3] / 255f) / 255f;
+                        float as = alpha * srcPixel[3] / 255f;
+                        if (as >= 1f || ab == 255) {
+                            // opaque result: the weight is the source's own (exact, no division).
+                            colourWeight = Math.min(1f, as);
+                            outAlpha = as >= 1f ? 255 : ab;
+                        } else {
+                            float abf = ab / 255f;
+                            float ar = abf + as - abf * as;
+                            colourWeight = ar > 0 ? Math.min(1f, as / ar) : 0;
+                            outAlpha = Math.min(255, (int) (ar * 255 + 0.5f));
+                        }
+                    } else {
+                        outAlpha = (int) (dstPixel[3] + (result[3] - dstPixel[3]) * alpha) & 0xFF;
                     }
 
-                    // mixes the result with the opacity
-                    dstPixels[x] =
-                            ((int) (dstPixel[3] + (result[3] - dstPixel[3]) * alpha) & 0xFF) << 24 |
-                                    ((int) (dstPixel[0] + (result[0] - dstPixel[0]) * colourWeight) & 0xFF) << 16 |
-                                    ((int) (dstPixel[1] + (result[1] - dstPixel[1]) * colourWeight) & 0xFF) << 8 |
-                                    (int) (dstPixel[2] + (result[2] - dstPixel[2]) * colourWeight) & 0xFF;
+                    int r = (int) (dstPixel[0] + (result[0] - dstPixel[0]) * colourWeight) & 0xFF;
+                    int g = (int) (dstPixel[1] + (result[1] - dstPixel[1]) * colourWeight) & 0xFF;
+                    int b = (int) (dstPixel[2] + (result[2] - dstPixel[2]) * colourWeight) & 0xFF;
+                    if (premultipliedDestination && outAlpha != 255) {
+                        r = (r * outAlpha + 127) / 255;
+                        g = (g * outAlpha + 127) / 255;
+                        b = (b * outAlpha + 127) / 255;
+                    }
+                    dstPixels[x] = outAlpha << 24 | r << 16 | g << 8 | b;
                 }
                 dstOut.setDataElements(0, y, width, 1, dstPixels);
             }
