@@ -5,8 +5,7 @@ ICEpdf core. Pages are rendered by the core's Java2D engine into tiles. Each til
 JavaFX with no copy (`PixelBuffer` over the same `int[]`). Everything interactive is a native JavaFX
 node: text selection, search highlights, annotation chrome and popups, and form field editors.
 
-Package: `org.icepdf.fx.view`. Demo: `org.icepdf.fx.demo.PdfViewDemo`. The older `org.icepdf.fx.ri`
-shell is an earlier experiment and is not used.
+Package: `org.icepdf.fx.view`. Demo: `org.icepdf.fx.demo.PdfViewDemo`.
 
 ## Run the demo
 
