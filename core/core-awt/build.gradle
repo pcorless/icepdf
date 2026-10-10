@@ -17,7 +17,9 @@ dependencies {
     implementation 'org.apache.pdfbox:jbig2-imageio:' + "${JBIG2_VERSION}"
     implementation 'org.apache.pdfbox:fontbox:' + "${FONT_BOX_VERSION}"
     implementation 'commons-logging:commons-logging:' + "${COMMONS_LOGGING_VERSION}"
-    runtimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    // JPEG 2000 is optional and never shipped (its licence is unusual): applications that need
+    // JPXDecode add jai-imageio-jpeg2000 themselves; core finds it through ImageIO.  Tests use it.
+    testRuntimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
