@@ -224,3 +224,40 @@
 .icepdf-viewer.presenting .pdf-view:focused {
     -fx-background-color: black;
 }
+
+/* document tabs */
+.icepdf-viewer .tab-strip {
+    -fx-padding: 0 4 0 4;
+}
+
+.icepdf-viewer .doc-tab {
+    -fx-padding: 4 4 4 10;
+    -fx-background-radius: 6;
+    -fx-background-insets: 1 1 1 1;
+}
+
+.icepdf-viewer .doc-tab .label {
+    -fx-text-fill: -icepdf-fg-dim;
+}
+
+.icepdf-viewer .doc-tab:hover {
+    -fx-background-color: -icepdf-hover;
+}
+
+.icepdf-viewer .doc-tab.selected {
+    -fx-background-color: -icepdf-active;
+}
+
+.icepdf-viewer .doc-tab.selected .label {
+    -fx-text-fill: -icepdf-fg;
+    -fx-font-weight: bold;
+}
+
+.icepdf-viewer .doc-tab .tab-close {
+    -fx-padding: 2;
+    -fx-opacity: 0.6;
+}
+
+.icepdf-viewer .doc-tab .tab-close:hover {
+    -fx-opacity: 1;
+}

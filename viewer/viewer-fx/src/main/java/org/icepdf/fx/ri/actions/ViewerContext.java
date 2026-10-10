@@ -33,7 +33,7 @@ public interface ViewerContext {
 
     /** Application-level operations a host may offer. */
     enum Capability {
-        OPEN, SAVE, CLOSE, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND
+        OPEN, SAVE, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND
     }
 
     PdfView view();
@@ -69,6 +69,10 @@ public interface ViewerContext {
     /** Closes the document (asking about unsaved changes). */
     default void closeDocument() {
         throw new UnsupportedOperationException("close");
+    }
+
+    default void newTab() {
+        throw new UnsupportedOperationException("new tab");
     }
 
     default void newWindow() {

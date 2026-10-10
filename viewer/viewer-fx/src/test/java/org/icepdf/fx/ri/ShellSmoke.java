@@ -257,6 +257,60 @@ public final class ShellSmoke {
                 viewer.getHeaderBar().lookup(".page-field .text-field")).getText())) && onFx(() -> viewer.getView() == one.getView()));
         check("removing the second leaves one", onFx(() -> viewer.removeDocument(two) && viewer.getDocuments().size() == 1));
 
+        // tabs: a viewer that holds several documents.
+        if (args.length > 2) {
+            Path other = Paths.get(args[2]);
+            PdfViewer tabbed = onFx(() -> {
+                PdfViewer v = PdfViewer.create(ViewerFeatures.builder(ViewerFeatures.Preset.FULL).multipleDocuments(true).build(),
+                        UserLayout.inMemory());
+                Stage stage = new Stage();
+                stage.setScene(new Scene(v, 1100, 760));
+                stage.show();
+                v.open(doc);
+                return v;
+            });
+            settle();
+            check("one tab for one document", onFx(() -> tabbed.getHeaderBar().lookupAll(".doc-tab").size()) == 1);
+            onFx(() -> tabbed.open(other));
+            settle();
+            check("a second file opens in a second tab", onFx(() -> tabbed.getDocuments().size()) == 2
+                    && onFx(() -> tabbed.getHeaderBar().lookupAll(".doc-tab").size()) == 2);
+            check("and is the selected one", onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(1)));
+            snapshot(tabbed, "shell-tabs.png");
+            onFx(() -> tabbed.open(doc));
+            settle();
+            check("opening an open file selects its tab", onFx(() -> tabbed.getDocuments().size()) == 2
+                    && onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(0)));
+            onFx(() -> {
+                Event.fireEvent(tabbed, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, false, true, false, false));
+                return null;
+            });
+            check("Ctrl+Tab goes to the next tab", onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(1)));
+            onFx(() -> {
+                tabbed.getActions().execute("document.new-tab");
+                return null;
+            });
+            settle();
+            check("New Tab adds an empty tab", onFx(() -> tabbed.getDocuments().size()) == 3
+                    && onFx(() -> tabbed.getView().getDocument()) == null);
+            onFx(() -> {
+                tabbed.getActions().execute("document.new-tab");
+                return null;
+            });
+            check("and only one empty tab at a time", onFx(() -> tabbed.getDocuments().size()) == 3);
+            onFx(() -> tabbed.open(Paths.get(args[1] + ".missing")));
+            settle();
+            check("a failed open leaves no stray tab", onFx(() -> tabbed.getDocuments().size()) == 3);
+            onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(2)));
+            onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(1)));
+            check("closing tabs leaves the other", onFx(() -> tabbed.getDocuments().size()) == 1
+                    && onFx(() -> tabbed.getView().getDocument()) != null);
+            onFx(() -> {
+                tabbed.dispose();
+                return null;
+            });
+        }
+
         // full screen.
         onFx(() -> {
             viewer.getActions().execute("view.full-screen");

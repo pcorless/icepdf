@@ -69,7 +69,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.save-as", "document.print", null, "document.properties", null,
+            "document.new-tab", "document.save-as", "document.print", null, "document.properties", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -130,6 +130,11 @@ public class PdfViewer extends StackPane {
         currentView.set(first.getView());
 
         header = new HeaderBar(actions, currentView, query -> pane().getSearchPanel().search(query), MENU);
+        if (features.isMultipleDocuments()) {
+            header.setTabs(new TabStrip(documents, current, this::selectDocument, this::removeDocument,
+                    this::newTab, icons));
+            addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
+        }
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
         // the layout is shared by every viewer in the application: follow its changes, wherever made.
@@ -152,7 +157,59 @@ public class PdfViewer extends StackPane {
 
     /** Opens a file (asking about unsaved changes first).  @return true if it opened */
     public boolean open(Path file) {
+        if (!features.isMultipleDocuments()) return session().open(file);
+        // a file that is open already is shown, not opened twice.
+        Path real = real(file);
+        for (DocumentPane pane : documents) {
+            Path open = pane.getSession().getFile();
+            if (open != null && real(open).equals(real)) {
+                selectDocument(pane);
+                return true;
+            }
+        }
+        // an empty tab is used; else a new one, taken away again if the file doesn't open.
+        if (pane().getSession().getDocument() != null) {
+            DocumentPane added = addDocument();
+            if (added.getSession().open(file)) return true;
+            if (added.getSession().getDocument() == null) removeDocument(added);
+            return false;
+        }
         return session().open(file);
+    }
+
+    private static Path real(Path file) {
+        try {
+            return file.toRealPath();
+        } catch (java.io.IOException e) {
+            return file.toAbsolutePath().normalize();
+        }
+    }
+
+    /** A new empty tab, with the focus on the open button's job: the user picks a file next. */
+    public void newTab() {
+        if (!features.isMultipleDocuments()) return;
+        // one empty tab is enough.
+        for (DocumentPane pane : documents) {
+            if (pane.getSession().getDocument() == null) {
+                selectDocument(pane);
+                return;
+            }
+        }
+        addDocument();
+    }
+
+    private void tabKeys(KeyEvent e) {
+        if (!e.isShortcutDown() || documents.size() < 2) return;
+        int by = switch (e.getCode()) {
+            case TAB -> e.isShiftDown() ? -1 : 1;
+            case PAGE_DOWN -> 1;
+            case PAGE_UP -> -1;
+            default -> 0;
+        };
+        if (by == 0) return;
+        int at = documents.indexOf(current.get());
+        selectDocument(documents.get(Math.floorMod(at + by, documents.size())));
+        e.consume();
     }
 
     /** The selected document's view. */
@@ -563,6 +620,7 @@ public class PdfViewer extends StackPane {
         @Override
         public boolean has(Capability capability) {
             return switch (capability) {
+                case NEW_TAB -> features.isMultipleDocuments();
                 case NEW_WINDOW -> onNewWindow != null;
                 case EXIT -> onExit != null;
                 case PREFERENCES -> onPreferences != null;
@@ -595,7 +653,16 @@ public class PdfViewer extends StackPane {
         }
 
         @Override
+        public void newTab() {
+            PdfViewer.this.newTab();
+        }
+
+        @Override
         public void closeDocument() {
+            if (features.isMultipleDocuments() && documents.size() > 1) {
+                removeDocument(pane());
+                return;
+            }
             session().close();
             pane().refreshTitle();
             updateTitle();

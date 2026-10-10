@@ -64,6 +64,7 @@ public final class ViewerFeatures {
     private final List<String> defaultRail;
     private final List<String> railCandidates;
     private final boolean userCustomisable;
+    private final boolean multipleDocuments;
 
     private ViewerFeatures(Builder b) {
         includes = Collections.unmodifiableSet(new LinkedHashSet<>(b.includes));
@@ -73,6 +74,7 @@ public final class ViewerFeatures {
         defaultRail = List.copyOf(b.defaultRail);
         railCandidates = List.copyOf(b.railCandidates);
         userCustomisable = b.userCustomisable;
+        multipleDocuments = b.multipleDocuments;
     }
 
     /** Everything, rearrangeable by the user. */
@@ -133,6 +135,11 @@ public final class ViewerFeatures {
         return allows(actionId) && matches(railCandidates, actionId);
     }
 
+    /** Whether the viewer holds several documents, as tabs.  Off by default: one viewer, one document. */
+    public boolean isMultipleDocuments() {
+        return multipleDocuments;
+    }
+
     public boolean isUserCustomisable() {
         return userCustomisable;
     }
@@ -165,6 +172,7 @@ public final class ViewerFeatures {
      * features.viewModes=CONTINUOUS, FACING
      * features.rail=tool.select, tool.pan, annotation.highlight
      * features.customisable=true
+     * features.multipleDocuments=true
      * </pre>
      * Lists are comma separated; missing keys keep the preset's choice.  Unknown panel or layout
      * names are ignored.
@@ -198,6 +206,8 @@ public final class ViewerFeatures {
         if (rail != null) b.defaultRail(list(rail).toArray(new String[0]));
         String customisable = properties.getProperty("features.customisable");
         if (customisable != null) b.userCustomisable(Boolean.parseBoolean(customisable.trim()));
+        String multiple = properties.getProperty("features.multipleDocuments");
+        if (multiple != null) b.multipleDocuments(Boolean.parseBoolean(multiple.trim()));
         return b.build();
     }
 
@@ -231,6 +241,7 @@ public final class ViewerFeatures {
         private final List<String> defaultRail = new ArrayList<>();
         private final List<String> railCandidates = new ArrayList<>(List.of("tool.*", "annotation.*", "signature.*"));
         private boolean userCustomisable = true;
+        private boolean multipleDocuments;
 
         private Builder(Preset preset) {
             String select = ToolModeAction.id(ToolMode.TEXT_SELECT), pan = ToolModeAction.id(ToolMode.PAN);
@@ -306,6 +317,12 @@ public final class ViewerFeatures {
         /** Whether users may rearrange the rail (true by default). */
         public Builder userCustomisable(boolean customisable) {
             userCustomisable = customisable;
+            return this;
+        }
+
+        /** Whether the viewer holds several documents as tabs (false by default). */
+        public Builder multipleDocuments(boolean multiple) {
+            multipleDocuments = multiple;
             return this;
         }
 

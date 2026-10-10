@@ -38,6 +38,8 @@ public final class HeaderBar extends VBox {
 
     private final ActionControls actions;
     private final Label title = new Label();
+    private HBox bar;
+    private Region leftSpace, rightSpace;
     private final HBox searchBar;
     private final TextField searchField = new TextField();
     private final ToggleButton searchToggle;
@@ -49,7 +51,7 @@ public final class HeaderBar extends VBox {
     public HeaderBar(ActionControls actions, ObservableValue<PdfView> view, Consumer<String> search, String... menuIds) {
         this.actions = actions;
         getStyleClass().add("header-bar-box");
-        HBox bar = new HBox();
+        bar = new HBox();
         bar.getStyleClass().add("header-bar");
         bar.setAlignment(Pos.CENTER_LEFT);
 
@@ -58,6 +60,8 @@ public final class HeaderBar extends VBox {
         Region left = new Region(), right = new Region();
         HBox.setHgrow(left, Priority.ALWAYS);
         HBox.setHgrow(right, Priority.ALWAYS);
+        leftSpace = left;
+        rightSpace = right;
 
         add(bar, "document.open");
         add(bar, "document.save");
@@ -123,6 +127,14 @@ public final class HeaderBar extends VBox {
             }
         });
         getChildren().addAll(bar, searchBar);
+    }
+
+    /** Shows these tabs in the middle instead of the title. */
+    public void setTabs(Node tabs) {
+        int at = bar.getChildren().indexOf(leftSpace);
+        bar.getChildren().removeAll(leftSpace, title, rightSpace);
+        HBox.setHgrow(tabs, Priority.ALWAYS);
+        bar.getChildren().add(at, tabs);
     }
 
     /** The title in the middle (the file name). */

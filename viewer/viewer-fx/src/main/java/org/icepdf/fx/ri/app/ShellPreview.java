@@ -42,7 +42,7 @@ public class ShellPreview extends Application {
     @Override
     public void start(Stage stage) {
         FontSettings.apply(ViewerPreferences.load());
-        viewer = PdfViewer.create(ViewerFeatures.full(),
+        viewer = PdfViewer.create(ViewerFeatures.builder(ViewerFeatures.Preset.FULL).multipleDocuments(true).build(),
                 UserLayout.load(ViewerPreferences.home().resolve("layout.properties")));
         viewer.setOnExit(stage::close);
         stage.setScene(new Scene(viewer, 1200, 860));
