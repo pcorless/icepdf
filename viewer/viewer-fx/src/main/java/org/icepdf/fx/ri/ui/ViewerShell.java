@@ -44,7 +44,8 @@ public final class ViewerShell extends Region {
             if (e.getCode() == KeyCode.ESCAPE && closeOverlays()) e.consume();
         });
         addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-            if (center != null && isInside(center, e)) closeOverlays();
+            // an overlay floats over the document, so its clicks are inside the centre's bounds too.
+            if (center != null && isInside(center, e) && !inDrawer(e.getTarget())) closeOverlays();
         });
     }
 
@@ -133,6 +134,15 @@ public final class ViewerShell extends Region {
         for (EdgeDrawer drawer : new EdgeDrawer[]{left, right}) {
             if (drawer != null && drawer.getState() == EdgeDrawer.State.OVERLAY) drawer.getContent().toFront();
         }
+    }
+
+    private boolean inDrawer(Object target) {
+        for (Node n = target instanceof Node t ? t : null; n != null && n != this; n = n.getParent()) {
+            for (EdgeDrawer d : new EdgeDrawer[]{left, right}) {
+                if (d != null && (n == d.getContent() || n == d.getStrip())) return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isInside(Node node, MouseEvent e) {
