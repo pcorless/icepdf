@@ -327,7 +327,14 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
         if (!(fieldDictionary instanceof VariableTextFieldDictionary)) {
             return null;
         }
-        Name fontName = ((VariableTextFieldDictionary) fieldDictionary).getFontName();
+        return getTextFont(((VariableTextFieldDictionary) fieldDictionary).getFontName());
+    }
+
+    /**
+     * @param fontName a font resource name, as a {@code /DA} gives it
+     * @return that font, from the appearance's own resources or else the form's; null if neither has it
+     */
+    protected org.icepdf.core.pobjects.fonts.Font getTextFont(Name fontName) {
         if (fontName == null) {
             return null;
         }
@@ -339,6 +346,122 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
             }
         }
         return library.getInteractiveFormFont(fontName.toString());
+    }
+
+    /**
+     * @return the widget's appearance characteristics ({@code /MK}), or null if it has none
+     * @since 7.5
+     */
+    public AppearanceCharacteristics getAppearanceCharacteristics() {
+        Object value = library.getObject(entries, AppearanceCharacteristics.MK_KEY);
+        return value instanceof DictionaryEntries
+                ? new AppearanceCharacteristics(library, (DictionaryEntries) value) : null;
+    }
+
+    /**
+     * Rebuilds a text or choice field's normal appearance from its value (see
+     * {@link FieldAppearanceGenerator}) and records it with the StateManager, so the field shows and
+     * saves what it holds.  If it cannot be built, the appearance is left as it was.
+     */
+    protected void regenerateFieldAppearance() {
+        Appearance appearance = appearances.get(currentAppearance);
+        AppearanceState state = appearance != null ? appearance.getSelectedAppearanceState() : null;
+        if (state == null) {
+            return;
+        }
+        FieldAppearanceGenerator.Result result;
+        try {
+            result = FieldAppearanceGenerator.generate(this, hasAppearanceStream() ? state.getOriginalContentStream() : null,
+                    hasAppearanceStream() ? state.getBbox() : null, hasAppearanceStream() ? state.getMatrix() : null);
+        } catch (RuntimeException e) {
+            logger.log(Level.FINE, e, () -> "Could not build the appearance of field "
+                    + getFieldDictionary().getPartialFieldName());
+            return;
+        }
+        Form form = getOrGenerateAppearanceForm();
+        if (form == null) {
+            return;
+        }
+        byte[] content = result.content.getBytes(java.nio.charset.StandardCharsets.ISO_8859_1);
+        form.setRawBytes(content);
+        form.setAppearance(null, result.matrix, result.bbox);
+        addFontResource(form, result.fontName);
+        if (compressAppearanceStream) {
+            form.getEntries().put(Stream.FILTER_KEY, new Name("FlateDecode"));
+        } else {
+            form.getEntries().remove(Stream.FILTER_KEY);
+        }
+        StateManager stateManager = library.getStateManager();
+        stateManager.addChange(new PObject(form, form.getPObjectReference()));
+        DictionaryEntries appearanceRefs = new DictionaryEntries();
+        appearanceRefs.put(APPEARANCE_STREAM_NORMAL_KEY, form.getPObjectReference());
+        entries.put(APPEARANCE_STREAM_KEY, appearanceRefs);
+        stateManager.addChange(new PObject(this, getPObjectReference()));
+        try {
+            form.init();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        // the appearance the widget paints with is the form just built.
+        state.setShapes(form.getShapes());
+        state.setMatrix(result.matrix);
+        state.setBbox(result.bbox);
+    }
+
+    /**
+     * Makes sure the appearance's resources hold the font its {@code /DA} names, taken from the
+     * AcroForm's {@code /DR} - or, for the Helvetica a field falls back to when the document has no
+     * usable font, a standard Type1 Helvetica.  When the font is missing the form gets its own inline
+     * copy of its resources with the font added; the originals are left alone, as they may be shared
+     * with other forms (and an indirect dictionary would not be saved with this one).
+     */
+    private void addFontResource(Form form, Name fontName) {
+        if (fontName == null) {
+            return;
+        }
+        DictionaryEntries own = dictionaryOf(form.getEntries().get(Form.RESOURCES_KEY));
+        DictionaryEntries ownFonts = own != null ? dictionaryOf(own.get(Resources.FONT_KEY)) : null;
+        if (ownFonts != null && ownFonts.containsKey(fontName)) {
+            return;
+        }
+        InteractiveForm interactiveForm = library.getCatalog().getInteractiveForm();
+        Resources defaultResources = interactiveForm != null ? interactiveForm.getResources() : null;
+        DictionaryEntries drFonts = defaultResources != null
+                ? dictionaryOf(defaultResources.getEntries().get(Resources.FONT_KEY)) : null;
+        Object font = drFonts != null ? drFonts.get(fontName) : null;
+        if (font == null && FieldAppearanceGenerator.STANDARD_FONT.equals(fontName)) {
+            DictionaryEntries helvetica = new DictionaryEntries();
+            helvetica.put(Dictionary.TYPE_KEY, new Name("Font"));
+            helvetica.put(Dictionary.SUBTYPE_KEY, new Name("Type1"));
+            helvetica.put(new Name("BaseFont"), new Name("Helvetica"));
+            helvetica.put(new Name("Encoding"), new Name("WinAnsiEncoding"));
+            font = helvetica;
+        }
+        if (font == null) {
+            return;
+        }
+        DictionaryEntries resources = new DictionaryEntries();
+        if (own != null) resources.putAll(own);
+        DictionaryEntries fonts = new DictionaryEntries();
+        if (ownFonts != null) fonts.putAll(ownFonts);
+        fonts.put(fontName, font);
+        resources.put(Resources.FONT_KEY, fonts);
+        form.getEntries().put(Form.RESOURCES_KEY, resources);
+    }
+
+    /** The entries of a dictionary given inline, by reference, or already parsed; null otherwise. */
+    private DictionaryEntries dictionaryOf(Object value) {
+        if (value instanceof Reference) {
+            value = library.getObject((Reference) value);
+        }
+        if (value instanceof DictionaryEntries) {
+            return (DictionaryEntries) value;
+        }
+        if (value instanceof Dictionary) {
+            return ((Dictionary) value).getEntries();
+        }
+        return null;
     }
 
     /**

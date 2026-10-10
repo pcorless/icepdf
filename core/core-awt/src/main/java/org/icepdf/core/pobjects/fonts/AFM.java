@@ -165,6 +165,10 @@ public class AFM {
     private final float[] widths = new float[255];
     private final int[] fontBBox = new int[4];
     private float italicAngle = 0;
+    // vertical metrics, in thousandths of an em; 0 when the file does not give them.
+    private float capHeight = 0;
+    private float ascender = 0;
+    private float descender = 0;
     private float maxWidth = 0;
     private int avgWidth = 0;
     private int flags = 0;
@@ -230,6 +234,28 @@ public class AFM {
         return italicAngle;
     }
 
+    /**
+     * @return the height of a flat capital letter, in thousandths of an em; 0 if the AFM has none
+     */
+    public float getCapHeight() {
+        return capHeight;
+    }
+
+    /**
+     * @return the ascender (a lower-case letter's top, as of "d"), in thousandths of an em; 0 if none
+     */
+    public float getAscender() {
+        return ascender;
+    }
+
+    /**
+     * @return the descender (a lower-case letter's bottom, as of "p"), in thousandths of an em,
+     * negative below the baseline; 0 if none
+     */
+    public float getDescender() {
+        return descender;
+    }
+
     public float[] getWidths() {
         return widths;
     }
@@ -279,6 +305,12 @@ public class AFM {
                 fontBBox[3] = Integer.parseInt(st.nextToken());
             } else if (s1.equalsIgnoreCase("ItalicAngle")) {
                 italicAngle = Float.parseFloat(st.nextToken());
+            } else if (s1.equalsIgnoreCase("CapHeight")) {
+                capHeight = Float.parseFloat(st.nextToken());
+            } else if (s1.equalsIgnoreCase("Ascender")) {
+                ascender = Float.parseFloat(st.nextToken());
+            } else if (s1.equalsIgnoreCase("Descender")) {
+                descender = Float.parseFloat(st.nextToken());
             }
             // font width data
             else if (s1.equalsIgnoreCase("C")) {
