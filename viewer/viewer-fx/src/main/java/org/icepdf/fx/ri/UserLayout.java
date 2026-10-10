@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,6 +64,10 @@ public final class UserLayout {
     private double panelWidth = 260;
     private String lastPanel = SidePanel.THUMBNAILS.id();
 
+    private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
+    private int batch;
+    private boolean dirty;
+
     private UserLayout(Path file) {
         this.file = file;
     }
@@ -91,6 +96,40 @@ public final class UserLayout {
         return file;
     }
 
+    // ---- change notification ----------------------------------------------------------------
+
+    /**
+     * Calls {@code listener} after the rail or the panel's arrangement changes (not for the panel's
+     * width, pinned state or last panel, which the panel itself drives).  One layout is shared by
+     * every viewer in an application - its tabs and windows - and each listens, so a change made in
+     * one shows in all.
+     */
+    public void addListener(Runnable listener) {
+        listeners.add(Objects.requireNonNull(listener));
+    }
+
+    public void removeListener(Runnable listener) {
+        listeners.remove(listener);
+    }
+
+    /** Runs several changes as one: listeners are told once, afterwards. */
+    public void update(Runnable changes) {
+        batch++;
+        try {
+            changes.run();
+        } finally {
+            if (--batch == 0 && dirty) {
+                dirty = false;
+                listeners.forEach(Runnable::run);
+            }
+        }
+    }
+
+    private void fireChanged() {
+        if (batch > 0) dirty = true;
+        else listeners.forEach(Runnable::run);
+    }
+
     // ---- tool rail ----------------------------------------------------------------------------
 
     /** The pinned tools in order; empty until the user pins something. */
@@ -103,6 +142,7 @@ public final class UserLayout {
         pinned = new ArrayList<>(new LinkedHashSet<>(ids));
         railCustomised = true;
         hidden.removeAll(pinned);
+        fireChanged();
     }
 
     /** Whether the user has arranged the rail (else the product's default applies). */
@@ -115,6 +155,7 @@ public final class UserLayout {
         pinned.clear();
         hidden.clear();
         railCustomised = false;
+        fireChanged();
     }
 
     /** Tools the user doesn't want, not even in the overflow. */
@@ -129,6 +170,7 @@ public final class UserLayout {
         } else {
             hidden.remove(id);
         }
+        fireChanged();
     }
 
     public Side getRailSide() {
@@ -139,6 +181,7 @@ public final class UserLayout {
     public void setRailSide(Side side) {
         railSide = Objects.requireNonNull(side);
         panelSide = side == Side.LEFT ? Side.RIGHT : Side.LEFT;
+        fireChanged();
     }
 
     /** Whether the rail hides until the pointer reaches its edge. */
@@ -148,6 +191,7 @@ public final class UserLayout {
 
     public void setRailAutoShow(boolean autoShow) {
         railAutoShow = autoShow;
+        fireChanged();
     }
 
     // ---- side (utility) panel ------------------------------------------------------------------
@@ -160,6 +204,7 @@ public final class UserLayout {
     public void setPanelSide(Side side) {
         panelSide = Objects.requireNonNull(side);
         railSide = side == Side.LEFT ? Side.RIGHT : Side.LEFT;
+        fireChanged();
     }
 
     /** Docked beside the document (true) or collapsed to its icon strip (false). */
@@ -178,6 +223,7 @@ public final class UserLayout {
 
     public void setPanelHoverOpen(boolean hoverOpen) {
         panelHoverOpen = hoverOpen;
+        fireChanged();
     }
 
     /** The panel's width when open, in pixels. */

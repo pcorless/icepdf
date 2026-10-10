@@ -28,7 +28,6 @@ import org.icepdf.fx.ri.actions.ActionControls;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /**
  * The tool rail: the user's pinned tools (or the product's default) as icon buttons, then a "more"
@@ -40,19 +39,26 @@ public final class ToolRail extends VBox {
     private final ActionControls actions;
     private final ViewerFeatures features;
     private final UserLayout layout;
-    private Consumer<UserLayout> onLayoutChanged = l -> { };
+    private Runnable onCustomise = () -> { };
+    private final Runnable layoutListener = this::refresh;
 
     public ToolRail(ActionControls actions, ViewerFeatures features, UserLayout layout) {
         this.actions = actions;
         this.features = features;
         this.layout = layout;
         getStyleClass().add("tool-rail");
+        layout.addListener(layoutListener);
         refresh();
     }
 
-    /** Called after the user changes the rail from its settings menu (save the layout there). */
-    public void setOnLayoutChanged(Consumer<UserLayout> onLayoutChanged) {
-        this.onLayoutChanged = onLayoutChanged;
+    /** What the settings menu's "Customise Tools" runs. */
+    public void setOnCustomise(Runnable onCustomise) {
+        this.onCustomise = onCustomise;
+    }
+
+    /** Stops following the layout (call when the viewer is thrown away). */
+    public void dispose() {
+        layout.removeListener(layoutListener);
     }
 
     /** The arrangement shown now. */
@@ -88,24 +94,8 @@ public final class ToolRail extends VBox {
 
     private MenuButton settings(RailArrangement arrangement) {
         MenuButton settings = menuButton("ui.settings", "Arrange the tools");
-        Menu pin = new Menu("Tools on the Rail");
-        List<String> all = new ArrayList<>(arrangement.rail());
-        all.addAll(arrangement.overflow());
-        for (String id : all) {
-            CheckMenuItem item = new CheckMenuItem(actions.registry().get(id).label());
-            item.setSelected(arrangement.rail().contains(id));
-            item.setOnAction(e -> {
-                List<String> pinned = new ArrayList<>(arrangement().rail());
-                if (item.isSelected()) {
-                    if (!pinned.contains(id)) pinned.add(id);
-                } else {
-                    pinned.remove(id);
-                }
-                layout.setPinned(pinned);
-                changed();
-            });
-            pin.getItems().add(item);
-        }
+        MenuItem customise = new MenuItem("Customise Tools…");
+        customise.setOnAction(e -> onCustomise.run());
         MenuItem side = new MenuItem(layout.getRailSide() == UserLayout.Side.LEFT ? "Move Rail to the Right" : "Move Rail to the Left");
         side.setOnAction(e -> {
             layout.setRailSide(layout.getRailSide() == UserLayout.Side.LEFT ? UserLayout.Side.RIGHT : UserLayout.Side.LEFT);
@@ -122,13 +112,12 @@ public final class ToolRail extends VBox {
             layout.resetRail();
             changed();
         });
-        settings.getItems().addAll(pin, new SeparatorMenuItem(), side, autoShow, new SeparatorMenuItem(), reset);
+        settings.getItems().addAll(customise, new SeparatorMenuItem(), side, autoShow, new SeparatorMenuItem(), reset);
         return settings;
     }
 
+    // the layout tells every listener (this rail among them) when it changes.
     private void changed() {
-        refresh();
-        onLayoutChanged.accept(layout);
     }
 
     private MenuButton menuButton(String iconId, String tooltip) {

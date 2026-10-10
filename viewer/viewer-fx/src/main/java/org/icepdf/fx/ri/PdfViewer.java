@@ -134,10 +134,9 @@ public class PdfViewer extends StackPane {
 
         header = new HeaderBar(actions, view, searchPanel::search, MENU);
         rail = new ToolRail(actions, features, layout);
-        rail.setOnLayoutChanged(l -> {
-            buildDrawers();
-            saveLayoutLater.playFromStart();
-        });
+        rail.setOnCustomise(this::customiseTools);
+        // the layout is shared by every viewer in the application: follow its changes, wherever made.
+        layout.addListener(layoutListener);
         utility = new UtilityPanel(layout.getPanelSide(), icons);
         addPanel(SidePanel.THUMBNAILS, "Pages", thumbnails, view.documentProperty().isNotNull());
         addPanel(SidePanel.BOOKMARKS, "Bookmarks", outline, outline.hasOutlineProperty());
@@ -252,6 +251,8 @@ public class PdfViewer extends StackPane {
         comments.dispose();
         theme.dispose();
         saveLayoutLater.stop();
+        layout.removeListener(layoutListener);
+        rail.dispose();
         layout.save();
     }
 
@@ -259,6 +260,21 @@ public class PdfViewer extends StackPane {
 
     private void addPanel(SidePanel panel, String label, javafx.scene.Node node, ObservableBooleanValue available) {
         if (features.allows(panel)) utility.addPanel(panel, label, node, available);
+    }
+
+    private final Runnable layoutListener = this::layoutChanged;
+
+    private void layoutChanged() {
+        buildDrawers();
+        utility.getDrawer().hoverOpenProperty().set(layout.isPanelHoverOpen());
+        saveLayoutLater.playFromStart();
+    }
+
+    /** Opens the Customise Tools dialog; OK changes the layout, and so every viewer sharing it. */
+    public void customiseTools() {
+        if (!features.isUserCustomisable()) return;
+        CustomiseToolsPane.showDialog(getScene() != null ? getScene().getWindow() : null, this, actions, features,
+                layout);
     }
 
     /** Puts the rail and the utility panel on their sides, as the layout says. */

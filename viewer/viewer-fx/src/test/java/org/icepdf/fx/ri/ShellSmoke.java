@@ -28,6 +28,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
+import org.icepdf.fx.ri.ui.CustomiseToolsPane;
 import org.icepdf.fx.ri.ui.EdgeDrawer;
 import org.icepdf.fx.ri.ui.Theme;
 import org.icepdf.fx.viewer.ViewerPreferences;
@@ -171,6 +172,58 @@ public final class ShellSmoke {
         check("layout saved", Files.isRegularFile(layoutFile)
                 && Files.readString(layoutFile).contains("rail.side=RIGHT"));
 
+        // a click inside an overlay is the panel's own (it floats within the document's bounds).
+        onFx(() -> {
+            viewer.getUtilityPanel().open(SidePanel.BOOKMARKS);
+            return null;
+        });
+        settle();
+        javafx.geometry.Point2D inPanel = onFx(() -> {
+            Node content = panel.getContent();
+            javafx.geometry.Bounds b = content.localToScene(content.getBoundsInLocal());
+            return new javafx.geometry.Point2D(b.getCenterX(), b.getCenterY());
+        });
+        onFx(() -> {
+            Event.fireEvent(panel.getContent(), pressed(inPanel));
+            return null;
+        });
+        check("pressing inside the overlay keeps it open", onFx(panel::getState) == EdgeDrawer.State.OVERLAY);
+        onFx(() -> {
+            Event.fireEvent(viewer.getView(), pressed(inPanel));
+            return null;
+        });
+        check("pressing the document closes it", onFx(panel::getState) == EdgeDrawer.State.COLLAPSED);
+
+        // customise: the pane edits a copy and applies once; every viewer on the layout follows.
+        PdfViewer second = onFx(() -> {
+            PdfViewer v = PdfViewer.create(viewer.getFeatures(), viewer.getLayout());
+            Stage stage = new Stage();
+            stage.setScene(new Scene(v, 700, 600));
+            stage.show();
+            return v;
+        });
+        settle();
+        String first = onFx(() -> viewer.getToolRail().arrangement().rail().get(0));
+        onFx(() -> {
+            CustomiseToolsPane pane = new CustomiseToolsPane(viewer.getActions(), viewer.getFeatures(), viewer.getLayout());
+            pane.model().move(first, org.icepdf.fx.ri.ToolArrangement.Zone.HIDDEN, -1);
+            pane.load();
+            check("load() discards unapplied edits", pane.model().rail().contains(first));
+            pane.model().move(first, org.icepdf.fx.ri.ToolArrangement.Zone.HIDDEN, -1);
+            check("the pane lists edits only after refresh, not the layout",
+                    viewer.getToolRail().arrangement().rail().contains(first));
+            pane.apply();
+            return null;
+        });
+        settle();
+        check("apply hides the tool in this viewer", onFx(() -> !viewer.getToolRail().arrangement().rail().contains(first)
+                && !viewer.getToolRail().arrangement().overflow().contains(first)));
+        check("and in the other viewer on the same layout", onFx(() -> !second.getToolRail().arrangement().rail().contains(first)));
+        onFx(() -> {
+            second.dispose();
+            return null;
+        });
+
         // full screen.
         onFx(() -> {
             viewer.getActions().execute("view.full-screen");
@@ -208,6 +261,11 @@ public final class ShellSmoke {
         });
         Platform.exit();
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    private static MouseEvent pressed(javafx.geometry.Point2D scene) {
+        return new MouseEvent(MouseEvent.MOUSE_PRESSED, scene.getX(), scene.getY(), scene.getX(), scene.getY(),
+                MouseButton.PRIMARY, 1, false, false, false, false, true, false, false, false, false, false, null);
     }
 
     private static MouseEvent mouse(javafx.event.EventType<MouseEvent> type, Node target) {
