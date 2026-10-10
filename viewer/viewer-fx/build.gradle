@@ -21,6 +21,16 @@ application {
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 
+// JavaExec tasks that launch an Application class need JavaFX on the module path ("JavaFX runtime
+// components are missing" otherwise); the javafx plugin only does this for 'run'.
+def javafxModulePath = { JavaExec task ->
+    task.doFirst {
+        def fx = task.classpath.filter { it.name.startsWith('javafx-') }
+        task.jvmArgs('--module-path', fx.asPath, '--add-modules', 'javafx.controls')
+        task.classpath = task.classpath.filter { !it.name.startsWith('javafx-') }
+    }
+}
+
 // the new viewer shell (PdfViewer) while it replaces the classic window:
 // ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf"
 tasks.register('runShell', JavaExec) {
@@ -30,6 +40,7 @@ tasks.register('runShell', JavaExec) {
     mainClass = 'org.icepdf.fx.ri.app.ShellPreview'
     jvmArgs = ["-Xmx1024m"]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
+    javafxModulePath(it)
 }
 
 // the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf"
@@ -40,6 +51,7 @@ tasks.register('runDemo', JavaExec) {
     mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
     jvmArgs = ["-Xmx1024m"]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
+    javafxModulePath(it)
 }
 
 def sectionName = 'org/icepdf/fx/'
