@@ -58,7 +58,7 @@ public class ViewerSmoke {
         PdfViewerApp app = new PdfViewerApp();
         ViewerPreferences preferences = ViewerPreferences.load(out.resolve("settings/viewer.properties"));
         ViewerWindow window = onFx(() -> {
-            ViewerWindow w = new ViewerWindow(app, new Stage(), preferences);
+            ViewerWindow w = new ViewerWindow(app, new Stage(), preferences, org.icepdf.fx.ri.ViewerFeatures.full());
             // edits made by the checks are thrown away when the next document opens; no modal prompt.
             w.askBeforeDiscard = false;
             w.show();
@@ -86,6 +86,7 @@ public class ViewerSmoke {
             }
             commentSteps(window, tag);
             if (i == 1) {
+                featureSteps(app, preferences, file);
                 actionSteps(window);
                 fullScreenSteps(window, tag);
             }
@@ -251,6 +252,50 @@ public class ViewerSmoke {
             return null;
         });
         check("a custom action runs from its menu item", "with document".equals(ran[0]));
+    }
+
+    /** A product's features: a READING window has no editing commands, tools or comments panel. */
+    private static void featureSteps(PdfViewerApp app, ViewerPreferences preferences, Path file) throws Exception {
+        var features = org.icepdf.fx.ri.ViewerFeatures.builder(org.icepdf.fx.ri.ViewerFeatures.Preset.READING)
+                .panels(org.icepdf.fx.ri.SidePanel.THUMBNAILS, org.icepdf.fx.ri.SidePanel.BOOKMARKS)
+                .build();
+        ViewerWindow reading = onFx(() -> {
+            ViewerWindow w = new ViewerWindow(app, new Stage(), preferences, features);
+            w.askBeforeDiscard = false;
+            w.show();
+            w.open(file);
+            return w;
+        });
+        settle();
+        java.util.Set<String> shown = onFx(() -> {
+            java.util.Set<String> ids = new java.util.HashSet<>();
+            Node root = reading.getStage().getScene().getRoot();
+            for (Node n : root.lookupAll(".menu-bar")) {
+                for (var menu : ((javafx.scene.control.MenuBar) n).getMenus()) collectIds(menu, ids);
+            }
+            for (Node n : root.lookupAll(".tool-bar")) {
+                for (Node item : ((javafx.scene.control.ToolBar) n).getItems()) {
+                    if (item.getId() != null) ids.add(item.getId());
+                    if (item instanceof javafx.scene.control.MenuButton mb) mb.getItems().forEach(mi -> collectIds(mi, ids));
+                }
+            }
+            return ids;
+        });
+        System.out.println("  reading window offers " + shown.size() + " commands");
+        check("READING has no annotation tools, save, undo or signing",
+                shown.stream().noneMatch(id -> id.startsWith("annotation.") || id.equals("document.save")
+                        || id.equals("edit.undo") || id.equals("signature.sign")));
+        check("READING keeps reading commands", shown.containsAll(java.util.List.of("document.open", "document.print",
+                "view.zoom-in", "navigation.next", "tool.select", "search.find")));
+        check("READING without the comments panel has no comments command", !shown.contains("view.comments"));
+        check("only the offered side panels are tabs", onFx(() -> ((TabPane) reading.getStage().getScene().lookup(".tab-pane"))
+                .getTabs().stream().allMatch(t -> t.getId().equals("thumbnails") || t.getId().equals("bookmarks"))));
+        onFx(() -> {
+            // not close(): that tells the app, which quits when its (here empty) window list is.
+            reading.closeDocument();
+            reading.getStage().hide();
+            return null;
+        });
     }
 
     private static org.icepdf.fx.ri.actions.ViewerContext contextOf(ViewerWindow window) {

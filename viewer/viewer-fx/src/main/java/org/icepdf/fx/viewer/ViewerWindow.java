@@ -45,6 +45,8 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.panels.*;
+import org.icepdf.fx.ri.SidePanel;
+import org.icepdf.fx.ri.ViewerFeatures;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.StandardActions;
 import org.icepdf.fx.ri.actions.ViewerContext;
@@ -115,19 +117,21 @@ public class ViewerWindow {
     private final BooleanProperty sidePanelVisible = new SimpleBooleanProperty(this, "sidePanelVisible");
     private final BooleanProperty fullScreen = new SimpleBooleanProperty(this, "fullScreen");
     private final ActionControls actions;
+    private final ViewerFeatures features;
 
     private Document document;
     private Path file;
     // false only for scripted runs (ViewerSmoke): unsaved changes are dropped without asking.
     boolean askBeforeDiscard = true;
 
-    ViewerWindow(PdfViewerApp app, Stage stage, ViewerPreferences preferences) {
+    ViewerWindow(PdfViewerApp app, Stage stage, ViewerPreferences preferences, ViewerFeatures features) {
         this.app = app;
         this.stage = stage;
         this.preferences = preferences;
+        this.features = features;
         applyPreferences();
         buildPanels();
-        actions = new ActionControls(StandardActions.registry(), new Context());
+        actions = new ActionControls(StandardActions.registry(), new Context(), features::allows);
         sidePanelVisible.addListener((o, was, now) -> setSidePanelVisible(now));
         fullScreen.addListener((o, was, now) -> {
             if (now) enterFullScreen();
@@ -312,13 +316,14 @@ public class ViewerWindow {
     /** Pages and search always; bookmarks, comments, attachments, layers and signatures only when the document has them. */
     private void updateTabs() {
         Tab selected = sideTabs.getSelectionModel().getSelectedItem();
-        List<Tab> tabs = new java.util.ArrayList<>(List.of(thumbnailsTab));
-        if (outline.hasOutline()) tabs.add(outlineTab);
-        if (comments.hasComments()) tabs.add(commentsTab);
-        if (attachments.hasAttachments()) tabs.add(attachmentsTab);
-        if (layers.hasLayers()) tabs.add(layersTab);
-        if (signatures.hasSignaturesBinding().get()) tabs.add(signaturesTab);
-        tabs.add(searchTab);
+        List<Tab> tabs = new java.util.ArrayList<>();
+        if (features.allows(SidePanel.THUMBNAILS)) tabs.add(thumbnailsTab);
+        if (outline.hasOutline() && features.allows(SidePanel.BOOKMARKS)) tabs.add(outlineTab);
+        if (comments.hasComments() && features.allows(SidePanel.COMMENTS)) tabs.add(commentsTab);
+        if (attachments.hasAttachments() && features.allows(SidePanel.ATTACHMENTS)) tabs.add(attachmentsTab);
+        if (layers.hasLayers() && features.allows(SidePanel.LAYERS)) tabs.add(layersTab);
+        if (signatures.hasSignaturesBinding().get() && features.allows(SidePanel.SIGNATURES)) tabs.add(signaturesTab);
+        if (features.allows(SidePanel.SEARCH)) tabs.add(searchTab);
         sideTabs.getTabs().setAll(tabs);
         if (selected != null && tabs.contains(selected)) sideTabs.getSelectionModel().select(selected);
     }
@@ -523,14 +528,42 @@ public class ViewerWindow {
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        ToolBar bar = new ToolBar(actions.button(OpenAction.ID), actions.button(SaveAction.ID), actions.button(PrintAction.ID),
-                new Separator(), actions.button(SidePanelAction.ID), new Separator(),
-                actions.button(PreviousPageAction.ID), pageField, pageCount, actions.button(NextPageAction.ID),
-                new Separator(), actions.button(ZoomOutAction.ID), zoom, actions.button(ZoomInAction.ID),
-                actions.button(RotateClockwiseAction.ID), new Separator(),
-                actions.button(ToolModeAction.id(ToolMode.TEXT_SELECT)), actions.button(ToolModeAction.id(ToolMode.PAN)),
-                annotate, spacer, findField, actions.button(FindPreviousAction.ID), actions.button(FindNextAction.ID));
+        // only what the product offers; a group whose commands are all gone leaves no separator behind.
+        List<Node> items = new java.util.ArrayList<>();
+        addGroup(items, OpenAction.ID, SaveAction.ID, PrintAction.ID);
+        addGroup(items, SidePanelAction.ID);
+        if (actions.isAvailable(PreviousPageAction.ID)) {
+            addSeparator(items);
+            items.addAll(List.of(actions.button(PreviousPageAction.ID), pageField, pageCount, actions.button(NextPageAction.ID)));
+        }
+        if (actions.isAvailable(ZoomInAction.ID)) {
+            addSeparator(items);
+            items.addAll(List.of(actions.button(ZoomOutAction.ID), zoom, actions.button(ZoomInAction.ID)));
+        }
+        if (actions.isAvailable(RotateClockwiseAction.ID)) items.add(actions.button(RotateClockwiseAction.ID));
+        addGroup(items, ToolModeAction.id(ToolMode.TEXT_SELECT), ToolModeAction.id(ToolMode.PAN));
+        if (!annotate.getItems().isEmpty()) items.add(annotate);
+        items.add(spacer);
+        if (actions.isAvailable(FindNextAction.ID)) {
+            items.addAll(List.of(findField, actions.button(FindPreviousAction.ID), actions.button(FindNextAction.ID)));
+        }
+        ToolBar bar = new ToolBar(items.toArray(new Node[0]));
         return bar;
+    }
+
+    /** Adds the available ones of a group of tool bar buttons, after a separator. */
+    private void addGroup(List<Node> items, String... ids) {
+        boolean first = true;
+        for (String id : ids) {
+            if (!actions.isAvailable(id)) continue;
+            if (first) addSeparator(items);
+            first = false;
+            items.add(actions.button(id));
+        }
+    }
+
+    private static void addSeparator(List<Node> items) {
+        if (!items.isEmpty() && !(items.get(items.size() - 1) instanceof Separator)) items.add(new Separator());
     }
 
     /** Opens the side panel on the search tab, ready to type. */

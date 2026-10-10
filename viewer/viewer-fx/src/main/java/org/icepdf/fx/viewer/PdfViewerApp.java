@@ -18,6 +18,7 @@ package org.icepdf.fx.viewer;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.Stage;
+import org.icepdf.fx.ri.ViewerFeatures;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ public class PdfViewerApp extends Application {
 
     private final List<ViewerWindow> windows = new ArrayList<>();
     private ViewerPreferences preferences;
+    private ViewerFeatures features;
 
     public static void main(String[] args) {
         launch(args);
@@ -42,9 +44,10 @@ public class PdfViewerApp extends Application {
     @Override
     public void start(Stage stage) {
         preferences = ViewerPreferences.load();
+        features = loadFeatures();
         FontSettings.apply(preferences);
         List<String> args = getParameters().getUnnamed();
-        ViewerWindow first = new ViewerWindow(this, stage, preferences);
+        ViewerWindow first = new ViewerWindow(this, stage, preferences, features);
         windows.add(first);
         first.show();
         if (!args.isEmpty()) first.open(Paths.get(args.get(0)));
@@ -54,7 +57,7 @@ public class PdfViewerApp extends Application {
     /** Opens a new window, with {@code file} in it if not null. */
     public ViewerWindow newWindow(Path file) {
         Stage stage = new Stage();
-        ViewerWindow window = new ViewerWindow(this, stage, preferences);
+        ViewerWindow window = new ViewerWindow(this, stage, preferences, features);
         windows.add(window);
         // a new window cascades from the last one.
         if (windows.size() > 1) {
@@ -71,6 +74,30 @@ public class PdfViewerApp extends Application {
     public void exit() {
         for (ViewerWindow window : new ArrayList<>(windows)) {
             if (!window.close()) return;
+        }
+    }
+
+    /** System property naming a features file; see {@link #loadFeatures()}. */
+    public static final String FEATURES_PROPERTY = "org.icepdf.fx.features";
+
+    /**
+     * What this installation offers ({@link ViewerFeatures#fromProperties}): the file named by
+     * {@code -Dorg.icepdf.fx.features}, else {@code features.properties} in the settings directory,
+     * else everything.
+     */
+    static ViewerFeatures loadFeatures() {
+        String configured = System.getProperty(FEATURES_PROPERTY);
+        Path file = configured != null && !configured.isBlank() ? Paths.get(configured)
+                : ViewerPreferences.home().resolve("features.properties");
+        if (!java.nio.file.Files.isRegularFile(file)) return ViewerFeatures.full();
+        java.util.Properties properties = new java.util.Properties();
+        try (java.io.InputStream in = java.nio.file.Files.newInputStream(file)) {
+            properties.load(in);
+            return ViewerFeatures.fromProperties(properties);
+        } catch (java.io.IOException | IllegalArgumentException e) {
+            java.util.logging.Logger.getLogger(PdfViewerApp.class.getName())
+                    .log(java.util.logging.Level.WARNING, "Could not read " + file + "; offering everything", e);
+            return ViewerFeatures.full();
         }
     }
 

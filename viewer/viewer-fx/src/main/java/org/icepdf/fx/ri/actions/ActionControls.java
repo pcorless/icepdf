@@ -38,12 +38,22 @@ public final class ActionControls {
 
     private final ActionRegistry registry;
     private final ViewerContext context;
+    private final java.util.function.Predicate<String> allowed;
     // one toggle group per action group, shared by every radio item made here.
     private final Map<String, ToggleGroup> groups = new HashMap<>();
 
     public ActionControls(ActionRegistry registry, ViewerContext context) {
+        this(registry, context, id -> true);
+    }
+
+    /**
+     * @param allowed which ids the product offers (its {@code ViewerFeatures::allows}); the others
+     *                are left out like unavailable ones
+     */
+    public ActionControls(ActionRegistry registry, ViewerContext context, java.util.function.Predicate<String> allowed) {
         this.registry = registry;
         this.context = context;
+        this.allowed = allowed;
     }
 
     public ActionRegistry registry() {
@@ -54,9 +64,9 @@ public final class ActionControls {
         return context;
     }
 
-    /** Whether the id names an action that can run in this context. */
+    /** Whether the id names an action the product offers and that can run in this context. */
     public boolean isAvailable(String id) {
-        return id != null && registry.find(id).map(a -> a.isAvailable(context)).orElse(false);
+        return id != null && allowed.test(id) && registry.find(id).map(a -> a.isAvailable(context)).orElse(false);
     }
 
     /** Runs an action now, if it's available and enabled. */
