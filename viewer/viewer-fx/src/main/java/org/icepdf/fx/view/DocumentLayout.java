@@ -30,7 +30,7 @@ import java.util.List;
  * Pure math with no toolkit types, so it is unit-testable and could serve the Swing viewer too.
  * An instance is immutable; build a new one when any input changes.
  */
-public final class DocumentLayout {
+final class DocumentLayout {
 
     /** Page sizes in logical px at the layout's zoom and rotation. */
     public interface PageSizes {

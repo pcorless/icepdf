@@ -30,7 +30,7 @@ import java.awt.geom.NoninvertibleTransformException;
  * Re-mapping between two renders is {@code to ∘ from⁻¹}: that one transform carries a stale
  * tile, or the unrotated preview, onto the current zoom and rotation exactly, whatever the angle.
  */
-public final class PageTransforms {
+final class PageTransforms {
 
     private PageTransforms() {
     }

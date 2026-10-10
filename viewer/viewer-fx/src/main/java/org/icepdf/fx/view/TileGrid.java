@@ -30,7 +30,7 @@ import java.util.List;
  * <p>
  * Pure math with no toolkit types.
  */
-public final class TileGrid {
+final class TileGrid {
 
     public static final int DEFAULT_TILE_SIZE = 512;
 

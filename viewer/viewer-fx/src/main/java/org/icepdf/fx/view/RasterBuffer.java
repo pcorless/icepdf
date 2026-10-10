@@ -32,7 +32,7 @@ import java.nio.IntBuffer;
  * never converted either.  Once handed to the scene a buffer is treated as immutable: painting
  * into a displayed buffer would tear, so re-renders produce a new buffer instead.
  */
-public final class RasterBuffer {
+final class RasterBuffer {
 
     /** Stands for "nothing here" (an annotation tile with no annotation on it); never displayed. */
     public static final RasterBuffer EMPTY = new RasterBuffer(1, 1);

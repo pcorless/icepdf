@@ -19,7 +19,7 @@ package org.icepdf.fx.view;
  * Identity of a cached raster.  Everything that changes the pixels is part of the key, so a
  * lookup can never return a buffer rendered for a different zoom, rotation or screen scale.
  */
-public sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile, CacheKey.Preview {
+sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile, CacheKey.Preview {
 
     int pageIndex();
 

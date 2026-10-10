@@ -503,7 +503,7 @@ public final class PdfViewSmoke {
                 layout[frame[0]] = (System.nanoTime() - pulseStart[0]) / 1e6;
             }
         };
-        long rendersBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+        long rendersBefore = org.icepdf.fx.view.RenderStats.contentRenderCount();
         javafx.animation.AnimationTimer timer = new javafx.animation.AnimationTimer() {
             long last;
 
@@ -527,7 +527,7 @@ public final class PdfViewSmoke {
         });
         done.await(120, java.util.concurrent.TimeUnit.SECONDS);
         fx(() -> view.getScene().removePostLayoutPulseListener(postLayout));
-        long renders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - rendersBefore;
+        long renders = org.icepdf.fx.view.RenderStats.contentRenderCount() - rendersBefore;
         waitIdle(60_000);
         // the first interval is from timer start, not a pan frame
         return new PanStats(java.util.Arrays.copyOfRange(intervals, 1, frames),
@@ -1092,7 +1092,7 @@ public final class PdfViewSmoke {
         java.awt.geom.Rectangle2D original = new java.awt.geom.Rectangle2D.Float();
         original.setRect(square.getUserSpaceRectangle());
         double zoom = onFx(view::getZoom);
-        long contentBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+        long contentBefore = org.icepdf.fx.view.RenderStats.contentRenderCount();
 
         double[] p = viewPointIn(0, original);
         robotClick(robot, p);
@@ -1144,7 +1144,7 @@ public final class PdfViewSmoke {
         waitIdle(30_000);
         check("undo restores it", !square.isDeleted()
                         && onFx(() -> view.annotationAt(at[0], at[1])).orElse(null) == square, "");
-        long contentRenders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - contentBefore;
+        long contentRenders = org.icepdf.fx.view.RenderStats.contentRenderCount() - contentBefore;
         check("edits rendered no page-content tiles", contentRenders == 0, contentRenders + " content renders");
     }
 
@@ -1318,7 +1318,7 @@ public final class PdfViewSmoke {
         });
         org.icepdf.core.pobjects.Page page = doc.getPageTree().getPage(0);
         double zoom = onFx(view::getZoom);
-        long contentBefore = org.icepdf.fx.view.TileRenderer.contentRenderCount();
+        long contentBefore = org.icepdf.fx.view.RenderStats.contentRenderCount();
         double[] base = viewPointWithoutAnnotation(0);
         java.util.List<org.icepdf.core.pobjects.annotations.Annotation> created = new java.util.ArrayList<>();
 
@@ -1417,7 +1417,7 @@ public final class PdfViewSmoke {
         waitIdle(30_000);
         boolean allGone = created.stream().allMatch(org.icepdf.core.pobjects.annotations.Annotation::isDeleted);
         check("undo removes every created annotation", allGone && !created.isEmpty(), created.size() + " created");
-        long contentRenders = org.icepdf.fx.view.TileRenderer.contentRenderCount() - contentBefore;
+        long contentRenders = org.icepdf.fx.view.RenderStats.contentRenderCount() - contentBefore;
         check("creation rendered no page-content tiles", contentRenders == 0, contentRenders + " content renders");
         fx(() -> view.setDocument(null));
         doc.dispose();
@@ -1525,7 +1525,7 @@ public final class PdfViewSmoke {
     private void annotationSnapshots(Path dir) throws Exception {
         String compare = System.getProperty("smoke.compare");
         System.out.println("annotation snapshots" + (compare != null ? ", comparing with " + compare : "")
-                + (org.icepdf.fx.view.TileRenderer.SINGLE_PASS_ANNOTATIONS ? " [single pass]" : " [split layers]"));
+                + (org.icepdf.fx.view.RenderStats.singlePassAnnotations() ? " [single pass]" : " [split layers]"));
         for (String name : ANNOTATION_DOCS) {
             Path file = dir.resolve(name);
             if (!Files.exists(file)) {

@@ -66,7 +66,7 @@ import java.util.logging.Logger;
  * <p>
  * Requests, cancellation and delivery are all on the FX thread; only the paint runs on workers.
  */
-public final class TileRenderer {
+final class TileRenderer {
 
     private static final Logger logger = Logger.getLogger(TileRenderer.class.getName());
 
