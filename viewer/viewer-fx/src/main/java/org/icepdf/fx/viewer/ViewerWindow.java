@@ -38,7 +38,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
@@ -46,6 +45,7 @@ import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.ri.SidePanel;
+import org.icepdf.fx.ri.document.DocumentSession;
 import org.icepdf.fx.ri.ViewerFeatures;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.StandardActions;
@@ -63,18 +63,14 @@ import org.icepdf.fx.print.PrintSettings;
 import org.icepdf.fx.signature.DocumentSigning;
 import org.icepdf.fx.signature.SignDialog;
 import org.icepdf.fx.view.FitMode;
-import org.icepdf.fx.view.PasswordPrompt;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
 import org.icepdf.fx.view.ViewMode;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -119,8 +115,7 @@ public class ViewerWindow {
     private final ActionControls actions;
     private final ViewerFeatures features;
 
-    private Document document;
-    private Path file;
+    private final DocumentSession session;
     // false only for scripted runs (ViewerSmoke): unsaved changes are dropped without asking.
     boolean askBeforeDiscard = true;
 
@@ -129,6 +124,11 @@ public class ViewerWindow {
         this.stage = stage;
         this.preferences = preferences;
         this.features = features;
+        session = new DocumentSession(view);
+        session.setOwner(stage);
+        session.setConfirmDiscard(this::askAboutChanges);
+        session.setOnError(this::error);
+        session.setOnLoaded(this::loaded);
         applyPreferences();
         buildPanels();
         actions = new ActionControls(StandardActions.registry(), new Context(), features::allows);
@@ -186,7 +186,7 @@ public class ViewerWindow {
 
     /** The open file, or null. */
     public Path getFile() {
-        return file;
+        return session.getFile();
     }
 
     void show() {
@@ -754,6 +754,7 @@ public class ViewerWindow {
     }
 
     private void updateTitle() {
+        Path file = session.getFile();
         String name = file != null ? file.getFileName().toString() : null;
         stage.setTitle(name == null ? APP_NAME : (isModified() ? "*" : "") + name + " — " + APP_NAME);
     }
@@ -772,6 +773,7 @@ public class ViewerWindow {
         chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF documents", "*.pdf", "*.PDF"),
                 new FileChooser.ExtensionFilter("All files", "*.*"));
         String last = preferences.get(ViewerPreferences.LAST_DIRECTORY, null);
+        Path file = session.getFile();
         if (file != null && file.getParent() != null) chooser.setInitialDirectory(file.getParent().toFile());
         else if (last != null && new File(last).isDirectory()) chooser.setInitialDirectory(new File(last));
         return chooser;
@@ -783,53 +785,24 @@ public class ViewerWindow {
      * @return true if it opened
      */
     public boolean open(Path path) {
-        if (!confirmDiscard()) return false;
-        return load(path, -1);
+        return session.open(path);
     }
 
-    /** Loads without asking; {@code page} >= 0 restores a page (after a save). */
-    private boolean load(Path path, int page) {
-        Document next = new Document();
-        PasswordPrompt prompt = new PasswordPrompt(stage, path.getFileName().toString());
-        next.setSecurityCallback(prompt);
-        try {
-            next.setFile(path.toString());
-        } catch (PDFSecurityException e) {
-            next.dispose();
-            if (!prompt.isCancelled()) error("Could not open " + path.getFileName() + ": incorrect password.");
-            return false;
-        } catch (Exception e) {
-            next.dispose();
-            error("Could not open " + path + ":\n" + e.getMessage());
-            return false;
-        }
-        Document old = document;
-        document = next;
-        file = path.toAbsolutePath();
-        view.setDocument(next);
-        if (old != null) old.dispose();
-        if (page >= 0) view.setCurrentPageIndex(Math.min(page, view.getPageCount() - 1));
-        view.refreshModified();
+    /** A file opened (or reopened after a save): remember it, pick its first panel, retitle. */
+    private void loaded(Path file) {
         preferences.addRecentFile(file);
         if (file.getParent() != null) preferences.put(ViewerPreferences.LAST_DIRECTORY, file.getParent().toString());
         preferences.save();
-        applyPageMode(next);
+        applyPageMode(session.getDocument());
         updateTitle();
         showStatus("");
-        return true;
     }
 
     /** Closes the document, keeping the window; asks about unsaved changes first. */
     public boolean closeDocument() {
-        if (!confirmDiscard()) return false;
-        Document old = document;
-        document = null;
-        file = null;
-        view.setDocument(null);
-        if (old != null) old.dispose();
-        view.refreshModified();
-        updateTitle();
-        return true;
+        boolean closed = session.close();
+        if (closed) updateTitle();
+        return closed;
     }
 
     /**
@@ -838,13 +811,10 @@ public class ViewerWindow {
      * @return false if the user cancelled
      */
     public boolean close() {
-        if (!confirmDiscard()) return false;
+        if (!session.confirmDiscard()) return false;
         storeWindowState();
         preferences.save();
-        Document old = document;
-        document = null;
-        view.setDocument(null);
-        if (old != null) old.dispose();
+        session.dispose();
         thumbnails.dispose();
         comments.dispose();
         stage.hide();
@@ -857,9 +827,9 @@ public class ViewerWindow {
      *
      * @return true to go ahead (saved or discarded), false to stay
      */
-    private boolean confirmDiscard() {
+    private boolean askAboutChanges() {
         if (!askBeforeDiscard) return true;
-        if (document == null || !document.getStateManager().hasUnsavedUserChanges()) return true;
+        Path file = session.getFile();
         ButtonType saveButton = new ButtonType("Save", ButtonBar.ButtonData.YES);
         ButtonType discard = new ButtonType("Don't Save", ButtonBar.ButtonData.NO);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
@@ -874,76 +844,30 @@ public class ViewerWindow {
     }
 
     /**
-     * Saves to the open file: the document is written (an incremental update) to a temporary file
-     * beside it, closed, and the temporary file moved over the original - the open file is the
-     * document's backing store, so it can't be written in place - then reopened at the same page.
+     * Saves to the open file (see {@link DocumentSession#save()}); asks for a name when it can't be
+     * written in place.
      *
      * @return true if saved
      */
     public boolean save() {
-        if (document == null) return false;
-        if (file == null || !Files.isWritable(file)) return saveAs();
-        return writeAndReopen(file);
+        if (session.getDocument() == null) return false;
+        if (!session.canSaveInPlace()) return saveAs();
+        boolean saved = session.save();
+        if (saved) showStatus("Saved " + session.getFile().getFileName());
+        return saved;
     }
 
     /** Saves to a file the user picks, which then becomes the open file. */
     public boolean saveAs() {
-        if (document == null) return false;
+        if (session.getDocument() == null) return false;
         FileChooser chooser = pdfChooser("Save As");
+        Path file = session.getFile();
         chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
         File chosen = chooser.showSaveDialog(stage);
         if (chosen == null) return false;
-        Path target = chosen.toPath();
-        if (!target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            target = target.resolveSibling(target.getFileName() + ".pdf");
-        }
-        return writeAndReopen(target);
-    }
-
-    private boolean writeAndReopen(Path target) {
-        Path directory = target.toAbsolutePath().getParent();
-        Path temp = null;
-        try {
-            temp = Files.createTempFile(directory, "." + target.getFileName(), ".tmp");
-            try (OutputStream out = new java.io.BufferedOutputStream(Files.newOutputStream(temp))) {
-                document.saveToOutputStream(out);
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Save failed", e);
-            deleteQuietly(temp);
-            error("Could not save " + target.getFileName() + ":\n" + e.getMessage());
-            return false;
-        }
-        int page = view.getCurrentPageIndex();
-        Document old = document;
-        document = null;
-        view.setDocument(null);
-        old.dispose();
-        try {
-            try {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Save failed", e);
-            error("Could not replace " + target.getFileName() + ":\n" + e.getMessage()
-                    + "\nThe document was saved as " + temp);
-            load(file != null ? file : temp, page);
-            return false;
-        }
-        boolean reopened = load(target, page);
-        if (reopened) showStatus("Saved " + target.getFileName());
-        return reopened;
-    }
-
-    private static void deleteQuietly(Path path) {
-        if (path == null) return;
-        try {
-            Files.deleteIfExists(path);
-        } catch (IOException ignored) {
-            // a stray temporary file
-        }
+        boolean saved = session.saveAs(chosen.toPath());
+        if (saved) showStatus("Saved " + session.getFile().getFileName());
+        return saved;
     }
 
     /** The print dialog starts from the remembered choices, and remembers what was printed with. */
@@ -1012,6 +936,7 @@ public class ViewerWindow {
     }
 
     private void sign(SignatureWidgetAnnotation field) {
+        Document document = session.getDocument();
         if (document == null) return;
         SignDialog dialog = new SignDialog(stage, document, field);
         SignDialog.Result result = dialog.showAndWait().orElse(null);
@@ -1024,6 +949,7 @@ public class ViewerWindow {
             return;
         }
         FileChooser chooser = pdfChooser("Save Signed Document");
+        Path file = session.getFile();
         String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
         chooser.setInitialFileName(base + "-signed.pdf");
         File target = chooser.showSaveDialog(stage);
@@ -1039,7 +965,7 @@ public class ViewerWindow {
                 Platform.runLater(() -> {
                     // the signed copy is the document now; the original's pending signature is gone.
                     signing.getStateManager().setChangesSnapshot();
-                    load(target.toPath(), view.getCurrentPageIndex());
+                    session.openAt(target.toPath(), view.getCurrentPageIndex());
                     showStatus("Signed " + target.getName());
                 });
             } catch (Exception e) {
