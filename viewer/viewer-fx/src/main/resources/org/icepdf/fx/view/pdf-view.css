@@ -22,3 +22,20 @@
 .pdf-view:focused {
     -fx-background-color: #525659;
 }
+
+/* Annotation popups are paper notes: they keep their own light colours whatever theme the
+   application around the view uses. */
+.pdf-annotation-popup {
+    -fx-base: #f4f4f4;
+    -fx-background: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-accent: #3584e4;
+}
+
+.pdf-annotation-popup .text-area {
+    -fx-text-fill: #1a1a1a;
+}
+
+.pdf-annotation-popup .label {
+    -fx-text-fill: #1a1a1a;
+}

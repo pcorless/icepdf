@@ -8,6 +8,14 @@ node: text selection, search highlights, annotation chrome and popups, and form 
 Module: `org.icepdf.fx` (requires `org.icepdf.core` and `javafx.controls`; the rendering engine is not exported).
 Package: `org.icepdf.fx.view`. Demo: `org.icepdf.fx.demo.PdfViewDemo`.
 
+## The new viewer shell (in progress)
+
+`org.icepdf.fx.ri.PdfViewer` is the viewer as one embeddable component: header bar, tool rail,
+hover-open utility panel, light/dark/high-contrast themes, full screen - built from actions and shaped
+by `ViewerFeatures` (what a product offers) and `UserLayout` (how the user arranged it):
+
+    ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf"
+
 ## Run the demo
 
 Gradle builds the core from source:

@@ -1,0 +1,226 @@
+/*
+ * Copyright 2026 Patrick Corless
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The ICEpdf viewer: minimal, document first.  Colours are looked-up variables set per theme class
+   on the root; everything below uses them.  Written for ICEpdf (no theme library or GNOME files). */
+
+.icepdf-viewer.theme-light {
+    -icepdf-window: #fafafa;
+    -icepdf-header: #ebebeb;
+    -icepdf-sidebar: #f2f2f2;
+    -icepdf-canvas: #d6d6d6;
+    -icepdf-fg: #2e3436;
+    -icepdf-fg-dim: #6f7375;
+    -icepdf-border: rgba(0, 0, 0, 0.12);
+    -icepdf-hover: rgba(0, 0, 0, 0.07);
+    -icepdf-active: rgba(0, 0, 0, 0.13);
+    -icepdf-accent: #3584e4;
+    -icepdf-toast: rgba(32, 32, 32, 0.9);
+    -fx-base: #f6f5f4;
+    -fx-background: #fafafa;
+    -fx-control-inner-background: #ffffff;
+    -fx-accent: #3584e4;
+    -fx-focus-color: #3584e4;
+}
+
+.icepdf-viewer.theme-dark {
+    -icepdf-window: #242424;
+    -icepdf-header: #303030;
+    -icepdf-sidebar: #2a2a2a;
+    -icepdf-canvas: #1a1a1a;
+    -icepdf-fg: #eeeeec;
+    -icepdf-fg-dim: #a8a8a8;
+    -icepdf-border: rgba(255, 255, 255, 0.1);
+    -icepdf-hover: rgba(255, 255, 255, 0.08);
+    -icepdf-active: rgba(255, 255, 255, 0.15);
+    -icepdf-accent: #78aeed;
+    -icepdf-toast: rgba(60, 60, 60, 0.95);
+    -fx-base: #383838;
+    -fx-background: #242424;
+    -fx-control-inner-background: #2d2d2d;
+    -fx-accent: #3584e4;
+    -fx-focus-color: #78aeed;
+}
+
+.icepdf-viewer.theme-high-contrast {
+    -icepdf-window: #ffffff;
+    -icepdf-header: #ffffff;
+    -icepdf-sidebar: #ffffff;
+    -icepdf-canvas: #9a9a9a;
+    -icepdf-fg: #000000;
+    -icepdf-fg-dim: #000000;
+    -icepdf-border: #000000;
+    -icepdf-hover: rgba(0, 0, 0, 0.15);
+    -icepdf-active: rgba(0, 0, 0, 0.3);
+    -icepdf-accent: #0040c0;
+    -icepdf-toast: #000000;
+    -fx-base: #ffffff;
+    -fx-background: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-accent: #0040c0;
+    -fx-focus-color: #000000;
+}
+
+.icepdf-viewer {
+    -fx-background-color: -icepdf-window;
+}
+
+.icepdf-viewer .pdf-view,
+.icepdf-viewer .pdf-view:focused {
+    -fx-background-color: -icepdf-canvas;
+}
+
+/* header bar */
+.icepdf-viewer .header-bar {
+    -fx-background-color: -icepdf-header;
+    -fx-border-color: transparent transparent -icepdf-border transparent;
+    -fx-padding: 6 8 6 8;
+    -fx-spacing: 6;
+}
+
+.icepdf-viewer .header-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -icepdf-fg;
+}
+
+.icepdf-viewer .dim-label {
+    -fx-text-fill: -icepdf-fg-dim;
+}
+
+.icepdf-viewer .search-bar {
+    -fx-background-color: -icepdf-header;
+    -fx-border-color: transparent transparent -icepdf-border transparent;
+    -fx-padding: 4 8 6 8;
+    -fx-spacing: 6;
+}
+
+/* flat icon buttons: no chrome until hovered */
+.icepdf-viewer .icon-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 6;
+    -fx-border-color: transparent;
+}
+
+.icepdf-viewer .icon-button:hover {
+    -fx-background-color: -icepdf-hover;
+}
+
+.icepdf-viewer .icon-button:selected,
+.icepdf-viewer .icon-button:armed {
+    -fx-background-color: -icepdf-active;
+}
+
+.icepdf-viewer .icon-button:focused {
+    -fx-border-color: -icepdf-accent;
+    -fx-border-radius: 6;
+}
+
+.icepdf-viewer .icon-button > .arrow-button {
+    -fx-padding: 0;
+}
+
+.icepdf-viewer .icon-button > .arrow-button > .arrow {
+    -fx-padding: 0;
+    -fx-shape: null;
+}
+
+.icepdf-viewer .icon-path {
+    -fx-stroke: -icepdf-fg;
+}
+
+.icepdf-viewer .icon-button:selected .icon-path {
+    -fx-stroke: -icepdf-accent;
+}
+
+.icepdf-viewer .icon-button:disabled .icon-path {
+    -fx-opacity: 0.4;
+}
+
+/* tool rail and utility strip */
+.icepdf-viewer .tool-rail,
+.icepdf-viewer .utility-strip {
+    -fx-background-color: -icepdf-sidebar;
+    -fx-padding: 6 4 6 4;
+    -fx-spacing: 2;
+}
+
+.icepdf-viewer .tool-rail {
+    -fx-border-color: transparent -icepdf-border transparent transparent;
+}
+
+.icepdf-viewer .utility-strip {
+    -fx-border-color: transparent transparent transparent -icepdf-border;
+}
+
+.icepdf-viewer .rail-hot-edge {
+    -fx-background-color: transparent;
+    -fx-pref-width: 6;
+}
+
+/* drawers: overlays float with a shadow, docked ones sit flat */
+.icepdf-viewer .edge-drawer {
+    -fx-background-color: -icepdf-sidebar;
+}
+
+.icepdf-viewer .edge-drawer-right {
+    -fx-border-color: transparent transparent transparent -icepdf-border;
+}
+
+.icepdf-viewer .edge-drawer-left {
+    -fx-border-color: transparent -icepdf-border transparent transparent;
+}
+
+.icepdf-viewer .edge-drawer.overlay {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 18, 0, 0, 2);
+}
+
+.icepdf-viewer .edge-drawer-handle:hover {
+    -fx-background-color: -icepdf-accent;
+    -fx-opacity: 0.5;
+}
+
+.icepdf-viewer .panel-header {
+    -fx-padding: 6 6 6 10;
+    -fx-spacing: 4;
+    -fx-alignment: center-left;
+}
+
+.icepdf-viewer .panel-title {
+    -fx-font-weight: bold;
+    -fx-text-fill: -icepdf-fg;
+}
+
+/* the panels inside keep their own controls, on the sidebar colour */
+.icepdf-viewer .edge-drawer .list-view,
+.icepdf-viewer .edge-drawer .tree-view {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+/* toast */
+.icepdf-viewer .toast {
+    -fx-background-color: -icepdf-toast;
+    -fx-background-radius: 18;
+    -fx-text-fill: white;
+    -fx-padding: 8 16 8 16;
+}
+
+/* full screen */
+.icepdf-viewer.presenting .pdf-view,
+.icepdf-viewer.presenting .pdf-view:focused {
+    -fx-background-color: black;
+}

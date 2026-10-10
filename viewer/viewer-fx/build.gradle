@@ -21,6 +21,17 @@ application {
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 
+// the new viewer shell (PdfViewer) while it replaces the classic window:
+// ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf"
+tasks.register('runShell', JavaExec) {
+    group = 'application'
+    description = 'Runs the PdfViewer shell preview'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'org.icepdf.fx.ri.app.ShellPreview'
+    jvmArgs = ["-Xmx1024m"]
+    if (project.hasProperty('args')) args project.property('args').toString().split(' ')
+}
+
 // the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf"
 tasks.register('runDemo', JavaExec) {
     group = 'application'
@@ -181,6 +192,21 @@ tasks.register('iconSheet', JavaExec) {
     javaLauncher = javaToolchains.launcherFor(java.toolchain)
     if (project.hasProperty('iconArgs')) {
         args project.property('iconArgs').toString().split(';')
+    }
+}
+
+// ShellSmoke: the new viewer shell (PdfViewer) - rail, utility panel, themes, full screen.
+// ./gradlew :viewer:viewer-fx:shellSmoke -PsmokeArgs="outdir;doc.pdf"
+tasks.register('shellSmoke', JavaExec) {
+    description = 'Drives the PdfViewer shell and snapshots it.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.ri.ShellSmoke'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs = ["-Xmx1g"]
+    if (project.hasProperty('smokeArgs')) {
+        args project.property('smokeArgs').toString().split(';')
     }
 }
 
