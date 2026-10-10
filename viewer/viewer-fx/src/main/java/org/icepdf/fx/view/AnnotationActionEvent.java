@@ -15,19 +15,45 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.event.EventTarget;
+import javafx.event.EventType;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.annotations.Annotation;
 
 /**
- * An annotation action the view does not perform itself, handed to
- * {@link PdfView#onAnnotationActionProperty()}: a URI to open, a file to launch, a remote GoTo,
- * JavaScript and so on.  In-document navigation (GoTo destinations and the page named actions) is
- * handled by the view.  Opening links is left to the application on purpose - it decides whether to
- * confirm, which browser, and whether to allow it at all.
- *
- * @param annotation the annotation clicked (usually a link); null for an action that isn't an
- *                   annotation's, such as a bookmark's ({@link PdfView#performAction})
- * @param action     its action, never null
+ * An action the view doesn't perform itself, for the application ({@link PdfView#setOnAnnotationAction}):
+ * a URI to open, a file to launch, a remote GoTo, SubmitForm, JavaScript...  In-document navigation
+ * (GoTo, the page named actions) is handled by the view and never arrives here.
  */
-public record AnnotationActionEvent(Annotation annotation, Action action) {
+public class AnnotationActionEvent extends PdfViewEvent {
+
+    public static final EventType<AnnotationActionEvent> ANNOTATION_ACTION =
+            new EventType<>(PdfViewEvent.ANY, "ANNOTATION_ACTION");
+
+    private final transient Annotation annotation;
+    private final transient Action action;
+
+    /**
+     * @param annotation the annotation whose action it is; null for an action from elsewhere (a
+     *                   bookmark, {@link PdfView#performAction})
+     */
+    public AnnotationActionEvent(Object source, EventTarget target, Annotation annotation, Action action) {
+        super(source, target, ANNOTATION_ACTION);
+        this.annotation = annotation;
+        this.action = action;
+    }
+
+    /** The annotation clicked, or null when the action didn't come from one (a bookmark). */
+    public Annotation getAnnotation() {
+        return annotation;
+    }
+
+    public Action getAction() {
+        return action;
+    }
+
+    @Override
+    public String toString() {
+        return "AnnotationActionEvent[annotation=" + annotation + ", action=" + action + "]";
+    }
 }

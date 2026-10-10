@@ -859,12 +859,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     /** A click on a signature field or badge: the application's handler, else the properties dialog. */
     void signatureClicked(org.icepdf.fx.signature.SignatureStatus status) {
-        java.util.function.Consumer<org.icepdf.fx.signature.SignatureStatus> handler =
-                getSkinnable().getOnSignatureClicked();
+        PdfView view = getSkinnable();
+        boolean handled = view.getOnSignatureClicked() != null;
         // after the gesture: a modal dialog opened inside a mouse handler takes the release.
         Platform.runLater(() -> {
-            if (handler != null) handler.accept(status);
-            else if (status.isSigned()) getSkinnable().showSignatureProperties(status);
+            if (handled) view.fireEvent(new SignatureEvent(view, view, status));
+            else if (status.isSigned()) view.showSignatureProperties(status);
         });
     }
 

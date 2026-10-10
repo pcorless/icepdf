@@ -146,6 +146,8 @@ public class ViewerSmoke {
                 if (info != null) {
                     info.setTitle("Saved by ViewerSmoke");
                 }
+                // a core edit made outside the view: the view is told to look again.
+                window.getView().refreshModified();
                 return null;
             });
             Thread.sleep(1200);
@@ -218,8 +220,20 @@ public class ViewerSmoke {
         // the list follows edits made in the view: delete the picked comment, then undo.
         if (picked != null && onFx(view::isAnnotationEditingAllowed)) {
             String was = onFx(() -> statusLabel(panel));
+            // ANNOTATIONS_CHANGED bubbles: a handler on the scene root sees the delete.
+            int[] bubbled = {0};
+            javafx.event.EventHandler<org.icepdf.fx.view.PdfViewEvent> rootHandler = e -> bubbled[0]++;
             onFx(() -> {
+                window.getStage().getScene().getRoot().addEventHandler(
+                        org.icepdf.fx.view.PdfViewEvent.ANNOTATIONS_CHANGED, rootHandler);
                 view.deleteSelectedAnnotation();
+                return null;
+            });
+            check("ANNOTATIONS_CHANGED bubbles to the scene root", bubbled[0] == 1);
+            check("a delete marks the document modified", onFx(view::isModified));
+            onFx(() -> {
+                window.getStage().getScene().getRoot().removeEventHandler(
+                        org.icepdf.fx.view.PdfViewEvent.ANNOTATIONS_CHANGED, rootHandler);
                 return null;
             });
             settle();

@@ -15,18 +15,53 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.event.EventTarget;
+import javafx.event.EventType;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 
 /**
- * A form field's value changed, handed to {@link PdfView#onFormFieldChangedProperty()}: by the user
- * (typing, a click, a choice), by a reset, by {@link PdfView#setFieldValue}, or by undo/redo
- * (which report the change being made, so old and new swap on undo).  Values are plain Java, as
- * {@link PdfView#getFieldValue} returns them.
- *
- * @param field    a widget of the field (a radio group reports one of its kids)
- * @param name     the field's fully-qualified name
- * @param oldValue the value before
- * @param newValue the value after
+ * A form field's value changed ({@link PdfView#setOnFormFieldChanged}): by the user, by
+ * {@link PdfView#setFieldValue}, by a reset, or by undo/redo (old and new swapped).
  */
-public record FormFieldChangeEvent(AbstractWidgetAnnotation field, String name, Object oldValue, Object newValue) {
+public class FormFieldChangeEvent extends PdfViewEvent {
+
+    public static final EventType<FormFieldChangeEvent> FIELD_CHANGED =
+            new EventType<>(PdfViewEvent.ANY, "FIELD_CHANGED");
+
+    private final transient AbstractWidgetAnnotation field;
+    private final String name;
+    private final transient Object oldValue;
+    private final transient Object newValue;
+
+    public FormFieldChangeEvent(Object source, EventTarget target, AbstractWidgetAnnotation field, String name,
+                                Object oldValue, Object newValue) {
+        super(source, target, FIELD_CHANGED);
+        this.field = field;
+        this.name = name;
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+    }
+
+    /** The widget edited. */
+    public AbstractWidgetAnnotation getField() {
+        return field;
+    }
+
+    /** The field's fully-qualified name. */
+    public String getName() {
+        return name;
+    }
+
+    public Object getOldValue() {
+        return oldValue;
+    }
+
+    public Object getNewValue() {
+        return newValue;
+    }
+
+    @Override
+    public String toString() {
+        return "FormFieldChangeEvent[name=" + name + ", oldValue=" + oldValue + ", newValue=" + newValue + "]";
+    }
 }

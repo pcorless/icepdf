@@ -17,6 +17,7 @@ package org.icepdf.fx.view;
 
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.event.EventHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.Control;
@@ -118,13 +119,41 @@ public class PdfView extends Control {
 
     private final ReadOnlyObjectWrapper<Annotation> selectedAnnotation =
             new ReadOnlyObjectWrapper<>(this, "selectedAnnotation");
-    private final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationAction =
-            new SimpleObjectProperty<>(this, "onAnnotationAction");
+    private final ObjectProperty<EventHandler<? super AnnotationActionEvent>> onAnnotationAction = new ObjectPropertyBase<>() {
+        @Override
+        protected void invalidated() {
+            setEventHandler(AnnotationActionEvent.ANNOTATION_ACTION, get());
+        }
+
+        @Override
+        public Object getBean() {
+            return PdfView.this;
+        }
+
+        @Override
+        public String getName() {
+            return "onAnnotationAction";
+        }
+    };
     private final AnnotationEdits.History history = new AnnotationEdits.History();
     private final BooleanProperty formFieldsEditable = new SimpleBooleanProperty(this, "formFieldsEditable", true);
     private final BooleanProperty highlightFormFields = new SimpleBooleanProperty(this, "highlightFormFields", false);
-    private final ObjectProperty<Consumer<FormFieldChangeEvent>> onFormFieldChanged =
-            new SimpleObjectProperty<>(this, "onFormFieldChanged");
+    private final ObjectProperty<EventHandler<? super FormFieldChangeEvent>> onFormFieldChanged = new ObjectPropertyBase<>() {
+        @Override
+        protected void invalidated() {
+            setEventHandler(FormFieldChangeEvent.FIELD_CHANGED, get());
+        }
+
+        @Override
+        public Object getBean() {
+            return PdfView.this;
+        }
+
+        @Override
+        public String getName() {
+            return "onFormFieldChanged";
+        }
+    };
     private final ReadOnlyObjectWrapper<AbstractWidgetAnnotation> focusedField =
             new ReadOnlyObjectWrapper<>(this, "focusedField");
     private final StringProperty annotationAuthor =
@@ -133,7 +162,23 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
-    private final ReadOnlyIntegerWrapper annotationsVersion = new ReadOnlyIntegerWrapper(this, "annotationsVersion", 0);
+    private final ObjectProperty<EventHandler<? super PdfViewEvent>> onAnnotationsChanged = new ObjectPropertyBase<>() {
+        @Override
+        protected void invalidated() {
+            setEventHandler(PdfViewEvent.ANNOTATIONS_CHANGED, get());
+        }
+
+        @Override
+        public Object getBean() {
+            return PdfView.this;
+        }
+
+        @Override
+        public String getName() {
+            return "onAnnotationsChanged";
+        }
+    };
+    private final ReadOnlyBooleanWrapper modified = new ReadOnlyBooleanWrapper(this, "modified", false);
     // what an encrypted document's permissions (/P) allow the user; all true for an unencrypted one.
     private final ReadOnlyBooleanWrapper copyAllowed = new ReadOnlyBooleanWrapper(this, "copyAllowed", true);
     private final ReadOnlyBooleanWrapper annotationEditingAllowed =
@@ -149,8 +194,22 @@ public class PdfView extends Control {
             new ReadOnlyBooleanWrapper(this, "verifyingSignatures", false);
     private final BooleanProperty verifySignaturesOnOpen =
             new SimpleBooleanProperty(this, "verifySignaturesOnOpen", true);
-    private final ObjectProperty<Consumer<org.icepdf.fx.signature.SignatureStatus>> onSignatureClicked =
-            new SimpleObjectProperty<>(this, "onSignatureClicked");
+    private final ObjectProperty<EventHandler<? super SignatureEvent>> onSignatureClicked = new ObjectPropertyBase<>() {
+        @Override
+        protected void invalidated() {
+            setEventHandler(SignatureEvent.SIGNATURE_CLICKED, get());
+        }
+
+        @Override
+        public Object getBean() {
+            return PdfView.this;
+        }
+
+        @Override
+        public String getName() {
+            return "onSignatureClicked";
+        }
+    };
     private int signatureGeneration;
     private boolean lowResolutionPrintOnly;
 
@@ -182,6 +241,7 @@ public class PdfView extends Control {
             signatures.clear();
             verifyingSignatures.set(false);
             if (doc != null && isVerifySignaturesOnOpen()) verifySignatures();
+            refreshModified();
         });
     }
 
@@ -414,19 +474,19 @@ public class PdfView extends Control {
     // ---- form values ----------------------------------------------------------------------------
 
     /**
-     * Receives every form field value change: typing, clicks and choices, resets,
-     * {@link #setFieldValue}, undo and redo.  For applications tracking dirty state or validating;
-     * null ignores them.
+     * Called for every form field value change: typing, clicks and choices, resets,
+     * {@link #setFieldValue}, undo and redo ({@link FormFieldChangeEvent#FIELD_CHANGED}).  For
+     * applications tracking dirty state or validating.
      */
-    public final ObjectProperty<Consumer<FormFieldChangeEvent>> onFormFieldChangedProperty() {
+    public final ObjectProperty<EventHandler<? super FormFieldChangeEvent>> onFormFieldChangedProperty() {
         return onFormFieldChanged;
     }
 
-    public final void setOnFormFieldChanged(Consumer<FormFieldChangeEvent> handler) {
+    public final void setOnFormFieldChanged(EventHandler<? super FormFieldChangeEvent> handler) {
         onFormFieldChanged.set(handler);
     }
 
-    public final Consumer<FormFieldChangeEvent> getOnFormFieldChanged() {
+    public final EventHandler<? super FormFieldChangeEvent> getOnFormFieldChanged() {
         return onFormFieldChanged.get();
     }
 
@@ -558,11 +618,10 @@ public class PdfView extends Control {
     }
 
     private void fireFieldChanges(AnnotationEdits.Edit edit, boolean undone) {
-        Consumer<FormFieldChangeEvent> handler = getOnFormFieldChanged();
-        if (handler == null || !(edit instanceof FormController.FieldEdit fieldEdit)) return;
+        if (!(edit instanceof FormController.FieldEdit fieldEdit)) return;
         for (FormController.FieldChange c : fieldEdit.changes()) {
-            handler.accept(undone ? new FormFieldChangeEvent(c.widget(), c.name(), c.newValue(), c.oldValue())
-                    : new FormFieldChangeEvent(c.widget(), c.name(), c.oldValue(), c.newValue()));
+            fireEvent(undone ? new FormFieldChangeEvent(this, this, c.widget(), c.name(), c.newValue(), c.oldValue())
+                    : new FormFieldChangeEvent(this, this, c.widget(), c.name(), c.oldValue(), c.newValue()));
         }
     }
 
@@ -598,16 +657,40 @@ public class PdfView extends Control {
     }
 
     /**
-     * Changes whenever an annotation or form field is added, removed or edited through the view
-     * (including undo and redo), so a list of the document's annotations knows to refresh.  Edits
-     * made straight on the core objects aren't seen.
+     * Called when an annotation or form field is added, removed or edited through the view
+     * (including undo and redo) - {@link PdfViewEvent#ANNOTATIONS_CHANGED} - so a list of the
+     * document's annotations knows to refresh.  Edits made straight on the core objects aren't seen.
      */
-    public final ReadOnlyIntegerProperty annotationsVersionProperty() {
-        return annotationsVersion.getReadOnlyProperty();
+    public final ObjectProperty<EventHandler<? super PdfViewEvent>> onAnnotationsChangedProperty() {
+        return onAnnotationsChanged;
     }
 
-    public final int getAnnotationsVersion() {
-        return annotationsVersion.get();
+    public final void setOnAnnotationsChanged(EventHandler<? super PdfViewEvent> handler) {
+        onAnnotationsChanged.set(handler);
+    }
+
+    public final EventHandler<? super PdfViewEvent> getOnAnnotationsChanged() {
+        return onAnnotationsChanged.get();
+    }
+
+    /**
+     * True while the document has changes not yet saved (core's
+     * {@code StateManager.hasUnsavedUserChanges()}).  Updated after every edit made through the view,
+     * undo and redo, and when the document changes; after changing core objects directly, or after
+     * saving in place, call {@link #refreshModified()}.
+     */
+    public final ReadOnlyBooleanProperty modifiedProperty() {
+        return modified.getReadOnlyProperty();
+    }
+
+    public final boolean isModified() {
+        return modified.get();
+    }
+
+    /** Reads {@link #modifiedProperty()} again from the document. */
+    public void refreshModified() {
+        Document doc = getDocument();
+        modified.set(doc != null && doc.getStateManager().hasUnsavedUserChanges());
     }
 
     public final ReadOnlyBooleanProperty canRedoProperty() {
@@ -627,8 +710,11 @@ public class PdfView extends Control {
             edit.pages().forEach(skin::bumpAnnotationGeneration);
             skin.refreshAnnotationChrome();
         }
-        if (edit != null) annotationsVersion.set(annotationsVersion.get() + 1);
         updateHistoryState();
+        if (edit != null) {
+            refreshModified();
+            fireEvent(new PdfViewEvent(this, this, PdfViewEvent.ANNOTATIONS_CHANGED));
+        }
     }
 
     private void updateHistoryState() {
@@ -637,18 +723,19 @@ public class PdfView extends Control {
     }
 
     /**
-     * Receives annotation actions the view doesn't perform itself (URI, launch, remote GoTo,
-     * JavaScript, ...).  In-document navigation is handled by the view.  Null ignores them.
+     * Called with annotation actions the view doesn't perform itself (URI, launch, remote GoTo,
+     * JavaScript, ...) - {@link AnnotationActionEvent#ANNOTATION_ACTION}.  In-document navigation is
+     * handled by the view.
      */
-    public final ObjectProperty<Consumer<AnnotationActionEvent>> onAnnotationActionProperty() {
+    public final ObjectProperty<EventHandler<? super AnnotationActionEvent>> onAnnotationActionProperty() {
         return onAnnotationAction;
     }
 
-    public final void setOnAnnotationAction(Consumer<AnnotationActionEvent> handler) {
+    public final void setOnAnnotationAction(EventHandler<? super AnnotationActionEvent> handler) {
         onAnnotationAction.set(handler);
     }
 
-    public final Consumer<AnnotationActionEvent> getOnAnnotationAction() {
+    public final EventHandler<? super AnnotationActionEvent> getOnAnnotationAction() {
         return onAnnotationAction.get();
     }
 
@@ -689,8 +776,7 @@ public class PdfView extends Control {
     }
 
     private void dispatchAction(Annotation annotation, Action action) {
-        Consumer<AnnotationActionEvent> handler = getOnAnnotationAction();
-        if (handler != null) handler.accept(new AnnotationActionEvent(annotation, action));
+        fireEvent(new AnnotationActionEvent(this, this, annotation, action));
     }
 
     /**
@@ -1214,18 +1300,19 @@ public class PdfView extends Control {
     }
 
     /**
-     * Called when the user clicks a signature field or its badge.  Null (the default) opens the
-     * signature properties dialog for a signed field.
+     * Called when the user clicks a signature field or its badge, or draws one with the signature
+     * tool ({@link SignatureEvent#SIGNATURE_CLICKED}).  Setting a handler replaces the default - the
+     * signature properties dialog for a signed field - and offers unsigned fields for signing.
      */
-    public final ObjectProperty<Consumer<org.icepdf.fx.signature.SignatureStatus>> onSignatureClickedProperty() {
+    public final ObjectProperty<EventHandler<? super SignatureEvent>> onSignatureClickedProperty() {
         return onSignatureClicked;
     }
 
-    public final Consumer<org.icepdf.fx.signature.SignatureStatus> getOnSignatureClicked() {
+    public final EventHandler<? super SignatureEvent> getOnSignatureClicked() {
         return onSignatureClicked.get();
     }
 
-    public final void setOnSignatureClicked(Consumer<org.icepdf.fx.signature.SignatureStatus> handler) {
+    public final void setOnSignatureClicked(EventHandler<? super SignatureEvent> handler) {
         onSignatureClicked.set(handler);
     }
 

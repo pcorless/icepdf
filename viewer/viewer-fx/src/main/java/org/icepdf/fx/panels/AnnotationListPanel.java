@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * annotations - for a {@link PdfView}: grouped by page (or sorted by date, author or type), replies
  * under the comment they answer, filtered by text, type or author.  Picking one goes to it and
  * selects it; double-click or Enter opens its note.  The list follows edits made in the view
- * ({@link PdfView#annotationsVersionProperty()}).
+ * ({@link org.icepdf.fx.view.PdfViewEvent#ANNOTATIONS_CHANGED}).
  */
 public class AnnotationListPanel extends BorderPane {
 
@@ -145,7 +145,7 @@ public class AnnotationListPanel extends BorderPane {
 
         rescanLater.setOnFinished(e -> rescan());
         view.documentProperty().addListener((o, a, b) -> rescan());
-        view.annotationsVersionProperty().addListener((o, a, b) -> rescanLater.playFromStart());
+        view.addEventHandler(org.icepdf.fx.view.PdfViewEvent.ANNOTATIONS_CHANGED, e -> rescanLater.playFromStart());
         view.selectedAnnotationProperty().addListener((o, a, b) -> follow(b));
         rescan();
     }

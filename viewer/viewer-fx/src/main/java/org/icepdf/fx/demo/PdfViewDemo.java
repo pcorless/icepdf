@@ -87,12 +87,12 @@ public class PdfViewDemo extends Application {
         // links that leave the document are the application's call; the demo opens URIs.
         // signed fields show their properties; empty ones (clicked, or drawn with the signature tool)
         // are signed: the sign dialog, then save to a new file, which core signs as it writes.
-        view.setOnSignatureClicked(status -> {
-            if (status.isSigned()) view.showSignatureProperties(status);
-            else sign(status.widget());
+        view.setOnSignatureClicked(event -> {
+            if (event.getStatus().isSigned()) view.showSignatureProperties(event.getStatus());
+            else sign(event.getStatus().widget());
         });
         view.setOnAnnotationAction(event -> {
-            if (event.action() instanceof org.icepdf.core.pobjects.actions.URIAction uri && uri.getURI() != null) {
+            if (event.getAction() instanceof org.icepdf.core.pobjects.actions.URIAction uri && uri.getURI() != null) {
                 getHostServices().showDocument(uri.getURI());
             }
         });
@@ -322,7 +322,7 @@ public class PdfViewDemo extends Application {
         // the last form field change, to show onFormFieldChanged in use.
         Label fieldChange = new Label();
         view.setOnFormFieldChanged(change ->
-                fieldChange.setText(change.name() + ": " + change.oldValue() + " → " + change.newValue()));
+                fieldChange.setText(change.getName() + ": " + change.getOldValue() + " → " + change.getNewValue()));
         HBox bar = new HBox(16, memory, selection, fieldChange, printStatus);
         bar.setPadding(new Insets(2, 8, 2, 8));
         return bar;

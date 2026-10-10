@@ -35,9 +35,9 @@ view.setFitMode(FitMode.WIDTH);
 view.setToolMode(ToolMode.TEXT_SELECT);     // PAN, HIGHLIGHT, NOTE, FREE_TEXT, INK, ...
 
 // actions with outside effects are the application's call (URI, launch, SubmitForm, JavaScript)
-view.setOnAnnotationAction(e -> { /* e.action() */ });
+view.setOnAnnotationAction(e -> { /* e.getAction() */ });
 // form values: read, set, reset, and track changes (undo/redo included)
-view.setOnFormFieldChanged(e -> System.out.println(e.name() + " = " + e.newValue()));
+view.setOnFormFieldChanged(e -> System.out.println(e.getName() + " = " + e.getNewValue()));
 view.setFieldValue("name", "Ada");
 view.resetForm();
 

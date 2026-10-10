@@ -867,7 +867,7 @@ public final class PdfViewSmoke {
         fx(() -> view.setOnAnnotationAction(actions::add));
         clickField(robot, widgets("submit").get(0));
         check("submit goes to the application", actions.size() == 1
-                        && actions.get(0).action() instanceof org.icepdf.core.pobjects.actions.SubmitFormAction,
+                        && actions.get(0).getAction() instanceof org.icepdf.core.pobjects.actions.SubmitFormAction,
                 actions.toString());
         fx(() -> view.setOnAnnotationAction(null));
 
@@ -899,12 +899,12 @@ public final class PdfViewSmoke {
             fx(() -> edit.setText("Typed"));
             key(edit, javafx.scene.input.KeyCode.ENTER, false, false);
         }
-        check("typing reports a field change", events.size() == 1 && "name".equals(events.get(0).name())
-                        && "Typed".equals(events.get(0).newValue()), events.toString());
-        String before = String.valueOf(events.isEmpty() ? null : events.get(0).oldValue());
+        check("typing reports a field change", events.size() == 1 && "name".equals(events.get(0).getName())
+                        && "Typed".equals(events.get(0).getNewValue()), events.toString());
+        String before = String.valueOf(events.isEmpty() ? null : events.get(0).getOldValue());
         fx(view::undo);
-        check("undo reports the change back", events.size() == 2 && before.equals(events.get(1).newValue())
-                        && "Typed".equals(events.get(1).oldValue()), events.toString());
+        check("undo reports the change back", events.size() == 2 && before.equals(events.get(1).getNewValue())
+                        && "Typed".equals(events.get(1).getOldValue()), events.toString());
 
         check("getFieldValue reads each kind", onFx(() -> before.equals(view.getFieldValue("name"))
                         && "Green".equals(view.getFieldValue("color")) && "Japan".equals(view.getFieldValue("country"))
@@ -1063,8 +1063,8 @@ public final class PdfViewSmoke {
                     String.valueOf(onFx(viewport::getCursor)));
             robotClick(robot, p);
             check("GoToR link goes to the app callback", events.size() == 1
-                            && events.get(0).action() instanceof org.icepdf.core.pobjects.actions.GoToRAction
-                            && events.get(0).annotation() == remoteLink,
+                            && events.get(0).getAction() instanceof org.icepdf.core.pobjects.actions.GoToRAction
+                            && events.get(0).getAnnotation() == remoteLink,
                     events.size() + " events");
         }
         if (destLink != null) {
@@ -1953,7 +1953,7 @@ public final class PdfViewSmoke {
         document.setFile(copy.toString());
         java.util.List<org.icepdf.fx.signature.SignatureStatus> clicked = new java.util.concurrent.CopyOnWriteArrayList<>();
         fx(() -> {
-            view.setOnSignatureClicked(clicked::add);
+            view.setOnSignatureClicked(e -> clicked.add(e.getStatus()));
             view.setFitMode(FitMode.PAGE);
             view.setDocument(document);
         });
@@ -2113,7 +2113,7 @@ public final class PdfViewSmoke {
 
         // the application's handler gets the click.
         java.util.List<org.icepdf.fx.signature.SignatureStatus> clicked = new java.util.concurrent.CopyOnWriteArrayList<>();
-        fx(() -> view.setOnSignatureClicked(clicked::add));
+        fx(() -> view.setOnSignatureClicked(e -> clicked.add(e.getStatus())));
         double[] at = viewPointIn(first.pageIndex(), first.widget().getUserSpaceRectangle());
         // delivered as JavaFX mouse events: screen input (Robot) can be covered by other windows.
         if (at != null) syntheticClick(at);

@@ -15,12 +15,9 @@
  */
 package org.icepdf.fx.viewer;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyBooleanProperty;
-import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -89,7 +86,6 @@ public class ViewerWindow {
     private final SplitPane split = new SplitPane();
     private final TabPane sideTabs = new TabPane();
     private final Label status = new Label();
-    private final ReadOnlyBooleanWrapper modified = new ReadOnlyBooleanWrapper(this, "modified", false);
     private final Menu recentMenu = new Menu("Open Recent");
 
     private ThumbnailPanel thumbnails;
@@ -133,20 +129,15 @@ public class ViewerWindow {
         });
         setSidePanelVisible(preferences.getBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, true));
 
-        view.setOnSignatureClicked(statusOf -> {
-            if (statusOf.isSigned()) view.showSignatureProperties(statusOf);
-            else sign(statusOf.widget());
+        view.setOnSignatureClicked(event -> {
+            if (event.getStatus().isSigned()) view.showSignatureProperties(event.getStatus());
+            else sign(event.getStatus().widget());
         });
         view.setOnAnnotationAction(event -> {
-            if (event.action() instanceof URIAction uri && uri.getURI() != null) app.showDocument(uri.getURI());
+            if (event.getAction() instanceof URIAction uri && uri.getURI() != null) app.showDocument(uri.getURI());
         });
 
-        // unsaved changes: core's StateManager knows; it has no events, so look twice a second.
-        Timeline poll = new Timeline(new KeyFrame(Duration.millis(500), e -> modified.set(
-                document != null && document.getStateManager().hasUnsavedUserChanges())));
-        poll.setCycleCount(Timeline.INDEFINITE);
-        poll.play();
-        modified.addListener((obs, was, now) -> updateTitle());
+        view.modifiedProperty().addListener((obs, was, now) -> updateTitle());
         updateTitle();
     }
 
@@ -161,11 +152,11 @@ public class ViewerWindow {
 
     /** True while the document has changes that haven't been saved. */
     public final ReadOnlyBooleanProperty modifiedProperty() {
-        return modified.getReadOnlyProperty();
+        return view.modifiedProperty();
     }
 
     public boolean isModified() {
-        return modified.get();
+        return view.isModified();
     }
 
     /** The open file, or null. */
@@ -364,7 +355,7 @@ public class ViewerWindow {
         rebuildRecentMenu();
         MenuItem newWindow = item("New Window", "Shortcut+N", () -> app.newWindow(null));
         MenuItem save = item("Save", "Shortcut+S", this::save);
-        save.disableProperty().bind(modified.not());
+        save.disableProperty().bind(view.modifiedProperty().not());
         MenuItem saveAs = item("Save As…", "Shortcut+Shift+S", this::saveAs);
         saveAs.disableProperty().bind(view.documentProperty().isNull());
         MenuItem print = item("Print…", "Shortcut+P", this::print);
@@ -525,7 +516,7 @@ public class ViewerWindow {
     private ToolBar buildToolBar() {
         Button open = button("Open", "Open a document (Ctrl+O)", this::chooseAndOpen);
         Button save = button("Save", "Save (Ctrl+S)", this::save);
-        save.disableProperty().bind(modified.not());
+        save.disableProperty().bind(view.modifiedProperty().not());
         Button print = button("Print", "Print (Ctrl+P)", this::print);
         print.disableProperty().bind(view.printAllowedProperty().not());
 
@@ -755,27 +746,34 @@ public class ViewerWindow {
     }
 
     /**
-     * Puts the side panel back at its width in pixels.  The window is still screen-sized when full
-     * screen ends and shrinks some time later, so a divider fraction set now would come out wrong:
-     * re-apply the width as the split resizes, until it is back to the width it had before.
+     * Puts the side panel back at the width it had.  The window is still screen-sized when full
+     * screen ends and shrinks back some time later (when, depends on the window manager), so the
+     * panel is restored as its old fraction of the split and scales with the window while that
+     * happens - landing on its old width whenever the resize comes.  A few seconds on, it keeps a
+     * fixed width again as the window resizes.
      */
     private void keepSideWidth(double width, double splitWidth) {
-        javafx.animation.PauseTransition giveUp = new javafx.animation.PauseTransition(Duration.seconds(5));
-        javafx.beans.value.ChangeListener<Number> apply = new javafx.beans.value.ChangeListener<>() {
-            @Override
-            public void changed(javafx.beans.value.ObservableValue<? extends Number> o, Number was, Number now) {
-                double w = now.doubleValue();
-                if (w > 0) split.setDividerPositions(Math.min(0.9, width / w));
-                if (Math.abs(w - splitWidth) < 2) {
-                    split.widthProperty().removeListener(this);
-                    giveUp.stop();
-                }
-            }
+        SplitPane.setResizableWithParent(sideTabs, true);
+        double fraction = splitWidth > 0 ? Math.min(0.9, width / splitWidth) : 0.2;
+        // the split pane rebuilds its dividers (at 0.5) when the re-added panel is laid out, which
+        // can be a pulse or two later: hold the fraction until things settle.
+        javafx.beans.value.ChangeListener<Number> hold = (o, was, now) -> {
+            if (Math.abs(now.doubleValue() - fraction) > 0.002) split.setDividerPositions(fraction);
         };
-        split.widthProperty().addListener(apply);
-        apply.changed(split.widthProperty(), null, split.getWidth());
-        giveUp.setOnFinished(e -> split.widthProperty().removeListener(apply));
-        giveUp.play();
+        javafx.collections.ListChangeListener<SplitPane.Divider> rebuilt = change -> {
+            split.getDividers().forEach(d -> d.positionProperty().addListener(hold));
+            split.setDividerPositions(fraction);
+        };
+        split.getDividers().addListener(rebuilt);
+        split.getDividers().forEach(d -> d.positionProperty().addListener(hold));
+        split.setDividerPositions(fraction);
+        javafx.animation.PauseTransition settle = new javafx.animation.PauseTransition(Duration.seconds(3));
+        settle.setOnFinished(e -> {
+            split.getDividers().removeListener(rebuilt);
+            split.getDividers().forEach(d -> d.positionProperty().removeListener(hold));
+            SplitPane.setResizableWithParent(sideTabs, false);
+        });
+        settle.play();
     }
 
     // Esc (the stage's own exit key) or the window manager can end full screen too.
@@ -899,7 +897,7 @@ public class ViewerWindow {
         view.setDocument(next);
         if (old != null) old.dispose();
         if (page >= 0) view.setCurrentPageIndex(Math.min(page, view.getPageCount() - 1));
-        modified.set(false);
+        view.refreshModified();
         preferences.addRecentFile(file);
         if (file.getParent() != null) preferences.put(ViewerPreferences.LAST_DIRECTORY, file.getParent().toString());
         preferences.save();
@@ -917,7 +915,7 @@ public class ViewerWindow {
         file = null;
         view.setDocument(null);
         if (old != null) old.dispose();
-        modified.set(false);
+        view.refreshModified();
         updateTitle();
         return true;
     }
