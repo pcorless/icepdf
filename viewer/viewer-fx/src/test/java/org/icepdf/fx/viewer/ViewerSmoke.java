@@ -28,6 +28,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -81,7 +82,10 @@ public class ViewerSmoke {
                 settle();
                 snapshot(window.getStage().getScene().getRoot(), tag + "_tab_" + id + ".png");
             }
-            if (i == 1 && args.length > 1) searchSteps(window, side, tag);
+            if (i == 1 && args.length > 1) {
+                searchSteps(window, side, tag);
+                printDefaults(window);
+            }
             // properties dialog
             Dialog<?> dialog = onFx(() -> {
                 var d = new org.icepdf.fx.panels.DocumentPropertiesDialog(window.getStage(),
@@ -203,6 +207,40 @@ public class ViewerSmoke {
             return null;
         });
         check("clear removes hits", onFx(() -> view.getSearchHits().isEmpty()));
+    }
+
+    /** The print dialog starts from remembered choices, and its result reduces to them again. */
+    private static void printDefaults(ViewerWindow window) throws Exception {
+        javax.print.StreamPrintService filePrinter = javax.print.StreamPrintServiceFactory
+                .lookupStreamPrintServiceFactories(javax.print.DocFlavor.SERVICE_FORMATTED.PAGEABLE,
+                        "application/postscript")[0].getPrintService(java.io.OutputStream.nullOutputStream());
+        String paper = javax.print.attribute.standard.MediaSizeName.ISO_A5.toString();
+        var defaults = new org.icepdf.fx.print.PrintDefaults(filePrinter.getName(), paper,
+                org.icepdf.fx.print.PrintSettings.Scaling.ACTUAL_SIZE,
+                org.icepdf.fx.print.PrintSettings.Orientation.LANDSCAPE, null, false);
+        var dialog = onFx(() -> {
+            var d = new org.icepdf.fx.print.PdfPrintDialog(window.getStage(), window.getView().getDocument(), 0);
+            d.setDefaults(defaults);
+            d.setPrinters(List.of(filePrinter), null);
+            d.show();
+            return d;
+        });
+        Thread.sleep(800);
+        snapshot(dialog.getDialogPane(), "print_defaults.png");
+        onFx(() -> {
+            ((javafx.scene.control.Button) dialog.getDialogPane().lookupButton(
+                    dialog.getDialogPane().getButtonTypes().get(0))).fire();
+            return null;
+        });
+        var settings = onFx(dialog::getResult);
+        var back = settings != null ? org.icepdf.fx.print.PrintDefaults.of(settings) : null;
+        System.out.println("  print defaults back: " + back);
+        check("print dialog starts from remembered choices", back != null
+                && filePrinter.getName().equals(back.printer())
+                && back.scaling() == org.icepdf.fx.print.PrintSettings.Scaling.ACTUAL_SIZE
+                && back.orientation() == org.icepdf.fx.print.PrintSettings.Orientation.LANDSCAPE
+                && !back.annotations()
+                && paper.equals(back.paper()));
     }
 
     private static String statusOf(Node panel) {

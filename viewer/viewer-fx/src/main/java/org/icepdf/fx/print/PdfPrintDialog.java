@@ -98,6 +98,8 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
     private final int current;
     private boolean lowResolutionOnly;
     private boolean printersGiven;
+    // earlier choices to start from (setDefaults); applied when the printer list or paper list arrives.
+    private PrintDefaults defaults;
     private int previewIndex;
     private PageFormat sheet;
     // small page renders for the preview, by page index (null value: render in progress).
@@ -141,6 +143,36 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
     public void setLowResolutionOnly(boolean lowResolutionOnly) {
         this.lowResolutionOnly = lowResolutionOnly;
         note.setText(lowResolutionOnly ? "This document permits only low-resolution printing." : "");
+    }
+
+    /**
+     * Starts the dialog from earlier choices instead of the system's defaults.  Call before showing.
+     */
+    public void setDefaults(PrintDefaults defaults) {
+        this.defaults = defaults;
+        if (defaults == null) return;
+        PrintSettings.Scaling scaling = defaults.scaling() != null ? defaults.scaling() : PrintSettings.Scaling.FIT;
+        (scaling == PrintSettings.Scaling.ACTUAL_SIZE ? actual
+                : scaling == PrintSettings.Scaling.SHRINK_LARGE ? shrink : fit).setSelected(true);
+        orientation.setValue(defaults.orientation() != null ? defaults.orientation() : PrintSettings.Orientation.AUTO);
+        annotations.setSelected(defaults.annotations());
+        if (!printer.getItems().isEmpty()) {
+            PrintService named = named(printer.getItems(), defaults.printer());
+            // forget the system's paper and sides so the remembered ones are looked for.
+            paper.setValue(null);
+            sides.setValue(null);
+            if (named != null && named != printer.getValue()) printer.setValue(named);
+            else printerChanged();
+        }
+    }
+
+    private static <T> T named(List<T> values, String name) {
+        if (name == null) return null;
+        for (T value : values) {
+            String valueName = value instanceof PrintService service ? service.getName() : String.valueOf(value);
+            if (name.equals(valueName)) return value;
+        }
+        return null;
     }
 
     // ---- layout ---------------------------------------------------------------------------
@@ -269,7 +301,9 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
 
     private void showPrinters(List<PrintService> services, PrintService preferred) {
         printer.getItems().setAll(services);
-        PrintService chosen = preferred != null && services.contains(preferred) ? preferred
+        PrintService remembered = defaults != null ? named(services, defaults.printer()) : null;
+        PrintService chosen = remembered != null ? remembered
+                : preferred != null && services.contains(preferred) ? preferred
                 : services.isEmpty() ? null : services.get(0);
         printer.setValue(chosen);
         printerStatus.setText(services.isEmpty() ? "No printers found." : "");
@@ -280,6 +314,8 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
     private void printerChanged() {
         PrintService service = printer.getValue();
         MediaSizeName keep = paper.getValue();
+        Sides keepSides = sides.getValue();
+        if (defaults != null && keep == null) keep = named(supportedPaper(service), defaults.paper());
         List<MediaSizeName> sizes = new ArrayList<>();
         MediaSizeName fallback = null;
         Sides[] sideValues = null;
@@ -300,13 +336,24 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         paper.getItems().setAll(sizes);
         paper.setValue(keep != null && sizes.contains(keep) ? keep : fallback);
 
-        Sides keepSides = sides.getValue();
         sides.getItems().clear();
         if (sideValues != null && sideValues.length > 1) sides.getItems().setAll(sideValues);
+        if (defaults != null && keepSides == null) keepSides = named(sides.getItems(), defaults.sides());
         sides.setVisible(!sides.getItems().isEmpty());
         sides.setValue(sides.getItems().contains(keepSides) ? keepSides
                 : sides.getItems().contains(Sides.ONE_SIDED) ? Sides.ONE_SIDED : null);
         sheetChanged();
+    }
+
+    private static List<MediaSizeName> supportedPaper(PrintService service) {
+        List<MediaSizeName> sizes = new ArrayList<>();
+        if (service != null && service.getSupportedAttributeValues(Media.class, null, null) instanceof Media[] all) {
+            for (Media m : all) {
+                if (m instanceof MediaSizeName name && MediaSize.getMediaSizeForName(name) != null) sizes.add(name);
+            }
+        }
+        if (sizes.isEmpty()) sizes.addAll(List.of(MediaSizeName.NA_LETTER, MediaSizeName.ISO_A4, MediaSizeName.NA_LEGAL));
+        return sizes;
     }
 
     /** Letter in the US and Canada, A4 elsewhere, if the printer has it. */

@@ -1274,11 +1274,25 @@ public class PdfView extends Control {
      * document, or it doesn't permit printing
      */
     public Optional<javafx.concurrent.Task<Void>> showPrintDialog() {
+        return showPrintDialog(null);
+    }
+
+    /**
+     * Shows the print dialog, letting the application set it up first - start it from remembered
+     * choices ({@link org.icepdf.fx.print.PdfPrintDialog#setDefaults}), offer other printers, or
+     * watch its result to remember what was chosen.
+     *
+     * @param customize called with the dialog before it shows; may be null
+     * @see #showPrintDialog()
+     */
+    public Optional<javafx.concurrent.Task<Void>> showPrintDialog(
+            java.util.function.Consumer<org.icepdf.fx.print.PdfPrintDialog> customize) {
         Document document = getDocument();
         if (document == null || !isPrintAllowed()) return Optional.empty();
         org.icepdf.fx.print.PdfPrintDialog dialog = new org.icepdf.fx.print.PdfPrintDialog(
                 getScene() != null ? getScene().getWindow() : null, document, getCurrentPageIndex());
         dialog.setLowResolutionOnly(lowResolutionPrintOnly);
+        if (customize != null) customize.accept(dialog);
         return dialog.showAndWait().map(this::print);
     }
 

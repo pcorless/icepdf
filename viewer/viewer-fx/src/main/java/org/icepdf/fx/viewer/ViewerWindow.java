@@ -46,6 +46,8 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.panels.*;
+import org.icepdf.fx.print.PrintDefaults;
+import org.icepdf.fx.print.PrintSettings;
 import org.icepdf.fx.signature.DocumentSigning;
 import org.icepdf.fx.signature.SignDialog;
 import org.icepdf.fx.view.FitMode;
@@ -876,14 +878,48 @@ public class ViewerWindow {
     }
 
     private void print() {
-        view.showPrintDialog().ifPresent(task -> {
+        view.showPrintDialog(dialog -> {
+            dialog.setDefaults(printDefaults());
+            // remember what was printed with, for next time.
+            dialog.resultProperty().addListener((o, was, settings) -> {
+                if (settings != null) savePrintDefaults(PrintDefaults.of(settings));
+            });
+        }).ifPresent(task -> {
             status.textProperty().bind(task.messageProperty());
+            task.setOnSucceeded(e -> {
+                status.textProperty().unbind();
+                showStatus("Printed.");
+            });
+            task.setOnCancelled(e -> {
+                status.textProperty().unbind();
+                showStatus("Printing cancelled.");
+            });
             task.setOnFailed(e -> {
                 status.textProperty().unbind();
                 showStatus("");
                 error("Printing failed: " + task.getException().getMessage());
             });
         });
+    }
+
+    private PrintDefaults printDefaults() {
+        return new PrintDefaults(preferences.get(ViewerPreferences.PRINT_PRINTER, null),
+                preferences.get(ViewerPreferences.PRINT_PAPER, null),
+                preferences.getEnum(ViewerPreferences.PRINT_SCALING, PrintSettings.Scaling.class, PrintSettings.Scaling.FIT),
+                preferences.getEnum(ViewerPreferences.PRINT_ORIENTATION, PrintSettings.Orientation.class,
+                        PrintSettings.Orientation.AUTO),
+                preferences.get(ViewerPreferences.PRINT_SIDES, null),
+                preferences.getBoolean(ViewerPreferences.PRINT_ANNOTATIONS, true));
+    }
+
+    private void savePrintDefaults(PrintDefaults defaults) {
+        preferences.put(ViewerPreferences.PRINT_PRINTER, defaults.printer());
+        preferences.put(ViewerPreferences.PRINT_PAPER, defaults.paper());
+        preferences.putEnum(ViewerPreferences.PRINT_SCALING, defaults.scaling());
+        preferences.putEnum(ViewerPreferences.PRINT_ORIENTATION, defaults.orientation());
+        preferences.put(ViewerPreferences.PRINT_SIDES, defaults.sides());
+        preferences.putBoolean(ViewerPreferences.PRINT_ANNOTATIONS, defaults.annotations());
+        preferences.save();
     }
 
     private void showProperties() {

@@ -66,6 +66,12 @@ public final class ViewerPreferences {
     public static final String ANNOTATION_COLOR = "annotation.color";
     public static final String HIGHLIGHT_FIELDS = "forms.highlightFields";
     public static final String PAINT_ANNOTATIONS = "view.paintAnnotations";
+    public static final String PRINT_PRINTER = "print.printer";
+    public static final String PRINT_PAPER = "print.paper";
+    public static final String PRINT_SCALING = "print.scaling";
+    public static final String PRINT_ORIENTATION = "print.orientation";
+    public static final String PRINT_SIDES = "print.sides";
+    public static final String PRINT_ANNOTATIONS = "print.annotations";
     public static final String SEARCH_CASE = "search.caseSensitive";
     public static final String SEARCH_WHOLE_WORD = "search.wholeWord";
     public static final String SEARCH_FOLD_ACCENTS = "search.foldAccents";
