@@ -28,9 +28,17 @@ import org.icepdf.core.pobjects.graphics.text.OffsetRange;
  * @param y         bottom of the match's bounds, PDF user space
  * @param width     bounds width
  * @param height    bounds height
+ * @param before    text leading up to the match on its line, for a results list; may be empty
+ * @param after     text following the match on its line; may be empty
  */
 public record SearchHit(int pageIndex, OffsetRange range, String text,
-                        double x, double y, double width, double height) implements Comparable<SearchHit> {
+                        double x, double y, double width, double height,
+                        String before, String after) implements Comparable<SearchHit> {
+
+    /** A hit without context. */
+    public SearchHit(int pageIndex, OffsetRange range, String text, double x, double y, double width, double height) {
+        this(pageIndex, range, text, x, y, width, height, "", "");
+    }
 
     /** The centre of the match's bounds, for {@link PdfView#ensureVisible}. */
     public PagePoint centre() {

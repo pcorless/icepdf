@@ -81,6 +81,7 @@ public class ViewerSmoke {
                 settle();
                 snapshot(window.getStage().getScene().getRoot(), tag + "_tab_" + id + ".png");
             }
+            if (i == 1 && args.length > 1) searchSteps(window, side, tag);
             // properties dialog
             Dialog<?> dialog = onFx(() -> {
                 var d = new org.icepdf.fx.panels.DocumentPropertiesDialog(window.getStage(),
@@ -158,6 +159,60 @@ public class ViewerSmoke {
         });
         Platform.exit();
         System.exit(failures == 0 ? 0 : 1);
+    }
+
+    /** The search panel: text with context, plus bookmarks and comments; next-hit follows in the tree. */
+    private static void searchSteps(ViewerWindow window, TabPane side, String tag) throws Exception {
+        var panel = window.getSearchPanel();
+        var view = window.getView();
+        onFx(() -> {
+            panel.outlinesProperty().set(true);
+            panel.destinationsProperty().set(true);
+            panel.commentsProperty().set(true);
+            panel.formFieldsProperty().set(true);
+            window.showSideTab("search");
+            return panel.search("transparency");
+        });
+        for (int i = 0; i < 600 && onFx(view::isSearching); i++) Thread.sleep(100);
+        settle();
+        int hits = onFx(() -> view.getSearchHits().size());
+        System.out.println("  search: " + hits + " text hits; status \"" + onFx(() -> statusOf(panel)) + "\"");
+        check("search finds text", hits > 0);
+        check("hits carry context", onFx(() -> view.getSearchHits().stream()
+                .anyMatch(h -> !h.before().isEmpty() || !h.after().isEmpty())));
+        check("current hit selected in the tree", onFx(() -> view.getCurrentSearchHitIndex() >= 0));
+        onFx(() -> {
+            view.nextSearchHit();
+            view.nextSearchHit();
+            return null;
+        });
+        settle();
+        snapshot(window.getStage().getScene().getRoot(), tag + "_tab_search.png");
+        onFx(() -> {
+            panel.cumulativeProperty().set(true);
+            return panel.search("annotation");
+        });
+        for (int i = 0; i < 600 && onFx(view::isSearching); i++) Thread.sleep(100);
+        settle();
+        int both = onFx(() -> view.getSearchHits().size());
+        check("cumulative adds the second term's hits (" + both + " > " + hits + ")", both > hits);
+        snapshot(window.getStage().getScene().getRoot(), tag + "_tab_search_cumulative.png");
+        onFx(() -> {
+            panel.cumulativeProperty().set(false);
+            panel.clear();
+            return null;
+        });
+        check("clear removes hits", onFx(() -> view.getSearchHits().isEmpty()));
+    }
+
+    private static String statusOf(Node panel) {
+        StringBuilder sb = new StringBuilder();
+        for (Node n : panel.lookupAll(".label")) {
+            if (n instanceof javafx.scene.control.Label l && l.getText() != null && l.getText().contains("match")) {
+                sb.append(l.getText());
+            }
+        }
+        return sb.toString();
     }
 
     private static void check(String what, boolean ok) {

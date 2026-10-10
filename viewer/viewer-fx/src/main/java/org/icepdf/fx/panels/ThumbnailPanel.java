@@ -49,6 +49,8 @@ public class ThumbnailPanel extends BorderPane {
     private final ObservableList<Integer> pages = FXCollections.observableArrayList();
     private final PageThumbnails thumbnails = new PageThumbnails();
     private final DoubleProperty thumbnailWidth = new SimpleDoubleProperty(this, "thumbnailWidth", 120);
+    // the document the list was filled for; the view's changes first, while the old items are still listed.
+    private Document document;
     // true while the selection follows the view, so the listener doesn't navigate back.
     private boolean syncing;
 
@@ -88,6 +90,7 @@ public class ThumbnailPanel extends BorderPane {
     }
 
     private void onDocument(Document document) {
+        this.document = document;
         thumbnails.setDocument(document);
         int count = document != null ? document.getNumberOfPages() : 0;
         pages.setAll(IntStream.range(0, count).boxed().collect(Collectors.toList()));
@@ -96,7 +99,7 @@ public class ThumbnailPanel extends BorderPane {
 
     /** Selects the view's current page and scrolls it into the strip if it isn't showing. */
     private void follow(int page) {
-        if (page < 0 || page >= pages.size()) return;
+        if (document != view.getDocument() || page < 0 || page >= pages.size()) return;
         syncing = true;
         try {
             list.getSelectionModel().select(page);
@@ -142,8 +145,7 @@ public class ThumbnailPanel extends BorderPane {
         @Override
         protected void updateItem(Integer page, boolean empty) {
             super.updateItem(page, empty);
-            Document document = view.getDocument();
-            if (empty || page == null || document == null) {
+            if (empty || page == null || document == null || page >= document.getNumberOfPages()) {
                 setGraphic(null);
                 setText(null);
                 image.setImage(null);

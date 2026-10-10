@@ -166,4 +166,24 @@ class DocumentSearchTest {
         assertEquals(-1, DocumentSearch.next(List.of(), -1, 0));
         assertEquals(-1, DocumentSearch.previous(List.of(), -1, 0));
     }
+
+    @DisplayName("hits carry the words around them, from their own line only")
+    @Test
+    void hitsCarryLineContext() {
+        TextSequence sequence = texts(addendum).apply(0);
+        List<SearchHit> hits = DocumentSearch.searchPage(sequence, 0, List.of(term("redaction", false, false, false)));
+        assertFalse(hits.isEmpty());
+        boolean anyContext = false;
+        for (SearchHit hit : hits) {
+            assertFalse(hit.before().contains("\n") || hit.after().contains("\n"), "context stays on one line");
+            assertTrue(hit.before().length() <= DocumentSearch.CONTEXT + 1, hit.before());
+            assertTrue(hit.after().length() <= DocumentSearch.CONTEXT + 1, hit.after());
+            anyContext |= !hit.before().isEmpty() || !hit.after().isEmpty();
+            // the context is the text either side of the hit, as written on the line.
+            String line = sequence.text(sequence.lineRange(hit.range().getStart())).replace('\n', ' ');
+            String before = hit.before().replace("\u2026", "");
+            assertTrue(line.contains(before), before + " | " + line);
+        }
+        assertTrue(anyContext);
+    }
 }

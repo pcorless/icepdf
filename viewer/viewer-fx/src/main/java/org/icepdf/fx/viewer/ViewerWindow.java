@@ -45,7 +45,6 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.core.search.SearchTerm;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.signature.DocumentSigning;
 import org.icepdf.fx.signature.SignDialog;
@@ -96,7 +95,8 @@ public class ViewerWindow {
     private AttachmentPanel attachments;
     private LayersPanel layers;
     private SignaturePanel signatures;
-    private Tab thumbnailsTab, outlineTab, attachmentsTab, layersTab, signaturesTab;
+    private SearchPanel search;
+    private Tab thumbnailsTab, outlineTab, attachmentsTab, layersTab, signaturesTab, searchTab;
 
     private Document document;
     private Path file;
@@ -234,11 +234,23 @@ public class ViewerWindow {
         attachments.setOnOpen(this::openAttachment);
         layers = new LayersPanel(view);
         signatures = new SignaturePanel(view);
+        search = new SearchPanel(view);
+        loadSearchOptions();
+        bindSearchOption(search.caseSensitiveProperty(), ViewerPreferences.SEARCH_CASE);
+        bindSearchOption(search.wholeWordProperty(), ViewerPreferences.SEARCH_WHOLE_WORD);
+        bindSearchOption(search.foldAccentsProperty(), ViewerPreferences.SEARCH_FOLD_ACCENTS);
+        bindSearchOption(search.regexProperty(), ViewerPreferences.SEARCH_REGEX);
+        bindSearchOption(search.cumulativeProperty(), ViewerPreferences.SEARCH_CUMULATIVE);
+        bindSearchOption(search.commentsProperty(), ViewerPreferences.SEARCH_COMMENTS);
+        bindSearchOption(search.formFieldsProperty(), ViewerPreferences.SEARCH_FORMS);
+        bindSearchOption(search.outlinesProperty(), ViewerPreferences.SEARCH_OUTLINES);
+        bindSearchOption(search.destinationsProperty(), ViewerPreferences.SEARCH_DESTINATIONS);
         thumbnailsTab = tab("thumbnails", "Pages", thumbnails);
         outlineTab = tab("bookmarks", "Bookmarks", outline);
         attachmentsTab = tab("attachments", "Attachments", attachments);
         layersTab = tab("layers", "Layers", layers);
         signaturesTab = tab("signatures", "Signatures", signatures);
+        searchTab = tab("search", "Search", search);
         sideTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         sideTabs.setMinWidth(140);
         sideTabs.setSide(javafx.geometry.Side.TOP);
@@ -249,13 +261,31 @@ public class ViewerWindow {
         updateTabs();
     }
 
+    /** The search panel's options from the preferences (at start, and after the preferences dialog). */
+    private void loadSearchOptions() {
+        search.caseSensitiveProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_CASE, false));
+        search.wholeWordProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_WHOLE_WORD, false));
+        search.foldAccentsProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_FOLD_ACCENTS, true));
+        search.regexProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_REGEX, false));
+        search.cumulativeProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_CUMULATIVE, false));
+        search.commentsProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_COMMENTS, false));
+        search.formFieldsProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_FORMS, false));
+        search.outlinesProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_OUTLINES, false));
+        search.destinationsProperty().set(preferences.getBoolean(ViewerPreferences.SEARCH_DESTINATIONS, false));
+    }
+
+    /** An option changed in the panel is remembered. */
+    private void bindSearchOption(javafx.beans.property.BooleanProperty option, String key) {
+        option.addListener((o, a, b) -> preferences.putBoolean(key, b));
+    }
+
     private static Tab tab(String id, String title, Node content) {
         Tab tab = new Tab(title, content);
         tab.setId(id);
         return tab;
     }
 
-    /** Pages always; bookmarks, attachments, layers and signatures only when the document has them. */
+    /** Pages and search always; bookmarks, attachments, layers and signatures only when the document has them. */
     private void updateTabs() {
         Tab selected = sideTabs.getSelectionModel().getSelectedItem();
         List<Tab> tabs = new java.util.ArrayList<>(List.of(thumbnailsTab));
@@ -263,6 +293,7 @@ public class ViewerWindow {
         if (attachments.hasAttachments()) tabs.add(attachmentsTab);
         if (layers.hasLayers()) tabs.add(layersTab);
         if (signatures.hasSignaturesBinding().get()) tabs.add(signaturesTab);
+        tabs.add(searchTab);
         sideTabs.getTabs().setAll(tabs);
         if (selected != null && tabs.contains(selected)) sideTabs.getSelectionModel().select(selected);
     }
@@ -347,12 +378,13 @@ public class ViewerWindow {
             view.selectAll();
         });
         MenuItem find = item("Find…", "Shortcut+F", this::focusFind);
+        MenuItem advancedSearch = item("Search…", "Shortcut+Shift+F", this::showSearch);
         MenuItem delete = item("Delete Annotation", null, view::deleteSelectedAnnotation);
         delete.disableProperty().bind(view.selectedAnnotationProperty().isNull()
                 .or(view.annotationEditingAllowedProperty().not()));
         MenuItem preferencesItem = item("Preferences…", "Shortcut+Comma", this::showPreferences);
         Menu edit = new Menu("Edit", null, undo, redo, new SeparatorMenuItem(), copy, selectAll,
-                new SeparatorMenuItem(), find, new SeparatorMenuItem(), delete, new SeparatorMenuItem(), preferencesItem);
+                new SeparatorMenuItem(), find, advancedSearch, new SeparatorMenuItem(), delete, new SeparatorMenuItem(), preferencesItem);
 
         CheckMenuItem side = new CheckMenuItem("Side Panel");
         side.setAccelerator(KeyCombination.keyCombination("F4"));
@@ -572,16 +604,13 @@ public class ViewerWindow {
                 return;
             }
             lastFind[0] = text;
-            SearchTerm term = new SearchTerm(text, null,
-                    preferences.getBoolean(ViewerPreferences.SEARCH_CASE, false),
-                    preferences.getBoolean(ViewerPreferences.SEARCH_WHOLE_WORD, false), false);
-            term.setFoldDiacritics(preferences.getBoolean(ViewerPreferences.SEARCH_FOLD_ACCENTS, true));
-            view.search(term);
+            // the panel's search, with its options, so the results are listed there too.
+            search.search(text);
         });
         findField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 lastFind[0] = null;
-                view.clearSearch();
+                search.clear();
                 view.requestFocus();
             }
         });
@@ -609,6 +638,17 @@ public class ViewerWindow {
         button.setTooltip(new Tooltip(tooltip));
         button.setOnAction(e -> action.run());
         return button;
+    }
+
+    /** Opens the side panel on the search tab, ready to type. */
+    private void showSearch() {
+        if (!isSidePanelVisible()) setSidePanelVisible(true);
+        showSideTab("search");
+        search.focusQuery();
+    }
+
+    SearchPanel getSearchPanel() {
+        return search;
     }
 
     private void focusFind() {
@@ -852,6 +892,7 @@ public class ViewerWindow {
 
     private void showPreferences() {
         new PreferencesDialog(stage, preferences, view).showAndWait();
+        loadSearchOptions();
     }
 
     private void goToPage() {

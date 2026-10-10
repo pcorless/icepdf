@@ -88,12 +88,13 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         CheckBox wholeWord = check("Whole words only", ViewerPreferences.SEARCH_WHOLE_WORD, false);
         CheckBox accents = check("Ignore accents", ViewerPreferences.SEARCH_FOLD_ACCENTS, true);
         CheckBox regex = check("Regular expression", ViewerPreferences.SEARCH_REGEX, false);
+        CheckBox cumulative = check("Add each search to the previous terms", ViewerPreferences.SEARCH_CUMULATIVE, false);
         CheckBox comments = check("Comments", ViewerPreferences.SEARCH_COMMENTS, false);
         CheckBox forms = check("Form fields", ViewerPreferences.SEARCH_FORMS, false);
         CheckBox outlines = check("Bookmarks", ViewerPreferences.SEARCH_OUTLINES, false);
         CheckBox destinations = check("Named destinations", ViewerPreferences.SEARCH_DESTINATIONS, false);
         VBox search = new VBox(8, new Label("Defaults for a new search:"), matchCase, wholeWord, accents, regex,
-                new Separator(), new Label("Also search:"), comments, forms, outlines, destinations);
+                cumulative, new Separator(), new Label("Also search:"), comments, forms, outlines, destinations);
         search.setPadding(new Insets(12));
 
         TabPane tabs = new TabPane(new Tab("General", general), new Tab("Annotations", annotations),
@@ -114,7 +115,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.put(ViewerPreferences.ANNOTATION_COLOR, web(colour.getValue()));
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
                 preferences.putBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, highlightFields.isSelected());
-                for (CheckBox box : List.of(matchCase, wholeWord, accents, regex, comments, forms, outlines, destinations)) {
+                for (CheckBox box : List.of(matchCase, wholeWord, accents, regex, cumulative, comments, forms, outlines, destinations)) {
                     preferences.putBoolean((String) box.getUserData(), box.isSelected());
                 }
                 preferences.save();

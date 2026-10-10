@@ -70,6 +70,7 @@ public final class ViewerPreferences {
     public static final String SEARCH_WHOLE_WORD = "search.wholeWord";
     public static final String SEARCH_FOLD_ACCENTS = "search.foldAccents";
     public static final String SEARCH_REGEX = "search.regex";
+    public static final String SEARCH_CUMULATIVE = "search.cumulative";
     public static final String SEARCH_COMMENTS = "search.comments";
     public static final String SEARCH_FORMS = "search.forms";
     public static final String SEARCH_OUTLINES = "search.outlines";

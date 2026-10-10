@@ -73,12 +73,47 @@ final class DocumentSearch {
                     else bounds.add(r);
                 }
                 if (bounds == null) continue;
-                hits.add(new SearchHit(pageIndex, range, sequence.text(range),
-                        bounds.x, bounds.y, bounds.width, bounds.height));
+                hits.add(new SearchHit(pageIndex, range, oneLine(sequence.text(range)),
+                        bounds.x, bounds.y, bounds.width, bounds.height,
+                        contextBefore(sequence, range.getStart()), contextAfter(sequence, range.getEnd())));
             }
         }
         Collections.sort(hits);
         return hits;
+    }
+
+    /** Characters of context kept on each side of a hit. */
+    static final int CONTEXT = 40;
+
+    /** Up to {@link #CONTEXT} characters before {@code start} on its line, starting at a word. */
+    static String contextBefore(TextSequence sequence, int start) {
+        int lineStart = sequence.lineRange(start).getStart();
+        if (start <= lineStart) return "";
+        int from = Math.max(lineStart, start - CONTEXT);
+        String text = oneLine(sequence.text(from, start));
+        if (from > lineStart) {
+            int space = text.indexOf(' ');
+            text = "\u2026" + (space >= 0 && space < text.length() - 1 ? text.substring(space + 1) : text);
+        }
+        return text;
+    }
+
+    /** Up to {@link #CONTEXT} characters after {@code end} on its line, ending at a word. */
+    static String contextAfter(TextSequence sequence, int end) {
+        if (end <= 0 || end >= sequence.length()) return "";
+        int lineEnd = sequence.lineRange(end - 1).getEnd();
+        if (end >= lineEnd) return "";
+        int to = Math.min(lineEnd, end + CONTEXT);
+        String text = oneLine(sequence.text(end, to));
+        if (to < lineEnd) {
+            int space = text.lastIndexOf(' ');
+            text = (space > 0 ? text.substring(0, space) : text) + "\u2026";
+        }
+        return text;
+    }
+
+    private static String oneLine(String text) {
+        return text.replace('\n', ' ').replace('\r', ' ');
     }
 
     /**
