@@ -130,6 +130,14 @@ public class PdfViewer extends StackPane {
         sceneProperty().addListener((o, a, scene) -> {
             owner = scene != null ? scene.getWindow() : null;
             documents.forEach(d -> d.getSession().setOwner(owner));
+            if (a != null) for (int i = 1; i <= 9; i++) a.getAccelerators().remove(recentKey(i));
+            if (scene != null) {
+                // Shortcut+1..9 open the nth recent file, read when pressed (the menu is built only when shown).
+                for (int i = 1; i <= 9; i++) {
+                    int index = i - 1;
+                    scene.getAccelerators().put(recentKey(i), () -> openRecentAt(index));
+                }
+            }
         });
 
         DocumentPane first = newPane();
@@ -649,12 +657,24 @@ public class PdfViewer extends StackPane {
         header.getMenu().getItems().setAll(items);
     }
 
+    private static javafx.scene.input.KeyCombination recentKey(int number) {
+        return new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.valueOf("DIGIT" + number),
+                javafx.scene.input.KeyCombination.SHORTCUT_DOWN);
+    }
+
+    private void openRecentAt(int index) {
+        java.util.List<Path> recent = history != null ? history.recent() : java.util.List.of();
+        if (index < recent.size()) open(recent.get(index));
+    }
+
     private void rebuildRecentMenu() {
         recentMenu.getItems().clear();
         java.util.List<Path> recent = history != null ? history.recent() : java.util.List.of();
-        for (Path path : recent) {
+        for (int i = 0; i < recent.size(); i++) {
+            Path path = recent.get(i);
             javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(path.getFileName().toString());
             item.setMnemonicParsing(false);
+            if (i < 9) item.setAccelerator(recentKey(i + 1)); // shown beside the name; the scene handles the key
             item.setOnAction(e -> open(path));
             recentMenu.getItems().add(item);
         }
