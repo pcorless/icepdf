@@ -84,4 +84,23 @@ class ViewerPreferencesTest {
         preferences.save();
         assertTrue(preferences.getBoolean(ViewerPreferences.SEARCH_REGEX, false));
     }
+
+    @DisplayName("recent colours: most recent first, no duplicates, at most ten, survive a save")
+    @Test
+    void recentColours(@TempDir Path dir) {
+        Path file = dir.resolve("viewer.properties");
+        ViewerPreferences preferences = ViewerPreferences.load(file);
+        assertTrue(preferences.getRecentColors().isEmpty());
+        for (int i = 0; i < 12; i++) preferences.addRecentColor(new java.awt.Color(i, 0, 0));
+        preferences.addRecentColor(new java.awt.Color(5, 0, 0));
+        List<java.awt.Color> colors = preferences.getRecentColors();
+        assertEquals(10, colors.size());
+        assertEquals(new java.awt.Color(5, 0, 0), colors.get(0));
+        assertEquals(new java.awt.Color(11, 0, 0), colors.get(1));
+        assertEquals(1, colors.stream().filter(new java.awt.Color(5, 0, 0)::equals).count());
+        preferences.save();
+        assertEquals(colors, ViewerPreferences.load(file).getRecentColors());
+        preferences.put(ViewerPreferences.RECENT_COLORS, "bad 255 255");
+        assertEquals(List.of(new java.awt.Color(255)), preferences.getRecentColors());
+    }
 }

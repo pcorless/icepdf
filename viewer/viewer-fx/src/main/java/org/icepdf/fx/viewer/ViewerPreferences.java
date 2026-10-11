@@ -49,6 +49,8 @@ public final class ViewerPreferences {
     // keys
     public static final String RECENT_FILES = "file.recent";
     public static final String LAST_DIRECTORY = "file.lastDirectory";
+    /** Colours recently chosen for annotations, most recent first, as space separated RGB integers. */
+    public static final String RECENT_COLORS = "annotation.recentColors";
     /** Whether file dialogs start in the folder last used (default true). */
     public static final String REMEMBER_LAST_DIRECTORY = "file.rememberLastDirectory";
     public static final String WINDOW_X = "window.x";
@@ -196,6 +198,34 @@ public final class ViewerPreferences {
         StringBuilder joined = new StringBuilder();
         for (Path path : files) joined.append(path).append('\n');
         put(RECENT_FILES, joined.toString());
+    }
+
+    /** Annotation colours recently chosen, most recent first (at most ten). */
+    public List<java.awt.Color> getRecentColors() {
+        String value = properties.getProperty(RECENT_COLORS);
+        List<java.awt.Color> colors = new ArrayList<>();
+        if (value == null || value.isBlank()) return colors;
+        for (String entry : value.trim().split("\\s+")) {
+            try {
+                java.awt.Color color = new java.awt.Color(Integer.parseInt(entry) & 0xFFFFFF);
+                if (!colors.contains(color)) colors.add(color);
+            } catch (NumberFormatException ignored) {
+                // a hand-edited bad entry is skipped.
+            }
+        }
+        return colors;
+    }
+
+    /** Moves {@code color} to the front of the recent colours, keeping the last ten. */
+    public void addRecentColor(java.awt.Color color) {
+        List<java.awt.Color> colors = new ArrayList<>(getRecentColors());
+        java.awt.Color opaque = new java.awt.Color(color.getRGB() & 0xFFFFFF);
+        colors.remove(opaque);
+        colors.add(0, opaque);
+        while (colors.size() > MAX_RECENT) colors.remove(colors.size() - 1);
+        StringBuilder joined = new StringBuilder();
+        for (java.awt.Color c : colors) joined.append(c.getRGB() & 0xFFFFFF).append(' ');
+        put(RECENT_COLORS, joined.toString().trim());
     }
 
     public void clearRecentFiles() {
