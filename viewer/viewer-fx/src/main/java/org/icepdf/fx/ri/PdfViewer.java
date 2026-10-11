@@ -169,7 +169,7 @@ public class PdfViewer extends StackPane {
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
 
         shell.setHeader(header);
-        shell.setCenter(first.getView());
+        shell.setCenter(first.getNode());
         buildDrawers();
         getChildren().addAll(shell, toast);
         acceptDroppedFiles();
@@ -345,7 +345,7 @@ public class PdfViewer extends StackPane {
         if (presenting != null) fullScreen.set(false);
         current.set(pane);
         currentView.set(pane.getView());
-        shell.setCenter(pane.getView());
+        shell.setCenter(pane.getNode());
         for (SidePanel panel : SidePanel.values()) {
             if (features.allows(panel)) utility.retarget(panel, panelNode(pane, panel), panelAvailable(pane, panel));
         }
@@ -497,11 +497,26 @@ public class PdfViewer extends StackPane {
             if (pane == current.get()) updateTitle();
         });
     }
+        pane.getAttachments().setOnOpen(this::openAttachment);
 
     private static String panelLabel(SidePanel panel) {
         return switch (panel) {
             case THUMBNAILS -> "Pages";
             case BOOKMARKS -> "Bookmarks";
+    /** Opens an embedded PDF in a new tab, from a temporary copy; the panel saves anything else. */
+    private void openAttachment(org.icepdf.fx.panels.Attachment attachment) {
+        try {
+            Path dir = java.nio.file.Files.createTempDirectory("icepdf-attachment");
+            Path file = dir.resolve(java.nio.file.Paths.get(attachment.name()).getFileName().toString());
+            attachment.saveTo(file);
+            file.toFile().deleteOnExit();
+            dir.toFile().deleteOnExit();
+            openInNewTab(file);
+        } catch (java.io.IOException | java.nio.file.InvalidPathException e) {
+            onError.accept("Could not open " + attachment.name() + ": " + e.getMessage());
+        }
+    }
+
             case COMMENTS -> "Comments";
             case ATTACHMENTS -> "Attachments";
             case LAYERS -> "Layers";

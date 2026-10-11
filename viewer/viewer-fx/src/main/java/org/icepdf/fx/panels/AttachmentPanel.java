@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.panels;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -99,7 +100,10 @@ public class AttachmentPanel extends BorderPane {
         save.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         save.setOnAction(e -> save(list.getSelectionModel().getSelectedItem()));
         Button open = new Button("Open");
-        open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull().or(onOpen.isNull()));
+        open.disableProperty().bind(Bindings.createBooleanBinding(() -> {
+            Attachment selected = list.getSelectionModel().getSelectedItem();
+            return selected == null || !selected.isPdf() || onOpen.get() == null;
+        }, list.getSelectionModel().selectedItemProperty(), onOpen));
         open.setOnAction(e -> open(list.getSelectionModel().getSelectedItem()));
         HBox buttons = new HBox(6, open, save);
         buttons.setPadding(new Insets(4));
@@ -136,8 +140,11 @@ public class AttachmentPanel extends BorderPane {
         setCenter(attachments.isEmpty() ? empty : list);
     }
 
-    private void open(Attachment attachment) {
-        if (attachment != null && onOpen.get() != null) onOpen.get().accept(attachment);
+    /** Opens an attachment as the Open button does: a PDF through the open handler, anything else is saved. */
+    public void open(Attachment attachment) {
+        if (attachment == null) return;
+        if (attachment.isPdf() && onOpen.get() != null) onOpen.get().accept(attachment);
+        else save(attachment);
     }
 
     private void save(Attachment attachment) {

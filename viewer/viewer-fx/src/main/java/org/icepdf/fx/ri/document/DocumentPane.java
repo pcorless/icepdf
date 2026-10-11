@@ -18,6 +18,7 @@ package org.icepdf.fx.ri.document;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.Node;
+import javafx.scene.layout.StackPane;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.view.PdfView;
@@ -42,6 +43,8 @@ public final class DocumentPane {
     private final AttachmentPanel attachments = new AttachmentPanel(view);
     private final LayersPanel layers = new LayersPanel(view);
     private final SignaturePanel signatures = new SignaturePanel(view);
+    private final CollectionView collection = new CollectionView();
+    private final StackPane node = new StackPane(view, collection);
     private final ReadOnlyStringWrapper title = new ReadOnlyStringWrapper(this, "title", "");
     private Consumer<String> onMessage = m -> { };
     private Consumer<String> onLink;
@@ -52,6 +55,14 @@ public final class DocumentPane {
                 if (onLink != null) onLink.accept(uri.getURI());
                 else onMessage.accept("Link: " + uri.getURI());
             }
+        });
+        collection.setVisible(false);
+        collection.setOnOpen(attachments::open);
+        view.documentProperty().addListener((o, a, b) -> {
+            boolean portfolio = CollectionView.isCollection(b);
+            collection.setDocument(portfolio ? b : null);
+            collection.setVisible(portfolio);
+            view.setVisible(!portfolio);
         });
         view.modifiedProperty().addListener((o, a, b) -> refreshTitle());
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
@@ -93,9 +104,12 @@ public final class DocumentPane {
         return signatures;
     }
 
-    /** What shows in the document's place: the view. */
+    /**
+     * What shows in the document's place: the view, or for a PDF portfolio a tile per embedded file
+     * instead of its cover sheet.
+     */
     public Node getNode() {
-        return view;
+        return node;
     }
 
     /** The file name, marked with a bullet while there are unsaved changes; empty with no file. */
@@ -128,5 +142,6 @@ public final class DocumentPane {
         session.dispose();
         thumbnails.dispose();
         comments.dispose();
+        collection.dispose();
     }
 }
