@@ -125,7 +125,7 @@ jar {
         manifest {
             attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
             // executable jar
-            attributes("Main-Class": 'org.icepdf.fx.viewer.PdfViewerApp')
+            attributes("Main-Class": 'org.icepdf.fx.ri.app.ViewerApp')
             if (!configurations.runtimeClasspath.isEmpty()) {
                 attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }
@@ -175,21 +175,6 @@ tasks.register('bench', JavaExec) {
     jvmArgs = ['-Xmx1g', '-Dprism.vsync=false', '-Djavafx.animation.fullspeed=true']
     if (project.hasProperty('benchArgs')) {
         args project.property('benchArgs').toString().split(';')
-    }
-}
-
-// PdfViewSmoke: scripted run of the control through the plan's verification steps, with snapshots.
-// ./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="/path/file.pdf;build/smoke" -PsmokeXmx=512m
-tasks.register('viewerSmoke', JavaExec) {
-    description = 'Drives the viewer window (side panels, dialogs, save) and snapshots each step.'
-    group = 'verification'
-    dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'org.icepdf.fx.viewer.ViewerSmoke'
-    javaLauncher = javaToolchains.launcherFor(java.toolchain)
-    jvmArgs = ["-Xmx${project.findProperty('smokeXmx') ?: '1g'}"]
-    if (project.hasProperty('smokeArgs')) {
-        args project.property('smokeArgs').toString().split(';')
     }
 }
 

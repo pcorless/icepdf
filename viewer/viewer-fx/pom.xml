@@ -106,7 +106,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.icepdf.fx.viewer.PdfViewerApp</mainClass>
+                    <mainClass>org.icepdf.fx.ri.app.ViewerApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>
