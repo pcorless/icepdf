@@ -156,8 +156,10 @@ public class PdfViewer extends StackPane {
         }
         recentMenu.setMnemonicParsing(false);
         recentMenu.setVisible(false);
+        // an empty Menu is treated as a leaf and never fires onShowing, so seed it; the real items are built on showing.
+        recentMenu.getItems().add(new javafx.scene.control.MenuItem());
         recentMenu.setOnShowing(e -> rebuildRecentMenu());
-        header.getMenu().getItems().add(0, recentMenu);
+        refreshMenu();
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
         // the layout is shared by every viewer in the application: follow its changes, wherever made.
@@ -595,16 +597,19 @@ public class PdfViewer extends StackPane {
         this.onNewWindow = onNewWindow;
     }
 
+        refreshMenu();
     /** Offers "Exit" (app.exit). */
     public void setOnExit(Runnable onExit) {
         this.onExit = onExit;
     }
 
+        refreshMenu();
     /** Offers "Preferences" (app.preferences). */
     public void setOnPreferences(Runnable onPreferences) {
         this.onPreferences = onPreferences;
     }
 
+        refreshMenu();
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */
     public void setFileHistory(FileHistory history) {
         this.history = history;
@@ -628,6 +633,13 @@ public class PdfViewer extends StackPane {
 
     private void rebuildRecentMenu() {
         recentMenu.getItems().clear();
+    /** Builds the primary menu again: an item is left out while its capability (new window, exit, preferences) is unset. */
+    private void refreshMenu() {
+        java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>(actions.items(MENU));
+        items.add(0, recentMenu);
+        header.getMenu().getItems().setAll(items);
+    }
+
         java.util.List<Path> recent = history != null ? history.recent() : java.util.List.of();
         for (Path path : recent) {
             javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(path.getFileName().toString());
