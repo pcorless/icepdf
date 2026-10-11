@@ -58,6 +58,8 @@ final class PageLayer extends Group {
     private final Page page;
     private final Rectangle paper = new Rectangle();
     private final Rectangle clip = new Rectangle();
+    private final Group shadow = new Group();
+    private final Rectangle[] shadowRings = new Rectangle[SHADOW_RINGS];
     private final ImageView preview = new ImageView();
     private final Affine previewTransform = new Affine();
     private final TileSet content = new TileSet();
@@ -83,9 +85,22 @@ final class PageLayer extends Group {
     private TextSequence searchSequence;
     private List<SearchHit> searchHitList = List.of();
 
+    private static final int SHADOW_RINGS = 4;
+
     PageLayer(int pageIndex, Page page) {
         this.pageIndex = pageIndex;
         this.page = page;
+        // a soft shadow from a few translucent rings, not a DropShadow effect (see class comment).
+        for (int i = 0; i < SHADOW_RINGS; i++) {
+            Rectangle ring = new Rectangle();
+            ring.setFill(Color.rgb(0, 0, 0, 0.05));
+            ring.setMouseTransparent(true);
+            shadowRings[i] = ring;
+            shadow.getChildren().add(ring);
+        }
+        shadow.setMouseTransparent(true);
+        shadow.layoutXProperty().bind(layoutXProperty());
+        shadow.layoutYProperty().bind(layoutYProperty());
         setAutoSizeChildren(false);
         paper.setFill(Color.WHITE);
         preview.getTransforms().add(previewTransform);
@@ -111,6 +126,11 @@ final class PageLayer extends Group {
         multiplyAnnotations.root.setBlendMode(BlendMode.MULTIPLY);
         getChildren().addAll(paper, preview, content.root, multiplyAnnotations.root, annotations.root, overlay, caret);
         setClip(clip);
+    }
+
+    /** The page's drop shadow; lives outside the layer because the layer is clipped to the page. */
+    Node getShadow() {
+        return shadow;
     }
 
     int getPageIndex() {
@@ -139,6 +159,16 @@ final class PageLayer extends Group {
         paper.setHeight(height);
         clip.setWidth(width);
         clip.setHeight(height);
+        for (int i = 0; i < SHADOW_RINGS; i++) {
+            Rectangle ring = shadowRings[i];
+            double grow = SHADOW_RINGS - i;
+            ring.setX(-grow);
+            ring.setY(-grow + 1);
+            ring.setWidth(width + 2 * grow);
+            ring.setHeight(height + 2 * grow);
+            ring.setArcWidth(2 * grow);
+            ring.setArcHeight(2 * grow);
+        }
         if (newParams.equals(params)) return;
         params = newParams;
         pageToView = PageTransforms.pageToView(page, newParams.boundary(), newParams.rotation(), newParams.zoom());

@@ -100,6 +100,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final Map<Integer, PageLayer> layers = new HashMap<>();
     // page layers (clipped to their pages) under the annotation UI layers (not clipped: popups and
     // chrome may extend past a page edge, as Swing's document-level popup layer allows).
+    private final Group shadowGroup = new Group();
     private final Group pagesGroup = new Group();
     private final Group uiGroup = new Group();
     private final Map<Integer, AnnotationUiLayer> uiLayers = new HashMap<>();
@@ -186,7 +187,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         renderer.setPaintAnnotations(control.isPaintAnnotations());
 
         viewport.setClip(viewportClip);
-        viewport.getChildren().addAll(pagesGroup, uiGroup);
+        viewport.getChildren().addAll(shadowGroup, pagesGroup, uiGroup);
         viewport.setManaged(false);
         vbar.setOrientation(Orientation.VERTICAL);
         vbar.setUnitIncrement(SCROLL_UNIT);
@@ -619,6 +620,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             if (layer == null) {
                 layer = new PageLayer(index, document.getPageTree().getPage(index));
                 layers.put(index, layer);
+                shadowGroup.getChildren().add(layer.getShadow());
                 pagesGroup.getChildren().add(layer);
             }
             layer.setParams(params, slot.width(), slot.height());
@@ -666,6 +668,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         }
         layers.entrySet().removeIf(e -> {
             if (keep.contains(e.getKey())) return false;
+            shadowGroup.getChildren().remove(e.getValue().getShadow());
             pagesGroup.getChildren().remove(e.getValue());
             return true;
         });
@@ -1681,6 +1684,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void clearLayers() {
+        shadowGroup.getChildren().clear();
         pagesGroup.getChildren().clear();
         layers.clear();
         uiGroup.getChildren().clear();
