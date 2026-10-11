@@ -109,12 +109,12 @@ public final class DocumentSession {
 
     /** Receives what went wrong, for the user; by default it's logged. */
     public void setOnError(Consumer<String> onError) {
-        this.onError = onError;
+        this.onError = onError != null ? onError : message -> logger.warning(message);
     }
 
     /** Called after a file is opened (or reopened after a save). */
     public void setOnLoaded(Consumer<Path> onLoaded) {
-        this.onLoaded = onLoaded;
+        this.onLoaded = onLoaded != null ? onLoaded : path -> { };
     }
 
     /** True when the open document has changes not yet saved. */

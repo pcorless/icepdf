@@ -335,6 +335,37 @@ public final class ShellSmoke {
             onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(1)));
             check("closing tabs leaves the other", onFx(() -> tabbed.getDocuments().size()) == 1
                     && onFx(() -> tabbed.getView().getDocument()) != null);
+            // moving a tab to another viewer (another window): it leaves one and joins the mover.
+            PdfViewer mover = onFx(() -> PdfViewer.create(ViewerFeatures.builder(ViewerFeatures.Preset.FULL)
+                    .multipleDocuments(true).build(), UserLayout.inMemory()));
+            int[] emptied = {0};
+            org.icepdf.fx.ri.document.DocumentPane moving = onFx(() -> {
+                org.icepdf.fx.ri.document.DocumentPane added = tabbed.addDocument();
+                added.getSession().open(Paths.get(args[1]));
+                return added;
+            });
+            settle();
+            int before = onFx(() -> tabbed.getDocuments().size());
+            onFx(() -> {
+                check("a tab detaches", tabbed.detachDocument(moving));
+                mover.adoptDocument(moving, 0);
+                return null;
+            });
+            settle();
+            check("the mover viewer shows the moved document", onFx(() -> mover.getDocuments().size()) == 1
+                    && onFx(() -> mover.getCurrentDocument()) == moving && onFx(() -> mover.getView().getDocument()) != null);
+            check("the first viewer lost one", onFx(() -> tabbed.getDocuments().size()) == before - 1
+                    && !onFx(() -> tabbed.getDocuments().contains(moving)));
+            onFx(() -> {
+                mover.setOnEmptied(() -> emptied[0]++);
+                return null;
+            });
+            check("detaching the only tab tells the viewer it is empty", onFx(() -> mover.detachDocument(moving)) && emptied[0] == 1
+                    && onFx(() -> mover.getDocuments().size()) == 1 && onFx(() -> mover.getView().getDocument()) == null);
+            onFx(() -> {
+                mover.dispose();
+                return null;
+            });
             // file history: opened files are reported; the menu lists them; the chooser folder is kept.
             java.util.List<Path> remembered = new ArrayList<>();
             onFx(() -> {

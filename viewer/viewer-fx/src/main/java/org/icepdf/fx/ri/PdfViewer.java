@@ -97,6 +97,8 @@ public class PdfViewer extends StackPane {
     private FileHistory history;
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
     private Consumer<String> onLink;
+    private TearOff onTearOff;
+    private Runnable onEmptied;
     private Consumer<DocumentPane> onDocumentCreated;
     private java.util.function.BooleanSupplier confirmDiscard;
     private javafx.stage.Window owner;
@@ -139,6 +141,8 @@ public class PdfViewer extends StackPane {
             TabStrip strip = new TabStrip(documents, current, this::selectDocument, this::removeDocument,
                     this::newTab, icons);
             strip.setOnMove(this::moveDocument);
+            strip.setOnTransfer(this::detachDocument, this::adoptDocument, this::tearOffRequested,
+                    () -> onTearOff != null && documents.size() > 1);
             header.setTabs(strip);
             addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
             strip.setOnFilesDropped(board -> !droppedPdfs(board).isEmpty(), (pane, board) -> {
@@ -383,16 +387,61 @@ public class PdfViewer extends StackPane {
         return true;
     }
 
-    /** Takes a document out without closing it, to put in another window; the last can't leave. */
+    /**
+     * Takes a document out without closing it, to put in another window.  The last one can leave
+     * too: this viewer is left with an empty document and {@link #setOnEmptied} is told.
+     */
     public boolean detachDocument(DocumentPane pane) {
-        if (!documents.contains(pane) || documents.size() == 1) return false;
+        if (!documents.contains(pane)) return false;
+        boolean last = documents.size() == 1;
+        if (last) {
+            DocumentPane placeholder = newPane();
+            documents.add(placeholder);
+        }
         int at = documents.indexOf(pane);
-        if (pane == current.get()) selectDocument(documents.get(at > 0 ? at - 1 : 1));
+        if (pane == current.get()) selectDocument(documents.get(at > 0 ? at - 1 : at + 1));
         documents.remove(pane);
         pane.setOnMessage(null);
+        pane.setOnLink(null);
         pane.getSession().setOnError(null);
         pane.getSession().setOnLoaded(null);
+        if (last && onEmptied != null) onEmptied.run();
         return true;
+    }
+
+    /**
+     * Takes a document from another window in at {@code index}; an empty document this viewer only
+     * has as a placeholder gives way to it.
+     */
+    public void adoptDocument(DocumentPane pane, int index) {
+        DocumentPane placeholder = documents.size() == 1 && documents.get(0).getSession().getDocument() == null
+                ? documents.get(0) : null;
+        addDocument(pane, index);
+        if (placeholder != null) {
+            documents.remove(placeholder);
+            placeholder.dispose();
+        }
+    }
+
+    /** What the application does with a document pulled out to a window of its own; at is the screen position or null. */
+    @FunctionalInterface
+    public interface TearOff {
+        void tearOff(DocumentPane pane, javafx.geometry.Point2D at);
+    }
+
+    /** Offers "Move to New Window" and dropping a tab outside the window; the application opens the window. */
+    public void setOnTearOff(TearOff onTearOff) {
+        this.onTearOff = onTearOff;
+    }
+
+    /** Called when the last document has been moved to another window: this one has nothing left to show. */
+    public void setOnEmptied(Runnable onEmptied) {
+        this.onEmptied = onEmptied;
+    }
+
+    private void tearOffRequested(DocumentPane pane, javafx.geometry.Point2D at) {
+        if (onTearOff == null || documents.size() < 2 || !detachDocument(pane)) return;
+        onTearOff.tearOff(pane, at);
     }
 
     /** Saves the selected document in place, or asks for a name when it can't be. @return true if saved */
@@ -431,6 +480,7 @@ public class PdfViewer extends StackPane {
     private DocumentPane newPane() {
         DocumentPane pane = new DocumentPane();
         wire(pane);
+        if (onDocumentCreated != null) onDocumentCreated.accept(pane);
         return pane;
     }
 
@@ -443,7 +493,6 @@ public class PdfViewer extends StackPane {
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
-        if (onDocumentCreated != null) onDocumentCreated.accept(pane);
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });

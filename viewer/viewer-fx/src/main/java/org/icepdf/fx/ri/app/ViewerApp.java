@@ -145,7 +145,19 @@ public class ViewerApp extends Application {
 
     // ---- windows ----------------------------------------------------------------------------------
 
+    /**
+     * Opens a window around a document taken from another window's tabs, near {@code at} (a screen
+     * position; cascaded when null).
+     */
+    public AppWindow newWindow(DocumentPane document, javafx.geometry.Point2D at) {
+        return createWindow(new Stage(), document, at);
+    }
+
     private AppWindow createWindow(Stage stage) {
+        return createWindow(stage, null, null);
+    }
+
+    private AppWindow createWindow(Stage stage, DocumentPane document, javafx.geometry.Point2D at) {
         PdfViewer viewer = PdfViewer.create(features, layout);
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
@@ -155,11 +167,19 @@ public class ViewerApp extends Application {
         viewer.setOnLink(uri -> getHostServices().showDocument(uri));
         viewer.setConfirmDiscard(() -> askAboutChanges(window));
         viewer.setOnDocumentCreated(this::applyPreferences);
+        viewer.setOnTearOff(this::newWindow);
+        // the last tab went to another window: this one has nothing left.
+        viewer.setOnEmptied(() -> Platform.runLater(() -> close(window)));
+        if (document != null) viewer.adoptDocument(document, 0);
 
         stage.setScene(new Scene(viewer, preferences.getDouble(ViewerPreferences.WINDOW_WIDTH, 1200),
                 preferences.getDouble(ViewerPreferences.WINDOW_HEIGHT, 860)));
         followTitle(window);
         placeWindow(stage);
+        if (at != null) {
+            stage.setX(at.getX() - 120);
+            stage.setY(at.getY() - 24);
+        }
         stage.setOnCloseRequest(e -> {
             if (!close(window)) e.consume();
         });

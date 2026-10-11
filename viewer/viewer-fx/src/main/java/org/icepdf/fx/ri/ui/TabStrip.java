@@ -55,7 +55,13 @@ public final class TabStrip extends HBox {
     private static final javafx.scene.input.DataFormat TAB = new javafx.scene.input.DataFormat("application/x-icepdf-tab");
     private final javafx.scene.layout.Region indicator = new javafx.scene.layout.Region();
     private BiConsumer<DocumentPane, Integer> onMove = (pane, index) -> { };
-    private DocumentPane dragging;
+    // the tab being dragged, in any window: one drag at a time, all on the FX thread.
+    private static DocumentPane dragging;
+    private static TabStrip dragSource;
+    private java.util.function.Predicate<DocumentPane> detach = pane -> false;
+    private BiConsumer<DocumentPane, Integer> onAdopt = (pane, index) -> { };
+    private BiConsumer<DocumentPane, javafx.geometry.Point2D> onTearOff = (pane, at) -> { };
+    private java.util.function.BooleanSupplier canTearOff = () -> false;
     private BiConsumer<DocumentPane, javafx.scene.input.Dragboard> onDropOnTab = (pane, board) -> { };
     private java.util.function.Predicate<javafx.scene.input.Dragboard> accepts = board -> false;
 
@@ -105,9 +111,17 @@ public final class TabStrip extends HBox {
         row.setOnDragDropped(e -> {
             if (dragging == null) return;
             DocumentPane moved = dragging;
+            TabStrip from = dragSource;
             int index = insertionIndex(e.getSceneX());
             indicator.setVisible(false);
-            onMove.accept(moved, index);
+            if (from == TabStrip.this) {
+                onMove.accept(moved, index);
+            } else if (from != null && from.detach.test(moved)) {
+                // from another window: it leaves there and joins here.
+                dragging = null;
+                dragSource = null;
+                onAdopt.accept(moved, index);
+            }
             e.setDropCompleted(true);
             e.consume();
         });
@@ -132,9 +146,31 @@ public final class TabStrip extends HBox {
         this.onDropOnTab = onDrop;
     }
 
+    /**
+     * Moving tabs between windows.  {@code detach} takes a tab out of this strip's viewer (false if
+     * it can't leave); {@code adopt} puts a tab from another window in at an index; {@code tearOff} gets
+     * a tab dropped outside every window (with the pointer's screen position, null from the menu),
+     * and {@code canTearOff} says whether that is on offer now.
+     */
+    public void setOnTransfer(java.util.function.Predicate<DocumentPane> detach, BiConsumer<DocumentPane, Integer> adopt,
+                              BiConsumer<DocumentPane, javafx.geometry.Point2D> tearOff,
+                              java.util.function.BooleanSupplier canTearOff) {
+        this.detach = detach;
+        this.onAdopt = adopt;
+        this.onTearOff = tearOff;
+        this.canTearOff = canTearOff;
+    }
+
     /** A tab dragged to a new place: the document and its index among the others (without it). */
     public void setOnMove(BiConsumer<DocumentPane, Integer> onMove) {
         this.onMove = onMove;
+    }
+
+    // a cancelled drag (Escape) looks like a drop on nothing: only a pointer outside the window tears off.
+    private boolean outsideWindow(double screenX, double screenY) {
+        javafx.stage.Window w = getScene() != null ? getScene().getWindow() : null;
+        return w == null || screenX < w.getX() || screenY < w.getY() || screenX > w.getX() + w.getWidth()
+                || screenY > w.getY() + w.getHeight();
     }
 
     /** Where the dragged tab would land: the number of other tabs left of the pointer. */
@@ -220,8 +256,9 @@ public final class TabStrip extends HBox {
             Tooltip.install(this, tip);
             pane.titleProperty().addListener((o, a, b) -> sync());
             setOnDragDetected(e -> {
-                if (e.getButton() != MouseButton.PRIMARY || documents.size() < 2) return;
+                if (e.getButton() != MouseButton.PRIMARY) return;
                 dragging = pane;
+                dragSource = TabStrip.this;
                 javafx.scene.input.Dragboard db = startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
                 javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
                 content.put(TAB, "tab");
@@ -231,9 +268,16 @@ public final class TabStrip extends HBox {
                 e.consume();
             });
             setOnDragDone(e -> {
+                boolean dropped = e.isDropCompleted();
+                boolean ours = dragging == pane && dragSource == TabStrip.this;
                 dragging = null;
+                dragSource = null;
                 getStyleClass().remove("dragging");
                 indicator.setVisible(false);
+                // let go outside every window: the tab gets a window of its own.
+                if (ours && !dropped && canTearOff.getAsBoolean() && outsideWindow(e.getScreenX(), e.getScreenY())) {
+                    onTearOff.accept(pane, new javafx.geometry.Point2D(e.getScreenX(), e.getScreenY()));
+                }
             });
             setOnMousePressed(e -> {
                 if (e.getButton() == MouseButton.PRIMARY) select.accept(pane);
@@ -263,7 +307,10 @@ public final class TabStrip extends HBox {
             closeOthers.setOnAction(e -> {
                 for (DocumentPane other : documents.toArray(new DocumentPane[0])) if (other != pane) close.accept(other);
             });
-            menu.getItems().addAll(closeThis, closeOthers);
+            MenuItem toWindow = new MenuItem("Move to New Window");
+            toWindow.setOnAction(e -> onTearOff.accept(pane, null));
+            menu.setOnShowing(e -> toWindow.setDisable(!canTearOff.getAsBoolean()));
+            menu.getItems().addAll(closeThis, closeOthers, new javafx.scene.control.SeparatorMenuItem(), toWindow);
             setOnContextMenuRequested(e -> menu.show(this, e.getScreenX(), e.getScreenY()));
         }
 
