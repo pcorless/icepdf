@@ -345,13 +345,16 @@ public class ViewerApp extends Application {
 
         @Override
         public Path lastDirectory() {
+            if (!preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true)) return null;
             String folder = preferences.get(ViewerPreferences.LAST_DIRECTORY, null);
             return folder != null ? Paths.get(folder) : null;
         }
 
         @Override
         public void setLastDirectory(Path directory) {
+            if (!preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true)) return;
             preferences.put(ViewerPreferences.LAST_DIRECTORY, directory != null ? directory.toString() : null);
+            preferences.save();
         }
     }
 }

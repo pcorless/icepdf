@@ -49,6 +49,8 @@ public final class ViewerPreferences {
     // keys
     public static final String RECENT_FILES = "file.recent";
     public static final String LAST_DIRECTORY = "file.lastDirectory";
+    /** Whether file dialogs start in the folder last used (default true). */
+    public static final String REMEMBER_LAST_DIRECTORY = "file.rememberLastDirectory";
     public static final String WINDOW_X = "window.x";
     public static final String WINDOW_Y = "window.y";
     public static final String WINDOW_WIDTH = "window.width";

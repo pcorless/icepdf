@@ -63,12 +63,15 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         sidePanel.setSelected(preferences.getBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, true));
         CheckBox verify = new CheckBox("Check signatures when a document opens");
         verify.setSelected(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
+        CheckBox rememberFolder = new CheckBox("Open and save dialogs start in the last folder used");
+        rememberFolder.setSelected(preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true));
         GridPane general = grid();
         general.addRow(0, new Label("Page display:"), viewMode);
         general.addRow(1, new Label("Zoom:"), fitMode);
         general.addRow(2, new Label("Zoom percent:"), zoom);
         general.add(sidePanel, 0, 3, 2, 1);
         general.add(verify, 0, 4, 2, 1);
+        general.add(rememberFolder, 0, 5, 2, 1);
 
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
@@ -111,6 +114,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.putDouble(ViewerPreferences.ZOOM, zoom.getValue() / 100.0);
                 preferences.putBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, sidePanel.isSelected());
                 preferences.putBoolean(ViewerPreferences.VERIFY_SIGNATURES, verify.isSelected());
+                preferences.putBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, rememberFolder.isSelected());
                 preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
                 preferences.put(ViewerPreferences.ANNOTATION_COLOR, web(colour.getValue()));
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());

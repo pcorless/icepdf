@@ -462,7 +462,9 @@ public class PdfViewer extends StackPane {
         Path file = session().getFile();
         chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
         File chosen = chooser.showSaveDialog(context.window());
-        if (chosen == null || !session().saveAs(chosen.toPath())) return false;
+        if (chosen == null) return false;
+        if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
+        if (!session().saveAs(chosen.toPath())) return false;
         showMessage("Saved " + session().getFile().getFileName());
         return true;
     }
@@ -495,16 +497,12 @@ public class PdfViewer extends StackPane {
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
+        pane.getAttachments().setOnOpen(this::openAttachment);
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });
     }
-        pane.getAttachments().setOnOpen(this::openAttachment);
 
-    private static String panelLabel(SidePanel panel) {
-        return switch (panel) {
-            case THUMBNAILS -> "Pages";
-            case BOOKMARKS -> "Bookmarks";
     /** Opens an embedded PDF in a new tab, from a temporary copy; the panel saves anything else. */
     private void openAttachment(org.icepdf.fx.panels.Attachment attachment) {
         try {
@@ -519,6 +517,10 @@ public class PdfViewer extends StackPane {
         }
     }
 
+    private static String panelLabel(SidePanel panel) {
+        return switch (panel) {
+            case THUMBNAILS -> "Pages";
+            case BOOKMARKS -> "Bookmarks";
             case COMMENTS -> "Comments";
             case ATTACHMENTS -> "Attachments";
             case LAYERS -> "Layers";
@@ -595,21 +597,21 @@ public class PdfViewer extends StackPane {
     /** Offers "New Window" (app.new-window) and runs this for it. */
     public void setOnNewWindow(Runnable onNewWindow) {
         this.onNewWindow = onNewWindow;
+        refreshMenu();
     }
 
-        refreshMenu();
     /** Offers "Exit" (app.exit). */
     public void setOnExit(Runnable onExit) {
         this.onExit = onExit;
+        refreshMenu();
     }
 
-        refreshMenu();
     /** Offers "Preferences" (app.preferences). */
     public void setOnPreferences(Runnable onPreferences) {
         this.onPreferences = onPreferences;
+        refreshMenu();
     }
 
-        refreshMenu();
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */
     public void setFileHistory(FileHistory history) {
         this.history = history;
@@ -631,8 +633,6 @@ public class PdfViewer extends StackPane {
         if (onDocumentCreated != null) documents.forEach(onDocumentCreated);
     }
 
-    private void rebuildRecentMenu() {
-        recentMenu.getItems().clear();
     /** Builds the primary menu again: an item is left out while its capability (new window, exit, preferences) is unset. */
     private void refreshMenu() {
         java.util.List<javafx.scene.control.MenuItem> items = new java.util.ArrayList<>(actions.items(MENU));
@@ -640,6 +640,8 @@ public class PdfViewer extends StackPane {
         header.getMenu().getItems().setAll(items);
     }
 
+    private void rebuildRecentMenu() {
+        recentMenu.getItems().clear();
         java.util.List<Path> recent = history != null ? history.recent() : java.util.List.of();
         for (Path path : recent) {
             javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(path.getFileName().toString());
@@ -997,8 +999,8 @@ public class PdfViewer extends StackPane {
             chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF documents", "*.pdf", "*.PDF"),
                     new FileChooser.ExtensionFilter("All files", "*.*"));
             Path file = session().getFile();
-            Path folder = file != null && file.getParent() != null ? file.getParent()
-                    : history != null ? history.lastDirectory() : null;
+            Path folder = history != null ? history.lastDirectory() : null;
+            if (folder == null && file != null) folder = file.getParent();
             if (folder != null && java.nio.file.Files.isDirectory(folder)) chooser.setInitialDirectory(folder.toFile());
             return chooser;
         }
