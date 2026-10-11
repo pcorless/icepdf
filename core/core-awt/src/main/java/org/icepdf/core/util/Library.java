@@ -1115,42 +1115,45 @@ public class Library {
 
         logger.log(Level.FINE, () -> "Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
 
+        // the thread factory goes in the constructor: set afterwards, a task submitted in between
+        // started a worker from the default (non-daemon) factory, which kept the JVM alive after
+        // the last window closed.
         if (commonThreadPool == null || commonThreadPool.isShutdown()) {
             commonThreadPool = new ThreadPoolExecutor(
                     commonPoolThreads, commonPoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>());
-            // set a lower thread priority
-            commonThreadPool.setThreadFactory(command -> {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            });
+                    new LinkedBlockingQueue<>(), daemonThreadFactory("ICEpdf-thread-pool"));
         }
 
         logger.log(Level.FINE, () -> "Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
-                    new LinkedBlockingQueue<>());
-            // set a lower thread priority
-            imageThreadPool.setThreadFactory(command -> {
-                Thread newThread = new Thread(command);
-                newThread.setName("ICEpdf-thread-image-pool");
-                newThread.setPriority(Thread.NORM_PRIORITY);
-                newThread.setDaemon(true);
-                return newThread;
-            });
+                    new LinkedBlockingQueue<>(), daemonThreadFactory("ICEpdf-thread-image-pool"));
         }
+    }
+
+    /** Daemon threads at normal priority, so an idle pool never keeps the JVM running. */
+    private static java.util.concurrent.ThreadFactory daemonThreadFactory(String name) {
+        return command -> {
+            Thread newThread = new Thread(command);
+            newThread.setName(name);
+            newThread.setPriority(Thread.NORM_PRIORITY);
+            newThread.setDaemon(true);
+            return newThread;
+        };
     }
 
     public static void shutdownThreadPool() {
         // do a little cleanup.
-        commonThreadPool.purge();
-        commonThreadPool.shutdownNow();
-        imageThreadPool.purge();
-        imageThreadPool.shutdownNow();
+        // the pools are created on first use; there is nothing to stop before that.
+        if (commonThreadPool != null) {
+            commonThreadPool.purge();
+            commonThreadPool.shutdownNow();
+        }
+        if (imageThreadPool != null) {
+            imageThreadPool.purge();
+            imageThreadPool.shutdownNow();
+        }
     }
 
     /**
