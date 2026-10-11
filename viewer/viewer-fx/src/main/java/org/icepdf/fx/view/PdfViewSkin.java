@@ -282,6 +282,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         viewport.addEventHandler(MouseEvent.MOUSE_DRAGGED, this::onDrag);
         viewport.addEventHandler(MouseEvent.MOUSE_RELEASED, this::onRelease);
         viewport.addEventHandler(MouseEvent.MOUSE_MOVED, this::onMoved);
+        viewport.addEventHandler(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::onContextMenu);
 
         installTool();
         watchWindow();
@@ -1874,6 +1875,24 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** The cursor for the current state: hand while Space is held, else the active tool's. */
     void restoreViewportCursor() {
         viewport.setCursor(spaceDown ? Cursor.OPEN_HAND : activeHandler.idleCursor());
+    }
+
+    private javafx.scene.control.ContextMenu annotationMenu;
+
+    /** Right-click on an editable annotation: select it and show the application's menu for it. */
+    private void onContextMenu(javafx.scene.input.ContextMenuEvent e) {
+        var factory = getSkinnable().annotationMenuFactoryProperty().get();
+        if (factory == null || document == null) return;
+        Point2D local = viewport.sceneToLocal(e.getSceneX(), e.getSceneY());
+        AnnotationHit hit = local != null ? annotationAtViewport(local.getX(), local.getY()) : null;
+        if (hit == null || !canEdit(hit.annotation())) return;
+        javafx.scene.control.ContextMenu menu = factory.apply(hit.annotation());
+        if (menu == null || menu.getItems().isEmpty()) return;
+        if (annotationMenu != null) annotationMenu.hide();
+        getSkinnable().selectAnnotation(hit.annotation());
+        annotationMenu = menu;
+        menu.show(getSkinnable(), e.getScreenX(), e.getScreenY());
+        e.consume();
     }
 
     private void onPress(MouseEvent e) {

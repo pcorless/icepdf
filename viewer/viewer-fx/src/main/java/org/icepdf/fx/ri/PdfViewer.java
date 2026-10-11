@@ -95,6 +95,7 @@ public class PdfViewer extends StackPane {
     private Runnable onNewWindow, onExit, onPreferences;
     private final Context context = new Context();
     private FileHistory history;
+    private ColorHistory colorHistory = ColorHistory.inMemory();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
     private Consumer<String> onLink;
     private TearOff onTearOff;
@@ -498,6 +499,9 @@ public class PdfViewer extends StackPane {
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
         pane.getAttachments().setOnOpen(this::openAttachment);
+        pane.getView().setAnnotationMenuFactory(annotation -> AnnotationContextMenu.create(pane.getView(), annotation,
+                colorHistory, target -> AnnotationPropertiesDialog.show(getScene() != null ? getScene().getWindow() : null, target)
+                .ifPresent(change -> pane.getView().applyAnnotationProperties(target, change))));
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });
@@ -610,6 +614,11 @@ public class PdfViewer extends StackPane {
     public void setOnPreferences(Runnable onPreferences) {
         this.onPreferences = onPreferences;
         refreshMenu();
+    }
+
+    /** Remembers the colours the user picks for annotations (shown in the annotation context menu). */
+    public void setColorHistory(ColorHistory colorHistory) {
+        this.colorHistory = colorHistory != null ? colorHistory : ColorHistory.inMemory();
     }
 
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */

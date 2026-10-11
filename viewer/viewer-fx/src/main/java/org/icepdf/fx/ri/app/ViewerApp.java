@@ -72,6 +72,18 @@ public class ViewerApp extends Application {
     private ViewerFeatures features;
     private UserLayout layout;
     private final FileHistory history = new PreferenceHistory();
+    private final org.icepdf.fx.ri.ColorHistory colorHistory = new org.icepdf.fx.ri.ColorHistory() {
+        @Override
+        public List<java.awt.Color> recent() {
+            return preferences.getRecentColors();
+        }
+
+        @Override
+        public void used(java.awt.Color color) {
+            preferences.addRecentColor(color);
+            preferences.save();
+        }
+    };
 
     public static void main(String[] args) {
         launch(args);
@@ -161,6 +173,7 @@ public class ViewerApp extends Application {
         PdfViewer viewer = PdfViewer.create(features, layout);
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
+        viewer.setColorHistory(colorHistory);
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));
