@@ -162,6 +162,8 @@ public class PdfView extends Control {
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
+    private final ObjectProperty<java.util.function.Function<Annotation, javafx.scene.control.ContextMenu>>
+            annotationMenuFactory = new SimpleObjectProperty<>(this, "annotationMenuFactory");
     private final ObjectProperty<EventHandler<? super PdfViewEvent>> onAnnotationsChanged = new ObjectPropertyBase<>() {
         @Override
         protected void invalidated() {
@@ -636,6 +638,42 @@ public class PdfView extends Control {
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, hit.pageIndex(), hit.annotation()));
         clearAnnotationSelection();
+    }
+
+    /**
+     * Changes properties of an annotation as one undoable edit.  No-op if the annotation isn't on a
+     * page of this document, it's locked, the document doesn't permit annotating, or its type has no
+     * editable properties ({@link AnnotationProperties#supports}).
+     */
+    public void applyAnnotationProperties(Annotation annotation, AnnotationProperties change) {
+        if (change == null || !AnnotationProperties.supports(annotation)) return;
+        if (!(getSkin() instanceof PdfViewSkin skin) || !skin.canEdit(annotation)) return;
+        PdfViewSkin.AnnotationHit hit = skin.hitOf(annotation);
+        if (hit == null) return;
+        Page page = getDocument().getPageTree().getPage(hit.pageIndex());
+        recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, hit.pageIndex(), annotation, change,
+                skin.toPageSpace(page)));
+    }
+
+    /**
+     * Builds the context menu shown when the user right-clicks an editable annotation (it is selected
+     * first).  Return null for no menu.  With no factory set right-click does nothing.
+     */
+    public final ObjectProperty<java.util.function.Function<Annotation, javafx.scene.control.ContextMenu>>
+            annotationMenuFactoryProperty() {
+        return annotationMenuFactory;
+    }
+
+    public final void setAnnotationMenuFactory(
+            java.util.function.Function<Annotation, javafx.scene.control.ContextMenu> factory) {
+        annotationMenuFactory.set(factory);
+    }
+
+    /** Changes an annotation's colour; undoable.  See {@link #applyAnnotationProperties}. */
+    public void setAnnotationColor(Annotation annotation, java.awt.Color color) {
+        if (color != null && AnnotationProperties.hasColor(annotation)) {
+            applyAnnotationProperties(annotation, AnnotationProperties.ofColor(color));
+        }
     }
 
     /** Undoes the last annotation edit (move, resize, delete, add). */

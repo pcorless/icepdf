@@ -247,6 +247,48 @@ final class AnnotationEdits {
         });
     }
 
+    /**
+     * Changes an annotation's properties (colour, opacity, border, fill, ...) as one edit, applied now.
+     * Undo restores a full snapshot taken before; the appearance stream is regenerated each way.
+     */
+    static Edit properties(Locker locker, Page page, int pageIndex, Annotation annotation,
+                           AnnotationProperties change, AffineTransform toPageSpace) {
+        AnnotationProperties before = AnnotationProperties.capture(annotation);
+        AffineTransform toPage = new AffineTransform(toPageSpace);
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return annotation;
+            }
+
+            public void undo() {
+                set(before);
+            }
+
+            public void redo() {
+                set(change);
+            }
+
+            private void set(AnnotationProperties values) {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    values.apply(annotation);
+                    if (annotation instanceof MarkupAnnotation markup) {
+                        markup.setModifiedDate(org.icepdf.core.pobjects.PDate.formatDateTime(new java.util.Date()));
+                    }
+                    if (annotation instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation freeText) {
+                        freeText.resetAppearanceStream(toPage);
+                    } else {
+                        annotation.resetAppearanceStream(0, 0, toPage);
+                    }
+                    page.updateAnnotation(annotation);
+                });
+            }
+        });
+    }
+
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
     static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;
