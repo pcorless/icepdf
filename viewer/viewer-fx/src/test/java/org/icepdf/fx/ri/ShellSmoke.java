@@ -335,6 +335,44 @@ public final class ShellSmoke {
             onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(1)));
             check("closing tabs leaves the other", onFx(() -> tabbed.getDocuments().size()) == 1
                     && onFx(() -> tabbed.getView().getDocument()) != null);
+            // file history: opened files are reported; the menu lists them; the chooser folder is kept.
+            java.util.List<Path> remembered = new ArrayList<>();
+            onFx(() -> {
+                tabbed.setFileHistory(new FileHistory() {
+                    public java.util.List<Path> recent() {
+                        return remembered;
+                    }
+
+                    public void opened(Path file) {
+                        remembered.add(0, file);
+                    }
+
+                    public void clearRecent() {
+                        remembered.clear();
+                    }
+
+                    public Path lastDirectory() {
+                        return null;
+                    }
+
+                    public void setLastDirectory(Path directory) {
+                    }
+                });
+                tabbed.open(Paths.get(args[1]));
+                return null;
+            });
+            settle();
+            check("an opened file is reported to the history", remembered.size() == 1);
+            javafx.scene.control.Menu recent = onFx(() -> tabbed.getHeaderBar().getMenu().getItems().stream()
+                    .filter(i -> i instanceof javafx.scene.control.Menu).map(i -> (javafx.scene.control.Menu) i)
+                    .filter(m -> m.getText().equals("Open Recent")).findFirst().orElse(null));
+            check("the menu has Open Recent", recent != null && onFx(recent::isVisible));
+            onFx(() -> {
+                recent.getOnShowing().handle(null);
+                return null;
+            });
+            check("Open Recent lists the file and Clear", onFx(() -> recent.getItems().size()) == 3);
+            check("a window with no changes closes without asking", onFx(tabbed::confirmClose));
             onFx(() -> {
                 tabbed.dispose();
                 return null;

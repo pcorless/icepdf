@@ -93,6 +93,11 @@ public class PdfViewer extends StackPane {
     private final BooleanProperty fullScreen = new SimpleBooleanProperty(this, "fullScreen");
     private final PauseTransition saveLayoutLater = new PauseTransition(Duration.millis(600));
     private Runnable onNewWindow, onExit, onPreferences;
+    private final Context context = new Context();
+    private FileHistory history;
+    private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
+    private Consumer<String> onLink;
+    private Consumer<DocumentPane> onDocumentCreated;
     private java.util.function.BooleanSupplier confirmDiscard;
     private javafx.stage.Window owner;
     private Consumer<String> onError = this::showMessage;
@@ -117,7 +122,7 @@ public class PdfViewer extends StackPane {
         this.icons = icons;
         getStyleClass().add("pdf-viewer");
         theme = new Theme(this);
-        actions = new ActionControls(registry, new Context(), features::allows).setIcons(icons, 20, 16);
+        actions = new ActionControls(registry, context, features::allows).setIcons(icons, 20, 16);
 
         sceneProperty().addListener((o, a, scene) -> {
             owner = scene != null ? scene.getWindow() : null;
@@ -145,6 +150,10 @@ public class PdfViewer extends StackPane {
                 });
             });
         }
+        recentMenu.setMnemonicParsing(false);
+        recentMenu.setVisible(false);
+        recentMenu.setOnShowing(e -> rebuildRecentMenu());
+        header.getMenu().getItems().add(0, recentMenu);
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
         // the layout is shared by every viewer in the application: follow its changes, wherever made.
@@ -358,7 +367,10 @@ public class PdfViewer extends StackPane {
      * @return false if the user kept it
      */
     public boolean removeDocument(DocumentPane pane) {
-        if (!documents.contains(pane) || !pane.getSession().confirmDiscard()) return false;
+        if (!documents.contains(pane)) return false;
+        // the prompt is about the selected document: show the one being asked about.
+        if (pane.getSession().hasUnsavedChanges()) selectDocument(pane);
+        if (!pane.getSession().confirmDiscard()) return false;
         if (documents.size() == 1) {
             pane.getSession().close();
             pane.refreshTitle();
@@ -380,6 +392,27 @@ public class PdfViewer extends StackPane {
         pane.setOnMessage(null);
         pane.getSession().setOnError(null);
         pane.getSession().setOnLoaded(null);
+        return true;
+    }
+
+    /** Saves the selected document in place, or asks for a name when it can't be. @return true if saved */
+    public boolean save() {
+        if (session().getDocument() == null) return false;
+        if (!session().canSaveInPlace()) return saveAs();
+        boolean saved = session().save();
+        if (saved) showMessage("Saved");
+        return saved;
+    }
+
+    /** Saves the selected document under a name the user picks. @return true if saved */
+    public boolean saveAs() {
+        if (session().getDocument() == null) return false;
+        FileChooser chooser = context.chooser("Save As");
+        Path file = session().getFile();
+        chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
+        File chosen = chooser.showSaveDialog(context.window());
+        if (chosen == null || !session().saveAs(chosen.toPath())) return false;
+        showMessage("Saved " + session().getFile().getFileName());
         return true;
     }
 
@@ -409,6 +442,8 @@ public class PdfViewer extends StackPane {
         session.setOwner(owner);
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
+        pane.setOnLink(onLink);
+        if (onDocumentCreated != null) onDocumentCreated.accept(pane);
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });
@@ -506,6 +541,66 @@ public class PdfViewer extends StackPane {
         this.onPreferences = onPreferences;
     }
 
+    /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */
+    public void setFileHistory(FileHistory history) {
+        this.history = history;
+        recentMenu.setVisible(history != null);
+    }
+
+    /** Receives the URI of a link the user follows (to open in a browser); otherwise it's shown as a message. */
+    public void setOnLink(Consumer<String> onLink) {
+        this.onLink = onLink;
+        documents.forEach(d -> d.setOnLink(onLink));
+    }
+
+    /**
+     * Called for every document this viewer holds, now and as they're added: the place to apply the
+     * user's preferences to its view and panels.
+     */
+    public void setOnDocumentCreated(Consumer<DocumentPane> onDocumentCreated) {
+        this.onDocumentCreated = onDocumentCreated;
+        if (onDocumentCreated != null) documents.forEach(onDocumentCreated);
+    }
+
+    private void rebuildRecentMenu() {
+        recentMenu.getItems().clear();
+        java.util.List<Path> recent = history != null ? history.recent() : java.util.List.of();
+        for (Path path : recent) {
+            javafx.scene.control.MenuItem item = new javafx.scene.control.MenuItem(path.getFileName().toString());
+            item.setMnemonicParsing(false);
+            item.setOnAction(e -> open(path));
+            recentMenu.getItems().add(item);
+        }
+        if (recent.isEmpty()) {
+            javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem("No recent files");
+            none.setDisable(true);
+            recentMenu.getItems().add(none);
+        } else {
+            javafx.scene.control.MenuItem clear = new javafx.scene.control.MenuItem("Clear Recent Files");
+            clear.setOnAction(e -> history.clearRecent());
+            recentMenu.getItems().addAll(new javafx.scene.control.SeparatorMenuItem(), clear);
+        }
+    }
+
+    /** True if any document has unsaved changes. */
+    public boolean hasUnsavedChanges() {
+        return documents.stream().anyMatch(d -> d.getSession().hasUnsavedChanges());
+    }
+
+    /**
+     * Asks about each document with unsaved changes (showing it first), for closing the window.
+     *
+     * @return false if the user cancelled
+     */
+    public boolean confirmClose() {
+        for (DocumentPane pane : new java.util.ArrayList<>(documents)) {
+            if (!pane.getSession().hasUnsavedChanges()) continue;
+            selectDocument(pane);
+            if (!pane.getSession().confirmDiscard()) return false;
+        }
+        return true;
+    }
+
     /** Receives errors (could not open, could not save); a message toast by default. */
     public void setOnError(Consumer<String> onError) {
         this.onError = onError != null ? onError : this::showMessage;
@@ -599,6 +694,7 @@ public class PdfViewer extends StackPane {
 
     private void loaded(DocumentPane pane) {
         pane.refreshTitle();
+        if (history != null && pane.getSession().getFile() != null) history.opened(pane.getSession().getFile());
         if (pane != current.get()) return;
         updateTitle();
         // the document's /PageMode picks the panel it opens with, as Acrobat does.
@@ -711,31 +807,33 @@ public class PdfViewer extends StackPane {
         @Override
         public void openDocument() {
             File chosen = chooser("Open").showOpenDialog(window());
-            if (chosen != null) open(chosen.toPath());
+            if (chosen != null) {
+                rememberFolder(chosen);
+                open(chosen.toPath());
+            }
         }
 
         @Override
         public void openDocumentInNewTab() {
             File chosen = chooser("Open in New Tab").showOpenDialog(window());
-            if (chosen != null) openInNewTab(chosen.toPath());
+            if (chosen != null) {
+                rememberFolder(chosen);
+                openInNewTab(chosen.toPath());
+            }
+        }
+
+        private void rememberFolder(File chosen) {
+            if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
         }
 
         @Override
         public void saveDocument() {
-            if (session().canSaveInPlace()) {
-                if (session().save()) showMessage("Saved");
-            } else {
-                saveDocumentAs();
-            }
+            save();
         }
 
         @Override
         public void saveDocumentAs() {
-            FileChooser chooser = chooser("Save As");
-            Path file = session().getFile();
-            chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
-            File chosen = chooser.showSaveDialog(window());
-            if (chosen != null && session().saveAs(chosen.toPath())) showMessage("Saved " + session().getFile().getFileName());
+            saveAs();
         }
 
         @Override
@@ -817,13 +915,15 @@ public class PdfViewer extends StackPane {
         public void customisePrintDialog(PdfPrintDialog dialog) {
         }
 
-        private FileChooser chooser(String title) {
+        FileChooser chooser(String title) {
             FileChooser chooser = new FileChooser();
             chooser.setTitle(title);
             chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF documents", "*.pdf", "*.PDF"),
                     new FileChooser.ExtensionFilter("All files", "*.*"));
             Path file = session().getFile();
-            if (file != null && file.getParent() != null) chooser.setInitialDirectory(file.getParent().toFile());
+            Path folder = file != null && file.getParent() != null ? file.getParent()
+                    : history != null ? history.lastDirectory() : null;
+            if (folder != null && java.nio.file.Files.isDirectory(folder)) chooser.setInitialDirectory(folder.toFile());
             return chooser;
         }
     }

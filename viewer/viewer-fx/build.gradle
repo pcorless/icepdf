@@ -17,7 +17,7 @@ repositories {
 description = 'ICEpdf FX viewer reference implementation project'
 
 application {
-    mainClass = "org.icepdf.fx.viewer.PdfViewerApp"
+    mainClass = "org.icepdf.fx.ri.app.ViewerApp"
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 

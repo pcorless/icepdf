@@ -44,10 +44,14 @@ public final class DocumentPane {
     private final SignaturePanel signatures = new SignaturePanel(view);
     private final ReadOnlyStringWrapper title = new ReadOnlyStringWrapper(this, "title", "");
     private Consumer<String> onMessage = m -> { };
+    private Consumer<String> onLink;
 
     public DocumentPane() {
         view.setOnAnnotationAction(event -> {
-            if (event.getAction() instanceof URIAction uri && uri.getURI() != null) onMessage.accept("Link: " + uri.getURI());
+            if (event.getAction() instanceof URIAction uri && uri.getURI() != null) {
+                if (onLink != null) onLink.accept(uri.getURI());
+                else onMessage.accept("Link: " + uri.getURI());
+            }
         });
         view.modifiedProperty().addListener((o, a, b) -> refreshTitle());
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
@@ -110,6 +114,11 @@ public final class DocumentPane {
     }
 
     /** Receives short messages for the user (a link was clicked). */
+    /** Receives the URI of a link the user follows; without one the link is shown as a message. */
+    public void setOnLink(Consumer<String> onLink) {
+        this.onLink = onLink;
+    }
+
     public void setOnMessage(Consumer<String> onMessage) {
         this.onMessage = onMessage != null ? onMessage : m -> { };
     }

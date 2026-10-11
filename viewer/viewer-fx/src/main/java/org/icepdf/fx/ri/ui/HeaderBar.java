@@ -44,6 +44,8 @@ public final class HeaderBar extends VBox {
     private final TextField searchField = new TextField();
     private final ToggleButton searchToggle;
 
+    private final MenuButton menu;
+
     /**
      * @param search runs a search for the typed text (the viewer's search panel, so results list there)
      * @param menuIds the primary menu's actions; null for a separator
@@ -91,7 +93,7 @@ public final class HeaderBar extends VBox {
         followDocument.run();
         if (actions.isAvailable("search.find")) bar.getChildren().add(searchToggle);
 
-        MenuButton menu = new MenuButton();
+        menu = new MenuButton();
         Node menuIcon = actions.icon("ui.menu", 20);
         if (menuIcon != null) menu.setGraphic(menuIcon);
         else menu.setText("☰");
@@ -151,5 +153,10 @@ public final class HeaderBar extends VBox {
 
     private void add(HBox bar, String id) {
         if (actions.isAvailable(id)) bar.getChildren().add(actions.button(id));
+    }
+
+    /** The primary menu, for an application to add its own items (Open Recent). */
+    public MenuButton getMenu() {
+        return menu;
     }
 }
