@@ -267,3 +267,12 @@
     -fx-border-radius: 6;
     -fx-background-color: -icepdf-hover;
 }
+
+.icepdf-viewer .doc-tab.dragging {
+    -fx-opacity: 0.5;
+}
+
+.icepdf-viewer .tab-drop-indicator {
+    -fx-background-color: -icepdf-accent;
+    -fx-background-radius: 1;
+}

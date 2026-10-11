@@ -52,6 +52,10 @@ public final class TabStrip extends HBox {
     private final Map<DocumentPane, TabNode> tabs = new IdentityHashMap<>();
     private final TabRow row = new TabRow();
     private final MenuButton list = new MenuButton();
+    private static final javafx.scene.input.DataFormat TAB = new javafx.scene.input.DataFormat("application/x-icepdf-tab");
+    private final javafx.scene.layout.Region indicator = new javafx.scene.layout.Region();
+    private BiConsumer<DocumentPane, Integer> onMove = (pane, index) -> { };
+    private DocumentPane dragging;
     private BiConsumer<DocumentPane, javafx.scene.input.Dragboard> onDropOnTab = (pane, board) -> { };
     private java.util.function.Predicate<javafx.scene.input.Dragboard> accepts = board -> false;
 
@@ -87,6 +91,26 @@ public final class TabStrip extends HBox {
         });
         list.setVisible(false);
         list.setManaged(false);
+        indicator.getStyleClass().add("tab-drop-indicator");
+        indicator.setManaged(false);
+        indicator.setVisible(false);
+        indicator.setMouseTransparent(true);
+        row.setOnDragOver(e -> {
+            if (dragging == null || !e.getDragboard().hasContent(TAB)) return;
+            e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
+            showIndicator(insertionIndex(e.getSceneX()));
+            e.consume();
+        });
+        row.setOnDragExited(e -> indicator.setVisible(false));
+        row.setOnDragDropped(e -> {
+            if (dragging == null) return;
+            DocumentPane moved = dragging;
+            int index = insertionIndex(e.getSceneX());
+            indicator.setVisible(false);
+            onMove.accept(moved, index);
+            e.setDropCompleted(true);
+            e.consume();
+        });
         getChildren().addAll(row, list, plus);
 
         documents.addListener((ListChangeListener<DocumentPane>) c -> rebuild());
@@ -108,6 +132,41 @@ public final class TabStrip extends HBox {
         this.onDropOnTab = onDrop;
     }
 
+    /** A tab dragged to a new place: the document and its index among the others (without it). */
+    public void setOnMove(BiConsumer<DocumentPane, Integer> onMove) {
+        this.onMove = onMove;
+    }
+
+    /** Where the dragged tab would land: the number of other tabs left of the pointer. */
+    private int insertionIndex(double sceneX) {
+        int index = 0;
+        for (DocumentPane pane : documents) {
+            TabNode tab = tabs.get(pane);
+            if (pane == dragging || tab == null) continue;
+            javafx.geometry.Bounds b = tab.localToScene(tab.getBoundsInLocal());
+            if (b.getMinX() + b.getWidth() / 2 < sceneX) index++;
+        }
+        return index;
+    }
+
+    private void showIndicator(int index) {
+        double x = 0;
+        int seen = 0;
+        for (DocumentPane pane : documents) {
+            TabNode tab = tabs.get(pane);
+            if (pane == dragging || tab == null) continue;
+            if (seen == index) {
+                x = tab.getLayoutX() + tab.getTranslateX();
+                break;
+            }
+            x = tab.getLayoutX() + tab.getTranslateX() + tab.getWidth();
+            seen++;
+        }
+        indicator.resizeRelocate(Math.max(0, Math.min(x, row.getWidth() - 2)) - 1, 2, 2, Math.max(0, row.getHeight() - 4));
+        indicator.setVisible(true);
+        indicator.toFront();
+    }
+
     /** The tab for a document (for tests and drag handling). */
     public Node tabFor(DocumentPane pane) {
         return tabs.get(pane);
@@ -120,7 +179,9 @@ public final class TabStrip extends HBox {
     private void rebuild() {
         tabs.keySet().removeIf(p -> !documents.contains(p));
         for (DocumentPane pane : documents) tabs.computeIfAbsent(pane, TabNode::new);
-        row.getChildren().setAll(documents.stream().map(tabs::get).toList());
+        java.util.List<Node> nodes = new java.util.ArrayList<>(documents.stream().map(tabs::get).toList());
+        nodes.add(indicator);
+        row.getChildren().setAll(nodes);
         tabs.values().forEach(TabNode::sync);
         row.requestLayout();
     }
@@ -158,6 +219,22 @@ public final class TabStrip extends HBox {
             getChildren().addAll(name, x);
             Tooltip.install(this, tip);
             pane.titleProperty().addListener((o, a, b) -> sync());
+            setOnDragDetected(e -> {
+                if (e.getButton() != MouseButton.PRIMARY || documents.size() < 2) return;
+                dragging = pane;
+                javafx.scene.input.Dragboard db = startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.put(TAB, "tab");
+                db.setContent(content);
+                db.setDragView(snapshot(null, null));
+                getStyleClass().add("dragging");
+                e.consume();
+            });
+            setOnDragDone(e -> {
+                dragging = null;
+                getStyleClass().remove("dragging");
+                indicator.setVisible(false);
+            });
             setOnMousePressed(e -> {
                 if (e.getButton() == MouseButton.PRIMARY) select.accept(pane);
                 else if (e.getButton() == MouseButton.MIDDLE) close.accept(pane);
@@ -214,14 +291,15 @@ public final class TabStrip extends HBox {
 
         @Override
         protected void layoutChildren() {
-            int n = getChildren().size();
+            java.util.List<Node> managed = getManagedChildren();
+            int n = managed.size();
             double w = getWidth(), h = getHeight();
             clip.setWidth(w);
             clip.setHeight(h);
             if (n == 0) return;
             double each = Math.max(MIN_TAB, Math.min(MAX_TAB, w / n));
             double x = 0, selectedX = 0;
-            for (Node node : getChildren()) {
+            for (Node node : managed) {
                 node.resizeRelocate(x, 0, each, h);
                 if (node instanceof TabNode tab && tab.pane == current.getValue()) selectedX = x;
                 x += each;
@@ -229,7 +307,7 @@ public final class TabStrip extends HBox {
             boolean overflow = x > w + 0.5;
             double shift = 0;
             if (overflow) shift = Math.max(0, Math.min(x - w, selectedX + each - w));
-            for (Node node : getChildren()) node.setTranslateX(-shift);
+            for (Node node : managed) node.setTranslateX(-shift);
             list.setVisible(overflow);
             list.setManaged(overflow);
         }

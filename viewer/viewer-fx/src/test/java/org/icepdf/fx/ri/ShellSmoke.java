@@ -309,6 +309,28 @@ public final class ShellSmoke {
             onFx(() -> tabbed.openInNewTab(Paths.get(args[1] + ".missing")));
             settle();
             check("a failed open leaves no stray tab", onFx(() -> tabbed.getDocuments().size()) == 3);
+            // reorder: by index, and Ctrl+Shift+PageDown/PageUp for the selected tab.
+            java.util.List<org.icepdf.fx.ri.document.DocumentPane> order = onFx(() -> new ArrayList<>(tabbed.getDocuments()));
+            org.icepdf.fx.ri.document.DocumentPane selectedBefore = onFx(tabbed::getCurrentDocument);
+            onFx(() -> {
+                tabbed.moveDocument(order.get(0), 2);
+                return null;
+            });
+            check("moveDocument reorders the tabs", onFx(() -> new ArrayList<>(tabbed.getDocuments()))
+                    .equals(List.of(order.get(1), order.get(2), order.get(0))));
+            check("the selection stays with its document", onFx(tabbed::getCurrentDocument) == selectedBefore);
+            onFx(() -> {
+                tabbed.selectDocument(order.get(0));
+                Event.fireEvent(tabbed, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.PAGE_UP, true, true, false, false));
+                return null;
+            });
+            check("Ctrl+Shift+PageUp moves the selected tab left", onFx(() -> new ArrayList<>(tabbed.getDocuments()))
+                    .equals(List.of(order.get(1), order.get(0), order.get(2))) && onFx(() -> tabbed.getCurrentDocument()) == order.get(0));
+            onFx(() -> {
+                tabbed.moveDocument(order.get(0), 99);
+                return null;
+            });
+            check("an index past the end puts it last", onFx(() -> tabbed.getDocuments().get(2)) == order.get(0));
             onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(2)));
             onFx(() -> tabbed.removeDocument(tabbed.getDocuments().get(1)));
             check("closing tabs leaves the other", onFx(() -> tabbed.getDocuments().size()) == 1

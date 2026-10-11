@@ -133,6 +133,7 @@ public class PdfViewer extends StackPane {
         if (features.isMultipleDocuments()) {
             TabStrip strip = new TabStrip(documents, current, this::selectDocument, this::removeDocument,
                     this::newTab, icons);
+            strip.setOnMove(this::moveDocument);
             header.setTabs(strip);
             addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
             strip.setOnFilesDropped(board -> !droppedPdfs(board).isEmpty(), (pane, board) -> {
@@ -263,6 +264,12 @@ public class PdfViewer extends StackPane {
 
     private void tabKeys(KeyEvent e) {
         if (!e.isShortcutDown() || documents.size() < 2) return;
+        // Ctrl+Shift+PageUp/PageDown moves the tab itself.
+        if (e.isShiftDown() && (e.getCode() == KeyCode.PAGE_DOWN || e.getCode() == KeyCode.PAGE_UP)) {
+            moveDocument(current.get(), documents.indexOf(current.get()) + (e.getCode() == KeyCode.PAGE_DOWN ? 1 : -1));
+            e.consume();
+            return;
+        }
         int by = switch (e.getCode()) {
             case TAB -> e.isShiftDown() ? -1 : 1;
             case PAGE_DOWN -> 1;
@@ -332,6 +339,16 @@ public class PdfViewer extends StackPane {
         actions.refresh();
         updateTitle();
         pane.getView().requestFocus();
+    }
+
+    /** Moves a document to {@code index} among the others (tab order); the selection stays. */
+    public void moveDocument(DocumentPane pane, int index) {
+        int from = documents.indexOf(pane);
+        if (from < 0) return;
+        int to = Math.max(0, Math.min(index, documents.size() - 1));
+        if (to == from) return;
+        documents.remove(from);
+        documents.add(to, pane);
     }
 
     /**
