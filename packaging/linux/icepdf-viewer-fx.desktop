@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=ICEpdf Viewer (JavaFX)
+GenericName=PDF Viewer
+Comment=View and annotate PDF documents
+Exec=icepdf-viewer-fx %F
+TryExec=icepdf-viewer-fx
+Icon=icepdf-viewer-fx
+Terminal=false
+Categories=Office;Viewer;Java;
+MimeType=application/pdf;
+Keywords=PDF;Viewer;Document;Annotate;
+StartupNotify=true
+StartupWMClass=org.icepdf.fx.ri.app.ViewerApp

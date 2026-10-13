@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Launcher shim for the ICEpdf JavaFX viewer.
+#
+# JavaFX has to be on the module path (java -jar fails with "JavaFX runtime components are
+# missing"), so this script sorts the jars in the install folder: javafx-* go on the module path,
+# everything else on the class path.  Files may be given as paths or file:// URLs.
+#
+# Override the library folder with ICEPDF_FX_LIB, the JVM options with ICEPDF_JAVA_OPTS.
+set -euo pipefail
+
+JAVA_BIN="${JAVA_HOME:+$JAVA_HOME/bin/java}"
+JAVA_BIN="${JAVA_BIN:-java}"
+
+find_lib() {
+    local dir
+    for dir in \
+        "${ICEPDF_FX_LIB:-}" \
+        "$HOME/.local/lib/icepdf-fx" \
+        "/opt/icepdf-fx/lib" \
+        "/usr/share/icepdf-fx/lib"; do
+        [ -n "$dir" ] && ls "$dir"/icepdf-viewer-fx-*.jar >/dev/null 2>&1 && { printf '%s' "$dir"; return 0; }
+    done
+    return 1
+}
+
+LIB="$(find_lib || true)"
+if [ -z "$LIB" ]; then
+    echo "icepdf-viewer-fx: could not locate the viewer libraries." >&2
+    echo "Set ICEPDF_FX_LIB=/folder/with/icepdf-viewer-fx-<version>.jar and its dependencies" >&2
+    exit 1
+fi
+
+MODULE_PATH="" CLASS_PATH=""
+for jar in "$LIB"/*.jar; do
+    case "$(basename "$jar")" in
+        *-sources.jar|*-javadoc.jar) ;;
+        javafx-*) MODULE_PATH="${MODULE_PATH:+$MODULE_PATH:}$jar" ;;
+        *) CLASS_PATH="${CLASS_PATH:+$CLASS_PATH:}$jar" ;;
+    esac
+done
+
+args=()
+for arg in "$@"; do
+    case "$arg" in
+        file://*) args+=("${arg#file://}") ;;
+        *) args+=("$arg") ;;
+    esac
+done
+
+exec "$JAVA_BIN" -Xmx1024m ${ICEPDF_JAVA_OPTS:-} \
+    --module-path "$MODULE_PATH" --add-modules javafx.controls \
+    -cp "$CLASS_PATH" org.icepdf.fx.ri.app.ViewerApp "${args[@]}"

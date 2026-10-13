@@ -184,18 +184,24 @@ public final class ActionControls {
 
     /**
      * Puts the shortcuts of these actions on a scene, for a viewer embedded without a menu bar
-     * (a menu bar's items carry their own; don't install those twice).
+     * (a menu bar's items carry their own; don't install those twice).  A drop-down menu's items
+     * don't count: their shortcuts only work while the menu is open.
+     *
+     * @return the keys installed, to remove again with {@code scene.getAccelerators().remove(key)}
      */
-    public void installAccelerators(Scene scene, String... ids) {
+    public java.util.List<KeyCombination> installAccelerators(Scene scene, String... ids) {
+        java.util.List<KeyCombination> installed = new java.util.ArrayList<>();
         for (String id : ids) {
-            if (!isAvailable(id)) continue;
+            if (id == null || !isAvailable(id)) continue;
             ViewerAction action = registry.get(id);
             KeyCombination key = action.accelerator();
             if (key == null) continue;
             scene.getAccelerators().put(key, () -> {
                 if (action.enabled(context).get()) action.execute(context);
             });
+            installed.add(key);
         }
+        return installed;
     }
 
     private void run(ViewerAction action, MenuItem item) {

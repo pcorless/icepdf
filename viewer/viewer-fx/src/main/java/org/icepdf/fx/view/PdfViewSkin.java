@@ -28,35 +28,17 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.SkinBase;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.input.ZoomEvent;
+import javafx.scene.input.*;
 import javafx.scene.layout.Pane;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Window;
 import javafx.util.Duration;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.PDimension;
-import org.icepdf.core.pobjects.Reference;
-import org.icepdf.core.pobjects.StringObject;
+import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.actions.FormAction;
 import org.icepdf.core.pobjects.actions.ResetFormAction;
-import org.icepdf.core.pobjects.Page;
-import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
-import org.icepdf.core.pobjects.annotations.TextAnnotation;
-import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.TextWidgetAnnotation;
-import org.icepdf.core.pobjects.annotations.Annotation;
-import org.icepdf.core.pobjects.annotations.LinkAnnotation;
-import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
-import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
@@ -263,9 +245,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             updateCaretBlink(true);
             refresh();
         });
+        // focus only decides whether the caret shows: update the text layers, not the whole view - a full
+        // refresh here ran in the middle of a click on a header control, as the view lost focus to it.
         registerChangeListener(control.focusedProperty(), o -> {
             updateCaretBlink(false);
-            refresh();
+            layers.values().forEach(this::updateText);
         });
         caretBlink.getKeyFrames().add(new KeyFrame(CARET_BLINK, e -> {
             caretOn = !caretOn;
@@ -1896,7 +1880,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     private void onPress(MouseEvent e) {
-        getSkinnable().requestFocus();
+        if (!getSkinnable().isFocused()) getSkinnable().requestFocus();
         if (gestureHandler != null) {
             if (e.getButton() != gestureButton) return; // a second button during a gesture
             // the same button again: its release went elsewhere (a popup the press opened, such as a

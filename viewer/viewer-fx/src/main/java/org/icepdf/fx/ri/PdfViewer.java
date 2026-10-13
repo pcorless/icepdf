@@ -16,14 +16,10 @@
 package org.icepdf.fx.ri;
 
 import javafx.animation.PauseTransition;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.*;
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ObservableBooleanValue;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.input.KeyCode;
@@ -36,7 +32,6 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.fx.panels.*;
 import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.ActionRegistry;
@@ -96,6 +91,7 @@ public class PdfViewer extends StackPane {
     private final Context context = new Context();
     private FileHistory history;
     private ColorHistory colorHistory = ColorHistory.inMemory();
+    private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
     private Consumer<String> onLink;
     private TearOff onTearOff;
@@ -130,8 +126,17 @@ public class PdfViewer extends StackPane {
         sceneProperty().addListener((o, a, scene) -> {
             owner = scene != null ? scene.getWindow() : null;
             documents.forEach(d -> d.getSession().setOwner(owner));
-            if (a != null) for (int i = 1; i <= 9; i++) a.getAccelerators().remove(recentKey(i));
+            if (a != null) {
+                for (int i = 1; i <= 9; i++) a.getAccelerators().remove(recentKey(i));
+                actionKeys.forEach(a.getAccelerators()::remove);
+            }
+            actionKeys = java.util.List.of();
             if (scene != null) {
+                // the header button and the drop-down menu are not a menu bar: their shortcuts (Ctrl+O...) go on the
+                // scene.
+                java.util.List<String> ids = new java.util.ArrayList<>(java.util.Arrays.asList(MENU));
+                ids.addAll(java.util.List.of("document.open", "document.save"));
+                actionKeys = actions.installAccelerators(scene, ids.toArray(new String[0]));
                 // Shortcut+1..9 open the nth recent file, read when pressed (the menu is built only when shown).
                 for (int i = 1; i <= 9; i++) {
                     int index = i - 1;
