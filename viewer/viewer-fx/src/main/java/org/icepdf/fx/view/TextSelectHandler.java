@@ -92,7 +92,7 @@ final class TextSelectHandler implements ToolHandler {
         skin.setHovered(hit != null && !PdfViewSkin.isActionable(hit.annotation()) ? hit : null);
         if (hit != null) {
             boolean selectedEditable = hit.annotation() == skin.getSkinnable().getSelectedAnnotation()
-                    && skin.canEdit(hit.annotation());
+                    && skin.canMove(hit.annotation());
             skin.setViewportCursor(PdfViewSkin.isActionable(hit.annotation()) ? Cursor.HAND
                     : selectedEditable ? Cursor.MOVE : Cursor.DEFAULT);
         } else {
@@ -173,7 +173,7 @@ final class TextSelectHandler implements ToolHandler {
                 return;
             }
             annotationGesture = true;
-            if (skin.canEdit(hit.annotation())) pendingMove = hit;
+            if (skin.canMove(hit.annotation())) pendingMove = hit;
             return;
         }
         view.clearAnnotationSelection();

@@ -935,6 +935,22 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         });
     }
 
+    /**
+     * True for annotations drawn over text - highlight, underline, strike-out, squiggly and redaction:
+     * their quads are the text they mark, so moving or resizing one would only detach it from that
+     * text.  They can still be selected, recoloured and deleted; to change what they cover, delete
+     * and mark again.
+     */
+    static boolean isTextBound(Annotation annotation) {
+        return annotation instanceof TextMarkupAnnotation
+                || annotation instanceof org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+    }
+
+    /** {@link #canEdit}, and not {@link #isTextBound}: it may be moved and resized. */
+    boolean canMove(Annotation annotation) {
+        return canEdit(annotation) && !isTextBound(annotation);
+    }
+
     /** {@link #isEditable}, and the document permits annotating. */
     boolean canEdit(Annotation annotation) {
         return getSkinnable().isAnnotationEditingAllowed() && isEditable(annotation);
@@ -1816,7 +1832,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
         Annotation selected = getSkinnable().getSelectedAnnotation();
         Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
-        ui.setSelected(onPage, canEdit(onPage));
+        ui.setSelected(onPage, canMove(onPage));
     }
 
     private boolean isOnPage(Annotation annotation, int pageIndex) {
