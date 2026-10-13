@@ -105,6 +105,10 @@ public class SearchPanel extends BorderPane {
     private Thread fieldThread;
     private int generation;
     private boolean fieldSearching;
+    // comment/field/bookmark/destination matches so far, and whether that search is still running:
+    // Redact All works on those alone too (it records the terms).
+    private final javafx.beans.property.IntegerProperty fieldHitCount = new javafx.beans.property.SimpleIntegerProperty();
+    private final javafx.beans.property.BooleanProperty fieldBusy = new javafx.beans.property.SimpleBooleanProperty();
     // true while the tree selection follows the view, so the listener doesn't navigate back.
     private boolean syncing;
 
@@ -167,16 +171,26 @@ public class SearchPanel extends BorderPane {
         HBox.setHgrow(query, Priority.ALWAYS);
         // search and redact: every text match becomes a redaction (undoable as one step).
         redactAll.setTooltip(new javafx.scene.control.Tooltip(
-                "Mark every match for redaction; export a redacted copy to remove them"));
+                "Mark every match for redaction - in the text, comments, form fields and bookmarks; "
+                        + "export a redacted copy to remove them"));
         redactAll.visibleProperty().bind(redactionEnabled);
         redactAll.managedProperty().bind(redactAll.visibleProperty());
         redactAll.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(view.getSearchHits())
-                .or(view.searchingProperty()).or(view.annotationEditingAllowedProperty().not()).or(redacting));
+                .and(fieldHitCount.isEqualTo(0))
+                .or(view.searchingProperty()).or(fieldBusy).or(view.annotationEditingAllowedProperty().not())
+                .or(redacting));
         redactAll.setOnAction(e -> {
             redacting.set(true);
+            int elsewhere = fieldHitCount.get();
             view.redactSearchHits(count -> {
                 redacting.set(false);
-                if (count > 0) status.setText((count == 1 ? "1 match" : count + " matches") + " marked for redaction");
+                StringBuilder text = new StringBuilder();
+                if (count > 0) text.append(count == 1 ? "1 match" : count + " matches").append(" marked for redaction");
+                if (elsewhere > 0 && view.hasTermRedaction()) {
+                    text.append(text.length() > 0 ? "; " : "").append(elsewhere == 1 ? "1 match" : elsewhere + " matches")
+                            .append(" in comments, fields or bookmarks will be masked on export");
+                }
+                if (text.length() > 0) status.setText(text.toString());
             });
         });
         HBox actions = new HBox(4, options, clear, redactAll);
@@ -326,6 +340,7 @@ public class SearchPanel extends BorderPane {
             DocumentFieldSearch search = new DocumentFieldSearch(terms);
             List<DocumentFieldSearch.Hit> batch = new ArrayList<>();
             fieldSearching = true;
+            fieldBusy.set(true);
             fieldThread = new Thread(() -> {
                 try {
                     search.run(document, c, f, o, d, () -> run != generation, hit -> {
@@ -343,6 +358,7 @@ public class SearchPanel extends BorderPane {
                         drain(run, batch);
                         if (run == generation) {
                             fieldSearching = false;
+                            fieldBusy.set(false);
                             updateStatus();
                         }
                     });
@@ -371,6 +387,7 @@ public class SearchPanel extends BorderPane {
     private void stopFieldSearch() {
         generation++;
         fieldSearching = false;
+        fieldBusy.set(false);
         if (fieldThread != null) {
             fieldThread.interrupt();
             fieldThread = null;
@@ -384,6 +401,7 @@ public class SearchPanel extends BorderPane {
         textPages.clear();
         textItems.clear();
         fieldCategories.clear();
+        fieldHitCount.set(0);
         fieldPages.clear();
         root.getChildren().clear();
         // hits already in the view (a search started before this panel, or elsewhere).
@@ -435,6 +453,7 @@ public class SearchPanel extends BorderPane {
             return item;
         });
         ((Category) category.getValue()).count++;
+        fieldHitCount.set(fieldHitCount.get() + 1);
         TreeItem<Entry> result = new TreeItem<>(new FieldResult(hit));
         // comments and fields are grouped by page; bookmarks and destinations are a flat list.
         boolean byPage = hit.kind() == DocumentFieldSearch.Kind.COMMENT || hit.kind() == DocumentFieldSearch.Kind.FORM_FIELD;

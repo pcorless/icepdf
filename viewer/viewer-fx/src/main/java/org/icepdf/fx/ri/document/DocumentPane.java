@@ -180,7 +180,8 @@ public final class DocumentPane {
     private void updateRedactionBanner() {
         org.icepdf.core.pobjects.Document document = session.getDocument();
         // the state manager knows the redactions marked since opening - cheap, unlike a page scan.
-        boolean marked = document != null && document.getStateManager().hasRedactions();
+        boolean marked = document != null && (document.getStateManager().hasRedactions()
+                || DocumentSession.termsRecorded(document));
         redactionBanner.setVisible(marked && !redactionBannerDismissed);
     }
 

@@ -852,6 +852,7 @@ public class PdfView extends Control {
      */
     public void search(SearchTerm... terms) {
         clearSearch();
+        searchTerms = List.of();
         Document doc = getDocument();
         List<SearchTerm> list = new ArrayList<>();
         for (SearchTerm term : terms) {
@@ -909,15 +910,17 @@ public class PdfView extends Control {
      * one undoable edit; and hands the search terms to the export, so the same words are also
      * masked where they have no place on a page - bookmarks, comments, form values, metadata
      * ({@code RedactionRequest.ofAnnotationsAndTerms}).  Nothing is removed until the document is
-     * exported with {@code WriteMode.FULL_UPDATE}.  The text is read on a worker; {@code done} gets
-     * the number marked on the FX thread (0 while a search is running, with no hits, or when the
-     * document doesn't permit annotating).
+     * exported with {@code WriteMode.FULL_UPDATE}.  With no hits in the page text (the terms only
+     * match comments, form fields, bookmarks...) only the terms are recorded, still undoably.  The
+     * text is read on a worker; {@code done} gets the number of redactions made, on the FX thread -
+     * 0 when only the terms were recorded, or nothing was done (a search running, no search, or a
+     * document that doesn't permit annotating); see {@link #hasTermRedaction()}.
      */
     public void redactSearchHits(java.util.function.IntConsumer done) {
         Document doc = getDocument();
         List<SearchHit> hits = List.copyOf(searchHits);
         List<SearchTerm> terms = searchTerms;
-        if (doc == null || hits.isEmpty() || isSearching() || !isAnnotationEditingAllowed()
+        if (doc == null || terms.isEmpty() || isSearching() || !isAnnotationEditingAllowed()
                 || !(getSkin() instanceof PdfViewSkin)) {
             done.accept(0);
             return;
@@ -945,10 +948,6 @@ public class PdfView extends Control {
                 rects.forEach((hit, r) -> {
                     if (!r.isEmpty()) edits.add(skin.redactPageRects(hit.pageIndex(), r));
                 });
-                if (edits.isEmpty()) {
-                    done.accept(0);
-                    return;
-                }
                 org.icepdf.core.util.redaction.RedactionRequest before = doc.getRedactionRequest();
                 Runnable withTerms = () -> org.icepdf.core.util.redaction.Redactor.configure(doc,
                         org.icepdf.core.util.redaction.RedactionRequest.ofAnnotationsAndTerms(terms));
@@ -960,6 +959,16 @@ public class PdfView extends Control {
         }, "icepdf-fx-redact-search");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    /**
+     * True when the document has search terms recorded for redaction ({@link #redactSearchHits}):
+     * the export will mask them where they have no place on a page, even with no redaction
+     * annotations at all.
+     */
+    public boolean hasTermRedaction() {
+        Document doc = getDocument();
+        return doc != null && doc.getRedactionRequest() != null && doc.getRedactionRequest().hasTerms();
     }
 
     /** Stops any running search and removes all hits; the text selection is left alone. */

@@ -323,7 +323,12 @@ public final class DocumentSession {
 
     /** True when the open document has redactions marked but not yet burned in. */
     public boolean hasRedactions() {
-        return document != null && document.hasRedactions();
+        return document != null && (document.hasRedactions() || termsRecorded(document));
+    }
+
+    /** Search terms recorded for redaction (search and redact): masked on export, with or without marks. */
+    static boolean termsRecorded(Document document) {
+        return document.getRedactionRequest() != null && document.getRedactionRequest().hasTerms();
     }
 
     /**

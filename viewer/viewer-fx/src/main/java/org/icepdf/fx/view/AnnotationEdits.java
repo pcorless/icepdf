@@ -179,12 +179,14 @@ final class AnnotationEdits {
     /**
      * Several edits, already applied, as one undo step (search and redact marks every match at once).
      * Undo goes in reverse; {@code alsoUndo}/{@code alsoRedo} run after the edits (null for none).
+     * {@code edits} may be empty when only the extra steps change something (pageIndex -1, no
+     * annotation).
      */
     static Edit group(List<Edit> edits, Runnable alsoUndo, Runnable alsoRedo) {
         List<Edit> all = List.copyOf(edits);
         return new Edit() {
             public int pageIndex() {
-                return all.get(0).pageIndex();
+                return all.isEmpty() ? -1 : all.get(0).pageIndex();
             }
 
             public java.util.Set<Integer> pages() {
@@ -194,7 +196,7 @@ final class AnnotationEdits {
             }
 
             public Annotation annotation() {
-                return all.get(0).annotation();
+                return all.isEmpty() ? null : all.get(0).annotation();
             }
 
             public void undo() {
