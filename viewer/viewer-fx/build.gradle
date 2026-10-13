@@ -16,9 +16,12 @@ repositories {
 
 description = 'ICEpdf FX viewer reference implementation project'
 
+// the viewer's heap: -Pxmx=4g on run, runShell or runDemo (1024m by default).
+def viewerXmx = "-Xmx${findProperty('xmx') ?: '1024m'}"
+
 application {
     mainClass = "org.icepdf.fx.ri.app.ViewerApp"
-    applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
+    applicationDefaultJvmArgs = ["-Xms64m", viewerXmx]
 }
 
 // JavaExec tasks that launch an Application class need JavaFX on the module path ("JavaFX runtime
@@ -42,24 +45,24 @@ tasks.register('launcherLibs', Sync) {
 }
 
 // the new viewer shell (PdfViewer) while it replaces the classic window:
-// ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf"
+// ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf" [-Pxmx=4g]
 tasks.register('runShell', JavaExec) {
     group = 'application'
     description = 'Runs the PdfViewer shell preview'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'org.icepdf.fx.ri.app.ShellPreview'
-    jvmArgs = ["-Xmx1024m"]
+    jvmArgs = [viewerXmx]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
     javafxModulePath(it)
 }
 
-// the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf"
+// the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf" [-Pxmx=4g]
 tasks.register('runDemo', JavaExec) {
     group = 'application'
     description = 'Runs PdfViewDemo, the minimal PdfView host'
     classpath = sourceSets.main.runtimeClasspath
     mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
-    jvmArgs = ["-Xmx1024m"]
+    jvmArgs = [viewerXmx]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
     javafxModulePath(it)
 }
