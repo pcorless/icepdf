@@ -72,6 +72,11 @@ public class SearchPanel extends BorderPane {
     private final PdfView view;
     private final TextField query = new TextField();
     private final Label status = new Label();
+    private final Button redactAll = new Button("Redact All");
+    private final javafx.beans.property.BooleanProperty redactionEnabled =
+            new javafx.beans.property.SimpleBooleanProperty(this, "redactionEnabled", true);
+    // marking is under way (the text is read on a worker): no second click meanwhile.
+    private final javafx.beans.property.BooleanProperty redacting = new javafx.beans.property.SimpleBooleanProperty();
     private final Label termsLabel = new Label();
     private final ProgressBar progress = new ProgressBar();
     private final TreeView<Entry> tree = new TreeView<>();
@@ -160,7 +165,21 @@ public class SearchPanel extends BorderPane {
         clear.setOnAction(e -> clear());
         HBox field = new HBox(4, query, go);
         HBox.setHgrow(query, Priority.ALWAYS);
-        HBox actions = new HBox(4, options, clear);
+        // search and redact: every text match becomes a redaction (undoable as one step).
+        redactAll.setTooltip(new javafx.scene.control.Tooltip(
+                "Mark every match for redaction; export a redacted copy to remove them"));
+        redactAll.visibleProperty().bind(redactionEnabled);
+        redactAll.managedProperty().bind(redactAll.visibleProperty());
+        redactAll.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(view.getSearchHits())
+                .or(view.searchingProperty()).or(view.annotationEditingAllowedProperty().not()).or(redacting));
+        redactAll.setOnAction(e -> {
+            redacting.set(true);
+            view.redactSearchHits(count -> {
+                redacting.set(false);
+                if (count > 0) status.setText((count == 1 ? "1 match" : count + " matches") + " marked for redaction");
+            });
+        });
+        HBox actions = new HBox(4, options, clear, redactAll);
         termsLabel.setWrapText(true);
         termsLabel.managedProperty().bind(termsLabel.visibleProperty());
         termsLabel.setVisible(false);
@@ -475,6 +494,15 @@ public class SearchPanel extends BorderPane {
     }
 
     // ---- status ---------------------------------------------------------------------------
+
+    /** Whether the panel offers Redact All (true by default); a viewer without redaction turns it off. */
+    public final javafx.beans.property.BooleanProperty redactionEnabledProperty() {
+        return redactionEnabled;
+    }
+
+    public final void setRedactionEnabled(boolean value) {
+        redactionEnabled.set(value);
+    }
 
     private void updateStatus() {
         boolean busy = view.isSearching() || fieldSearching;

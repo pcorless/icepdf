@@ -136,6 +136,8 @@ public class PdfView extends Control {
             return "onAnnotationAction";
         }
     };
+    // the terms of the last search, for search-and-redact.
+    private List<SearchTerm> searchTerms = List.of();
     private final AnnotationEdits.History history = new AnnotationEdits.History();
     private final BooleanProperty formFieldsEditable = new SimpleBooleanProperty(this, "formFieldsEditable", true);
     private final BooleanProperty highlightFormFields = new SimpleBooleanProperty(this, "highlightFormFields", false);
@@ -856,6 +858,7 @@ public class PdfView extends Control {
             if (term != null && term.getTerm() != null && !term.getTerm().isEmpty()) list.add(term);
         }
         if (doc == null || list.isEmpty()) return;
+        searchTerms = List.copyOf(list);
         int generation = searchGeneration;
         int pages = getPageCount();
         searchAutoSelect = true;
@@ -899,6 +902,64 @@ public class PdfView extends Control {
             searchAutoSelect = false;
             selectSearchHit(0);
         }
+    }
+
+    /**
+     * Marks every search hit for redaction, one redaction per match (covering each line of it), as
+     * one undoable edit; and hands the search terms to the export, so the same words are also
+     * masked where they have no place on a page - bookmarks, comments, form values, metadata
+     * ({@code RedactionRequest.ofAnnotationsAndTerms}).  Nothing is removed until the document is
+     * exported with {@code WriteMode.FULL_UPDATE}.  The text is read on a worker; {@code done} gets
+     * the number marked on the FX thread (0 while a search is running, with no hits, or when the
+     * document doesn't permit annotating).
+     */
+    public void redactSearchHits(java.util.function.IntConsumer done) {
+        Document doc = getDocument();
+        List<SearchHit> hits = List.copyOf(searchHits);
+        List<SearchTerm> terms = searchTerms;
+        if (doc == null || hits.isEmpty() || isSearching() || !isAnnotationEditingAllowed()
+                || !(getSkin() instanceof PdfViewSkin)) {
+            done.accept(0);
+            return;
+        }
+        Thread worker = new Thread(() -> {
+            // each match's line rectangles, page space, from the same text the search ran on.
+            Map<SearchHit, List<java.awt.geom.Rectangle2D>> rects = new java.util.LinkedHashMap<>();
+            for (SearchHit hit : hits) {
+                try {
+                    PageText text = doc.getPageViewText(hit.pageIndex());
+                    org.icepdf.core.pobjects.graphics.text.TextSequence sequence = text != null ? text.getTextSequence() : null;
+                    if (sequence == null) continue;
+                    rects.put(hit, new ArrayList<>(sequence.rectsFor(hit.range())));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            Platform.runLater(() -> {
+                if (getDocument() != doc || !(getSkin() instanceof PdfViewSkin skin)) {
+                    done.accept(0);
+                    return;
+                }
+                List<AnnotationEdits.Edit> edits = new ArrayList<>();
+                rects.forEach((hit, r) -> {
+                    if (!r.isEmpty()) edits.add(skin.redactPageRects(hit.pageIndex(), r));
+                });
+                if (edits.isEmpty()) {
+                    done.accept(0);
+                    return;
+                }
+                org.icepdf.core.util.redaction.RedactionRequest before = doc.getRedactionRequest();
+                Runnable withTerms = () -> org.icepdf.core.util.redaction.Redactor.configure(doc,
+                        org.icepdf.core.util.redaction.RedactionRequest.ofAnnotationsAndTerms(terms));
+                Runnable restore = () -> org.icepdf.core.util.redaction.Redactor.configure(doc, before);
+                withTerms.run();
+                recordEdit(AnnotationEdits.group(edits, restore, withTerms));
+                done.accept(edits.size());
+            });
+        }, "icepdf-fx-redact-search");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     /** Stops any running search and removes all hits; the text selection is left alone. */

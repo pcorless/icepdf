@@ -25,6 +25,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 /**
  * Annotation edits as undoable commands, applied to the document through core much as the Swing
@@ -175,6 +176,39 @@ final class AnnotationEdits {
         });
     }
 
+    /**
+     * Several edits, already applied, as one undo step (search and redact marks every match at once).
+     * Undo goes in reverse; {@code alsoUndo}/{@code alsoRedo} run after the edits (null for none).
+     */
+    static Edit group(List<Edit> edits, Runnable alsoUndo, Runnable alsoRedo) {
+        List<Edit> all = List.copyOf(edits);
+        return new Edit() {
+            public int pageIndex() {
+                return all.get(0).pageIndex();
+            }
+
+            public java.util.Set<Integer> pages() {
+                java.util.Set<Integer> pages = new java.util.TreeSet<>();
+                for (Edit edit : all) pages.addAll(edit.pages());
+                return pages;
+            }
+
+            public Annotation annotation() {
+                return all.get(0).annotation();
+            }
+
+            public void undo() {
+                for (int i = all.size() - 1; i >= 0; i--) all.get(i).undo();
+                if (alsoUndo != null) alsoUndo.run();
+            }
+
+            public void redo() {
+                for (Edit edit : all) edit.redo();
+                if (alsoRedo != null) alsoRedo.run();
+            }
+        };
+    }
+
     private static Edit applied(Edit edit) {
         edit.redo();
         return edit;
@@ -183,6 +217,8 @@ final class AnnotationEdits {
     /** Adds a new annotation (and its popup, if any) to the page, applied now; undo deletes it. */
     static Edit add(Locker locker, Page page, int pageIndex, Annotation annotation, PopupAnnotation popup) {
         boolean[] first = {true};
+        // the appearance streams as they were before undo deleted them (core drops them from the library).
+        org.icepdf.core.pobjects.Stream[] appearances = new org.icepdf.core.pobjects.Stream[2];
         return applied(new Edit() {
             public int pageIndex() {
                 return pageIndex;
@@ -194,6 +230,8 @@ final class AnnotationEdits {
 
             public void undo() {
                 locker.withAnnotationLock(pageIndex, () -> {
+                    appearances[0] = annotation.getAppearanceStream();
+                    appearances[1] = popup != null ? popup.getAppearanceStream() : null;
                     page.deleteAnnotation(annotation);
                     if (popup != null) page.deleteAnnotation(popup);
                 });
@@ -205,9 +243,14 @@ final class AnnotationEdits {
                         annotation.setDeleted(false);
                         if (popup != null) popup.setDeleted(false);
                     }
+                    boolean redone = !first[0];
                     first[0] = false;
                     page.addAnnotation(annotation);
                     if (popup != null) page.addAnnotation(popup);
+                    if (redone) {
+                        revive(annotation, appearances[0]);
+                        if (popup != null) revive(popup, appearances[1]);
+                    }
                 });
             }
         });
@@ -292,6 +335,7 @@ final class AnnotationEdits {
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
     static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;
+        org.icepdf.core.pobjects.Stream[] appearances = new org.icepdf.core.pobjects.Stream[2];
         Edit edit = new Edit() {
             public int pageIndex() {
                 return pageIndex;
@@ -305,15 +349,19 @@ final class AnnotationEdits {
                 locker.withAnnotationLock(pageIndex, () -> {
                     annotation.setDeleted(false);
                     page.addAnnotation(annotation);
+                    revive(annotation, appearances[0]);
                     if (popup != null) {
                         popup.setDeleted(false);
                         page.addAnnotation(popup);
+                        revive(popup, appearances[1]);
                     }
                 });
             }
 
             public void redo() {
                 locker.withAnnotationLock(pageIndex, () -> {
+                    appearances[0] = annotation.getAppearanceStream();
+                    appearances[1] = popup != null ? popup.getAppearanceStream() : null;
                     page.deleteAnnotation(annotation);
                     if (popup != null) page.deleteAnnotation(popup);
                 });
@@ -321,6 +369,47 @@ final class AnnotationEdits {
         };
         edit.redo();
         return edit;
+    }
+
+    /**
+     * Puts back what core's delete ({@code AnnotationRemovalModifier}) took from an annotation besides
+     * the annotation itself, after {@code page.addAnnotation} has re-added it: the appearance stream
+     * it flagged deleted and dropped from the library and the pending changes, and the images and
+     * embedded font under it that it registered as deletions.  Without this an annotation brought
+     * back by undo or redo is written without its appearance - and a redaction burns nothing.
+     *
+     * @param ap the appearance stream as it was before the delete (afterwards the annotation can no
+     *           longer find it: core removed it from the library)
+     */
+    static void revive(Annotation annotation, org.icepdf.core.pobjects.Stream ap) {
+        org.icepdf.core.util.Library library = annotation.getLibrary();
+        org.icepdf.core.pobjects.StateManager state = library.getStateManager();
+        if (ap == null || ap.getPObjectReference() == null) return;
+        ap.setDeleted(false);
+        library.addObject(ap, ap.getPObjectReference());
+        state.addChange(new org.icepdf.core.pobjects.PObject(ap, ap.getPObjectReference()));
+        Object resources = library.getObject(ap.getEntries(), Page.RESOURCES_KEY);
+        if (!(resources instanceof org.icepdf.core.pobjects.Resources res)) return;
+        java.util.List<org.icepdf.core.pobjects.Reference> refs = new java.util.ArrayList<>();
+        org.icepdf.core.pobjects.DictionaryEntries xObjects = res.getXObjects();
+        if (xObjects != null) {
+            for (Object value : xObjects.values()) {
+                if (value instanceof org.icepdf.core.pobjects.Reference ref) refs.add(ref);
+            }
+        }
+        org.icepdf.core.pobjects.Dictionary font = res.getFont(
+                org.icepdf.core.pobjects.annotations.utils.ContentWriterUtils.EMBEDDED_FONT_NAME);
+        if (font != null && font.getPObjectReference() != null) {
+            font.setDeleted(false);
+            refs.add(font.getPObjectReference());
+        }
+        for (org.icepdf.core.pobjects.Reference ref : refs) {
+            org.icepdf.core.pobjects.StateManager.Change change = state.getChange(ref);
+            if (change == null || change.getType() != org.icepdf.core.pobjects.StateManager.Type.DELETE) continue;
+            Object object = library.getObject(ref);
+            if (object != null) state.addChange(new org.icepdf.core.pobjects.PObject(object, ref));
+            else state.removeChange(new org.icepdf.core.pobjects.PObject(null, ref));
+        }
     }
 
     /** Undo/redo stacks; confined to the FX thread. */

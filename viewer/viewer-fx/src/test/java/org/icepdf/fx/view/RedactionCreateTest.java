@@ -82,4 +82,30 @@ class RedactionCreateTest {
             redacted.dispose();
         }
     }
+
+    @DisplayName("a redaction undone and redone still burns (redo restores what the delete took away)")
+    @Test
+    void undoRedoStillBurns() throws Exception {
+        Document document = new Document();
+        document.setFile(FIXTURE.toString());
+        Path out = temp.resolve("redone.pdf");
+        try {
+            Page page = document.getPageTree().getPage(0);
+            page.init();
+            AffineTransform toPageSpace = page.getToPageSpaceTransform(Page.BOUNDARY_CROPBOX, 0f, 1f);
+            Rectangle2D viewBox = toPageSpace.createInverse()
+                    .createTransformedShape(new Rectangle2D.Double(53, 96, 34, 16)).getBounds2D();
+            AnnotationEdits.Edit edit = AnnotationEdits.add((index, mutation) -> mutation.run(), page, 0,
+                    AnnotationCreator.redaction(page.getLibrary(), List.of(viewBox), toPageSpace, "tester"), null);
+            edit.undo();
+            edit.redo();
+            try (OutputStream stream = Files.newOutputStream(out)) {
+                document.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+            }
+            assertTrue(document.getRedactionReport().getGlyphsRemoved() >= 5,
+                    "removed " + document.getRedactionReport().getGlyphsRemoved());
+        } finally {
+            document.dispose();
+        }
+    }
 }

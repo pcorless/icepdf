@@ -1548,6 +1548,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         scheduleRefresh();
     }
 
+    /**
+     * Marks text on a page for redaction from its page-space rectangles (one match's lines), as the
+     * redact tool does for a selection.  @return the edit, applied, for the caller to record
+     */
+    AnnotationEdits.Edit redactPageRects(int pageIndex, List<java.awt.geom.Rectangle2D> pageRects) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        AffineTransform pageToView = pageToViewNow(page);
+        List<java.awt.geom.Rectangle2D> viewRects = new ArrayList<>();
+        for (java.awt.geom.Rectangle2D r : pageRects) viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
+        return AnnotationEdits.add(renderer::withAnnotationLock, page, pageIndex, AnnotationCreator.redaction(
+                page.getLibrary(), viewRects, toPageSpaceNow(page), getSkinnable().getAnnotationAuthor()), null);
+    }
+
     /** The redaction tool's box: marks whatever is under it (an image, a drawing) for redaction. */
     void createRedactionBox(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
         Page page = document.getPageTree().getPage(pageIndex);

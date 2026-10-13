@@ -649,6 +649,7 @@ public class PdfViewer extends StackPane {
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
+        pane.getSearchPanel().setRedactionEnabled(features.allows("annotation.redact"));
         pane.setOnExportRedacted(() -> {
             if (pane == current.get()) exportRedacted();
         });
