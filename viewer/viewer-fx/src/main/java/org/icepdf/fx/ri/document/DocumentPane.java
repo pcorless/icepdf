@@ -17,11 +17,18 @@ package org.icepdf.fx.ri.document;
 
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.view.PdfView;
+import org.icepdf.fx.view.PdfViewEvent;
 
 import java.nio.file.Path;
 import java.util.function.Consumer;
@@ -44,7 +51,11 @@ public final class DocumentPane {
     private final LayersPanel layers = new LayersPanel(view);
     private final SignaturePanel signatures = new SignaturePanel(view);
     private final CollectionView collection = new CollectionView();
-    private final StackPane node = new StackPane(view, collection);
+    private final HBox redactionBanner = new HBox(10);
+    private final StackPane node = new StackPane(view, collection, redactionBanner);
+    // the user closed the redaction reminder for this document.
+    private boolean redactionBannerDismissed;
+    private Runnable onExportRedacted;
     private final ReadOnlyStringWrapper title = new ReadOnlyStringWrapper(this, "title", "");
     private Consumer<String> onMessage = m -> { };
     private Consumer<String> onLink;
@@ -64,11 +75,17 @@ public final class DocumentPane {
             collection.setVisible(portfolio);
             view.setVisible(!portfolio);
         });
+        buildRedactionBanner();
+        view.addEventHandler(PdfViewEvent.ANNOTATIONS_CHANGED, e -> updateRedactionBanner());
+        view.documentProperty().addListener((o, a, b) -> {
+            redactionBannerDismissed = false;
+            updateRedactionBanner();
+        });
         view.modifiedProperty().addListener((o, a, b) -> refreshTitle());
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
         session.loadingFileProperty().addListener((o, a, b) -> refreshTitle());
-        // the wait cursor while the file is read; the view keeps it until the first pages are painted.
-        view.busyProperty().bind(session.loadingProperty());
+        // the wait cursor while the file is read or a redacted copy written; the view keeps it until the first pages are painted.
+        view.busyProperty().bind(session.loadingProperty().or(session.writingProperty()));
     }
 
     public PdfView getView() {
@@ -122,6 +139,54 @@ public final class DocumentPane {
 
     public String getTitle() {
         return title.get();
+    }
+
+    /**
+     * A reminder floating over the top of the document once redactions are marked: they are only
+     * marks until the document is exported with them burned in, to a new file.  Closable; it comes
+     * back for the next document.
+     */
+    private void buildRedactionBanner() {
+        Label text = new Label("Redactions are only marks until applied. Export a redacted copy to a new file "
+                + "to remove the content under them.");
+        text.setWrapText(true);
+        Button export = new Button("Export Redacted Copy\u2026");
+        export.setOnAction(e -> {
+            if (onExportRedacted != null) onExportRedacted.run();
+        });
+        Button close = new Button("\u2715");
+        close.getStyleClass().add("close");
+        close.setFocusTraversable(false);
+        close.setAccessibleText("Close");
+        close.setOnAction(e -> {
+            redactionBannerDismissed = true;
+            redactionBanner.setVisible(false);
+        });
+        // the buttons keep their full width; the message wraps instead.
+        export.setMinWidth(Region.USE_PREF_SIZE);
+        close.setMinWidth(Region.USE_PREF_SIZE);
+        HBox.setHgrow(text, javafx.scene.layout.Priority.ALWAYS);
+        redactionBanner.getChildren().addAll(text, export, close);
+        redactionBanner.getStyleClass().add("redaction-banner");
+        redactionBanner.setAlignment(Pos.CENTER_LEFT);
+        redactionBanner.setMaxWidth(640);
+        redactionBanner.setMaxHeight(Region.USE_PREF_SIZE);
+        redactionBanner.setPickOnBounds(false);
+        redactionBanner.setVisible(false);
+        StackPane.setAlignment(redactionBanner, Pos.TOP_CENTER);
+        StackPane.setMargin(redactionBanner, new Insets(12, 24, 0, 24));
+    }
+
+    private void updateRedactionBanner() {
+        org.icepdf.core.pobjects.Document document = session.getDocument();
+        // the state manager knows the redactions marked since opening - cheap, unlike a page scan.
+        boolean marked = document != null && document.getStateManager().hasRedactions();
+        redactionBanner.setVisible(marked && !redactionBannerDismissed);
+    }
+
+    /** What the reminder's Export Redacted Copy button does (the viewer's export). */
+    public void setOnExportRedacted(Runnable onExportRedacted) {
+        this.onExportRedacted = onExportRedacted;
     }
 
     /** Works the title out again (after anything that changes the file or the modified state). */

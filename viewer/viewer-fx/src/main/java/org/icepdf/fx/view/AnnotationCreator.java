@@ -88,6 +88,31 @@ final class AnnotationCreator {
         return annotation;
     }
 
+    /**
+     * A redaction over {@code viewRects} (selected text's rectangles, or one dragged box) in page view
+     * space: black, its /QuadPoints covering the rectangles.  As Swing's RedactionAnnotationHandler.
+     */
+    static RedactionAnnotation redaction(Library library, List<Rectangle2D> viewRects, AffineTransform toPageSpace,
+                                         String author) {
+        GeneralPath viewPath = new GeneralPath();
+        for (Shape shape : viewRects) viewPath.append(shape, false);
+        Rectangle tBbox = Annotation.commonBoundsNormalization(new GeneralPath(viewPath), toPageSpace);
+        ArrayList<Shape> bounds = new ArrayList<>(viewRects.size());
+        for (Shape shape : viewRects) bounds.add(toPageSpace.createTransformedShape(shape));
+        GeneralPath path = new GeneralPath(toPageSpace.createTransformedShape(viewPath));
+        RedactionAnnotation annotation = (RedactionAnnotation) AnnotationFactory.buildAnnotation(library,
+                Annotation.SUBTYPE_REDACT, tBbox);
+        annotation.setCreationDate(PDate.formatDateTime(new Date()));
+        annotation.setTitleText(author);
+        annotation.setColor(Color.BLACK);
+        annotation.setMarkupBounds(bounds);
+        annotation.setMarkupPath(path);
+        annotation.setBBox(tBbox);
+        annotation.resetAppearanceStream(toPageSpace);
+        annotation.syncBBoxToUserSpaceRectangle(annotation.getUserSpaceRectangle());
+        return annotation;
+    }
+
     /** A sticky note with its icon's top-left at a view point. */
     static TextAnnotation note(Library library, double viewX, double viewY, AffineTransform pageToView,
                                AffineTransform toPageSpace, Style style) {

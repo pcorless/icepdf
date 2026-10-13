@@ -29,6 +29,9 @@
     -icepdf-active: rgba(0, 0, 0, 0.13);
     -icepdf-accent: #3584e4;
     -icepdf-toast: rgba(32, 32, 32, 0.9);
+    -icepdf-warning: #fdf0c8;
+    -icepdf-warning-fg: #4a3800;
+    -icepdf-warning-border: #e5c96a;
     -fx-base: #f6f5f4;
     -fx-background: #fafafa;
     -fx-control-inner-background: #ffffff;
@@ -48,6 +51,9 @@
     -icepdf-active: rgba(255, 255, 255, 0.15);
     -icepdf-accent: #78aeed;
     -icepdf-toast: rgba(60, 60, 60, 0.95);
+    -icepdf-warning: #4a3d12;
+    -icepdf-warning-fg: #f6e3a8;
+    -icepdf-warning-border: #7a6420;
     -fx-base: #383838;
     -fx-background: #242424;
     -fx-control-inner-background: #2d2d2d;
@@ -67,6 +73,9 @@
     -icepdf-active: rgba(0, 0, 0, 0.3);
     -icepdf-accent: #0040c0;
     -icepdf-toast: #000000;
+    -icepdf-warning: #ffff00;
+    -icepdf-warning-fg: #000000;
+    -icepdf-warning-border: #000000;
     -fx-base: #ffffff;
     -fx-background: #ffffff;
     -fx-control-inner-background: #ffffff;
@@ -217,6 +226,29 @@
     -fx-background-radius: 18;
     -fx-text-fill: white;
     -fx-padding: 8 16 8 16;
+}
+
+/* redaction reminder, floating over the top of the document */
+.icepdf-viewer .redaction-banner {
+    -fx-background-color: -icepdf-warning-border, -icepdf-warning;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 8, 7;
+    -fx-padding: 6 6 6 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 8, 0, 0, 2);
+}
+
+.icepdf-viewer .redaction-banner .label {
+    -fx-text-fill: -icepdf-warning-fg;
+}
+
+.icepdf-viewer .redaction-banner .close {
+    -fx-background-color: transparent;
+    -fx-text-fill: -icepdf-warning-fg;
+    -fx-padding: 2 8 2 8;
+}
+
+.icepdf-viewer .redaction-banner .close:hover {
+    -fx-background-color: -icepdf-hover;
 }
 
 /* full screen */

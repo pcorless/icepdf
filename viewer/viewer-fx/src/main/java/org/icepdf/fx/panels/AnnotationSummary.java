@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.util.Library;
 
 import java.awt.Color;
 import java.time.LocalDateTime;
@@ -94,28 +95,47 @@ public final class AnnotationSummary {
     }
 
     /**
-     * Every visible markup annotation, page by page (each page is initialised as needed - call off
-     * the FX thread).  Deleted and hidden ones are left out.
+     * Every visible markup annotation, page by page - call off the FX thread.  Deleted and hidden ones
+     * are left out.
+     * <p>
+     * A page the view has already initialised gives its annotation list; any other page only has its
+     * /Annots references resolved, as the Swing viewer's annotation panel does.  Initialising every
+     * page would parse every page's content just to list comments, which on a long document is the
+     * expensive part by far; the annotation getters read the dictionary lazily, so no init is needed.
+     * The instances are the library's, the same ones the page gets when it initialises later.
      *
      * @return null if cancelled
      */
     public static List<Entry> collect(Document document, BooleanSupplier cancelled) throws InterruptedException {
         List<Entry> entries = new ArrayList<>();
         if (document == null) return entries;
+        Library library = document.getCatalog().getLibrary();
         for (int i = 0, count = document.getNumberOfPages(); i < count; i++) {
             if (cancelled.getAsBoolean() || Thread.currentThread().isInterrupted()) return null;
             Page page = document.getPageTree().getPage(i);
             if (page == null) continue;
-            page.init();
-            List<Annotation> annotations = page.getAnnotations();
-            if (annotations == null) continue;
-            for (Annotation annotation : new ArrayList<>(annotations)) {
-                if (annotation instanceof MarkupAnnotation markup && !markup.isDeleted() && !markup.getFlagHidden()) {
-                    entries.add(entry(i, markup));
+            List<Annotation> annotations = page.isInitiated() ? page.getAnnotations() : null;
+            if (annotations != null) {
+                for (Annotation annotation : new ArrayList<>(annotations)) add(entries, i, annotation);
+                continue;
+            }
+            List<Reference> references = page.getAnnotationReferences();
+            if (references == null) continue;
+            for (Object reference : references) {
+                if (reference instanceof Reference ref && library.getObject(ref) instanceof Annotation annotation) {
+                    // as Page.init does; replies are matched to their comment by it.
+                    if (annotation.getPObjectReference() == null) annotation.setPObjectReference(ref);
+                    add(entries, i, annotation);
                 }
             }
         }
         return entries;
+    }
+
+    private static void add(List<Entry> entries, int pageIndex, Annotation annotation) {
+        if (annotation instanceof MarkupAnnotation markup && !markup.isDeleted() && !markup.getFlagHidden()) {
+            entries.add(entry(pageIndex, markup));
+        }
     }
 
     static Entry entry(int pageIndex, MarkupAnnotation markup) {
@@ -124,7 +144,19 @@ public final class AnnotationSummary {
         String author = markup.getTitleText();
         String contents = markup.getContents();
         return new Entry(pageIndex, markup, typeName(markup), author != null ? author.trim() : "", date,
-                contents != null ? contents.trim() : "", markup.getColor(), markup.getInReplyToAnnotation());
+                contents != null ? contents.trim() : "", markup.getColor(), replyTo(markup));
+    }
+
+    /** /IRT, read from the dictionary: set by init, which a page not yet shown hasn't run. */
+    private static MarkupAnnotation replyTo(MarkupAnnotation markup) {
+        MarkupAnnotation initialised = markup.getInReplyToAnnotation();
+        if (initialised != null) return initialised;
+        Object irt = markup.getObject(MarkupAnnotation.IRT_KEY);
+        Reference ref = irt instanceof Reference r ? r : null;
+        if (ref != null) irt = markup.getLibrary().getObject(ref);
+        if (!(irt instanceof MarkupAnnotation parent)) return null;
+        if (ref != null && parent.getPObjectReference() == null) parent.setPObjectReference(ref);
+        return parent;
     }
 
     /** The entries that are replies, keyed by the comment they answer (by object reference). */

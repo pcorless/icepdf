@@ -24,6 +24,8 @@ import javafx.stage.Window;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.util.redaction.RedactionReport;
+import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.fx.view.PasswordPrompt;
 import org.icepdf.fx.view.PdfView;
 
@@ -65,6 +67,7 @@ public final class DocumentSession {
     private final PdfView view;
     private final ReadOnlyObjectWrapper<Path> file = new ReadOnlyObjectWrapper<>(this, "file");
     private final ReadOnlyBooleanWrapper loading = new ReadOnlyBooleanWrapper(this, "loading");
+    private final ReadOnlyBooleanWrapper writing = new ReadOnlyBooleanWrapper(this, "writing");
     private final ReadOnlyObjectWrapper<Path> loadingFile = new ReadOnlyObjectWrapper<>(this, "loadingFile");
     // bumped by every open and close: a load that finishes under an older ticket is thrown away.
     private int ticket;
@@ -105,6 +108,11 @@ public final class DocumentSession {
 
     public boolean isLoading() {
         return loading.get();
+    }
+
+    /** True while {@link #exportRedacted} writes the redacted copy. */
+    public ReadOnlyBooleanProperty writingProperty() {
+        return writing.getReadOnlyProperty();
     }
 
     /** The file being read (absolute), or null when nothing is loading. */
@@ -311,6 +319,58 @@ public final class DocumentSession {
         }
         openAt(target, page);
         return true;
+    }
+
+    /** True when the open document has redactions marked but not yet burned in. */
+    public boolean hasRedactions() {
+        return document != null && document.hasRedactions();
+    }
+
+    /**
+     * Writes a redacted copy to {@code target} (".pdf" added when missing): a full rewrite, which is
+     * what burns the redactions - the marked content is removed, not covered - and drops the old
+     * revisions an incremental save would keep.  Runs on a worker; the copy then replaces the open
+     * document, and {@code done} gets the write's report (null if it failed - see onError).
+     */
+    public void exportRedacted(Path target, Consumer<RedactionReport> done) {
+        if (document == null || target == null) return;
+        Path out = target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf") ? target
+                : target.resolveSibling(target.getFileName() + ".pdf");
+        Document writingDocument = document;
+        int page = view.getCurrentPageIndex();
+        writing.set(true);
+        Thread worker = new Thread(() -> {
+            Path temp = null;
+            try {
+                temp = Files.createTempFile(out.toAbsolutePath().getParent(), "." + out.getFileName(), ".tmp");
+                try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(temp))) {
+                    writingDocument.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
+                }
+                try {
+                    Files.move(temp, out, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(temp, out, StandardCopyOption.REPLACE_EXISTING);
+                }
+                RedactionReport report = writingDocument.getRedactionReport();
+                Platform.runLater(() -> {
+                    writing.set(false);
+                    // the redacted copy is the document now; the marked original is left as it was.
+                    writingDocument.getStateManager().setChangesSnapshot();
+                    if (document == writingDocument) openAt(out, page);
+                    done.accept(report);
+                });
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Redacted export failed", e);
+                deleteQuietly(temp);
+                Platform.runLater(() -> {
+                    writing.set(false);
+                    onError.accept("Could not write " + out.getFileName() + ":\n" + e.getMessage());
+                    done.accept(null);
+                });
+            }
+        }, "pdf-redact");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     private static void deleteQuietly(Path path) {

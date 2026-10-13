@@ -46,11 +46,17 @@ public enum ToolMode {
      * Drag to place a signature field; the view then reports it to {@code onSignatureClicked} so the
      * application can sign it.  Needs the document's form fill-in and signing permission.
      */
-    SIGNATURE;
+    SIGNATURE,
+    /**
+     * Mark content for redaction: a drag over text marks the selected text, a drag anywhere else
+     * marks a box (an image, a drawing).  Nothing is removed until the document is exported with its
+     * redactions burned in ({@code WriteMode.FULL_UPDATE}).
+     */
+    REDACT;
 
-    /** The tool selects text (plain selection or a text-markup tool). */
+    /** The tool selects text (plain selection, a text-markup tool, or redaction over text). */
     public boolean selectsText() {
-        return this == TEXT_SELECT || this == HIGHLIGHT || this == UNDERLINE || this == STRIKE_OUT;
+        return this == TEXT_SELECT || this == HIGHLIGHT || this == UNDERLINE || this == STRIKE_OUT || this == REDACT;
     }
 
     /** The tool creates annotations. */

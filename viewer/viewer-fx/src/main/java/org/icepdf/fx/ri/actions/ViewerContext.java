@@ -66,6 +66,11 @@ public interface ViewerContext {
         throw new UnsupportedOperationException("save as");
     }
 
+    /** Writes a copy with the redactions burned in. */
+    default void exportRedacted() {
+        throw new UnsupportedOperationException("export redacted");
+    }
+
     /** Closes the document (asking about unsaved changes). */
     default void closeDocument() {
         throw new UnsupportedOperationException("close");

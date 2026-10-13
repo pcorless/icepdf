@@ -122,6 +122,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final PanHandler panHandler = new PanHandler(this);
     private final TextSelectHandler textSelectHandler = new TextSelectHandler(this);
     private final AnnotationCreateHandler createHandler = new AnnotationCreateHandler(this);
+    private final RedactHandler redactHandler = new RedactHandler(this, textSelectHandler, createHandler);
     private ToolHandler activeHandler;
     private ToolHandler gestureHandler;
     private MouseButton gestureButton;
@@ -1517,6 +1518,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private void addCreated(int pageIndex, Page page, Annotation annotation, boolean popupOpen) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup
                 && !(annotation instanceof FreeTextAnnotation)
+                && !(annotation instanceof org.icepdf.core.pobjects.annotations.RedactionAnnotation)
                 ? AnnotationCreator.popup(page.getLibrary(), markup, popupOpen, toPageSpaceNow(page)) : null;
         getSkinnable().recordEdit(AnnotationEdits.add(renderer::withAnnotationLock, page, pageIndex, annotation, popup));
         getSkinnable().selectAnnotation(annotation);
@@ -1528,6 +1530,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 toPageSpaceNow(page), style(ToolMode.NOTE));
         addCreated(pageIndex, page, note, true);
         scheduleRefresh();
+    }
+
+    /** The redaction tool's box: marks whatever is under it (an image, a drawing) for redaction. */
+    void createRedactionBox(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
+        Page page = document.getPageTree().getPage(pageIndex);
+        addCreated(pageIndex, page, AnnotationCreator.redaction(page.getLibrary(), List.of(viewRect),
+                toPageSpaceNow(page), getSkinnable().getAnnotationAuthor()), false);
     }
 
     void createShape(int pageIndex, boolean ellipse, java.awt.geom.Rectangle2D viewRect) {
@@ -1596,7 +1605,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
             }
             if (viewRects.isEmpty()) continue;
-            TextMarkupAnnotation markup = AnnotationCreator.textMarkup(page.getLibrary(), subtype, viewRects,
+            Annotation markup = Annotation.SUBTYPE_REDACT.equals(subtype)
+                    ? AnnotationCreator.redaction(page.getLibrary(), viewRects, toPageSpaceNow(page),
+                    getSkinnable().getAnnotationAuthor())
+                    : AnnotationCreator.textMarkup(page.getLibrary(), subtype, viewRects,
                     sequence.extractText(range), toPageSpaceNow(page), style(mode));
             addCreated(pageIndex, page, markup, false);
             last = markup;
@@ -1918,10 +1930,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             case HIGHLIGHT -> TextMarkupAnnotation.SUBTYPE_HIGHLIGHT;
             case UNDERLINE -> TextMarkupAnnotation.SUBTYPE_UNDERLINE;
             case STRIKE_OUT -> TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
+            case REDACT -> Annotation.SUBTYPE_REDACT;
             default -> null;
         });
         createHandler.setMode(mode);
-        ToolHandler next = mode == ToolMode.PAN ? panHandler : mode.selectsText() ? textSelectHandler : createHandler;
+        ToolHandler next = mode == ToolMode.PAN ? panHandler : mode == ToolMode.REDACT ? redactHandler
+                : mode.selectsText() ? textSelectHandler : createHandler;
         if (next == activeHandler) return;
         if (activeHandler != null) activeHandler.uninstall();
         activeHandler = next;

@@ -86,13 +86,17 @@ final class AnnotationCreateHandler implements ToolHandler {
                 ink.lineTo(p.getX(), p.getY());
                 inkPreview.getElements().add(new LineTo(p.getX(), p.getY()));
             }
-            case RECTANGLE, SIGNATURE -> {
+            case RECTANGLE, SIGNATURE, REDACT -> {
                 Rectangle2D r = rect();
                 Rectangle shape = new Rectangle(r.getX(), r.getY(), r.getWidth(), r.getHeight());
                 style(shape);
                 if (mode == ToolMode.SIGNATURE) {
                     shape.getStrokeDashArray().setAll(4.0, 3.0);
                     shape.setFill(javafx.scene.paint.Color.rgb(21, 101, 192, 0.08));
+                } else if (mode == ToolMode.REDACT) {
+                    shape.getStrokeDashArray().clear();
+                    shape.setStroke(Color.BLACK);
+                    shape.setFill(Color.rgb(0, 0, 0, 0.35));
                 }
                 showPreview(shape);
             }
@@ -130,6 +134,9 @@ final class AnnotationCreateHandler implements ToolHandler {
             }
             case SIGNATURE -> {
                 if (!click) skin.createSignatureField(page, rect());
+            }
+            case REDACT -> {
+                if (!click) skin.createRedactionBox(page, rect());
             }
             case INK -> {
                 if (ink != null && ink.getBounds2D().getWidth() + ink.getBounds2D().getHeight() > 3) {

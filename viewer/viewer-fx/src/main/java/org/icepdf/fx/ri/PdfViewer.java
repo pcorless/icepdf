@@ -68,7 +68,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.open-new-tab", "document.new-tab", "document.save-as", "document.print", null, "document.properties", null,
+            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.print", null, "document.properties", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -427,6 +427,7 @@ public class PdfViewer extends StackPane {
         documents.remove(pane);
         pane.setOnMessage(null);
         pane.setOnLink(null);
+        pane.setOnExportRedacted(null);
         pane.getSession().setOnError(null);
         pane.getSession().setOnLoaded(null);
         if (last && onEmptied != null) onEmptied.run();
@@ -472,7 +473,8 @@ public class PdfViewer extends StackPane {
     /** Saves the selected document in place, or asks for a name when it can't be. @return true if saved */
     public boolean save() {
         if (session().getDocument() == null) return false;
-        if (!session().canSaveInPlace()) return saveAs();
+        if (!redactionsSettled()) return false;
+        if (!session().canSaveInPlace()) return saveAsChecked();
         boolean saved = session().save();
         if (saved) showMessage("Saved");
         return saved;
@@ -481,6 +483,11 @@ public class PdfViewer extends StackPane {
     /** Saves the selected document under a name the user picks. @return true if saved */
     public boolean saveAs() {
         if (session().getDocument() == null) return false;
+        if (!redactionsSettled()) return false;
+        return saveAsChecked();
+    }
+
+    private boolean saveAsChecked() {
         FileChooser chooser = context.chooser("Save As");
         Path file = session().getFile();
         chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
@@ -544,6 +551,76 @@ public class PdfViewer extends StackPane {
         worker.start();
     }
 
+    /**
+     * Before a plain save: a document with redactions marked but not burned in gets a choice, since an
+     * incremental save keeps the content under them in the file.  Export Redacted Copy starts the
+     * export instead.  @return true to go on with the save
+     */
+    private boolean redactionsSettled() {
+        if (!session().hasRedactions()) return true;
+        javafx.scene.control.ButtonType export = new javafx.scene.control.ButtonType("Export Redacted Copy\u2026",
+                javafx.scene.control.ButtonBar.ButtonData.YES);
+        javafx.scene.control.ButtonType keep = new javafx.scene.control.ButtonType("Save Without Redacting",
+                javafx.scene.control.ButtonBar.ButtonData.NO);
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING,
+                "This document has redactions that haven't been applied. Saving keeps them as marks: "
+                        + "the content under them stays in the file.\n\nExport a redacted copy to remove it.",
+                export, keep, javafx.scene.control.ButtonType.CANCEL);
+        alert.setHeaderText("Redactions not applied");
+        alert.initOwner(context.window());
+        javafx.scene.control.ButtonType choice = alert.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL);
+        if (choice == export) exportRedacted();
+        return choice == keep;
+    }
+
+    /**
+     * Writes a copy with the redactions burned in (the marked content removed), opens it in place of
+     * the marked document and reports what was removed.
+     */
+    public void exportRedacted() {
+        DocumentPane pane = pane();
+        DocumentSession session = pane.getSession();
+        if (session.getDocument() == null) return;
+        FileChooser chooser = context.chooser("Export Redacted Copy");
+        Path file = session.getFile();
+        String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
+        chooser.setInitialFileName(base + "-redacted.pdf");
+        File chosen = chooser.showSaveDialog(context.window());
+        if (chosen == null) return;
+        if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
+        showMessage("Redacting\u2026");
+        session.exportRedacted(chosen.toPath(), report -> {
+            if (report != null) showRedactionReport(chosen.getName(), report);
+        });
+    }
+
+    private void showRedactionReport(String name, org.icepdf.core.util.redaction.RedactionReport report) {
+        StringBuilder text = new StringBuilder();
+        text.append("Text removed: ").append(report.getGlyphsRemoved()).append(" characters\n");
+        text.append("Images redacted: ").append(report.getImagesBurned()).append('\n');
+        if (report.getStringsRewritten() > 0) {
+            text.append("Other text masked: ").append(report.getStringsRewritten()).append('\n');
+        }
+        org.icepdf.core.util.redaction.RedactionConfidence confidence = report.getConfidence();
+        text.append("\nCheck: ").append(switch (confidence) {
+            case FAILED -> "FAILED - redacted content is still in the file. Do not release it.";
+            case UNVERIFIED -> "unverified - parts of the document could not be checked; review it before release.";
+            case VERIFIED_WITH_WARNINGS -> "verified, with warnings - read them before release.";
+            default -> "verified - nothing redacted was found in the written file.";
+        });
+        for (org.icepdf.core.util.redaction.RedactionWarning warning : report.getWarnings()) {
+            text.append("\n\u2022 ").append(warning.getDetail());
+        }
+        boolean clean = confidence == org.icepdf.core.util.redaction.RedactionConfidence.VERIFIED
+                && report.getWarnings().isEmpty();
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(clean
+                ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING,
+                text.toString(), javafx.scene.control.ButtonType.OK);
+        alert.setHeaderText("Redacted copy saved as " + name);
+        alert.initOwner(context.window());
+        alert.show();
+    }
+
     private DocumentPane pane() {
         return current.get();
     }
@@ -572,6 +649,9 @@ public class PdfViewer extends StackPane {
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
+        pane.setOnExportRedacted(() -> {
+            if (pane == current.get()) exportRedacted();
+        });
         pane.getAttachments().setOnOpen(this::openAttachment);
         pane.getView().setOnSignatureClicked(event -> {
             if (event.getStatus().isSigned()) pane.getView().showSignatureProperties(event.getStatus());
@@ -1016,6 +1096,11 @@ public class PdfViewer extends StackPane {
         @Override
         public void saveDocumentAs() {
             saveAs();
+        }
+
+        @Override
+        public void exportRedacted() {
+            PdfViewer.this.exportRedacted();
         }
 
         @Override

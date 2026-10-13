@@ -68,6 +68,27 @@ class AnnotationSummaryTest {
         assertNull(AnnotationSummary.collect(document, () -> true), "a cancelled scan returns null");
     }
 
+    @DisplayName("listing comments doesn't initialise pages, and gives the instances the page gets later")
+    @Test
+    void collectWithoutInit() throws Exception {
+        Document fresh = new Document();
+        fresh.setFile(FIXTURE.toString());
+        try {
+            List<AnnotationSummary.Entry> entries = AnnotationSummary.collect(fresh, () -> false);
+            assertEquals(3, entries.size());
+            org.icepdf.core.pobjects.Page page = fresh.getPageTree().getPage(0);
+            assertFalse(page.isInitiated(), "no page content parsed to list the comments");
+            assertEquals("the capybara looks wrong here", entries.get(0).contents());
+            page.init();
+            for (AnnotationSummary.Entry entry : entries) {
+                assertTrue(page.getAnnotations().stream().anyMatch(a -> a == entry.annotation()),
+                        "the listed comment is the page's own instance");
+            }
+        } finally {
+            fresh.dispose();
+        }
+    }
+
     @DisplayName("the filter matches type, author or contents, ignoring case")
     @Test
     void filter() throws Exception {

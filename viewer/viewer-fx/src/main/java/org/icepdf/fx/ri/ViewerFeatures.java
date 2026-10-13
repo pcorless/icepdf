@@ -266,7 +266,8 @@ public final class ViewerFeatures {
                 case FULL -> {
                     includes.add("*");
                     defaultRail.addAll(List.of(select, pan, "annotation.highlight", "annotation.note",
-                            "annotation.free-text", "annotation.ink", "annotation.rectangle", "signature.sign"));
+                            "annotation.free-text", "annotation.ink", "annotation.rectangle", "annotation.redact",
+                            "signature.sign"));
                 }
             }
         }
