@@ -66,6 +66,9 @@ public final class DocumentPane {
         });
         view.modifiedProperty().addListener((o, a, b) -> refreshTitle());
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
+        session.loadingFileProperty().addListener((o, a, b) -> refreshTitle());
+        // the wait cursor while the file is read; the view keeps it until the first pages are painted.
+        view.busyProperty().bind(session.loadingProperty());
     }
 
     public PdfView getView() {
@@ -123,8 +126,11 @@ public final class DocumentPane {
 
     /** Works the title out again (after anything that changes the file or the modified state). */
     public void refreshTitle() {
+        Path loading = session.getLoadingFile();
         Path file = session.getFile();
-        title.set(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
+        // a file still loading names its tab already.
+        if (loading != null && file == null) title.set(loading.getFileName().toString());
+        else title.set(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
     }
 
     /** Receives short messages for the user (a link was clicked). */

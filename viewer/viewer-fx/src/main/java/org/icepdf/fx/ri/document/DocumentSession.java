@@ -15,6 +15,9 @@
  */
 package org.icepdf.fx.ri.document;
 
+import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.stage.Window;
@@ -43,8 +46,10 @@ import java.util.logging.Logger;
  * The session owns the {@link Document} - it disposes the old one whenever it replaces it - so an
  * application never has to.
  * <ul>
- *     <li><b>open</b> asks for a password when the file needs one ({@link PasswordPrompt} by
- *     default), and first asks what to do with unsaved changes ({@link #setConfirmDiscard});</li>
+ *     <li><b>open</b> reads the file on a worker thread - {@link #loadingProperty()} is true
+ *     meanwhile, for a busy indicator - and swaps it in on the FX thread; it asks for a password when
+ *     the file needs one ({@link PasswordPrompt} by default), and first asks what to do with unsaved
+ *     changes ({@link #setConfirmDiscard}).  A newer open, or a close, supersedes one in progress;</li>
  *     <li><b>save</b> writes the document (an incremental update) to a temporary file beside the
  *     target, closes it, moves the temporary file over the target in one step, and reopens it at
  *     the same page - the open file backs the document, so it can't be written in place, and a
@@ -59,6 +64,10 @@ public final class DocumentSession {
 
     private final PdfView view;
     private final ReadOnlyObjectWrapper<Path> file = new ReadOnlyObjectWrapper<>(this, "file");
+    private final ReadOnlyBooleanWrapper loading = new ReadOnlyBooleanWrapper(this, "loading");
+    private final ReadOnlyObjectWrapper<Path> loadingFile = new ReadOnlyObjectWrapper<>(this, "loadingFile");
+    // bumped by every open and close: a load that finishes under an older ticket is thrown away.
+    private int ticket;
     private Document document;
     private Window owner;
     private BiFunction<Window, Path, SecurityCallback> security =
@@ -89,6 +98,24 @@ public final class DocumentSession {
         return file.get();
     }
 
+    /** True while a file is being read (before it shows). */
+    public ReadOnlyBooleanProperty loadingProperty() {
+        return loading.getReadOnlyProperty();
+    }
+
+    public boolean isLoading() {
+        return loading.get();
+    }
+
+    /** The file being read (absolute), or null when nothing is loading. */
+    public ReadOnlyObjectProperty<Path> loadingFileProperty() {
+        return loadingFile.getReadOnlyProperty();
+    }
+
+    public Path getLoadingFile() {
+        return loadingFile.get();
+    }
+
     /** Window the password prompt belongs to. */
     public void setOwner(Window owner) {
         this.owner = owner;
@@ -112,7 +139,7 @@ public final class DocumentSession {
         this.onError = onError != null ? onError : message -> logger.warning(message);
     }
 
-    /** Called after a file is opened (or reopened after a save). */
+    /** Called on the FX thread after a file is opened (or reopened after a save). */
     public void setOnLoaded(Consumer<Path> onLoaded) {
         this.onLoaded = onLoaded != null ? onLoaded : path -> { };
     }
@@ -128,34 +155,72 @@ public final class DocumentSession {
     }
 
     /**
-     * Opens a file, after asking about unsaved changes to the current one.
+     * Starts opening a file, after asking about unsaved changes to the current one.  The current
+     * document stays until the new one is read; then {@code onLoaded}, or {@code onError}, hears.
      *
-     * @return true if it opened
+     * @return false if the user chose to keep the current document
      */
     public boolean open(Path path) {
+        return open(path, ok -> { });
+    }
+
+    /** {@link #open(Path)}, then {@code done} with whether the file opened (not called when superseded). */
+    public boolean open(Path path, Consumer<Boolean> done) {
         if (!confirmDiscard()) return false;
-        return openAt(path, -1);
+        openAt(path, -1, done);
+        return true;
     }
 
     /**
-     * Opens a file without asking about unsaved changes - for a file that replaces the open one
-     * (a signed copy, say) - at {@code page} when that's >= 0.
+     * Starts opening a file without asking about unsaved changes - for a file that replaces the
+     * open one (a signed copy, say) - at {@code page} when that's >= 0.
      */
-    public boolean openAt(Path path, int page) {
-        Document next = new Document();
+    public void openAt(Path path, int page) {
+        openAt(path, page, ok -> { });
+    }
+
+    private void openAt(Path path, int page, Consumer<Boolean> done) {
+        int mine = ++ticket;
+        loadingFile.set(path.toAbsolutePath());
+        loading.set(true);
         SecurityCallback callback = security.apply(owner, path);
-        next.setSecurityCallback(callback);
-        try {
-            next.setFile(path.toString());
-        } catch (PDFSecurityException e) {
-            next.dispose();
+        Thread worker = new Thread(() -> {
+            Document next = new Document();
+            next.setSecurityCallback(callback);
+            Exception failure = null;
+            try {
+                next.setFile(path.toString());
+            } catch (Exception e) {
+                next.dispose();
+                failure = e;
+            }
+            Exception failed = failure;
+            Platform.runLater(() -> loaded(mine, path, page, failed == null ? next : null, failed, callback, done));
+        }, "pdf-open");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void loaded(int mine, Path path, int page, Document next, Exception failure, SecurityCallback callback,
+                        Consumer<Boolean> done) {
+        if (mine != ticket) {
+            // a newer open or a close came first.
+            if (next != null) next.dispose();
+            return;
+        }
+        loading.set(false);
+        loadingFile.set(null);
+        if (failure instanceof PDFSecurityException) {
             boolean cancelled = callback instanceof PasswordPrompt prompt && prompt.isCancelled();
             if (!cancelled) onError.accept("Could not open " + path.getFileName() + ": incorrect password.");
-            return false;
-        } catch (Exception e) {
-            next.dispose();
-            onError.accept("Could not open " + path + ":\n" + e.getMessage());
-            return false;
+            done.accept(false);
+            return;
+        }
+        if (failure != null) {
+            logger.log(Level.FINE, "Open failed", failure);
+            onError.accept("Could not open " + path + ":\n" + failure.getMessage());
+            done.accept(false);
+            return;
         }
         Document old = document;
         document = next;
@@ -165,7 +230,7 @@ public final class DocumentSession {
         if (page >= 0) view.setCurrentPageIndex(Math.min(page, view.getPageCount() - 1));
         view.refreshModified();
         onLoaded.accept(file.get());
-        return true;
+        done.accept(true);
     }
 
     /** Closes the document, after asking about unsaved changes.  @return false if the user stayed */
@@ -177,6 +242,9 @@ public final class DocumentSession {
 
     /** Closes the document without asking (the window is going away). */
     public void dispose() {
+        ticket++;
+        loading.set(false);
+        loadingFile.set(null);
         Document old = document;
         document = null;
         file.set(null);
@@ -191,7 +259,7 @@ public final class DocumentSession {
     }
 
     /**
-     * Saves to the open file.  @return true if saved; false if it failed (see onError) or can't be
+     * Saves to the open file, which is then read back in (asynchronously).  @return true if saved; false if it failed (see onError) or can't be
      * saved in place ({@link #canSaveInPlace()}).
      */
     public boolean save() {
@@ -241,7 +309,8 @@ public final class DocumentSession {
             openAt(previous != null ? previous : temp, page);
             return false;
         }
-        return openAt(target, page);
+        openAt(target, page);
+        return true;
     }
 
     private static void deleteQuietly(Path path) {

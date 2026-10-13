@@ -202,7 +202,8 @@ public class PdfViewer extends StackPane {
 
     /**
      * Opens a file in the selected document, asking about unsaved changes first.  A file that is
-     * open in another tab shows that tab instead.  @return true if it opened
+     * open in another tab shows that tab instead.  The file is read in the background.
+     * @return false if the user kept the current document
      */
     public boolean open(Path file) {
         return open(file, pane());
@@ -222,7 +223,8 @@ public class PdfViewer extends StackPane {
 
     /**
      * Opens a file in a new tab (an empty tab is used instead of adding one).  A file that is open
-     * already shows its tab.  Without tabs it replaces the document.  @return true if it opened
+     * already shows its tab.  Without tabs it replaces the document.  The file is read in the
+     * background; a tab it can't open is taken away again.  @return false if the user kept the current document
      */
     public boolean openInNewTab(Path file) {
         if (!features.isMultipleDocuments()) return session().open(file);
@@ -231,19 +233,20 @@ public class PdfViewer extends StackPane {
             selectDocument(existing);
             return true;
         }
-        if (pane().getSession().getDocument() == null) return session().open(file);
+        if (pane().getSession().getDocument() == null && !pane().getSession().isLoading()) return session().open(file);
         // taken away again if the file doesn't open.
         DocumentPane added = addDocument();
-        if (added.getSession().open(file)) return true;
-        if (added.getSession().getDocument() == null) removeDocument(added);
-        return false;
+        return added.getSession().open(file, opened -> {
+            if (!opened && added.getSession().getDocument() == null && documents.contains(added)) removeDocument(added);
+        });
     }
 
     private DocumentPane paneShowing(Path file) {
         Path real = real(file);
         for (DocumentPane pane : documents) {
             Path open = pane.getSession().getFile();
-            if (open != null && real(open).equals(real)) return pane;
+            Path loading = pane.getSession().getLoadingFile();
+            if (open != null && real(open).equals(real) || loading != null && real(loading).equals(real)) return pane;
         }
         return null;
     }
@@ -288,7 +291,7 @@ public class PdfViewer extends StackPane {
         if (!features.isMultipleDocuments()) return;
         // one empty tab is enough.
         for (DocumentPane pane : documents) {
-            if (pane.getSession().getDocument() == null) {
+            if (pane.getSession().getDocument() == null && !pane.getSession().isLoading()) {
                 selectDocument(pane);
                 return;
             }
@@ -436,6 +439,7 @@ public class PdfViewer extends StackPane {
      */
     public void adoptDocument(DocumentPane pane, int index) {
         DocumentPane placeholder = documents.size() == 1 && documents.get(0).getSession().getDocument() == null
+                && !documents.get(0).getSession().isLoading()
                 ? documents.get(0) : null;
         addDocument(pane, index);
         if (placeholder != null) {
@@ -484,7 +488,8 @@ public class PdfViewer extends StackPane {
         if (chosen == null) return false;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
         if (!session().saveAs(chosen.toPath())) return false;
-        showMessage("Saved " + session().getFile().getFileName());
+        Path saved = session().getLoadingFile();
+        showMessage("Saved " + (saved != null ? saved.getFileName() : chosen.getName()));
         return true;
     }
 

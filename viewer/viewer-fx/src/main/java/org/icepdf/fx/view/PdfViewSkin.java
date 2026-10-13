@@ -90,9 +90,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private AnnotationHit hovered;
 
     private Document document;
-    // page sizes at zoom 1 for the current rotation and boundary.
+    // page sizes at zoom 1 for the current rotation and boundary.  Only the first pages are read when
+    // a document opens - reading every page's size of a long document stalls the FX thread - the
+    // rest take their average until they come into view (estimated[i]), as the Swing viewer does.
+    private static final int SIZE_READ_AHEAD = 10;
     private double[] unitWidths = new double[0];
     private double[] unitHeights = new double[0];
+    private boolean[] estimated = new boolean[0];
     private DocumentLayout layout;
     // the zoom/rotation the current layout was built for; the properties may already differ when
     // a listener runs, and anchoring needs the old values.
@@ -131,6 +135,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final javafx.event.EventHandler<KeyEvent> keyHandler = this::onKey;
     private final javafx.event.EventHandler<KeyEvent> keyReleasedHandler = this::onKeyReleased;
     private Window window;
+
+    // what the tools want the viewport's cursor to be; the wait cursor overrides it while waiting.
+    private Cursor viewportCursor = Cursor.DEFAULT;
+    private boolean firstPaintPending;
 
     PdfViewSkin(PdfView control) {
         super(control);
@@ -188,6 +196,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         });
 
         registerChangeListener(control.documentProperty(), o -> onDocument());
+        registerChangeListener(control.busyProperty(), o -> applyCursor());
         registerChangeListener(control.zoomProperty(), o -> onZoom());
         registerChangeListener(control.rotationProperty(), o -> onRotation());
         registerChangeListener(control.pageBoundaryProperty(), o -> onRotation());
@@ -349,6 +358,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         editing = null;
         annotationGenerations.clear();
         document = getSkinnable().getDocument();
+        // the wait cursor until refresh finds the first screenful painted.
+        firstPaintPending = document != null;
+        applyCursor();
         renderer.setDocument(document);
         textLoader.setDocument(document);
         caretNavigator = null;
@@ -358,7 +370,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         scrollX = 0;
         scrollY = 0;
         resetRasters();
-        loadUnitSizes();
+        loadUnitSizes(false);
         if (getSkinnable().getFitMode() != FitMode.NONE) applyFit();
         relayout(null);
     }
@@ -378,7 +390,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private void onRotation() {
         Anchor anchor = captureAnchor(viewportW / 2, viewportH / 2);
-        loadUnitSizes();
+        loadUnitSizes(true);
         if (getSkinnable().getFitMode() != FitMode.NONE) applyFit();
         relayout(anchor);
     }
@@ -410,18 +422,78 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return (float) ((360 - getSkinnable().getRotation()) % 360);
     }
 
-    private void loadUnitSizes() {
+    /**
+     * Reads the sizes of the first pages, and of any page already read for the previous rotation or
+     * boundary; the rest get the average of the first ones until {@link #resolveSizes} reads them.
+     *
+     * @param keepResolved false for a new document, true to re-read the pages read so far
+     */
+    private void loadUnitSizes(boolean keepResolved) {
         int count = document != null ? document.getNumberOfPages() : 0;
+        boolean[] read = keepResolved && estimated.length == count ? estimated : null;
         unitWidths = new double[count];
         unitHeights = new double[count];
-        int boundary = getSkinnable().getPageBoundary();
-        float rotation = coreRotation();
-        for (int i = 0; i < count; i++) {
-            Page page = document.getPageTree().getPage(i);
-            PDimension size = page != null ? page.getSize(boundary, rotation, 1f) : null;
-            unitWidths[i] = size != null ? size.getWidth() : 612;
-            unitHeights[i] = size != null ? size.getHeight() : 792;
+        estimated = new boolean[count];
+        int ahead = Math.min(count, SIZE_READ_AHEAD);
+        double sumW = 0;
+        double sumH = 0;
+        for (int i = 0; i < ahead; i++) {
+            readUnitSize(i);
+            sumW += unitWidths[i];
+            sumH += unitHeights[i];
         }
+        double avgW = ahead > 0 ? sumW / ahead : 612;
+        double avgH = ahead > 0 ? sumH / ahead : 792;
+        for (int i = ahead; i < count; i++) {
+            if (read != null && !read[i]) {
+                readUnitSize(i);
+            } else {
+                unitWidths[i] = avgW;
+                unitHeights[i] = avgH;
+                estimated[i] = true;
+            }
+        }
+    }
+
+    private void readUnitSize(int i) {
+        Page page = document.getPageTree().getPage(i);
+        PDimension size = page != null ? page.getSize(getSkinnable().getPageBoundary(), coreRotation(), 1f) : null;
+        unitWidths[i] = size != null ? size.getWidth() : 612;
+        unitHeights[i] = size != null ? size.getHeight() : 792;
+        estimated[i] = false;
+    }
+
+    /**
+     * Reads the real size of the estimated pages among {@code slots} (the ones about to show) and,
+     * when one differs from its estimate, lays the document out again around what's on screen.
+     *
+     * @return true if the layout was rebuilt, so the slots are stale
+     */
+    private boolean resolveSizes(List<PageSlot> slots) {
+        Anchor anchor = null;
+        boolean changed = false;
+        boolean currentChanged = false;
+        int current = getSkinnable().getCurrentPageIndex();
+        for (PageSlot slot : slots) {
+            int i = slot.pageIndex();
+            if (i >= estimated.length || !estimated[i]) continue;
+            if (anchor == null) anchor = captureAnchor(viewportW / 2, viewportH / 2);
+            double w = unitWidths[i];
+            double h = unitHeights[i];
+            readUnitSize(i);
+            if (Math.abs(w - unitWidths[i]) > 0.5 || Math.abs(h - unitHeights[i]) > 0.5) {
+                changed = true;
+                currentChanged |= i == current;
+            }
+        }
+        if (!changed) return false;
+        // a fit to the current page follows its real size; a continuous fit width doesn't re-fit
+        // as each wider page scrolls in.
+        PdfView control = getSkinnable();
+        boolean continuousWidth = control.getFitMode() == FitMode.WIDTH && control.getViewMode().isContinuous();
+        if (currentChanged && control.getFitMode() != FitMode.NONE && !continuousWidth) applyFit();
+        relayout(anchor);
+        return true;
     }
 
     /** Rebuilds the layout for the current properties, then restores the anchor (or the top). */
@@ -594,6 +666,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
                 control.getPageBoundary(), control.getContentVersion());
         double band = viewportH * PREFETCH;
         List<PageSlot> slots = layout.slotsIntersecting(scrollX, scrollY - band, viewportW, viewportH + 2 * band);
+        // relayout scrolls, which refreshes again with the new slots.
+        if (resolveSizes(slots)) return;
 
         Set<Integer> keep = new HashSet<>();
         Set<CacheKey> wanted = new HashSet<>();
@@ -666,6 +740,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         textLoader.retain(needsText() ? keep::contains : page -> false);
         renderer.retain(wanted::contains);
         control.setRendering(zoomSettling || incomplete);
+        if (firstPaintPending && !zoomSettling && !incomplete) {
+            firstPaintPending = false;
+            applyCursor();
+        }
         publishCurrentPage();
     }
 
@@ -1853,12 +1931,19 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     void setViewportCursor(Cursor cursor) {
-        viewport.setCursor(cursor);
+        viewportCursor = cursor;
+        applyCursor();
     }
 
     /** The cursor for the current state: hand while Space is held, else the active tool's. */
     void restoreViewportCursor() {
-        viewport.setCursor(spaceDown ? Cursor.OPEN_HAND : activeHandler.idleCursor());
+        setViewportCursor(spaceDown ? Cursor.OPEN_HAND : activeHandler.idleCursor());
+    }
+
+    /** The tool's cursor, or the wait cursor while the application is busy or the first paint is pending. */
+    private void applyCursor() {
+        boolean waiting = getSkinnable().isBusy() || firstPaintPending;
+        viewport.setCursor(waiting ? Cursor.WAIT : viewportCursor);
     }
 
     private javafx.scene.control.ContextMenu annotationMenu;

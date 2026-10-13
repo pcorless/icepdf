@@ -99,6 +99,7 @@ public class PdfView extends Control {
     private final IntegerProperty pageBoundary =
             new SimpleIntegerProperty(this, "pageBoundary", Page.BOUNDARY_CROPBOX);
     private final BooleanProperty paintAnnotations = new SimpleBooleanProperty(this, "paintAnnotations", true);
+    private final BooleanProperty busy = new SimpleBooleanProperty(this, "busy", false);
     private final ObjectProperty<PageOverlayFactory> pageOverlayFactory =
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
     private final ReadOnlyIntegerWrapper pageCount = new ReadOnlyIntegerWrapper(this, "pageCount", 0);
@@ -1146,6 +1147,23 @@ public class PdfView extends Control {
      * Whether annotation appearances are drawn.  They render in their own layers above the page
      * content, so annotation changes never re-render the page.
      */
+    /**
+     * True shows the wait cursor over the pages - for an application reading a file the view will
+     * show.  The view also shows it on its own from a new document until its first pages are fully
+     * painted, then goes back to the tool's cursor.
+     */
+    public final BooleanProperty busyProperty() {
+        return busy;
+    }
+
+    public final boolean isBusy() {
+        return busy.get();
+    }
+
+    public final void setBusy(boolean value) {
+        busy.set(value);
+    }
+
     public final BooleanProperty paintAnnotationsProperty() {
         return paintAnnotations;
     }
