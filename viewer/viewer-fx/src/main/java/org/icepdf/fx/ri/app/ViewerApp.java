@@ -286,8 +286,8 @@ public class ViewerApp extends Application {
         searchOption(search.foldAccentsProperty(), ViewerPreferences.SEARCH_FOLD_ACCENTS, true);
         searchOption(search.regexProperty(), ViewerPreferences.SEARCH_REGEX, false);
         searchOption(search.cumulativeProperty(), ViewerPreferences.SEARCH_CUMULATIVE, false);
-        searchOption(search.commentsProperty(), ViewerPreferences.SEARCH_COMMENTS, false);
-        searchOption(search.formFieldsProperty(), ViewerPreferences.SEARCH_FORMS, false);
+        searchOption(search.commentsProperty(), ViewerPreferences.SEARCH_COMMENTS, true);
+        searchOption(search.formFieldsProperty(), ViewerPreferences.SEARCH_FORMS, true);
         searchOption(search.outlinesProperty(), ViewerPreferences.SEARCH_OUTLINES, false);
         searchOption(search.destinationsProperty(), ViewerPreferences.SEARCH_DESTINATIONS, false);
     }

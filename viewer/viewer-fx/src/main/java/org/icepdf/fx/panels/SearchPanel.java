@@ -87,8 +87,8 @@ public class SearchPanel extends BorderPane {
     private final BooleanProperty regex = new SimpleBooleanProperty(this, "regex");
     private final BooleanProperty foldAccents = new SimpleBooleanProperty(this, "foldAccents", true);
     private final BooleanProperty cumulative = new SimpleBooleanProperty(this, "cumulative");
-    private final BooleanProperty comments = new SimpleBooleanProperty(this, "comments");
-    private final BooleanProperty formFields = new SimpleBooleanProperty(this, "formFields");
+    private final BooleanProperty comments = new SimpleBooleanProperty(this, "comments", true);
+    private final BooleanProperty formFields = new SimpleBooleanProperty(this, "formFields", true);
     private final BooleanProperty outlines = new SimpleBooleanProperty(this, "outlines");
     private final BooleanProperty destinations = new SimpleBooleanProperty(this, "destinations");
 

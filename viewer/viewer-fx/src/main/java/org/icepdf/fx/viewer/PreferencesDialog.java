@@ -92,8 +92,8 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         CheckBox accents = check("Ignore accents", ViewerPreferences.SEARCH_FOLD_ACCENTS, true);
         CheckBox regex = check("Regular expression", ViewerPreferences.SEARCH_REGEX, false);
         CheckBox cumulative = check("Add each search to the previous terms", ViewerPreferences.SEARCH_CUMULATIVE, false);
-        CheckBox comments = check("Comments", ViewerPreferences.SEARCH_COMMENTS, false);
-        CheckBox forms = check("Form fields", ViewerPreferences.SEARCH_FORMS, false);
+        CheckBox comments = check("Comments", ViewerPreferences.SEARCH_COMMENTS, true);
+        CheckBox forms = check("Form fields", ViewerPreferences.SEARCH_FORMS, true);
         CheckBox outlines = check("Bookmarks", ViewerPreferences.SEARCH_OUTLINES, false);
         CheckBox destinations = check("Named destinations", ViewerPreferences.SEARCH_DESTINATIONS, false);
         VBox search = new VBox(8, new Label("Defaults for a new search:"), matchCase, wholeWord, accents, regex,
