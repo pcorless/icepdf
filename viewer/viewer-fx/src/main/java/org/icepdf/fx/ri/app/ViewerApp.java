@@ -69,6 +69,7 @@ public class ViewerApp extends Application {
 
     private final List<AppWindow> windows = new ArrayList<>();
     private ViewerPreferences preferences;
+    private org.icepdf.fx.ri.SigningStore signing;
     private ViewerFeatures features;
     private UserLayout layout;
     private final FileHistory history = new PreferenceHistory();
@@ -92,6 +93,7 @@ public class ViewerApp extends Application {
     @Override
     public void start(Stage stage) {
         preferences = ViewerPreferences.load();
+        signing = org.icepdf.fx.viewer.SigningPreferences.of(preferences);
         features = loadFeatures();
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
         FontSettings.apply(preferences);
@@ -174,6 +176,7 @@ public class ViewerApp extends Application {
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
         viewer.setColorHistory(colorHistory);
+        viewer.setSigningStore(signing);
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));

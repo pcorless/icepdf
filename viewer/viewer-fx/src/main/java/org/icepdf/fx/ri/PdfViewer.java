@@ -31,7 +31,9 @@ import javafx.stage.Stage;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.Catalog;
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.ActionRegistry;
@@ -42,6 +44,8 @@ import org.icepdf.fx.ri.document.DocumentSession;
 import org.icepdf.fx.ri.icons.IconProvider;
 import org.icepdf.fx.ri.icons.SvgIcons;
 import org.icepdf.fx.ri.ui.*;
+import org.icepdf.fx.signature.DocumentSigning;
+import org.icepdf.fx.signature.SignDialog;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ViewMode;
@@ -91,6 +95,7 @@ public class PdfViewer extends StackPane {
     private final Context context = new Context();
     private FileHistory history;
     private ColorHistory colorHistory = ColorHistory.inMemory();
+    private SigningStore signingStore = SigningStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
     private Consumer<String> onLink;
@@ -483,6 +488,57 @@ public class PdfViewer extends StackPane {
         return true;
     }
 
+    /**
+     * Signs an empty signature field (clicked, or just drawn with the signature tool): the sign
+     * dialog, then a name for the signed copy, which is written off the FX thread and opened in the
+     * document's place.  Cancelling at any step leaves the field unsigned.
+     */
+    private void sign(DocumentPane pane, SignatureWidgetAnnotation field) {
+        DocumentSession session = pane.getSession();
+        Document document = session.getDocument();
+        if (document == null) return;
+        SigningStore store = signingStore;
+        org.icepdf.fx.signature.SigningSettings settings = store.settings();
+        SignDialog.Result result = new SignDialog(context.window(), document, field, settings).showAndWait().orElse(null);
+        // saved on cancel too: a signature drawn and the keystore opened are worth keeping either way.
+        store.save(settings);
+        if (result == null) return;
+        try {
+            DocumentSigning.prepare(field, result.signer(), result.request(), result.appearance());
+        } catch (IllegalStateException e) {
+            DocumentSigning.cancel(field);
+            onError.accept(e.getMessage());
+            return;
+        }
+        FileChooser chooser = context.chooser("Save Signed Document");
+        Path file = session.getFile();
+        String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
+        chooser.setInitialFileName(base + "-signed.pdf");
+        File target = chooser.showSaveDialog(context.window());
+        if (target == null) {
+            DocumentSigning.cancel(field);
+            return;
+        }
+        if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
+        showMessage("Signing…");
+        int page = pane.getView().getCurrentPageIndex();
+        Thread worker = new Thread(() -> {
+            try {
+                DocumentSigning.saveSigned(document, target.toPath());
+                javafx.application.Platform.runLater(() -> {
+                    // the signed copy is the document now; the original's pending signature is gone.
+                    document.getStateManager().setChangesSnapshot();
+                    if (session.getDocument() == document) session.openAt(target.toPath(), page);
+                    showMessage("Signed " + target.getName());
+                });
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> onError.accept("Signing failed: " + e.getMessage()));
+            }
+        }, "pdf-sign");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
     private DocumentPane pane() {
         return current.get();
     }
@@ -512,6 +568,10 @@ public class PdfViewer extends StackPane {
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
         pane.getAttachments().setOnOpen(this::openAttachment);
+        pane.getView().setOnSignatureClicked(event -> {
+            if (event.getStatus().isSigned()) pane.getView().showSignatureProperties(event.getStatus());
+            else sign(pane, event.getStatus().widget());
+        });
         pane.getView().setAnnotationMenuFactory(annotation -> AnnotationContextMenu.create(pane.getView(), annotation,
                 colorHistory, target -> AnnotationPropertiesDialog.show(getScene() != null ? getScene().getWindow() : null, target)
                 .ifPresent(change -> pane.getView().applyAnnotationProperties(target, change))));
@@ -632,6 +692,11 @@ public class PdfViewer extends StackPane {
     /** Remembers the colours the user picks for annotations (shown in the annotation context menu). */
     public void setColorHistory(ColorHistory colorHistory) {
         this.colorHistory = colorHistory != null ? colorHistory : ColorHistory.inMemory();
+    }
+
+    /** Remembers the keystore, certificate, appearance and drawn signature from one signing to the next. */
+    public void setSigningStore(SigningStore signingStore) {
+        this.signingStore = signingStore != null ? signingStore : SigningStore.inMemory();
     }
 
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */

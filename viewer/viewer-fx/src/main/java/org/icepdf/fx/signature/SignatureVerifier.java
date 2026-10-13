@@ -173,12 +173,38 @@ public final class SignatureVerifier {
     }
 
     /** A part of the subject's distinguished name ("CN", "O", ...), or null. */
+    /**
+     * An RDN value as text.  An attribute the RFC 2253 form has no keyword for - the e-mail address
+     * among them - comes as its DER encoding (a byte[]), not a string.
+     */
+    static String valueOf(Object value) {
+        if (!(value instanceof byte[] der)) return String.valueOf(value);
+        // tag, length (short or long form), then the string's bytes.
+        if (der.length < 2) return null;
+        int length = der[1] & 0xFF;
+        int offset = 2;
+        if ((length & 0x80) != 0) {
+            int count = length & 0x7F;
+            if (count > 3 || der.length < 2 + count) return null;
+            length = 0;
+            for (int i = 0; i < count; i++) length = (length << 8) | (der[2 + i] & 0xFF);
+            offset += count;
+        }
+        if (offset + length > der.length) return null;
+        java.nio.charset.Charset charset = switch (der[0]) {
+            case 0x0C -> java.nio.charset.StandardCharsets.UTF_8;         // UTF8String
+            case 0x1E -> java.nio.charset.StandardCharsets.UTF_16BE;      // BMPString
+            default -> java.nio.charset.StandardCharsets.ISO_8859_1;      // IA5, Printable, T61
+        };
+        return new String(der, offset, length, charset);
+    }
+
     static String part(X509Certificate certificate, String... types) {
         try {
             LdapName name = new LdapName(certificate.getSubjectX500Principal().getName());
             for (Rdn rdn : name.getRdns()) {
                 for (String type : types) {
-                    if (rdn.getType().equalsIgnoreCase(type)) return String.valueOf(rdn.getValue());
+                    if (rdn.getType().equalsIgnoreCase(type)) return valueOf(rdn.getValue());
                 }
             }
         } catch (InvalidNameException e) {

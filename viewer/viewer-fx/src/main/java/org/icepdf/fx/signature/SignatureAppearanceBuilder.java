@@ -67,6 +67,8 @@ public class SignatureAppearanceBuilder implements SignatureAppearanceCallback<S
     protected static final float MIN_IMAGE_WIDTH = 1;
 
     protected SignatureAppearance signatureAppearanceModel;
+    // the image the last build wrote, to tell when the signer has changed it.
+    private BufferedImage lastImage;
 
 
     @Override
@@ -188,6 +190,17 @@ public class SignatureAppearanceBuilder implements SignatureAppearanceCallback<S
         Reference imageReference = signatureAppearanceModel.getImageXObjectReference();
         Reference softMaskReference = signatureAppearanceModel.getImageSoftMaskXObjectReference();
         ImageStream imageStream = null;
+        if (drawImage && signatureImage != lastImage) {
+            // A different image gets a new object number.  Decoded images are cached by object
+            // number, so writing a new image under the old one would keep painting the old pixels,
+            // placed by the new image's size - a drawn signature would stop updating after the first
+            // stroke, and stretch.
+            discard(library.getStateManager(), imageReference);
+            discard(library.getStateManager(), softMaskReference);
+            imageReference = null;
+            softMaskReference = null;
+        }
+        lastImage = drawImage ? signatureImage : null;
         if (drawImage) {
             Rectangle2D imageRegion = new Rectangle2D.Float(padding, padding,
                     imageColumnWidth, availableHeight);

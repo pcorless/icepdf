@@ -1977,8 +1977,13 @@ public final class PdfViewSmoke {
         }
 
         org.icepdf.fx.signature.SignDialog dialog = onFx(() -> {
+            // a drawn signature, as the pad keeps it, to check it reaches the field.
+            org.icepdf.fx.signature.SigningSettings settings = new org.icepdf.fx.signature.SigningSettings();
+            settings.getInk().parse("20,80 40,50 60,85 80,40 100,88 130,45 160,82 190,60 230,70 300,55\n"
+                    + "40,96 280,94");
+            settings.setImageSource(org.icepdf.fx.signature.SigningSettings.ImageSource.DRAWN);
             org.icepdf.fx.signature.SignDialog d = new org.icepdf.fx.signature.SignDialog(stage, document,
-                    created.widget());
+                    created.widget(), settings);
             d.show();
             return d;
         });
@@ -2003,6 +2008,14 @@ public final class PdfViewSmoke {
         check("the keystore lists its certificate", certificates == 1, certificates + " certificates");
         WritableImage shot = onFx(() -> dialog.getDialogPane().snapshot(null, null));
         ImageIO.write(SwingFXUtils.fromFXImage(shot, null), "png", out.resolve("sign-dialog.png").toFile());
+        WritableImage appearanceShot = onFx(() -> {
+            javafx.scene.control.TabPane tabs = (javafx.scene.control.TabPane) dialog.getDialogPane().lookup(".tab-pane");
+            tabs.getSelectionModel().select(1);
+            dialog.getDialogPane().applyCss();
+            dialog.getDialogPane().layout();
+            return dialog.getDialogPane().snapshot(null, null);
+        });
+        ImageIO.write(SwingFXUtils.fromFXImage(appearanceShot, null), "png", out.resolve("sign-dialog-appearance.png").toFile());
         fx(() -> ((javafx.scene.control.Button) dialog.getDialogPane().lookupButton(
                 dialog.getDialogPane().getButtonTypes().get(0))).fire());
         org.icepdf.fx.signature.SignDialog.Result result = onFx(dialog::getResult);

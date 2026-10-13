@@ -103,6 +103,99 @@ class DocumentSigningTest {
         assertTrue(new File(signed.toString()).length() > Files.size(source), "an incremental update");
     }
 
+    @DisplayName("a drawn signature is embedded as the field's image and the file still verifies")
+    @Test
+    void signsWithDrawnInk() throws Exception {
+        Path source = temp.resolve("source.pdf");
+        Files.copy(resource("/forms/all_fields.pdf"), source);
+        Path signed = temp.resolve("signed.pdf");
+
+        Document document = new Document();
+        document.setFile(source.toString());
+        Pkcs12SignerHandler signer = signer(null);
+        signer.setCertAlias(DocumentSigning.keyEntries(signer).get(0).alias());
+        SignatureWidgetAnnotation field = DocumentSigning.addSignatureField(document, 0,
+                new Rectangle2D.Double(300, 40, 200, 60));
+        Ink ink = new Ink();
+        ink.parse("20,80 60,40 100,90 140,30 180,70\n200,60 260,62");
+        SignatureAppearance appearance = new SignatureAppearance(document.getCatalog().getLibrary());
+        appearance.setImage(ink.toImage(3));
+        appearance.setImageVisible(true);
+        DocumentSigning.prepare(field, signer, new DocumentSigning.Request(SignatureType.SIGNER, "Test Signer",
+                null, null, null), appearance);
+        assertNotNull(appearance.getImageXObjectReference(), "the drawn image is written");
+        assertNotNull(appearance.getImageSoftMaskXObjectReference(), "with its transparency");
+        DocumentSigning.saveSigned(document, signed);
+        document.dispose();
+
+        Document reopened = new Document();
+        reopened.setFile(signed.toString());
+        try {
+            SignatureStatus status = SignatureVerifier.verifyAll(reopened).stream()
+                    .filter(SignatureStatus::isSigned).findFirst().orElseThrow();
+            assertFalse(status.signedDataModified(), status.summary());
+            assertFalse(status.modifiedAfterSigning());
+        } finally {
+            reopened.dispose();
+        }
+    }
+
+    @DisplayName("redrawing the signature updates the preview (not the first image, cached by object number)")
+    @Test
+    void previewFollowsANewImage() throws Exception {
+        Document document = new Document();
+        document.setFile(resource("/forms/all_fields.pdf").toString());
+        try {
+            SignatureWidgetAnnotation field = DocumentSigning.addSignatureField(document, 0,
+                    new Rectangle2D.Double(300, 40, 200, 60));
+            SignatureAppearance appearance = new SignatureAppearance(document.getCatalog().getLibrary());
+            appearance.setTextVisible(false);
+            appearance.setLayout(SignatureAppearance.Layout.OVERLAY);
+            Ink ink = new Ink();
+            ink.setWidth(6);
+            ink.parse("0,0 100,0");
+            appearance.setImage(ink.toImage(1));
+            DocumentSigning.previewAppearance(field, appearance);
+            render(field);
+            org.icepdf.core.pobjects.Reference first = appearance.getImageXObjectReference();
+
+            // now a tall stroke: a stale image would paint the flat one, squeezed into a narrow column.
+            ink.parse("0,0 0,100");
+            appearance.setImage(ink.toImage(1));
+            DocumentSigning.previewAppearance(field, appearance);
+            java.awt.image.BufferedImage second = render(field);
+            assertNotEquals(first, appearance.getImageXObjectReference(), "a new image, a new object");
+            int inked = 0;
+            for (int y = 0; y < second.getHeight(); y++) {
+                if ((second.getRGB(second.getWidth() / 2, y) & 0xFFFFFF) != 0xFFFFFF) inked++;
+            }
+            assertTrue(inked > second.getHeight() / 2, "the vertical stroke spans the field: " + inked);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    private static java.awt.image.BufferedImage render(SignatureWidgetAnnotation field) {
+        Rectangle2D r = field.getUserSpaceRectangle();
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage((int) r.getWidth(), (int) r.getHeight(),
+                java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = image.createGraphics();
+        g.setColor(java.awt.Color.WHITE);
+        g.fillRect(0, 0, image.getWidth(), image.getHeight());
+        g.transform(new java.awt.geom.AffineTransform(1, 0, 0, -1, -r.getX(), r.getY() + r.getHeight()));
+        field.render(g, org.icepdf.core.util.GraphicsRenderingHints.SCREEN, 0f, 1f, false);
+        g.dispose();
+        return image;
+    }
+
+    @DisplayName("an e-mail address in a certificate name comes out as text, not a byte array")
+    @Test
+    void derEncodedValue() {
+        byte[] ia5 = {0x16, 0x0E, 'm', 'e', '@', 'e', 'x', 'a', 'm', 'p', 'l', 'e', '.', 'c', 'o', 'm'};
+        assertEquals("me@example.com", SignatureVerifier.valueOf(ia5));
+        assertEquals("plain", SignatureVerifier.valueOf("plain"));
+    }
+
     @DisplayName("a certification signature can't be added twice")
     @Test
     void certifiesOnce() throws Exception {
