@@ -1111,7 +1111,11 @@ public class PdfView extends Control {
         document.set(value);
     }
 
-    /** Zero-based page the user is looking at; setting it scrolls that page into view. */
+    /**
+     * Zero-based page the user is looking at; setting it scrolls that page into view.  In the
+     * continuous modes it's the page the view was last taken to (by setting this, a search hit, a
+     * link, the caret...) until the user scrolls, then the page showing the most of itself.
+     */
     public final IntegerProperty currentPageIndexProperty() {
         return currentPageIndex;
     }

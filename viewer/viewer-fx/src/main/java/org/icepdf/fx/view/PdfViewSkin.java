@@ -114,6 +114,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private boolean refreshQueued;
     private boolean syncingBars;
     private boolean publishingPage;
+    // the page last navigated to (go to page, search hit, caret, link...) and the scroll position it
+    // was shown at: it stays the current page until the view scrolls, even when a neighbour is more
+    // visible.  -1 when none.
+    private int pinnedPage = -1;
+    private double pinnedX, pinnedY;
     // viewport point a zoom should hold still (mouse position for wheel/pinch zoom), else centre.
     private Point2D zoomFocus;
 
@@ -415,6 +420,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             double gap = getSkinnable().getPageGap();
             double x = layout.getWidth() > viewportW ? slot.x() - gap : scrollX;
             scrollTo(x, slot.y() - gap);
+            pinCurrentPage(page);
         }
     }
 
@@ -1673,7 +1679,36 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private void publishCurrentPage() {
         if (!getSkinnable().getViewMode().isContinuous()) return;
-        int current = layout.currentPage(scrollX, scrollY, viewportW, viewportH);
+        if (pinnedPage >= 0) {
+            if (pinStillHolds()) {
+                publish(pinnedPage);
+                return;
+            }
+            pinnedPage = -1;
+        }
+        publish(layout.currentPage(scrollX, scrollY, viewportW, viewportH));
+    }
+
+    /**
+     * Makes a page the current one because the view was taken to it, not scrolled past it: it stays
+     * current, though a neighbour may show more of itself, until the view scrolls.
+     */
+    private void pinCurrentPage(int page) {
+        if (layout == null || !getSkinnable().getViewMode().isContinuous()) return;
+        pinnedPage = page;
+        pinnedX = scrollX;
+        pinnedY = scrollY;
+        publish(page);
+    }
+
+    private boolean pinStillHolds() {
+        PageSlot slot = layout.getSlot(pinnedPage);
+        return slot != null && Math.abs(scrollX - pinnedX) < 0.5 && Math.abs(scrollY - pinnedY) < 0.5
+                && slot.maxY() > scrollY && slot.y() < scrollY + viewportH
+                && slot.maxX() > scrollX && slot.x() < scrollX + viewportW;
+    }
+
+    private void publish(int current) {
         if (current < 0 || current == getSkinnable().getCurrentPageIndex()) return;
         publishingPage = true;
         try {
@@ -2124,6 +2159,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         if (dy < scrollY + m) y = dy - m;
         else if (dy > scrollY + viewportH - m) y = dy - viewportH + m;
         if (x != scrollX || y != scrollY) scrollTo(x, y);
+        pinCurrentPage(point.pageIndex());
     }
 
     double getViewportWidth() {
