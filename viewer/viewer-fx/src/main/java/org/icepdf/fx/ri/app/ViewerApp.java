@@ -272,7 +272,10 @@ public class ViewerApp extends Application {
         }
         view.setHighlightFormFields(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         view.setPaintAnnotations(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
-        view.viewModeProperty().addListener((o, a, b) -> preferences.putEnum(ViewerPreferences.VIEW_MODE, b));
+        // a document's /PageLayout changes the mode for that document only, not the user's preference.
+        view.viewModeProperty().addListener((o, a, b) -> {
+            if (!pane.isApplyingPageLayout()) preferences.putEnum(ViewerPreferences.VIEW_MODE, b);
+        });
         view.fitModeProperty().addListener((o, a, b) -> preferences.putEnum(ViewerPreferences.FIT_MODE, b));
         view.zoomProperty().addListener((o, a, b) -> preferences.putDouble(ViewerPreferences.ZOOM, b.doubleValue()));
         view.highlightFormFieldsProperty().addListener((o, a, b) ->

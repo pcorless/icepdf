@@ -957,6 +957,7 @@ public class PdfViewer extends StackPane {
 
     private void loaded(DocumentPane pane) {
         pane.refreshTitle();
+        pane.applyPageLayout(PageLayout.of(pane.getSession().getDocument().getCatalog()));
         if (history != null && pane.getSession().getFile() != null) history.opened(pane.getSession().getFile());
         if (pane != current.get()) return;
         updateTitle();

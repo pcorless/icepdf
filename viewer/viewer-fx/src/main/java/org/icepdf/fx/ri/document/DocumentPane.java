@@ -190,6 +190,50 @@ public final class DocumentPane {
         this.onExportRedacted = onExportRedacted;
     }
 
+    // the view's mode and cover page before a document's /PageLayout replaced them, and what the
+    // document set; null when the view shows the viewer's own (or the user's) choice.
+    private org.icepdf.fx.ri.PageLayout beforeDocumentLayout;
+    private org.icepdf.fx.ri.PageLayout documentLayout;
+    private boolean applyingPageLayout;
+
+    /** True while {@link #applyPageLayout} changes the view: the change is the document's, not the user's. */
+    public boolean isApplyingPageLayout() {
+        return applyingPageLayout;
+    }
+
+    /**
+     * Applies an opened document's /PageLayout (null when it names none), which overrides the viewer's
+     * view mode as in the Swing viewer.  A document without one gets back the mode the view had before
+     * an earlier document's layout replaced it - unless the user has changed the mode since, which
+     * then stays.
+     */
+    public void applyPageLayout(org.icepdf.fx.ri.PageLayout layout) {
+        applyingPageLayout = true;
+        try {
+            applyPageLayoutNow(layout);
+        } finally {
+            applyingPageLayout = false;
+        }
+    }
+
+    private void applyPageLayoutNow(org.icepdf.fx.ri.PageLayout layout) {
+        org.icepdf.fx.ri.PageLayout current = new org.icepdf.fx.ri.PageLayout(view.getViewMode(), view.isCoverPage());
+        if (documentLayout != null && !documentLayout.equals(current)) beforeDocumentLayout = null; // the user's choice
+        if (layout != null) {
+            if (beforeDocumentLayout == null) beforeDocumentLayout = current;
+            documentLayout = layout;
+            view.setViewMode(layout.viewMode());
+            view.setCoverPage(layout.coverPage());
+        } else {
+            if (beforeDocumentLayout != null && documentLayout != null && documentLayout.equals(current)) {
+                view.setViewMode(beforeDocumentLayout.viewMode());
+                view.setCoverPage(beforeDocumentLayout.coverPage());
+            }
+            beforeDocumentLayout = null;
+            documentLayout = null;
+        }
+    }
+
     /** Works the title out again (after anything that changes the file or the modified state). */
     public void refreshTitle() {
         Path loading = session.getLoadingFile();
