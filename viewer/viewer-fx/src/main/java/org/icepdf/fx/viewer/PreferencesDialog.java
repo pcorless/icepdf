@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.viewer;
 
+import org.icepdf.fx.fonts.FontSettings;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -191,28 +193,28 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 + (FontSettings.isScanning() ? " (scanning…)" : ""));
         updateCount.run();
 
-        ListView<String> directories = new ListView<>(FXCollections.observableArrayList(FontSettings.directories(preferences)));
+        ListView<String> directories = new ListView<>(FXCollections.observableArrayList(FontDirectories.of(preferences)));
         directories.setPrefHeight(80);
         Button add = new Button("Add Folder…");
         add.setOnAction(e -> {
             File chosen = new DirectoryChooser().showDialog(getOwner());
             if (chosen != null && !directories.getItems().contains(chosen.getPath())) {
                 directories.getItems().add(chosen.getPath());
-                FontSettings.setDirectories(preferences, directories.getItems());
+                FontDirectories.set(preferences, directories.getItems());
             }
         });
         Button remove = new Button("Remove");
         remove.disableProperty().bind(directories.getSelectionModel().selectedItemProperty().isNull());
         remove.setOnAction(e -> {
             directories.getItems().remove(directories.getSelectionModel().getSelectedItem());
-            FontSettings.setDirectories(preferences, directories.getItems());
+            FontDirectories.set(preferences, directories.getItems());
         });
         Button rescan = new Button("Rescan Fonts");
         rescan.setTooltip(new Tooltip("Read the system font folders and the folders above again"));
         rescan.setOnAction(e -> {
             preferences.save();
             rescan.setDisable(true);
-            FontSettings.rescanInBackground(preferences, () -> Platform.runLater(() -> {
+            FontSettings.rescanInBackground(FontDirectories.of(preferences), () -> Platform.runLater(() -> {
                 fonts.setAll(FontSettings.fonts());
                 rescan.setDisable(false);
                 updateCount.run();

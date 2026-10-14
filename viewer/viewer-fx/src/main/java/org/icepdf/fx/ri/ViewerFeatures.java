@@ -65,6 +65,7 @@ public final class ViewerFeatures {
     private final List<String> railCandidates;
     private final boolean userCustomisable;
     private final boolean multipleDocuments;
+    private final EnumSet<Chrome> chrome;
 
     private ViewerFeatures(Builder b) {
         includes = Collections.unmodifiableSet(new LinkedHashSet<>(b.includes));
@@ -75,6 +76,7 @@ public final class ViewerFeatures {
         railCandidates = List.copyOf(b.railCandidates);
         userCustomisable = b.userCustomisable;
         multipleDocuments = b.multipleDocuments;
+        chrome = b.chrome.isEmpty() ? EnumSet.noneOf(Chrome.class) : EnumSet.copyOf(b.chrome);
     }
 
     /** Everything, rearrangeable by the user. */
@@ -94,8 +96,10 @@ public final class ViewerFeatures {
             if (actionId.equals(ViewModeAction.id(mode))) return viewModes.contains(mode);
         }
         // the comments command needs the comments panel.
-        if (actionId.equals("view.comments")) return panels.contains(SidePanel.COMMENTS);
-        if (actionId.startsWith("search.panel")) return panels.contains(SidePanel.SEARCH);
+        if (actionId.equals("view.comments")) return panels.contains(SidePanel.COMMENTS) && shows(Chrome.SIDE_PANELS);
+        if (actionId.startsWith("search.panel")) return panels.contains(SidePanel.SEARCH) && shows(Chrome.SIDE_PANELS);
+        // the side panel commands need the strip.
+        if (actionId.equals("view.side-panel")) return shows(Chrome.SIDE_PANELS);
         return true;
     }
 
@@ -140,6 +144,15 @@ public final class ViewerFeatures {
         return multipleDocuments;
     }
 
+    /** Whether the viewer shows a part of its chrome (all of it unless the product said otherwise). */
+    public boolean shows(Chrome part) {
+        return chrome.contains(part);
+    }
+
+    public Set<Chrome> chrome() {
+        return Collections.unmodifiableSet(chrome);
+    }
+
     public boolean isUserCustomisable() {
         return userCustomisable;
     }
@@ -173,6 +186,7 @@ public final class ViewerFeatures {
      * features.rail=tool.select, tool.pan, annotation.highlight
      * features.customisable=true
      * features.multipleDocuments=true
+     * features.chrome=none            (or: header, tool-rail, side-panels)
      * </pre>
      * Lists are comma separated; missing keys keep the preset's choice.  Unknown panel or layout
      * names are ignored.
@@ -208,6 +222,12 @@ public final class ViewerFeatures {
         if (customisable != null) b.userCustomisable(Boolean.parseBoolean(customisable.trim()));
         String multiple = properties.getProperty("features.multipleDocuments");
         if (multiple != null) b.multipleDocuments(Boolean.parseBoolean(multiple.trim()));
+        String chrome = properties.getProperty("features.chrome");
+        if (chrome != null) {
+            List<Chrome> parts = new ArrayList<>();
+            list(chrome).forEach(c -> Chrome.of(c).ifPresent(parts::add));
+            b.chrome(parts.toArray(new Chrome[0]));
+        }
         return b.build();
     }
 
@@ -242,6 +262,7 @@ public final class ViewerFeatures {
         private final List<String> railCandidates = new ArrayList<>(List.of("tool.*", "annotation.*", "signature.*"));
         private boolean userCustomisable = true;
         private boolean multipleDocuments;
+        private final EnumSet<Chrome> chrome = EnumSet.allOf(Chrome.class);
 
         private Builder(Preset preset) {
             String select = ToolModeAction.id(ToolMode.TEXT_SELECT), pan = ToolModeAction.id(ToolMode.PAN);
@@ -324,6 +345,17 @@ public final class ViewerFeatures {
         /** Whether the viewer holds several documents as tabs (false by default). */
         public Builder multipleDocuments(boolean multiple) {
             multipleDocuments = multiple;
+            return this;
+        }
+
+        /**
+         * The chrome shown around the document (all of it, if never called); none at all -
+         * {@code chrome()} - leaves just the document, for an application with its own tool bar
+         * that runs the viewer's actions ({@code viewer.getActions().bind(button, id)}).
+         */
+        public Builder chrome(Chrome... parts) {
+            chrome.clear();
+            chrome.addAll(Arrays.asList(parts));
             return this;
         }
 

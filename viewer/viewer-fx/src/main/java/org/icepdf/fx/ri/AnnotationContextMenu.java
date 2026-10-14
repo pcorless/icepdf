@@ -52,6 +52,20 @@ public final class AnnotationContextMenu {
     }
 
     /**
+     * Gives a view this menu, with the {@link AnnotationPropertiesDialog} for Properties…: right-click
+     * an annotation the document lets the user edit.
+     *
+     * @param colors the colours picked lately; null keeps them for this view only
+     */
+    public static void install(PdfView view, ColorHistory colors) {
+        ColorHistory history = colors != null ? colors : ColorHistory.inMemory();
+        view.setAnnotationMenuFactory(annotation -> create(view, annotation, history, target -> {
+            Window owner = view.getScene() != null ? view.getScene().getWindow() : null;
+            AnnotationPropertiesDialog.show(owner, target).ifPresent(change -> view.applyAnnotationProperties(target, change));
+        }));
+    }
+
+    /**
      * Builds the menu for {@code annotation}, or null when nothing in it applies.
      *
      * @param properties shows the properties dialog for the annotation; null leaves the item out

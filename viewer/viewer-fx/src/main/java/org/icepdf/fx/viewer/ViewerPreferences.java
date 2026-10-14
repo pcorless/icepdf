@@ -43,7 +43,7 @@ public final class ViewerPreferences {
     private static final Logger logger = Logger.getLogger(ViewerPreferences.class.getName());
 
     /** The system property naming the settings directory. */
-    public static final String HOME_PROPERTY = "org.icepdf.fx.viewer.home";
+    public static final String HOME_PROPERTY = org.icepdf.fx.fonts.FontSettings.HOME_PROPERTY;
     private static final int MAX_RECENT = 10;
 
     // keys

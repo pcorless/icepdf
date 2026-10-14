@@ -31,7 +31,7 @@ public final class LastPageAction extends AbstractViewerAction {
 
     @Override
     public ObservableBooleanValue enabled(ViewerContext context) {
-        return Conditions.documentOpen(context);
+        return Conditions.notAtLastPage(context);
     }
 
     @Override

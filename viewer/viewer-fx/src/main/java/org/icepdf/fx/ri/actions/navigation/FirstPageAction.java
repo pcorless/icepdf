@@ -31,7 +31,7 @@ public final class FirstPageAction extends AbstractViewerAction {
 
     @Override
     public ObservableBooleanValue enabled(ViewerContext context) {
-        return Conditions.documentOpen(context);
+        return Conditions.notAtFirstPage(context);
     }
 
     @Override

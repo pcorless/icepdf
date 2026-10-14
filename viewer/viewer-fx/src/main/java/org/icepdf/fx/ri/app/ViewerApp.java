@@ -31,7 +31,8 @@ import org.icepdf.fx.ri.ViewerFeatures;
 import org.icepdf.fx.ri.document.DocumentPane;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.ViewMode;
-import org.icepdf.fx.viewer.FontSettings;
+import org.icepdf.fx.fonts.FontSettings;
+import org.icepdf.fx.viewer.FontDirectories;
 import org.icepdf.fx.viewer.PreferencesDialog;
 import org.icepdf.fx.viewer.ViewerPreferences;
 
@@ -96,7 +97,7 @@ public class ViewerApp extends Application {
         signing = org.icepdf.fx.viewer.SigningPreferences.of(preferences);
         features = loadFeatures();
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
-        FontSettings.apply(preferences);
+        FontSettings.apply(FontSettings.defaultCacheFile(), FontDirectories.of(preferences));
         List<String> args = getParameters().getUnnamed();
         AppWindow first = createWindow(stage);
         if (!args.isEmpty()) first.viewer().open(Paths.get(args.get(0)));

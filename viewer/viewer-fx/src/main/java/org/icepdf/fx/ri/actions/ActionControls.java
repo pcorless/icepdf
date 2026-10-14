@@ -28,7 +28,8 @@ import java.util.Map;
  * Makes ready-wired controls for a registry's actions in one viewer: menu items and buttons with the
  * action's text, tool tip and shortcut, enabled and (for toggles) selected as the action says, and
  * running it when used.  Applications with their own menus and tool bars use this to put ICEpdf's
- * commands in them: {@code controls.menuItem("document.print")}.
+ * commands in them: {@code controls.menuItem("document.print")}, or wire their own controls to
+ * them: {@code controls.bind(myButton, "navigation.next")}.
  * <p>
  * Ids the registry doesn't have, or whose action isn't {@linkplain ViewerAction#isAvailable
  * available} in this context, are skipped by the list methods ({@link #menu}, {@link #items});
@@ -115,14 +116,10 @@ public final class ActionControls {
         } else {
             item = new MenuItem(action.label());
         }
-        item.setId(id);
         item.setMnemonicParsing(false);
         javafx.scene.Node graphic = icon(id, menuIconSize);
         if (graphic != null) item.setGraphic(graphic);
-        if (action.accelerator() != null) item.setAccelerator(action.accelerator());
-        item.setOnAction(e -> run(action, item));
-        wire(item, action);
-        return item;
+        return bind(item, id);
     }
 
     /** A button for an action: a toggle button for a toggle action.  Text is the short label. */
@@ -132,17 +129,10 @@ public final class ActionControls {
         if (action instanceof ToggleAction toggle) {
             ToggleButton toggleButton = new ToggleButton(action.shortLabel());
             if (toggle.group() != null) toggleButton.setToggleGroup(group(toggle.group()));
-            toggleButton.setOnAction(e -> {
-                run(action, null);
-                toggleButton.setSelected(toggle.selected(context).get());
-            });
             button = toggleButton;
         } else {
-            Button plain = new Button(action.shortLabel());
-            plain.setOnAction(e -> run(action, null));
-            button = plain;
+            button = new Button(action.shortLabel());
         }
-        button.setId(id);
         button.setMnemonicParsing(false);
         button.setTooltip(new Tooltip(action.tooltip()));
         javafx.scene.Node graphic = icon(id, buttonIconSize);
@@ -152,8 +142,42 @@ public final class ActionControls {
             button.getStyleClass().add("icon-button");
             button.setAccessibleText(action.label());
         }
+        return bind(button, id);
+    }
+
+    /**
+     * Wires an application's own button to an action: pressing it runs the action, it's disabled
+     * while the action can't run, and a {@link ToggleButton} shows whether a toggle action is on
+     * (a tool is the view's tool, a view mode is the view's).  Its text, graphic and style stay the
+     * application's; a tool tip is added only when it has none.
+     * <pre>{@code
+     * Button next = controls.bind(new Button("Next"), "navigation.next");
+     * }</pre>
+     *
+     * @return the button
+     * @throws IllegalArgumentException for an id the registry doesn't have
+     */
+    public <T extends ButtonBase> T bind(T button, String id) {
+        ViewerAction action = registry.get(id);
+        if (button.getId() == null) button.setId(id);
+        if (button.getTooltip() == null) button.setTooltip(new Tooltip(action.tooltip()));
+        button.setOnAction(e -> run(action, button));
         wire(button, action);
         return button;
+    }
+
+    /**
+     * Wires an application's own menu item to an action, as {@link #bind(ButtonBase, String)}: a
+     * {@link CheckMenuItem} or {@link RadioMenuItem} shows a toggle action's state.  The action's
+     * shortcut is shown when the item has none.
+     */
+    public <T extends MenuItem> T bind(T item, String id) {
+        ViewerAction action = registry.get(id);
+        if (item.getId() == null) item.setId(id);
+        if (item.getAccelerator() == null && action.accelerator() != null) item.setAccelerator(action.accelerator());
+        item.setOnAction(e -> run(action, item));
+        wire(item, action);
+        return item;
     }
 
     /** Menu items for a list of ids; null is a separator; unavailable ids are skipped. */
@@ -204,14 +228,16 @@ public final class ActionControls {
         return installed;
     }
 
-    private void run(ViewerAction action, MenuItem item) {
+    private void run(ViewerAction action, Object control) {
         action.execute(context);
         // a toggle the action refused (or changed differently) shows its real state again.
-        if (action instanceof ToggleAction toggle && item != null) {
-            boolean on = toggle.selected(context).get();
-            if (item instanceof CheckMenuItem check) check.setSelected(on);
-            else if (item instanceof RadioMenuItem radio) radio.setSelected(on);
-        }
+        if (action instanceof ToggleAction toggle) show(control, toggle.selected(context).get());
+    }
+
+    private static void show(Object target, boolean on) {
+        if (target instanceof CheckMenuItem check) check.setSelected(on);
+        else if (target instanceof RadioMenuItem radio) radio.setSelected(on);
+        else if (target instanceof ToggleButton button) button.setSelected(on);
     }
 
     private void wire(Object control, ViewerAction action) {
@@ -264,12 +290,6 @@ public final class ActionControls {
                 else if (target instanceof ButtonBase button) button.getProperties().put(ToggleAction.class, this);
             }
             return true;
-        }
-
-        private void show(Object target, boolean on) {
-            if (target instanceof CheckMenuItem check) check.setSelected(on);
-            else if (target instanceof RadioMenuItem radio) radio.setSelected(on);
-            else if (target instanceof ToggleButton button) button.setSelected(on);
         }
     }
 

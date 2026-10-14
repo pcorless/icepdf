@@ -31,7 +31,7 @@ public final class SearchPanelAction extends AbstractViewerAction {
 
     @Override
     public boolean isAvailable(ViewerContext context) {
-        return context.has(ViewerContext.Capability.FIND);
+        return context.has(ViewerContext.Capability.SIDE_PANEL);
     }
 
     @Override

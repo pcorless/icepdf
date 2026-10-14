@@ -33,7 +33,20 @@ public interface ViewerContext {
 
     /** Application-level operations a host may offer. */
     enum Capability {
-        OPEN, SAVE, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND
+        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND
+    }
+
+    /**
+     * A context for a bare {@link PdfView} in an application's own window: the view's commands
+     * (pages, zoom, selection, tools, undo...) work at once; the host operations an application
+     * hands over - its Find field, its Open... - are offered once set.
+     * <pre>{@code
+     * ActionControls actions = new ActionControls(StandardActions.registry(),
+     *         ViewerContext.of(view).onFind(searchField::requestFocus));
+     * }</pre>
+     */
+    static SimpleViewerContext of(PdfView view) {
+        return new SimpleViewerContext(view);
     }
 
     PdfView view();

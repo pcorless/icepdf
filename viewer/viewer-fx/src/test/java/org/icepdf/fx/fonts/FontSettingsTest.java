@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.viewer;
+package org.icepdf.fx.fonts;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,14 +37,14 @@ class FontSettingsTest {
 
     @BeforeEach
     void useScratchHome() {
-        previousHome = System.getProperty(ViewerPreferences.HOME_PROPERTY);
-        System.setProperty(ViewerPreferences.HOME_PROPERTY, home.toString());
+        previousHome = System.getProperty(FontSettings.HOME_PROPERTY);
+        System.setProperty(FontSettings.HOME_PROPERTY, home.toString());
     }
 
     @AfterEach
     void restoreHome() {
-        if (previousHome == null) System.clearProperty(ViewerPreferences.HOME_PROPERTY);
-        else System.setProperty(ViewerPreferences.HOME_PROPERTY, previousHome);
+        if (previousHome == null) System.clearProperty(FontSettings.HOME_PROPERTY);
+        else System.setProperty(FontSettings.HOME_PROPERTY, previousHome);
     }
 
     @DisplayName("an entry is family|decorations|path; anything else is skipped")
@@ -98,16 +98,5 @@ class FontSettingsTest {
         preferences.remove("a");
         assertFalse(backing.containsKey("a"));
         preferences.flush();
-    }
-
-    @DisplayName("extra font directories are one per line; empty clears the preference")
-    @Test
-    void directories() {
-        ViewerPreferences preferences = ViewerPreferences.inMemory();
-        assertTrue(FontSettings.directories(preferences).isEmpty());
-        FontSettings.setDirectories(preferences, List.of("/a", "/b c"));
-        assertEquals(List.of("/a", "/b c"), FontSettings.directories(preferences));
-        FontSettings.setDirectories(preferences, List.of());
-        assertNull(preferences.get(FontSettings.DIRECTORIES, null));
     }
 }

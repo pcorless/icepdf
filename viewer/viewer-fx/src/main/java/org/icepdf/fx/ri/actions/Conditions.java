@@ -62,4 +62,32 @@ public final class Conditions {
     public static BooleanBinding hasSearchHits(ViewerContext context) {
         return Bindings.isNotEmpty(context.view().getSearchHits());
     }
+
+    /** A document is open and the view isn't at its first page (or, side by side, first spread). */
+    public static BooleanBinding notAtFirstPage(ViewerContext context) {
+        PdfView view = context.view();
+        return Bindings.createBooleanBinding(() -> view.getDocument() != null
+                        && spreadStart(view, view.getCurrentPageIndex()) > 0,
+                view.documentProperty(), view.currentPageIndexProperty(), view.pageCountProperty(),
+                view.viewModeProperty(), view.coverPageProperty());
+    }
+
+    /** A document is open and the view isn't at its last page (or, side by side, last spread). */
+    public static BooleanBinding notAtLastPage(ViewerContext context) {
+        PdfView view = context.view();
+        return Bindings.createBooleanBinding(() -> view.getDocument() != null && view.getPageCount() > 0
+                        && spreadStart(view, view.getCurrentPageIndex()) < spreadStart(view, view.getPageCount() - 1),
+                view.documentProperty(), view.currentPageIndexProperty(), view.pageCountProperty(),
+                view.viewModeProperty(), view.coverPageProperty());
+    }
+
+    /**
+     * The first page of the spread a page is in: itself one page at a time; side by side, pages
+     * pair up from the first, or from the second when the first is a cover shown alone.
+     */
+    static int spreadStart(PdfView view, int page) {
+        if (!view.getViewMode().isFacing()) return page;
+        if (view.isCoverPage()) return page == 0 ? 0 : page - (page + 1) % 2;
+        return page - page % 2;
+    }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.viewer;
+package org.icepdf.fx.fonts;
 
 import org.icepdf.core.pobjects.fonts.FontManager;
 
@@ -23,9 +23,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
@@ -37,21 +37,24 @@ import java.util.prefs.BackingStoreException;
 /**
  * The system fonts core substitutes for fonts a document doesn't embed.  Finding them means reading
  * every font file on the machine, so the list is cached - as the Swing viewer caches it, but in the
- * viewer's own settings directory ({@code fonts.properties}) rather than in {@code java.util.prefs}
+ * viewer's own settings directory ({@code ~/.icepdf/fx/fonts.properties}) rather than in {@code java.util.prefs}
  * - and loaded into core's {@link FontManager} at start.  Without a cache the scan runs in the
  * background (a render that needs a substitute meanwhile waits for it).
  * <p>
- * Extra font directories (preference {@code fonts.directories}, one per line) are scanned too.
+ * An application calls {@link #apply()} once at start - the cache then lives in {@code ~/.icepdf/fx}
+ * - or {@link #apply(Path, List)} to keep it, and choose extra font directories to scan, itself.
  */
 public final class FontSettings {
 
     private static final Logger logger = Logger.getLogger(FontSettings.class.getName());
 
-    /** Preference: extra font directories, one per line. */
-    public static final String DIRECTORIES = "fonts.directories";
+    /** System property naming the settings directory the default cache goes in (shared with the viewer application). */
+    public static final String HOME_PROPERTY = "org.icepdf.fx.viewer.home";
     private static final String VERSION_KEY = "__icepdf.cache.version";
     private static final String CACHE_VERSION = "1";
     private static volatile Thread scan;
+    // the cache in use: set by apply, the default until then.
+    private static volatile Path cache;
 
     /** One cached font: its name, family, style flags and file. */
     public record FontEntry(String name, String family, int decorations, String path) {
@@ -60,16 +63,35 @@ public final class FontSettings {
     private FontSettings() {
     }
 
-    /** The cache file. */
+    /** The cache file: the one last applied, else {@link #defaultCacheFile()}. */
     public static Path cacheFile() {
-        return ViewerPreferences.home().resolve("fonts.properties");
+        Path file = cache;
+        return file != null ? file : defaultCacheFile();
+    }
+
+    /** {@code fonts.properties} in {@code ~/.icepdf/fx}, or in the directory system property {@value #HOME_PROPERTY} names. */
+    public static Path defaultCacheFile() {
+        String configured = System.getProperty(HOME_PROPERTY);
+        Path home = configured != null && !configured.isEmpty() ? Paths.get(configured)
+                : Paths.get(System.getProperty("user.home"), ".icepdf", "fx");
+        return home.resolve("fonts.properties");
     }
 
     /**
-     * Loads the cached font list into core, or - with no usable cache - scans in the background and
-     * writes one.
+     * Loads the cached font list into core, or - with no usable cache - scans the system's fonts in
+     * the background and writes one, in {@link #defaultCacheFile()}.
      */
-    public static void apply(ViewerPreferences preferences) {
+    public static void apply() {
+        apply(defaultCacheFile(), List.of());
+    }
+
+    /**
+     * {@link #apply()} with the application's own cache file, scanning {@code extraDirectories} as
+     * well as the system's font directories when there's no cache.  The cache is used from then on
+     * ({@link #rescanInBackground}, {@link #clearCache}).
+     */
+    public static void apply(Path cacheFile, List<String> extraDirectories) {
+        cache = cacheFile;
         Properties cache = readCache();
         if (cache != null && !cache.isEmpty()) {
             try {
@@ -79,7 +101,7 @@ public final class FontSettings {
                 logger.log(Level.WARNING, "The font cache could not be read; rescanning", e);
             }
         }
-        rescanInBackground(preferences, null);
+        rescanInBackground(extraDirectories, null);
     }
 
     /** True while a scan is running. */
@@ -94,9 +116,9 @@ public final class FontSettings {
      *
      * @param done run on the scanning thread when finished; may be null
      */
-    public static synchronized void rescanInBackground(ViewerPreferences preferences, Runnable done) {
+    public static synchronized void rescanInBackground(List<String> extraDirectories, Runnable done) {
         if (isScanning()) return;
-        String[] extra = directories(preferences).toArray(new String[0]);
+        String[] extra = extraDirectories.toArray(new String[0]);
         Thread thread = new Thread(() -> {
             try {
                 FontManager manager = FontManager.getInstance();
@@ -134,21 +156,6 @@ public final class FontSettings {
         }
         fonts.sort((a, b) -> a.name().compareToIgnoreCase(b.name()));
         return fonts;
-    }
-
-    /** The extra font directories. */
-    public static List<String> directories(ViewerPreferences preferences) {
-        String value = preferences.get(DIRECTORIES, "");
-        if (value.isEmpty()) return Collections.emptyList();
-        List<String> directories = new ArrayList<>();
-        for (String line : value.split("\n")) {
-            if (!line.trim().isEmpty()) directories.add(line.trim());
-        }
-        return directories;
-    }
-
-    public static void setDirectories(ViewerPreferences preferences, List<String> directories) {
-        preferences.put(DIRECTORIES, directories.isEmpty() ? null : String.join("\n", directories));
     }
 
     static FontEntry parse(String name, String value) {

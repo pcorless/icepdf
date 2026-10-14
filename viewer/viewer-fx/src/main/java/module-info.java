@@ -37,6 +37,7 @@ module org.icepdf.fx {
     requires org.bouncycastle.provider;
 
     exports org.icepdf.fx.view;
+    exports org.icepdf.fx.fonts;
     exports org.icepdf.fx.panels;
     exports org.icepdf.fx.print;
     exports org.icepdf.fx.signature;

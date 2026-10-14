@@ -203,4 +203,24 @@ class ViewerFeaturesTest {
         back.read(written);
         assertTrue(back.isRailCustomised() && back.getPinned().isEmpty());
     }
+
+    @Test
+    void chrome() {
+        ViewerFeatures all = ViewerFeatures.full();
+        assertTrue(all.shows(Chrome.HEADER) && all.shows(Chrome.TOOL_RAIL) && all.shows(Chrome.SIDE_PANELS));
+        assertTrue(all.allows("view.side-panel") && all.allows("search.panel") && all.allows("view.comments"));
+
+        ViewerFeatures none = ViewerFeatures.builder(ViewerFeatures.Preset.FULL).chrome().build();
+        assertTrue(none.chrome().isEmpty());
+        // the side panel commands need the strip; the panels themselves stay offered.
+        assertFalse(none.allows("view.side-panel") || none.allows("search.panel") || none.allows("view.comments"));
+        assertTrue(none.allows(SidePanel.BOOKMARKS) && none.allows("navigation.next"));
+
+        Properties p = new Properties();
+        p.setProperty("features.chrome", "none");
+        assertTrue(ViewerFeatures.fromProperties(p).chrome().isEmpty());
+        p.setProperty("features.chrome", "header, side-panels");
+        ViewerFeatures some = ViewerFeatures.fromProperties(p);
+        assertTrue(some.shows(Chrome.HEADER) && some.shows(Chrome.SIDE_PANELS) && !some.shows(Chrome.TOOL_RAIL));
+    }
 }

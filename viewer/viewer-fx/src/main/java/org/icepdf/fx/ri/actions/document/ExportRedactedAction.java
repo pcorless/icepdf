@@ -34,7 +34,7 @@ public final class ExportRedactedAction extends AbstractViewerAction {
 
     @Override
     public boolean isAvailable(ViewerContext context) {
-        return context.has(ViewerContext.Capability.SAVE);
+        return context.has(ViewerContext.Capability.EXPORT_REDACTED);
     }
 
     @Override

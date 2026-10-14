@@ -21,7 +21,7 @@ import javafx.stage.Stage;
 import org.icepdf.fx.ri.PdfViewer;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
-import org.icepdf.fx.viewer.FontSettings;
+import org.icepdf.fx.fonts.FontSettings;
 import org.icepdf.fx.viewer.ViewerPreferences;
 
 import java.nio.file.Paths;
@@ -41,7 +41,7 @@ public class ShellPreview extends Application {
 
     @Override
     public void start(Stage stage) {
-        FontSettings.apply(ViewerPreferences.load());
+        FontSettings.apply();
         viewer = PdfViewer.create(ViewerFeatures.builder(ViewerFeatures.Preset.FULL).multipleDocuments(true).build(),
                 UserLayout.load(ViewerPreferences.home().resolve("layout.properties")));
         viewer.setOnExit(stage::close);

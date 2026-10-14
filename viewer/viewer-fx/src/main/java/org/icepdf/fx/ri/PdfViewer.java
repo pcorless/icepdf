@@ -33,7 +33,6 @@ import javafx.util.Duration;
 import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
-import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.ri.actions.ActionControls;
 import org.icepdf.fx.ri.actions.ActionRegistry;
@@ -41,11 +40,10 @@ import org.icepdf.fx.ri.actions.StandardActions;
 import org.icepdf.fx.ri.actions.ViewerContext;
 import org.icepdf.fx.ri.document.DocumentPane;
 import org.icepdf.fx.ri.document.DocumentSession;
+import org.icepdf.fx.ri.document.SignatureFlow;
 import org.icepdf.fx.ri.icons.IconProvider;
 import org.icepdf.fx.ri.icons.SvgIcons;
 import org.icepdf.fx.ri.ui.*;
-import org.icepdf.fx.signature.DocumentSigning;
-import org.icepdf.fx.signature.SignDialog;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ViewMode;
@@ -95,6 +93,18 @@ public class PdfViewer extends StackPane {
     private final Context context = new Context();
     private FileHistory history;
     private ColorHistory colorHistory = ColorHistory.inMemory();
+    // what the annotation menus are given: the history set now, whenever it's set.
+    private final ColorHistory colors = new ColorHistory() {
+        @Override
+        public java.util.List<java.awt.Color> recent() {
+            return colorHistory.recent();
+        }
+
+        @Override
+        public void used(java.awt.Color color) {
+            colorHistory.used(color);
+        }
+    };
     private SigningStore signingStore = SigningStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
@@ -189,7 +199,7 @@ public class PdfViewer extends StackPane {
         }
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
 
-        shell.setHeader(header);
+        if (features.shows(Chrome.HEADER)) shell.setHeader(header);
         shell.setCenter(first.getNode());
         buildDrawers();
         getChildren().addAll(shell, toast);
@@ -500,55 +510,17 @@ public class PdfViewer extends StackPane {
         return true;
     }
 
-    /**
-     * Signs an empty signature field (clicked, or just drawn with the signature tool): the sign
-     * dialog, then a name for the signed copy, which is written off the FX thread and opened in the
-     * document's place.  Cancelling at any step leaves the field unsigned.
-     */
-    private void sign(DocumentPane pane, SignatureWidgetAnnotation field) {
-        DocumentSession session = pane.getSession();
-        Document document = session.getDocument();
-        if (document == null) return;
-        SigningStore store = signingStore;
-        org.icepdf.fx.signature.SigningSettings settings = store.settings();
-        SignDialog.Result result = new SignDialog(context.window(), document, field, settings).showAndWait().orElse(null);
-        // saved on cancel too: a signature drawn and the keystore opened are worth keeping either way.
-        store.save(settings);
-        if (result == null) return;
-        try {
-            DocumentSigning.prepare(field, result.signer(), result.request(), result.appearance());
-        } catch (IllegalStateException e) {
-            DocumentSigning.cancel(field);
-            onError.accept(e.getMessage());
-            return;
-        }
-        FileChooser chooser = context.chooser("Save Signed Document");
-        Path file = session.getFile();
-        String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
-        chooser.setInitialFileName(base + "-signed.pdf");
-        File target = chooser.showSaveDialog(context.window());
-        if (target == null) {
-            DocumentSigning.cancel(field);
-            return;
-        }
-        if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
-        showMessage("Signing…");
-        int page = pane.getView().getCurrentPageIndex();
-        Thread worker = new Thread(() -> {
-            try {
-                DocumentSigning.saveSigned(document, target.toPath());
-                javafx.application.Platform.runLater(() -> {
-                    // the signed copy is the document now; the original's pending signature is gone.
-                    document.getStateManager().setChangesSnapshot();
-                    if (session.getDocument() == document) session.openAt(target.toPath(), page);
-                    showMessage("Signed " + target.getName());
+    /** Signing in a document: the sign dialog, then a name for the signed copy, which replaces the document. */
+    private SignatureFlow signatureFlow(DocumentPane pane) {
+        return new SignatureFlow(pane.getSession()).setSigningStore(signingStore).setOnMessage(this::showMessage)
+                .setOnError(message -> onError.accept(message)).setTargetChooser((window, suggested) -> {
+                    FileChooser chooser = context.chooser("Save Signed Document");
+                    chooser.setInitialFileName(suggested.getFileName().toString());
+                    File target = chooser.showSaveDialog(window);
+                    if (target == null) return null;
+                    if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
+                    return target.toPath();
                 });
-            } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> onError.accept("Signing failed: " + e.getMessage()));
-            }
-        }, "pdf-sign");
-        worker.setDaemon(true);
-        worker.start();
     }
 
     /**
@@ -654,13 +626,9 @@ public class PdfViewer extends StackPane {
             if (pane == current.get()) exportRedacted();
         });
         pane.getAttachments().setOnOpen(this::openAttachment);
-        pane.getView().setOnSignatureClicked(event -> {
-            if (event.getStatus().isSigned()) pane.getView().showSignatureProperties(event.getStatus());
-            else sign(pane, event.getStatus().widget());
-        });
-        pane.getView().setAnnotationMenuFactory(annotation -> AnnotationContextMenu.create(pane.getView(), annotation,
-                colorHistory, target -> AnnotationPropertiesDialog.show(getScene() != null ? getScene().getWindow() : null, target)
-                .ifPresent(change -> pane.getView().applyAnnotationProperties(target, change))));
+        // a new flow per click: it picks up the signing store as it is then.
+        pane.getView().setOnSignatureClicked(event -> signatureFlow(pane).handle(event));
+        AnnotationContextMenu.install(pane.getView(), colors);
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });
@@ -909,6 +877,15 @@ public class PdfViewer extends StackPane {
 
     /** Puts the rail and the utility panel on their sides, as the layout says. */
     private void buildDrawers() {
+        if (features.shows(Chrome.TOOL_RAIL)) buildRailDrawer();
+        if (features.shows(Chrome.SIDE_PANELS)) {
+            // the utility panel sits opposite the rail.
+            utility.getDrawer().setSide(layout.getPanelSide());
+            shell.setDrawer(utility.getDrawer());
+        }
+    }
+
+    private void buildRailDrawer() {
         UserLayout.Side railSide = layout.getRailSide();
         EdgeDrawer railDrawer;
         if (layout.isRailAutoShow()) {
@@ -922,9 +899,6 @@ public class PdfViewer extends StackPane {
         railDrawer.setResizable(false);
         railDrawer.setFitContent(true);
         shell.setDrawer(railDrawer);
-        // the utility panel sits opposite the rail.
-        utility.getDrawer().setSide(layout.getPanelSide());
-        shell.setDrawer(utility.getDrawer());
     }
 
     /** The utility panel's state is the user's: remember it. */
@@ -967,7 +941,7 @@ public class PdfViewer extends StackPane {
                 : Catalog.PAGE_MODE_USE_THUMBS_VALUE.equals(mode) ? SidePanel.THUMBNAILS
                 : Catalog.PAGE_MODE_USE_ATTACHMENTS_VALUE.equals(mode) ? SidePanel.ATTACHMENTS
                 : Catalog.PAGE_MODE_OPTIONAL_CONTENT_VALUE.equals(mode) ? SidePanel.LAYERS : null;
-        if (wanted != null) javafx.application.Platform.runLater(() -> utility.open(wanted));
+        if (wanted != null && features.shows(Chrome.SIDE_PANELS)) javafx.application.Platform.runLater(() -> utility.open(wanted));
     }
 
     private void updateTitle() {
@@ -1064,6 +1038,8 @@ public class PdfViewer extends StackPane {
                 case NEW_WINDOW -> onNewWindow != null;
                 case EXIT -> onExit != null;
                 case PREFERENCES -> onPreferences != null;
+                case FIND -> features.shows(Chrome.HEADER);
+                case SIDE_PANEL -> features.shows(Chrome.SIDE_PANELS);
                 default -> true;
             };
         }
