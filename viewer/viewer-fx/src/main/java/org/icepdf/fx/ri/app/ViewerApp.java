@@ -31,6 +31,7 @@ import org.icepdf.fx.ri.PdfViewer;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
 import org.icepdf.fx.ri.document.DocumentPane;
+import org.icepdf.fx.ri.ui.Theme;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.ViewMode;
 import org.icepdf.fx.fonts.FontSettings;
@@ -176,6 +177,7 @@ public class ViewerApp extends Application {
 
     private AppWindow createWindow(Stage stage, DocumentPane document, javafx.geometry.Point2D at) {
         PdfViewer viewer = PdfViewer.create(features, layout);
+        applyTheme(viewer);
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
         viewer.setColorHistory(colorHistory);
@@ -256,9 +258,14 @@ public class ViewerApp extends Application {
     private void showPreferences(AppWindow window) {
         new PreferencesDialog(window.stage(), preferences, window.viewer().getView()).showAndWait();
         preferences.save();
+        for (AppWindow each : windows) applyTheme(each.viewer());
     }
 
     /** Applies what the user chose (and keeps what they change) to a document's view and search panel. */
+    private void applyTheme(PdfViewer viewer) {
+        viewer.getTheme().modeProperty().set(preferences.getEnum(ViewerPreferences.THEME, Theme.Mode.class, Theme.Mode.SYSTEM));
+    }
+
     private void applyPreferences(DocumentPane pane) {
         var view = pane.getView();
         view.setViewMode(preferences.getEnum(ViewerPreferences.VIEW_MODE, ViewMode.class, ViewMode.CONTINUOUS));

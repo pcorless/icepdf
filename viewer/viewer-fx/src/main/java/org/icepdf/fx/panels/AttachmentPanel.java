@@ -64,7 +64,8 @@ public class AttachmentPanel extends BorderPane {
 
             {
                 name.setStyle("-fx-font-weight: bold;");
-                details.setStyle("-fx-opacity: 0.75; -fx-font-size: 0.9em;");
+                details.setStyle("-fx-font-size: 0.9em;");
+                details.getStyleClass().add("dim-label");
                 setOnMouseClicked(e -> {
                     if (e.getClickCount() == 2 && !isEmpty()) open(getItem());
                 });

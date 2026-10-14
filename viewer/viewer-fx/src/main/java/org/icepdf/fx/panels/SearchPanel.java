@@ -597,7 +597,7 @@ public class SearchPanel extends BorderPane {
             List<Text> parts = new ArrayList<>();
             if (label != null && !label.isEmpty()) {
                 Text l = new Text(label + ": ");
-                l.setStyle("-fx-opacity: 0.7;");
+                l.getStyleClass().add("dim-label");
                 parts.add(l);
             }
             parts.add(new Text(before));

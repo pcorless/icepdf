@@ -29,6 +29,10 @@
     -icepdf-active: rgba(0, 0, 0, 0.13);
     -icepdf-accent: #3584e4;
     -icepdf-toast: rgba(32, 32, 32, 0.9);
+    -icepdf-toast-fg: white;
+    -icepdf-toast-border: transparent;
+    -icepdf-focus: #3584e4;
+    -icepdf-active-fg: -icepdf-accent;
     -icepdf-warning: #fdf0c8;
     -icepdf-warning-fg: #4a3800;
     -icepdf-warning-border: #e5c96a;
@@ -51,6 +55,10 @@
     -icepdf-active: rgba(255, 255, 255, 0.15);
     -icepdf-accent: #78aeed;
     -icepdf-toast: rgba(60, 60, 60, 0.95);
+    -icepdf-toast-fg: white;
+    -icepdf-toast-border: transparent;
+    -icepdf-focus: #78aeed;
+    -icepdf-active-fg: -icepdf-accent;
     -icepdf-warning: #4a3d12;
     -icepdf-warning-fg: #f6e3a8;
     -icepdf-warning-border: #7a6420;
@@ -61,26 +69,99 @@
     -fx-focus-color: #78aeed;
 }
 
+/* High contrast: solid colours only (no translucent hovers), black or white borders, a thick focus
+   ring and selected states shown by inverting.  Contrast is at least 7:1 for text and 3:1 for
+   boundaries (WCAG 2.1 AAA 1.4.6, AA 1.4.11).  The shared rules are under .high-contrast below. */
 .icepdf-viewer.theme-high-contrast {
     -icepdf-window: #ffffff;
     -icepdf-header: #ffffff;
     -icepdf-sidebar: #ffffff;
-    -icepdf-canvas: #9a9a9a;
+    -icepdf-canvas: #595959;
     -icepdf-fg: #000000;
     -icepdf-fg-dim: #000000;
     -icepdf-border: #000000;
-    -icepdf-hover: rgba(0, 0, 0, 0.15);
-    -icepdf-active: rgba(0, 0, 0, 0.3);
-    -icepdf-accent: #0040c0;
+    -icepdf-hover: #e0e0e0;
+    -icepdf-active: #000000;
+    -icepdf-active-fg: #ffffff;
+    -icepdf-accent: #0000c0;
+    -icepdf-focus: #0000c0;
     -icepdf-toast: #000000;
+    -icepdf-toast-fg: #ffffff;
+    -icepdf-toast-border: #000000;
     -icepdf-warning: #ffff00;
     -icepdf-warning-fg: #000000;
     -icepdf-warning-border: #000000;
     -fx-base: #ffffff;
     -fx-background: #ffffff;
     -fx-control-inner-background: #ffffff;
-    -fx-accent: #0040c0;
-    -fx-focus-color: #000000;
+    -fx-control-inner-background-alt: #ffffff;
+    -fx-dark-text-color: #000000;
+    -fx-mid-text-color: #000000;
+    -fx-light-text-color: #ffffff;
+    -fx-prompt-text-fill: #333333;
+    -fx-mark-color: #000000;
+    -fx-accent: #0000c0;
+    -fx-default-button: #e0e0e0;
+    -fx-selection-bar: #0000c0;
+    -fx-selection-bar-non-focused: #000000;
+    -fx-cell-focus-inner-border: #0000c0;
+    -fx-focus-color: #0000c0;
+    -fx-faint-focus-color: transparent;
+    -fx-box-border: #000000;
+    -fx-text-box-border: #000000;
+    -fx-outer-border: #000000;
+    -fx-inner-border: transparent;
+    -fx-inner-border-horizontal: transparent;
+    -fx-body-color: #ffffff;
+    -fx-shadow-highlight-color: transparent;
+    -fx-hover-base: #e0e0e0;
+    -fx-pressed-base: #c0c0c0;
+}
+
+.icepdf-viewer.theme-high-contrast-dark {
+    -icepdf-window: #000000;
+    -icepdf-header: #000000;
+    -icepdf-sidebar: #000000;
+    -icepdf-canvas: #000000;
+    -icepdf-fg: #ffffff;
+    -icepdf-fg-dim: #ffffff;
+    -icepdf-border: #ffffff;
+    -icepdf-hover: #333333;
+    -icepdf-active: #ffff00;
+    -icepdf-active-fg: #000000;
+    -icepdf-accent: #ffff00;
+    -icepdf-focus: #00ffff;
+    -icepdf-toast: #000000;
+    -icepdf-toast-fg: #ffffff;
+    -icepdf-toast-border: #ffffff;
+    -icepdf-warning: #000000;
+    -icepdf-warning-fg: #ffff00;
+    -icepdf-warning-border: #ffff00;
+    -fx-base: #000000;
+    -fx-background: #000000;
+    -fx-control-inner-background: #000000;
+    -fx-control-inner-background-alt: #000000;
+    -fx-dark-text-color: #000000;
+    -fx-mid-text-color: #000000;
+    -fx-light-text-color: #ffffff;
+    -fx-prompt-text-fill: #c0c0c0;
+    -fx-mark-color: #ffffff;
+    -fx-accent: #ffff00;
+    -fx-default-button: #333333;
+    -fx-selection-bar: #ffff00;
+    -fx-selection-bar-non-focused: #ffffff;
+    -fx-cell-focus-inner-border: #00ffff;
+    -fx-focus-color: #00ffff;
+    -fx-faint-focus-color: transparent;
+    -fx-box-border: #ffffff;
+    -fx-text-box-border: #ffffff;
+    -fx-outer-border: #ffffff;
+    -fx-inner-border: transparent;
+    -fx-inner-border-horizontal: transparent;
+    -fx-body-color: #000000;
+    -fx-shadow-highlight-color: transparent;
+    -fx-hover-base: #333333;
+    -fx-pressed-base: #555555;
 }
 
 .icepdf-viewer {
@@ -109,6 +190,25 @@
     -fx-text-fill: -icepdf-fg-dim;
 }
 
+/* the search panel's snippets are Text nodes: they take the cell's text colour (fill, not text-fill) */
+.icepdf-viewer .search-panel .text {
+    -fx-fill: -fx-text-background-color;
+}
+
+.icepdf-viewer .search-panel .text.dim-label {
+    -fx-fill: -icepdf-fg-dim;
+}
+
+.icepdf-viewer .search-panel .tree-cell:filled:selected .text {
+    -fx-fill: -fx-text-background-color;
+}
+
+/* secondary text on a selected row takes the row's text colour */
+.icepdf-viewer .list-cell:filled:selected .dim-label,
+.icepdf-viewer .tree-cell:filled:selected .dim-label {
+    -fx-text-fill: -fx-text-background-color;
+}
+
 .icepdf-viewer .search-bar {
     -fx-background-color: -icepdf-header;
     -fx-border-color: transparent transparent -icepdf-border transparent;
@@ -134,7 +234,7 @@
 }
 
 .icepdf-viewer .icon-button:focused {
-    -fx-border-color: -icepdf-accent;
+    -fx-border-color: -icepdf-focus;
     -fx-border-radius: 6;
 }
 
@@ -165,7 +265,7 @@
 }
 
 .icepdf-viewer .icon-button:selected .icon-path {
-    -fx-stroke: -icepdf-accent;
+    -fx-stroke: -icepdf-active-fg;
 }
 
 .icepdf-viewer .icon-button:disabled .icon-path {
@@ -237,7 +337,10 @@
 .icepdf-viewer .toast {
     -fx-background-color: -icepdf-toast;
     -fx-background-radius: 18;
-    -fx-text-fill: white;
+    -fx-border-color: -icepdf-toast-border;
+    -fx-border-width: 2;
+    -fx-border-radius: 18;
+    -fx-text-fill: -icepdf-toast-fg;
     -fx-padding: 8 16 8 16;
 }
 
@@ -320,4 +423,197 @@
 .icepdf-viewer .tab-drop-indicator {
     -fx-background-color: -icepdf-accent;
     -fx-background-radius: 1;
+}
+
+/* ---- high contrast: shared rules ------------------------------------------------------------- */
+
+/* no shadows: they blur boundaries and read as dirt */
+.icepdf-viewer.high-contrast .edge-drawer.overlay,
+.icepdf-viewer.high-contrast .redaction-banner {
+    -fx-effect: null;
+}
+
+/* every edge is a full-strength line */
+.icepdf-viewer.high-contrast .header-bar,
+.icepdf-viewer.high-contrast .search-bar {
+    -fx-border-width: 0 0 2 0;
+}
+
+.icepdf-viewer.high-contrast .tool-rail,
+.icepdf-viewer.high-contrast .edge-drawer-left {
+    -fx-border-width: 0 2 0 0;
+}
+
+.icepdf-viewer.high-contrast .utility-strip,
+.icepdf-viewer.high-contrast .edge-drawer-right {
+    -fx-border-width: 0 0 0 2;
+}
+
+.icepdf-viewer.high-contrast .edge-drawer.overlay {
+    -fx-border-color: -icepdf-border;
+    -fx-border-width: 2;
+}
+
+/* standard controls: outlined, not shaded */
+.icepdf-viewer.high-contrast .button,
+.icepdf-viewer.high-contrast .toggle-button,
+.icepdf-viewer.high-contrast .menu-button,
+.icepdf-viewer.high-contrast .combo-box-base,
+.icepdf-viewer.high-contrast .text-input,
+.icepdf-viewer.high-contrast .check-box > .box,
+.icepdf-viewer.high-contrast .radio-button > .radio {
+    -fx-background-color: -icepdf-fg, -fx-body-color;
+    -fx-background-insets: 0, 1;
+}
+
+.icepdf-viewer.high-contrast .button:hover,
+.icepdf-viewer.high-contrast .toggle-button:hover,
+.icepdf-viewer.high-contrast .combo-box-base:hover {
+    -fx-background-color: -icepdf-fg, -fx-hover-base;
+}
+
+.icepdf-viewer.high-contrast .toggle-button:selected,
+.icepdf-viewer.high-contrast .button:armed {
+    -fx-background-color: -icepdf-fg, -icepdf-active;
+    -fx-text-fill: -icepdf-active-fg;
+}
+
+/* icon buttons stay flat (they are buttons too, so this comes after the rules above) */
+.icepdf-viewer.high-contrast .icon-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.icepdf-viewer.high-contrast .icon-button:hover {
+    -fx-background-color: -icepdf-hover;
+}
+
+/* hover: a solid outline as well as a fill, so it doesn't rely on a faint grey */
+.icepdf-viewer.high-contrast .icon-button:hover,
+.icepdf-viewer.high-contrast .doc-tab:hover {
+    -fx-border-color: -icepdf-fg;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+
+/* selected and pressed: inverted */
+.icepdf-viewer.high-contrast .icon-button:selected,
+.icepdf-viewer.high-contrast .icon-button:armed,
+.icepdf-viewer.high-contrast .doc-tab.selected {
+    -fx-background-color: -icepdf-active;
+}
+
+.icepdf-viewer.high-contrast .doc-tab.selected .label {
+    -fx-text-fill: -icepdf-active-fg;
+}
+
+.icepdf-viewer.high-contrast .doc-tab.selected .icon-path {
+    -fx-stroke: -icepdf-active-fg;
+}
+
+.icepdf-viewer.high-contrast .doc-tab .label {
+    -fx-text-fill: -icepdf-fg;
+}
+
+.icepdf-viewer.high-contrast .doc-tab .tab-close {
+    -fx-opacity: 1;
+}
+
+/* disabled stays legible: a lighter tone of the foreground, not near-invisible */
+.icepdf-viewer.high-contrast .icon-button:disabled .icon-path {
+    -fx-opacity: 0.6;
+}
+
+/* heavier icon strokes */
+.icepdf-viewer.high-contrast .icon-path {
+    -fx-stroke-width: 2.5;
+}
+
+/* the focus ring: thick, solid, outside the control, on everything that takes focus */
+.icepdf-viewer.high-contrast .icon-button:focused,
+.icepdf-viewer.high-contrast .button:focused,
+.icepdf-viewer.high-contrast .toggle-button:focused,
+.icepdf-viewer.high-contrast .menu-button:focused,
+.icepdf-viewer.high-contrast .split-menu-button:focused,
+.icepdf-viewer.high-contrast .combo-box-base:focused,
+.icepdf-viewer.high-contrast .text-input:focused,
+.icepdf-viewer.high-contrast .spinner:focused,
+.icepdf-viewer.high-contrast .slider:focused,
+.icepdf-viewer.high-contrast .hyperlink:focused,
+.icepdf-viewer.high-contrast .list-view:focused,
+.icepdf-viewer.high-contrast .tree-view:focused,
+.icepdf-viewer.high-contrast .table-view:focused,
+.icepdf-viewer.high-contrast .tree-table-view:focused,
+.icepdf-viewer.high-contrast .check-box:focused > .box,
+.icepdf-viewer.high-contrast .radio-button:focused > .radio,
+.icepdf-viewer.high-contrast .tab-pane:focused > .tab-header-area > .headers-region > .tab:selected,
+.icepdf-viewer.high-contrast .doc-tab:focused {
+    -fx-border-color: -icepdf-focus;
+    -fx-border-width: 3;
+    -fx-border-insets: -3;
+    -fx-border-radius: 4;
+}
+
+.icepdf-viewer.high-contrast .pdf-view:focused {
+    -fx-border-color: -icepdf-focus;
+    -fx-border-width: 3;
+}
+
+.icepdf-viewer.high-contrast .check-box:selected > .box > .mark,
+.icepdf-viewer.high-contrast .radio-button:selected > .radio > .dot {
+    -fx-background-color: -icepdf-fg;
+}
+
+.icepdf-viewer.high-contrast .list-view .list-cell:filled:selected,
+.icepdf-viewer.high-contrast .tree-cell:filled:selected,
+.icepdf-viewer.high-contrast .table-row-cell:filled:selected {
+    -fx-background: -fx-selection-bar;
+    -fx-background-color: -fx-selection-bar;
+}
+
+.icepdf-viewer.high-contrast .tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: -icepdf-fg, -icepdf-window;
+    -fx-background-insets: 0, 1 1 0 1;
+}
+
+.icepdf-viewer.high-contrast .tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: -icepdf-fg, -icepdf-active;
+}
+
+.icepdf-viewer.high-contrast .tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label {
+    -fx-text-fill: -icepdf-active-fg;
+}
+
+.icepdf-viewer.high-contrast .separator .line {
+    -fx-border-color: -icepdf-fg;
+}
+
+.icepdf-viewer.high-contrast .scroll-bar > .thumb {
+    -fx-background-color: -icepdf-fg;
+}
+
+.icepdf-viewer.high-contrast .scroll-bar {
+    -fx-background-color: -icepdf-window;
+}
+
+.icepdf-viewer.high-contrast .tooltip {
+    -fx-background-color: -icepdf-fg, -icepdf-window;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 0;
+    -fx-text-fill: -icepdf-fg;
+}
+
+.icepdf-viewer.high-contrast .context-menu,
+.icepdf-viewer.high-contrast .menu-button .context-menu {
+    -fx-background-color: -icepdf-fg, -icepdf-window;
+    -fx-background-insets: 0, 2;
+    -fx-effect: null;
+}
+
+.icepdf-viewer.high-contrast .menu-item:focused {
+    -fx-background-color: -icepdf-active;
+}
+
+.icepdf-viewer.high-contrast .menu-item:focused > .label {
+    -fx-text-fill: -icepdf-active-fg;
 }

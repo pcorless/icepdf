@@ -115,7 +115,7 @@ public class AnnotationListPanel extends BorderPane {
         HBox sortRow = new HBox(4, sortLabel, order);
         sortRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(order, Priority.ALWAYS);
-        status.setStyle("-fx-opacity: 0.75;");
+        status.getStyleClass().add("dim-label");
         VBox top = new VBox(6, filter, pickers, sortRow, status);
         top.setPadding(new Insets(6));
         setTop(top);
@@ -425,7 +425,7 @@ public class AnnotationListPanel extends BorderPane {
             Node body = heading;
             if (!detail.isEmpty()) {
                 Label second = new Label(detail);
-                second.setStyle("-fx-opacity: 0.75;");
+                second.getStyleClass().add("dim-label");
                 second.setMinWidth(0);
                 body = new VBox(2, heading, second);
             }

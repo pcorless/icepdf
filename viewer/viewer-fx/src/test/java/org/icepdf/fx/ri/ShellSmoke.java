@@ -147,6 +147,53 @@ public final class ShellSmoke {
         int rgb = dark.getRGB(dark.getWidth() / 2, 12);
         int luma = ((rgb >> 16 & 255) + (rgb >> 8 & 255) + (rgb & 255)) / 3;
         check("dark theme darkens the header (luma " + luma + ")", luma < 90);
+        // high contrast, both ways round: header pure white / pure black, and an owned dialog follows.
+        onFx(() -> {
+            viewer.getTheme().modeProperty().set(Theme.Mode.HIGH_CONTRAST);
+            return null;
+        });
+        settle();
+        BufferedImage hc = snapshot(viewer, "shell-high-contrast.png");
+        check("high contrast header is white", (hc.getRGB(hc.getWidth() / 2, 12) & 0xffffff) == 0xffffff);
+        onFx(() -> {
+            viewer.getTheme().modeProperty().set(Theme.Mode.HIGH_CONTRAST_DARK);
+            return null;
+        });
+        settle();
+        BufferedImage hcDark = snapshot(viewer, "shell-high-contrast-dark.png");
+        check("high contrast dark header is black", (hcDark.getRGB(hcDark.getWidth() / 2, 12) & 0xffffff) == 0);
+        boolean dialogThemed = onFx(() -> {
+            javafx.stage.Stage dialog = new javafx.stage.Stage();
+            dialog.initOwner(viewer.getScene().getWindow());
+            javafx.scene.control.CheckBox box = new javafx.scene.control.CheckBox("Check box");
+            box.setSelected(true);
+            javafx.scene.control.ComboBox<String> combo = new javafx.scene.control.ComboBox<>(
+                    javafx.collections.FXCollections.observableArrayList("One", "Two"));
+            combo.setValue("One");
+            javafx.scene.control.ListView<String> list = new javafx.scene.control.ListView<>(
+                    javafx.collections.FXCollections.observableArrayList("Selected row", "Row"));
+            list.getSelectionModel().select(0);
+            list.setPrefHeight(60);
+            javafx.scene.control.TabPane tabs = new javafx.scene.control.TabPane(
+                    new javafx.scene.control.Tab("General", new javafx.scene.layout.VBox(8, box, combo,
+                            new javafx.scene.control.TextField("Text field"), list,
+                            new javafx.scene.layout.HBox(8, new javafx.scene.control.Button("OK"),
+                                    new javafx.scene.control.Button("Cancel")))),
+                    new javafx.scene.control.Tab("Fonts"));
+            dialog.setScene(new javafx.scene.Scene(new javafx.scene.layout.StackPane(tabs), 300, 280));
+            dialog.show();
+            box.requestFocus();
+            boolean themed = dialog.getScene().getRoot().getStyleClass().contains("theme-high-contrast-dark");
+            try {
+                javax.imageio.ImageIO.write(javafx.embed.swing.SwingFXUtils.fromFXImage(dialog.getScene().snapshot(null), null),
+                        "png", out.resolve("dialog-high-contrast-dark.png").toFile());
+            } catch (java.io.IOException e) {
+                throw new java.io.UncheckedIOException(e);
+            }
+            dialog.hide();
+            return themed;
+        });
+        check("a dialog the viewer's window owns takes the theme", dialogThemed);
         onFx(() -> {
             viewer.getTheme().modeProperty().set(Theme.Mode.LIGHT);
             panel.pinnedProperty().set(false);

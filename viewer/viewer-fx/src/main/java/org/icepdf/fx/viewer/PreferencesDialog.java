@@ -31,6 +31,7 @@ import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Window;
+import org.icepdf.fx.ri.ui.Theme;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ViewMode;
@@ -75,13 +76,17 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         verify.setSelected(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
         CheckBox rememberFolder = new CheckBox(Messages.get("preferences.rememberFolder"));
         rememberFolder.setSelected(preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true));
+        ComboBox<Theme.Mode> theme = new ComboBox<>(FXCollections.observableArrayList(Theme.Mode.values()));
+        theme.setConverter(labels(mode -> Messages.get("preferences.theme." + mode.name().toLowerCase(Locale.ROOT).replace('_', '-'))));
+        theme.setValue(preferences.getEnum(ViewerPreferences.THEME, Theme.Mode.class, Theme.Mode.SYSTEM));
         GridPane general = grid();
-        general.addRow(0, new Label(Messages.get("preferences.pageDisplay")), viewMode);
-        general.addRow(1, new Label(Messages.get("preferences.zoom")), fitMode);
-        general.addRow(2, new Label(Messages.get("preferences.zoomPercent")), zoom);
-        general.add(sidePanel, 0, 3, 2, 1);
-        general.add(verify, 0, 4, 2, 1);
-        general.add(rememberFolder, 0, 5, 2, 1);
+        general.addRow(0, label("preferences.theme", theme), theme);
+        general.addRow(1, label("preferences.pageDisplay", viewMode), viewMode);
+        general.addRow(2, label("preferences.zoom", fitMode), fitMode);
+        general.addRow(3, label("preferences.zoomPercent", zoom), zoom);
+        general.add(sidePanel, 0, 4, 2, 1);
+        general.add(verify, 0, 5, 2, 1);
+        general.add(rememberFolder, 0, 6, 2, 1);
 
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
@@ -91,8 +96,8 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         CheckBox highlightFields = new CheckBox(Messages.get("preferences.highlightFields"));
         highlightFields.setSelected(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         GridPane annotations = grid();
-        annotations.addRow(0, new Label(Messages.get("preferences.author")), author);
-        annotations.addRow(1, new Label(Messages.get("preferences.defaultColour")), colour);
+        annotations.addRow(0, label("preferences.author", author), author);
+        annotations.addRow(1, label("preferences.defaultColour", colour), colour);
         annotations.add(showAnnotations, 0, 2, 2, 1);
         annotations.add(highlightFields, 0, 3, 2, 1);
 
@@ -119,6 +124,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
 
         setResultConverter(button -> {
             if (button == ButtonType.OK) {
+                preferences.putEnum(ViewerPreferences.THEME, theme.getValue());
                 preferences.putEnum(ViewerPreferences.VIEW_MODE, viewMode.getValue());
                 preferences.putEnum(ViewerPreferences.FIT_MODE, fitMode.getValue());
                 preferences.putDouble(ViewerPreferences.ZOOM, zoom.getValue() / 100.0);
@@ -142,6 +148,13 @@ public class PreferencesDialog extends Dialog<ButtonType> {
             }
             return button;
         });
+    }
+
+    /** A field's label, which a screen reader announces with the field and Alt+mnemonic focuses. */
+    private static Label label(String key, Node field) {
+        Label label = new Label(Messages.get(key));
+        label.setLabelFor(field);
+        return label;
     }
 
     private CheckBox check(String text, String key, boolean defaultValue) {
