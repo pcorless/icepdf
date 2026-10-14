@@ -160,7 +160,8 @@ public final class ShellSmoke {
                 for (Node n : viewer.getToolRail().getChildren()) if ("ui.settings".equals(n.getId())) settings = (MenuButton) n;
             }
             for (MenuItem item : settings.getItems()) {
-                if (item.getText() != null && item.getText().startsWith("Move Rail")) item.fire();
+                if (org.icepdf.fx.i18n.Messages.get("toolRail.moveRight").equals(item.getText())
+                        || org.icepdf.fx.i18n.Messages.get("toolRail.moveLeft").equals(item.getText())) item.fire();
             }
             return null;
         });
@@ -396,7 +397,7 @@ public final class ShellSmoke {
             check("an opened file is reported to the history", remembered.size() == 1);
             javafx.scene.control.Menu recent = onFx(() -> tabbed.getHeaderBar().getMenu().getItems().stream()
                     .filter(i -> i instanceof javafx.scene.control.Menu).map(i -> (javafx.scene.control.Menu) i)
-                    .filter(m -> m.getText().equals("Open Recent")).findFirst().orElse(null));
+                    .filter(m -> m.getText().equals(org.icepdf.fx.i18n.Messages.get("viewer.openRecent"))).findFirst().orElse(null));
             check("the menu has Open Recent", recent != null && onFx(recent::isVisible));
             onFx(() -> {
                 recent.getOnShowing().handle(null);

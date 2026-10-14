@@ -50,6 +50,27 @@ class MessagesTest {
         }
     }
 
+    @DisplayName("every pattern formats, fills its arguments, and keeps its apostrophes (also inside plurals)")
+    @Test
+    void patternsFormat() throws Exception {
+        Properties english = load("messages.properties");
+        List<String> files = new ArrayList<>(List.of("messages.properties"));
+        LOCALES.forEach(l -> files.add("messages_" + l + ".properties"));
+        for (String file : files) {
+            Properties bundle = load(file);
+            for (String key : bundle.stringPropertyNames()) {
+                if (arguments(english.getProperty(key, "")).isEmpty()) continue;
+                String pattern = bundle.getProperty(key);
+                // plural arguments, so a choice picks its "many" form
+                String out = new MessageFormat(pattern, Locale.ROOT).format(new Object[]{3, 5, 7});
+                assertFalse(out.matches("(?s).*\\{\\d.*"), file + ": " + key + " left an argument: " + out);
+                if (pattern.contains("''")) {
+                    assertTrue(out.contains("'"), file + ": " + key + " lost its apostrophe (write '''' inside a plural): " + out);
+                }
+            }
+        }
+    }
+
     @DisplayName("a missing key reads as the key, with a fallback when one is given")
     @Test
     void missingKeys() {

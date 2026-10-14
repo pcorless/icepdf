@@ -4,7 +4,8 @@ The viewer's text is in `src/main/resources/org/icepdf/fx/i18n/messages.properti
 UTF-8) and read through `org.icepdf.fx.i18n.Messages`.  Keys are the area or class, then what
 the text is (`searchPanel.matchCase`); an action's text is keyed by its id (`document.print`,
 `document.print.tooltip`, `document.print.short`).  A value with `{0}` is a `MessageFormat`
-pattern: an apostrophe is written `''`, plurals use `{0,choice,1#1 page|1<{0} pages}`.
+pattern: an apostrophe is written `''`, plurals use `{0,choice,1#1 page|1<{0} pages}`, and
+an apostrophe inside a plural is written `''''` (the plural is read as a pattern twice).
 
 | Script | What it does |
 |---|---|
