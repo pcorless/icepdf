@@ -256,6 +256,21 @@ tasks.register('shellSmoke', JavaExec) {
     }
 }
 
+// AccessibilitySmoke: what a screen reader sees of PdfView, queried as the platform bridges do.
+// ./gradlew :viewer:viewer-fx:a11ySmoke -PsmokeArgs="doc.pdf"
+tasks.register('a11ySmoke', JavaExec) {
+    description = 'Runs AccessibilitySmoke: PdfView\'s screen-reader attributes and caret following.'
+    group = 'verification'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.icepdf.fx.view.AccessibilitySmoke'
+    javaLauncher = javaToolchains.launcherFor(java.toolchain)
+    jvmArgs = ["-Xmx1g"]
+    if (project.hasProperty('smokeArgs')) {
+        args project.property('smokeArgs').toString().split(';')
+    }
+}
+
 // Embedding smokes: an application's own tool bar driving a bare PdfView through the actions.
 // ./gradlew :viewer:viewer-fx:embedSmoke -PsmokeArgs="outdir;doc.pdf[;search term]"
 // ./gradlew :viewer:viewer-fx:embedInteractionSmoke -PsmokeArgs="outdir;doc.pdf[;keystore.pfx]"

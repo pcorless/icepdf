@@ -107,6 +107,8 @@ public final class HeaderBar extends VBox {
 
         // the search bar slides in under the header.
         searchField.setPromptText(Messages.get("headerBar.searchPrompt"));
+        Accessibility.name(searchField, Messages.get("a11y.find"));
+        followSearchResults(view);
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(420);
         searchField.setOnAction(e -> search.accept(searchField.getText()));
@@ -131,6 +133,38 @@ public final class HeaderBar extends VBox {
             }
         });
         getChildren().addAll(bar, searchBar);
+    }
+
+    /**
+     * Keeps "match 3 of 12" in the search field's accessible help, where a screen reader finds it
+     * (JavaFX can't announce it).  Follows whichever view {@code source} holds.
+     */
+    private void followSearchResults(ObservableValue<PdfView> source) {
+        PdfView[] following = new PdfView[1];
+        javafx.beans.InvalidationListener update = o -> {
+            PdfView v = following[0];
+            int hits = v != null ? v.getSearchHits().size() : 0;
+            int current = v != null ? v.getCurrentSearchHitIndex() : -1;
+            searchField.setAccessibleHelp(v == null || v.getSearchHits().isEmpty() && !v.isSearching() ? null
+                    : current >= 0 ? Messages.format("a11y.searchMatch", current + 1, hits)
+                    : Messages.format("searchPanel.matches", hits));
+        };
+        javafx.beans.value.ChangeListener<PdfView> follow = (o, was, now) -> {
+            if (was != null) {
+                was.getSearchHits().removeListener(update);
+                was.currentSearchHitIndexProperty().removeListener(update);
+                was.searchingProperty().removeListener(update);
+            }
+            following[0] = now;
+            if (now != null) {
+                now.getSearchHits().addListener(update);
+                now.currentSearchHitIndexProperty().addListener(update);
+                now.searchingProperty().addListener(update);
+            }
+            update.invalidated(null);
+        };
+        source.addListener(follow);
+        follow.changed(source, null, source.getValue());
     }
 
     /** Shows these tabs in the middle instead of the title. */

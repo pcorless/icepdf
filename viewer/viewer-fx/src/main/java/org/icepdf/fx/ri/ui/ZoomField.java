@@ -37,6 +37,7 @@ public final class ZoomField extends ComboBox<String> {
     /** Follows whichever view {@code source} holds, now and as it changes. */
     public ZoomField(javafx.beans.value.ObservableValue<PdfView> source) {
         getStyleClass().add("zoom-field");
+        Accessibility.name(this, Messages.get("a11y.zoom"));
         setEditable(true);
         setPrefWidth(104);
         getItems().addAll(FIT_WIDTH, FIT_PAGE, "50%", "75%", "100%", "125%", "150%", "200%", "300%", "400%", "800%");

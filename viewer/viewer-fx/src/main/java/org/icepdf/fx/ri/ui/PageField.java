@@ -51,6 +51,7 @@ public final class PageField extends HBox {
         field.setPrefColumnCount(3);
         field.setAlignment(Pos.CENTER_RIGHT);
         count.getStyleClass().add("dim-label");
+        Accessibility.name(field, Messages.get("a11y.pageNumber"));
         field.setOnAction(e -> {
             try {
                 view.setCurrentPageIndex(Integer.parseInt(field.getText().trim()) - 1);
@@ -87,5 +88,7 @@ public final class PageField extends HBox {
 
     private void show() {
         field.setText(view != null && view.getDocument() != null ? String.valueOf(view.getCurrentPageIndex() + 1) : "");
+        // "of 12" sits beside the field, where a screen reader doesn't look.
+        field.setAccessibleHelp(view != null && view.getDocument() != null ? count.getText() : null);
     }
 }

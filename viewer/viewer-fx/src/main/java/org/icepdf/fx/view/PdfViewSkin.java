@@ -21,8 +21,12 @@ import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
+import javafx.scene.AccessibleAction;
+import javafx.scene.AccessibleAttribute;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -73,7 +77,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
     private final TileRenderer renderer;
-    private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> scheduleRefresh());
+    private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> onTextReady(page));
+    // what a screen reader sees: set in the constructor.
+    private PdfViewAccessibility accessibility;
     private CaretNavigator caretNavigator;
     // caret blink phase; the caret is drawn on the focus page's layer only (see updateText).
     private static final Duration CARET_BLINK = Duration.millis(500);
@@ -211,6 +217,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         registerChangeListener(control.pageGapProperty(), o -> onArrangement());
         registerChangeListener(control.fitModeProperty(), o -> applyFit());
         registerChangeListener(control.currentPageIndexProperty(), o -> onCurrentPage());
+        // after the page settles, so a caret placed for a screen reader doesn't fight the scroll.
+        registerChangeListener(control.currentPageIndexProperty(),
+                o -> Platform.runLater(() -> accessibility.currentPageChanged()));
         registerChangeListener(control.paintAnnotationsProperty(), o -> {
             renderer.setPaintAnnotations(control.isPaintAnnotations());
             resetRasters();
@@ -259,10 +268,12 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             caretOn = true;
             updateCaretBlink(true);
             refresh();
+            accessibility.selectionChanged();
         });
         // focus only decides whether the caret shows: update the text layers, not the whole view - a full
         // refresh here ran in the middle of a click on a header control, as the view lost focus to it.
         registerChangeListener(control.focusedProperty(), o -> {
+            if (control.isFocused()) accessibility.focusGained();
             updateCaretBlink(false);
             layers.values().forEach(this::updateText);
         });
@@ -283,6 +294,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         viewport.addEventHandler(MouseEvent.MOUSE_MOVED, this::onMoved);
         viewport.addEventHandler(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, this::onContextMenu);
 
+        accessibility = new PdfViewAccessibility(this);
         installTool();
         watchWindow();
         onDocument();
@@ -370,6 +382,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         renderer.setDocument(document);
         textLoader.setDocument(document);
         caretNavigator = null;
+        accessibility.documentChanged();
         // drop the previous document's layout before anything refreshes: its slots index pages the
         // new document may not have.
         layout = null;
@@ -1769,6 +1782,43 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     /** The page's loaded text, or null if it isn't loaded (or has none). */
     TextSequence textSequence(int pageIndex) {
         return textLoader.get(pageIndex);
+    }
+
+    /** True once the page's text is loaded, even if it has none. */
+    boolean isTextLoaded(int pageIndex) {
+        return textLoader.isLoaded(pageIndex);
+    }
+
+    /** Loads a page's text, keeping it while off-screen (for the screen reader's page). */
+    void requestText(int pageIndex) {
+        textLoader.requestKept(pageIndex);
+    }
+
+    private void onTextReady(int pageIndex) {
+        scheduleRefresh();
+        if (accessibility != null) accessibility.textReady(pageIndex);
+    }
+
+    @Override
+    protected Object queryAccessibleAttribute(AccessibleAttribute attribute, Object... parameters) {
+        Object value = accessibility.query(attribute, parameters);
+        return value != null ? value : super.queryAccessibleAttribute(attribute, parameters);
+    }
+
+    @Override
+    protected void executeAccessibleAction(AccessibleAction action, Object... parameters) {
+        if (!accessibility.execute(action, parameters)) super.executeAccessibleAction(action, parameters);
+    }
+
+    /** A rectangle in a page's user space, in screen coordinates; null if the page isn't laid out. */
+    Bounds pageRectToScreen(int pageIndex, java.awt.geom.Rectangle2D rect) {
+        if (layout == null || document == null) return null;
+        PageSlot slot = layout.getSlot(pageIndex);
+        if (slot == null) return null;
+        java.awt.geom.Rectangle2D view = pageToViewNow(document.getPageTree().getPage(pageIndex))
+                .createTransformedShape(rect).getBounds2D();
+        return viewport.localToScreen(new BoundingBox(slot.x() + view.getX() - scrollX,
+                slot.y() + view.getY() - scrollY, view.getWidth(), view.getHeight()));
     }
 
     /** Keyboard caret movement over the loader's text; rebuilt per document. */

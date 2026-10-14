@@ -22,6 +22,7 @@ import javafx.beans.property.*;
 import javafx.event.EventHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.AccessibleRole;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.input.Clipboard;
@@ -234,6 +235,9 @@ public class PdfView extends Control {
     public PdfView() {
         getStyleClass().add("pdf-view");
         setFocusTraversable(true);
+        // a screen reader reads the view as a read-only text area over a page (see PdfViewAccessibility).
+        setAccessibleRole(AccessibleRole.TEXT_AREA);
+        setAccessibleRoleDescription(Messages.get("pdfView.a11y.role"));
         document.addListener((obs, old, doc) -> {
             clearSearch();
             selectedAnnotation.set(null);
