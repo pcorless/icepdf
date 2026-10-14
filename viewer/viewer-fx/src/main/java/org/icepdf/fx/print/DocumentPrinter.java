@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.print;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
@@ -100,7 +102,7 @@ public class DocumentPrinter {
         if (pages.length == 0 || cancelled) return;
         PrintService service = settings.getPrinter() != null ? settings.getPrinter()
                 : PrintServiceLookup.lookupDefaultPrintService();
-        if (service == null) throw new PrinterException("No printer is available.");
+        if (service == null) throw new PrinterException(Messages.get("documentPrinter.noPrinter"));
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         printerJob.setPrintService(service);
         printerJob.setJobName(jobName());
@@ -155,7 +157,7 @@ public class DocumentPrinter {
     private String jobName() {
         if (settings.getJobName() != null) return settings.getJobName();
         String title = document.getInfo() != null ? document.getInfo().getTitle() : null;
-        return title != null && !title.isBlank() ? title : "PDF document";
+        return title != null && !title.isBlank() ? title : Messages.get("documentPrinter.jobName");
     }
 
     /**

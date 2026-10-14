@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -51,8 +53,8 @@ public final class CustomiseToolsPane extends VBox {
     private ToolArrangement model;
     private final java.util.Map<Zone, ListView<String>> lists = new java.util.EnumMap<>(Zone.class);
     private final ComboBox<UserLayout.Side> railSide = new ComboBox<>();
-    private final CheckBox autoShow = new CheckBox("Show the rail only when the pointer reaches its edge");
-    private final CheckBox hoverOpen = new CheckBox("Open the side panel when the pointer rests on its icons");
+    private final CheckBox autoShow = new CheckBox(Messages.get("customiseTools.autoShow"));
+    private final CheckBox hoverOpen = new CheckBox(Messages.get("customiseTools.hoverOpen"));
     private String dragging;
 
     public CustomiseToolsPane(ActionControls actions, ViewerFeatures features, UserLayout layout) {
@@ -66,8 +68,8 @@ public final class CustomiseToolsPane extends VBox {
         setSpacing(12);
         setPadding(new Insets(12));
 
-        HBox columns = new HBox(10, column(Zone.RAIL, "On the rail"), buttons(),
-                new VBox(10, column(Zone.MORE, "In the More menu"), column(Zone.HIDDEN, "Hidden")));
+        HBox columns = new HBox(10, column(Zone.RAIL, Messages.get("customiseTools.onRail")), buttons(),
+                new VBox(10, column(Zone.MORE, Messages.get("customiseTools.inMore")), column(Zone.HIDDEN, Messages.get("customiseTools.hidden"))));
         HBox.setHgrow(columns.getChildren().get(0), Priority.ALWAYS);
         HBox.setHgrow(columns.getChildren().get(2), Priority.ALWAYS);
 
@@ -75,7 +77,7 @@ public final class CustomiseToolsPane extends VBox {
         railSide.setConverter(new javafx.util.StringConverter<>() {
             @Override
             public String toString(UserLayout.Side side) {
-                return side == UserLayout.Side.LEFT ? "Left" : "Right";
+                return Messages.get(side == UserLayout.Side.LEFT ? "customiseTools.left" : "customiseTools.right");
             }
 
             @Override
@@ -83,7 +85,7 @@ public final class CustomiseToolsPane extends VBox {
                 return null;
             }
         });
-        Button reset = new Button("Reset to Defaults");
+        Button reset = new Button(Messages.get("customiseTools.reset"));
         reset.setOnAction(e -> {
             model = ToolArrangement.defaults(features, available);
             railSide.setValue(UserLayout.Side.LEFT);
@@ -91,10 +93,10 @@ public final class CustomiseToolsPane extends VBox {
             hoverOpen.setSelected(true);
             refresh();
         });
-        Label hint = new Label("Drag tools between the lists, or select one and use the buttons.");
+        Label hint = new Label(Messages.get("customiseTools.hint"));
         hint.getStyleClass().add("hint");
         getChildren().addAll(hint, columns,
-                new HBox(8, new Label("Tool rail on the"), railSide, new Label("side")), autoShow, hoverOpen, reset);
+                new HBox(8, new Label(Messages.get("customiseTools.railOnThe")), railSide, new Label(Messages.get("customiseTools.side"))), autoShow, hoverOpen, reset);
         VBox.setVgrow(columns, Priority.ALWAYS);
         load();
     }
@@ -135,7 +137,7 @@ public final class CustomiseToolsPane extends VBox {
                                   UserLayout layout) {
         CustomiseToolsPane pane = new CustomiseToolsPane(actions, features, layout);
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Customise Tools");
+        dialog.setTitle(Messages.get("customiseTools.title"));
         dialog.setResizable(true);
         if (owner != null) dialog.initOwner(owner);
         DialogPane dp = dialog.getDialogPane();
@@ -169,11 +171,11 @@ public final class CustomiseToolsPane extends VBox {
     }
 
     private Node buttons() {
-        Button up = new Button("Up");
-        Button down = new Button("Down");
-        Button toRail = new Button("To Rail");
-        Button toMore = new Button("To More");
-        Button hide = new Button("Hide");
+        Button up = new Button(Messages.get("customiseTools.up"));
+        Button down = new Button(Messages.get("customiseTools.down"));
+        Button toRail = new Button(Messages.get("customiseTools.toRail"));
+        Button toMore = new Button(Messages.get("customiseTools.toMore"));
+        Button hide = new Button(Messages.get("customiseTools.hide"));
         up.setOnAction(e -> nudge(-1));
         down.setOnAction(e -> nudge(1));
         toRail.setOnAction(e -> send(Zone.RAIL));

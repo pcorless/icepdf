@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.collections.ObservableList;
@@ -40,7 +42,7 @@ public class OutlinePanel extends BorderPane {
 
     private final PdfView view;
     private final TreeView<OutlineItem> tree = new TreeView<>();
-    private final Label empty = new Label("This document has no bookmarks.");
+    private final Label empty = new Label(Messages.get("outlinePanel.empty"));
     private final ReadOnlyBooleanWrapper hasOutline = new ReadOnlyBooleanWrapper(this, "hasOutline", false);
 
     private static final Name COUNT_KEY = new Name("Count");

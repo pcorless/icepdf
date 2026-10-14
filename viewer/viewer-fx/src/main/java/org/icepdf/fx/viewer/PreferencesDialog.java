@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.viewer;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.fx.fonts.FontSettings;
 
 import javafx.application.Platform;
@@ -50,27 +52,33 @@ public class PreferencesDialog extends Dialog<ButtonType> {
     public PreferencesDialog(Window owner, ViewerPreferences preferences, PdfView view) {
         this.preferences = preferences;
         initOwner(owner);
-        setTitle("Preferences");
+        setTitle(Messages.get("preferences.title"));
         setResizable(true);
 
         // General
         ComboBox<ViewMode> viewMode = new ComboBox<>(FXCollections.observableArrayList(ViewMode.values()));
+        viewMode.setConverter(labels(mode -> Messages.get("view.mode." + mode.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'))));
         viewMode.setValue(preferences.getEnum(ViewerPreferences.VIEW_MODE, ViewMode.class, ViewMode.CONTINUOUS));
         ComboBox<FitMode> fitMode = new ComboBox<>(FXCollections.observableArrayList(FitMode.values()));
+        fitMode.setConverter(labels(mode -> Messages.get(switch (mode) {
+            case WIDTH -> "view.fit-width";
+            case PAGE -> "view.fit-page";
+            default -> "preferences.fitNone";
+        })));
         fitMode.setValue(preferences.getEnum(ViewerPreferences.FIT_MODE, FitMode.class, FitMode.WIDTH));
         Spinner<Integer> zoom = new Spinner<>(5, 6400, (int) Math.round(preferences.getDouble(ViewerPreferences.ZOOM, 1) * 100), 25);
         zoom.setEditable(true);
         zoom.disableProperty().bind(fitMode.valueProperty().isNotEqualTo(FitMode.NONE));
-        CheckBox sidePanel = new CheckBox("Show the side panel");
+        CheckBox sidePanel = new CheckBox(Messages.get("preferences.sidePanel"));
         sidePanel.setSelected(preferences.getBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, true));
-        CheckBox verify = new CheckBox("Check signatures when a document opens");
+        CheckBox verify = new CheckBox(Messages.get("preferences.verify"));
         verify.setSelected(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
-        CheckBox rememberFolder = new CheckBox("Open and save dialogs start in the last folder used");
+        CheckBox rememberFolder = new CheckBox(Messages.get("preferences.rememberFolder"));
         rememberFolder.setSelected(preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true));
         GridPane general = grid();
-        general.addRow(0, new Label("Page display:"), viewMode);
-        general.addRow(1, new Label("Zoom:"), fitMode);
-        general.addRow(2, new Label("Zoom percent:"), zoom);
+        general.addRow(0, new Label(Messages.get("preferences.pageDisplay")), viewMode);
+        general.addRow(1, new Label(Messages.get("preferences.zoom")), fitMode);
+        general.addRow(2, new Label(Messages.get("preferences.zoomPercent")), zoom);
         general.add(sidePanel, 0, 3, 2, 1);
         general.add(verify, 0, 4, 2, 1);
         general.add(rememberFolder, 0, 5, 2, 1);
@@ -78,32 +86,32 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
         ColorPicker colour = new ColorPicker(colour(preferences.get(ViewerPreferences.ANNOTATION_COLOR, "#ffff00")));
-        CheckBox showAnnotations = new CheckBox("Show annotations");
+        CheckBox showAnnotations = new CheckBox(Messages.get("preferences.showAnnotations"));
         showAnnotations.setSelected(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
-        CheckBox highlightFields = new CheckBox("Highlight form fields");
+        CheckBox highlightFields = new CheckBox(Messages.get("preferences.highlightFields"));
         highlightFields.setSelected(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         GridPane annotations = grid();
-        annotations.addRow(0, new Label("Author:"), author);
-        annotations.addRow(1, new Label("Default colour:"), colour);
+        annotations.addRow(0, new Label(Messages.get("preferences.author")), author);
+        annotations.addRow(1, new Label(Messages.get("preferences.defaultColour")), colour);
         annotations.add(showAnnotations, 0, 2, 2, 1);
         annotations.add(highlightFields, 0, 3, 2, 1);
 
         // Search
-        CheckBox matchCase = check("Match case", ViewerPreferences.SEARCH_CASE, false);
-        CheckBox wholeWord = check("Whole words only", ViewerPreferences.SEARCH_WHOLE_WORD, false);
-        CheckBox accents = check("Ignore accents", ViewerPreferences.SEARCH_FOLD_ACCENTS, true);
-        CheckBox regex = check("Regular expression", ViewerPreferences.SEARCH_REGEX, false);
-        CheckBox cumulative = check("Add each search to the previous terms", ViewerPreferences.SEARCH_CUMULATIVE, false);
-        CheckBox comments = check("Comments", ViewerPreferences.SEARCH_COMMENTS, true);
-        CheckBox forms = check("Form fields", ViewerPreferences.SEARCH_FORMS, true);
-        CheckBox outlines = check("Bookmarks", ViewerPreferences.SEARCH_OUTLINES, false);
-        CheckBox destinations = check("Named destinations", ViewerPreferences.SEARCH_DESTINATIONS, false);
-        VBox search = new VBox(8, new Label("Defaults for a new search:"), matchCase, wholeWord, accents, regex,
-                cumulative, new Separator(), new Label("Also search:"), comments, forms, outlines, destinations);
+        CheckBox matchCase = check(Messages.get("preferences.matchCase"), ViewerPreferences.SEARCH_CASE, false);
+        CheckBox wholeWord = check(Messages.get("preferences.wholeWords"), ViewerPreferences.SEARCH_WHOLE_WORD, false);
+        CheckBox accents = check(Messages.get("preferences.ignoreAccents"), ViewerPreferences.SEARCH_FOLD_ACCENTS, true);
+        CheckBox regex = check(Messages.get("preferences.regex"), ViewerPreferences.SEARCH_REGEX, false);
+        CheckBox cumulative = check(Messages.get("preferences.cumulative"), ViewerPreferences.SEARCH_CUMULATIVE, false);
+        CheckBox comments = check(Messages.get("preferences.comments"), ViewerPreferences.SEARCH_COMMENTS, true);
+        CheckBox forms = check(Messages.get("preferences.formFields"), ViewerPreferences.SEARCH_FORMS, true);
+        CheckBox outlines = check(Messages.get("preferences.bookmarks"), ViewerPreferences.SEARCH_OUTLINES, false);
+        CheckBox destinations = check(Messages.get("preferences.destinations"), ViewerPreferences.SEARCH_DESTINATIONS, false);
+        VBox search = new VBox(8, new Label(Messages.get("preferences.searchDefaults")), matchCase, wholeWord, accents, regex,
+                cumulative, new Separator(), new Label(Messages.get("preferences.alsoSearch")), comments, forms, outlines, destinations);
         search.setPadding(new Insets(12));
 
-        TabPane tabs = new TabPane(new Tab("General", general), new Tab("Annotations", annotations),
-                new Tab("Search", search), new Tab("Fonts", fontsTab()));
+        TabPane tabs = new TabPane(new Tab(Messages.get("preferences.tab.general"), general), new Tab(Messages.get("preferences.tab.annotations"), annotations),
+                new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.fonts"), fontsTab()));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefSize(620, 480);
         getDialogPane().setContent(tabs);
@@ -143,6 +151,21 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         return box;
     }
 
+    /** Shows a choice by its label rather than its constant name. */
+    private static <T> javafx.util.StringConverter<T> labels(java.util.function.Function<T, String> label) {
+        return new javafx.util.StringConverter<>() {
+            @Override
+            public String toString(T value) {
+                return value == null ? "" : label.apply(value);
+            }
+
+            @Override
+            public T fromString(String text) {
+                return null;
+            }
+        };
+    }
+
     private static GridPane grid() {
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -169,7 +192,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         ObservableList<FontSettings.FontEntry> fonts = FXCollections.observableArrayList(FontSettings.fonts());
         FilteredList<FontSettings.FontEntry> filtered = new FilteredList<>(fonts);
         TextField filter = new TextField();
-        filter.setPromptText("Filter fonts");
+        filter.setPromptText(Messages.get("preferences.filterFonts"));
         filter.textProperty().addListener((o, a, text) -> {
             String needle = text.trim().toLowerCase(Locale.ROOT);
             filtered.setPredicate(needle.isEmpty() ? null : f -> f.name().toLowerCase(Locale.ROOT).contains(needle)
@@ -177,25 +200,25 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                     || f.path().toLowerCase(Locale.ROOT).contains(needle));
         });
         TableView<FontSettings.FontEntry> table = new TableView<>(filtered);
-        TableColumn<FontSettings.FontEntry, String> name = new TableColumn<>("Font");
+        TableColumn<FontSettings.FontEntry, String> name = new TableColumn<>(Messages.get("preferences.font"));
         name.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
         name.setPrefWidth(200);
-        TableColumn<FontSettings.FontEntry, String> family = new TableColumn<>("Family");
+        TableColumn<FontSettings.FontEntry, String> family = new TableColumn<>(Messages.get("preferences.family"));
         family.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().family()));
         family.setPrefWidth(140);
-        TableColumn<FontSettings.FontEntry, String> path = new TableColumn<>("File");
+        TableColumn<FontSettings.FontEntry, String> path = new TableColumn<>(Messages.get("preferences.file"));
         path.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().path()));
         path.setPrefWidth(240);
         table.getColumns().setAll(List.of(name, family, path));
-        table.setPlaceholder(new Label("No fonts found yet."));
+        table.setPlaceholder(new Label(Messages.get("preferences.noFonts")));
         Label count = new Label();
-        Runnable updateCount = () -> count.setText(fonts.size() + " fonts"
-                + (FontSettings.isScanning() ? " (scanning…)" : ""));
+        Runnable updateCount = () -> count.setText(Messages.format("preferences.fontCount", fonts.size())
+                + (FontSettings.isScanning() ? " " + Messages.get("preferences.scanning") : ""));
         updateCount.run();
 
         ListView<String> directories = new ListView<>(FXCollections.observableArrayList(FontDirectories.of(preferences)));
         directories.setPrefHeight(80);
-        Button add = new Button("Add Folder…");
+        Button add = new Button(Messages.get("preferences.addFolder"));
         add.setOnAction(e -> {
             File chosen = new DirectoryChooser().showDialog(getOwner());
             if (chosen != null && !directories.getItems().contains(chosen.getPath())) {
@@ -203,14 +226,14 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 FontDirectories.set(preferences, directories.getItems());
             }
         });
-        Button remove = new Button("Remove");
+        Button remove = new Button(Messages.get("preferences.remove"));
         remove.disableProperty().bind(directories.getSelectionModel().selectedItemProperty().isNull());
         remove.setOnAction(e -> {
             directories.getItems().remove(directories.getSelectionModel().getSelectedItem());
             FontDirectories.set(preferences, directories.getItems());
         });
-        Button rescan = new Button("Rescan Fonts");
-        rescan.setTooltip(new Tooltip("Read the system font folders and the folders above again"));
+        Button rescan = new Button(Messages.get("preferences.rescan"));
+        rescan.setTooltip(new Tooltip(Messages.get("preferences.rescanTooltip")));
         rescan.setOnAction(e -> {
             preferences.save();
             rescan.setDisable(true);
@@ -221,15 +244,15 @@ public class PreferencesDialog extends Dialog<ButtonType> {
             }));
             updateCount.run();
         });
-        Button clear = new Button("Clear Cache");
-        clear.setTooltip(new Tooltip("Forget the saved font list; the next start scans again"));
+        Button clear = new Button(Messages.get("preferences.clearCache"));
+        clear.setTooltip(new Tooltip(Messages.get("preferences.clearCacheTooltip")));
         clear.setOnAction(e -> FontSettings.clearCache());
 
         HBox filterRow = new HBox(8, filter, count);
         HBox.setHgrow(filter, Priority.ALWAYS);
         HBox directoryButtons = new HBox(8, add, remove);
         HBox actions = new HBox(8, rescan, clear);
-        VBox box = new VBox(8, filterRow, table, new Label("Also look for fonts in:"), directories, directoryButtons,
+        VBox box = new VBox(8, filterRow, table, new Label(Messages.get("preferences.alsoLookIn")), directories, directoryButtons,
                 new Separator(), actions);
         VBox.setVgrow(table, Priority.ALWAYS);
         box.setPadding(new Insets(12));

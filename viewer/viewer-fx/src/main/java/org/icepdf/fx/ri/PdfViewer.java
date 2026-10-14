@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.animation.PauseTransition;
 import javafx.beans.property.*;
 import javafx.beans.value.ObservableBooleanValue;
@@ -107,7 +109,7 @@ public class PdfViewer extends StackPane {
     };
     private SigningStore signingStore = SigningStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
-    private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu("Open Recent");
+    private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu(Messages.get("viewer.openRecent"));
     private Consumer<String> onLink;
     private TearOff onTearOff;
     private Runnable onEmptied;
@@ -486,7 +488,7 @@ public class PdfViewer extends StackPane {
         if (!redactionsSettled()) return false;
         if (!session().canSaveInPlace()) return saveAsChecked();
         boolean saved = session().save();
-        if (saved) showMessage("Saved");
+        if (saved) showMessage(Messages.get("viewer.saved"));
         return saved;
     }
 
@@ -498,7 +500,7 @@ public class PdfViewer extends StackPane {
     }
 
     private boolean saveAsChecked() {
-        FileChooser chooser = context.chooser("Save As");
+        FileChooser chooser = context.chooser(Messages.get("viewer.saveAsTitle"));
         Path file = session().getFile();
         chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
         File chosen = chooser.showSaveDialog(context.window());
@@ -506,7 +508,7 @@ public class PdfViewer extends StackPane {
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
         if (!session().saveAs(chosen.toPath())) return false;
         Path saved = session().getLoadingFile();
-        showMessage("Saved " + (saved != null ? saved.getFileName() : chosen.getName()));
+        showMessage(Messages.format("viewer.savedFile", saved != null ? saved.getFileName() : chosen.getName()));
         return true;
     }
 
@@ -514,7 +516,7 @@ public class PdfViewer extends StackPane {
     private SignatureFlow signatureFlow(DocumentPane pane) {
         return new SignatureFlow(pane.getSession()).setSigningStore(signingStore).setOnMessage(this::showMessage)
                 .setOnError(message -> onError.accept(message)).setTargetChooser((window, suggested) -> {
-                    FileChooser chooser = context.chooser("Save Signed Document");
+                    FileChooser chooser = context.chooser(Messages.get("viewer.saveSignedTitle"));
                     chooser.setInitialFileName(suggested.getFileName().toString());
                     File target = chooser.showSaveDialog(window);
                     if (target == null) return null;
@@ -530,15 +532,14 @@ public class PdfViewer extends StackPane {
      */
     private boolean redactionsSettled() {
         if (!session().hasRedactions()) return true;
-        javafx.scene.control.ButtonType export = new javafx.scene.control.ButtonType("Export Redacted Copy\u2026",
+        javafx.scene.control.ButtonType export = new javafx.scene.control.ButtonType(Messages.get("viewer.exportRedacted"),
                 javafx.scene.control.ButtonBar.ButtonData.YES);
-        javafx.scene.control.ButtonType keep = new javafx.scene.control.ButtonType("Save Without Redacting",
+        javafx.scene.control.ButtonType keep = new javafx.scene.control.ButtonType(Messages.get("viewer.saveWithoutRedacting"),
                 javafx.scene.control.ButtonBar.ButtonData.NO);
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.WARNING,
-                "This document has redactions that haven't been applied. Saving keeps them as marks: "
-                        + "the content under them stays in the file.\n\nExport a redacted copy to remove it.",
+                Messages.get("viewer.redactionsPending"),
                 export, keep, javafx.scene.control.ButtonType.CANCEL);
-        alert.setHeaderText("Redactions not applied");
+        alert.setHeaderText(Messages.get("viewer.redactionsNotApplied"));
         alert.initOwner(context.window());
         javafx.scene.control.ButtonType choice = alert.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL);
         if (choice == export) exportRedacted();
@@ -553,14 +554,14 @@ public class PdfViewer extends StackPane {
         DocumentPane pane = pane();
         DocumentSession session = pane.getSession();
         if (session.getDocument() == null) return;
-        FileChooser chooser = context.chooser("Export Redacted Copy");
+        FileChooser chooser = context.chooser(Messages.get("viewer.exportRedactedTitle"));
         Path file = session.getFile();
         String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
         chooser.setInitialFileName(base + "-redacted.pdf");
         File chosen = chooser.showSaveDialog(context.window());
         if (chosen == null) return;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        showMessage("Redacting\u2026");
+        showMessage(Messages.get("viewer.redacting"));
         session.exportRedacted(chosen.toPath(), report -> {
             if (report != null) showRedactionReport(chosen.getName(), report);
         });
@@ -568,18 +569,18 @@ public class PdfViewer extends StackPane {
 
     private void showRedactionReport(String name, org.icepdf.core.util.redaction.RedactionReport report) {
         StringBuilder text = new StringBuilder();
-        text.append("Text removed: ").append(report.getGlyphsRemoved()).append(" characters\n");
-        text.append("Images redacted: ").append(report.getImagesBurned()).append('\n');
+        text.append(Messages.format("viewer.report.textRemoved", report.getGlyphsRemoved())).append('\n');
+        text.append(Messages.format("viewer.report.imagesRedacted", report.getImagesBurned())).append('\n');
         if (report.getStringsRewritten() > 0) {
-            text.append("Other text masked: ").append(report.getStringsRewritten()).append('\n');
+            text.append(Messages.format("viewer.report.otherMasked", report.getStringsRewritten())).append('\n');
         }
         org.icepdf.core.util.redaction.RedactionConfidence confidence = report.getConfidence();
-        text.append("\nCheck: ").append(switch (confidence) {
-            case FAILED -> "FAILED - redacted content is still in the file. Do not release it.";
-            case UNVERIFIED -> "unverified - parts of the document could not be checked; review it before release.";
-            case VERIFIED_WITH_WARNINGS -> "verified, with warnings - read them before release.";
-            default -> "verified - nothing redacted was found in the written file.";
-        });
+        text.append('\n').append(Messages.format("viewer.report.check", Messages.get(switch (confidence) {
+            case FAILED -> "viewer.report.failed";
+            case UNVERIFIED -> "viewer.report.unverified";
+            case VERIFIED_WITH_WARNINGS -> "viewer.report.warnings";
+            default -> "viewer.report.verified";
+        })));
         for (org.icepdf.core.util.redaction.RedactionWarning warning : report.getWarnings()) {
             text.append("\n\u2022 ").append(warning.getDetail());
         }
@@ -588,7 +589,7 @@ public class PdfViewer extends StackPane {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(clean
                 ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING,
                 text.toString(), javafx.scene.control.ButtonType.OK);
-        alert.setHeaderText("Redacted copy saved as " + name);
+        alert.setHeaderText(Messages.format("viewer.redactedSavedAs", name));
         alert.initOwner(context.window());
         alert.show();
     }
@@ -644,19 +645,19 @@ public class PdfViewer extends StackPane {
             dir.toFile().deleteOnExit();
             openInNewTab(file);
         } catch (java.io.IOException | java.nio.file.InvalidPathException e) {
-            onError.accept("Could not open " + attachment.name() + ": " + e.getMessage());
+            onError.accept(Messages.format("viewer.attachmentOpenFailed", attachment.name(), e.getMessage()));
         }
     }
 
     private static String panelLabel(SidePanel panel) {
         return switch (panel) {
-            case THUMBNAILS -> "Pages";
-            case BOOKMARKS -> "Bookmarks";
-            case COMMENTS -> "Comments";
-            case ATTACHMENTS -> "Attachments";
-            case LAYERS -> "Layers";
-            case SIGNATURES -> "Signatures";
-            case SEARCH -> "Search";
+            case THUMBNAILS -> Messages.get("viewer.panel.thumbnails");
+            case BOOKMARKS -> Messages.get("viewer.panel.bookmarks");
+            case COMMENTS -> Messages.get("viewer.panel.comments");
+            case ATTACHMENTS -> Messages.get("viewer.panel.attachments");
+            case LAYERS -> Messages.get("viewer.panel.layers");
+            case SIGNATURES -> Messages.get("viewer.panel.signatures");
+            case SEARCH -> Messages.get("viewer.panel.search");
         };
     }
 
@@ -803,11 +804,11 @@ public class PdfViewer extends StackPane {
             recentMenu.getItems().add(item);
         }
         if (recent.isEmpty()) {
-            javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem("No recent files");
+            javafx.scene.control.MenuItem none = new javafx.scene.control.MenuItem(Messages.get("viewer.noRecent"));
             none.setDisable(true);
             recentMenu.getItems().add(none);
         } else {
-            javafx.scene.control.MenuItem clear = new javafx.scene.control.MenuItem("Clear Recent Files");
+            javafx.scene.control.MenuItem clear = new javafx.scene.control.MenuItem(Messages.get("viewer.clearRecent"));
             clear.setOnAction(e -> history.clearRecent());
             recentMenu.getItems().addAll(new javafx.scene.control.SeparatorMenuItem(), clear);
         }
@@ -982,7 +983,7 @@ public class PdfViewer extends StackPane {
         view().setFitMode(FitMode.PAGE);
         addEventFilter(KeyEvent.KEY_PRESSED, keys);
         if (getScene() != null && getScene().getWindow() instanceof Stage stage) {
-            stage.setFullScreenExitHint("Press Esc to leave full screen");
+            stage.setFullScreenExitHint(Messages.get("viewer.fullScreenHint"));
             stage.setFullScreen(true);
             stage.fullScreenProperty().addListener(stageFullScreen);
         }
@@ -1046,7 +1047,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void openDocument() {
-            File chosen = chooser("Open").showOpenDialog(window());
+            File chosen = chooser(Messages.get("viewer.openTitle")).showOpenDialog(window());
             if (chosen != null) {
                 rememberFolder(chosen);
                 open(chosen.toPath());
@@ -1055,7 +1056,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void openDocumentInNewTab() {
-            File chosen = chooser("Open in New Tab").showOpenDialog(window());
+            File chosen = chooser(Messages.get("viewer.openNewTabTitle")).showOpenDialog(window());
             if (chosen != null) {
                 rememberFolder(chosen);
                 openInNewTab(chosen.toPath());
@@ -1152,8 +1153,8 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void printStarted(Task<Void> task) {
-            task.setOnSucceeded(e -> showMessage("Printed"));
-            task.setOnFailed(e -> onError.accept("Printing failed: " + task.getException().getMessage()));
+            task.setOnSucceeded(e -> showMessage(Messages.get("viewer.printed")));
+            task.setOnFailed(e -> onError.accept(Messages.format("viewer.printFailed", task.getException().getMessage())));
         }
 
         @Override
@@ -1163,8 +1164,8 @@ public class PdfViewer extends StackPane {
         FileChooser chooser(String title) {
             FileChooser chooser = new FileChooser();
             chooser.setTitle(title);
-            chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PDF documents", "*.pdf", "*.PDF"),
-                    new FileChooser.ExtensionFilter("All files", "*.*"));
+            chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(Messages.get("viewer.pdfFilter"), "*.pdf", "*.PDF"),
+                    new FileChooser.ExtensionFilter(Messages.get("viewer.allFilter"), "*.*"));
             Path file = session().getFile();
             Path folder = history != null ? history.lastDirectory() : null;
             if (folder == null && file != null) folder = file.getParent();

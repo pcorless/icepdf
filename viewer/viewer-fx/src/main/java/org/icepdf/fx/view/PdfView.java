@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.event.EventHandler;
@@ -1540,7 +1542,7 @@ public class PdfView extends Control {
     public javafx.concurrent.Task<Void> print(org.icepdf.fx.print.PrintSettings settings) {
         Document document = getDocument();
         if (document == null || !isPrintAllowed()) {
-            throw new IllegalStateException("The document can't be printed.");
+            throw new IllegalStateException(Messages.get("pdfView.cannotPrint"));
         }
         if (lowResolutionPrintOnly) settings.setLowResolution(true);
         org.icepdf.fx.print.DocumentPrinter printer = new org.icepdf.fx.print.DocumentPrinter(document, settings);
@@ -1548,13 +1550,13 @@ public class PdfView extends Control {
         javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
             @Override
             protected Void call() throws Exception {
-                updateMessage("Printing\u2026");
+                updateMessage(Messages.get("pdfView.printing"));
                 printer.print((page, total) -> {
                     updateProgress(page - 1, total);
-                    updateMessage("Printing page " + page + " of " + total);
+                    updateMessage(Messages.format("pdfView.printingPage", page, total));
                 });
                 updateProgress(1, 1);
-                updateMessage(printer.isCancelled() ? "Printing cancelled" : "Printed");
+                updateMessage(Messages.get(printer.isCancelled() ? "pdfView.printCancelled" : "pdfView.printed"));
                 return null;
             }
 

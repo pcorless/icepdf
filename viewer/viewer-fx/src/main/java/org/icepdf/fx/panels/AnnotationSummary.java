@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.Page;
@@ -65,17 +67,17 @@ public final class AnnotationSummary {
 
     /** Ways to order the list. */
     public enum Order {
-        PAGE("Page"), DATE("Date (newest first)"), AUTHOR("Author"), TYPE("Type");
+        PAGE("page"), DATE("date"), AUTHOR("author"), TYPE("type");
 
-        private final String label;
+        private final String key;
 
-        Order(String label) {
-            this.label = label;
+        Order(String key) {
+            this.key = key;
         }
 
         @Override
         public String toString() {
-            return label;
+            return Messages.get("annotationSummary.order." + key);
         }
 
         public Comparator<Entry> comparator() {
@@ -175,16 +177,16 @@ public final class AnnotationSummary {
     static String typeName(Annotation annotation) {
         String subtype = annotation.getSubType() != null ? annotation.getSubType().getName() : "";
         return switch (subtype) {
-            case "Text" -> "Note";
-            case "FreeText" -> "Text box";
-            case "StrikeOut" -> "Strikeout";
-            case "Square" -> "Rectangle";
-            case "Circle" -> "Ellipse";
-            case "PolyLine" -> "Polyline";
-            case "Ink" -> "Freehand";
-            case "FileAttachment" -> "Attachment";
-            case "Redact" -> "Redaction";
-            case "" -> "Comment";
+            case "Text" -> Messages.get("annotationSummary.type.note");
+            case "FreeText" -> Messages.get("annotationSummary.type.freeText");
+            case "StrikeOut" -> Messages.get("annotationSummary.type.strikeOut");
+            case "Square" -> Messages.get("annotationSummary.type.square");
+            case "Circle" -> Messages.get("annotationSummary.type.circle");
+            case "PolyLine" -> Messages.get("annotationSummary.type.polyLine");
+            case "Ink" -> Messages.get("annotationSummary.type.ink");
+            case "FileAttachment" -> Messages.get("annotationSummary.type.fileAttachment");
+            case "Redact" -> Messages.get("annotationSummary.type.redact");
+            case "" -> Messages.get("annotationSummary.type.comment");
             default -> subtype;
         };
     }

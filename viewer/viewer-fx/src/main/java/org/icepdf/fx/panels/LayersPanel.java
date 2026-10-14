@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Insets;
@@ -35,7 +37,7 @@ public class LayersPanel extends BorderPane {
 
     private final PdfView view;
     private final TreeView<LayerNode> tree = new TreeView<>();
-    private final Label empty = new Label("This document has no layers.");
+    private final Label empty = new Label(Messages.get("layersPanel.empty"));
     private final ReadOnlyBooleanWrapper hasLayers = new ReadOnlyBooleanWrapper(this, "hasLayers", false);
 
     public LayersPanel(PdfView view) {
@@ -106,7 +108,7 @@ public class LayersPanel extends BorderPane {
             } else {
                 box.setText(node.name());
                 box.setSelected(node.isVisible());
-                box.setTooltip(node.isRadio() ? new Tooltip("Only one layer of this set can be on.") : null);
+                box.setTooltip(node.isRadio() ? new Tooltip(Messages.get("layersPanel.radio")) : null);
                 setText(null);
                 setGraphic(box);
                 setStyle(null);

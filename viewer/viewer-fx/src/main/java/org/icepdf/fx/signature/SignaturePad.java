@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.geometry.Pos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -48,7 +50,7 @@ public class SignaturePad extends VBox {
 
     private final Ink ink;
     private final Canvas canvas = new Canvas(PAD_WIDTH, PAD_HEIGHT);
-    private final Label hint = new Label("Sign here");
+    private final Label hint = new Label(Messages.get("signaturePad.hint"));
     private List<double[]> current;
     private Runnable onChanged = () -> { };
 
@@ -66,26 +68,26 @@ public class SignaturePad extends VBox {
 
         ColorPicker color = new ColorPicker(toFx(ink.getColor()));
         color.getStyleClass().add(ColorPicker.STYLE_CLASS_BUTTON);
-        color.setTooltip(new Tooltip("Ink colour"));
+        color.setTooltip(new Tooltip(Messages.get("signaturePad.inkColour")));
         color.valueProperty().addListener((o, a, b) -> {
             ink.setColor(toAwt(b));
             changed();
         });
         Slider weight = new Slider(1, 6, ink.getWidth());
         weight.setPrefWidth(110);
-        weight.setTooltip(new Tooltip("Line weight"));
+        weight.setTooltip(new Tooltip(Messages.get("signaturePad.lineWeight")));
         weight.valueProperty().addListener((o, a, b) -> {
             ink.setWidth(b.doubleValue());
             changed();
         });
-        Button clear = new Button("Clear");
+        Button clear = new Button(Messages.get("signaturePad.clear"));
         clear.setOnAction(e -> {
             ink.clear();
             changed();
         });
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox controls = new HBox(8, color, new Label("Weight"), weight, spacer, clear);
+        HBox controls = new HBox(8, color, new Label(Messages.get("signaturePad.weight")), weight, spacer, clear);
         controls.setAlignment(Pos.CENTER_LEFT);
         controls.setMaxWidth(PAD_WIDTH);
 

@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Destination;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.NameTree;
@@ -54,16 +56,16 @@ public final class DocumentFieldSearch {
 
     /** What a hit was found in. */
     public enum Kind {
-        COMMENT("Comments"), FORM_FIELD("Form fields"), OUTLINE("Bookmarks"), DESTINATION("Named destinations");
+        COMMENT("comment"), FORM_FIELD("formField"), OUTLINE("outline"), DESTINATION("destination");
 
-        private final String label;
+        private final String key;
 
-        Kind(String label) {
-            this.label = label;
+        Kind(String key) {
+            this.key = key;
         }
 
         public String label() {
-            return label;
+            return Messages.get("documentFieldSearch.kind." + key);
         }
     }
 
@@ -170,7 +172,7 @@ public final class DocumentFieldSearch {
     private static String commentLabel(MarkupAnnotation markup) {
         String author = markup.getTitleText();
         if (author != null && !author.isBlank()) return author.trim();
-        return markup.getSubType() != null ? markup.getSubType().getName() : "Comment";
+        return markup.getSubType() != null ? markup.getSubType().getName() : Messages.get("documentFieldSearch.comment");
     }
 
     private static String fieldLabel(FieldDictionary field) {

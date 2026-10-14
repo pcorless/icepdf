@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.app;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -46,7 +48,7 @@ public class ShellPreview extends Application {
                 UserLayout.load(ViewerPreferences.home().resolve("layout.properties")));
         viewer.setOnExit(stage::close);
         stage.setScene(new Scene(viewer, 1200, 860));
-        stage.setTitle("ICEpdf");
+        stage.setTitle(Messages.get("app.title"));
         stage.show();
         if (!getParameters().getUnnamed().isEmpty()) viewer.open(Paths.get(getParameters().getUnnamed().get(0)));
     }

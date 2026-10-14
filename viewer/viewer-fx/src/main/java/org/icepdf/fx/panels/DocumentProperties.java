@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.security.CryptFilter;
 import org.icepdf.core.pobjects.security.CryptFilterEntry;
@@ -55,38 +57,38 @@ public final class DocumentProperties {
         List<Row> rows = new ArrayList<>();
         String location = document.getDocumentLocation();
         File file = location != null ? new File(location) : null;
-        add(rows, "File", file != null ? file.getName() : null);
-        add(rows, "Location", file != null && file.getParent() != null ? file.getParent() : location);
+        add(rows, Messages.get("properties.file"), file != null ? file.getName() : null);
+        add(rows, Messages.get("properties.location"), file != null && file.getParent() != null ? file.getParent() : location);
         if (file != null && file.isFile()) {
             try {
                 long bytes = Files.size(file.toPath());
-                add(rows, "File size", AttachmentPanel.formatSize(bytes) + " (" + String.format("%,d", bytes) + " bytes)");
+                add(rows, Messages.get("properties.fileSize"), Messages.format("properties.fileSizeValue", AttachmentPanel.formatSize(bytes), String.format("%,d", bytes)));
             } catch (java.io.IOException ignored) {
                 // no size then
             }
         }
         PInfo info = document.getInfo();
         if (info != null) {
-            add(rows, "Title", info.getTitle());
-            add(rows, "Author", info.getAuthor());
-            add(rows, "Subject", info.getSubject());
-            add(rows, "Keywords", info.getKeywords());
-            add(rows, "Created", date(info.getCreationDate()));
-            add(rows, "Modified", date(info.getModDate()));
-            add(rows, "Application", info.getCreator());
-            add(rows, "PDF producer", info.getProducer());
+            add(rows, Messages.get("properties.title"), info.getTitle());
+            add(rows, Messages.get("properties.author"), info.getAuthor());
+            add(rows, Messages.get("properties.subject"), info.getSubject());
+            add(rows, Messages.get("properties.keywords"), info.getKeywords());
+            add(rows, Messages.get("properties.created"), date(info.getCreationDate()));
+            add(rows, Messages.get("properties.modified"), date(info.getModDate()));
+            add(rows, Messages.get("properties.application"), info.getCreator());
+            add(rows, Messages.get("properties.producer"), info.getProducer());
         }
         Library library = document.getCatalog().getLibrary();
         if (library.getFileHeader() != null && library.getFileHeader().getVersion() > 0) {
-            add(rows, "PDF version", String.valueOf(library.getFileHeader().getVersion()));
+            add(rows, Messages.get("properties.version"), String.valueOf(library.getFileHeader().getVersion()));
         }
-        add(rows, "Pages", String.valueOf(document.getNumberOfPages()));
+        add(rows, Messages.get("properties.pages"), String.valueOf(document.getNumberOfPages()));
         if (document.getNumberOfPages() > 0) {
             PDimension size = document.getPageDimension(0, 0);
-            add(rows, "Page size", pageSize(size.getWidth(), size.getHeight()));
+            add(rows, Messages.get("properties.pageSize"), pageSize(size.getWidth(), size.getHeight()));
         }
-        add(rows, "Tagged PDF", tagged(document) ? "Yes" : "No");
-        add(rows, "Encrypted", library.getSecurityManager() != null ? "Yes" : "No");
+        add(rows, Messages.get("properties.tagged"), yesNo(tagged(document)));
+        add(rows, Messages.get("properties.encrypted"), yesNo(library.getSecurityManager() != null));
         return rows;
     }
 
@@ -95,26 +97,26 @@ public final class DocumentProperties {
         List<Row> rows = new ArrayList<>();
         SecurityManager securityManager = document.getCatalog().getLibrary().getSecurityManager();
         if (securityManager == null) {
-            rows.add(new Row("Security method", "No security"));
+            rows.add(new Row(Messages.get("properties.securityMethod"), Messages.get("properties.noSecurity")));
             return rows;
         }
         EncryptionDictionary encryption = securityManager.getEncryptionDictionary();
         Name filter = encryption != null ? encryption.getPreferredSecurityHandlerName() : null;
-        rows.add(new Row("Security method", filter != null && "Standard".equals(filter.getName())
-                ? "Password security" : filter != null ? filter.getName() : "Unknown"));
-        if (encryption != null) rows.add(new Row("Encryption", encryptionMethod(encryption)));
+        rows.add(new Row(Messages.get("properties.securityMethod"), filter != null && "Standard".equals(filter.getName())
+                ? Messages.get("properties.passwordSecurity") : filter != null ? filter.getName() : Messages.get("properties.unknown")));
+        if (encryption != null) rows.add(new Row(Messages.get("properties.encryption"), encryptionMethod(encryption)));
         Permissions permissions = securityManager.getPermissions();
         if (permissions != null) {
             boolean print = permissions.getPermissions(Permissions.PRINT_DOCUMENT);
             boolean highQuality = permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY);
-            rows.add(new Row("Printing", !print ? "Not allowed" : highQuality ? "Allowed" : "Low resolution only"));
-            rows.add(new Row("Changing the document", allowed(permissions, Permissions.MODIFY_DOCUMENT)));
-            rows.add(new Row("Document assembly", allowed(permissions, Permissions.DOCUMENT_ASSEMBLY)));
-            rows.add(new Row("Content copying", allowed(permissions, Permissions.CONTENT_EXTRACTION)));
-            rows.add(new Row("Content copying for accessibility", allowed(permissions, Permissions.CONTENT_ACCESSABILITY)));
-            rows.add(new Row("Commenting", allowed(permissions, Permissions.AUTHORING_FORM_FIELDS)));
-            rows.add(new Row("Filling of form fields", allowed(permissions, Permissions.FORM_FIELD_FILL_SIGNING)));
-            rows.add(new Row("Signing", allowed(permissions, Permissions.FORM_FIELD_FILL_SIGNING)));
+            rows.add(new Row(Messages.get("properties.printing"), Messages.get(!print ? "properties.notAllowed" : highQuality ? "properties.allowed" : "properties.lowResolution")));
+            rows.add(new Row(Messages.get("properties.changing"), allowed(permissions, Permissions.MODIFY_DOCUMENT)));
+            rows.add(new Row(Messages.get("properties.assembly"), allowed(permissions, Permissions.DOCUMENT_ASSEMBLY)));
+            rows.add(new Row(Messages.get("properties.copying"), allowed(permissions, Permissions.CONTENT_EXTRACTION)));
+            rows.add(new Row(Messages.get("properties.copyingAccessibility"), allowed(permissions, Permissions.CONTENT_ACCESSABILITY)));
+            rows.add(new Row(Messages.get("properties.commenting"), allowed(permissions, Permissions.AUTHORING_FORM_FIELDS)));
+            rows.add(new Row(Messages.get("properties.filling"), allowed(permissions, Permissions.FORM_FIELD_FILL_SIGNING)));
+            rows.add(new Row(Messages.get("properties.signing"), allowed(permissions, Permissions.FORM_FIELD_FILL_SIGNING)));
         }
         return rows;
     }
@@ -135,7 +137,7 @@ public final class DocumentProperties {
     }
 
     private static String allowed(Permissions permissions, int which) {
-        return permissions.getPermissions(which) ? "Allowed" : "Not allowed";
+        return Messages.get(permissions.getPermissions(which) ? "properties.allowed" : "properties.notAllowed");
     }
 
     /** RC4 or AES and the key length, from /V and the standard crypt filter's /CFM. */
@@ -162,6 +164,10 @@ public final class DocumentProperties {
             return Boolean.TRUE.equals(marked);
         }
         return false;
+    }
+
+    private static String yesNo(boolean yes) {
+        return Messages.get(yes ? "properties.yes" : "properties.no");
     }
 
     /** "8.50 × 11.00 in (215.9 × 279.4 mm)". */

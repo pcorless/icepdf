@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
@@ -169,10 +171,10 @@ public final class DocumentSigning {
         Library library = field.getLibrary();
         SignatureManager manager = library.getSignatureDictionaries();
         if (!manager.hasPermissionToSignDocument()) {
-            throw new IllegalStateException("The document's certification doesn't permit more signatures.");
+            throw new IllegalStateException(Messages.get("documentSigning.certifiedNoMore"));
         }
         if (request.type() == SignatureType.CERTIFIER && manager.hasExistingCertifier(library)) {
-            throw new IllegalStateException("The document is already certified; it can only be approved.");
+            throw new IllegalStateException(Messages.get("documentSigning.alreadyCertified"));
         }
         SignatureDictionary dictionary = SignatureDictionary.getInstance(field, request.type());
         dictionary.setSignerHandler(signer);

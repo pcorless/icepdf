@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.geometry.Insets;
@@ -51,12 +53,12 @@ public class SignaturePanel extends BorderPane {
                     setTooltip(null);
                     return;
                 }
-                String who = item.isSigned() ? (item.signerName() != null ? item.signerName() : "Unknown signer")
-                        : "Empty field " + item.fieldName();
+                String who = item.isSigned() ? (item.signerName() != null ? item.signerName() : Messages.get("signaturePanel.unknownSigner"))
+                        : Messages.format("signaturePanel.emptyField", item.fieldName());
                 String when = item.signingTime() != null ? DateFormat.getDateTimeInstance(
                         DateFormat.SHORT, DateFormat.SHORT).format(item.signingTime()) : "";
                 setText(who + (when.isEmpty() ? "" : "\n" + when)
-                        + (item.pageIndex() >= 0 ? "  (page " + (item.pageIndex() + 1) + ")" : ""));
+                        + (item.pageIndex() >= 0 ? "  " + Messages.format("signaturePanel.page", item.pageIndex() + 1) : ""));
                 setGraphic(item.isSigned() ? SignatureIcons.icon(item.verdict(), 16) : null);
                 setTooltip(new Tooltip(item.summary()));
             }
@@ -68,7 +70,7 @@ public class SignaturePanel extends BorderPane {
             SignatureStatus selected = list.getSelectionModel().getSelectedItem();
             if (e.getClickCount() == 2 && selected != null && selected.isSigned()) view.showSignatureProperties(selected);
         });
-        Label empty = new Label("This document has no signature fields.");
+        Label empty = new Label(Messages.get("signaturePanel.empty"));
         empty.setWrapText(true);
         empty.setPadding(new Insets(8));
         list.setPlaceholder(empty);

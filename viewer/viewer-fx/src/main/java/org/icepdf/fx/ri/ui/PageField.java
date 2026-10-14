@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -74,7 +76,7 @@ public final class PageField extends HBox {
         if (view != null) {
             view.currentPageIndexProperty().addListener(pageListener);
             view.documentProperty().addListener(documentListener);
-            count.textProperty().bind(Bindings.createStringBinding(() -> "of " + view.getPageCount(), view.pageCountProperty()));
+            count.textProperty().bind(Bindings.createStringBinding(() -> Messages.format("pageField.of", view.getPageCount()), view.pageCountProperty()));
             disableProperty().bind(view.documentProperty().isNull());
         } else {
             count.setText("");

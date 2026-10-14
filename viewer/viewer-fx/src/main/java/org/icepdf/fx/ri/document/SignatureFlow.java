@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.document;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -129,7 +131,7 @@ public final class SignatureFlow {
             DocumentSigning.cancel(field);
             return;
         }
-        onMessage.accept("Signing…");
+        onMessage.accept(Messages.get("signatureFlow.signing"));
         int page = view.getCurrentPageIndex();
         // signing may call a timestamp authority: off the FX thread.
         Thread worker = new Thread(() -> {
@@ -139,11 +141,11 @@ public final class SignatureFlow {
                     // the signed copy is the document now; the original's pending signature is gone.
                     document.getStateManager().setChangesSnapshot();
                     if (session.getDocument() == document) session.openAt(target, page);
-                    onMessage.accept("Signed " + target.getFileName());
+                    onMessage.accept(Messages.format("signatureFlow.signed", target.getFileName()));
                 });
             } catch (Exception e) {
                 logger.log(Level.FINE, "Signing failed", e);
-                Platform.runLater(() -> onError.accept("Signing failed: " + e.getMessage()));
+                Platform.runLater(() -> onError.accept(Messages.format("signatureFlow.failed", e.getMessage())));
             }
         }, "pdf-sign");
         worker.setDaemon(true);
@@ -152,8 +154,8 @@ public final class SignatureFlow {
 
     private static Path chooseWithFileChooser(Window owner, Path suggested) {
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Signed Document");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF documents", "*.pdf"));
+        chooser.setTitle(Messages.get("signatureFlow.saveTitle"));
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("signatureFlow.pdfFilter"), "*.pdf"));
         chooser.setInitialFileName(suggested.getFileName().toString());
         Path folder = suggested.toAbsolutePath().getParent();
         if (folder != null && folder.toFile().isDirectory()) chooser.setInitialDirectory(folder.toFile());

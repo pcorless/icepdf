@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.actions.navigation;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.scene.control.TextInputDialog;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
@@ -43,7 +45,7 @@ public final class GoToPageAction extends AbstractViewerAction {
         if (context.window() != null) dialog.initOwner(context.window());
         dialog.setTitle(label());
         dialog.setHeaderText(null);
-        dialog.setContentText("Page (1 - " + view.getPageCount() + "):");
+        dialog.setContentText(Messages.format("goToPage.prompt", view.getPageCount()));
         dialog.showAndWait().ifPresent(text -> {
             try {
                 view.setCurrentPageIndex(Integer.parseInt(text.trim()) - 1);

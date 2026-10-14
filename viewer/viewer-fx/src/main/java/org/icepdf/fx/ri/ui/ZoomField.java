@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.scene.control.ComboBox;
 import org.icepdf.fx.view.FitMode;
@@ -23,7 +25,7 @@ import org.icepdf.fx.view.PdfView;
 /** The zoom: fit width, fit page or a percentage, typed or picked; follows the view. */
 public final class ZoomField extends ComboBox<String> {
 
-    private static final String FIT_WIDTH = "Fit Width", FIT_PAGE = "Fit Page";
+    private static final String FIT_WIDTH = Messages.get("zoomField.fitWidth"), FIT_PAGE = Messages.get("zoomField.fitPage");
 
     private final javafx.beans.value.ChangeListener<Object> listener = (o, a, b) -> showValue();
     private PdfView view;

@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
@@ -40,8 +42,8 @@ import java.util.Optional;
 public final class AnnotationContextMenu {
 
     /** The ten standard colours of the Swing viewer's colour drop-down, with names. */
-    static final String[] STANDARD_NAMES = {"Dark Red", "Red", "Orange", "Yellow", "Light Green", "Green", "Light Blue",
-            "Blue", "Dark Blue", "Purple"};
+    static final String[] STANDARD_NAMES = {"darkRed", "red", "orange", "yellow", "lightGreen", "green", "lightBlue",
+            "blue", "darkBlue", "purple"};
     static final java.awt.Color[] STANDARD = {
             new java.awt.Color(192, 0, 0), new java.awt.Color(255, 0, 0), new java.awt.Color(255, 192, 0),
             new java.awt.Color(255, 255, 0), new java.awt.Color(146, 208, 80), new java.awt.Color(0, 176, 80),
@@ -75,11 +77,11 @@ public final class AnnotationContextMenu {
         ContextMenu menu = new ContextMenu();
         if (AnnotationProperties.hasColor(annotation)) menu.getItems().add(colourMenu(view, annotation, colors));
         if (AnnotationProperties.supports(annotation) && properties != null) {
-            MenuItem item = new MenuItem("Properties…");
+            MenuItem item = new MenuItem(Messages.get("annotationMenu.properties"));
             item.setOnAction(e -> properties.accept(annotation));
             menu.getItems().add(item);
         }
-        MenuItem delete = new MenuItem("Delete");
+        MenuItem delete = new MenuItem(Messages.get("annotationMenu.delete"));
         delete.setOnAction(e -> {
             view.selectAnnotation(annotation);
             view.deleteSelectedAnnotation();
@@ -90,11 +92,11 @@ public final class AnnotationContextMenu {
     }
 
     static Menu colourMenu(PdfView view, Annotation annotation, ColorHistory colors) {
-        Menu menu = new Menu("Change Colour");
+        Menu menu = new Menu(Messages.get("annotationMenu.changeColour"));
         java.awt.Color current = annotation.getColor();
         int currentRgb = current != null ? current.getRGB() & 0xFFFFFF : -1;
         for (int i = 0; i < STANDARD.length; i++) {
-            menu.getItems().add(swatch(STANDARD_NAMES[i], STANDARD[i], currentRgb, view, annotation, colors));
+            menu.getItems().add(swatch(Messages.get("annotationMenu.colour." + STANDARD_NAMES[i]), STANDARD[i], currentRgb, view, annotation, colors));
         }
         List<java.awt.Color> recent = colors != null ? colors.recent() : List.of();
         List<java.awt.Color> shown = recent.stream().filter(c -> (c.getRGB() & 0xFFFFFF) != currentRgb).toList();
@@ -105,7 +107,7 @@ public final class AnnotationContextMenu {
                         annotation, colors));
             }
         }
-        MenuItem more = new MenuItem("More Colours…");
+        MenuItem more = new MenuItem(Messages.get("annotationMenu.moreColours"));
         more.setOnAction(e -> chooseColour(view, annotation, colors, current));
         menu.getItems().addAll(new SeparatorMenuItem(), more);
         return menu;
@@ -132,7 +134,7 @@ public final class AnnotationContextMenu {
         ColorPicker picker = new ColorPicker(current != null
                 ? Color.rgb(current.getRed(), current.getGreen(), current.getBlue()) : Color.RED);
         Dialog<Color> dialog = new Dialog<>();
-        dialog.setTitle("Annotation Colour");
+        dialog.setTitle(Messages.get("annotationMenu.colourTitle"));
         dialog.getDialogPane().setContent(new StackPane(picker));
         dialog.getDialogPane().getButtonTypes().addAll(javafx.scene.control.ButtonType.OK,
                 javafx.scene.control.ButtonType.CANCEL);

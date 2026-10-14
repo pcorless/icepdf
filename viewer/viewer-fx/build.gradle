@@ -247,6 +247,10 @@ tasks.register('shellSmoke', JavaExec) {
     mainClass = 'org.icepdf.fx.ri.ShellSmoke'
     javaLauncher = javaToolchains.launcherFor(java.toolchain)
     jvmArgs = ["-Xmx1g"]
+    // e.g. -PsmokeJvmArgs="-Duser.language=fr" to look at a translation
+    if (project.hasProperty('smokeJvmArgs')) {
+        jvmArgs project.property('smokeJvmArgs').toString().split(';')
+    }
     if (project.hasProperty('smokeArgs')) {
         args project.property('smokeArgs').toString().split(';')
     }
@@ -265,6 +269,9 @@ tasks.register('shellSmoke', JavaExec) {
         mainClass = main
         javaLauncher = javaToolchains.launcherFor(java.toolchain)
         jvmArgs = ["-Xmx1g"]
+        if (project.hasProperty('smokeJvmArgs')) {
+            jvmArgs project.property('smokeJvmArgs').toString().split(';')
+        }
         if (project.hasProperty('smokeArgs')) {
             args project.property('smokeArgs').toString().split(';')
         }

@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -48,7 +50,7 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
 
     public SignaturePropertiesDialog(Window owner, SignatureStatus status) {
         if (owner != null) initOwner(owner);
-        setTitle("Signature properties");
+        setTitle(Messages.get("signatureProperties.title"));
         setResizable(true);
         getDialogPane().getStyleClass().add("pdf-signature-dialog");
         getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
@@ -65,8 +67,8 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
         content.setMinWidth(600);
         content.setPrefWidth(620);
         if (status.isSigned()) {
-            content.getChildren().addAll(details(status), section("Checks", checks(status)));
-            if (!status.chain().isEmpty()) content.getChildren().add(section("Certificate chain", chain(status)));
+            content.getChildren().addAll(details(status), section(Messages.get("signatureProperties.checks"), checks(status)));
+            if (!status.chain().isEmpty()) content.getChildren().add(section(Messages.get("signatureProperties.chain"), chain(status)));
         }
         getDialogPane().setContent(content);
         getDialogPane().setPrefWidth(660);
@@ -86,17 +88,17 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
         if (status.signerOrganization() != null && !status.signerOrganization().equals(status.signerName())) {
             signer += ", " + status.signerOrganization();
         }
-        row = add(grid, row, "Signed by", signer);
+        row = add(grid, row, Messages.get("signatureProperties.signedBy"), signer);
         if (status.signingTime() != null) {
-            row = add(grid, row, "Signed", DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG)
-                    .format(status.signingTime()) + (status.timestamped() ? "  (timestamp authority)"
-                    : "  (signer's clock)"));
+            row = add(grid, row, Messages.get("signatureProperties.signed"), DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG)
+                    .format(status.signingTime()) + "  " + Messages.get(status.timestamped() ? "signatureProperties.timestampAuthority"
+                    : "signatureProperties.signersClock"));
         }
-        row = add(grid, row, "Reason", status.reason());
-        row = add(grid, row, "Location", status.location());
-        row = add(grid, row, "Contact", status.contact());
-        row = add(grid, row, "Type", status.certification() ? "Certification signature" : "Approval signature");
-        add(grid, row, "Field", status.fieldName());
+        row = add(grid, row, Messages.get("signatureProperties.reason"), status.reason());
+        row = add(grid, row, Messages.get("signatureProperties.location"), status.location());
+        row = add(grid, row, Messages.get("signatureProperties.contact"), status.contact());
+        row = add(grid, row, Messages.get("signatureProperties.type"), status.certification() ? Messages.get("signatureProperties.certificationSignature") : Messages.get("signatureProperties.approvalSignature"));
+        add(grid, row, Messages.get("signatureProperties.field"), status.fieldName());
         return grid;
     }
 
@@ -120,37 +122,36 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
     static List<Check> checkList(SignatureStatus s) {
         List<Check> out = new ArrayList<>();
         if (s.verdict() == SignatureStatus.Verdict.ERROR) {
-            out.add(new Check(SignatureStatus.Verdict.ERROR, "The signature couldn't be checked: " + s.problem()));
+            out.add(new Check(SignatureStatus.Verdict.ERROR, Messages.format("signatureProperties.check.error", s.problem())));
             return out;
         }
         if (s.signedDataModified()) {
             out.add(new Check(SignatureStatus.Verdict.INVALID,
-                    "The signed content has been altered or corrupted since it was signed."));
+                    Messages.get("signatureProperties.check.altered")));
         } else {
-            out.add(new Check(SignatureStatus.Verdict.VALID, "The document hasn't been altered since it was signed."));
+            out.add(new Check(SignatureStatus.Verdict.VALID, Messages.get("signatureProperties.check.unaltered")));
         }
         if (s.modifiedAfterSigning() && !s.signedDataModified()) {
-            out.add(new Check(SignatureStatus.Verdict.UNKNOWN, "The document has changed since it was signed "
-                    + "(later revisions: form fill-in, comments or more signatures)."));
+            out.add(new Check(SignatureStatus.Verdict.UNKNOWN, Messages.get("signatureProperties.check.changed")));
         }
         if (s.revoked()) {
-            out.add(new Check(SignatureStatus.Verdict.INVALID, "The signer's certificate has been revoked."));
+            out.add(new Check(SignatureStatus.Verdict.INVALID, Messages.get("signatureProperties.check.revoked")));
         } else if (s.identityTrusted()) {
-            out.add(new Check(SignatureStatus.Verdict.VALID, "The signer's identity is valid."));
+            out.add(new Check(SignatureStatus.Verdict.VALID, Messages.get("signatureProperties.check.trusted")));
         } else if (s.selfSigned()) {
             out.add(new Check(SignatureStatus.Verdict.UNKNOWN,
-                    "The signer's certificate is self-signed, so its identity can't be verified."));
+                    Messages.get("signatureProperties.check.selfSigned")));
         } else {
             out.add(new Check(SignatureStatus.Verdict.UNKNOWN,
-                    "The signer's identity is unknown: the certificate doesn't chain to a trusted root."));
+                    Messages.get("signatureProperties.check.untrusted")));
         }
         out.add(s.certificateDateValid()
-                ? new Check(SignatureStatus.Verdict.VALID, "The certificate was valid at the signing time.")
+                ? new Check(SignatureStatus.Verdict.VALID, Messages.get("signatureProperties.check.dateValid"))
                 : new Check(SignatureStatus.Verdict.UNKNOWN,
-                "The certificate wasn't valid at the signing time (expired, or not yet valid)."));
+                Messages.get("signatureProperties.check.dateInvalid")));
         out.add(new Check(s.timestamped() ? SignatureStatus.Verdict.VALID : SignatureStatus.Verdict.ERROR,
-                s.timestamped() ? "The signing time comes from an embedded timestamp."
-                        : "The signing time comes from the signer's computer clock."));
+                s.timestamped() ? Messages.get("signatureProperties.check.timestamped")
+                        : Messages.get("signatureProperties.check.clock")));
         return out;
     }
 

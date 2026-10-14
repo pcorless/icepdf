@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
@@ -69,24 +71,24 @@ public final class AnnotationPropertiesDialog {
         AnnotationProperties before = AnnotationProperties.capture(annotation);
         Fields fields = new Fields(annotation, before);
         Dialog<AnnotationProperties> dialog = new Dialog<>();
-        dialog.setTitle(title(annotation) + " Properties");
+        dialog.setTitle(Messages.format("annotationProperties.title", title(annotation)));
         if (owner != null) dialog.initOwner(owner);
         DialogPane pane = dialog.getDialogPane();
         pane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-        TabPane tabs = new TabPane(tab("Appearance", fields.appearance()), tab("Flags", fields.flags()));
+        TabPane tabs = new TabPane(tab(Messages.get("annotationProperties.tab.appearance"), fields.appearance()), tab(Messages.get("annotationProperties.tab.flags"), fields.flags()));
         pane.setContent(tabs);
         dialog.setResultConverter(b -> b == ButtonType.OK ? fields.result() : null);
         return dialog.showAndWait().filter(p -> !p.isEmpty());
     }
 
     private static String title(Annotation a) {
-        if (a instanceof FreeTextAnnotation) return "Free Text";
-        if (a instanceof TextAnnotation) return "Note";
-        if (a instanceof InkAnnotation) return "Ink";
-        if (a instanceof LineAnnotation) return "Line";
-        if (a instanceof SquareAnnotation) return "Rectangle";
-        if (a instanceof CircleAnnotation) return "Ellipse";
-        return "Annotation";
+        if (a instanceof FreeTextAnnotation) return Messages.get("annotationProperties.kind.freeText");
+        if (a instanceof TextAnnotation) return Messages.get("annotationProperties.kind.note");
+        if (a instanceof InkAnnotation) return Messages.get("annotationProperties.kind.ink");
+        if (a instanceof LineAnnotation) return Messages.get("annotationProperties.kind.line");
+        if (a instanceof SquareAnnotation) return Messages.get("annotationProperties.kind.rectangle");
+        if (a instanceof CircleAnnotation) return Messages.get("annotationProperties.kind.ellipse");
+        return Messages.get("annotationProperties.kind.annotation");
     }
 
     private static Tab tab(String name, Node content) {
@@ -128,7 +130,7 @@ public final class AnnotationPropertiesDialog {
             int row = 0;
             if (AnnotationProperties.hasColor(annotation)) {
                 color = new ColorPicker(fx(before.color()));
-                grid.addRow(row++, new Label(annotation instanceof FreeTextAnnotation ? "Border colour:" : "Colour:"), color);
+                grid.addRow(row++, new Label(annotation instanceof FreeTextAnnotation ? Messages.get("annotationProperties.borderColour") : Messages.get("annotationProperties.colour")), color);
             }
             if (annotation instanceof FreeTextAnnotation) {
                 font = new ComboBox<>();
@@ -137,59 +139,61 @@ public final class AnnotationPropertiesDialog {
                 font.setEditable(true);
                 fontSize = new Spinner<>(4, 200, Math.round(before.fontSize() != null ? before.fontSize() : 12));
                 fontColor = new ColorPicker(fx(before.fontColor()));
-                grid.addRow(row++, new Label("Font:"), font);
-                grid.addRow(row++, new Label("Size:"), fontSize);
-                grid.addRow(row++, new Label("Text colour:"), fontColor);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.font")), font);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.size")), fontSize);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.textColour")), fontColor);
             }
             if (before.fillEnabled() != null || annotation instanceof LineAnnotation) {
                 fillColor = new ColorPicker(fx(before.fillColor()));
                 if (before.fillEnabled() != null) {
-                    fillEnabled = new CheckBox("Fill");
+                    fillEnabled = new CheckBox(Messages.get("annotationProperties.fill"));
                     fillEnabled.setSelected(before.fillEnabled());
                     fillColor.disableProperty().bind(fillEnabled.selectedProperty().not());
                     grid.addRow(row++, fillEnabled, fillColor);
                 } else {
-                    grid.addRow(row++, new Label("Interior colour:"), fillColor);
+                    grid.addRow(row++, new Label(Messages.get("annotationProperties.interiorColour")), fillColor);
                 }
             }
             if (before.startArrow() != null) {
                 startArrow = endings(before.startArrow());
                 endArrow = endings(before.endArrow());
-                grid.addRow(row++, new Label("Start:"), startArrow);
-                grid.addRow(row++, new Label("End:"), endArrow);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.start")), startArrow);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.end")), endArrow);
             }
             if (borderApplies()) {
                 width = new Spinner<>(0.0, 50.0, before.borderWidth() != null ? before.borderWidth() : 1.0, 0.5);
                 style = new ComboBox<>();
                 style.getItems().addAll(STYLES.keySet());
+                translated(style, "annotationProperties.style.");
                 style.setValue(styleLabel(before.borderStyle()));
-                grid.addRow(row++, new Label("Border width:"), width);
-                grid.addRow(row++, new Label("Border style:"), style);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.borderWidth")), width);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.borderStyle")), style);
             }
             if (before.iconName() != null) {
                 icon = new ComboBox<>();
                 icon.getItems().addAll(ICONS);
+                translated(icon, "annotationProperties.iconName.");
                 icon.setValue(before.iconName().getName());
-                grid.addRow(row++, new Label("Icon:"), icon);
+                grid.addRow(row++, new Label(Messages.get("annotationProperties.icon")), icon);
             }
             if (annotation instanceof MarkupAnnotation && before.opacity() != null) {
                 opacity = new Slider(0, 100, Math.round(before.opacity() * 100));
                 opacity.setShowTickLabels(true);
                 opacity.setMajorTickUnit(25);
-                grid.addRow(row, new Label("Opacity (%):"), opacity);
+                grid.addRow(row, new Label(Messages.get("annotationProperties.opacity")), opacity);
             }
             return grid;
         }
 
         Node flags() {
             GridPane grid = grid();
-            print = new CheckBox("Print");
+            print = new CheckBox(Messages.get("annotationProperties.print"));
             print.setSelected(Boolean.TRUE.equals(before.print()));
-            noZoom = new CheckBox("Keep size when zooming");
+            noZoom = new CheckBox(Messages.get("annotationProperties.noZoom"));
             noZoom.setSelected(Boolean.TRUE.equals(before.noZoom()));
-            noRotate = new CheckBox("Keep orientation when rotating");
+            noRotate = new CheckBox(Messages.get("annotationProperties.noRotate"));
             noRotate.setSelected(Boolean.TRUE.equals(before.noRotate()));
-            readOnly = new CheckBox("Read only (cannot be edited afterwards)");
+            readOnly = new CheckBox(Messages.get("annotationProperties.readOnly"));
             readOnly.setSelected(Boolean.TRUE.equals(before.readOnly()));
             grid.addRow(0, print);
             grid.addRow(1, noZoom);
@@ -248,7 +252,22 @@ public final class AnnotationPropertiesDialog {
             ComboBox<String> box = new ComboBox<>();
             box.getItems().addAll("None", "OpenArrow", "ClosedArrow", "Diamond", "Square", "Circle");
             box.setValue(current != null ? current.getName() : "None");
+            translated(box, "annotationProperties.ending.");
             return box;
+        }
+
+        /** Shows each PDF name in the list by its label ({@code prefix + name}); the value stays the name. */
+        private static void translated(ComboBox<String> box, String prefix) {
+            javafx.util.Callback<javafx.scene.control.ListView<String>, javafx.scene.control.ListCell<String>> cells =
+                    list -> new javafx.scene.control.ListCell<>() {
+                        @Override
+                        protected void updateItem(String item, boolean empty) {
+                            super.updateItem(item, empty);
+                            setText(empty || item == null ? null : Messages.get(prefix + item, item));
+                        }
+                    };
+            box.setCellFactory(cells);
+            box.setButtonCell(cells.call(null));
         }
 
         private static GridPane grid() {

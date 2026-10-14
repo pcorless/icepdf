@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
@@ -110,9 +112,9 @@ public record Attachment(String name, String description, long size, LocalDateTi
     /** Writes the file's bytes. */
     public void writeTo(OutputStream out) throws IOException {
         EmbeddedFileStream stream = streamOf(specification);
-        if (stream == null) throw new IOException(name + " has no embedded content");
+        if (stream == null) throw new IOException(Messages.format("attachment.noContent", name));
         try (InputStream in = stream.getDecodedStreamData()) {
-            if (in == null) throw new IOException(name + " could not be decoded");
+            if (in == null) throw new IOException(Messages.format("attachment.notDecoded", name));
             in.transferTo(out);
         }
     }

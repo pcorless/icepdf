@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.scene.Group;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.BlendMode;
@@ -235,7 +237,7 @@ final class AnnotationUiLayer extends Group {
             badge.getStyleClass().add("pdf-signature-badge");
             badge.setCursor(javafx.scene.Cursor.HAND);
             Tooltip.install(badge, new Tooltip(status.summary()
-                    + (status.signerName() != null ? "\nSigned by " + status.signerName() : "")));
+                    + (status.signerName() != null ? "\n" + Messages.format("signatureBadge.signedBy", status.signerName()) : "")));
             badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_PRESSED, javafx.scene.input.MouseEvent::consume);
             badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_RELEASED, javafx.scene.input.MouseEvent::consume);
             badge.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, ev -> {

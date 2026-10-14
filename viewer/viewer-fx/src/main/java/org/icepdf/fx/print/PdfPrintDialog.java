@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.print;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -72,26 +74,27 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
     private static final double PREVIEW_H = 260;
     private static final Map<String, String> PAPER_NAMES = Map.of(
             "na-letter", "Letter", "na-legal", "Legal", "iso-a4", "A4", "iso-a3", "A3", "iso-a5", "A5",
-            "executive", "Executive", "tabloid", "Tabloid", "ledger", "Ledger", "iso-b5", "B5", "jis-b5", "B5 (JIS)");
+            "executive", "Executive", "tabloid", "Tabloid", "ledger", "Ledger", "iso-b5", "B5", "jis-b5",
+            Messages.get("printDialog.paper.jisB5"));
 
     private final Document document;
     private final int pageCount;
     private final ComboBox<PrintService> printer = new ComboBox<>();
-    private final Label printerStatus = new Label("Looking for printers…");
+    private final Label printerStatus = new Label(Messages.get("printDialog.lookingForPrinters"));
     private final RadioButton allPages = new RadioButton();
     private final RadioButton currentPage = new RadioButton();
-    private final RadioButton rangePages = new RadioButton("Pages");
+    private final RadioButton rangePages = new RadioButton(Messages.get("printDialog.pages"));
     private final TextField range = new TextField();
     private final Spinner<Integer> copies = new Spinner<>(1, 999, 1);
-    private final CheckBox collate = new CheckBox("Collate");
+    private final CheckBox collate = new CheckBox(Messages.get("printDialog.collate"));
     private final ComboBox<MediaSizeName> paper = new ComboBox<>();
-    private final RadioButton fit = new RadioButton("Fit to paper");
-    private final RadioButton shrink = new RadioButton("Shrink oversized pages");
-    private final RadioButton actual = new RadioButton("Actual size");
+    private final RadioButton fit = new RadioButton(Messages.get("printDialog.fit"));
+    private final RadioButton shrink = new RadioButton(Messages.get("printDialog.shrink"));
+    private final RadioButton actual = new RadioButton(Messages.get("printDialog.actual"));
     private final ComboBox<PrintSettings.Orientation> orientation = new ComboBox<>();
     private final ComboBox<Sides> sides = new ComboBox<>();
-    private final Label sidesLabel = new Label("Two-sided");
-    private final CheckBox annotations = new CheckBox("Print annotations and form fields");
+    private final Label sidesLabel = new Label(Messages.get("printDialog.twoSided"));
+    private final CheckBox annotations = new CheckBox(Messages.get("printDialog.annotations"));
     private final Label note = new Label();
     private final Canvas preview = new Canvas(PREVIEW_W, PREVIEW_H);
     private final Label previewCaption = new Label();
@@ -120,11 +123,11 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         this.pageCount = document.getNumberOfPages();
         this.current = Math.max(0, Math.min(currentPage, pageCount - 1));
         if (owner != null) initOwner(owner);
-        setTitle("Print");
+        setTitle(Messages.get("printDialog.title"));
         setResizable(false);
         getDialogPane().getStyleClass().add("pdf-print-dialog");
 
-        ButtonType print = new ButtonType("Print", ButtonBar.ButtonData.OK_DONE);
+        ButtonType print = new ButtonType(Messages.get("printDialog.print"), ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(print, ButtonType.CANCEL);
         getDialogPane().setContent(buildContent());
         Node printButton = getDialogPane().lookupButton(print);
@@ -142,7 +145,7 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
      */
     public void setLowResolutionOnly(boolean lowResolutionOnly) {
         this.lowResolutionOnly = lowResolutionOnly;
-        note.setText(lowResolutionOnly ? "This document permits only low-resolution printing." : "");
+        note.setText(lowResolutionOnly ? Messages.get("printDialog.lowResolutionOnly") : "");
     }
 
     /**
@@ -190,11 +193,11 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         printer.setButtonCell(new PrinterCell());
         printer.setCellFactory(list -> new PrinterCell());
         printer.valueProperty().addListener((obs, was, now) -> printerChanged());
-        form.addRow(row++, new Label("Printer"), new VBox(2, printer, printerStatus));
+        form.addRow(row++, new Label(Messages.get("printDialog.printer")), new VBox(2, printer, printerStatus));
 
         ToggleGroup pages = new ToggleGroup();
-        allPages.setText("All (" + pageCount + (pageCount == 1 ? " page)" : " pages)"));
-        currentPage.setText("Current page (" + (current + 1) + ")");
+        allPages.setText(Messages.format("printDialog.all", pageCount));
+        currentPage.setText(Messages.format("printDialog.currentPage", current + 1));
         allPages.setToggleGroup(pages);
         currentPage.setToggleGroup(pages);
         rangePages.setToggleGroup(pages);
@@ -208,7 +211,7 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
             pagesChanged();
         });
         pages.selectedToggleProperty().addListener((obs, was, now) -> pagesChanged());
-        form.addRow(row++, new Label("Pages"), new VBox(4, allPages, currentPage,
+        form.addRow(row++, new Label(Messages.get("printDialog.pagesRow")), new VBox(4, allPages, currentPage,
                 new HBox(6, rangePages, range)));
 
         copies.setEditable(true);
@@ -217,13 +220,13 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         collate.disableProperty().bind(copies.valueProperty().isEqualTo(1));
         HBox copiesRow = new HBox(10, copies, collate);
         copiesRow.setAlignment(Pos.CENTER_LEFT);
-        form.addRow(row++, new Label("Copies"), copiesRow);
+        form.addRow(row++, new Label(Messages.get("printDialog.copies")), copiesRow);
 
         paper.setPrefWidth(260);
         paper.setButtonCell(new PaperCell());
         paper.setCellFactory(list -> new PaperCell());
         paper.valueProperty().addListener((obs, was, now) -> sheetChanged());
-        form.addRow(row++, new Label("Paper"), paper);
+        form.addRow(row++, new Label(Messages.get("printDialog.paper")), paper);
 
         ToggleGroup sizing = new ToggleGroup();
         fit.setToggleGroup(sizing);
@@ -231,14 +234,14 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         actual.setToggleGroup(sizing);
         fit.setSelected(true);
         sizing.selectedToggleProperty().addListener((obs, was, now) -> drawPreview());
-        form.addRow(row++, new Label("Size"), new VBox(4, fit, shrink, actual));
+        form.addRow(row++, new Label(Messages.get("printDialog.size")), new VBox(4, fit, shrink, actual));
 
         orientation.getItems().setAll(PrintSettings.Orientation.values());
         orientation.setValue(PrintSettings.Orientation.AUTO);
         orientation.setButtonCell(new OrientationCell());
         orientation.setCellFactory(list -> new OrientationCell());
         orientation.valueProperty().addListener((obs, was, now) -> drawPreview());
-        form.addRow(row++, new Label("Orientation"), orientation);
+        form.addRow(row++, new Label(Messages.get("printDialog.orientation")), orientation);
 
         sides.setButtonCell(new SidesCell());
         sides.setCellFactory(list -> new SidesCell());
@@ -306,7 +309,7 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
                 : preferred != null && services.contains(preferred) ? preferred
                 : services.isEmpty() ? null : services.get(0);
         printer.setValue(chosen);
-        printerStatus.setText(services.isEmpty() ? "No printers found." : "");
+        printerStatus.setText(services.isEmpty() ? Messages.get("printDialog.noPrinters") : "");
         printerStatus.setManaged(services.isEmpty());
         printerStatus.setVisible(services.isEmpty());
     }
@@ -419,12 +422,12 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         g.fillRect(0, 0, PREVIEW_W, PREVIEW_H);
         int[] pages = selectedPages();
         if (pages == null || pages.length == 0) {
-            previewCaption.setText("No pages");
+            previewCaption.setText(Messages.get("printDialog.noPages"));
             return;
         }
         previewIndex = Math.min(previewIndex, pages.length - 1);
         int pageIndex = pages[previewIndex];
-        previewCaption.setText("Page " + (pageIndex + 1) + "  (" + (previewIndex + 1) + " of " + pages.length + ")");
+        previewCaption.setText(Messages.format("printDialog.previewCaption", pageIndex + 1, previewIndex + 1, pages.length));
         Page page = document.getPageTree().getPage(pageIndex);
         PDimension size = page != null ? page.getSize(Page.BOUNDARY_CROPBOX, 0, 1f) : null;
         if (size == null) return;
@@ -574,9 +577,9 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         protected void updateItem(PrintSettings.Orientation item, boolean empty) {
             super.updateItem(item, empty);
             setText(empty || item == null ? null : switch (item) {
-                case AUTO -> "Automatic (per page)";
-                case PORTRAIT -> "Portrait";
-                case LANDSCAPE -> "Landscape";
+                case AUTO -> Messages.get("printDialog.orientation.auto");
+                case PORTRAIT -> Messages.get("printDialog.orientation.portrait");
+                case LANDSCAPE -> Messages.get("printDialog.orientation.landscape");
             });
         }
     }
@@ -586,9 +589,9 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         protected void updateItem(Sides item, boolean empty) {
             super.updateItem(item, empty);
             setText(empty || item == null ? null
-                    : item == Sides.ONE_SIDED ? "Off"
-                    : item == Sides.TWO_SIDED_LONG_EDGE ? "Flip on long edge"
-                    : item == Sides.TWO_SIDED_SHORT_EDGE ? "Flip on short edge" : item.toString());
+                    : item == Sides.ONE_SIDED ? Messages.get("printDialog.sides.off")
+                    : item == Sides.TWO_SIDED_LONG_EDGE ? Messages.get("printDialog.sides.longEdge")
+                    : item == Sides.TWO_SIDED_SHORT_EDGE ? Messages.get("printDialog.sides.shortEdge") : item.toString());
         }
     }
 }

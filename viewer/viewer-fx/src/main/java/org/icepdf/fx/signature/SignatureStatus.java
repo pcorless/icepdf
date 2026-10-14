@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import java.security.cert.X509Certificate;
@@ -80,13 +82,13 @@ public record SignatureStatus(SignatureWidgetAnnotation widget, int pageIndex, S
     /** One sentence for the verdict, e.g. for a tooltip or a list cell. */
     public String summary() {
         return switch (verdict) {
-            case VALID -> modifiedAfterSigning ? "Signature is valid; the document has changed since it was signed"
-                    : "Signature is valid";
-            case UNKNOWN -> "Signature validity is unknown: the signer's identity can't be verified";
-            case INVALID -> revoked && !signedDataModified ? "Signature is invalid: the certificate has been revoked"
-                    : "Signature is invalid: the document was altered after it was signed";
-            case UNSIGNED -> "Unsigned signature field";
-            case ERROR -> "Signature couldn't be checked" + (problem != null ? ": " + problem : "");
+            case VALID -> modifiedAfterSigning ? Messages.get("signatureStatus.valid.changed")
+                    : Messages.get("signatureStatus.valid");
+            case UNKNOWN -> Messages.get("signatureStatus.unknown");
+            case INVALID -> revoked && !signedDataModified ? Messages.get("signatureStatus.invalid.revoked")
+                    : Messages.get("signatureStatus.invalid.altered");
+            case UNSIGNED -> Messages.get("signatureStatus.unsigned");
+            case ERROR -> problem != null ? Messages.format("signatureStatus.error.problem", problem) : Messages.get("signatureStatus.error");
         };
     }
 }

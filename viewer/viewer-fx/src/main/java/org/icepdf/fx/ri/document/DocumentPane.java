@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.document;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Insets;
@@ -64,7 +66,7 @@ public final class DocumentPane {
         view.setOnAnnotationAction(event -> {
             if (event.getAction() instanceof URIAction uri && uri.getURI() != null) {
                 if (onLink != null) onLink.accept(uri.getURI());
-                else onMessage.accept("Link: " + uri.getURI());
+                else onMessage.accept(Messages.format("documentPane.link", uri.getURI()));
             }
         });
         collection.setVisible(false);
@@ -147,17 +149,16 @@ public final class DocumentPane {
      * back for the next document.
      */
     private void buildRedactionBanner() {
-        Label text = new Label("Redactions are only marks until applied. Export a redacted copy to a new file "
-                + "to remove the content under them.");
+        Label text = new Label(Messages.get("documentPane.redactionBanner"));
         text.setWrapText(true);
-        Button export = new Button("Export Redacted Copy\u2026");
+        Button export = new Button(Messages.get("documentPane.exportRedacted"));
         export.setOnAction(e -> {
             if (onExportRedacted != null) onExportRedacted.run();
         });
         Button close = new Button("\u2715");
         close.getStyleClass().add("close");
         close.setFocusTraversable(false);
-        close.setAccessibleText("Close");
+        close.setAccessibleText(Messages.get("documentPane.close"));
         close.setOnAction(e -> {
             redactionBannerDismissed = true;
             redactionBanner.setVisible(false);

@@ -17,16 +17,13 @@ package org.icepdf.fx.ri.actions;
 
 import javafx.scene.input.KeyCombination;
 
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import org.icepdf.fx.i18n.Messages;
 
 /**
  * Base for the built-in actions: the id, and the label, tool tip and short label from the
  * {@code messages} bundle in this package ({@code <id>}, {@code <id>.tooltip}, {@code <id>.short}).
  */
 public abstract class AbstractViewerAction implements ViewerAction {
-
-    private static final ResourceBundle MESSAGES = ResourceBundle.getBundle("org.icepdf.fx.ri.actions.messages");
 
     private final String id;
     private final KeyCombination accelerator;
@@ -67,13 +64,9 @@ public abstract class AbstractViewerAction implements ViewerAction {
         return accelerator;
     }
 
-    /** A message from this package's bundle, or {@code fallback}. */
+    /** A message from the viewer's bundle ({@link Messages}), or {@code fallback}. */
     protected static String message(String key, String fallback) {
-        try {
-            return MESSAGES.getString(key);
-        } catch (MissingResourceException e) {
-            return fallback;
-        }
+        return Messages.get(key, fallback);
     }
 
     @Override

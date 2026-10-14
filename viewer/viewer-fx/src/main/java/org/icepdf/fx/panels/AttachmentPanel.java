@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -47,7 +49,7 @@ public class AttachmentPanel extends BorderPane {
 
     private final PdfView view;
     private final ListView<Attachment> list = new ListView<>();
-    private final Label empty = new Label("This document has no attachments.");
+    private final Label empty = new Label(Messages.get("attachmentPanel.empty"));
     private final ReadOnlyBooleanWrapper hasAttachments = new ReadOnlyBooleanWrapper(this, "hasAttachments", false);
     private final ObjectProperty<Consumer<Attachment>> onOpen = new SimpleObjectProperty<>(this, "onOpen");
 
@@ -96,10 +98,10 @@ public class AttachmentPanel extends BorderPane {
             if (e.getCode() == javafx.scene.input.KeyCode.ENTER) open(list.getSelectionModel().getSelectedItem());
         });
 
-        Button save = new Button("Save…");
+        Button save = new Button(Messages.get("attachmentPanel.save"));
         save.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
         save.setOnAction(e -> save(list.getSelectionModel().getSelectedItem()));
-        Button open = new Button("Open");
+        Button open = new Button(Messages.get("attachmentPanel.open"));
         open.disableProperty().bind(Bindings.createBooleanBinding(() -> {
             Attachment selected = list.getSelectionModel().getSelectedItem();
             return selected == null || !selected.isPdf() || onOpen.get() == null;
@@ -150,14 +152,14 @@ public class AttachmentPanel extends BorderPane {
     private void save(Attachment attachment) {
         if (attachment == null) return;
         FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save attachment");
+        chooser.setTitle(Messages.get("attachmentPanel.saveTitle"));
         chooser.setInitialFileName(attachment.name());
         File file = chooser.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
         if (file == null) return;
         try {
             attachment.saveTo(file.toPath());
         } catch (IOException e) {
-            new Alert(Alert.AlertType.ERROR, "Could not save " + attachment.name() + ":\n" + e.getMessage())
+            new Alert(Alert.AlertType.ERROR, Messages.format("attachmentPanel.saveFailed", attachment.name(), e.getMessage()))
                     .showAndWait();
         }
     }

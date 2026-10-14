@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.actions.app;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.scene.control.Alert;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
@@ -32,7 +34,7 @@ public final class AboutAction extends AbstractViewerAction {
     @Override
     public void execute(ViewerContext context) {
         Alert about = new Alert(Alert.AlertType.INFORMATION, context.applicationName()
-                + "\nJavaFX viewer for ICEpdf " + Document.getLibraryVersion());
+                + "\n" + Messages.format("about.version", Document.getLibraryVersion()));
         about.setHeaderText(null);
         if (context.window() != null) about.initOwner(context.window());
         about.showAndWait();

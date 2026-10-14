@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
@@ -95,7 +97,7 @@ public final class DocumentFonts {
     }
 
     static FontInfo describe(Font font, int page) {
-        String name = font.getBaseFont() != null ? font.getBaseFont() : "(unnamed)";
+        String name = font.getBaseFont() != null ? font.getBaseFont() : Messages.get("documentFonts.unnamed");
         boolean subset = name.length() > 7 && name.charAt(6) == '+' && name.substring(0, 6).chars().allMatch(Character::isUpperCase);
         FontDescriptor descriptor = font.getFontDescriptor();
         boolean embedded = descriptor != null && descriptor.getEmbeddedFont() != null;

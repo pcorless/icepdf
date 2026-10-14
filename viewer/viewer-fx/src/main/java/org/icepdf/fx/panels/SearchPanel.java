@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -72,7 +74,7 @@ public class SearchPanel extends BorderPane {
     private final PdfView view;
     private final TextField query = new TextField();
     private final Label status = new Label();
-    private final Button redactAll = new Button("Redact All");
+    private final Button redactAll = new Button(Messages.get("searchPanel.redactAll"));
     private final javafx.beans.property.BooleanProperty redactionEnabled =
             new javafx.beans.property.SimpleBooleanProperty(this, "redactionEnabled", true);
     // marking is under way (the text is read on a worker): no second click meanwhile.
@@ -148,31 +150,30 @@ public class SearchPanel extends BorderPane {
         this.view = view;
         getStyleClass().add("search-panel");
 
-        query.setPromptText("Search");
+        query.setPromptText(Messages.get("searchPanel.prompt"));
         query.setOnAction(e -> search(query.getText()));
         query.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) clear();
         });
-        Button go = new Button("Search");
+        Button go = new Button(Messages.get("searchPanel.search"));
         go.setOnAction(e -> search(query.getText()));
         go.setDefaultButton(false);
-        MenuButton options = new MenuButton("Options");
+        MenuButton options = new MenuButton(Messages.get("searchPanel.options"));
         options.getItems().addAll(
-                check("Match case", caseSensitive), check("Whole words only", wholeWord),
-                check("Ignore accents", foldAccents), check("Regular expression", regex),
-                check("Add to previous terms (cumulative)", cumulative),
+                check(Messages.get("searchPanel.matchCase"), caseSensitive), check(Messages.get("searchPanel.wholeWords"), wholeWord),
+                check(Messages.get("searchPanel.ignoreAccents"), foldAccents), check(Messages.get("searchPanel.regex"), regex),
+                check(Messages.get("searchPanel.cumulative"), cumulative),
                 new SeparatorMenuItem(),
-                new CustomMenuItem(new Label("Also search:"), false),
-                check("Comments", comments), check("Form fields", formFields),
-                check("Bookmarks", outlines), check("Named destinations", destinations));
-        Button clear = new Button("Clear");
+                new CustomMenuItem(new Label(Messages.get("searchPanel.alsoSearch")), false),
+                check(Messages.get("searchPanel.comments"), comments), check(Messages.get("searchPanel.formFields"), formFields),
+                check(Messages.get("searchPanel.bookmarks"), outlines), check(Messages.get("searchPanel.destinations"), destinations));
+        Button clear = new Button(Messages.get("searchPanel.clear"));
         clear.setOnAction(e -> clear());
         HBox field = new HBox(4, query, go);
         HBox.setHgrow(query, Priority.ALWAYS);
         // search and redact: every text match becomes a redaction (undoable as one step).
         redactAll.setTooltip(new javafx.scene.control.Tooltip(
-                "Mark every match for redaction - in the text, comments, form fields and bookmarks; "
-                        + "export a redacted copy to remove them"));
+                Messages.get("searchPanel.redactAllTooltip")));
         redactAll.visibleProperty().bind(redactionEnabled);
         redactAll.managedProperty().bind(redactAll.visibleProperty());
         redactAll.disableProperty().bind(javafx.beans.binding.Bindings.isEmpty(view.getSearchHits())
@@ -185,10 +186,9 @@ public class SearchPanel extends BorderPane {
             view.redactSearchHits(count -> {
                 redacting.set(false);
                 StringBuilder text = new StringBuilder();
-                if (count > 0) text.append(count == 1 ? "1 match" : count + " matches").append(" marked for redaction");
+                if (count > 0) text.append(Messages.format("searchPanel.markedForRedaction", count));
                 if (elsewhere > 0 && view.hasTermRedaction()) {
-                    text.append(text.length() > 0 ? "; " : "").append(elsewhere == 1 ? "1 match" : elsewhere + " matches")
-                            .append(" in comments, fields or bookmarks will be masked on export");
+                    text.append(text.length() > 0 ? "; " : "").append(Messages.format("searchPanel.maskedOnExport", elsewhere));
                 }
                 if (text.length() > 0) status.setText(text.toString());
             });
@@ -306,7 +306,7 @@ public class SearchPanel extends BorderPane {
             try {
                 Pattern.compile(text);
             } catch (PatternSyntaxException e) {
-                status.setText("Not a valid regular expression: " + e.getDescription());
+                status.setText(Messages.format("searchPanel.badRegex", e.getDescription()));
                 return false;
             }
         }
@@ -428,7 +428,7 @@ public class SearchPanel extends BorderPane {
 
     private void addTextHit(int index, SearchHit hit) {
         if (textCategory == null) {
-            textCategory = new TreeItem<>(new Category("Text"));
+            textCategory = new TreeItem<>(new Category(Messages.get("searchPanel.text")));
             textCategory.setExpanded(true);
             root.getChildren().add(0, textCategory);
         }
@@ -535,16 +535,15 @@ public class SearchPanel extends BorderPane {
         int fields = fieldCategories.values().stream().mapToInt(c -> ((Category) c.getValue()).count).sum();
         int pages = (int) view.getSearchHits().stream().mapToInt(SearchHit::pageIndex).distinct().count();
         StringBuilder sb = new StringBuilder();
-        sb.append(text == 1 ? "1 match" : text + " matches");
-        if (text > 0) sb.append(" on ").append(pages == 1 ? "1 page" : pages + " pages");
-        if (fields > 0) sb.append(", ").append(fields).append(" elsewhere");
-        if (busy) sb.append(" (searching…)");
+        sb.append(Messages.format(text > 0 ? "searchPanel.matchesOnPages" : "searchPanel.matches", text, pages));
+        if (fields > 0) sb.append(", ").append(Messages.format("searchPanel.elsewhere", fields));
+        if (busy) sb.append(' ').append(Messages.get("searchPanel.searching"));
         status.setText(sb.toString());
     }
 
     private void updateTermsLabel() {
         termsLabel.setVisible(terms.size() > 1);
-        termsLabel.setText("Terms: " + String.join(", ", terms.stream().map(t -> "“" + t.getTerm() + "”").toList()));
+        termsLabel.setText(Messages.format("searchPanel.terms", String.join(", ", terms.stream().map(t -> "“" + t.getTerm() + "”").toList())));
     }
 
     private static CheckMenuItem check(String text, BooleanProperty property) {
@@ -568,7 +567,7 @@ public class SearchPanel extends BorderPane {
                 label.setStyle("-fx-font-weight: bold;");
                 setGraphic(label);
             } else if (entry instanceof PageGroup group) {
-                setText("Page " + (group.pageIndex + 1) + " (" + group.count + ")");
+                setText(Messages.format("searchPanel.pageRow", group.pageIndex + 1, group.count));
             } else if (entry instanceof TextResult text) {
                 SearchHit hit = text.hit();
                 String before = tidy(hit.before()), after = tidy(hit.after());

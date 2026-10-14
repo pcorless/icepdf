@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.geometry.Orientation;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
@@ -82,7 +84,7 @@ public final class ToolRail extends VBox {
             getChildren().add(actions.button(id));
         }
         if (!arrangement.overflow().isEmpty()) {
-            MenuButton more = menuButton("ui.more", "More tools");
+            MenuButton more = menuButton("ui.more", Messages.get("toolRail.more"));
             more.getItems().setAll(actions.items(arrangement.overflow().toArray(new String[0])));
             getChildren().add(more);
         }
@@ -93,21 +95,21 @@ public final class ToolRail extends VBox {
     }
 
     private MenuButton settings(RailArrangement arrangement) {
-        MenuButton settings = menuButton("ui.settings", "Arrange the tools");
-        MenuItem customise = new MenuItem("Customise Tools…");
+        MenuButton settings = menuButton("ui.settings", Messages.get("toolRail.arrange"));
+        MenuItem customise = new MenuItem(Messages.get("toolRail.customise"));
         customise.setOnAction(e -> onCustomise.run());
-        MenuItem side = new MenuItem(layout.getRailSide() == UserLayout.Side.LEFT ? "Move Rail to the Right" : "Move Rail to the Left");
+        MenuItem side = new MenuItem(Messages.get(layout.getRailSide() == UserLayout.Side.LEFT ? "toolRail.moveRight" : "toolRail.moveLeft"));
         side.setOnAction(e -> {
             layout.setRailSide(layout.getRailSide() == UserLayout.Side.LEFT ? UserLayout.Side.RIGHT : UserLayout.Side.LEFT);
             changed();
         });
-        CheckMenuItem autoShow = new CheckMenuItem("Show Rail Only When Pointed At");
+        CheckMenuItem autoShow = new CheckMenuItem(Messages.get("toolRail.autoShow"));
         autoShow.setSelected(layout.isRailAutoShow());
         autoShow.setOnAction(e -> {
             layout.setRailAutoShow(autoShow.isSelected());
             changed();
         });
-        MenuItem reset = new MenuItem("Reset Tools");
+        MenuItem reset = new MenuItem(Messages.get("toolRail.reset"));
         reset.setOnAction(e -> {
             layout.resetRail();
             changed();

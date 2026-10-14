@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.document;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
@@ -220,13 +222,13 @@ public final class DocumentSession {
         loadingFile.set(null);
         if (failure instanceof PDFSecurityException) {
             boolean cancelled = callback instanceof PasswordPrompt prompt && prompt.isCancelled();
-            if (!cancelled) onError.accept("Could not open " + path.getFileName() + ": incorrect password.");
+            if (!cancelled) onError.accept(Messages.format("documentSession.wrongPassword", path.getFileName()));
             done.accept(false);
             return;
         }
         if (failure != null) {
             logger.log(Level.FINE, "Open failed", failure);
-            onError.accept("Could not open " + path + ":\n" + failure.getMessage());
+            onError.accept(Messages.format("documentSession.openFailed", path, failure.getMessage()));
             done.accept(false);
             return;
         }
@@ -295,7 +297,7 @@ public final class DocumentSession {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Save failed", e);
             deleteQuietly(temp);
-            onError.accept("Could not save " + target.getFileName() + ":\n" + e.getMessage());
+            onError.accept(Messages.format("documentSession.saveFailed", target.getFileName(), e.getMessage()));
             return false;
         }
         int page = view.getCurrentPageIndex();
@@ -312,8 +314,7 @@ public final class DocumentSession {
             }
         } catch (IOException e) {
             logger.log(Level.WARNING, "Save failed", e);
-            onError.accept("Could not replace " + target.getFileName() + ":\n" + e.getMessage()
-                    + "\nThe document was saved as " + temp);
+            onError.accept(Messages.format("documentSession.replaceFailed", target.getFileName(), e.getMessage(), temp));
             openAt(previous != null ? previous : temp, page);
             return false;
         }
@@ -369,7 +370,7 @@ public final class DocumentSession {
                 deleteQuietly(temp);
                 Platform.runLater(() -> {
                     writing.set(false);
-                    onError.accept("Could not write " + out.getFileName() + ":\n" + e.getMessage());
+                    onError.accept(Messages.format("documentSession.writeFailed", out.getFileName(), e.getMessage()));
                     done.accept(null);
                 });
             }

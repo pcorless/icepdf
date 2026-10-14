@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -77,14 +79,14 @@ public final class TabStrip extends HBox {
         setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(row, Priority.ALWAYS);
 
-        Button plus = iconButton("ui.add", "New tab", "+");
+        Button plus = iconButton("ui.add", Messages.get("tabStrip.newTab"), "+");
         plus.setId("ui.add");
         plus.setOnAction(e -> add.run());
         list.getStyleClass().add("icon-button");
         Node arrow = icons.icon("ui.tabs", 16);
         if (arrow != null) list.setGraphic(arrow);
         else list.setText("\u25be");
-        list.setTooltip(new Tooltip("All documents"));
+        list.setTooltip(new Tooltip(Messages.get("tabStrip.allDocuments")));
         list.setId("ui.tabs");
         list.setOnShowing(e -> {
             list.getItems().clear();
@@ -209,7 +211,7 @@ public final class TabStrip extends HBox {
     }
 
     private static String label(DocumentPane pane) {
-        return pane.getTitle().isEmpty() ? "New Tab" : pane.getTitle();
+        return pane.getTitle().isEmpty() ? Messages.get("tabStrip.newTabTitle") : pane.getTitle();
     }
 
     private void rebuild() {
@@ -246,7 +248,7 @@ public final class TabStrip extends HBox {
             name.setMinWidth(0);
             name.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(name, Priority.ALWAYS);
-            Button x = iconButton("ui.close", "Close", "\u00d7");
+            Button x = iconButton("ui.close", Messages.get("tabStrip.close"), "\u00d7");
             x.getStyleClass().add("tab-close");
             x.setOnAction(e -> {
                 close.accept(pane);
@@ -301,13 +303,13 @@ public final class TabStrip extends HBox {
                 e.consume();
             });
             ContextMenu menu = new ContextMenu();
-            MenuItem closeThis = new MenuItem("Close");
+            MenuItem closeThis = new MenuItem(Messages.get("tabStrip.close"));
             closeThis.setOnAction(e -> close.accept(pane));
-            MenuItem closeOthers = new MenuItem("Close Other Tabs");
+            MenuItem closeOthers = new MenuItem(Messages.get("tabStrip.closeOthers"));
             closeOthers.setOnAction(e -> {
                 for (DocumentPane other : documents.toArray(new DocumentPane[0])) if (other != pane) close.accept(other);
             });
-            MenuItem toWindow = new MenuItem("Move to New Window");
+            MenuItem toWindow = new MenuItem(Messages.get("tabStrip.moveToWindow"));
             toWindow.setOnAction(e -> onTearOff.accept(pane, null));
             menu.setOnShowing(e -> toWindow.setDisable(!canTearOff.getAsBoolean()));
             menu.getItems().addAll(closeThis, closeOthers, new javafx.scene.control.SeparatorMenuItem(), toWindow);
@@ -316,7 +318,7 @@ public final class TabStrip extends HBox {
 
         void sync() {
             name.setText(label(pane));
-            tip.setText(pane.getSession().getFile() != null ? pane.getSession().getFile().toString() : "No document");
+            tip.setText(pane.getSession().getFile() != null ? pane.getSession().getFile().toString() : Messages.get("tabStrip.noDocument"));
             getStyleClass().remove("selected");
             if (pane == current.getValue()) getStyleClass().add("selected");
         }

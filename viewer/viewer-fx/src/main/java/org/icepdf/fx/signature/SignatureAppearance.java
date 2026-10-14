@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureAppearanceModel;
@@ -58,6 +60,13 @@ public class SignatureAppearance implements SignatureAppearanceModel {
                          String location) {
         public static final Labels ENGLISH = new Labels("Reason: {0}", "Approval", "Certification",
                 "Contact: {0}", "Digitally signed by {0}", "{0}");
+
+        /** The labels in the viewer's language ({@link Messages}). */
+        public static Labels localized() {
+            return new Labels(Messages.get("signatureAppearance.reason"), Messages.get("signatureAppearance.approval"),
+                    Messages.get("signatureAppearance.certification"), Messages.get("signatureAppearance.contact"),
+                    Messages.get("signatureAppearance.signer"), Messages.get("signatureAppearance.location"));
+        }
     }
 
     private final Name imageXObjectName;
@@ -69,7 +78,7 @@ public class SignatureAppearance implements SignatureAppearanceModel {
     private String name;
     private String contact;
     private String location;
-    private Labels labels = Labels.ENGLISH;
+    private Labels labels = Labels.localized();
 
     private boolean textVisible = true;
     private String fontName = "Helvetica";

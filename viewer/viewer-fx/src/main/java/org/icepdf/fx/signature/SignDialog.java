@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.signature;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -83,18 +85,18 @@ public class SignDialog extends Dialog<SignDialog.Result> {
     private final PasswordField password = new PasswordField();
     private final Label keystoreStatus = new Label();
     private final ListView<DocumentSigning.KeyEntry> certificates = new ListView<>();
-    private final RadioButton approval = new RadioButton("Approval signature");
-    private final RadioButton certification = new RadioButton("Certification signature (locks the document)");
+    private final RadioButton approval = new RadioButton(Messages.get("signDialog.approval"));
+    private final RadioButton certification = new RadioButton(Messages.get("signDialog.certification"));
     private final TextField name = new TextField();
     private final TextField contact = new TextField();
     private final TextField location = new TextField();
     private final TextField reason = new TextField();
-    private final CheckBox visible = new CheckBox("Visible signature");
-    private final CheckBox showText = new CheckBox("Show text");
+    private final CheckBox visible = new CheckBox(Messages.get("signDialog.visible"));
+    private final CheckBox showText = new CheckBox(Messages.get("signDialog.showText"));
     private final ToggleGroup imageSource = new ToggleGroup();
-    private final RadioButton noImage = new RadioButton("None");
-    private final RadioButton drawnImage = new RadioButton("Draw");
-    private final RadioButton fileImage = new RadioButton("Image file");
+    private final RadioButton noImage = new RadioButton(Messages.get("signDialog.noImage"));
+    private final RadioButton drawnImage = new RadioButton(Messages.get("signDialog.drawnImage"));
+    private final RadioButton fileImage = new RadioButton(Messages.get("signDialog.fileImage"));
     private final TextField imagePath = new TextField();
     private final SignaturePad pad;
     private final ComboBox<SignatureAppearance.Layout> layout = new ComboBox<>();
@@ -126,11 +128,11 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         this.appearance = new SignatureAppearance(field.getLibrary());
         this.pad = new SignaturePad(settings.getInk());
         if (owner != null) initOwner(owner);
-        setTitle("Sign document");
+        setTitle(Messages.get("signDialog.title"));
         setResizable(true);
         getDialogPane().getStyleClass().add("pdf-sign-dialog");
 
-        ButtonType sign = new ButtonType("Sign", ButtonBar.ButtonData.OK_DONE);
+        ButtonType sign = new ButtonType(Messages.get("signDialog.sign"), ButtonBar.ButtonData.OK_DONE);
         getDialogPane().getButtonTypes().addAll(sign, ButtonType.CANCEL);
         getDialogPane().lookupButton(sign).disableProperty().bind(
                 certificates.getSelectionModel().selectedItemProperty().isNull());
@@ -141,12 +143,12 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         approval.setSelected(true);
         certification.setDisable(!DocumentSigning.canCertify(document));
         if (certification.isDisable()) {
-            certification.setTooltip(new Tooltip("The document is already certified."));
+            certification.setTooltip(new Tooltip(Messages.get("signDialog.alreadyCertified")));
         }
 
-        TabPane tabs = new TabPane(new Tab("Certificate", certificateTab()), new Tab("Appearance", appearanceTab()));
+        TabPane tabs = new TabPane(new Tab(Messages.get("signDialog.tab.certificate"), certificateTab()), new Tab(Messages.get("signDialog.tab.appearance"), appearanceTab()));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-        Label previewLabel = new Label("Preview");
+        Label previewLabel = new Label(Messages.get("signDialog.preview"));
         previewLabel.setStyle("-fx-font-weight: bold;");
         preview.setFitWidth(PREVIEW_W);
         preview.setPreserveRatio(true);
@@ -262,22 +264,22 @@ public class SignDialog extends Dialog<SignDialog.Result> {
             if (was == SigningSettings.KeystoreType.PKCS11) settings.setPkcs11Config(keystore.getText().strip());
             else if (was == SigningSettings.KeystoreType.PKCS12) settings.setPkcs12Path(keystore.getText().strip());
             keystore.setText(Objects.toString(token ? settings.getPkcs11Config() : settings.getPkcs12Path(), ""));
-            keystore.setPromptText(token ? "SunPKCS11 configuration file (.cfg)" : "Keystore file (.p12, .pfx)");
-            password.setPromptText(token ? "Token PIN" : "Keystore password");
+            keystore.setPromptText(token ? Messages.get("signDialog.tokenConfig") : Messages.get("signDialog.keystoreFile"));
+            password.setPromptText(token ? Messages.get("signDialog.tokenPin") : Messages.get("signDialog.keystorePassword"));
             password.clear();
             certificates.getItems().clear();
             keystoreStatus.setText("");
             signer = null;
         });
         HBox.setHgrow(keystore, Priority.ALWAYS);
-        Button browse = new Button("Browse…");
+        Button browse = new Button(Messages.get("signDialog.browse"));
         browse.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
             if (keystoreType.getValue() == SigningSettings.KeystoreType.PKCS11) {
-                chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("PKCS#11 configuration", "*.cfg", "*.conf"),
-                        new FileChooser.ExtensionFilter("All files", "*.*"));
+                chooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(Messages.get("signDialog.pkcs11Filter"), "*.cfg", "*.conf"),
+                        new FileChooser.ExtensionFilter(Messages.get("signDialog.allFilter"), "*.*"));
             } else {
-                chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PKCS#12 keystore", "*.p12", "*.pfx"));
+                chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("signDialog.pkcs12Filter"), "*.p12", "*.pfx"));
             }
             File current = new File(keystore.getText().strip());
             if (current.getParentFile() != null && current.getParentFile().isDirectory()) {
@@ -289,7 +291,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
                 password.requestFocus();
             }
         });
-        Button open = new Button("Open");
+        Button open = new Button(Messages.get("signDialog.open"));
         open.setDefaultButton(false);
         open.setOnAction(e -> openKeystore());
         password.setOnAction(e -> openKeystore());
@@ -300,7 +302,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         keystoreStatus.managedProperty().bind(keystoreStatus.textProperty().isNotEmpty());
 
         certificates.setPrefHeight(110);
-        certificates.setPlaceholder(new Label("Open a keystore to list its certificates"));
+        certificates.setPlaceholder(new Label(Messages.get("signDialog.noCertificates")));
         certificates.setCellFactory(v -> new ListCell<>() {
             @Override
             protected void updateItem(DocumentSigning.KeyEntry item, boolean empty) {
@@ -311,9 +313,8 @@ public class SignDialog extends Dialog<SignDialog.Result> {
                 }
                 String issuer = SignatureVerifier.part(item.certificate(), "CN");
                 String issuerCn = issuerName(item);
-                setText(item.commonName() + "\n  issued by " + (issuerCn != null ? issuerCn : issuer)
-                        + ", valid until " + DateFormat.getDateInstance(DateFormat.MEDIUM)
-                        .format(item.certificate().getNotAfter()));
+                setText(item.commonName() + "\n  " + Messages.format("signDialog.issuedBy", issuerCn != null ? issuerCn : issuer,
+                        DateFormat.getDateInstance(DateFormat.MEDIUM).format(item.certificate().getNotAfter())));
             }
         });
 
@@ -326,12 +327,12 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         fields.setHgrow(Priority.ALWAYS);
         details.getColumnConstraints().addAll(labels, fields);
         reason.setPromptText("optional");
-        timestampAuthority.setPromptText("https://… (optional)");
-        details.addRow(0, new Label("Name"), name);
-        details.addRow(1, new Label("Contact"), contact);
-        details.addRow(2, new Label("Location"), location);
-        details.addRow(3, new Label("Reason"), reason);
-        details.addRow(4, new Label("Timestamp"), timestampAuthority);
+        timestampAuthority.setPromptText(Messages.get("signDialog.timestampPrompt"));
+        details.addRow(0, new Label(Messages.get("signDialog.name")), name);
+        details.addRow(1, new Label(Messages.get("signDialog.contact")), contact);
+        details.addRow(2, new Label(Messages.get("signDialog.location")), location);
+        details.addRow(3, new Label(Messages.get("signDialog.reason")), reason);
+        details.addRow(4, new Label(Messages.get("signDialog.timestamp")), timestampAuthority);
 
         VBox tab = new VBox(8, keystoreType, keystoreRow, passwordRow, keystoreStatus, certificates,
                 new HBox(16, approval, certification), details);
@@ -354,12 +355,12 @@ public class SignDialog extends Dialog<SignDialog.Result> {
 
     private Node appearanceTab() {
         for (RadioButton r : List.of(noImage, drawnImage, fileImage)) r.setToggleGroup(imageSource);
-        imagePath.setPromptText("Signature image (.png, .jpg)");
+        imagePath.setPromptText(Messages.get("signDialog.imagePrompt"));
         HBox.setHgrow(imagePath, Priority.ALWAYS);
-        Button browse = new Button("Browse…");
+        Button browse = new Button(Messages.get("signDialog.browse"));
         browse.setOnAction(e -> {
             FileChooser chooser = new FileChooser();
-            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Image", "*.png", "*.jpg", "*.jpeg",
+            chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(Messages.get("signDialog.imageFilter"), "*.png", "*.jpg", "*.jpeg",
                     "*.gif"));
             File file = chooser.showOpenDialog(getOwner());
             if (file != null) {
@@ -389,9 +390,9 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         grid.setHgap(8);
         grid.setVgap(8);
         grid.addRow(0, visible);
-        grid.addRow(1, showText, new HBox(6, new Label("Font size"), fontSize));
-        grid.addRow(2, new Label("Signature"), new HBox(12, noImage, drawnImage, fileImage));
-        grid.addRow(3, new Label("Layout"), layout);
+        grid.addRow(1, showText, new HBox(6, new Label(Messages.get("signDialog.fontSize")), fontSize));
+        grid.addRow(2, new Label(Messages.get("signDialog.signature")), new HBox(12, noImage, drawnImage, fileImage));
+        grid.addRow(3, new Label(Messages.get("signDialog.layout")), layout);
         VBox tab = new VBox(8, grid, pad, fileRow);
         tab.setPadding(new Insets(10));
         return tab;
@@ -402,7 +403,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         protected void updateItem(SigningSettings.KeystoreType item, boolean empty) {
             super.updateItem(item, empty);
             setText(empty || item == null ? null : item == SigningSettings.KeystoreType.PKCS11
-                    ? "Smart card or token (PKCS#11)" : "Certificate file (PKCS#12)");
+                    ? Messages.get("signDialog.pkcs11") : Messages.get("signDialog.pkcs12"));
         }
     }
 
@@ -411,7 +412,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         protected void updateItem(SignatureAppearance.Layout item, boolean empty) {
             super.updateItem(item, empty);
             setText(empty || item == null ? null : item == SignatureAppearance.Layout.OVERLAY
-                    ? "Text over the image" : "Image beside the text");
+                    ? Messages.get("signDialog.overlay") : Messages.get("signDialog.beside"));
         }
     }
 
@@ -424,7 +425,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         boolean token = keystoreType.getValue() == SigningSettings.KeystoreType.PKCS11;
         File file = new File(keystore.getText().strip());
         if (!file.isFile()) {
-            keystoreStatus.setText(token ? "Choose the token's PKCS#11 configuration file." : "Choose a keystore file.");
+            keystoreStatus.setText(token ? Messages.get("signDialog.chooseToken") : Messages.get("signDialog.chooseKeystore"));
             return;
         }
         SimplePasswordCallbackHandler secret = new SimplePasswordCallbackHandler(password.getText());
@@ -433,8 +434,8 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         try {
             List<DocumentSigning.KeyEntry> entries = DocumentSigning.keyEntries(handler);
             if (entries.isEmpty()) {
-                keystoreStatus.setText(token ? "The token holds no certificate with a private key."
-                        : "The keystore holds no certificate with a private key.");
+                keystoreStatus.setText(token ? Messages.get("signDialog.tokenEmpty")
+                        : Messages.get("signDialog.keystoreEmpty"));
                 return;
             }
             signer = handler;
@@ -446,8 +447,8 @@ public class SignDialog extends Dialog<SignDialog.Result> {
             if (last != null) certificates.getSelectionModel().select(last);
             else certificates.getSelectionModel().selectFirst();
         } catch (Exception e) {
-            keystoreStatus.setText(token ? "Couldn't open the token: wrong PIN, card not present, or a bad configuration."
-                    : "Couldn't open the keystore: wrong password, or not a PKCS#12 file.");
+            keystoreStatus.setText(token ? Messages.get("signDialog.tokenFailed")
+                    : Messages.get("signDialog.keystoreFailed"));
         }
     }
 

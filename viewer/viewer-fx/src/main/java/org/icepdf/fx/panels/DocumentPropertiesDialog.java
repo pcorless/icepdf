@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -43,13 +45,13 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
 
     public DocumentPropertiesDialog(Window owner, Document document) {
         initOwner(owner);
-        setTitle("Document Properties");
+        setTitle(Messages.get("documentProperties.title"));
         setResizable(true);
         TabPane tabs = new TabPane(
-                tab("Description", rows(DocumentProperties.description(document))),
-                tab("Security", rows(DocumentProperties.security(document))),
-                tab("Fonts", fonts(document)),
-                tab("Custom", custom(DocumentProperties.custom(document))));
+                tab(Messages.get("documentProperties.description"), rows(DocumentProperties.description(document))),
+                tab(Messages.get("documentProperties.security"), rows(DocumentProperties.security(document))),
+                tab(Messages.get("documentProperties.fonts"), fonts(document)),
+                tab(Messages.get("documentProperties.custom"), custom(DocumentProperties.custom(document))));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefSize(560, 460);
         getDialogPane().setContent(tabs);
@@ -91,20 +93,20 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
         TableView<DocumentFonts.FontInfo> table = new TableView<>();
         ObservableList<DocumentFonts.FontInfo> items = FXCollections.observableArrayList();
         table.setItems(items);
-        TableColumn<DocumentFonts.FontInfo, String> name = new TableColumn<>("Font");
+        TableColumn<DocumentFonts.FontInfo, String> name = new TableColumn<>(Messages.get("documentProperties.font"));
         name.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().name()));
         name.setPrefWidth(200);
-        TableColumn<DocumentFonts.FontInfo, String> type = new TableColumn<>("Type");
+        TableColumn<DocumentFonts.FontInfo, String> type = new TableColumn<>(Messages.get("documentProperties.type"));
         type.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().type()));
-        TableColumn<DocumentFonts.FontInfo, String> encoding = new TableColumn<>("Encoding");
+        TableColumn<DocumentFonts.FontInfo, String> encoding = new TableColumn<>(Messages.get("documentProperties.encoding"));
         encoding.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().encoding()));
-        TableColumn<DocumentFonts.FontInfo, String> embedded = new TableColumn<>("Embedded");
+        TableColumn<DocumentFonts.FontInfo, String> embedded = new TableColumn<>(Messages.get("documentProperties.embedded"));
         embedded.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().embedded()
-                ? (c.getValue().subset() ? "Subset" : "Yes") : "No"));
-        TableColumn<DocumentFonts.FontInfo, String> actual = new TableColumn<>("Shown with");
+                ? Messages.get(c.getValue().subset() ? "documentProperties.subset" : "documentProperties.yes") : Messages.get("documentProperties.no")));
+        TableColumn<DocumentFonts.FontInfo, String> actual = new TableColumn<>(Messages.get("documentProperties.shownWith"));
         actual.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().substitute()));
         table.getColumns().setAll(List.of(name, type, encoding, embedded, actual));
-        table.setPlaceholder(new Label("Looking for fonts…"));
+        table.setPlaceholder(new Label(Messages.get("documentProperties.lookingForFonts")));
 
         ProgressBar progress = new ProgressBar(0);
         progress.setMaxWidth(Double.MAX_VALUE);
@@ -124,7 +126,7 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
             }
             Platform.runLater(() -> {
                 pane.setBottom(null);
-                table.setPlaceholder(new Label("No fonts found."));
+                table.setPlaceholder(new Label(Messages.get("documentProperties.noFonts")));
             });
         }, "icepdf-fx-fonts");
         scan.setDaemon(true);
@@ -134,14 +136,14 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
 
     private static javafx.scene.Node custom(Map<String, String> custom) {
         TableView<Map.Entry<String, String>> table = new TableView<>(FXCollections.observableArrayList(custom.entrySet()));
-        TableColumn<Map.Entry<String, String>, String> key = new TableColumn<>("Name");
+        TableColumn<Map.Entry<String, String>, String> key = new TableColumn<>(Messages.get("documentProperties.name"));
         key.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getKey()));
         key.setPrefWidth(180);
-        TableColumn<Map.Entry<String, String>, String> value = new TableColumn<>("Value");
+        TableColumn<Map.Entry<String, String>, String> value = new TableColumn<>(Messages.get("documentProperties.value"));
         value.setCellValueFactory(c -> new SimpleStringProperty(c.getValue().getValue()));
         value.setPrefWidth(320);
         table.getColumns().setAll(List.of(key, value));
-        table.setPlaceholder(new Label("No custom properties."));
+        table.setPlaceholder(new Label(Messages.get("documentProperties.noCustom")));
         return table;
     }
 }

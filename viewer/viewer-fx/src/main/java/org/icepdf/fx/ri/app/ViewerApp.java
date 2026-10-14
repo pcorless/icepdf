@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.app;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -246,7 +248,7 @@ public class ViewerApp extends Application {
     }
 
     private static String title(DocumentPane pane) {
-        return pane == null || pane.getTitle().isEmpty() ? "ICEpdf" : pane.getTitle() + " – ICEpdf";
+        return pane == null || pane.getTitle().isEmpty() ? Messages.get("viewerApp.title") : Messages.format("viewerApp.documentTitle", pane.getTitle());
     }
 
     // ---- preferences ------------------------------------------------------------------------------
@@ -307,10 +309,10 @@ public class ViewerApp extends Application {
     private boolean askAboutChanges(AppWindow window) {
         DocumentPane pane = window.viewer().getCurrentDocument();
         Path file = pane != null ? pane.getSession().getFile() : null;
-        ButtonType save = new ButtonType("Save", ButtonBar.ButtonData.YES);
-        ButtonType discard = new ButtonType("Don't Save", ButtonBar.ButtonData.NO);
+        ButtonType save = new ButtonType(Messages.get("viewerApp.save"), ButtonBar.ButtonData.YES);
+        ButtonType discard = new ButtonType(Messages.get("viewerApp.dontSave"), ButtonBar.ButtonData.NO);
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                "Do you want to save the changes you made to " + (file != null ? file.getFileName() : "the document") + "?",
+                file != null ? Messages.format("viewerApp.saveChanges", file.getFileName()) : Messages.get("viewerApp.saveChangesUntitled"),
                 save, discard, ButtonType.CANCEL);
         alert.setHeaderText(null);
         alert.initOwner(window.stage());

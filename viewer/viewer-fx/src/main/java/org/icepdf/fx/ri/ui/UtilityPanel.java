@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.value.ObservableBooleanValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -58,14 +60,14 @@ public final class UtilityPanel {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         pin.setGraphic(icon("ui.pin", 20));
         pin.getStyleClass().add("icon-button");
-        pin.setTooltip(new Tooltip("Keep the panel open beside the document"));
+        pin.setTooltip(new Tooltip(Messages.get("utilityPanel.pin")));
         strip.getChildren().addAll(buttons, spacer, pin);
 
         title.getStyleClass().add("panel-title");
         Button close = new Button();
         close.setGraphic(icon("ui.close", 16));
         close.getStyleClass().add("icon-button");
-        close.setTooltip(new Tooltip("Close"));
+        close.setTooltip(new Tooltip(Messages.get("utilityPanel.close")));
         Region grow = new Region();
         HBox.setHgrow(grow, Priority.ALWAYS);
         HBox header = new HBox(title, grow, close);

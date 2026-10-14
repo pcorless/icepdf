@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.control.ButtonType;
@@ -94,13 +96,13 @@ public class PasswordPrompt implements SecurityCallback {
     private String ask() {
         Dialog<String> dialog = new Dialog<>();
         if (owner != null) dialog.initOwner(owner);
-        dialog.setTitle("Password required");
-        dialog.setHeaderText(attempts > 1 ? "Incorrect password.  Try again."
-                : (documentName != null ? "“" + documentName + "”" : "This document")
-                + " is protected by a password.");
+        dialog.setTitle(Messages.get("passwordPrompt.title"));
+        dialog.setHeaderText(attempts > 1 ? Messages.get("passwordPrompt.incorrect")
+                : documentName != null ? Messages.format("passwordPrompt.protected", documentName)
+                : Messages.get("passwordPrompt.protectedUntitled"));
         PasswordField field = new PasswordField();
-        field.setPromptText("Password");
-        VBox content = new VBox(8, new Label("Enter the password to open it:"), field);
+        field.setPromptText(Messages.get("passwordPrompt.password"));
+        VBox content = new VBox(8, new Label(Messages.get("passwordPrompt.enter")), field);
         content.setPadding(new Insets(10, 10, 0, 10));
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);

@@ -34,7 +34,11 @@ class AnnotationContextMenuTest {
         assertEquals(10, AnnotationContextMenu.STANDARD.length);
         assertEquals(AnnotationContextMenu.STANDARD.length, AnnotationContextMenu.STANDARD_NAMES.length);
         assertEquals(new Color(255, 0, 0), AnnotationContextMenu.STANDARD[1]);
-        assertEquals("Red", AnnotationContextMenu.STANDARD_NAMES[1]);
+        assertEquals("red", AnnotationContextMenu.STANDARD_NAMES[1]);
+        // each name has its label in the bundle
+        for (String name : AnnotationContextMenu.STANDARD_NAMES) {
+            assertNotEquals("annotationMenu.colour." + name, org.icepdf.fx.i18n.Messages.get("annotationMenu.colour." + name));
+        }
     }
 
     @DisplayName("the in-memory colour history keeps ten, most recent first, no duplicates")

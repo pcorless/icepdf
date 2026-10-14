@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.panels;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -64,8 +66,8 @@ import java.util.logging.Logger;
 public class AnnotationListPanel extends BorderPane {
 
     private static final Logger logger = Logger.getLogger(AnnotationListPanel.class.getName());
-    private static final String ALL_TYPES = "All types";
-    private static final String ALL_AUTHORS = "All authors";
+    private static final String ALL_TYPES = Messages.get("commentsPanel.allTypes");
+    private static final String ALL_AUTHORS = Messages.get("commentsPanel.allAuthors");
 
     private final PdfView view;
     private final TextField filter = new TextField();
@@ -75,7 +77,7 @@ public class AnnotationListPanel extends BorderPane {
     private final Label status = new Label();
     private final TreeView<Object> tree = new TreeView<>();
     private final TreeItem<Object> root = new TreeItem<>();
-    private final Label empty = new Label("This document has no comments.");
+    private final Label empty = new Label(Messages.get("commentsPanel.empty"));
     private final ReadOnlyBooleanWrapper hasComments = new ReadOnlyBooleanWrapper(this, "hasComments", false);
     private final PauseTransition rescanLater = new PauseTransition(Duration.millis(250));
 
@@ -93,7 +95,7 @@ public class AnnotationListPanel extends BorderPane {
         this.view = view;
         getStyleClass().add("annotation-list-panel");
 
-        filter.setPromptText("Filter comments");
+        filter.setPromptText(Messages.get("commentsPanel.filter"));
         filter.textProperty().addListener((o, a, b) -> rebuild());
         types.valueProperty().addListener((o, a, b) -> rebuild());
         authors.valueProperty().addListener((o, a, b) -> rebuild());
@@ -109,7 +111,7 @@ public class AnnotationListPanel extends BorderPane {
         HBox pickers = new HBox(4, types, authors);
         HBox.setHgrow(types, Priority.ALWAYS);
         HBox.setHgrow(authors, Priority.ALWAYS);
-        Label sortLabel = new Label("Sort:");
+        Label sortLabel = new Label(Messages.get("commentsPanel.sort"));
         HBox sortRow = new HBox(4, sortLabel, order);
         sortRow.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(order, Priority.ALWAYS);
@@ -180,7 +182,7 @@ public class AnnotationListPanel extends BorderPane {
             show(Collections.emptyList());
             return;
         }
-        if (entries.isEmpty()) status.setText("Reading comments…");
+        if (entries.isEmpty()) status.setText(Messages.get("commentsPanel.reading"));
         scan = new Thread(() -> {
             try {
                 List<AnnotationSummary.Entry> found = AnnotationSummary.collect(document, () -> run != generation);
@@ -270,7 +272,7 @@ public class AnnotationListPanel extends BorderPane {
 
         int total = entries.size();
         status.setText(total == 0 ? "" : shown.size() == total ? count(total)
-                : shown.size() + " of " + count(total));
+                : Messages.format("commentsPanel.shownOf", shown.size(), count(total)));
         setCenter(total == 0 ? empty : tree);
         if (selected instanceof MarkupAnnotation markup) follow(markup);
     }
@@ -293,7 +295,7 @@ public class AnnotationListPanel extends BorderPane {
     }
 
     private static String count(int n) {
-        return n == 1 ? "1 comment" : n + " comments";
+        return Messages.format("commentsPanel.count", n);
     }
 
     private Object selectedAnnotation() {
@@ -347,10 +349,10 @@ public class AnnotationListPanel extends BorderPane {
     }
 
     private ContextMenu contextMenu() {
-        MenuItem goTo = new MenuItem("Go To");
-        MenuItem open = new MenuItem("Open Note");
-        MenuItem copy = new MenuItem("Copy Text");
-        MenuItem delete = new MenuItem("Delete");
+        MenuItem goTo = new MenuItem(Messages.get("commentsPanel.goTo"));
+        MenuItem open = new MenuItem(Messages.get("commentsPanel.openNote"));
+        MenuItem copy = new MenuItem(Messages.get("commentsPanel.copyText"));
+        MenuItem delete = new MenuItem(Messages.get("commentsPanel.delete"));
         ContextMenu menu = new ContextMenu(goTo, open, copy, new SeparatorMenuItem(), delete);
         menu.setOnShowing(e -> {
             AnnotationSummary.Entry entry = selectedEntry();
@@ -400,7 +402,7 @@ public class AnnotationListPanel extends BorderPane {
             setTooltip(null);
             if (empty || value == null) return;
             if (value instanceof PageRow page) {
-                Label label = new Label("Page " + (page.pageIndex() + 1) + " (" + page.count() + ")");
+                Label label = new Label(Messages.format("commentsPanel.pageRow", page.pageIndex() + 1, page.count()));
                 label.setStyle("-fx-font-weight: bold;");
                 setGraphic(label);
                 return;

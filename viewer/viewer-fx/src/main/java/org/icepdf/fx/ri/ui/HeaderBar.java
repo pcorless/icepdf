@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.ui;
 
+import org.icepdf.fx.i18n.Messages;
+
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -79,9 +81,9 @@ public final class HeaderBar extends VBox {
         searchToggle = new ToggleButton();
         Node searchIcon = actions.icon("search.find", 20);
         if (searchIcon != null) searchToggle.setGraphic(searchIcon);
-        else searchToggle.setText("Find");
+        else searchToggle.setText(Messages.get("headerBar.find"));
         searchToggle.getStyleClass().add("icon-button");
-        searchToggle.setTooltip(new Tooltip("Search"));
+        searchToggle.setTooltip(new Tooltip(Messages.get("headerBar.search")));
         searchToggle.setId("ui.search");
         Runnable followDocument = () -> {
             searchToggle.disableProperty().unbind();
@@ -98,13 +100,13 @@ public final class HeaderBar extends VBox {
         if (menuIcon != null) menu.setGraphic(menuIcon);
         else menu.setText("☰");
         menu.getStyleClass().add("icon-button");
-        menu.setTooltip(new Tooltip("Menu"));
+        menu.setTooltip(new Tooltip(Messages.get("headerBar.menu")));
         menu.setId("ui.menu");
         menu.getItems().setAll(actions.items(menuIds));
         if (!menu.getItems().isEmpty()) bar.getChildren().add(menu);
 
         // the search bar slides in under the header.
-        searchField.setPromptText("Search the document");
+        searchField.setPromptText(Messages.get("headerBar.searchPrompt"));
         HBox.setHgrow(searchField, Priority.ALWAYS);
         searchField.setMaxWidth(420);
         searchField.setOnAction(e -> search.accept(searchField.getText()));
