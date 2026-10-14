@@ -28,7 +28,13 @@ publishing {
                             .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()
                             .appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.txt').parent()
                             .appendNode('tag', 'icepdf-' + version + '-maven')
-                    asNode().appendNode('licenses').appendNode('license').with {
+                    def licenses = asNode().appendNode('licenses')
+                    licenses.appendNode('license').with {
+                        appendNode('name', 'Apache License, Version 2.0')
+                        appendNode('url', 'https://www.apache.org/licenses/LICENSE-2.0.txt')
+                        appendNode('distribution', 'repo')
+                    }
+                    licenses.appendNode('license').with {
                         appendNode('name', 'SIL OPEN FONT LICENSE Version 1.1')
                         appendNode('url', 'https://openfontlicense.org')
                         appendNode('distribution', 'repo')

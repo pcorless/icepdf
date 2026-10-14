@@ -88,12 +88,17 @@ tasks.register('sourcesJar', Jar) {
         attributes("Implementation-Vendor": "${COMPANY}", "${sectionName}")
     }
     from sourceSets.main.allSource
+    // NOTICE (Apache 2.0 section 4(d)), as in the jar
+    metaInf { from rootProject.file('NOTICE') }
 }
 
 tasks.register('javadocJar', Jar) {
     dependsOn javadoc
     from javadoc
     archiveClassifier.set('javadoc')
+    // the module's LICENSE / NOTICE, as in its other jars
+    metaInf { from('src/main/resources/META-INF') { include 'LICENSE', 'NOTICE' } }
+    metaInf { from rootProject.file('NOTICE') }
 }
 
 // Archives are now automatically included via publishing plugin

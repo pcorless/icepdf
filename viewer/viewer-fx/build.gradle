@@ -201,6 +201,8 @@ task sourcesJar(type: Jar, dependsOn: classes) {
 task javadocJar(type: Jar, dependsOn: 'javadoc') {
     from javadoc
     archiveClassifier.set("javadoc")
+    // the module's LICENSE / NOTICE, as in its other jars
+    metaInf { from('src/main/resources/META-INF') { include 'LICENSE', 'NOTICE' } }
 }
 
 // Archives are now automatically included via publishing plugin
