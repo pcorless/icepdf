@@ -6,7 +6,8 @@ JavaFX with no copy (`PixelBuffer` over the same `int[]`). Everything interactiv
 node: text selection, search highlights, annotation chrome and popups, and form field editors.
 
 Module: `org.icepdf.fx` (requires `org.icepdf.core` and `javafx.controls`; the rendering engine is not exported).
-Package: `org.icepdf.fx.view`. Demo: `org.icepdf.fx.demo.PdfViewDemo`.
+Package: `org.icepdf.fx.view`. Bare-view test host: `org.icepdf.fx.demo.PdfViewDemo` (test sources, `runDemo`);
+the public example is `examples/javafx`.
 
 ## The new viewer shell (in progress)
 

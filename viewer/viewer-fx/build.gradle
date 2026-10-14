@@ -56,11 +56,13 @@ tasks.register('runShell', JavaExec) {
     javafxModulePath(it)
 }
 
-// the minimal embedding example: ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf" [-Pxmx=4g]
+// PdfViewDemo, a bare PdfView test host (test sources; the public example is examples/javafx):
+// ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf" [-Pxmx=4g]
 tasks.register('runDemo', JavaExec) {
     group = 'application'
-    description = 'Runs PdfViewDemo, the minimal PdfView host'
-    classpath = sourceSets.main.runtimeClasspath
+    description = 'Runs PdfViewDemo, a bare PdfView test host'
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
     jvmArgs = [viewerXmx]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
@@ -217,6 +219,25 @@ tasks.register('shellSmoke', JavaExec) {
     jvmArgs = ["-Xmx1g"]
     if (project.hasProperty('smokeArgs')) {
         args project.property('smokeArgs').toString().split(';')
+    }
+}
+
+// Embedding smokes: an application's own tool bar driving a bare PdfView through the actions.
+// ./gradlew :viewer:viewer-fx:embedSmoke -PsmokeArgs="outdir;doc.pdf[;search term]"
+// ./gradlew :viewer:viewer-fx:embedInteractionSmoke -PsmokeArgs="outdir;doc.pdf[;keystore.pfx]"
+[embedSmoke: 'org.icepdf.fx.embed.EmbedBasicSmoke',
+ embedInteractionSmoke: 'org.icepdf.fx.embed.EmbedInteractionSmoke'].each { name, main ->
+    tasks.register(name, JavaExec) {
+        description = "Runs ${main.tokenize('.').last()}, a host application embedding PdfView."
+        group = 'verification'
+        dependsOn testClasses
+        classpath = sourceSets.test.runtimeClasspath
+        mainClass = main
+        javaLauncher = javaToolchains.launcherFor(java.toolchain)
+        jvmArgs = ["-Xmx1g"]
+        if (project.hasProperty('smokeArgs')) {
+            args project.property('smokeArgs').toString().split(';')
+        }
     }
 }
 

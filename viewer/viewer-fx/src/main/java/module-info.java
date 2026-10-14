@@ -55,7 +55,5 @@ module org.icepdf.fx {
     exports org.icepdf.fx.ri.actions.search;
     exports org.icepdf.fx.ri.actions.tools;
     exports org.icepdf.fx.ri.actions.view;
-    // the demo is launched, not used: JavaFX needs to reach its Application class.
-    exports org.icepdf.fx.demo to javafx.graphics;
     exports org.icepdf.fx.ri.app to javafx.graphics;
 }
