@@ -27,6 +27,19 @@ reactor still trips on the stale `qa` module:
     mvn -f core/core-awt/pom.xml install -DskipTests -Djacoco.skip=true
     mvn -f viewer/viewer-fx/pom.xml javafx:run
 
+### The jars
+
+`icepdf-viewer-fx-<version>.jar` (Maven `com.github.pcorless.icepdf:icepdf-viewer-fx`) holds the page
+view, the viewer component and the viewer application. It needs `icepdf-core` and JavaFX 22 or
+later, which your application brings. The `osDistZip` bundle has it in `libs/` with everything else
+it needs except JavaFX, its sources in `libs-source/`, and its pom in `maven2/`.
+
+A single runnable jar with JavaFX for the build platform inside:
+
+    ./gradlew :viewer:viewer-fx:jarWithDependencies      # build/libs/
+    mvn -P assembly -pl viewer/viewer-fx -am package      # target/
+    java -jar icepdf-viewer-fx-<version>-jar-with-dependencies.jar [file.pdf]
+
 ## Embed it
 
 Three shapes, from the most given to the most control. Whichever you pick, load the system fonts

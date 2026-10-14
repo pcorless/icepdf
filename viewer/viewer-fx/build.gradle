@@ -44,6 +44,33 @@ tasks.register('launcherLibs', Sync) {
     into layout.buildDirectory.dir('launcher/lib')
 }
 
+// The viewer with everything it needs, JavaFX for this platform included, in one jar (as Maven's
+// -P assembly): java -jar build/libs/icepdf-viewer-fx-<version>-jar-with-dependencies.jar [file.pdf]
+// Signature files and module descriptors are left out: copied in, Bouncy Castle's signature would
+// make the launcher reject the jar, and it runs on the class path.
+tasks.register('jarWithDependencies', Jar) {
+    group = 'distribution'
+    description = 'Assembles the viewer and its runtime jars, JavaFX included, into one runnable jar'
+    archiveBaseName.set('icepdf')
+    archiveAppendix.set('viewer-fx')
+    archiveVersion.set("${VERSION}")
+    archiveClassifier.set('jar-with-dependencies')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes('Main-Class': 'org.icepdf.fx.ri.app.Launcher')
+        attributes('Implementation-Title': 'icepdf-viewer-fx')
+        attributes('Implementation-Version': "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}")
+        attributes('Implementation-Vendor': "${COMPANY}")
+    }
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.EC',
+            'module-info.class', 'META-INF/versions/*/module-info.class'
+}
+
 // the new viewer shell (PdfViewer) while it replaces the classic window:
 // ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf" [-Pxmx=4g]
 tasks.register('runShell', JavaExec) {
@@ -140,7 +167,8 @@ jar {
         manifest {
             attributes ('Created-By': System.getProperty('java.version') + ' (' + System.getProperty('java.vendor') + ')')
             // executable jar
-            attributes("Main-Class": 'org.icepdf.fx.ri.app.ViewerApp')
+            // a plain class that launches ViewerApp: java -jar refuses an Application main class on the class path
+            attributes("Main-Class": 'org.icepdf.fx.ri.app.Launcher')
             if (!configurations.runtimeClasspath.isEmpty()) {
                 attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }

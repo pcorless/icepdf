@@ -112,4 +112,38 @@
         </plugins>
     </build>
 
+    <profiles>
+        <!-- mvn -P assembly package: also target/icepdf-viewer-fx-<version>-jar-with-dependencies.jar,
+             the viewer with JavaFX (for the platform built on) inside; java -jar runs it. -->
+        <profile>
+            <id>assembly</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>org.icepdf.fx.ri.app.Launcher</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptors>
+                                <descriptor>src/assembly/jar-with-dependencies.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>make-assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
