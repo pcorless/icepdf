@@ -96,7 +96,7 @@
 .icepdf-viewer .header-bar {
     -fx-background-color: -icepdf-header;
     -fx-border-color: transparent transparent -icepdf-border transparent;
-    -fx-padding: 6 8 6 8;
+    -fx-padding: 4 8 4 8;
     -fx-spacing: 6;
 }
 
@@ -140,6 +140,19 @@
 
 .icepdf-viewer .icon-button > .arrow-button {
     -fx-padding: 0;
+    -fx-min-width: 0;
+    -fx-pref-width: 0;
+    -fx-max-width: 0;
+}
+
+/* a menu button keeps the icon button's size: no label padding, no room for an arrow */
+.icepdf-viewer .menu-button.icon-button {
+    -fx-padding: 6;
+}
+
+.icepdf-viewer .menu-button.icon-button > .label {
+    -fx-padding: 0;
+    -fx-label-padding: 0;
 }
 
 .icepdf-viewer .icon-button > .arrow-button > .arrow {
@@ -163,7 +176,7 @@
 .icepdf-viewer .tool-rail,
 .icepdf-viewer .utility-strip {
     -fx-background-color: -icepdf-sidebar;
-    -fx-padding: 6 4 6 4;
+    -fx-padding: 6 3 6 3;
     -fx-spacing: 2;
 }
 
