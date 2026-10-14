@@ -77,12 +77,20 @@ class FontSettingsTest {
         assertNull(FontSettings.readCache());
     }
 
-    @DisplayName("a cache from another version is ignored")
+    @DisplayName("a cache from another version of core's font list is ignored")
     @Test
     void otherVersion() throws Exception {
         Path font = Files.createFile(home.resolve("f.ttf"));
-        Files.writeString(FontSettings.cacheFile(), "__icepdf.cache.version=0\nF=F|0|" + font.toString().replace("\\", "/") + "\n");
+        String entry = "F=F|0|" + font.toString().replace("\\", "/") + "\n";
+        Files.writeString(FontSettings.cacheFile(), "__icepdf.cache.version=0\n" + entry);
         assertNull(FontSettings.readCache());
+        // a list from before core's scanner last learned new fonts is read again.
+        Files.writeString(FontSettings.cacheFile(), "__icepdf.cache.version="
+                + (org.icepdf.core.pobjects.fonts.FontManager.FONT_LIST_VERSION - 1) + "\n" + entry);
+        assertNull(FontSettings.readCache());
+        Files.writeString(FontSettings.cacheFile(), "__icepdf.cache.version="
+                + org.icepdf.core.pobjects.fonts.FontManager.FONT_LIST_VERSION + "\n" + entry);
+        assertNotNull(FontSettings.readCache());
     }
 
     @DisplayName("the preferences adapter reads and writes the backing properties only")

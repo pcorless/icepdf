@@ -80,6 +80,16 @@ public class FontManager {
      */
     public static final String DEFAULT_FONT_FILE_ALLOW_LIST_PATTERN = "";
 
+    /**
+     * Version of the font list {@link #readSystemFonts} produces.  Viewers that cache the list
+     * ({@link #getFontProperties()}) stamp it with this and scan again when it differs.  Raise it
+     * whenever this class learns to discover fonts it previously skipped, so existing installations
+     * re-scan once instead of loading a list that predates the change.
+     * <p>
+     * 1 -&gt; 2: TrueType/OpenType collections (.ttc/.otc) are read, one entry per contained face.
+     */
+    public static final int FONT_LIST_VERSION = 2;
+
     // stores all font data.  volatile for safe publication of the list reference; structural
     // reads/iteration go through snapshotFontList() so a lookup never iterates a list a writer
     // (readSystemFonts/setFontProperties) is concurrently mutating.

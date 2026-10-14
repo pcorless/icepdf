@@ -51,7 +51,8 @@ public final class FontSettings {
     /** System property naming the settings directory the default cache goes in (shared with the viewer application). */
     public static final String HOME_PROPERTY = "org.icepdf.fx.viewer.home";
     private static final String VERSION_KEY = "__icepdf.cache.version";
-    private static final String CACHE_VERSION = "1";
+    // core's font list version: a cache written by an older (or newer) scanner is read again.
+    private static final String CACHE_VERSION = String.valueOf(FontManager.FONT_LIST_VERSION);
     private static volatile Thread scan;
     // the cache in use: set by apply, the default until then.
     private static volatile Path cache;
