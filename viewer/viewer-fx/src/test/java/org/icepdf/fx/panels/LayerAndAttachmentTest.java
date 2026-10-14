@@ -67,6 +67,37 @@ class LayerAndAttachmentTest {
         }
     }
 
+    @DisplayName("switching a layer switches the layers nested under it; a label switches its layers")
+    @Test
+    void nestedLayersFollowTheirParent() throws Exception {
+        Path file = Paths.get("src/test/resources/layers/nested_layers.pdf");
+        Document document = new Document();
+        document.setFile(file.toString());
+        try {
+            List<LayerNode> layers = LayerNode.of(document);
+            assertEquals(2, layers.size(), "A, and the label");
+            LayerNode a = layers.get(0);
+            LayerNode label = layers.get(1);
+            assertEquals("A", a.name());
+            assertEquals(List.of("B", "C"), a.children().stream().map(LayerNode::name).toList());
+            assertTrue(label.isLabel());
+            assertEquals("D", label.children().get(0).name());
+
+            a.setVisible(false);
+            assertFalse(a.isVisible());
+            assertTrue(a.children().stream().noneMatch(LayerNode::isVisible), "B and C follow A off");
+            assertTrue(label.children().get(0).isVisible(), "D is not under A");
+            a.setVisible(true);
+            assertTrue(a.children().stream().allMatch(LayerNode::isVisible), "and back on");
+
+            label.setVisible(false);
+            assertFalse(label.children().get(0).isVisible(), "the label switches D");
+            assertTrue(a.isVisible(), "and nothing else");
+        } finally {
+            document.dispose();
+        }
+    }
+
     @DisplayName("an embedded file: name, description, content")
     @Test
     void attachments() throws Exception {

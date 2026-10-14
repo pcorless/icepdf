@@ -28,7 +28,8 @@ import java.util.List;
 /**
  * A document's layers (optional content groups, PDF 32000-1 8.11) as a tree of check boxes for a
  * {@link PdfView}: switching one on or off re-renders the view ({@link PdfView#refreshContent()}).
- * Members of a radio-button set switch each other off; labels group layers and have no box.
+ * Switching a layer switches the layers nested under it too; members of a radio-button set switch
+ * each other off; labels group layers and have no box.
  */
 public class LayersPanel extends BorderPane {
 
@@ -84,7 +85,7 @@ public class LayersPanel extends BorderPane {
                 LayerNode node = getItem();
                 if (node == null) return;
                 node.setVisible(box.isSelected());
-                // a radio set may have switched others off: redraw their boxes.
+                // its nested layers followed, and a radio set may have switched others off: redraw the boxes.
                 tree.refresh();
                 view.refreshContent();
             });

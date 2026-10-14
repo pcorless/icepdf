@@ -147,19 +147,22 @@ public final class LayerNode {
     }
 
     /**
-     * Switches the group on or off; switching on a member of a radio-button set switches the rest of
-     * the set off.  Labels ignore it.
+     * Switches the group on or off, and every layer nested under it with it, as the Swing viewer's
+     * layer tree does; switching on a member of a radio-button set switches the rest of the set off.
+     * A label has no group of its own but still switches the layers under it.
      */
     public void setVisible(boolean visible) {
-        if (group == null) return;
-        group.setVisible(visible);
-        if (visible) {
-            for (List<OptionalContentGroup> set : radioGroups) {
-                for (OptionalContentGroup other : set) {
-                    if (other != group) other.setVisible(false);
+        if (group != null) {
+            group.setVisible(visible);
+            if (visible) {
+                for (List<OptionalContentGroup> set : radioGroups) {
+                    for (OptionalContentGroup other : set) {
+                        if (other != group) other.setVisible(false);
+                    }
                 }
             }
         }
+        for (LayerNode child : children) child.setVisible(visible);
     }
 
     @Override
