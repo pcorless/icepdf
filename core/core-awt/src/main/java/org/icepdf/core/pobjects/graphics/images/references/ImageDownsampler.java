@@ -190,6 +190,10 @@ public final class ImageDownsampler {
      * into a grey level for opaque grey sources and a premultiplied ARGB level otherwise.
      */
     static BufferedImage halveSource(BufferedImage src) {
+        int type = src.getType();
+        if (type == BufferedImage.TYPE_BYTE_GRAY || type == BufferedImage.TYPE_USHORT_GRAY) {
+            return halveGraySamples(src);
+        }
         int w = src.getWidth(), h = src.getHeight();
         int nw = (w + 1) / 2, nh = (h + 1) / 2;
         boolean gray = isOpaqueGray(src);
@@ -212,6 +216,34 @@ public final class ImageDownsampler {
                 } else {
                     argbOut[out + x] = averagePremultiplied(p0, p1, p2, p3);
                 }
+            }
+        }
+        return dst;
+    }
+
+    /**
+     * First halving of a {@code TYPE_BYTE_GRAY} or {@code TYPE_USHORT_GRAY} source, from its raw
+     * samples.  Their {@code CS_GRAY} colour space is linear, so {@code getRGB} gamma-lifts the
+     * mid-tones (128 reads as 188), yet {@code drawImage} paints the samples as they are; a level
+     * built through {@code getRGB} would draw visibly lighter than the source it stands in for.
+     */
+    static BufferedImage halveGraySamples(BufferedImage src) {
+        int w = src.getWidth(), h = src.getHeight();
+        int nw = (w + 1) / 2, nh = (h + 1) / 2;
+        // 16-bit samples are drawn by their high byte
+        int shift = src.getType() == BufferedImage.TYPE_USHORT_GRAY ? 8 : 0;
+        BufferedImage dst = new BufferedImage(nw, nh, BufferedImage.TYPE_BYTE_GRAY);
+        byte[] out = ((DataBufferByte) dst.getRaster().getDataBuffer()).getData();
+        java.awt.image.Raster raster = src.getRaster();
+        int[] row0 = new int[w];
+        int[] row1 = new int[w];
+        for (int y = 0; y < nh; y++) {
+            raster.getSamples(0, 2 * y, w, 1, 0, row0);
+            raster.getSamples(0, Math.min(2 * y + 1, h - 1), w, 1, 0, row1);
+            for (int x = 0; x < nw; x++) {
+                int x0 = 2 * x, x1 = Math.min(x0 + 1, w - 1);
+                int sum = (row0[x0] >> shift) + (row0[x1] >> shift) + (row1[x0] >> shift) + (row1[x1] >> shift);
+                out[y * nw + x] = (byte) ((sum + 2) >> 2);
             }
         }
         return dst;
