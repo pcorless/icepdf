@@ -1226,6 +1226,18 @@ public class ImageUtility {
      * @return resultant image.
      */
     public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage) {
+        return applyExplicitSMask(baseImage, sMaskImage, null);
+    }
+
+    /**
+     * As {@link #applyExplicitSMask(BufferedImage, BufferedImage)}, un-blending the colour of an
+     * image whose samples were pre-blended with the mask's {@code /Matte} colour (§11.6.5.3):
+     * {@code c = m + (c' - m) / alpha}.
+     *
+     * @param matteRgb the matte as RGB 0-255, or null when the image is not pre-blended.
+     */
+    public static BufferedImage applyExplicitSMask(BufferedImage baseImage, BufferedImage sMaskImage,
+                                                   int[] matteRgb) {
         // if either image failed to decode there is nothing to composite; return
         // whatever base we have rather than NPE inside the scaling step.
         if (baseImage == null || sMaskImage == null) {
@@ -1260,6 +1272,9 @@ public class ImageUtility {
                 // take any one of the primaries and apply src image alpha.
                 red = (sMaskBand[j] >> 16) & 0x000000FF;
                 alpha = (srcBand[j] >> 24) & 0x000000FF;
+                if (matteRgb != null && red > 0 && red < 255) {
+                    srcBand[j] = unblendMatte(srcBand[j], red, matteRgb);
+                }
                 sa = ((int) (red * (alpha / 255.0f))) << 24;
                 // apply the smask value as the alpha value
                 srcBand[j] = sa | (srcBand[j] & ~0xff000000);
@@ -1270,6 +1285,18 @@ public class ImageUtility {
         baseImage = argbImage;
 
         return baseImage;
+    }
+
+    private static int unblendMatte(int argb, int maskValue, int[] matteRgb) {
+        int r = unblendMatte((argb >> 16) & 0xff, maskValue, matteRgb[0]);
+        int g = unblendMatte((argb >> 8) & 0xff, maskValue, matteRgb[1]);
+        int b = unblendMatte(argb & 0xff, maskValue, matteRgb[2]);
+        return (argb & 0xff000000) | (r << 16) | (g << 8) | b;
+    }
+
+    private static int unblendMatte(int c, int maskValue, int m) {
+        int v = m + Math.round((c - m) * 255f / maskValue);
+        return v < 0 ? 0 : Math.min(v, 255);
     }
 
     public BufferedImage applyExplicitLuminosity(BufferedImage baseImage, BufferedImage sMaskImage) {
