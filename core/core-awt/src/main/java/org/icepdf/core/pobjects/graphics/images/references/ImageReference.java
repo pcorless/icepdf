@@ -219,7 +219,22 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         }
         BufferedImage image = getImage();
         if (image != null) {
+            Object interpolation = null;
             try {
+                // GH-608: a minified image is drawn from a box-filtered mip level with bilinear, as
+                // Java2D point-samples on shrink and drops the thin strokes of scanned pages.
+                BufferedImage drawn = image;
+                if (useDownsampling() && !ImageUtility.isCmykInkCapturing()
+                        && ImageDownsampler.isRasterTarget(aG)
+                        && ImageDownsampler.deviceScale(aG, image, aX, aY, aW, aH) < 1) {
+                    interpolation = aG.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
+                    if (interpolation == null) {
+                        interpolation = RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR;
+                    }
+                    aG.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                            RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    drawn = ImageDownsampler.select(aG, image, aX, aY, aW, aH);
+                }
                 // Java2D sizes drawImage's destination raster to the whole
                 // transformed image; at high zoom that is a page-sized raster
                 // (hundreds of MB) and, across several render threads at once,
@@ -229,8 +244,8 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 // clip so the raster is bounded by the visible viewport, not the
                 // whole page.  Skipped while a CMYK group is being rasterised, as
                 // captureCmykInk assumes the full image was drawn.
-                if (!drawClippedToViewport(aG, image, aX, aY, aW, aH)) {
-                    aG.drawImage(image, aX, aY, aW, aH, null);
+                if (!drawClippedToViewport(aG, drawn, aX, aY, aW, aH)) {
+                    aG.drawImage(drawn, aX, aY, aW, aH, null);
                 }
                 // GH-501 step 2: if a CMYK group is being rasterised, blit this
                 // image's TRUE preserved CMYK samples into the ink sink, aligned to
@@ -266,8 +281,21 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                 aG.drawImage(scaledImage, aX, aY, aW, aH, null);
                 // store the scaled image for future repaints.
                 this.image = ImageUtility.createBufferedImage(scaledImage);
+            } finally {
+                if (interpolation != null) {
+                    aG.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation);
+                }
             }
         }
+    }
+
+    /**
+     * Whether minified paints of this reference go through {@link ImageDownsampler}.
+     *
+     * @return the global {@link ImageDownsampler#isEnabled()} setting by default
+     */
+    protected boolean useDownsampling() {
+        return ImageDownsampler.isEnabled();
     }
 
     /**
