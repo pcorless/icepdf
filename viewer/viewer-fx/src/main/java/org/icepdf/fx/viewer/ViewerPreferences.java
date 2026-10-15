@@ -88,6 +88,10 @@ public final class ViewerPreferences {
     public static final String SEARCH_OUTLINES = "search.outlines";
     public static final String SEARCH_DESTINATIONS = "search.destinations";
     public static final String FONT_CACHE = "fonts.cache";
+    /** Core's image reference type, an {@code ImageReferenceFactory} key; applies to documents opened after. */
+    public static final String IMAGE_REFERENCE = "imaging.imageReference";
+    /** Whether core draws shrunk images from a box-filtered mip level (default true). */
+    public static final String IMAGE_DOWNSAMPLE = "imaging.downsample";
 
     private final Path file;
     private final Properties properties = new Properties();

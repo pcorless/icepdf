@@ -19,6 +19,9 @@ import org.icepdf.fx.i18n.Messages;
 
 import org.icepdf.fx.fonts.FontSettings;
 
+import org.icepdf.core.pobjects.graphics.images.references.ImageDownsampler;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;
+
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -42,7 +45,9 @@ import java.util.Locale;
 
 /**
  * The viewer's settings: General (page display on open, signatures), Annotations (author, colour),
- * Search (defaults for the find bar and search panel) and Fonts - the system fonts core substitutes
+ * Search (defaults for the find bar and search panel), Imaging (how core draws images: smooth
+ * downscaling, redrawn at once, and the image reference type, for documents opened after) and
+ * Fonts - the system fonts core substitutes
  * with, the extra directories to look in, and a rescan.  OK writes the settings and applies them to
  * the window's view; the font tab's actions take effect at once.
  */
@@ -115,8 +120,25 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 cumulative, new Separator(), new Label(Messages.get("preferences.alsoSearch")), comments, forms, outlines, destinations);
         search.setPadding(new Insets(12));
 
+        // Imaging: core's image reference type, and drawing shrunk images from a filtered mip level
+        ComboBox<String> imageReference = new ComboBox<>(FXCollections.observableArrayList(
+                ImageReferenceFactory.getRegisteredTypeKeys()));
+        imageReference.setConverter(labels(PreferencesDialog::imageReferenceLabel));
+        imageReference.setValue(ImageReferenceFactory.getImageReferenceType());
+        CheckBox downsample = new CheckBox(Messages.get("preferences.imaging.downsample"));
+        downsample.setSelected(ImageDownsampler.isEnabled());
+        Label downsampleHelp = help("preferences.imaging.downsampleHelp");
+        Label referenceHelp = help("preferences.imaging.imageReferenceHelp");
+        GridPane imaging = grid();
+        imaging.add(downsample, 0, 0, 2, 1);
+        imaging.add(downsampleHelp, 0, 1, 2, 1);
+        imaging.add(new Separator(), 0, 2, 2, 1);
+        imaging.addRow(3, label("preferences.imaging.imageReference", imageReference), imageReference);
+        imaging.add(referenceHelp, 0, 4, 2, 1);
+
         TabPane tabs = new TabPane(new Tab(Messages.get("preferences.tab.general"), general), new Tab(Messages.get("preferences.tab.annotations"), annotations),
-                new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.fonts"), fontsTab()));
+                new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.imaging"), imaging),
+                new Tab(Messages.get("preferences.tab.fonts"), fontsTab()));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefSize(620, 480);
         getDialogPane().setContent(tabs);
@@ -138,8 +160,14 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 for (CheckBox box : List.of(matchCase, wholeWord, accents, regex, cumulative, comments, forms, outlines, destinations)) {
                     preferences.putBoolean((String) box.getUserData(), box.isSelected());
                 }
+                preferences.put(ViewerPreferences.IMAGE_REFERENCE, imageReference.getValue());
+                preferences.putBoolean(ViewerPreferences.IMAGE_DOWNSAMPLE, downsample.isSelected());
                 preferences.save();
-                // what applies to the open view now; page display and zoom apply to the next document.
+                boolean redraw = downsample.isSelected() != ImageDownsampler.isEnabled();
+                ImagingSettings.apply(preferences);
+                if (redraw) view.refreshContent();
+                // what applies to the open view now; page display, zoom and the image reference type
+                // apply to the next document.
                 view.setVerifySignaturesOnOpen(verify.isSelected());
                 view.setAnnotationAuthor(author.getText().trim());
                 view.setAnnotationColor(colour.getValue());
@@ -155,6 +183,20 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         Label label = new Label(Messages.get(key));
         label.setLabelFor(field);
         return label;
+    }
+
+    /** A wrapped line of explanation under a setting. */
+    private static Label help(String key) {
+        Label help = new Label(Messages.get(key));
+        help.setWrapText(true);
+        help.setMaxWidth(560);
+        return help;
+    }
+
+    /** An image reference type's name: translated for the built-in types, as registered otherwise. */
+    private static String imageReferenceLabel(String key) {
+        ImageReferenceFactory.RegistryEntry entry = ImageReferenceFactory.getRegisteredTypes().get(key);
+        return Messages.get("preferences.imaging.type." + key, entry != null ? entry.getDisplayName() : key);
     }
 
     private CheckBox check(String text, String key, boolean defaultValue) {

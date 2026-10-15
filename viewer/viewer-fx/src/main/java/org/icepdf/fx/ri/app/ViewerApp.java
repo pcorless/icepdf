@@ -36,6 +36,7 @@ import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.ViewMode;
 import org.icepdf.fx.fonts.FontSettings;
 import org.icepdf.fx.viewer.FontDirectories;
+import org.icepdf.fx.viewer.ImagingSettings;
 import org.icepdf.fx.viewer.PreferencesDialog;
 import org.icepdf.fx.viewer.ViewerPreferences;
 
@@ -101,6 +102,7 @@ public class ViewerApp extends Application {
         features = loadFeatures();
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
         FontSettings.apply(FontSettings.defaultCacheFile(), FontDirectories.of(preferences));
+        ImagingSettings.apply(preferences);
         List<String> args = getParameters().getUnnamed();
         AppWindow first = createWindow(stage);
         if (!args.isEmpty()) first.viewer().open(Paths.get(args.get(0)));
