@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.graphics.TilingPattern;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 
 /**
  * TilingPatternDrawCmd stores a tilingPattern and applies the TilingPattern
@@ -32,9 +33,16 @@ import java.awt.geom.AffineTransform;
 public class TilingPatternDrawCmd extends AbstractDrawCmd {
 
     private final TilingPattern tilingPattern;
+    // user-space bounds of what the following fill or stroke paints, or null when not known
+    private final Rectangle2D paintBounds;
 
     public TilingPatternDrawCmd(TilingPattern tilingPattern) {
+        this(tilingPattern, null);
+    }
+
+    public TilingPatternDrawCmd(TilingPattern tilingPattern, Rectangle2D paintBounds) {
         this.tilingPattern = tilingPattern;
+        this.paintBounds = paintBounds;
     }
 
     @Override
@@ -42,7 +50,7 @@ public class TilingPatternDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        tilingPattern.paintPattern(g, base);
+        tilingPattern.paintPattern(g, base, paintBounds);
         return currentShape;
     }
 }

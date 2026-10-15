@@ -367,6 +367,29 @@ public class TilingPattern extends Stream implements Pattern {
      *             space transform of the page.
      */
     public void paintPattern(Graphics2D g, final AffineTransform base) {
+        paintPattern(g, base, null);
+    }
+
+    /**
+     * As {@link #paintPattern(Graphics2D, AffineTransform)}, knowing the area the pattern is
+     * about to paint.
+     *
+     * @param paintBounds user-space bounds of the fill or stroke that follows, or null if unknown.
+     */
+    public void paintPattern(Graphics2D g, final AffineTransform base, Rectangle2D paintBounds) {
+
+        // A rotated or sheared lattice cannot be expressed by the axis-aligned
+        // TexturePaint below: it tiles the bounding box of the rotated cell, so
+        // copies overlap at the wrong offsets (PowerPoint's rotated picture fills,
+        // test-wrong-image.pdf).  Tile in pattern space instead.
+        AffineTransform patternToDevice = new AffineTransform(base);
+        patternToDevice.concatenate(matrix);
+        if (!isAxisAligned(patternToDevice)) {
+            if (paintBounds == null || !paintCellsInDeviceSpace(g, patternToDevice, paintBounds)) {
+                paintTransformedPattern(g, patternToDevice);
+            }
+            return;
+        }
 
         // base represents the current page transform, zoom and rotation,
         // the g.getTransform() will be the state of the current graphics
@@ -524,6 +547,215 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
     private static final Color TRANSPARENT = new Color(0, 0, 0, 0);
+
+    /**
+     * True when the transform maps the pattern's axes onto the device axes (any
+     * multiple of 90 degrees, with or without a flip), so the lattice is
+     * axis-aligned on the device and a plain {@link TexturePaint} can tile it.
+     */
+    private static boolean isAxisAligned(AffineTransform at) {
+        double scale = Math.max(Math.max(Math.abs(at.getScaleX()), Math.abs(at.getScaleY())),
+                Math.max(Math.abs(at.getShearX()), Math.abs(at.getShearY())));
+        double eps = scale * 1e-6;
+        boolean straight = Math.abs(at.getShearX()) <= eps && Math.abs(at.getShearY()) <= eps;
+        boolean quarterTurn = Math.abs(at.getScaleX()) <= eps && Math.abs(at.getScaleY()) <= eps;
+        return straight || quarterTurn;
+    }
+
+    // Most cells paintCellsInDeviceSpace will draw before it leaves the lattice to the texture.
+    private static final int MAX_DEVICE_CELLS = 4096;
+
+    /**
+     * Paints a rotated or sheared lattice cell by cell, straight onto a device-aligned buffer
+     * covering the visible part of the area about to be painted, so nothing is resampled: a
+     * one-pixel hatch line or a cell a couple of pixels across stays exact (tradedoc.pdf's 45
+     * degree rule pattern, whose cell is under two device pixels).  Declines -- returning false so
+     * the caller falls back to {@link #paintTransformedPattern} -- when the area needs more than
+     * {@link #MAX_DEVICE_CELLS} cells or a buffer over {@link #MAX_BUFFER_SIZE}.
+     *
+     * @param paintBounds user-space bounds of the fill or stroke that follows.
+     * @return true when the paint has been set.
+     */
+    private boolean paintCellsInDeviceSpace(Graphics2D g, AffineTransform patternToDevice,
+                                            Rectangle2D paintBounds) {
+        double stepX = Math.abs(xStep);
+        double stepY = Math.abs(yStep);
+        if (!(stepX > 0) || !(stepY > 0)) {
+            return false;
+        }
+        AffineTransform userToDevice = g.getTransform();
+        Rectangle2D visible = paintBounds;
+        Shape clip = g.getClip();
+        if (clip != null) {
+            visible = visible.createIntersection(clip.getBounds2D());
+        }
+        Rectangle2D viewport = PaintViewport.inUserSpace(g);
+        if (viewport != null) {
+            visible = visible.createIntersection(viewport);
+        }
+        if (visible.isEmpty()) {
+            g.setPaint(TRANSPARENT);
+            return true;
+        }
+        // whole device pixels, a pixel of slack each side for anti-aliased edges.
+        Rectangle device = userToDevice.createTransformedShape(visible).getBounds();
+        device.grow(1, 1);
+        if (device.width > MAX_BUFFER_SIZE || device.height > MAX_BUFFER_SIZE) {
+            return false;
+        }
+        // the cells that reach the visible area, in lattice units.
+        Rectangle2D patternArea;
+        try {
+            patternArea = patternToDevice.createInverse().createTransformedShape(device).getBounds2D();
+        } catch (NoninvertibleTransformException e) {
+            return false;
+        }
+        long iMin = (long) Math.floor((patternArea.getMinX() - bBox.getMaxX()) / stepX);
+        long iMax = (long) Math.ceil((patternArea.getMaxX() - bBox.getMinX()) / stepX);
+        long jMin = (long) Math.floor((patternArea.getMinY() - bBox.getMaxY()) / stepY);
+        long jMax = (long) Math.ceil((patternArea.getMaxY() - bBox.getMinY()) / stepY);
+        if ((iMax - iMin + 1) * (jMax - jMin + 1) > MAX_DEVICE_CELLS) {
+            return false;
+        }
+
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(device.width, device.height);
+        Graphics2D canvas = bi.createGraphics();
+        canvas.setRenderingHints(renderingHints);
+        canvas.setClip(0, 0, device.width, device.height);
+        AffineTransform cellOrigin = AffineTransform.getTranslateInstance(-device.x, -device.y);
+        cellOrigin.concatenate(patternToDevice);
+        Shapes tilingShapes = getShapes();
+        try {
+            for (long j = jMin; j <= jMax; j++) {
+                for (long i = iMin; i <= iMax; i++) {
+                    canvas.setTransform(cellOrigin);
+                    canvas.translate(i * stepX, j * stepY);
+                    tilingShapes.paint(canvas);
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINER, "Interrupted painting tiling pattern cells.");
+        } finally {
+            canvas.dispose();
+        }
+        // the buffer is device pixels; anchor it on its device rectangle, mapped back to user space.
+        AffineTransform deviceToUser;
+        try {
+            deviceToUser = userToDevice.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            return false;
+        }
+        g.setPaint(new TransformedPaint(new TexturePaint(bi, device), deviceToUser));
+        return true;
+    }
+
+    /**
+     * Tiles a pattern whose lattice is rotated or sheared on the device.  One cell
+     * is rendered in pattern space, at the device resolution along each pattern
+     * axis, and repeated by a {@link TexturePaint} anchored on the cell in pattern
+     * space; the paint is then mapped through the pattern-to-user-space transform,
+     * so the copies land on the real (rotated) lattice.
+     *
+     * @param patternToDevice the pattern matrix composed with the base (page) transform.
+     */
+    private void paintTransformedPattern(Graphics2D g, AffineTransform patternToDevice) {
+        AffineTransform patternToUser;
+        try {
+            patternToUser = g.getTransform().createInverse();
+        } catch (NoninvertibleTransformException e) {
+            g.setPaint(TRANSPARENT);
+            return;
+        }
+        patternToUser.concatenate(patternToDevice);
+
+        double stepX = Math.abs(xStep);
+        double stepY = Math.abs(yStep);
+        if (!(stepX > 0) || !(stepY > 0)) {
+            g.setPaint(TRANSPARENT);
+            return;
+        }
+        // device pixels per pattern unit along each pattern axis.
+        double kx = Math.hypot(patternToDevice.getScaleX(), patternToDevice.getShearY());
+        double ky = Math.hypot(patternToDevice.getShearX(), patternToDevice.getScaleY());
+        if (!(kx > 0) || Double.isInfinite(kx)) kx = 1;
+        if (!(ky > 0) || Double.isInfinite(ky)) ky = 1;
+        int bufW = Math.max(1, (int) Math.ceil(stepX * kx));
+        int bufH = Math.max(1, (int) Math.ceil(stepY * ky));
+        if (bufW > MAX_BUFFER_SIZE) {
+            bufW = MAX_BUFFER_SIZE;
+        }
+        if (bufH > MAX_BUFFER_SIZE) {
+            bufH = MAX_BUFFER_SIZE;
+        }
+
+        BufferedImage bi = ImageUtility.createTranslucentCompatibleImage(bufW, bufH);
+        Graphics2D canvas = bi.createGraphics();
+        canvas.setRenderingHints(renderingHints);
+        canvas.setClip(0, 0, bufW, bufH);
+        // the cell starts at the BBox origin, one step on each axis.
+        AffineTransform cellTransform = AffineTransform.getScaleInstance(bufW / stepX, bufH / stepY);
+        cellTransform.translate(-bBox.getX(), -bBox.getY());
+        Shapes tilingShapes = getShapes();
+        try {
+            // the key cell plus its neighbours, for content that bleeds past the cell.
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    canvas.setTransform(cellTransform);
+                    canvas.translate(dx * stepX, dy * stepY);
+                    tilingShapes.paint(canvas);
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.log(Level.FINER, "Interrupted painting transformed tiling pattern.");
+        } finally {
+            canvas.dispose();
+        }
+
+        TexturePaint cellPaint = new TexturePaint(bi,
+                new Rectangle2D.Double(bBox.getX(), bBox.getY(), stepX, stepY));
+        g.setPaint(new TransformedPaint(cellPaint, patternToUser));
+    }
+
+    /**
+     * A paint drawn through an extra transform: the delegate is defined in its own
+     * space (here pattern space) and {@code toUser} maps that space into the user
+     * space the fill is made in.
+     */
+    private static final class TransformedPaint implements Paint {
+        private final Paint delegate;
+        private final AffineTransform toUser;
+
+        TransformedPaint(Paint delegate, AffineTransform toUser) {
+            this.delegate = delegate;
+            this.toUser = toUser;
+        }
+
+        @Override
+        public PaintContext createContext(java.awt.image.ColorModel cm, Rectangle deviceBounds,
+                                          Rectangle2D userBounds, AffineTransform xform,
+                                          RenderingHints hints) {
+            AffineTransform toDevice = new AffineTransform(xform);
+            toDevice.concatenate(toUser);
+            Rectangle2D delegateBounds = userBounds;
+            try {
+                delegateBounds = toUser.createInverse().createTransformedShape(userBounds).getBounds2D();
+            } catch (NoninvertibleTransformException e) {
+                // keep the user bounds; they are only a hint to the delegate.
+            }
+            // The texture reaches the device through a rotation, so it is resampled on every pixel;
+            // nearest-neighbour sampling breaks a one-pixel hatch line into dots.
+            RenderingHints sampling = hints != null ? (RenderingHints) hints.clone() : new RenderingHints(null);
+            sampling.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            return delegate.createContext(cm, deviceBounds, delegateBounds, toDevice, sampling);
+        }
+
+        @Override
+        public int getTransparency() {
+            return delegate.getTransparency();
+        }
+    }
 
     /**
      * Paints a pattern that appears at most once in the current clip (its step

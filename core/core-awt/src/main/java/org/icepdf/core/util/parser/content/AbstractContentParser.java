@@ -1954,7 +1954,13 @@ public abstract class AbstractContentParser {
                 // 4. Restore the saved graphics state
                 graphicState.restore();
                 if (tilingPattern.getbBoxMod() != null) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                    // the stroke paints up to half a line width either side of the path, more at a
+                    // miter; a full width each side covers it.
+                    Rectangle2D strokeBounds = geometricPath.getBounds2D();
+                    double pad = Math.max(1, graphicState.getLineWidth());
+                    strokeBounds.setRect(strokeBounds.getX() - pad, strokeBounds.getY() - pad,
+                            strokeBounds.getWidth() + 2 * pad, strokeBounds.getHeight() + 2 * pad);
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern, strokeBounds));
                 }
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
@@ -2091,7 +2097,7 @@ public abstract class AbstractContentParser {
                 // 3.  Restore the saved graphics state
                 graphicState.restore();
                 if (tilingPattern.getbBoxMod() != null) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern, geometricPath.getBounds2D()));
                 }
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());
