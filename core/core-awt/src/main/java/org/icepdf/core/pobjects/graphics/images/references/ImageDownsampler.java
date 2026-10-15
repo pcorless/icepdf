@@ -39,7 +39,7 @@ import java.util.WeakHashMap;
  * <p>
  * Here the image is instead drawn from a mip level: the source repeatedly halved with a 2x2 box
  * filter until the next halving would drop below the device resolution, then drawn with bilinear.
- * Every source pixel contributes to the result, which is what poppler, pdf.js and pdfium do.
+ * Every source pixel contributes to the result: a standard 2x2 box-filter mip map.
  * <p>
  * The pyramid is keyed weakly on the decoded image, so it lives exactly as long as the image the
  * {@link ImagePool} (or a reference) keeps, and every image reference type shares it.  Levels are
