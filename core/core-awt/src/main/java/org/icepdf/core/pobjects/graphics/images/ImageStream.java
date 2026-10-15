@@ -19,12 +19,14 @@ package org.icepdf.core.pobjects.graphics.images;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.Indexed;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.logging.Logger;
 
 import static org.icepdf.core.pobjects.graphics.images.ImageParams.*;
@@ -171,6 +173,46 @@ public class ImageStream extends Stream {
     }
 
     /**
+     * The soft mask's {@code /Matte} colour as packed RGB, or null when there is none or it cannot
+     * be resolved.  A matte says the image's colour samples were pre-blended with that colour by
+     * the mask (§11.6.5.3) and must be un-blended when the mask is applied; PowerPoint writes its
+     * reflections this way, against black, and drawn as-is they come out as a dark slab.
+     * <p>
+     * Only a gray or RGB image's matte is resolved: un-blending runs on the converted RGB samples,
+     * which is exact only when the conversion is linear, and the colour spaces do not agree on
+     * component order for anything wider.
+     */
+    private int[] getMatteRgb() {
+        ImageStream sMask = imageParams.getSMaskImageStream();
+        if (sMask == null) {
+            return null;
+        }
+        Object matte = library.getObject(sMask.getEntries(), MATTE_KEY);
+        if (!(matte instanceof List)) {
+            return null;
+        }
+        List<?> values = (List<?>) matte;
+        PColorSpace colourSpace = imageParams.getColourSpace();
+        if (colourSpace == null || colourSpace instanceof Indexed) {
+            return null;
+        }
+        int n = colourSpace.getNumComponents();
+        if (values.size() != n || (n != 1 && n != 3)) {
+            return null;
+        }
+        int[] rgb = new int[3];
+        for (int i = 0; i < 3; i++) {
+            Object v = values.get(n == 1 ? 0 : i);
+            if (!(v instanceof Number)) {
+                return null;
+            }
+            float f = Math.max(0f, Math.min(1f, ((Number) v).floatValue()));
+            rgb[i] = Math.round(f * 255);
+        }
+        return rgb;
+    }
+
+    /**
      * Gets the image param wrapper class for quick access to parameters that are needed now!
      *
      * @return image params for the given image stream
@@ -232,7 +274,7 @@ public class ImageStream extends Stream {
             if (smaskDecoder != null) {
                 BufferedImage smaskImage = smaskDecoder.decode();
 //                ImageUtility.displayImage(smaskImage, "SMask " + entries.get(SMASK_KEY).toString());
-                decodedImage = ImageUtility.applyExplicitSMask(decodedImage, smaskImage);
+                decodedImage = ImageUtility.applyExplicitSMask(decodedImage, smaskImage, getMatteRgb());
             }
             ImageDecoder maskDecoder = imageParams.getMask(graphicsState);
             if (maskDecoder != null) {

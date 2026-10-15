@@ -617,7 +617,10 @@ public abstract class AbstractContentParser {
                 shapes.add(new GroupDrawCmd(true, formXObject.isIsolated(), formXObject.isKnockOut(),
                         groupCs instanceof Name ? (Name) groupCs : null, groupBlend, formXObject.getBBox()));
             }
-            if (!disableTransparencyGroups && FormDrawCmd.requiresOffscreenBuffer(formXObject)) {
+            // graphicState is the Do's own state (the enclosing content's), so this
+            // asks whether the form is placed as an element of a knockout group.
+            if (!disableTransparencyGroups
+                    && FormDrawCmd.requiresOffscreenBuffer(formXObject, graphicState.isKnockOut())) {
                 // add the hold form for further processing.
                 FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
                 shapes.add(formDrawCmd);
@@ -1951,7 +1954,13 @@ public abstract class AbstractContentParser {
                 // 4. Restore the saved graphics state
                 graphicState.restore();
                 if (tilingPattern.getbBoxMod() != null) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                    // the stroke paints up to half a line width either side of the path, more at a
+                    // miter; a full width each side covers it.
+                    Rectangle2D strokeBounds = geometricPath.getBounds2D();
+                    double pad = Math.max(1, graphicState.getLineWidth());
+                    strokeBounds.setRect(strokeBounds.getX() - pad, strokeBounds.getY() - pad,
+                            strokeBounds.getWidth() + 2 * pad, strokeBounds.getHeight() + 2 * pad);
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern, strokeBounds));
                 }
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new DrawDrawCmd());
@@ -2088,7 +2097,7 @@ public abstract class AbstractContentParser {
                 // 3.  Restore the saved graphics state
                 graphicState.restore();
                 if (tilingPattern.getbBoxMod() != null) {
-                    shapes.add(new TilingPatternDrawCmd(tilingPattern));
+                    shapes.add(new TilingPatternDrawCmd(tilingPattern, geometricPath.getBounds2D()));
                 }
                 shapes.add(new ShapeDrawCmd(geometricPath));
                 shapes.add(new FillDrawCmd());
