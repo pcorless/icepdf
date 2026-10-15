@@ -617,7 +617,10 @@ public abstract class AbstractContentParser {
                 shapes.add(new GroupDrawCmd(true, formXObject.isIsolated(), formXObject.isKnockOut(),
                         groupCs instanceof Name ? (Name) groupCs : null, groupBlend, formXObject.getBBox()));
             }
-            if (!disableTransparencyGroups && FormDrawCmd.requiresOffscreenBuffer(formXObject)) {
+            // graphicState is the Do's own state (the enclosing content's), so this
+            // asks whether the form is placed as an element of a knockout group.
+            if (!disableTransparencyGroups
+                    && FormDrawCmd.requiresOffscreenBuffer(formXObject, graphicState.isKnockOut())) {
                 // add the hold form for further processing.
                 FormDrawCmd formDrawCmd = new FormDrawCmd(formXObject);
                 shapes.add(formDrawCmd);

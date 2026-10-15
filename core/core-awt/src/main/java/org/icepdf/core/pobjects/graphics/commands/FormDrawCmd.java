@@ -151,11 +151,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
         for (DrawCmd cmd : shapes.getShapes()) {
             if (cmd instanceof FormDrawCmd) {
                 ExtGState elementState = ((FormDrawCmd) cmd).xForm.getExtGState();
-                if (elementState != null && isPartial(elementState.getNonStrokingAlphConstant())) {
+                if (elementState != null && isNotOpaque(elementState.getNonStrokingAlphConstant())) {
                     return true;
                 }
             } else if (cmd instanceof AlphaDrawCmd) {
-                if (isPartial(((AlphaDrawCmd) cmd).getAlphaComposite().getAlpha())) {
+                if (isNotOpaque(((AlphaDrawCmd) cmd).getAlphaComposite().getAlpha())) {
                     return true;
                 }
             }
@@ -163,8 +163,11 @@ public class FormDrawCmd extends AbstractDrawCmd {
         return false;
     }
 
-    private static boolean isPartial(float alpha) {
-        return alpha > 0f && alpha < 1f;
+    // Includes ca 0: a fully transparent element still knocks out what is under it,
+    // punching a hole -- Illustrator's "knockout group" photo frame (a page-sized
+    // white fill with a ca 0 circle, girl-card-with-photo.pdf) is exactly this.
+    private static boolean isNotOpaque(float alpha) {
+        return alpha < 1f;
     }
 
     /**
@@ -201,6 +204,23 @@ public class FormDrawCmd extends AbstractDrawCmd {
      * @return true if the group must be rasterised to a buffer.
      */
     public static boolean requiresOffscreenBuffer(Form form) {
+        return requiresOffscreenBuffer(form, false);
+    }
+
+    /**
+     * As {@link #requiresOffscreenBuffer(Form)}, for a group placed inside a
+     * knockout group.  Such a group is ONE element of its parent and must knock
+     * out what is beneath it as a unit, which only a buffer can do -- an inline
+     * group composites element by element (see ShapesDrawCmd).  So a not fully
+     * opaque element group is buffered, including one placed at {@code ca 0}: it
+     * paints nothing, but still punches its shape out of the parent (the
+     * Illustrator photo-frame idiom, girl-card-with-photo.pdf).
+     *
+     * @param form              transparency-group form being placed by a {@code Do}.
+     * @param inKnockoutGroup   true when the {@code Do} is inside a knockout group.
+     * @return true if the group must be rasterised to a buffer.
+     */
+    public static boolean requiresOffscreenBuffer(Form form, boolean inKnockoutGroup) {
         ExtGState extGState = form.getExtGState();
         double formWidth = form.getBBox().getWidth();
         double formHeight = form.getBBox().getHeight();
@@ -222,6 +242,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
                 && !blendingMode.equals(BlendComposite.NORMAL_VALUE);
         float ca = extGState.getNonStrokingAlphConstant();
         boolean hasPartialAlpha = ca > 0 && ca < 1;
+        boolean isKnockoutElement = inKnockoutGroup && form.isTransparencyGroup() && ca < 1;
         // Prototype (§5.2): an isolated group needs a transparent backdrop and a
         // knockout group needs its initial backdrop preserved -- both of which
         // only a buffer provides.  These flags are otherwise parsed but never
@@ -238,7 +259,8 @@ public class FormDrawCmd extends AbstractDrawCmd {
         // accumulates to opaque (Duke's nose, Java Magazine p3/p61).
         // No group effect -> inline; painting the shapes SRC_OVER onto the page
         // is identical to compositing them to a buffer first.
-        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation || isKnockout)) {
+        if (!(hasSoftMask || hasBlend || hasPartialAlpha || needsIsolation || isKnockout
+                || isKnockoutElement)) {
             return false;
         }
         // A sentinel/extreme bbox (typically +-Short.MAX_VALUE) would collapse if

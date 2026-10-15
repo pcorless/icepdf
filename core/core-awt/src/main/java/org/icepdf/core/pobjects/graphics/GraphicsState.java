@@ -390,6 +390,10 @@ public class GraphicsState {
         strokeAlpha = parentGraphicsState.strokeAlpha;
         alphaRule = parentGraphicsState.alphaRule;
 
+        // Content inside a knockout group stays inside it across q/Q and nested
+        // non-group forms; a nested transparency group resets it to its own /K.
+        knockOut = parentGraphicsState.knockOut;
+
         // extra graphics
         if (parentGraphicsState.getExtGState() != null) {
             extGState = new ExtGState(parentGraphicsState.getExtGState().getLibrary(),
