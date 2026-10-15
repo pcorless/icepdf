@@ -136,6 +136,28 @@ public class ImageDownsamplerTest {
     }
 
     @Test
+    @DisplayName("A linear CS_GRAY source keeps its tone: the level draws as dark as the source")
+    public void grayLevelKeepsTone() {
+        // a DeviceGray DCT image decodes to TYPE_BYTE_GRAY; getRGB lifts 128 to 188 but drawImage
+        // paints 128, so a level built through getRGB drew a grey photo visibly lighter
+        BufferedImage byteGray = new BufferedImage(64, 64, BufferedImage.TYPE_BYTE_GRAY);
+        BufferedImage ushortGray = new BufferedImage(64, 64, BufferedImage.TYPE_USHORT_GRAY);
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                byteGray.getRaster().setSample(x, y, 0, 128);
+                ushortGray.getRaster().setSample(x, y, 0, 128 * 257);
+            }
+        }
+        // control: the gamma shift is real, or the test proves nothing
+        assertTrue((byteGray.getRGB(0, 0) & 255) > 160);
+        for (BufferedImage source : new BufferedImage[]{byteGray, ushortGray}) {
+            int plain = paint(source, 1, false).getRGB(10, 10) & 255;
+            assertEquals(128, plain, 1);
+            assertEquals(plain, paint(source, 0.25, true).getRGB(5, 5) & 255, 1);
+        }
+    }
+
+    @Test
     @DisplayName("Odd sizes round up so the last row and column are kept")
     public void oddSizes() {
         BufferedImage level = ImageDownsampler.halveSource(strokes(5, 3, 4));
