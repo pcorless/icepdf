@@ -66,6 +66,7 @@ public class ImageParams extends Dictionary {
     public static final Name DECODE_KEY = new Name("Decode");
     public static final Name BITS_PER_COMPONENT_KEY = new Name("BitsPerComponent");
     public static final Name SMASK_KEY = new Name("SMask");
+    public static final Name MATTE_KEY = new Name("Matte");
     public static final Name MASK_KEY = new Name("Mask");
 
     private final Resources resources;
