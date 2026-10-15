@@ -43,6 +43,9 @@ import java.util.logging.Logger;
  * image instance and MIP mapped returns/picks a scaled image that best fits
  * the current zoom level for a balance of render speed and quality.
  * <p>
+ * Whatever the type, a minified image is painted from a box-filtered mip level when
+ * {@link ImageDownsampler} is enabled (the default), so scanned pages stay legible at low zoom.
+ * <p>
  * New ImageReference implementations can be registered at runtime via
  * {@link #register(String, String, ImageReferenceCreator)}, allowing third-party
  * or application-level image reference types to be added without modifying this class.

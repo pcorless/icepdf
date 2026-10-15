@@ -21,109 +21,30 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 
-import java.awt.*;
-import java.awt.geom.Point2D;
-import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
- * The MipMappedImageReference will create several scaled instance of the
- * specified image.  The images are all smaller then the original image and
- * are painted as the page zoom level is lowered. The main idea here is that small
- * images are painted at smaller zoom levels which in theory speeds up the image
- * paint time.
+ * The MipMappedImageReference paints a minified image from a box-filtered mip level of the
+ * decoded image, chosen per paint from the device scale, so small zoom levels keep the detail
+ * that a point-sampled shrink drops.
+ * <p>
+ * The levels come from {@link ImageDownsampler}, which every reference type uses when
+ * downsampling is enabled (the default).  This type keeps mip mapping on when it has been
+ * disabled globally with {@code org.icepdf.core.imageReference.downsample=false}.
+ * <p>
+ * Before 7.5 each level was a {@link ScaledImageReference} sharing the source's image-pool key,
+ * so every level resolved to the full-size image and the mode painted the same as the default.
  *
  * @since 5.0
  */
-class MipMappedImageReference extends ImageReference {
-
-    private static final Logger logger =
-            Logger.getLogger(MipMappedImageReference.class.getName());
-
-    private final ArrayList<ImageReference> images;
+class MipMappedImageReference extends ImageStreamReference {
 
     protected MipMappedImageReference(ImageStream imageStream, Name xobjectName, GraphicsState graphicsState,
                                       Resources resources, int imageIndex,
                                       Page page) {
-
         super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
-
-        images = new ArrayList<>();
-
-        ImageReference imageReference =
-                new ImageStreamReference(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
-        images.add(imageReference);
-
-        int width = imageReference.getWidth();
-        int height = imageReference.getHeight();
-        // disable proxy as we need to scale each image from the previous
-        // and thus need to do the downscale in one shot.
-        useProxy = false;
-        try {
-            while (width > 20 && height > 20) {
-                width /= 2;
-                height /= 2;
-                imageReference = new ScaledImageReference(imageReference, xobjectName, graphicsState, resources,
-                        width, height, imageIndex, page);
-                images.add(imageReference);
-            }
-        } catch (InterruptedException e) {
-            logger.log(Level.FINER, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
-                    " " + describe(imageStream));
-        }
     }
 
-    public int getWidth() {
-        return images.get(0).getWidth();
-    }
-
-    public int getHeight() {
-        return images.get(0).getHeight();
-    }
-
-    public BufferedImage getImage() throws InterruptedException {
-        return images.get(0).getImage();
-    }
-
-    public void drawImage(Graphics2D aG, int aX, int aY, int aW, int aH) throws InterruptedException {
-        ImageReference imageReference = chooseImage(aG, aX, aY, aW, aH);
-        imageReference.drawImage(aG, aX, aY, aW, aH);
-    }
-
-    private ImageReference chooseImage(Graphics2D aG, int aX, int aY, int aW, int aH) {
-        Point2D.Double in = new Point2D.Double(aX, aY);
-        Point2D.Double p1 = new Point2D.Double();
-        Point2D.Double p2 = new Point2D.Double();
-        aG.getTransform().transform(in, p1);
-        in.x = aW;
-        aG.getTransform().transform(in, p2);
-        int distSq1 = (int) Math.round(p1.distanceSq(p2));
-        in.x = aX;
-        in.y = aH;
-        aG.getTransform().transform(in, p2);
-        int distSq2 = (int) Math.round(p1.distanceSq(p2));
-        int maxDistSq = Math.max(distSq1, distSq2);
-
-        int level = 0;
-        ImageReference image = images.get(level);
-        int width = image.getWidth();
-        int height = image.getHeight();
-
-        while (level < (images.size() - 1) &&
-                (width * width / 4) > maxDistSq &&
-                (height * height / 4) > maxDistSq) {
-            image = images.get(level++);
-            width = image.getWidth();
-            height = image.getHeight();
-        }
-        return image;
-    }
-
-    // no need to implement as this class class calls ScaledImage and MipMapped
-    // as needed.
-    public BufferedImage call() {
-        return null;
+    @Override
+    protected boolean useDownsampling() {
+        return true;
     }
 }
