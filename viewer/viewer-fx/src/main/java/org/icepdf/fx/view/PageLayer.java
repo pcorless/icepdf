@@ -292,6 +292,16 @@ final class PageLayer extends Group {
         return hasPreview;
     }
 
+    /** Drops every raster the page shows (its view left the scene); a refresh brings them back. */
+    void releaseRasters() {
+        content.clear();
+        annotations.clear();
+        multiplyAnnotations.clear();
+        hasPreview = false;
+        preview.setImage(null);
+        preview.setVisible(false);
+    }
+
     /** Asks for a new preview; the old one stays on screen until it arrives. */
     void clearPreview() {
         hasPreview = false;

@@ -28,6 +28,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
+import org.icepdf.fx.view.RenderStats;
 import org.icepdf.fx.ri.ui.CustomiseToolsPane;
 import org.icepdf.fx.ri.ui.EdgeDrawer;
 import org.icepdf.fx.ri.prefs.ViewerPreferences;
@@ -336,11 +337,21 @@ public final class ShellSmoke {
             settle();
             check("opening an open file selects its tab", onFx(() -> tabbed.getDocuments().size()) == 2
                     && onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(0)));
+            // a background tab gives its rasters back once it has been out of the scene a moment.
+            Thread.sleep(3500);
+            settle();
+            long hidden = onFx(() -> RenderStats.cachedBytes(tabbed.getDocuments().get(1).getView()));
+            long shown = onFx(() -> RenderStats.cachedBytes(tabbed.getDocuments().get(0).getView()));
+            System.out.println("  rasters: " + hidden + " bytes hidden, " + shown + " shown");
+            check("a background tab holds no rasters", hidden == 0 && shown > 0);
             onFx(() -> {
                 Event.fireEvent(tabbed, new KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, false, true, false, false));
                 return null;
             });
             check("Ctrl+Tab goes to the next tab", onFx(() -> tabbed.getCurrentDocument() == tabbed.getDocuments().get(1)));
+            settle();
+            check("and it paints again", onFx(() -> RenderStats.cachedBytes(tabbed.getDocuments().get(1).getView())) > 0);
+            snapshot(tabbed, "shell-tab-back.png");
             onFx(() -> {
                 tabbed.getActions().execute("document.new-tab");
                 return null;

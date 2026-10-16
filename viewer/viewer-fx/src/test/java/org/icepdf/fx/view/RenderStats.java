@@ -29,6 +29,11 @@ public final class RenderStats {
         return TileRenderer.contentRenderCount();
     }
 
+    /** Bytes of tiles and previews a view holds in its cache; 0 without its skin. */
+    public static long cachedBytes(PdfView view) {
+        return view.getSkin() instanceof PdfViewSkin skin ? skin.cachedBytes() : 0;
+    }
+
     /** True when annotations render in one pass with the content (system property). */
     public static boolean singlePassAnnotations() {
         return TileRenderer.SINGLE_PASS_ANNOTATIONS;

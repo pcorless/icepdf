@@ -117,6 +117,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private boolean zoomSettling;
     private final PauseTransition zoomSettle = new PauseTransition(ZOOM_SETTLE);
+    // a view out of the scene (a background tab) gives its rasters back after this long; the grace
+    // covers a view moved between parents (full screen) so it doesn't repaint.
+    private static final Duration RELEASE_HIDDEN = Duration.seconds(3);
+    private final PauseTransition releaseHidden = new PauseTransition(RELEASE_HIDDEN);
     private boolean refreshQueued;
     private boolean syncingBars;
     private boolean publishingPage;
@@ -237,7 +241,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             layers.values().forEach(PageLayer::resetOverlay);
             refresh();
         });
-        registerChangeListener(control.sceneProperty(), o -> watchWindow());
+        registerChangeListener(control.sceneProperty(), o -> {
+            watchWindow();
+            onSceneChanged();
+        });
+        releaseHidden.setOnFinished(e -> {
+            if (getSkinnable().getScene() == null) releaseRasters();
+        });
         registerChangeListener(control.toolModeProperty(), o -> {
             installTool();
             updateCaretBlink(false);
@@ -306,6 +316,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         zoomSettle.stop();
+        releaseHidden.stop();
         renderer.shutdown();
         textLoader.shutdown();
         caretBlink.stop();
@@ -681,6 +692,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private void refresh() {
         if (layout == null || document == null || viewportW <= 0 || viewportH <= 0) {
             clearLayers();
+            getSkinnable().setRendering(false);
+            return;
+        }
+        // out of the scene nothing is seen: render nothing (see releaseRasters).
+        if (getSkinnable().getScene() == null) {
             getSkinnable().setRendering(false);
             return;
         }
@@ -1960,6 +1976,32 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         Point2D view = PageTransforms.pageToView(pageToView, point.x(), point.y());
         double x = layout.getWidth() > viewportW ? slot.x() + view.getX() - 8 : scrollX;
         scrollTo(x, slot.y() + view.getY() - 8);
+    }
+
+    /** Out of the scene: give the rasters back after a grace period.  Back in: paint again. */
+    private void onSceneChanged() {
+        if (getSkinnable().getScene() == null) {
+            releaseHidden.playFromStart();
+        } else {
+            releaseHidden.stop();
+            scheduleRefresh();
+        }
+    }
+
+    /**
+     * Drops the tiles, previews and page text of a view nobody can see, and stops rendering for it;
+     * the page layers stay (an open field editor or a selection lives on them).
+     */
+    private void releaseRasters() {
+        renderer.retain(key -> false);
+        cache.clear();
+        layers.values().forEach(PageLayer::releaseRasters);
+        textLoader.retain(page -> false);
+    }
+
+    /** Bytes of rasters cached; for the smoke runs. */
+    long cachedBytes() {
+        return cache.getUsedBytes();
     }
 
     private void resetRasters() {
