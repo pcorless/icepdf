@@ -36,6 +36,7 @@ import org.icepdf.fx.ri.ui.EdgeDrawer;
 import org.icepdf.fx.ri.ui.HeaderBar;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PdfView;
+import org.icepdf.fx.view.RenderStats;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -179,13 +180,64 @@ public final class EmbedBasicSmoke {
         fx(thumbnails::dispose);
         fx(host.view::dispose);
         Thread.sleep(500);
-        smoke.check("dispose stops the view's render threads", renderThreads().isEmpty(), renderThreads());
+        smoke.check("dispose leaves nothing of the view's queued", RenderStats.queued() == 0, RenderStats.queued());
+        smoke.check("no per-view render threads", perViewThreads().isEmpty(), perViewThreads());
+        smoke.check("the shared render threads stay within the pool",
+                RenderStats.poolThreadNames().size() <= RenderStats.poolThreads(), RenderStats.poolThreadNames());
+        checkTwoWindows(smoke, doc);
         checkViewerWithoutChrome(smoke, doc);
         smoke.finish("embed basic smoke");
     }
 
-    /** Live threads of the view's renderers, text loader and thumbnail strip. */
-    private static java.util.List<String> renderThreads() {
+    /**
+     * Two windows on one document, both panning: they share the one render pool, so the process's
+     * render threads stay within its size however many views paint.  A window that is hidden is in
+     * the background, behind the other's work.
+     */
+    private static void checkTwoWindows(SmokeSupport smoke, Path doc) throws Exception {
+        Host a = onFx(Host::new);
+        Host b = onFx(Host::new);
+        fx(() -> b.stage.setX(a.stage.getX() + 60));
+        for (Host host : new Host[]{a, b}) {
+            fx(() -> host.session.open(doc));
+            SmokeSupport.waitOpened(host.session, doc);
+            fx(() -> {
+                host.view.setFitMode(FitMode.NONE);
+                host.view.setZoom(3);
+            });
+        }
+        int most = 0;
+        for (int step = 0; step < 40; step++) {
+            fx(() -> {
+                a.view.scrollBy(0, 300);
+                b.view.scrollBy(0, -200);
+                if (b.view.getCurrentPageIndex() == 0) b.view.setCurrentPageIndex(20);
+            });
+            most = Math.max(most, RenderStats.poolThreadNames().size());
+            Thread.sleep(30);
+        }
+        smoke.check("two windows panning: render threads within the pool size", most <= RenderStats.poolThreads()
+                && perViewThreads().isEmpty(), most + " of " + RenderStats.poolThreads() + " " + perViewThreads());
+        // not "at most one in front": under XWayland JavaFX can report both stages focused at once.
+        for (Host host : new Host[]{a, b}) {
+            smoke.check("a view is in front exactly when its window is focused",
+                    onFx(() -> RenderStats.isForeground(host.view) == host.stage.isFocused()),
+                    onFx(() -> "focused " + host.stage.isFocused() + ", in front " + RenderStats.isForeground(host.view)));
+        }
+        fx(b.stage::hide);
+        smoke.check("a hidden window's view is behind", !onFx(() -> RenderStats.isForeground(b.view)));
+        SmokeSupport.waitIdle(a.view);
+        for (Host host : new Host[]{a, b}) {
+            fx(() -> host.session.dispose());
+            fx(host.stage::close);
+            fx(host.view::dispose);
+        }
+        Thread.sleep(300);
+        smoke.check("both disposed: nothing queued", RenderStats.queued() == 0, RenderStats.queued());
+    }
+
+    /** Threads of the per-view pools the shared render pool replaced; there should be none. */
+    private static java.util.List<String> perViewThreads() {
         return Thread.getAllStackTraces().keySet().stream().map(Thread::getName)
                 .filter(n -> n.startsWith("icepdf-fx-tile") || n.startsWith("icepdf-fx-preview")
                         || n.startsWith("icepdf-fx-text") || n.startsWith("icepdf-fx-thumbnails"))

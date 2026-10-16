@@ -191,6 +191,14 @@ view.resetForm();
   `annotationEditingAllowed` and `formFillingAllowed` say what the user may do; bind toolbar
   buttons to them. Bouncy Castle (needed for AES and public-key encryption) comes with core.
 
+**Render threads.** Every `PdfView` and thumbnail strip in the process paints on one shared pool
+of low-priority daemon threads, which exit when idle. The views in the focused window go first;
+then visible tiles, annotation layers, page text, previews and thumbnails, in that order. The pool
+is sized from the machine like core's own pools: half the cores, at least 2 and at most 8.
+`-Dorg.icepdf.fx.render.threads=N` sets the count and `-Dorg.icepdf.fx.render.threadPoolCap=N`
+the cap. Core decodes images on its own pools (`org.icepdf.core.library.threadPoolSize`,
+`imageThreadPoolSize`, `threadPoolCap`).
+
 ## Measure and test
 
 | Command | What it does |

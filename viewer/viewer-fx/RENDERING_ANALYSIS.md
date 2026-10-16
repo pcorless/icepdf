@@ -91,6 +91,7 @@ Two bugs found while measuring:
   stalled for minutes. Such renders now retry with backoff.
 - After the first out-of-memory error, paints run one at a time for that document. Dense vector
   content can need ~250 MB per paint, and several render threads at once multiplied that.
+  (Since the shared render pool, the gate is process-wide and lifts 60 s after the last error.)
 
 ### Core fixes found through the FX work (all merged to main, 2026-10-07)
 

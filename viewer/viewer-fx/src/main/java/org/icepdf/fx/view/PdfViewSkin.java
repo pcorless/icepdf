@@ -2007,6 +2007,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         textLoader.retain(page -> false);
     }
 
+    /** Whether this view's render work is ahead in the shared queue; for the smoke runs. */
+    boolean isRenderForeground() {
+        return renderOwner.isForeground();
+    }
+
     /** Bytes of rasters cached; for the smoke runs. */
     long cachedBytes() {
         return cache.getUsedBytes();
