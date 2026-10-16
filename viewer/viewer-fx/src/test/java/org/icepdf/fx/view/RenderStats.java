@@ -41,6 +41,11 @@ public final class RenderStats {
         return RenderService.shared().size().threads();
     }
 
+    /** The render pool, its queue, every view and the heap, as the devtools window sees them.  FX thread. */
+    public static RenderService.Snapshot snapshot() {
+        return RenderService.shared().snapshot();
+    }
+
     /** Render tasks waiting for a thread, process-wide. */
     public static int queued() {
         return RenderService.shared().queued();

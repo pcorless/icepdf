@@ -80,7 +80,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
     // this view's place in the shared render pool's queue: ahead while its window is focused.  Coming
     // to the front re-ranks what is queued and refreshes, so anything retain() dropped is asked for.
-    private final NodeOwner renderOwner = new NodeOwner(getSkinnable(), RenderService.shared(), this::scheduleRefresh);
+    private final NodeOwner renderOwner = new NodeOwner(getSkinnable(), RenderService.shared(), this::scheduleRefresh,
+            this::renderStats);
     private final TileRenderer renderer;
     private final PageTextLoader textLoader = new PageTextLoader(RenderService.shared(), renderOwner,
             (page, sequence) -> onTextReady(page));
@@ -2005,6 +2006,18 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         cache.clear();
         layers.values().forEach(PageLayer::releaseRasters);
         textLoader.retain(page -> false);
+    }
+
+    /** This view for the render pool's diagnostics (the devtools window).  FX thread. */
+    private RenderService.ViewStats renderStats() {
+        PdfView view = getSkinnable();
+        String name = "";
+        if (document != null && document.getDocumentOrigin() != null) {
+            name = java.nio.file.Paths.get(document.getDocumentOrigin()).getFileName().toString();
+        }
+        return new RenderService.ViewStats(name, document != null ? view.getPageCount() : 0, view.getZoom(),
+                view.getCurrentPageIndex() + 1, cache.getUsedBytes(), cache.getBudget(), cache.size(), layers.size(),
+                renderer.jobCount(), renderer.failedCount(), textLoader.loadedCount(), renderOwner.isForeground());
     }
 
     /** Whether this view's render work is ahead in the shared queue; for the smoke runs. */

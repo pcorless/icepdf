@@ -134,6 +134,55 @@ class RenderServiceTest {
         assertTrue(first.isDone(), "the caller's future is the re-ranked task");
     }
 
+    @DisplayName("a snapshot lists the running task, the queue in run order, registered views and counters")
+    @Test
+    void snapshot() throws Exception {
+        RenderService service = service(1, new AtomicLong());
+        RenderService.ViewStats stats = new RenderService.ViewStats("report.pdf", 12, 1.5, 3, 1024, 4096, 2, 1, 3, 0,
+                1, true);
+        RenderService.Owner view = new RenderService.Owner() {
+            @Override
+            public boolean isForeground() {
+                return true;
+            }
+
+            @Override
+            public RenderService.ViewStats stats() {
+                return stats;
+            }
+        };
+        service.register(view);
+        CountDownLatch release = block(service);
+        service.submit(BACKGROUND, THUMBNAIL, "p1 thumbnail", () -> {
+        });
+        Future<?> dropped = service.submit(view, PREVIEW, "p2 preview", () -> {
+        });
+        service.submit(view, TILE, "p3 tile", () -> {
+        });
+        service.cancel(dropped);
+
+        RenderService.Snapshot snapshot = service.snapshot();
+        assertEquals(List.of("p3 tile", "p1 thumbnail"), snapshot.queue().stream().map(RenderService.QueuedInfo::label).toList());
+        assertEquals("report.pdf", snapshot.queue().get(0).view());
+        assertEquals("", snapshot.queue().get(1).view(), "an owner without stats has no view name");
+        assertEquals(1, snapshot.threads().size());
+        assertEquals("blocker", snapshot.threads().get(0).task());
+        assertEquals(1, snapshot.active());
+        assertEquals(List.of(stats), snapshot.views());
+        assertEquals(1, snapshot.cancelled());
+        assertTrue(snapshot.heapMax() > 0);
+
+        release.countDown();
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (service.snapshot().completed() < 3 && System.currentTimeMillis() < deadline) Thread.sleep(10);
+        RenderService.Snapshot idle = service.snapshot();
+        assertEquals(3, idle.completed(), "blocker, tile and thumbnail; not the cancelled preview");
+        assertTrue(idle.queue().isEmpty());
+        assertTrue(idle.meanMs().containsKey(TILE) && !idle.meanMs().containsKey(PREVIEW));
+        service.unregister(view);
+        assertTrue(service.snapshot().views().isEmpty());
+    }
+
     @DisplayName("a cancelled task leaves the queue at once and never runs")
     @Test
     void cancelLeavesQueue() throws Exception {

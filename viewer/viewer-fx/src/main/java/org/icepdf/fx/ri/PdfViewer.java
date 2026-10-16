@@ -139,6 +139,14 @@ public class PdfViewer extends StackPane {
         this.icons = icons;
         getStyleClass().add("pdf-viewer");
         theme = new Theme(this);
+        // the render devtools window, on the browser devtools key; harmless to leave on, and where
+        // it is needed when debugging a user's machine.
+        addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (DevToolsWindow.KEY.match(e)) {
+                DevToolsWindow.toggle(theme);
+                e.consume();
+            }
+        });
         actions = new ActionControls(registry, context, features::allows).setIcons(icons, 20, 16);
 
         sceneProperty().addListener((o, a, scene) -> {

@@ -91,6 +91,11 @@ final class PageTextLoader {
         return loaded.containsKey(pageIndex);
     }
 
+    /** Pages whose text is loaded; for diagnostics. */
+    int loadedCount() {
+        return loaded.size();
+    }
+
     /** Queues the page unless it is loaded, pending or has failed. */
     void request(int pageIndex) {
         Document doc = document;

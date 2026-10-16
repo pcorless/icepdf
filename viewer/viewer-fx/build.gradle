@@ -16,12 +16,14 @@ repositories {
 
 description = 'ICEpdf FX viewer reference implementation project'
 
-// the viewer's heap: -Pxmx=4g on run or runDemo (1024m by default).
+// the viewer's heap: -Pxmx=4g on run or runDemo (1024m by default); -Pdevtools opens the render
+// devtools window at start.
 def viewerXmx = "-Xmx${findProperty('xmx') ?: '1024m'}"
 
 application {
     mainClass = "org.icepdf.fx.ri.app.ViewerApp"
-    applicationDefaultJvmArgs = ["-Xms64m", viewerXmx]
+    applicationDefaultJvmArgs = ["-Xms64m", viewerXmx] +
+            (project.hasProperty('devtools') ? ['-Dorg.icepdf.fx.devtools=true'] : [])
 }
 
 // JavaExec tasks that launch an Application class need JavaFX on the module path ("JavaFX runtime

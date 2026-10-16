@@ -17,6 +17,19 @@ package org.icepdf.fx.render;
 
 import org.icepdf.core.util.PoolSizing;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryUsage;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -26,6 +39,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.LongSupplier;
 
 /**
@@ -77,6 +91,53 @@ public final class RenderService {
          * at each submit, so it should be a cheap field read.
          */
         boolean isForeground();
+
+        /** The owner's view, for diagnostics; null if it doesn't report one.  On the FX thread. */
+        default ViewStats stats() {
+            return null;
+        }
+    }
+
+    /**
+     * One view, for diagnostics.
+     *
+     * @param document     the document's file name, or empty
+     * @param currentPage  1-based
+     * @param cacheEntries tiles and previews cached
+     * @param layers       page layers on screen
+     * @param inFlight     render jobs queued or running
+     * @param failed       tiles that failed and aren't asked for again
+     * @param textPages    pages whose text is loaded
+     */
+    public record ViewStats(String document, int pages, double zoom, int currentPage, long cacheUsed,
+                            long cacheBudget, int cacheEntries, int layers, int inFlight, int failed,
+                            int textPages, boolean foreground) {
+    }
+
+    /** A pool thread: idle when {@code task} is null. */
+    public record ThreadInfo(String name, String task, Kind kind, String view, long runningMs) {
+    }
+
+    /** A queued task, in run order. */
+    public record QueuedInfo(Kind kind, boolean foreground, String view, String label, long ageMs) {
+    }
+
+    /**
+     * The pool, its queue and the process's heap at one moment.  Weakly consistent: tasks start
+     * and finish while it is taken.
+     *
+     * @param meanMs           mean run time of finished tasks, by kind (kinds yet to run are absent)
+     * @param lowMemoryMsLeft  while paints are serialised, how long until the gate lifts
+     * @param views            the views of registered owners
+     */
+    public record Snapshot(PoolSizing.Size size, List<ThreadInfo> threads, List<QueuedInfo> queue,
+                           long completed, long cancelled, Map<Kind, Double> meanMs, boolean lowMemory,
+                           long lowMemoryMsLeft, List<ViewStats> views, long heapUsed, long heapCommitted,
+                           long heapMax, long gcCount, long gcMs) {
+        /** Threads running a task. */
+        public int active() {
+            return (int) threads.stream().filter(t -> t.task() != null).count();
+        }
     }
 
     /** A paint run through the out-of-memory gate. */
@@ -100,13 +161,47 @@ public final class RenderService {
     private volatile boolean lowMemory;
     private volatile long lowMemoryAt;
 
+    // diagnostics: the pool's threads (they exit when idle), what each runs, and run times by kind.
+    private final Set<Thread> workers = Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+    private final Map<Thread, Running> running = new ConcurrentHashMap<>();
+    private final AtomicLong completed = new AtomicLong();
+    private final AtomicLong cancelled = new AtomicLong();
+    private final LongAdder[] runNanos = adders();
+    private final LongAdder[] runs = adders();
+    // owners that report a view; weak, so a view dropped without dispose doesn't stay listed.
+    private final Map<Owner, Boolean> owners = Collections.synchronizedMap(new WeakHashMap<>());
+
+    private record Running(RenderTask task, long startNanos) {
+    }
+
     RenderService(PoolSizing.Size size, LongSupplier clockMs) {
         this.size = size;
         this.clockMs = clockMs;
         int threads = size.threads();
         executor = new ThreadPoolExecutor(threads, threads, 30, TimeUnit.SECONDS,
-                new PriorityBlockingQueue<>(), daemonThreads("icepdf-fx-render"));
+                new PriorityBlockingQueue<>(), daemonThreads("icepdf-fx-render")) {
+            @Override
+            protected void beforeExecute(Thread thread, Runnable task) {
+                running.put(thread, new Running((RenderTask) task, System.nanoTime()));
+            }
+
+            @Override
+            protected void afterExecute(Runnable task, Throwable thrown) {
+                Running done = running.remove(Thread.currentThread());
+                if (done == null || ((RenderTask) task).isCancelled()) return;
+                completed.incrementAndGet();
+                int kind = done.task().kind.ordinal();
+                runNanos[kind].add(System.nanoTime() - done.startNanos());
+                runs[kind].increment();
+            }
+        };
         executor.allowCoreThreadTimeOut(true);
+    }
+
+    private static LongAdder[] adders() {
+        LongAdder[] adders = new LongAdder[Kind.values().length];
+        for (int i = 0; i < adders.length; i++) adders[i] = new LongAdder();
+        return adders;
     }
 
     /** The process's pool, created on first use. */
@@ -157,8 +252,81 @@ public final class RenderService {
      */
     public void cancel(Future<?> task) {
         if (task == null) return;
-        task.cancel(true);
+        if (task.cancel(true)) cancelled.incrementAndGet();
         if (task instanceof Runnable runnable) executor.remove(runnable);
+    }
+
+    /** Lists an owner's view in {@link #snapshot()} while the owner is alive. */
+    public void register(Owner owner) {
+        owners.put(owner, Boolean.TRUE);
+    }
+
+    public void unregister(Owner owner) {
+        owners.remove(owner);
+    }
+
+    /**
+     * The pool now, for diagnostics; cheap enough to poll a few times a second.  Call it on the FX
+     * thread: it asks registered owners for their {@link Owner#stats() views}.
+     */
+    public Snapshot snapshot() {
+        long now = System.nanoTime();
+        Map<Owner, ViewStats> views = new IdentityHashMap<>();
+        Owner[] listed;
+        synchronized (owners) {
+            listed = owners.keySet().toArray(new Owner[0]);
+        }
+        for (Owner owner : listed) {
+            ViewStats stats = owner.stats();
+            if (stats != null) views.put(owner, stats);
+        }
+
+        List<ThreadInfo> threads = new ArrayList<>();
+        Thread[] live;
+        synchronized (workers) {
+            live = workers.toArray(new Thread[0]);
+        }
+        Arrays.sort(live, (a, b) -> a.getName().compareTo(b.getName()));
+        for (Thread thread : live) {
+            if (!thread.isAlive()) continue;
+            Running run = running.get(thread);
+            threads.add(run == null ? new ThreadInfo(thread.getName(), null, null, "", 0)
+                    : new ThreadInfo(thread.getName(), run.task().label, run.task().kind,
+                    viewName(views, run.task().owner), (now - run.startNanos()) / 1_000_000));
+        }
+
+        Object[] queued = executor.getQueue().toArray();
+        RenderTask[] tasks = new RenderTask[queued.length];
+        for (int i = 0; i < queued.length; i++) tasks[i] = (RenderTask) queued[i];
+        Arrays.sort(tasks);
+        List<QueuedInfo> queue = new ArrayList<>(tasks.length);
+        for (RenderTask task : tasks) {
+            queue.add(new QueuedInfo(task.kind, task.foreground, viewName(views, task.owner), task.label,
+                    (now - task.queuedNanos) / 1_000_000));
+        }
+
+        Map<Kind, Double> meanMs = new EnumMap<>(Kind.class);
+        for (Kind kind : Kind.values()) {
+            long count = runs[kind.ordinal()].sum();
+            if (count > 0) meanMs.put(kind, runNanos[kind.ordinal()].sum() / 1e6 / count);
+        }
+        boolean gated = isLowMemory();
+        long left = gated ? Math.max(0, LOW_MEMORY_MS - (clockMs.getAsLong() - lowMemoryAt)) : 0;
+
+        MemoryUsage heap = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
+        long gcCount = 0, gcMs = 0;
+        for (GarbageCollectorMXBean gc : ManagementFactory.getGarbageCollectorMXBeans()) {
+            gcCount += Math.max(0, gc.getCollectionCount());
+            gcMs += Math.max(0, gc.getCollectionTime());
+        }
+        return new Snapshot(size, List.copyOf(threads), List.copyOf(queue), completed.get(), cancelled.get(),
+                Collections.unmodifiableMap(meanMs), gated, left, List.copyOf(views.values()), heap.getUsed(),
+                heap.getCommitted(), heap.getMax(), gcCount, gcMs);
+    }
+
+    private static String viewName(Map<Owner, ViewStats> views, Owner owner) {
+        ViewStats stats = views.get(owner);
+        return stats != null ? stats.document() : "";
     }
 
     /** Tasks waiting for a thread. */
@@ -208,12 +376,13 @@ public final class RenderService {
         lowMemory = true;
     }
 
-    private static ThreadFactory daemonThreads(String name) {
+    private ThreadFactory daemonThreads(String name) {
         AtomicInteger count = new AtomicInteger();
         return r -> {
             Thread t = new Thread(r, name + "-" + count.incrementAndGet());
             t.setDaemon(true);
             t.setPriority(Thread.NORM_PRIORITY - 1);
+            workers.add(t);
             return t;
         };
     }
@@ -229,6 +398,7 @@ public final class RenderService {
         final Kind kind;
         final long sequence;
         final String label;
+        final long queuedNanos = System.nanoTime();
 
         RenderTask(Runnable job, Owner owner, boolean foreground, Kind kind, long sequence, String label) {
             super(job, null);

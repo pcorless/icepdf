@@ -38,6 +38,7 @@ import org.icepdf.fx.fonts.FontSettings;
 import org.icepdf.fx.ri.prefs.FontDirectories;
 import org.icepdf.fx.ri.prefs.ImagingSettings;
 import org.icepdf.fx.ri.prefs.PerformanceSettings;
+import org.icepdf.fx.ri.ui.DevToolsWindow;
 import org.icepdf.fx.ri.prefs.PreferencesDialog;
 import org.icepdf.fx.ri.prefs.ViewerPreferences;
 
@@ -121,6 +122,7 @@ public class ViewerApp extends Application {
         ImagingSettings.apply(preferences);
         List<String> args = getParameters().getUnnamed();
         AppWindow first = createWindow(stage);
+        if (Boolean.getBoolean(DevToolsWindow.OPEN_PROPERTY)) DevToolsWindow.show(first.viewer().getTheme());
         if (!args.isEmpty()) first.viewer().open(Paths.get(args.get(0)));
         for (int i = 1; i < args.size(); i++) {
             if (features.isMultipleDocuments()) first.viewer().openInNewTab(Paths.get(args.get(i)));

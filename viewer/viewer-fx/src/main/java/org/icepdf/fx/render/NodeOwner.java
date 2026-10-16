@@ -20,6 +20,8 @@ import javafx.beans.value.ObservableValue;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 
+import java.util.function.Supplier;
+
 /**
  * A render {@link RenderService.Owner} that is in the foreground while its node is in a scene whose
  * window is showing and focused.  A view in a background tab (out of the scene) or a window behind
@@ -32,6 +34,7 @@ public final class NodeOwner implements RenderService.Owner {
 
     private final RenderService service;
     private final Runnable onForeground;
+    private final Supplier<RenderService.ViewStats> stats;
     private final ObservableValue<Boolean> showing;
     private final ChangeListener<Boolean> listener = (obs, was, now) -> update(now);
     private volatile boolean foreground;
@@ -39,10 +42,13 @@ public final class NodeOwner implements RenderService.Owner {
     /**
      * @param node         the view (or the view a panel serves)
      * @param onForeground run when the node comes to the foreground; may be null
+     * @param stats        the view's diagnostics; null for an owner not listed as a view
      */
-    public NodeOwner(Node node, RenderService service, Runnable onForeground) {
+    public NodeOwner(Node node, RenderService service, Runnable onForeground,
+                     Supplier<RenderService.ViewStats> stats) {
         this.service = service;
         this.onForeground = onForeground;
+        this.stats = stats;
         showing = node.sceneProperty()
                 .flatMap(Scene::windowProperty)
                 .flatMap(window -> window.focusedProperty()
@@ -50,6 +56,7 @@ public final class NodeOwner implements RenderService.Owner {
                 .orElse(false);
         showing.addListener(listener);
         foreground = showing.getValue();
+        if (stats != null) service.register(this);
     }
 
     @Override
@@ -57,9 +64,15 @@ public final class NodeOwner implements RenderService.Owner {
         return foreground;
     }
 
-    /** Stops following the node; the owner stays in the background from now on. */
+    @Override
+    public RenderService.ViewStats stats() {
+        return stats != null ? stats.get() : null;
+    }
+
+    /** Stops following the node; the owner stays in the background from now on, and unlisted. */
     public void dispose() {
         showing.removeListener(listener);
+        service.unregister(this);
         update(false);
     }
 

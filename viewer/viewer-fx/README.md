@@ -28,6 +28,10 @@ The runnable example is `examples/javafx`.
 `./gradlew :viewer:viewer-fx:run` starts the viewer application; Gradle builds the core from source.
 Add `--args="/path/file.pdf"` to open a file, and `-Pxmx=4g` for a bigger heap.
 
+Ctrl+Shift+I (⌘⌥I on macOS) opens the render devtools window: the shared render pool's threads and
+queue, each view's cache and jobs, and the heap, live. `-Dorg.icepdf.fx.devtools=true` (`-Pdevtools`
+on `run`) opens it at start.
+
 Maven resolves `icepdf-core` from the local repository, so install the current core first. Repeat
 this after core changes. The coverage gate is skipped because tests are skipped, and the full
 reactor still trips on the stale `qa` module:

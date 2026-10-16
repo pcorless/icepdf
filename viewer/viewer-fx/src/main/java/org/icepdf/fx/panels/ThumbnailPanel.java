@@ -61,7 +61,7 @@ public class ThumbnailPanel extends BorderPane {
 
     public ThumbnailPanel(PdfView view) {
         this.view = view;
-        renderOwner = new NodeOwner(view, RenderService.shared(), null);
+        renderOwner = new NodeOwner(view, RenderService.shared(), null, null);
         thumbnails = new PageThumbnails(RenderService.shared(), renderOwner);
         getStyleClass().add("thumbnail-panel");
         list.setItems(pages);

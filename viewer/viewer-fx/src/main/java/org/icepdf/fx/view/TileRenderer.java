@@ -201,6 +201,16 @@ final class TileRenderer {
         return failed.contains(key);
     }
 
+    /** Jobs queued or running; for diagnostics. */
+    int jobCount() {
+        return jobs.size();
+    }
+
+    /** Keys that failed and aren't asked for again; for diagnostics. */
+    int failedCount() {
+        return failed.size();
+    }
+
     /**
      * Queues the given tiles of one page, skipping any already in flight.
      *

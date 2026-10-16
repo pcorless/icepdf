@@ -46,6 +46,8 @@ module org.icepdf.fx {
     requires java.logging;
     requires java.prefs;
     requires java.naming;
+    // heap and GC figures for the devtools window.
+    requires java.management;
     // ASN.1 values shown in the signature properties dialog.
     requires org.bouncycastle.provider;
 

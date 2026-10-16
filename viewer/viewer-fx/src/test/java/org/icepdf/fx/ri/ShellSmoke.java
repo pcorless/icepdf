@@ -33,6 +33,7 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.icepdf.fx.view.RenderStats;
 import org.icepdf.fx.ri.ui.CustomiseToolsPane;
+import org.icepdf.fx.ri.ui.DevToolsWindow;
 import org.icepdf.fx.ri.ui.EdgeDrawer;
 import org.icepdf.fx.ri.prefs.PreferencesDialog;
 import org.icepdf.fx.ri.prefs.ViewerPreferences;
@@ -114,6 +115,32 @@ public final class ShellSmoke {
             prefsStage.close();
             return null;
         });
+
+        // devtools: the browser key toggles the render window; it lists the pool's threads and this
+        // view, and its queue empties once the view is idle.
+        boolean mac = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).startsWith("mac");
+        Runnable devtoolsKey = () -> Event.fireEvent(viewer.getView(), new KeyEvent(KeyEvent.KEY_PRESSED, "", "",
+                KeyCode.I, !mac, !mac, mac, mac));
+        onFx(() -> {
+            devtoolsKey.run();
+            return null;
+        });
+        settle();
+        check("Ctrl+Shift+I opens the devtools window", onFx(DevToolsWindow::isShowing));
+        long until = System.currentTimeMillis() + 5_000;
+        while (onFx(() -> DevToolsWindow.current().rowCounts()[1]) > 0 && System.currentTimeMillis() < until) {
+            Thread.sleep(100);
+        }
+        int[] rows = onFx(() -> DevToolsWindow.current().rowCounts());
+        System.out.println("  devtools rows: threads " + rows[0] + ", queue " + rows[1] + ", views " + rows[2]);
+        check("devtools lists the render threads and the view", rows[0] > 0 && rows[2] > 0);
+        check("devtools queue empties once the view is idle", rows[1] == 0);
+        snapshot(onFx(() -> DevToolsWindow.current().getStage().getScene().getRoot()), "shell-devtools.png");
+        onFx(() -> {
+            devtoolsKey.run();
+            return null;
+        });
+        check("Ctrl+Shift+I closes it again", !onFx(DevToolsWindow::isShowing));
 
         // the rail is the arrangement; the strip lists the panels with content.
         List<String> railIds = onFx(() -> {
