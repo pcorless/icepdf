@@ -15,40 +15,54 @@
  */
 package org.icepdf.fx.view;
 
-import org.icepdf.fx.i18n.Messages;
-
 import javafx.application.Platform;
 import javafx.beans.property.*;
-import javafx.event.EventHandler;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
+import javafx.event.EventHandler;
 import javafx.scene.AccessibleRole;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
-import org.icepdf.core.pobjects.Document;
-import org.icepdf.core.pobjects.Page;
+import javafx.scene.paint.Color;
 import org.icepdf.core.pobjects.Destination;
+import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.NamedAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation;
+import org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.LinkAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
+import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.core.pobjects.security.Permissions;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.redaction.RedactionRequest;
+import org.icepdf.core.util.redaction.Redactor;
+import org.icepdf.fx.i18n.Messages;
+import org.icepdf.fx.print.DocumentPrinter;
+import org.icepdf.fx.print.PrintSettings;
+import org.icepdf.fx.signature.SignatureStatus;
+import org.icepdf.fx.signature.SignatureVerifier;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
 
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
@@ -91,7 +105,9 @@ public class PdfView extends Control {
     private final DoubleProperty rotation = new SimpleDoubleProperty(this, "rotation", 0) {
         @Override
         public void set(double value) {
-            double normalised = value % 360;
+            // quarter turns only: page layout, hit-testing and the caret assume upright or sideways pages.
+            double quarter = Double.isFinite(value) ? Math.round(value / 90) * 90.0 : 0;
+            double normalised = quarter % 360;
             super.set(normalised < 0 ? normalised + 360 : normalised);
         }
     };
@@ -145,10 +161,10 @@ public class PdfView extends Control {
     private final AnnotationEdits.History history = new AnnotationEdits.History();
     private final BooleanProperty formFieldsEditable = new SimpleBooleanProperty(this, "formFieldsEditable", true);
     private final BooleanProperty highlightFormFields = new SimpleBooleanProperty(this, "highlightFormFields", false);
-    private final ObjectProperty<EventHandler<? super FormFieldChangeEvent>> onFormFieldChanged = new ObjectPropertyBase<>() {
+    private final ObjectProperty<EventHandler<? super FormFieldEvent>> onFormFieldChanged = new ObjectPropertyBase<>() {
         @Override
         protected void invalidated() {
-            setEventHandler(FormFieldChangeEvent.FIELD_CHANGED, get());
+            setEventHandler(FormFieldEvent.FIELD_CHANGED, get());
         }
 
         @Override
@@ -165,11 +181,11 @@ public class PdfView extends Control {
             new ReadOnlyObjectWrapper<>(this, "focusedField");
     private final StringProperty annotationAuthor =
             new SimpleStringProperty(this, "annotationAuthor", System.getProperty("user.name", ""));
-    private final ObjectProperty<javafx.scene.paint.Color> annotationColor =
+    private final ObjectProperty<Color> annotationColor =
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
-    private final ObjectProperty<java.util.function.Function<Annotation, javafx.scene.control.ContextMenu>>
+    private final ObjectProperty<Function<Annotation, ContextMenu>>
             annotationMenuFactory = new SimpleObjectProperty<>(this, "annotationMenuFactory");
     private final ObjectProperty<EventHandler<? super PdfViewEvent>> onAnnotationsChanged = new ObjectPropertyBase<>() {
         @Override
@@ -196,8 +212,8 @@ public class PdfView extends Control {
             new ReadOnlyBooleanWrapper(this, "formFillingAllowed", true);
     private final ReadOnlyBooleanWrapper printAllowed = new ReadOnlyBooleanWrapper(this, "printAllowed", false);
     // signatures: checked off the FX thread when a document opens (verifySignaturesOnOpen).
-    private final ObservableList<org.icepdf.fx.signature.SignatureStatus> signatures = FXCollections.observableArrayList();
-    private final ObservableList<org.icepdf.fx.signature.SignatureStatus> signaturesView =
+    private final ObservableList<SignatureStatus> signatures = FXCollections.observableArrayList();
+    private final ObservableList<SignatureStatus> signaturesView =
             FXCollections.unmodifiableObservableList(signatures);
     private final ReadOnlyBooleanWrapper verifyingSignatures =
             new ReadOnlyBooleanWrapper(this, "verifyingSignatures", false);
@@ -220,7 +236,8 @@ public class PdfView extends Control {
         }
     };
     private int signatureGeneration;
-    private boolean lowResolutionPrintOnly;
+    private final ReadOnlyBooleanWrapper highQualityPrintAllowed =
+            new ReadOnlyBooleanWrapper(this, "highQualityPrintAllowed", false);
 
     private final ObjectProperty<DocumentSelection> textSelection =
             new SimpleObjectProperty<>(this, "textSelection");
@@ -402,15 +419,15 @@ public class PdfView extends Control {
     }
 
     /** Colour for new annotations; null uses each tool's default (yellow highlights, red shapes, ...). */
-    public final ObjectProperty<javafx.scene.paint.Color> annotationColorProperty() {
+    public final ObjectProperty<Color> annotationColorProperty() {
         return annotationColor;
     }
 
-    public final javafx.scene.paint.Color getAnnotationColor() {
+    public final Color getAnnotationColor() {
         return annotationColor.get();
     }
 
-    public final void setAnnotationColor(javafx.scene.paint.Color color) {
+    public final void setAnnotationColor(Color color) {
         annotationColor.set(color);
     }
 
@@ -498,18 +515,18 @@ public class PdfView extends Control {
 
     /**
      * Called for every form field value change: typing, clicks and choices, resets,
-     * {@link #setFieldValue}, undo and redo ({@link FormFieldChangeEvent#FIELD_CHANGED}).  For
+     * {@link #setFieldValue}, undo and redo ({@link FormFieldEvent#FIELD_CHANGED}).  For
      * applications tracking dirty state or validating.
      */
-    public final ObjectProperty<EventHandler<? super FormFieldChangeEvent>> onFormFieldChangedProperty() {
+    public final ObjectProperty<EventHandler<? super FormFieldEvent>> onFormFieldChangedProperty() {
         return onFormFieldChanged;
     }
 
-    public final void setOnFormFieldChanged(EventHandler<? super FormFieldChangeEvent> handler) {
+    public final void setOnFormFieldChanged(EventHandler<? super FormFieldEvent> handler) {
         onFormFieldChanged.set(handler);
     }
 
-    public final EventHandler<? super FormFieldChangeEvent> getOnFormFieldChanged() {
+    public final EventHandler<? super FormFieldEvent> getOnFormFieldChanged() {
         return onFormFieldChanged.get();
     }
 
@@ -556,24 +573,24 @@ public class PdfView extends Control {
             case TEXT, PASSWORD -> edit = forms.setText(first, value == null ? "" : value.toString(), toPage);
             case CHECK -> {
                 boolean on = value instanceof Boolean b ? b : value != null && !"Off".equals(value.toString());
-                org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation box =
-                        (org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) first.widget();
+                ButtonWidgetAnnotation box =
+                        (ButtonWidgetAnnotation) first.widget();
                 edit = box.isOn() == on ? null : forms.toggleCheck(first, toPage);
             }
             case RADIO -> {
                 FormController.Located target = null;
                 for (FormController.Located kid : widgets) {
                     Name onName = FormController.onNameOf(
-                            (org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) kid.widget());
+                            (ButtonWidgetAnnotation) kid.widget());
                     if (onName != null && value != null && onName.getName().equals(value.toString())) target = kid;
                 }
                 if (target == null) return false;
-                edit = ((org.icepdf.core.pobjects.annotations.ButtonWidgetAnnotation) target.widget()).isOn()
+                edit = ((ButtonWidgetAnnotation) target.widget()).isOn()
                         ? null : forms.selectRadio(target, widgets, toPage);
             }
             case COMBO, LIST -> {
-                org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary choice =
-                        ((org.icepdf.core.pobjects.annotations.ChoiceWidgetAnnotation) first.widget()).getFieldDictionary();
+                ChoiceFieldDictionary choice =
+                        ((ChoiceWidgetAnnotation) first.widget()).getFieldDictionary();
                 List<String> wanted = new ArrayList<>();
                 if (value instanceof Collection<?> many) {
                     if (!choice.isMultiSelect() && many.size() > 1) return false;
@@ -585,7 +602,7 @@ public class PdfView extends Control {
                 if (indexes.size() == wanted.size()) {
                     edit = forms.chooseIndexes(first, indexes, toPage);
                 } else if (wanted.size() == 1 && choice.getChoiceFieldType()
-                        == org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary.ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
+                        == ChoiceFieldDictionary.ChoiceFieldType.CHOICE_EDITABLE_COMBO) {
                     edit = forms.choose(first, wanted.get(0), toPage);
                 } else {
                     return false;
@@ -643,8 +660,8 @@ public class PdfView extends Control {
     private void fireFieldChanges(AnnotationEdits.Edit edit, boolean undone) {
         if (!(edit instanceof FormController.FieldEdit fieldEdit)) return;
         for (FormController.FieldChange c : fieldEdit.changes()) {
-            fireEvent(undone ? new FormFieldChangeEvent(this, this, c.widget(), c.name(), c.newValue(), c.oldValue())
-                    : new FormFieldChangeEvent(this, this, c.widget(), c.name(), c.oldValue(), c.newValue()));
+            fireEvent(undone ? new FormFieldEvent(this, this, c.widget(), c.name(), c.newValue(), c.oldValue())
+                    : new FormFieldEvent(this, this, c.widget(), c.name(), c.oldValue(), c.newValue()));
         }
     }
 
@@ -680,21 +697,18 @@ public class PdfView extends Control {
      * Builds the context menu shown when the user right-clicks an editable annotation (it is selected
      * first).  Return null for no menu.  With no factory set right-click does nothing.
      */
-    public final ObjectProperty<java.util.function.Function<Annotation, javafx.scene.control.ContextMenu>>
+    public final ObjectProperty<Function<Annotation, ContextMenu>>
             annotationMenuFactoryProperty() {
         return annotationMenuFactory;
     }
 
     public final void setAnnotationMenuFactory(
-            java.util.function.Function<Annotation, javafx.scene.control.ContextMenu> factory) {
+            Function<Annotation, ContextMenu> factory) {
         annotationMenuFactory.set(factory);
     }
 
-    /** Changes an annotation's colour; undoable.  See {@link #applyAnnotationProperties}. */
-    public void setAnnotationColor(Annotation annotation, java.awt.Color color) {
-        if (color != null && AnnotationProperties.hasColor(annotation)) {
-            applyAnnotationProperties(annotation, AnnotationProperties.ofColor(color));
-        }
+    public final Function<Annotation, ContextMenu> getAnnotationMenuFactory() {
+        return annotationMenuFactory.get();
     }
 
     /** Undoes the last annotation edit (move, resize, delete, add). */
@@ -713,6 +727,10 @@ public class PdfView extends Control {
 
     public final ReadOnlyBooleanProperty canUndoProperty() {
         return canUndo.getReadOnlyProperty();
+    }
+
+    public final boolean isCanUndo() {
+        return canUndo.get();
     }
 
     /**
@@ -754,6 +772,10 @@ public class PdfView extends Control {
 
     public final ReadOnlyBooleanProperty canRedoProperty() {
         return canRedo.getReadOnlyProperty();
+    }
+
+    public final boolean isCanRedo() {
+        return canRedo.get();
     }
 
     /** Records an edit already applied; re-renders that page's annotation layers. */
@@ -934,7 +956,7 @@ public class PdfView extends Control {
      * 0 when only the terms were recorded, or nothing was done (a search running, no search, or a
      * document that doesn't permit annotating); see {@link #hasTermRedaction()}.
      */
-    public void redactSearchHits(java.util.function.IntConsumer done) {
+    public void redactSearchHits(IntConsumer done) {
         Document doc = getDocument();
         List<SearchHit> hits = List.copyOf(searchHits);
         List<SearchTerm> terms = searchTerms;
@@ -949,7 +971,7 @@ public class PdfView extends Control {
             for (SearchHit hit : hits) {
                 try {
                     PageText text = doc.getPageViewText(hit.pageIndex());
-                    org.icepdf.core.pobjects.graphics.text.TextSequence sequence = text != null ? text.getTextSequence() : null;
+                    TextSequence sequence = text != null ? text.getTextSequence() : null;
                     if (sequence == null) continue;
                     rects.put(hit, new ArrayList<>(sequence.rectsFor(hit.range())));
                 } catch (InterruptedException e) {
@@ -966,10 +988,10 @@ public class PdfView extends Control {
                 rects.forEach((hit, r) -> {
                     if (!r.isEmpty()) edits.add(skin.redactPageRects(hit.pageIndex(), r));
                 });
-                org.icepdf.core.util.redaction.RedactionRequest before = doc.getRedactionRequest();
-                Runnable withTerms = () -> org.icepdf.core.util.redaction.Redactor.configure(doc,
-                        org.icepdf.core.util.redaction.RedactionRequest.ofAnnotationsAndTerms(terms));
-                Runnable restore = () -> org.icepdf.core.util.redaction.Redactor.configure(doc, before);
+                RedactionRequest before = doc.getRedactionRequest();
+                Runnable withTerms = () -> Redactor.configure(doc,
+                        RedactionRequest.ofAnnotationsAndTerms(terms));
+                Runnable restore = () -> Redactor.configure(doc, before);
                 withTerms.run();
                 recordEdit(AnnotationEdits.group(edits, restore, withTerms));
                 done.accept(edits.size());
@@ -1159,7 +1181,10 @@ public class PdfView extends Control {
         zoom.set(value);
     }
 
-    /** Clockwise user rotation in degrees, normalised to [0, 360); applied on top of the page's /Rotate. */
+    /**
+     * Clockwise user rotation in degrees, applied on top of the page's /Rotate: 0, 90, 180 or 270.
+     * Other values snap to the nearest quarter turn and are normalised to [0, 360).
+     */
     public final DoubleProperty rotationProperty() {
         return rotation;
     }
@@ -1401,7 +1426,7 @@ public class PdfView extends Control {
     /**
      * Whether there is a document and it permits printing.  A document may also permit only
      * low-quality printing; {@link #print} then prints pages as images (see
-     * {@link org.icepdf.fx.print.DocumentPrinter#LOW_RESOLUTION_DPI}).
+     * {@link DocumentPrinter#LOW_RESOLUTION_DPI}).
      */
     public final ReadOnlyBooleanProperty printAllowedProperty() {
         return printAllowed.getReadOnlyProperty();
@@ -1411,13 +1436,25 @@ public class PdfView extends Control {
         return printAllowed.get();
     }
 
+    /**
+     * False when the document permits printing only at low quality: {@link #print} then prints pages
+     * as images whatever the settings say.
+     */
+    public final ReadOnlyBooleanProperty highQualityPrintAllowedProperty() {
+        return highQualityPrintAllowed.getReadOnlyProperty();
+    }
+
+    public final boolean isHighQualityPrintAllowed() {
+        return highQualityPrintAllowed.get();
+    }
+
     // ---- signatures -----------------------------------------------------------------------
 
     /**
      * The document's signature fields and what checking them found, in form order; empty until a
      * check completes (see {@link #verifySignatures()}).  Signed fields also show a validity badge.
      */
-    public final ObservableList<org.icepdf.fx.signature.SignatureStatus> getSignatures() {
+    public final ObservableList<SignatureStatus> getSignatures() {
         return signaturesView;
     }
 
@@ -1470,7 +1507,7 @@ public class PdfView extends Control {
      *
      * @return completes with the results (on the FX thread)
      */
-    public CompletableFuture<List<org.icepdf.fx.signature.SignatureStatus>> verifySignatures() {
+    public CompletableFuture<List<SignatureStatus>> verifySignatures() {
         Document document = getDocument();
         int generation = ++signatureGeneration;
         if (document == null) {
@@ -1478,15 +1515,15 @@ public class PdfView extends Control {
             return CompletableFuture.completedFuture(List.of());
         }
         verifyingSignatures.set(true);
-        CompletableFuture<List<org.icepdf.fx.signature.SignatureStatus>> result = new CompletableFuture<>();
+        CompletableFuture<List<SignatureStatus>> result = new CompletableFuture<>();
         Thread worker = new Thread(() -> {
-            List<org.icepdf.fx.signature.SignatureStatus> found;
+            List<SignatureStatus> found;
             try {
-                found = org.icepdf.fx.signature.SignatureVerifier.verifyAll(document);
+                found = SignatureVerifier.verifyAll(document);
             } catch (RuntimeException e) {
                 found = List.of();
             }
-            List<org.icepdf.fx.signature.SignatureStatus> done = found;
+            List<SignatureStatus> done = found;
             Platform.runLater(() -> {
                 if (generation == signatureGeneration && document == getDocument()) {
                     signatures.setAll(done);
@@ -1500,15 +1537,8 @@ public class PdfView extends Control {
         return result;
     }
 
-    /** Opens the signature properties dialog (verdict, checks, certificate chain). */
-    public void showSignatureProperties(org.icepdf.fx.signature.SignatureStatus status) {
-        if (status == null) return;
-        new org.icepdf.fx.signature.SignaturePropertiesDialog(getScene() != null ? getScene().getWindow() : null,
-                status).showAndWait();
-    }
-
     /** Scrolls a signature field into view (its page becomes current in the single-page modes). */
-    public void revealSignature(org.icepdf.fx.signature.SignatureStatus status) {
+    public void revealSignature(SignatureStatus status) {
         if (status == null || status.pageIndex() < 0 || status.pageIndex() >= getPageCount()) return;
         java.awt.geom.Rectangle2D r = status.widget().getUserSpaceRectangle();
         if (!getViewMode().isContinuous()) setCurrentPageIndex(status.pageIndex());
@@ -1516,35 +1546,6 @@ public class PdfView extends Control {
     }
 
     // ---- printing -------------------------------------------------------------------------
-
-    /**
-     * Shows the print dialog for the document and prints what the user chooses.
-     *
-     * @return the running print task (progress, cancel), or empty if the user cancelled, there is no
-     * document, or it doesn't permit printing
-     */
-    public Optional<javafx.concurrent.Task<Void>> showPrintDialog() {
-        return showPrintDialog(null);
-    }
-
-    /**
-     * Shows the print dialog, letting the application set it up first - start it from remembered
-     * choices ({@link org.icepdf.fx.print.PdfPrintDialog#setDefaults}), offer other printers, or
-     * watch its result to remember what was chosen.
-     *
-     * @param customize called with the dialog before it shows; may be null
-     * @see #showPrintDialog()
-     */
-    public Optional<javafx.concurrent.Task<Void>> showPrintDialog(
-            java.util.function.Consumer<org.icepdf.fx.print.PdfPrintDialog> customize) {
-        Document document = getDocument();
-        if (document == null || !isPrintAllowed()) return Optional.empty();
-        org.icepdf.fx.print.PdfPrintDialog dialog = new org.icepdf.fx.print.PdfPrintDialog(
-                getScene() != null ? getScene().getWindow() : null, document, getCurrentPageIndex());
-        dialog.setLowResolutionOnly(lowResolutionPrintOnly);
-        if (customize != null) customize.accept(dialog);
-        return dialog.showAndWait().map(this::print);
-    }
 
     /**
      * Prints the document on a background thread.  Pages are painted under the same lock as
@@ -1555,24 +1556,24 @@ public class PdfView extends Control {
      * the job (pages already sent may still print)
      * @throws IllegalStateException with no document, or one that doesn't permit printing
      */
-    public javafx.concurrent.Task<Void> print(org.icepdf.fx.print.PrintSettings settings) {
+    public Task<Void> print(PrintSettings settings) {
         Document document = getDocument();
         if (document == null || !isPrintAllowed()) {
             throw new IllegalStateException(Messages.get("pdfView.cannotPrint"));
         }
-        if (lowResolutionPrintOnly) {
+        if (!isHighQualityPrintAllowed()) {
             settings = settings.copy();
             settings.setLowResolution(true);
         }
-        org.icepdf.fx.print.DocumentPrinter printer = new org.icepdf.fx.print.DocumentPrinter(document, settings);
+        DocumentPrinter printer = new DocumentPrinter(document, settings);
         if (getSkin() instanceof PdfViewSkin skin) printer.setPageLock(skin.annotationLocker()::withAnnotationLock);
-        javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {
+        Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
                 updateMessage(Messages.get("pdfView.printing"));
-                printer.print((page, total) -> {
-                    updateProgress(page - 1, total);
-                    updateMessage(Messages.format("pdfView.printingPage", page, total));
+                printer.print((index, total) -> {
+                    updateProgress(index, total);
+                    updateMessage(Messages.format("pdfView.printingPage", index + 1, total));
                 });
                 updateProgress(1, 1);
                 updateMessage(Messages.get(printer.isCancelled() ? "pdfView.printCancelled" : "pdfView.printed"));
@@ -1600,7 +1601,7 @@ public class PdfView extends Control {
     }
 
     /** A field created in this view (the signature tool), listed until the next check. */
-    void addSignatureStatus(org.icepdf.fx.signature.SignatureStatus status) {
+    void addSignatureStatus(SignatureStatus status) {
         signatures.add(status);
     }
 
@@ -1612,7 +1613,8 @@ public class PdfView extends Control {
         annotationEditingAllowed.set(annotate);
         formFillingAllowed.set(annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
         printAllowed.set(doc != null && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT)));
-        lowResolutionPrintOnly = permissions != null && !permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY);
+        highQualityPrintAllowed.set(printAllowed.get()
+                && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY)));
         if (!toolPermitted(getToolMode())) setToolMode(ToolMode.TEXT_SELECT);
     }
 }

@@ -23,9 +23,9 @@ import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
  * A form field's value changed ({@link PdfView#setOnFormFieldChanged}): by the user, by
  * {@link PdfView#setFieldValue}, by a reset, or by undo/redo (old and new swapped).
  */
-public class FormFieldChangeEvent extends PdfViewEvent {
+public class FormFieldEvent extends PdfViewEvent {
 
-    public static final EventType<FormFieldChangeEvent> FIELD_CHANGED =
+    public static final EventType<FormFieldEvent> FIELD_CHANGED =
             new EventType<>(PdfViewEvent.ANY, "FIELD_CHANGED");
 
     private final transient AbstractWidgetAnnotation field;
@@ -33,8 +33,8 @@ public class FormFieldChangeEvent extends PdfViewEvent {
     private final transient Object oldValue;
     private final transient Object newValue;
 
-    public FormFieldChangeEvent(Object source, EventTarget target, AbstractWidgetAnnotation field, String name,
-                                Object oldValue, Object newValue) {
+    public FormFieldEvent(Object source, EventTarget target, AbstractWidgetAnnotation field, String name,
+                          Object oldValue, Object newValue) {
         super(source, target, FIELD_CHANGED);
         this.field = field;
         this.name = name;
@@ -62,6 +62,6 @@ public class FormFieldChangeEvent extends PdfViewEvent {
 
     @Override
     public String toString() {
-        return "FormFieldChangeEvent[name=" + name + ", oldValue=" + oldValue + ", newValue=" + newValue + "]";
+        return "FormFieldEvent[name=" + name + ", oldValue=" + oldValue + ", newValue=" + newValue + "]";
     }
 }

@@ -953,7 +953,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         // after the gesture: a modal dialog opened inside a mouse handler takes the release.
         Platform.runLater(() -> {
             if (handled) view.fireEvent(new SignatureEvent(view, view, status));
-            else if (status.isSigned()) view.showSignatureProperties(status);
+            else org.icepdf.fx.signature.SignaturePropertiesDialog.show(view, status);
         });
     }
 

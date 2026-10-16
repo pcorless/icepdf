@@ -59,12 +59,9 @@ public final class ViewerPreferences {
     public static final String WINDOW_HEIGHT = "window.height";
     public static final String WINDOW_MAXIMIZED = "window.maximized";
     public static final String SIDE_PANEL_VISIBLE = "sidePanel.visible";
-    public static final String SIDE_PANEL_DIVIDER = "sidePanel.divider";
-    public static final String SIDE_PANEL_TAB = "sidePanel.tab";
     public static final String VIEW_MODE = "view.mode";
     public static final String FIT_MODE = "view.fit";
     public static final String ZOOM = "view.zoom";
-    public static final String PAGE_GAP = "view.pageGap";
     public static final String VERIFY_SIGNATURES = "signatures.verifyOnOpen";
     public static final String ANNOTATION_AUTHOR = "annotation.author";
     public static final String ANNOTATION_COLOR = "annotation.color";
@@ -87,7 +84,6 @@ public final class ViewerPreferences {
     public static final String SEARCH_FORMS = "search.forms";
     public static final String SEARCH_OUTLINES = "search.outlines";
     public static final String SEARCH_DESTINATIONS = "search.destinations";
-    public static final String FONT_CACHE = "fonts.cache";
     /** Core's image reference type, an {@code ImageReferenceFactory} key; applies to documents opened after. */
     public static final String IMAGE_REFERENCE = "imaging.imageReference";
     /** Whether core draws shrunk images from a box-filtered mip level (default true). */
@@ -232,6 +228,26 @@ public final class ViewerPreferences {
         StringBuilder joined = new StringBuilder();
         for (java.awt.Color c : colors) joined.append(c.getRGB() & 0xFFFFFF).append(' ');
         put(RECENT_COLORS, joined.toString().trim());
+    }
+
+    /** The choices of the last print (the {@code print.*} keys), or null if none are stored. */
+    public org.icepdf.fx.print.PrintDefaults getPrintDefaults() {
+        // every print stores PRINT_ANNOTATIONS; the other keys may be absent (system defaults).
+        if (properties.getProperty(PRINT_ANNOTATIONS) == null) return null;
+        return new org.icepdf.fx.print.PrintDefaults(get(PRINT_PRINTER, null), get(PRINT_PAPER, null),
+                getEnum(PRINT_SCALING, org.icepdf.fx.print.PrintSettings.Scaling.class, null),
+                getEnum(PRINT_ORIENTATION, org.icepdf.fx.print.PrintSettings.Orientation.class, null),
+                get(PRINT_SIDES, null), getBoolean(PRINT_ANNOTATIONS, true));
+    }
+
+    /** Stores a print's choices for {@link #getPrintDefaults()}; call {@link #save()} to write them. */
+    public void setPrintDefaults(org.icepdf.fx.print.PrintDefaults defaults) {
+        put(PRINT_PRINTER, defaults.printer());
+        put(PRINT_PAPER, defaults.paper());
+        putEnum(PRINT_SCALING, defaults.scaling());
+        putEnum(PRINT_ORIENTATION, defaults.orientation());
+        put(PRINT_SIDES, defaults.sides());
+        putBoolean(PRINT_ANNOTATIONS, defaults.annotations());
     }
 
     public void clearRecentFiles() {

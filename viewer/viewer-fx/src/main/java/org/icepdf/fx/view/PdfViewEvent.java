@@ -25,7 +25,7 @@ import javafx.event.EventType;
  * above it.  Fired on the FX thread.
  * <ul>
  *     <li>{@link AnnotationActionEvent#ANNOTATION_ACTION}: an action the view leaves to the application;</li>
- *     <li>{@link FormFieldChangeEvent#FIELD_CHANGED}: a form field's value changed;</li>
+ *     <li>{@link FormFieldEvent#FIELD_CHANGED}: a form field's value changed;</li>
  *     <li>{@link SignatureEvent#SIGNATURE_CLICKED}: a signature field or badge was clicked;</li>
  *     <li>{@link #ANNOTATIONS_CHANGED}: an annotation or field was added, removed or edited through
  *     the view (including undo and redo).</li>

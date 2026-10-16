@@ -117,6 +117,10 @@ public final class DocumentSession {
         return writing.getReadOnlyProperty();
     }
 
+    public boolean isWriting() {
+        return writing.get();
+    }
+
     /** The file being read (absolute), or null when nothing is loading. */
     public ReadOnlyObjectProperty<Path> loadingFileProperty() {
         return loadingFile.getReadOnlyProperty();
@@ -154,14 +158,17 @@ public final class DocumentSession {
         this.onLoaded = onLoaded != null ? onLoaded : path -> { };
     }
 
-    /** True when the open document has changes not yet saved. */
-    public boolean hasUnsavedChanges() {
+    /**
+     * True when the open document has changes not yet saved; read from the document, so it is current
+     * even before {@link PdfView#modifiedProperty()} is refreshed.
+     */
+    public boolean isModified() {
         return document != null && document.getStateManager().hasUnsavedUserChanges();
     }
 
     /** Asks about unsaved changes (when there are any); true to go ahead. */
     public boolean confirmDiscard() {
-        return !hasUnsavedChanges() || confirmDiscard.getAsBoolean();
+        return !isModified() || confirmDiscard.getAsBoolean();
     }
 
     /**
@@ -183,7 +190,7 @@ public final class DocumentSession {
 
     /**
      * Starts opening a file without asking about unsaved changes - for a file that replaces the
-     * open one (a signed copy, say) - at {@code page} when that's >= 0.
+     * open one (a signed copy, say) - at the zero-based page index {@code page} when that's >= 0.
      */
     public void openAt(Path path, int page) {
         openAt(path, page, ok -> { });

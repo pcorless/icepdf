@@ -16,6 +16,7 @@
 package org.icepdf.fx.ri.actions.document;
 
 import javafx.beans.value.ObservableBooleanValue;
+import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.Conditions;
 import org.icepdf.fx.ri.actions.ViewerContext;
@@ -36,6 +37,6 @@ public final class PrintAction extends AbstractViewerAction {
 
     @Override
     public void execute(ViewerContext context) {
-        context.view().showPrintDialog(context::customisePrintDialog).ifPresent(context::printStarted);
+        PdfPrintDialog.show(context.view(), context::customisePrintDialog).ifPresent(context::printStarted);
     }
 }

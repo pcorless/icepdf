@@ -888,7 +888,7 @@ public final class PdfViewSmoke {
 
     /** The public form API (step 5): change events, values by name, reset. */
     private void checkFormApi() throws Exception {
-        java.util.List<org.icepdf.fx.view.FormFieldChangeEvent> events = new java.util.ArrayList<>();
+        java.util.List<org.icepdf.fx.view.FormFieldEvent> events = new java.util.ArrayList<>();
         fx(() -> view.setOnFormFieldChanged(events::add));
 
         org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation name = widgets("name").get(0);

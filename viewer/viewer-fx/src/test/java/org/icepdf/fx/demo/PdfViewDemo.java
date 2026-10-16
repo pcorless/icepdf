@@ -38,6 +38,8 @@ import org.icepdf.core.pobjects.PRectangle;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.search.SearchTerm;
+import org.icepdf.fx.print.PdfPrintDialog;
+import org.icepdf.fx.signature.SignaturePropertiesDialog;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
 import org.icepdf.fx.view.PasswordPrompt;
@@ -88,7 +90,7 @@ public class PdfViewDemo extends Application {
         // signed fields show their properties; empty ones (clicked, or drawn with the signature tool)
         // are signed: the sign dialog, then save to a new file, which core signs as it writes.
         view.setOnSignatureClicked(event -> {
-            if (event.getStatus().isSigned()) view.showSignatureProperties(event.getStatus());
+            if (event.getStatus().isSigned()) SignaturePropertiesDialog.show(view, event.getStatus());
             else sign(event.getStatus().widget());
         });
         view.setOnAnnotationAction(event -> {
@@ -474,7 +476,7 @@ public class PdfViewDemo extends Application {
         list.getSelectionModel().selectedItemProperty().addListener((obs, was, now) -> view.revealSignature(now));
         list.setOnMouseClicked(e -> {
             if (e.getClickCount() == 2 && list.getSelectionModel().getSelectedItem() != null) {
-                view.showSignatureProperties(list.getSelectionModel().getSelectedItem());
+                SignaturePropertiesDialog.show(view, list.getSelectionModel().getSelectedItem());
             }
         });
         panel.selectedProperty().addListener((obs, was, now) -> root.setLeft(now ? list : null));
@@ -514,7 +516,7 @@ public class PdfViewDemo extends Application {
 
     /** Print dialog, then the job in the background with its progress in the status bar. */
     private void print() {
-        view.showPrintDialog().ifPresent(task -> {
+        PdfPrintDialog.show(view, null).ifPresent(task -> {
             printStatus.textProperty().bind(task.messageProperty());
             task.setOnFailed(e -> {
                 printStatus.textProperty().unbind();

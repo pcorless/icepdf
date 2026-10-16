@@ -85,6 +85,14 @@ public class ThumbnailPanel extends BorderPane {
         return thumbnailWidth;
     }
 
+    public final double getThumbnailWidth() {
+        return thumbnailWidth.get();
+    }
+
+    public final void setThumbnailWidth(double width) {
+        thumbnailWidth.set(width);
+    }
+
     /** Stops the background renderer; call when the panel is thrown away. */
     public void dispose() {
         thumbnails.shutdown();

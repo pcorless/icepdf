@@ -48,6 +48,16 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
             "data encipherment", "key agreement", "certificate signing", "CRL signing", "encipher only",
             "decipher only"};
 
+    /**
+     * Shows the details of a signature, modal to the window of {@code owner} (may be null); does
+     * nothing for a status that isn't signed.
+     */
+    public static void show(javafx.scene.Node owner, SignatureStatus status) {
+        if (status == null || !status.isSigned()) return;
+        Window window = owner != null && owner.getScene() != null ? owner.getScene().getWindow() : null;
+        new SignaturePropertiesDialog(window, status).showAndWait();
+    }
+
     public SignaturePropertiesDialog(Window owner, SignatureStatus status) {
         if (owner != null) initOwner(owner);
         setTitle(Messages.get("signatureProperties.title"));

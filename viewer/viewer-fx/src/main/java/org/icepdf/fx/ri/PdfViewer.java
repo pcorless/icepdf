@@ -108,6 +108,7 @@ public class PdfViewer extends StackPane {
         }
     };
     private SigningStore signingStore = SigningStore.inMemory();
+    private PrintStore printStore = PrintStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu(Messages.get("viewer.openRecent"));
     private Consumer<String> onLink;
@@ -409,7 +410,7 @@ public class PdfViewer extends StackPane {
     public boolean removeDocument(DocumentPane pane) {
         if (!documents.contains(pane)) return false;
         // the prompt is about the selected document: show the one being asked about.
-        if (pane.getSession().hasUnsavedChanges()) selectDocument(pane);
+        if (pane.getSession().isModified()) selectDocument(pane);
         if (!pane.getSession().confirmDiscard()) return false;
         if (documents.size() == 1) {
             pane.getSession().close();
@@ -679,7 +680,7 @@ public class PdfViewer extends StackPane {
             case COMMENTS -> pane.getComments().hasCommentsProperty();
             case ATTACHMENTS -> pane.getAttachments().hasAttachmentsProperty();
             case LAYERS -> pane.getLayers().hasLayersProperty();
-            case SIGNATURES -> pane.getSignatures().hasSignaturesBinding();
+            case SIGNATURES -> pane.getSignatures().hasSignaturesProperty();
             default -> pane.getView().documentProperty().isNotNull();
         };
     }
@@ -754,6 +755,11 @@ public class PdfViewer extends StackPane {
         this.signingStore = signingStore != null ? signingStore : SigningStore.inMemory();
     }
 
+    /** Remembers the printer, paper and layout chosen for the last print; the print dialog starts from them. */
+    public void setPrintStore(PrintStore printStore) {
+        this.printStore = printStore != null ? printStore : PrintStore.inMemory();
+    }
+
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */
     public void setFileHistory(FileHistory history) {
         this.history = history;
@@ -816,7 +822,7 @@ public class PdfViewer extends StackPane {
 
     /** True if any document has unsaved changes. */
     public boolean hasUnsavedChanges() {
-        return documents.stream().anyMatch(d -> d.getSession().hasUnsavedChanges());
+        return documents.stream().anyMatch(d -> d.getSession().isModified());
     }
 
     /**
@@ -826,7 +832,7 @@ public class PdfViewer extends StackPane {
      */
     public boolean confirmClose() {
         for (DocumentPane pane : new java.util.ArrayList<>(documents)) {
-            if (!pane.getSession().hasUnsavedChanges()) continue;
+            if (!pane.getSession().isModified()) continue;
             selectDocument(pane);
             if (!pane.getSession().confirmDiscard()) return false;
         }
@@ -844,8 +850,17 @@ public class PdfViewer extends StackPane {
         documents.forEach(d -> d.getSession().setConfirmDiscard(confirm));
     }
 
-    public BooleanProperty fullScreenProperty() {
+    /** True while the viewer presents the document full screen: one fitted page on black, chrome hidden. */
+    public final BooleanProperty fullScreenProperty() {
         return fullScreen;
+    }
+
+    public final boolean isFullScreen() {
+        return fullScreen.get();
+    }
+
+    public final void setFullScreen(boolean value) {
+        fullScreen.set(value);
     }
 
     /** Closes the document without asking and stops background work. */
@@ -1159,6 +1174,10 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void customisePrintDialog(PdfPrintDialog dialog) {
+            dialog.setDefaults(printStore.load());
+            dialog.resultProperty().addListener((obs, was, settings) -> {
+                if (settings != null) printStore.save(org.icepdf.fx.print.PrintDefaults.of(settings));
+            });
         }
 
         FileChooser chooser(String title) {

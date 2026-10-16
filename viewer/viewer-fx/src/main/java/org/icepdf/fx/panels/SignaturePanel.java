@@ -18,7 +18,8 @@ package org.icepdf.fx.panels;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -26,6 +27,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import org.icepdf.fx.signature.SignatureIcons;
+import org.icepdf.fx.signature.SignaturePropertiesDialog;
 import org.icepdf.fx.signature.SignatureStatus;
 import org.icepdf.fx.view.PdfView;
 
@@ -38,7 +40,7 @@ import java.text.DateFormat;
 public class SignaturePanel extends BorderPane {
 
     private final ListView<SignatureStatus> list = new ListView<>();
-    private final BooleanBinding hasSignatures;
+    private final ReadOnlyBooleanWrapper hasSignatures = new ReadOnlyBooleanWrapper(this, "hasSignatures");
 
     public SignaturePanel(PdfView view) {
         getStyleClass().add("signature-panel");
@@ -68,18 +70,22 @@ public class SignaturePanel extends BorderPane {
         });
         list.setOnMouseClicked(e -> {
             SignatureStatus selected = list.getSelectionModel().getSelectedItem();
-            if (e.getClickCount() == 2 && selected != null && selected.isSigned()) view.showSignatureProperties(selected);
+            if (e.getClickCount() == 2 && selected != null && selected.isSigned()) SignaturePropertiesDialog.show(view, selected);
         });
         Label empty = new Label(Messages.get("signaturePanel.empty"));
         empty.setWrapText(true);
         empty.setPadding(new Insets(8));
         list.setPlaceholder(empty);
         setCenter(list);
-        hasSignatures = Bindings.isNotEmpty(view.getSignatures());
+        hasSignatures.bind(Bindings.isNotEmpty(view.getSignatures()));
     }
 
     /** True when the document has signature fields. */
-    public final BooleanBinding hasSignaturesBinding() {
-        return hasSignatures;
+    public final ReadOnlyBooleanProperty hasSignaturesProperty() {
+        return hasSignatures.getReadOnlyProperty();
+    }
+
+    public final boolean hasSignatures() {
+        return hasSignatures.get();
     }
 }

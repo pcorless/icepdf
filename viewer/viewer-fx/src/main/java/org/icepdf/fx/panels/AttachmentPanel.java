@@ -136,6 +136,10 @@ public class AttachmentPanel extends BorderPane {
         onOpen.set(handler);
     }
 
+    public final Consumer<Attachment> getOnOpen() {
+        return onOpen.get();
+    }
+
     private void onDocument(Document document) {
         var attachments = Attachment.of(document);
         list.setItems(FXCollections.observableArrayList(attachments));

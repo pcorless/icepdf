@@ -91,6 +91,19 @@ public class ViewerApp extends Application {
         }
     };
 
+    private final org.icepdf.fx.ri.PrintStore printStore = new org.icepdf.fx.ri.PrintStore() {
+        @Override
+        public org.icepdf.fx.print.PrintDefaults load() {
+            return preferences.getPrintDefaults();
+        }
+
+        @Override
+        public void save(org.icepdf.fx.print.PrintDefaults defaults) {
+            preferences.setPrintDefaults(defaults);
+            preferences.save();
+        }
+    };
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -198,6 +211,7 @@ public class ViewerApp extends Application {
         viewer.setFileHistory(history);
         viewer.setColorHistory(colorHistory);
         viewer.setSigningStore(signing);
+        viewer.setPrintStore(printStore);
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));

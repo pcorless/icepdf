@@ -125,7 +125,9 @@ public final class AnnotationContextMenu {
     }
 
     private static void apply(PdfView view, Annotation annotation, ColorHistory colors, java.awt.Color color) {
-        view.setAnnotationColor(annotation, color);
+        if (AnnotationProperties.hasColor(annotation)) {
+            view.applyAnnotationProperties(annotation, AnnotationProperties.ofColor(color));
+        }
         if (colors != null) colors.used(color);
     }
 

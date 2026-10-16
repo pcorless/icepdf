@@ -70,10 +70,11 @@ public class DocumentPrinter {
     @FunctionalInterface
     public interface Progress {
         /**
-         * @param page  one-based number of the page being printed, within this job
+         * @param index zero-based position of the page being printed within this job (not its page
+         *              index in the document)
          * @param total pages in the job (one copy)
          */
-        void printing(int page, int total);
+        void printing(int index, int total);
     }
 
     private final Document document;
@@ -264,7 +265,7 @@ public class DocumentPrinter {
             // Java2D may call this more than once per page (a measuring pass, then bands).
             if (jobIndex != reported) {
                 reported = jobIndex;
-                if (progress != null) progress.printing(jobIndex + 1, pages.length);
+                if (progress != null) progress.printing(jobIndex, pages.length);
             }
             int pageIndex = pages[jobIndex];
             Page page = document.getPageTree().getPage(pageIndex);

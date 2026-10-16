@@ -168,8 +168,9 @@ view.resetForm();
 - text: search (`search`, `nextSearchHit`), selection and copy (`selectAll`, `copySelection`);
 - annotations: create, move, resize and delete annotations, with `undo`/`redo`;
 - forms: Tab order between fields (`focusNextField`, `highlightFormFields`);
-- printing: `showPrintDialog()` (a JavaFX dialog with a page preview) or `print(PrintSettings)`
-  with no dialog; pages print as vectors through Java2D (`org.icepdf.fx.print`);
+- printing: `PdfPrintDialog.show(view, null)` (a JavaFX dialog with a page preview) or
+  `view.print(PrintSettings)` with no dialog; pages print as vectors through Java2D
+  (`org.icepdf.fx.print`);
 - signatures: checked when a document opens (off the FX thread); `getSignatures()` lists each
   field's `SignatureStatus` (valid / unknown identity / invalid, the checks, the certificate chain),
   signed fields get a validity badge, and a click opens `SignaturePropertiesDialog` or your

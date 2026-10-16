@@ -99,8 +99,8 @@ class DocumentPrinterTest {
             settings.setPrinter(service);
             settings.setPages(new int[]{0, 0, 0});
             List<String> progress = new ArrayList<>();
-            new DocumentPrinter(document, settings).print((page, total) -> progress.add(page + "/" + total));
-            assertEquals(List.of("1/3", "2/3", "3/3"), progress);
+            new DocumentPrinter(document, settings).print((index, total) -> progress.add(index + "/" + total));
+            assertEquals(List.of("0/3", "1/3", "2/3"), progress);
         } finally {
             document.dispose();
         }

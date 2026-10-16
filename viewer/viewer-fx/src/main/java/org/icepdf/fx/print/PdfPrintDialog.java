@@ -18,6 +18,7 @@ package org.icepdf.fx.print;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -36,6 +37,7 @@ import javafx.stage.Window;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.fx.view.PdfView;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -53,8 +55,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * A JavaFX print dialog: printer, pages, copies, paper, sizing, orientation, two-sided and
@@ -137,6 +141,25 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
         setResultConverter(button -> button == print ? settings() : null);
         setOnHidden(e -> renderer.shutdownNow());
         lookUpPrinters();
+    }
+
+    /**
+     * Shows the print dialog for a view's document and prints what the user chooses with
+     * {@link PdfView#print}.
+     *
+     * @param customize called with the dialog before it shows - start it from remembered choices
+     *                  ({@link #setDefaults}), or watch its result to remember them; may be null
+     * @return the running print task (progress, cancel), or empty if the user cancelled, there is no
+     * document, or it doesn't permit printing
+     */
+    public static Optional<Task<Void>> show(PdfView view, Consumer<PdfPrintDialog> customize) {
+        Document document = view.getDocument();
+        if (document == null || !view.isPrintAllowed()) return Optional.empty();
+        PdfPrintDialog dialog = new PdfPrintDialog(view.getScene() != null ? view.getScene().getWindow() : null,
+                document, view.getCurrentPageIndex());
+        dialog.setLowResolutionOnly(!view.isHighQualityPrintAllowed());
+        if (customize != null) customize.accept(dialog);
+        return dialog.showAndWait().map(view::print);
     }
 
     /**

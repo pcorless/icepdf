@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.fx.ri.SigningStore;
 import org.icepdf.fx.signature.DocumentSigning;
 import org.icepdf.fx.signature.SignDialog;
+import org.icepdf.fx.signature.SignaturePropertiesDialog;
 import org.icepdf.fx.signature.SigningSettings;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.SignatureEvent;
@@ -74,7 +75,7 @@ public final class SignatureFlow {
 
     /** A click on a signature field (or one just drawn): sign an empty one, show a signed one's properties. */
     public void handle(SignatureEvent event) {
-        if (event.getStatus().isSigned()) session.getView().showSignatureProperties(event.getStatus());
+        if (event.getStatus().isSigned()) SignaturePropertiesDialog.show(session.getView(), event.getStatus());
         else sign(event.getStatus().widget());
     }
 

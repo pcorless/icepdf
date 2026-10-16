@@ -16,6 +16,8 @@
 package org.icepdf.fx.panels;
 
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
@@ -61,7 +63,7 @@ public final class CollectionView extends ScrollPane {
         thread.setPriority(Thread.NORM_PRIORITY - 1);
         return thread;
     });
-    private Consumer<Attachment> onOpen;
+    private final ObjectProperty<Consumer<Attachment>> onOpen = new SimpleObjectProperty<>(this, "onOpen");
     private int version;
 
     public CollectionView() {
@@ -82,8 +84,16 @@ public final class CollectionView extends ScrollPane {
     }
 
     /** Called with the attachment a tile was double-clicked on. */
-    public void setOnOpen(Consumer<Attachment> onOpen) {
-        this.onOpen = onOpen;
+    public final ObjectProperty<Consumer<Attachment>> onOpenProperty() {
+        return onOpen;
+    }
+
+    public final void setOnOpen(Consumer<Attachment> handler) {
+        onOpen.set(handler);
+    }
+
+    public final Consumer<Attachment> getOnOpen() {
+        return onOpen.get();
     }
 
     public void setDocument(Document document) {
@@ -105,7 +115,7 @@ public final class CollectionView extends ScrollPane {
             VBox tile = new VBox(6, frame, name);
             tile.setAlignment(Pos.TOP_CENTER);
             tile.setOnMouseClicked(e -> {
-                if (e.getClickCount() == 2 && onOpen != null) onOpen.accept(attachment);
+                if (e.getClickCount() == 2 && onOpen.get() != null) onOpen.get().accept(attachment);
             });
             tiles.getChildren().add(tile);
             if (attachment.isPdf()) {

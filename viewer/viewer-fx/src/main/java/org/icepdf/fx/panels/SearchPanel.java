@@ -243,12 +243,36 @@ public class SearchPanel extends BorderPane {
         return caseSensitive;
     }
 
+    public final boolean isCaseSensitive() {
+        return caseSensitive.get();
+    }
+
+    public final void setCaseSensitive(boolean value) {
+        caseSensitive.set(value);
+    }
+
     public final BooleanProperty wholeWordProperty() {
         return wholeWord;
     }
 
+    public final boolean isWholeWord() {
+        return wholeWord.get();
+    }
+
+    public final void setWholeWord(boolean value) {
+        wholeWord.set(value);
+    }
+
     public final BooleanProperty regexProperty() {
         return regex;
+    }
+
+    public final boolean isRegex() {
+        return regex.get();
+    }
+
+    public final void setRegex(boolean value) {
+        regex.set(value);
     }
 
     /** Accent-insensitive matching ("resume" finds "résumé"); on by default.  Ignored for regex. */
@@ -256,25 +280,73 @@ public class SearchPanel extends BorderPane {
         return foldAccents;
     }
 
+    public final boolean isFoldAccents() {
+        return foldAccents.get();
+    }
+
+    public final void setFoldAccents(boolean value) {
+        foldAccents.set(value);
+    }
+
     /** Each search adds its term to the previous ones instead of replacing them. */
     public final BooleanProperty cumulativeProperty() {
         return cumulative;
+    }
+
+    public final boolean isCumulative() {
+        return cumulative.get();
+    }
+
+    public final void setCumulative(boolean value) {
+        cumulative.set(value);
     }
 
     public final BooleanProperty commentsProperty() {
         return comments;
     }
 
+    public final boolean isComments() {
+        return comments.get();
+    }
+
+    public final void setComments(boolean value) {
+        comments.set(value);
+    }
+
     public final BooleanProperty formFieldsProperty() {
         return formFields;
+    }
+
+    public final boolean isFormFields() {
+        return formFields.get();
+    }
+
+    public final void setFormFields(boolean value) {
+        formFields.set(value);
     }
 
     public final BooleanProperty outlinesProperty() {
         return outlines;
     }
 
+    public final boolean isOutlines() {
+        return outlines.get();
+    }
+
+    public final void setOutlines(boolean value) {
+        outlines.set(value);
+    }
+
     public final BooleanProperty destinationsProperty() {
         return destinations;
+    }
+
+    public final boolean isDestinations() {
+        return destinations.get();
+    }
+
+    public final void setDestinations(boolean value) {
+        destinations.set(value);
     }
 
     /** Puts the caret in the query field. */
@@ -515,8 +587,12 @@ public class SearchPanel extends BorderPane {
     // ---- status ---------------------------------------------------------------------------
 
     /** Whether the panel offers Redact All (true by default); a viewer without redaction turns it off. */
-    public final javafx.beans.property.BooleanProperty redactionEnabledProperty() {
+    public final BooleanProperty redactionEnabledProperty() {
         return redactionEnabled;
+    }
+
+    public final boolean isRedactionEnabled() {
+        return redactionEnabled.get();
     }
 
     public final void setRedactionEnabled(boolean value) {
