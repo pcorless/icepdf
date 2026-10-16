@@ -24,6 +24,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.fx.render.RenderService;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -36,18 +37,15 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Small page renderings for a thumbnail strip: painted on a background pool with core's page
- * painter, kept in a byte-bounded LRU, and handed back on the FX thread.  Requests for a document
+ * Small page renderings for a thumbnail strip: painted with core's page painter as
+ * {@link RenderService.Kind#THUMBNAIL THUMBNAIL} tasks on the shared render pool, behind the view's
+ * own tiles, kept in a byte-bounded LRU, and handed back on the FX thread.  Requests for a document
  * that has since been replaced, or for a {@link #invalidate() previous version} of its pages, are
  * dropped; a request whose every waiter has {@link #cancel cancelled} (its cells scrolled away) is
  * stopped, so flinging through a long strip doesn't queue a paint for every page passed.
@@ -57,7 +55,8 @@ final class PageThumbnails {
     private static final Logger logger = Logger.getLogger(PageThumbnails.class.getName());
     private static final long BUDGET_BYTES = 32L << 20;
 
-    private final ExecutorService pool = workerPool();
+    private final RenderService service;
+    private final RenderService.Owner owner;
     private final Map<Key, Image> cache = new LinkedHashMap<>(64, 0.75f, true);
     private long cacheBytes;
     private final Map<Key, Request> pending = new LinkedHashMap<>();
@@ -76,16 +75,10 @@ final class PageThumbnails {
         Future<?> future;
     }
 
-    private static ExecutorService workerPool() {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
-                runnable -> {
-                    Thread thread = new Thread(runnable, "icepdf-fx-thumbnails");
-                    thread.setDaemon(true);
-                    thread.setPriority(Thread.NORM_PRIORITY - 1);
-                    return thread;
-                });
-        pool.allowCoreThreadTimeOut(true);
-        return pool;
+    /** @param owner the strip's view, whose foreground status its thumbnails share */
+    PageThumbnails(RenderService service, RenderService.Owner owner) {
+        this.service = service;
+        this.owner = owner;
     }
 
     /** FX thread: switches document, dropping everything of the old one. */
@@ -99,7 +92,7 @@ final class PageThumbnails {
         version++;
         cache.clear();
         cacheBytes = 0;
-        pending.values().forEach(request -> request.future.cancel(true));
+        pending.values().forEach(request -> service.cancel(request.future));
         pending.clear();
         waiting.clear();
     }
@@ -125,7 +118,7 @@ final class PageThumbnails {
         request.waiters.add(ready);
         pending.put(key, request);
         Document doc = document;
-        request.future = pool.submit(() -> {
+        request.future = service.submit(owner, RenderService.Kind.THUMBNAIL, "p" + (page + 1) + " thumbnail", () -> {
             int[] pixels;
             int width, height;
             try {
@@ -141,7 +134,10 @@ final class PageThumbnails {
                     g.setColor(Color.WHITE);
                     g.fillRect(0, 0, width, height);
                     g.setClip(0, 0, width, height);
-                    p.paint(g, GraphicsRenderingHints.SCREEN, boundary, rotation, zoom, true, false);
+                    service.paint(() -> {
+                        p.paint(g, GraphicsRenderingHints.SCREEN, boundary, rotation, zoom, true, false);
+                        return null;
+                    });
                 } finally {
                     g.dispose();
                 }
@@ -180,7 +176,7 @@ final class PageThumbnails {
         if (request == null) return;
         request.waiters.remove(ready);
         if (request.waiters.isEmpty()) {
-            request.future.cancel(true);
+            service.cancel(request.future);
             pending.remove(key);
         }
     }
@@ -197,9 +193,8 @@ final class PageThumbnails {
         }
     }
 
-    /** Stops the pool; nothing more is rendered. */
-    void shutdown() {
+    /** Cancels everything queued; the pool's threads are shared and stay. */
+    void dispose() {
         invalidate();
-        pool.shutdownNow();
     }
 }
