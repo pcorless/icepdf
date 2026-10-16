@@ -21,11 +21,11 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
+import org.icepdf.fx.render.RenderService;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.IntPredicate;
 import java.util.logging.Level;
@@ -42,6 +42,11 @@ import java.util.logging.Logger;
  * Only what is wanted is kept: a selection is just offsets ({@code DocumentSelection}), so a page's
  * text can be dropped when it scrolls away and reloaded when it returns - nothing needs pinning.
  * Requests, results and retention are confined to the FX thread.
+ * <p>
+ * Loads run as {@link RenderService.Kind#TEXT TEXT} tasks on the shared render pool, so two of a
+ * page's loads (or a load and an extraction) may run on different threads at once.  That is safe:
+ * core builds a page's view text under {@code Page.init}'s lock and its sequence under
+ * {@code PageText.getTextSequence}'s, so each is built once and the other caller gets it.
  */
 final class PageTextLoader {
 
@@ -53,7 +58,8 @@ final class PageTextLoader {
     }
 
     private final Sink sink;
-    private final ExecutorService executor = TileRenderer.workerPool("icepdf-fx-text", 1);
+    private final RenderService service;
+    private final RenderService.Owner owner;
     // FX thread only.  A page with no text maps to Optional.empty(), so it isn't re-requested.
     private final Map<Integer, Optional<TextSequence>> loaded = new HashMap<>();
     private final Map<Integer, Future<?>> pending = new HashMap<>();
@@ -64,7 +70,9 @@ final class PageTextLoader {
     private final LinkedHashSet<Integer> extra = new LinkedHashSet<>();
     private Document document;
 
-    PageTextLoader(Sink sink) {
+    PageTextLoader(RenderService service, RenderService.Owner owner, Sink sink) {
+        this.service = service;
+        this.owner = owner;
         this.sink = sink;
     }
 
@@ -89,7 +97,8 @@ final class PageTextLoader {
         if (doc == null || loaded.containsKey(pageIndex) || pending.containsKey(pageIndex)
                 || failed.contains(pageIndex)) return;
         Future<?>[] self = new Future<?>[1];
-        Future<?> future = executor.submit(() -> load(doc, pageIndex, self));
+        Future<?> future = service.submit(owner, RenderService.Kind.TEXT, "p" + (pageIndex + 1) + " text",
+                () -> load(doc, pageIndex, self));
         self[0] = future;
         pending.put(pageIndex, future);
     }
@@ -107,22 +116,21 @@ final class PageTextLoader {
         IntPredicate keep = page -> wanted.test(page) || extra.contains(page);
         pending.entrySet().removeIf(e -> {
             if (keep.test(e.getKey())) return false;
-            e.getValue().cancel(true);
+            service.cancel(e.getValue());
             return true;
         });
         loaded.keySet().removeIf(page -> !keep.test(page));
     }
 
     /**
-     * Extracts a selection's text on the loader's worker, loading (and initialising) every page it
-     * spans - for select-all on a long document that is real work, hence asynchronous.  Runs on the
-     * same single thread as page loads, so a page's sequence is never built by two threads at once.
+     * Extracts a selection's text on the render pool, loading (and initialising) every page it
+     * spans - for select-all on a long document that is real work, hence asynchronous.
      */
     CompletableFuture<String> extractAsync(DocumentSelection selection) {
         Document doc = document;
         if (doc == null || selection == null) return CompletableFuture.completedFuture("");
         CompletableFuture<String> result = new CompletableFuture<>();
-        executor.submit(() -> {
+        service.submit(owner, RenderService.Kind.TEXT, "extract selection", () -> {
             try {
                 result.complete(selection.extractText(page -> {
                     try {
@@ -142,16 +150,11 @@ final class PageTextLoader {
     }
 
     void clear() {
-        pending.values().forEach(f -> f.cancel(true));
+        pending.values().forEach(service::cancel);
         pending.clear();
         loaded.clear();
         failed.clear();
         extra.clear();
-    }
-
-    void shutdown() {
-        clear();
-        executor.shutdownNow();
     }
 
     private void load(Document doc, int pageIndex, Future<?>[] self) {

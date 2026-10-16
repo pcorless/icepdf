@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.graphics.commands.BlendCompositeDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.DrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ShapesDrawCmd;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.icepdf.fx.render.RenderService;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -35,8 +36,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,7 +64,9 @@ import java.util.logging.Logger;
  * {@code -Dorg.icepdf.fx.view.singlePassAnnotations=true}
  * restores the single-pass render (annotations baked into the page tiles) for A/B comparison.
  * <p>
- * Requests, cancellation and delivery are all on the FX thread; only the paint runs on workers.
+ * Requests, cancellation and delivery are all on the FX thread; only the paint runs on workers,
+ * the process-wide {@link RenderService} pool shared with every other view.  Paints go through its
+ * out-of-memory gate.
  */
 final class TileRenderer {
 
@@ -127,8 +129,8 @@ final class TileRenderer {
     }
 
     private final Sink sink;
-    private final ExecutorService tileExecutor;
-    private final ExecutorService previewExecutor;
+    private final RenderService service;
+    private final RenderService.Owner owner;
     // FX thread only.
     private final Map<CacheKey, Job> inFlight = new HashMap<>();
     private final Set<Job> jobs = new HashSet<>();
@@ -139,11 +141,6 @@ final class TileRenderer {
     private final Map<CacheKey, Integer> outOfMemoryAttempts = new HashMap<>();
     /** How many times a key that runs out of memory is retried before it counts as failed. */
     static final int OOM_RETRIES = 3;
-    // after a render runs out of memory, paints (tiles and previews) run one at a time for the rest
-    // of the document: content like a dense vector map can need hundreds of MB per paint, and N
-    // render threads at once multiply that.
-    private volatile boolean lowMemory;
-    private final Semaphore serialPaint = new Semaphore(1);
     private volatile Document document;
     private volatile boolean paintAnnotations = true;
     // annotation rendering is serialised per page: render() may lazily build appearance state.
@@ -166,36 +163,14 @@ final class TileRenderer {
         PaintResult paint(Graphics2D g, Page page) throws InterruptedException;
     }
 
-    public TileRenderer(int threads, Sink sink) {
-        this.sink = sink;
-        tileExecutor = workerPool("icepdf-fx-tile", threads);
-        previewExecutor = workerPool("icepdf-fx-preview", 1);
-    }
-
     /**
-     * A fixed pool of low-priority daemon threads that exit when idle, so a view that is dropped
-     * without {@link PdfView#dispose()} doesn't keep its threads for the life of the process.
+     * @param service the pool to paint on
+     * @param owner   the view the work is for, which decides its priority
      */
-    static ExecutorService workerPool(String name, int threads) {
-        ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(), daemonThreads(name));
-        pool.allowCoreThreadTimeOut(true);
-        return pool;
-    }
-
-    /** Half the cores, 1 to 4: page paints are memory-bandwidth heavy and image decode shares the box. */
-    public static int defaultThreads() {
-        return Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
-    }
-
-    private static ThreadFactory daemonThreads(String name) {
-        AtomicInteger count = new AtomicInteger();
-        return r -> {
-            Thread t = new Thread(r, name + "-" + count.incrementAndGet());
-            t.setDaemon(true);
-            t.setPriority(Thread.NORM_PRIORITY - 1);
-            return t;
-        };
+    TileRenderer(RenderService service, RenderService.Owner owner, Sink sink) {
+        this.service = service;
+        this.owner = owner;
+        this.sink = sink;
     }
 
     /** Zoom at which a page's unrotated long side is {@code longSide} px: the preview's zoom. */
@@ -207,31 +182,7 @@ final class TileRenderer {
     /** Switches document, cancelling all work for the previous one. */
     public void setDocument(Document document) {
         cancelAll();
-        lowMemory = false;
         this.document = document;
-    }
-
-    /** Runs a paint, alone if an earlier one ran out of memory (see {@link #lowMemory}). */
-    private <T> T paintGated(Paint<T> paint) throws InterruptedException {
-        if (!lowMemory) {
-            try {
-                return paint.run();
-            } catch (OutOfMemoryError e) {
-                lowMemory = true;
-                throw e;
-            }
-        }
-        serialPaint.acquire();
-        try {
-            return paint.run();
-        } finally {
-            serialPaint.release();
-        }
-    }
-
-    @FunctionalInterface
-    private interface Paint<T> {
-        T run() throws InterruptedException;
     }
 
     /**
@@ -264,7 +215,7 @@ final class TileRenderer {
                     page.paint(g, GraphicsRenderingHints.SCREEN, params.boundary(), params.rotation(),
                             params.zoom(), annotations, false);
                     return PaintResult.ALL;
-                }, null);
+                }, null, RenderService.Kind.TILE, "tile");
     }
 
     /**
@@ -279,7 +230,8 @@ final class TileRenderer {
         submitRegions(pageIndex, grid, tiles,
                 t -> new CacheKey.AnnotationTile(pageIndex, params, layer, t.column(), t.row(), generation),
                 params, (g, page) -> paintAnnotations(g, page, pageIndex, params, layer, excluded),
-                () -> sink.annotationLayerEmpty(pageIndex, layer, generation));
+                () -> sink.annotationLayerEmpty(pageIndex, layer, generation),
+                RenderService.Kind.ANNOTATION, layer == CacheKey.AnnotationLayer.MULTIPLY ? "multiply" : "annotations");
     }
 
     private PaintResult paintAnnotations(Graphics2D g, Page page, int pageIndex, CacheKey.Params params,
@@ -359,7 +311,7 @@ final class TileRenderer {
                                        TileGrid.Region region, java.util.function.Consumer<RasterBuffer> ready) {
         Document doc = document;
         if (doc == null || region.isEmpty()) return;
-        tileExecutor.submit(() -> {
+        service.submit(owner, RenderService.Kind.ANNOTATION, "p" + (pageIndex + 1) + " drag proxy", () -> {
             try {
                 Page page = doc.getPageTree().getPage(pageIndex);
                 RasterBuffer buffer = new RasterBuffer(region.width(), region.height());
@@ -389,7 +341,8 @@ final class TileRenderer {
      */
     private void submitRegions(int pageIndex, TileGrid grid, List<TileGrid.Tile> tiles,
                                java.util.function.Function<TileGrid.Tile, CacheKey> keyOf, CacheKey.Params params,
-                               RegionPainter painter, Runnable onNothingToPaint) {
+                               RegionPainter painter, Runnable onNothingToPaint, RenderService.Kind kind,
+                               String what) {
         Document doc = document;
         if (doc == null || tiles.isEmpty()) return;
         int block = Math.max(1, MAX_REGION / grid.getTileSize());
@@ -405,8 +358,10 @@ final class TileRenderer {
             for (TileGrid.Tile t : blockTiles) keys.add(keyOf.apply(t));
             Job job = new Job(keys);
             TileGrid.Region region = TileGrid.union(blockTiles);
-            job.future = tileExecutor.submit(() -> renderRegion(doc, job, pageIndex, params, region, blockTiles,
-                    keys, painter, onNothingToPaint));
+            String label = "p" + (pageIndex + 1) + " " + what + " " + region.width() + "x" + region.height()
+                    + " (" + keys.size() + " tiles)";
+            job.future = service.submit(owner, kind, label, () -> renderRegion(doc, job, pageIndex, params, region,
+                    blockTiles, keys, painter, onNothingToPaint));
             track(job);
         }
     }
@@ -420,7 +375,8 @@ final class TileRenderer {
         CacheKey.Preview key = new CacheKey.Preview(pageIndex, boundary);
         if (doc == null || inFlight.containsKey(key) || failed.contains(key)) return;
         Job job = new Job(List.of(key));
-        job.future = previewExecutor.submit(() -> renderPreview(doc, job, key, longSide));
+        job.future = service.submit(owner, RenderService.Kind.PREVIEW, "p" + (pageIndex + 1) + " preview",
+                () -> renderPreview(doc, job, key, longSide));
         track(job);
     }
 
@@ -447,20 +403,14 @@ final class TileRenderer {
         outOfMemoryAttempts.clear();
     }
 
-    public void shutdown() {
-        cancelAll();
-        tileExecutor.shutdownNow();
-        previewExecutor.shutdownNow();
-    }
-
     private void track(Job job) {
         jobs.add(job);
         for (CacheKey k : job.keys) inFlight.put(k, job);
     }
 
     private void cancel(Job job) {
-        // interrupt: page.init and page.paint are interruptible.
-        job.future.cancel(true);
+        // interrupt: page.init and page.paint are interruptible.  Also leaves the queue.
+        service.cancel(job.future);
         untrack(job);
     }
 
@@ -484,7 +434,7 @@ final class TileRenderer {
                 g.setClip(0, 0, region.width(), region.height());
                 g.translate(-region.x(), -region.y());
                 g.scale(params.scale(), params.scale());
-                result = paintGated(() -> painter.paint(g, page));
+                result = service.paint(() -> painter.paint(g, page));
             } finally {
                 g.dispose();
             }
@@ -541,7 +491,7 @@ final class TileRenderer {
             try {
                 g.setClip(0, 0, w, h);
                 // without annotations: those live in their own layers, so an edit never stales a preview.
-                paintGated(() -> {
+                service.paint(() -> {
                     page.paint(g, GraphicsRenderingHints.SCREEN, key.boundary(), 0f, zoom,
                         paintAnnotations && SINGLE_PASS_ANNOTATIONS, false);
                     return null;

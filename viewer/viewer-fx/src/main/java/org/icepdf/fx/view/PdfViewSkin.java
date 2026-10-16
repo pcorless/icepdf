@@ -47,6 +47,7 @@ import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
+import org.icepdf.fx.render.RenderService;
 import org.icepdf.fx.view.DocumentLayout.PageSlot;
 
 import java.awt.geom.AffineTransform;
@@ -76,8 +77,11 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final ScrollBar hbar = new ScrollBar();
 
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
+    // this view's place in the shared render pool's queue.
+    private final RenderService.Owner renderOwner = () -> true;
     private final TileRenderer renderer;
-    private final PageTextLoader textLoader = new PageTextLoader((page, sequence) -> onTextReady(page));
+    private final PageTextLoader textLoader = new PageTextLoader(RenderService.shared(), renderOwner,
+            (page, sequence) -> onTextReady(page));
     // what a screen reader sees: set in the constructor.
     private PdfViewAccessibility accessibility;
     private CaretNavigator caretNavigator;
@@ -160,7 +164,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     PdfViewSkin(PdfView control) {
         super(control);
-        renderer = new TileRenderer(TileRenderer.defaultThreads(), new TileRenderer.Sink() {
+        renderer = new TileRenderer(RenderService.shared(), renderOwner, new TileRenderer.Sink() {
             @Override
             public void tileReady(CacheKey key, RasterBuffer buffer) {
                 cache.put(key, buffer);
@@ -317,8 +321,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         zoomSettle.stop();
         releaseHidden.stop();
-        renderer.shutdown();
-        textLoader.shutdown();
+        // the pool's threads are shared: cancelling this view's work is all there is to stop.
+        renderer.cancelAll();
+        textLoader.clear();
         caretBlink.stop();
         cache.clear();
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
