@@ -34,6 +34,10 @@ adapted code.
 | `:core:core-awt` (icepdf-core) | project | Apache 2.0 | Brings its own transitive deps, listed below. |
 | `org.bouncycastle:bcprov-jdk18on`, `bcpkix-jdk18on` (+ `bcutil`) | 1.86 | Bouncy Castle Licence (MIT-style) | Also declared directly for signature validation. |
 
+The release distribution carries each shipped licence in the root `licenses/` directory
+(`BouncyCastleLICENSE.txt`, `TwelveMonkeysLICENSE.txt`, the Apache 2.0 and FontBox texts); add one
+there with any new non-Apache runtime dependency.
+
 Transitive through core-awt. Already shipped by the Swing viewer, so not new to the project:
 
 | Artifact | Version | License |
