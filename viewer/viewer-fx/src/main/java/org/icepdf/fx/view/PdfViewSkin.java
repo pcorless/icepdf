@@ -1094,7 +1094,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     void revealField(AbstractWidgetAnnotation widget) {
         for (int i = 0; i < document.getNumberOfPages(); i++) {
             Page page = document.getPageTree().getPage(i);
-            List<Annotation> annotations = page.isInitiated() || page.getAnnotations() != null ? page.getAnnotations() : null;
+            List<Annotation> annotations = page.getAnnotations();
             if (annotations != null && annotations.contains(widget)) {
                 if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(i) == null) {
                     getSkinnable().setCurrentPageIndex(i);
