@@ -173,6 +173,20 @@ public class ViewerApp extends Application {
         return createWindow(new Stage(), document, at);
     }
 
+    // window icons, loaded with the first window (an Image needs the toolkit running).
+    private List<javafx.scene.image.Image> appIcons;
+
+    private List<javafx.scene.image.Image> appIcons() {
+        if (appIcons == null) {
+            appIcons = List.of(appIcon("icepdf-app-icon-32x32.png"), appIcon("icepdf-app-icon-64x64.png"));
+        }
+        return appIcons;
+    }
+
+    private static javafx.scene.image.Image appIcon(String name) {
+        return new javafx.scene.image.Image(ViewerApp.class.getResource("/org/icepdf/fx/images/" + name).toExternalForm());
+    }
+
     private AppWindow createWindow(Stage stage) {
         return createWindow(stage, null, null);
     }
@@ -198,6 +212,7 @@ public class ViewerApp extends Application {
         stage.setScene(new Scene(viewer, preferences.getDouble(ViewerPreferences.WINDOW_WIDTH, 1200),
                 preferences.getDouble(ViewerPreferences.WINDOW_HEIGHT, 860)));
         followTitle(window);
+        stage.getIcons().setAll(appIcons());
         placeWindow(stage);
         if (at != null) {
             stage.setX(at.getX() - 120);

@@ -18,7 +18,7 @@ The runnable example is `examples/javafx`.
 ## Run the viewer
 
 `./gradlew :viewer:viewer-fx:run` starts the viewer application; Gradle builds the core from source.
-`runShell --args="/path/file.pdf"` opens one `PdfViewer` window; add `-Pxmx=4g` for a bigger heap.
+Add `--args="/path/file.pdf"` to open a file, and `-Pxmx=4g` for a bigger heap.
 
 Maven resolves `icepdf-core` from the local repository, so install the current core first. Repeat
 this after core changes. The coverage gate is skipped because tests are skipped, and the full

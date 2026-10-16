@@ -16,7 +16,7 @@ repositories {
 
 description = 'ICEpdf FX viewer reference implementation project'
 
-// the viewer's heap: -Pxmx=4g on run, runShell or runDemo (1024m by default).
+// the viewer's heap: -Pxmx=4g on run or runDemo (1024m by default).
 def viewerXmx = "-Xmx${findProperty('xmx') ?: '1024m'}"
 
 application {
@@ -71,18 +71,6 @@ tasks.register('jarWithDependencies', Jar) {
             'module-info.class', 'META-INF/versions/*/module-info.class'
 }
 
-// the new viewer shell (PdfViewer) while it replaces the classic window:
-// ./gradlew :viewer:viewer-fx:runShell --args="/path/file.pdf" [-Pxmx=4g]
-tasks.register('runShell', JavaExec) {
-    group = 'application'
-    description = 'Runs the PdfViewer shell preview'
-    classpath = sourceSets.main.runtimeClasspath
-    mainClass = 'org.icepdf.fx.ri.app.ShellPreview'
-    jvmArgs = [viewerXmx]
-    if (project.hasProperty('args')) args project.property('args').toString().split(' ')
-    javafxModulePath(it)
-}
-
 // PdfViewDemo, a bare PdfView test host (test sources; the public example is examples/javafx):
 // ./gradlew :viewer:viewer-fx:runDemo --args="/path/file.pdf" [-Pxmx=4g]
 tasks.register('runDemo', JavaExec) {
@@ -99,7 +87,6 @@ tasks.register('runDemo', JavaExec) {
 def sectionName = 'org/icepdf/fx/'
 def baseJarName = 'icepdf'
 def baseAppendixName  = 'viewer-fx'
-def commandlineArgs = '-loadfile "/home/pcorless/dev/pdf-qa/PDF32000_2008.pdf"'
 
 
 javafx {
