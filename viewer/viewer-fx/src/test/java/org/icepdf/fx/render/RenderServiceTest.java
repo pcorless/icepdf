@@ -88,6 +88,52 @@ class RenderServiceTest {
                 "bg-tile", "bg-thumb"), ran);
     }
 
+    @DisplayName("an owner coming to the front takes its queued work ahead; going behind gives way")
+    @Test
+    void reprioritise() throws Exception {
+        RenderService service = service(1, new AtomicLong());
+        CountDownLatch release = block(service);
+        boolean[] front = {false};
+        RenderService.Owner switching = () -> front[0];
+        List<String> ran = new CopyOnWriteArrayList<>();
+        CountDownLatch done = new CountDownLatch(4);
+        Future<?> first = service.submit(switching, TILE, "was-behind", () -> {
+            ran.add("was-behind");
+            done.countDown();
+        });
+        service.submit(FOREGROUND, TILE, "front", () -> {
+            ran.add("front");
+            done.countDown();
+        });
+        RenderService.Owner leaving = new RenderService.Owner() {
+            boolean foreground = true;
+
+            @Override
+            public boolean isForeground() {
+                boolean was = foreground;
+                foreground = false; // in front when submitting, behind from then on
+                return was;
+            }
+        };
+        service.submit(leaving, TILE, "was-front", () -> {
+            ran.add("was-front");
+            done.countDown();
+        });
+        service.submit(BACKGROUND, PREVIEW, "behind", () -> {
+            ran.add("behind");
+            done.countDown();
+        });
+        front[0] = true;
+        service.reprioritise(switching);
+        service.reprioritise(leaving);
+        assertEquals(4, service.queued());
+        release.countDown();
+        assertTrue(done.await(10, TimeUnit.SECONDS));
+        // same kind, both in front now: submit order.  Behind: TILE before PREVIEW.
+        assertEquals(List.of("was-behind", "front", "was-front", "behind"), ran);
+        assertTrue(first.isDone(), "the caller's future is the re-ranked task");
+    }
+
     @DisplayName("a cancelled task leaves the queue at once and never runs")
     @Test
     void cancelLeavesQueue() throws Exception {

@@ -33,7 +33,8 @@ import java.util.function.LongSupplier;
  * <p>
  * Tasks run in {@code (foreground, kind, sequence)} order: work for a view in the focused window
  * before work for one behind it, then by {@link Kind} (visible tiles first, thumbnails last), then
- * first in, first out.  An owner's foreground flag is read once, when its task is submitted.
+ * first in, first out.  An owner's foreground flag is read when its task is submitted, and again by
+ * {@link #reprioritise} when it changes.
  * <p>
  * The pool is sized from the machine with core's {@link PoolSizing} rule, half the cores within
  * {@code [2, cap]}: page paints are memory-bandwidth heavy and drive core's own decode pools as
@@ -127,9 +128,27 @@ public final class RenderService {
      * @return the queued task, for {@link #cancel}
      */
     public Future<?> submit(Owner owner, Kind kind, String label, Runnable job) {
-        RenderTask task = new RenderTask(job, owner.isForeground(), kind, sequence.getAndIncrement(), label);
+        RenderTask task = new RenderTask(job, owner, owner.isForeground(), kind, sequence.getAndIncrement(), label);
         executor.execute(task);
         return task;
+    }
+
+    /**
+     * Re-ranks an owner's queued tasks after its {@link Owner#isForeground()} changed: a window
+     * coming to the front jumps the queue with the work it already asked for, and one going behind
+     * gives way.  Running tasks are left alone.
+     */
+    public void reprioritise(Owner owner) {
+        boolean foreground = owner.isForeground();
+        for (Object queued : executor.getQueue().toArray()) {
+            // re-queue the same task, so callers' futures stay valid; a task a worker took meanwhile
+            // isn't removed, and is left to run.
+            if (queued instanceof RenderTask task && task.owner == owner && task.foreground != foreground
+                    && executor.remove(task)) {
+                task.foreground = foreground;
+                executor.execute(task);
+            }
+        }
     }
 
     /**
@@ -204,13 +223,16 @@ public final class RenderService {
      * rather than {@code submit}, whose plain {@code FutureTask} isn't comparable.
      */
     static final class RenderTask extends FutureTask<Void> implements Comparable<RenderTask> {
-        final boolean foreground;
+        final Owner owner;
+        // only changed while the task is out of the queue (see reprioritise), so the order holds.
+        boolean foreground;
         final Kind kind;
         final long sequence;
         final String label;
 
-        RenderTask(Runnable job, boolean foreground, Kind kind, long sequence, String label) {
+        RenderTask(Runnable job, Owner owner, boolean foreground, Kind kind, long sequence, String label) {
             super(job, null);
+            this.owner = owner;
             this.foreground = foreground;
             this.kind = kind;
             this.sequence = sequence;

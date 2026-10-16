@@ -47,6 +47,7 @@ import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
+import org.icepdf.fx.render.NodeOwner;
 import org.icepdf.fx.render.RenderService;
 import org.icepdf.fx.view.DocumentLayout.PageSlot;
 
@@ -77,8 +78,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final ScrollBar hbar = new ScrollBar();
 
     private final TileCache cache = new TileCache(TileCache.defaultBudget());
-    // this view's place in the shared render pool's queue.
-    private final RenderService.Owner renderOwner = () -> true;
+    // this view's place in the shared render pool's queue: ahead while its window is focused.  Coming
+    // to the front re-ranks what is queued and refreshes, so anything retain() dropped is asked for.
+    private final NodeOwner renderOwner = new NodeOwner(getSkinnable(), RenderService.shared(), this::scheduleRefresh);
     private final TileRenderer renderer;
     private final PageTextLoader textLoader = new PageTextLoader(RenderService.shared(), renderOwner,
             (page, sequence) -> onTextReady(page));
@@ -322,6 +324,7 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         zoomSettle.stop();
         releaseHidden.stop();
         // the pool's threads are shared: cancelling this view's work is all there is to stop.
+        renderOwner.dispose();
         renderer.cancelAll();
         textLoader.clear();
         caretBlink.stop();

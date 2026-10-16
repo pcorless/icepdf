@@ -31,6 +31,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Window;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
+import org.icepdf.fx.render.NodeOwner;
 import org.icepdf.fx.render.RenderService;
 import org.icepdf.fx.view.PdfView;
 
@@ -50,6 +51,8 @@ public class ThumbnailPanel extends BorderPane {
     private final ListView<Integer> list = new ListView<>();
     private final ObservableList<Integer> pages = FXCollections.observableArrayList();
     private final PageThumbnails thumbnails;
+    // the view's window decides the strip's priority, as it does the view's.
+    private final NodeOwner renderOwner;
     private final DoubleProperty thumbnailWidth = new SimpleDoubleProperty(this, "thumbnailWidth", 120);
     // the document the list was filled for; the view's changes first, while the old items are still listed.
     private Document document;
@@ -58,7 +61,8 @@ public class ThumbnailPanel extends BorderPane {
 
     public ThumbnailPanel(PdfView view) {
         this.view = view;
-        thumbnails = new PageThumbnails(RenderService.shared(), () -> true);
+        renderOwner = new NodeOwner(view, RenderService.shared(), null);
+        thumbnails = new PageThumbnails(RenderService.shared(), renderOwner);
         getStyleClass().add("thumbnail-panel");
         list.setItems(pages);
         list.setCellFactory(l -> new ThumbnailCell());
@@ -97,6 +101,7 @@ public class ThumbnailPanel extends BorderPane {
 
     /** Cancels the panel's background renders; call when the panel is thrown away. */
     public void dispose() {
+        renderOwner.dispose();
         thumbnails.dispose();
     }
 
