@@ -183,8 +183,9 @@ public class SearchPanel extends BorderPane {
         redactAll.setOnAction(e -> {
             redacting.set(true);
             int elsewhere = fieldHitCount.get();
-            view.redactSearchHits(count -> {
+            view.redactSearchHits().whenComplete((count, failure) -> {
                 redacting.set(false);
+                if (failure != null) return;
                 StringBuilder text = new StringBuilder();
                 if (count > 0) text.append(Messages.format("searchPanel.markedForRedaction", count));
                 if (elsewhere > 0 && view.hasTermRedaction()) {

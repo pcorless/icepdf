@@ -142,6 +142,13 @@ public final class EmbedBasicSmoke {
             fx(host.findPrevious::fire);
             smoke.check("previous hit", onFx(host.view::getCurrentSearchHitIndex) == 0);
         }
+        if (hits > 0) {
+            int marked = onFx(host.view::redactSearchHits).get(60, java.util.concurrent.TimeUnit.SECONDS);
+            smoke.check("redact all marks one redaction per hit, undoably", marked == hits
+                    && onFx(host.view::isCanUndo), marked + " of " + hits);
+            fx(host.view::undo);
+            smoke.check("undo takes them all back", !onFx(host.view::isCanUndo) && !onFx(host.view::hasTermRedaction));
+        }
         SmokeSupport.waitIdle(host.view);
         smoke.snapshot(host.root, "embed-basic.png");
 

@@ -62,7 +62,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntConsumer;
 
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
@@ -905,7 +904,7 @@ public class PdfView extends Control {
         searchAutoSelect = true;
         searchStartPage = getCurrentPageIndex();
         searching.set(true);
-        searchThread = new Thread(() -> DocumentSearch.run(page -> {
+        searchThread = startWorker("icepdf-fx-search", () -> DocumentSearch.run(page -> {
             try {
                 PageText text = doc.getPageViewText(page);
                 return text != null ? text.getTextSequence() : null;
@@ -923,10 +922,7 @@ public class PdfView extends Control {
                     searchProgress.set(done / (double) total);
                     if (done == total) searching.set(false);
                     autoSelectSearchHit(done == total);
-                })), "icepdf-fx-search");
-        searchThread.setDaemon(true);
-        searchThread.setPriority(Thread.NORM_PRIORITY - 1);
-        searchThread.start();
+                })));
     }
 
     /** Selects the first hit at or after the page the search started from, once one is known. */
@@ -952,36 +948,41 @@ public class PdfView extends Control {
      * ({@code RedactionRequest.ofAnnotationsAndTerms}).  Nothing is removed until the document is
      * exported with {@code WriteMode.FULL_UPDATE}.  With no hits in the page text (the terms only
      * match comments, form fields, bookmarks...) only the terms are recorded, still undoably.  The
-     * text is read on a worker; {@code done} gets the number of redactions made, on the FX thread -
-     * 0 when only the terms were recorded, or nothing was done (a search running, no search, or a
-     * document that doesn't permit annotating); see {@link #hasTermRedaction()}.
+     * text is read on a worker.
+     *
+     * @return completes on the FX thread with the number of redactions made - 0 when only the terms
+     * were recorded, or nothing was done (a search running, no search, the document changed, or one
+     * that doesn't permit annotating); see {@link #hasTermRedaction()}
      */
-    public void redactSearchHits(IntConsumer done) {
+    public CompletableFuture<Integer> redactSearchHits() {
         Document doc = getDocument();
         List<SearchHit> hits = List.copyOf(searchHits);
         List<SearchTerm> terms = searchTerms;
         if (doc == null || terms.isEmpty() || isSearching() || !isAnnotationEditingAllowed()
                 || !(getSkin() instanceof PdfViewSkin)) {
-            done.accept(0);
-            return;
+            return CompletableFuture.completedFuture(0);
         }
-        Thread worker = new Thread(() -> {
+        CompletableFuture<Integer> result = new CompletableFuture<>();
+        startWorker("icepdf-fx-redact-search", () -> {
             // each match's line rectangles, page space, from the same text the search ran on.
-            Map<SearchHit, List<java.awt.geom.Rectangle2D>> rects = new java.util.LinkedHashMap<>();
-            for (SearchHit hit : hits) {
-                try {
+            Map<SearchHit, List<java.awt.geom.Rectangle2D>> rects = new LinkedHashMap<>();
+            try {
+                for (SearchHit hit : hits) {
                     PageText text = doc.getPageViewText(hit.pageIndex());
                     TextSequence sequence = text != null ? text.getTextSequence() : null;
                     if (sequence == null) continue;
                     rects.put(hit, new ArrayList<>(sequence.rectsFor(hit.range())));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
                 }
+            } catch (InterruptedException e) {
+                Platform.runLater(() -> result.complete(0));
+                return;
+            } catch (RuntimeException e) {
+                Platform.runLater(() -> result.completeExceptionally(e));
+                return;
             }
             Platform.runLater(() -> {
                 if (getDocument() != doc || !(getSkin() instanceof PdfViewSkin skin)) {
-                    done.accept(0);
+                    result.complete(0);
                     return;
                 }
                 List<AnnotationEdits.Edit> edits = new ArrayList<>();
@@ -989,16 +990,23 @@ public class PdfView extends Control {
                     if (!r.isEmpty()) edits.add(skin.redactPageRects(hit.pageIndex(), r));
                 });
                 RedactionRequest before = doc.getRedactionRequest();
-                Runnable withTerms = () -> Redactor.configure(doc,
-                        RedactionRequest.ofAnnotationsAndTerms(terms));
+                Runnable withTerms = () -> Redactor.configure(doc, RedactionRequest.ofAnnotationsAndTerms(terms));
                 Runnable restore = () -> Redactor.configure(doc, before);
                 withTerms.run();
                 recordEdit(AnnotationEdits.group(edits, restore, withTerms));
-                done.accept(edits.size());
+                result.complete(edits.size());
             });
-        }, "icepdf-fx-redact-search");
+        });
+        return result;
+    }
+
+    /** Starts a one-off background job: a daemon thread below normal priority. */
+    private static Thread startWorker(String name, Runnable job) {
+        Thread worker = new Thread(job, name);
         worker.setDaemon(true);
+        worker.setPriority(Thread.NORM_PRIORITY - 1);
         worker.start();
+        return worker;
     }
 
     /**
@@ -1516,7 +1524,7 @@ public class PdfView extends Control {
         }
         verifyingSignatures.set(true);
         CompletableFuture<List<SignatureStatus>> result = new CompletableFuture<>();
-        Thread worker = new Thread(() -> {
+        startWorker("icepdf-fx-signature-check", () -> {
             List<SignatureStatus> found;
             try {
                 found = SignatureVerifier.verifyAll(document);
@@ -1531,9 +1539,7 @@ public class PdfView extends Control {
                 }
                 result.complete(done);
             });
-        }, "pdf-signature-check");
-        worker.setDaemon(true);
-        worker.start();
+        });
         return result;
     }
 
@@ -1585,9 +1591,7 @@ public class PdfView extends Control {
                 printer.cancel();
             }
         };
-        Thread thread = new Thread(task, "pdf-print");
-        thread.setDaemon(true);
-        thread.start();
+        startWorker("icepdf-fx-print", task);
         return task;
     }
 
