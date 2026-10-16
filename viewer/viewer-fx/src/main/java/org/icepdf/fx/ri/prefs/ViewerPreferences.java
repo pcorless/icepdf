@@ -88,6 +88,12 @@ public final class ViewerPreferences {
     public static final String IMAGE_REFERENCE = "imaging.imageReference";
     /** Whether core draws shrunk images from a box-filtered mip level (default true). */
     public static final String IMAGE_DOWNSAMPLE = "imaging.downsample";
+    /** Render pool threads, or absent for automatic; see {@link PerformanceSettings}. */
+    public static final String RENDER_THREADS = "performance.renderThreads";
+    /** Core common pool threads, or absent for automatic. */
+    public static final String CORE_THREADS = "performance.coreThreads";
+    /** Core image pool threads, or absent for automatic. */
+    public static final String IMAGE_THREADS = "performance.imageThreads";
 
     private final Path file;
     private final Properties properties = new Properties();

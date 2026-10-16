@@ -20,18 +20,23 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.event.Event;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TabPane;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.GridPane;
 import javafx.stage.Stage;
 import org.icepdf.fx.view.RenderStats;
 import org.icepdf.fx.ri.ui.CustomiseToolsPane;
 import org.icepdf.fx.ri.ui.EdgeDrawer;
+import org.icepdf.fx.ri.prefs.PreferencesDialog;
 import org.icepdf.fx.ri.prefs.ViewerPreferences;
+import org.icepdf.fx.i18n.Messages;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -78,6 +83,37 @@ public final class ShellSmoke {
         });
         settle();
         snapshot(viewer, "shell-light.png");
+
+        // Preferences > Performance: the dialog is built but not shown (a modal would block the run);
+        // its tabs are shown in a plain window instead.
+        Stage prefsStage = onFx(() -> {
+            PreferencesDialog dialog = new PreferencesDialog(viewer.getScene().getWindow(),
+                    ViewerPreferences.inMemory(), viewer.getView());
+            TabPane tabs = (TabPane) dialog.getDialogPane().getContent();
+            dialog.getDialogPane().setContent(null);
+            tabs.getSelectionModel().select(tabs.getTabs().stream()
+                    .filter(t -> t.getText().equals(Messages.get("preferences.tab.performance"))).findFirst().orElseThrow());
+            Stage stage = new Stage();
+            stage.setScene(new Scene(tabs, 640, 420));
+            stage.show();
+            return stage;
+        });
+        settle();
+        snapshot(prefsStage.getScene().getRoot(), "shell-preferences-performance.png");
+        List<String> now = onFx(() -> {
+            TabPane tabs = (TabPane) prefsStage.getScene().getRoot();
+            List<String> lines = new ArrayList<>();
+            for (Node n : ((GridPane) tabs.getSelectionModel().getSelectedItem().getContent()).getChildren()) {
+                if (n instanceof Label label && label.getText().startsWith("Now ")) lines.add(label.getText());
+            }
+            return lines;
+        });
+        System.out.println("  performance " + now);
+        check("Performance shows what each of the three pools runs with now", now.size() == 3);
+        onFx(() -> {
+            prefsStage.close();
+            return null;
+        });
 
         // the rail is the arrangement; the strip lists the panels with content.
         List<String> railIds = onFx(() -> {

@@ -46,8 +46,8 @@ import java.util.Locale;
 /**
  * The viewer's settings: General (page display on open, signatures), Annotations (author, colour),
  * Search (defaults for the find bar and search panel), Imaging (how core draws images: smooth
- * downscaling, redrawn at once, and the image reference type, for documents opened after) and
- * Fonts - the system fonts core substitutes
+ * downscaling, redrawn at once, and the image reference type, for documents opened after),
+ * Performance (thread counts, on restart) and Fonts - the system fonts core substitutes
  * with, the extra directories to look in, and a rescan.  OK writes the settings and applies them to
  * the window's view; the font tab's actions take effect at once.
  */
@@ -136,8 +136,25 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         imaging.addRow(3, label("preferences.imaging.imageReference", imageReference), imageReference);
         imaging.add(referenceHelp, 0, 4, 2, 1);
 
+        // Performance: thread counts, automatic or set; the pools are sized at start.
+        GridPane performance = grid();
+        java.util.Map<PerformanceSettings.Pool, ThreadCount> threadCounts = new java.util.EnumMap<>(PerformanceSettings.Pool.class);
+        int row = 0;
+        for (PerformanceSettings.Pool pool : PerformanceSettings.Pool.values()) {
+            ThreadCount count = new ThreadCount(pool);
+            threadCounts.put(pool, count);
+            performance.addRow(row++, label("preferences.performance." + pool.name().toLowerCase(Locale.ROOT), count.spinner),
+                    count.automatic, count.spinner, count.inEffect);
+        }
+        Label performanceHelp = new Label(Messages.format("preferences.performance.help",
+                Runtime.getRuntime().availableProcessors()));
+        performanceHelp.setWrapText(true);
+        performanceHelp.setMaxWidth(560);
+        performance.add(performanceHelp, 0, row, 4, 1);
+
         TabPane tabs = new TabPane(new Tab(Messages.get("preferences.tab.general"), general), new Tab(Messages.get("preferences.tab.annotations"), annotations),
                 new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.imaging"), imaging),
+                new Tab(Messages.get("preferences.tab.performance"), performance),
                 new Tab(Messages.get("preferences.tab.fonts"), fontsTab()));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefSize(620, 480);
@@ -162,6 +179,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 }
                 preferences.put(ViewerPreferences.IMAGE_REFERENCE, imageReference.getValue());
                 preferences.putBoolean(ViewerPreferences.IMAGE_DOWNSAMPLE, downsample.isSelected());
+                threadCounts.forEach((pool, count) -> PerformanceSettings.save(preferences, pool, count.value()));
                 preferences.save();
                 boolean redraw = downsample.isSelected() != ImageDownsampler.isEnabled();
                 ImagingSettings.apply(preferences);
@@ -176,6 +194,33 @@ public class PreferencesDialog extends Dialog<ButtonType> {
             }
             return button;
         });
+    }
+
+    /** One pool's thread count: automatic, or a number; and what the pool runs with now. */
+    private final class ThreadCount {
+        final CheckBox automatic = new CheckBox(Messages.get("preferences.performance.automatic"));
+        final Spinner<Integer> spinner;
+        final Label inEffect = new Label();
+
+        ThreadCount(PerformanceSettings.Pool pool) {
+            Integer saved = PerformanceSettings.saved(preferences, pool);
+            org.icepdf.core.util.PoolSizing.Size now = PerformanceSettings.inEffect(pool);
+            spinner = new Spinner<>(1, PerformanceSettings.MAX_THREADS, saved != null ? saved : now.threads());
+            spinner.setEditable(true);
+            spinner.setPrefWidth(90);
+            automatic.setSelected(saved == null);
+            spinner.disableProperty().bind(automatic.selectedProperty());
+            inEffect.setText(switch (now.source()) {
+                case AUTO -> Messages.format("preferences.performance.now.auto", now.threads());
+                case CAP -> Messages.format("preferences.performance.now.cap", now.threads(), now.cap());
+                case EXPLICIT -> Messages.format("preferences.performance.now.set", now.threads());
+            });
+        }
+
+        /** The count to save; null for automatic. */
+        Integer value() {
+            return automatic.isSelected() ? null : spinner.getValue();
+        }
     }
 
     /** A field's label, which a screen reader announces with the field and Alt+mnemonic focuses. */

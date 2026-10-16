@@ -37,6 +37,7 @@ import org.icepdf.fx.view.ViewMode;
 import org.icepdf.fx.fonts.FontSettings;
 import org.icepdf.fx.ri.prefs.FontDirectories;
 import org.icepdf.fx.ri.prefs.ImagingSettings;
+import org.icepdf.fx.ri.prefs.PerformanceSettings;
 import org.icepdf.fx.ri.prefs.PreferencesDialog;
 import org.icepdf.fx.ri.prefs.ViewerPreferences;
 
@@ -111,6 +112,8 @@ public class ViewerApp extends Application {
     @Override
     public void start(Stage stage) {
         preferences = ViewerPreferences.load();
+        // before anything loads core's Library or renders: the pools size themselves once.
+        PerformanceSettings.apply(preferences);
         signing = org.icepdf.fx.ri.prefs.SigningPreferences.of(preferences);
         features = loadFeatures();
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
