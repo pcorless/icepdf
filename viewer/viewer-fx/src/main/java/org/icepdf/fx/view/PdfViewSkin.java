@@ -147,6 +147,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final javafx.event.EventHandler<KeyEvent> keyHandler = this::onKey;
     private final javafx.event.EventHandler<KeyEvent> keyReleasedHandler = this::onKeyReleased;
     private Window window;
+    private Scene watchedScene;
+    private final ChangeListener<Window> windowListener = (obs, o, n) -> attachWindow(n);
 
     // what the tools want the viewport's cursor to be; the wait cursor overrides it while waiting.
     private Cursor viewportCursor = Cursor.DEFAULT;
@@ -241,17 +243,16 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             updateCaretBlink(false);
             refresh();
         });
-        control.getSearchHits().addListener((javafx.collections.ListChangeListener<SearchHit>) c -> scheduleRefresh());
-        control.getSignatures().addListener(
-                (javafx.collections.ListChangeListener<org.icepdf.fx.signature.SignatureStatus>) c -> {
-                    signatureByReference.clear();
-                    for (org.icepdf.fx.signature.SignatureStatus status : control.getSignatures()) {
-                        if (status.widget().getPObjectReference() != null) {
-                            signatureByReference.put(status.widget().getPObjectReference(), status);
-                        }
-                    }
-                    scheduleRefresh();
-                });
+        registerListChangeListener(control.getSearchHits(), c -> scheduleRefresh());
+        registerListChangeListener(control.getSignatures(), c -> {
+            signatureByReference.clear();
+            for (org.icepdf.fx.signature.SignatureStatus status : control.getSignatures()) {
+                if (status.widget().getPObjectReference() != null) {
+                    signatureByReference.put(status.widget().getPObjectReference(), status);
+                }
+            }
+            scheduleRefresh();
+        });
         registerChangeListener(control.selectedAnnotationProperty(), o ->
                 uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null)));
         registerChangeListener(control.focusedFieldProperty(), o -> {
@@ -302,7 +303,9 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     @Override
     public void dispose() {
+        if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
+        zoomSettle.stop();
         renderer.shutdown();
         textLoader.shutdown();
         caretBlink.stop();
@@ -1441,10 +1444,6 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         return edit;
     }
 
-    boolean isDraggingAnnotation() {
-        return drag != null;
-    }
-
     // ---- popups ----------------------------------------------------------------------------
 
     private final PopupNode.Listener popupListener = new PopupNode.Listener() {
@@ -1511,13 +1510,6 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         } catch (java.awt.geom.NoninvertibleTransformException e) {
             return new java.awt.geom.Rectangle2D.Double(0, 0, w, h);
         }
-    }
-
-    /** All open popup nodes on visible pages; for tests. */
-    List<PopupNode> openPopupNodes() {
-        List<PopupNode> nodes = new ArrayList<>();
-        uiLayers.values().forEach(ui -> nodes.addAll(ui.popupNodes()));
-        return nodes;
     }
 
     // ---- creating annotations -----------------------------------------------------------------
@@ -1982,9 +1974,10 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     private void watchWindow() {
         Scene scene = getSkinnable().getScene();
-        if (scene == null) return;
-        scene.windowProperty().addListener((obs, o, n) -> attachWindow(n));
-        attachWindow(scene.getWindow());
+        if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
+        watchedScene = scene;
+        if (scene != null) scene.windowProperty().addListener(windowListener);
+        attachWindow(scene != null ? scene.getWindow() : null);
     }
 
     private void attachWindow(Window w) {

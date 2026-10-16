@@ -33,6 +33,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.fx.view.PdfView;
 
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -131,6 +132,7 @@ public class ThumbnailPanel extends BorderPane {
         private final StackPane frame = new StackPane(image);
         private final Label number = new Label();
         private final VBox box = new VBox(4, frame, number);
+        private Consumer<Image> waiter;
 
         ThumbnailCell() {
             box.setAlignment(Pos.CENTER);
@@ -145,13 +147,19 @@ public class ThumbnailPanel extends BorderPane {
         @Override
         protected void updateItem(Integer page, boolean empty) {
             super.updateItem(page, empty);
+            // the cell is recycled: whatever it was waiting for is no longer wanted.
+            if (waiter != null) {
+                thumbnails.cancel(waiter);
+                waiter = null;
+            }
             if (empty || page == null || document == null || page >= document.getNumberOfPages()) {
                 setGraphic(null);
                 setText(null);
                 image.setImage(null);
                 return;
             }
-            float rotation = (float) view.getRotation();
+            // core rotates counter-clockwise; the view's property is clockwise.
+            float rotation = (float) ((360 - view.getRotation()) % 360);
             double width = thumbnailWidth.get();
             PDimension size = document.getPageDimension(page, rotation);
             double height = size.getWidth() > 0 ? width * size.getHeight() / size.getWidth() : width;
@@ -159,9 +167,8 @@ public class ThumbnailPanel extends BorderPane {
             image.setFitWidth(width);
             number.setText(String.valueOf(page + 1));
             int widthPx = (int) Math.round(width * outputScale());
-            Image ready = thumbnails.get(page, widthPx, rotation, view.getPageBoundary(), done -> {
-                if (getItem() != null && getItem().equals(page)) image.setImage(done);
-            });
+            waiter = done -> image.setImage(done);
+            Image ready = thumbnails.get(page, widthPx, rotation, view.getPageBoundary(), waiter);
             image.setImage(ready);
             setGraphic(box);
             setText(null);

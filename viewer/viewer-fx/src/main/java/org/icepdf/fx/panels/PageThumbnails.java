@@ -17,6 +17,7 @@ package org.icepdf.fx.panels;
 
 import javafx.application.Platform;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
 import javafx.scene.image.WritableImage;
 import org.icepdf.core.pobjects.Document;
@@ -28,44 +29,44 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Small page renderings for a thumbnail strip: painted on a background pool with core's page
- * painter, kept in a bounded LRU, and handed back on the FX thread.  Requests for a document that
- * has since been replaced, or for a {@link #invalidate() previous version} of its pages, are dropped.
+ * painter, kept in a byte-bounded LRU, and handed back on the FX thread.  Requests for a document
+ * that has since been replaced, or for a {@link #invalidate() previous version} of its pages, are
+ * dropped; a request whose every waiter has {@link #cancel cancelled} (its cells scrolled away) is
+ * stopped, so flinging through a long strip doesn't queue a paint for every page passed.
  */
 final class PageThumbnails {
 
     private static final Logger logger = Logger.getLogger(PageThumbnails.class.getName());
-    private static final int CACHE_SIZE = 256;
+    private static final long BUDGET_BYTES = 32L << 20;
 
-    private final ExecutorService pool = Executors.newFixedThreadPool(2, runnable -> {
-        Thread thread = new Thread(runnable, "icepdf-fx-thumbnails");
-        thread.setDaemon(true);
-        thread.setPriority(Thread.NORM_PRIORITY - 1);
-        return thread;
-    });
-    private final Map<Key, Image> cache = new LinkedHashMap<>(64, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<Key, Image> eldest) {
-            return size() > CACHE_SIZE;
-        }
-    };
+    private final ExecutorService pool = workerPool();
+    private final Map<Key, Image> cache = new LinkedHashMap<>(64, 0.75f, true);
+    private long cacheBytes;
     private final Map<Key, Request> pending = new LinkedHashMap<>();
+    // which request each waiter is on, so a recycled cell can withdraw.
+    private final Map<Consumer<Image>, Key> waiting = new IdentityHashMap<>();
     private Document document;
     private int version;
 
-    /** What a thumbnail was rendered for. */
+    /** What a thumbnail was rendered for; {@code rotation} is core's (counter-clockwise). */
     private record Key(int page, int widthPx, float rotation, int boundary, int version) {
     }
 
@@ -73,6 +74,18 @@ final class PageThumbnails {
     private static final class Request {
         final List<Consumer<Image>> waiters = new ArrayList<>();
         Future<?> future;
+    }
+
+    private static ExecutorService workerPool() {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(2, 2, 30, TimeUnit.SECONDS, new LinkedBlockingQueue<>(),
+                runnable -> {
+                    Thread thread = new Thread(runnable, "icepdf-fx-thumbnails");
+                    thread.setDaemon(true);
+                    thread.setPriority(Thread.NORM_PRIORITY - 1);
+                    return thread;
+                });
+        pool.allowCoreThreadTimeOut(true);
+        return pool;
     }
 
     /** FX thread: switches document, dropping everything of the old one. */
@@ -85,21 +98,27 @@ final class PageThumbnails {
     void invalidate() {
         version++;
         cache.clear();
+        cacheBytes = 0;
         pending.values().forEach(request -> request.future.cancel(true));
         pending.clear();
+        waiting.clear();
     }
 
     /**
      * FX thread: the thumbnail of {@code page}, {@code widthPx} device pixels wide; null when it
-     * isn't ready yet, in which case {@code ready} is called with it later (on the FX thread).
+     * isn't ready yet, in which case {@code ready} is called with it later (on the FX thread) unless
+     * it is {@link #cancel cancelled} first.
+     *
+     * @param rotation core's rotation (counter-clockwise degrees)
      */
     Image get(int page, int widthPx, float rotation, int boundary, Consumer<Image> ready) {
         Key key = new Key(page, widthPx, rotation, boundary, version);
         Image image = cache.get(key);
         if (image != null || document == null) return image;
-        Request waiting = pending.get(key);
-        if (waiting != null) {
-            waiting.waiters.add(ready);
+        waiting.put(ready, key);
+        Request inFlight = pending.get(key);
+        if (inFlight != null) {
+            inFlight.waiters.add(ready);
             return null;
         }
         Request request = new Request();
@@ -129,25 +148,53 @@ final class PageThumbnails {
                 pixels = ((DataBufferInt) buffer.getRaster().getDataBuffer()).getData();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                Platform.runLater(() -> pending.remove(key));
+                Platform.runLater(() -> pending.remove(key, request));
                 return;
             } catch (Throwable e) {
                 logger.log(Level.FINE, e, () -> "Thumbnail of page " + (page + 1) + " failed");
-                Platform.runLater(() -> pending.remove(key));
+                Platform.runLater(() -> pending.remove(key, request));
                 return;
             }
             int w = width, h = height;
             int[] argb = pixels;
             Platform.runLater(() -> {
-                pending.remove(key);
+                if (!pending.remove(key, request)) return; // cancelled or invalidated meanwhile
                 if (key.version() != version || doc != document) return;
-                WritableImage rendered = new WritableImage(w, h);
-                rendered.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), argb, 0, w);
-                cache.put(key, rendered);
-                request.waiters.forEach(waiter -> waiter.accept(rendered));
+                // zero-copy: the image shares the painted int[].
+                WritableImage rendered = new WritableImage(new PixelBuffer<>(w, h, IntBuffer.wrap(argb),
+                        PixelFormat.getIntArgbPreInstance()));
+                put(key, rendered, (long) argb.length * Integer.BYTES);
+                for (Consumer<Image> waiter : request.waiters) {
+                    waiting.remove(waiter, key);
+                    waiter.accept(rendered);
+                }
             });
         });
         return null;
+    }
+
+    /** FX thread: {@code ready} no longer wants its thumbnail; the render stops if nobody else does. */
+    void cancel(Consumer<Image> ready) {
+        Key key = waiting.remove(ready);
+        Request request = key != null ? pending.get(key) : null;
+        if (request == null) return;
+        request.waiters.remove(ready);
+        if (request.waiters.isEmpty()) {
+            request.future.cancel(true);
+            pending.remove(key);
+        }
+    }
+
+    private void put(Key key, Image image, long bytes) {
+        cache.put(key, image);
+        cacheBytes += bytes;
+        // access order: least recently used first.
+        Iterator<Map.Entry<Key, Image>> it = cache.entrySet().iterator();
+        while (cacheBytes > BUDGET_BYTES && cache.size() > 1 && it.hasNext()) {
+            Image eldest = it.next().getValue();
+            cacheBytes -= (long) eldest.getWidth() * (long) eldest.getHeight() * Integer.BYTES;
+            it.remove();
+        }
     }
 
     /** Stops the pool; nothing more is rendered. */

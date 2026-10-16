@@ -62,6 +62,24 @@ public class PrintSettings {
     private boolean lowResolution;
     private String jobName;
 
+    /** A copy to change without touching this one. */
+    public PrintSettings copy() {
+        PrintSettings copy = new PrintSettings();
+        copy.printer = printer;
+        copy.pages = pages.clone();
+        copy.copies = copies;
+        copy.collate = collate;
+        copy.paper = paper;
+        copy.scaling = scaling;
+        copy.orientation = orientation;
+        copy.annotations = annotations;
+        copy.sides = sides;
+        copy.boundary = boundary;
+        copy.lowResolution = lowResolution;
+        copy.jobName = jobName;
+        return copy;
+    }
+
     /** The printer; null prints to the system default. */
     public PrintService getPrinter() {
         return printer;

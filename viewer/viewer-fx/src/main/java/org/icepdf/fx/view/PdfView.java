@@ -64,6 +64,7 @@ import java.util.function.Consumer;
  * Pages are rendered off the FX thread by Java2D into tiles sized to the screen, not the zoom, so
  * memory stays bounded at any zoom up to {@link #MAX_ZOOM}.  Only visible pages have nodes.  The
  * control does not own the document: the caller disposes it after removing it from the view.
+ * {@link #dispose()} the view itself when it is thrown away, to stop its render threads.
  * <p>
  * Styleable with the {@code pdf-view} style class.
  */
@@ -254,6 +255,17 @@ public class PdfView extends Control {
             if (doc != null && isVerifySignaturesOnOpen()) verifySignatures();
             refreshModified();
         });
+    }
+
+    /**
+     * Stops the view's background work (rendering, text loading, search) and releases its rasters.
+     * Call it once the view is out of the scene and no longer wanted.  The document is not touched:
+     * the caller still owns it.  A disposed view that is shown again gets a new skin and works as
+     * before.
+     */
+    public void dispose() {
+        clearSearch();
+        setSkin(null);
     }
 
     @Override
@@ -1224,10 +1236,6 @@ public class PdfView extends Control {
     }
 
     /**
-     * Whether annotation appearances are drawn.  They render in their own layers above the page
-     * content, so annotation changes never re-render the page.
-     */
-    /**
      * True shows the wait cursor over the pages - for an application reading a file the view will
      * show.  The view also shows it on its own from a new document until its first pages are fully
      * painted, then goes back to the tool's cursor.
@@ -1244,6 +1252,10 @@ public class PdfView extends Control {
         busy.set(value);
     }
 
+    /**
+     * Whether annotation appearances are drawn.  They render in their own layers above the page
+     * content, so annotation changes never re-render the page.
+     */
     public final BooleanProperty paintAnnotationsProperty() {
         return paintAnnotations;
     }
@@ -1548,7 +1560,10 @@ public class PdfView extends Control {
         if (document == null || !isPrintAllowed()) {
             throw new IllegalStateException(Messages.get("pdfView.cannotPrint"));
         }
-        if (lowResolutionPrintOnly) settings.setLowResolution(true);
+        if (lowResolutionPrintOnly) {
+            settings = settings.copy();
+            settings.setLowResolution(true);
+        }
         org.icepdf.fx.print.DocumentPrinter printer = new org.icepdf.fx.print.DocumentPrinter(document, settings);
         if (getSkin() instanceof PdfViewSkin skin) printer.setPageLock(skin.annotationLocker()::withAnnotationLock);
         javafx.concurrent.Task<Void> task = new javafx.concurrent.Task<>() {

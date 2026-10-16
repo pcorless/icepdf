@@ -24,6 +24,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.stage.Stage;
+import org.icepdf.fx.panels.ThumbnailPanel;
 import org.icepdf.fx.ri.PdfViewer;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
@@ -144,12 +145,44 @@ public final class EmbedBasicSmoke {
         SmokeSupport.waitIdle(host.view);
         smoke.snapshot(host.root, "embed-basic.png");
 
+        // a thumbnail strip next to the view turns the same way as the pages: compare the two snapshots.
+        Stage strip = onFx(Stage::new);
+        ThumbnailPanel thumbnails = onFx(() -> {
+            ThumbnailPanel panel = new ThumbnailPanel(host.view);
+            strip.setScene(new Scene(panel, 220, 700));
+            strip.show();
+            return panel;
+        });
+        fx(() -> {
+            host.view.setCurrentPageIndex(0);
+            host.view.setRotation(90);
+        });
+        SmokeSupport.waitIdle(host.view);
+        Thread.sleep(1500);
+        smoke.snapshot(host.root, "embed-rotated-90-view.png");
+        smoke.snapshot(thumbnails, "embed-rotated-90-thumbnails.png");
+        fx(() -> host.view.setRotation(0));
+        SmokeSupport.waitIdle(host.view);
+
         fx(() -> host.session.dispose());
         smoke.check("closing empties the labels and disables the commands", onFx(() -> host.pageLabel.getText().isEmpty()
                 && host.next.isDisabled()));
+        fx(strip::close);
         fx(host.stage::close);
+        fx(thumbnails::dispose);
+        fx(host.view::dispose);
+        Thread.sleep(500);
+        smoke.check("dispose stops the view's render threads", renderThreads().isEmpty(), renderThreads());
         checkViewerWithoutChrome(smoke, doc);
         smoke.finish("embed basic smoke");
+    }
+
+    /** Live threads of the view's renderers, text loader and thumbnail strip. */
+    private static java.util.List<String> renderThreads() {
+        return Thread.getAllStackTraces().keySet().stream().map(Thread::getName)
+                .filter(n -> n.startsWith("icepdf-fx-tile") || n.startsWith("icepdf-fx-preview")
+                        || n.startsWith("icepdf-fx-text") || n.startsWith("icepdf-fx-thumbnails"))
+                .sorted().toList();
     }
 
     /**

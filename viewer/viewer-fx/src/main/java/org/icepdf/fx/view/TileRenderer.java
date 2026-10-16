@@ -168,8 +168,19 @@ final class TileRenderer {
 
     public TileRenderer(int threads, Sink sink) {
         this.sink = sink;
-        tileExecutor = Executors.newFixedThreadPool(threads, daemonThreads("icepdf-fx-tile"));
-        previewExecutor = Executors.newSingleThreadExecutor(daemonThreads("icepdf-fx-preview"));
+        tileExecutor = workerPool("icepdf-fx-tile", threads);
+        previewExecutor = workerPool("icepdf-fx-preview", 1);
+    }
+
+    /**
+     * A fixed pool of low-priority daemon threads that exit when idle, so a view that is dropped
+     * without {@link PdfView#dispose()} doesn't keep its threads for the life of the process.
+     */
+    static ExecutorService workerPool(String name, int threads) {
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(threads, threads, 30, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(), daemonThreads(name));
+        pool.allowCoreThreadTimeOut(true);
+        return pool;
     }
 
     /** Half the cores, 1 to 4: page paints are memory-bandwidth heavy and image decode shares the box. */

@@ -244,12 +244,12 @@ public final class DocumentPane {
         else title.set(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
     }
 
-    /** Receives short messages for the user (a link was clicked). */
     /** Receives the URI of a link the user follows; without one the link is shown as a message. */
     public void setOnLink(Consumer<String> onLink) {
         this.onLink = onLink;
     }
 
+    /** Receives short messages for the user (a link was clicked). */
     public void setOnMessage(Consumer<String> onMessage) {
         this.onMessage = onMessage != null ? onMessage : m -> { };
     }
@@ -260,5 +260,6 @@ public final class DocumentPane {
         thumbnails.dispose();
         comments.dispose();
         collection.dispose();
+        view.dispose();
     }
 }

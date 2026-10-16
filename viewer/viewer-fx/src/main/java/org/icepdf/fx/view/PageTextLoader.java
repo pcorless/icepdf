@@ -26,7 +26,6 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.IntPredicate;
 import java.util.logging.Level;
@@ -54,12 +53,7 @@ final class PageTextLoader {
     }
 
     private final Sink sink;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
-        Thread t = new Thread(r, "icepdf-fx-text");
-        t.setDaemon(true);
-        t.setPriority(Thread.NORM_PRIORITY - 1);
-        return t;
-    });
+    private final ExecutorService executor = TileRenderer.workerPool("icepdf-fx-text", 1);
     // FX thread only.  A page with no text maps to Optional.empty(), so it isn't re-requested.
     private final Map<Integer, Optional<TextSequence>> loaded = new HashMap<>();
     private final Map<Integer, Future<?>> pending = new HashMap<>();
