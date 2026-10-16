@@ -698,33 +698,31 @@ public class PdfViewer extends StackPane {
         return layout;
     }
 
+    /** The viewer's look: light, dark, high contrast, or following the system. */
     public Theme getTheme() {
         return theme;
     }
 
-    public ToolRail getToolRail() {
+    // the shell's parts, for the smoke runs; ri.ui is not exported.
+    ToolRail getToolRail() {
         return rail;
     }
 
-    public UtilityPanel getUtilityPanel() {
+    UtilityPanel getUtilityPanel() {
         return utility;
     }
 
-    public ViewerShell getShell() {
+    ViewerShell getShell() {
         return shell;
     }
 
-    public HeaderBar getHeaderBar() {
+    HeaderBar getHeaderBar() {
         return header;
     }
 
     /** Shows a short message that fades away. */
     public void showMessage(String message) {
         toast.show(message);
-    }
-
-    public Toast getToast() {
-        return toast;
     }
 
     /** Offers "New Window" (app.new-window) and runs this for it. */

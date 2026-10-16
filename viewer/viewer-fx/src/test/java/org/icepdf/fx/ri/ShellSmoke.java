@@ -30,8 +30,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import org.icepdf.fx.ri.ui.CustomiseToolsPane;
 import org.icepdf.fx.ri.ui.EdgeDrawer;
-import org.icepdf.fx.ri.ui.Theme;
-import org.icepdf.fx.viewer.ViewerPreferences;
+import org.icepdf.fx.ri.prefs.ViewerPreferences;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;

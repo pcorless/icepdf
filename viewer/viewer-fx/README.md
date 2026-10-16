@@ -6,12 +6,20 @@ JavaFX with no copy (`PixelBuffer` over the same `int[]`). Everything interactiv
 node: text selection, search highlights, annotation chrome and popups, and form field editors.
 
 Module: `org.icepdf.fx` (requires `org.icepdf.core` and `javafx.controls`; the rendering engine is not exported).
-Packages:
-- `org.icepdf.fx.view`: the page view;
-- `org.icepdf.fx.ri`: the assembled viewer, `PdfViewer`;
-- `org.icepdf.fx.ri.actions`: the commands;
-- `org.icepdf.fx.ri.document`: open, save, signing;
+Packages, in two layers. The components, for an application that builds its own window:
+- `org.icepdf.fx.view`: the page view, `PdfView`, and its events;
+- `org.icepdf.fx.panels`: side panels for a `PdfView` (thumbnails, bookmarks, comments,
+  attachments, layers, signatures, search, document properties);
+- `org.icepdf.fx.print`, `org.icepdf.fx.signature`: printing, signature checks and signing, each
+  with its dialog;
 - `org.icepdf.fx.fonts`: system fonts.
+
+The reference viewer built from them:
+- `org.icepdf.fx.ri`: the assembled viewer, `PdfViewer`, and its configuration;
+- `org.icepdf.fx.ri.actions`: the commands;
+- `org.icepdf.fx.ri.document`: open, save, passwords, signing;
+- `org.icepdf.fx.ri.prefs`: the stand-alone viewer's settings and preferences dialog;
+- `org.icepdf.fx.ri.icons`: the replaceable icon set.
 
 The runnable example is `examples/javafx`.
 
@@ -145,7 +153,7 @@ The view can also show a `Document` you manage yourself:
 
 ```java
 Document document = new Document();
-// encrypted documents: asks for the user password (three tries); see PasswordPrompt
+// encrypted documents: asks for the user password (three tries); see ri.document.PasswordPrompt
 document.setSecurityCallback(new PasswordPrompt(stage, "file.pdf"));
 document.setFile("file.pdf");
 

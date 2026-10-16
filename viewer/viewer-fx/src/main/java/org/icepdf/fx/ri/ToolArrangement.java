@@ -21,7 +21,7 @@ import java.util.List;
 
 /**
  * An editable copy of how the tools are arranged - on the rail, in its "more" menu, or hidden -
- * for a customise dialog to work on.  Nothing changes until {@link #apply(UserLayout)}, which
+ * for a customise dialog to work on.  Nothing changes until {@link #apply(UserLayout, ViewerFeatures, Collection)}, which
  * writes it in one change.  No toolkit types, so it is tested directly.
  */
 public final class ToolArrangement {

@@ -42,7 +42,7 @@ import org.icepdf.fx.print.PdfPrintDialog;
 import org.icepdf.fx.signature.SignaturePropertiesDialog;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PageOverlayFactory;
-import org.icepdf.fx.view.PasswordPrompt;
+import org.icepdf.fx.ri.document.PasswordPrompt;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
 import org.icepdf.fx.view.ViewMode;

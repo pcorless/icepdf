@@ -28,7 +28,6 @@ import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.util.redaction.RedactionReport;
 import org.icepdf.core.util.updater.WriteMode;
-import org.icepdf.fx.view.PasswordPrompt;
 import org.icepdf.fx.view.PdfView;
 
 import java.io.BufferedOutputStream;

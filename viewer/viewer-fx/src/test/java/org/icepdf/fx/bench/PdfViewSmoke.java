@@ -1767,13 +1767,13 @@ public final class PdfViewSmoke {
     }
 
     /**
-     * Opens a document on a loader thread with a {@link org.icepdf.fx.view.PasswordPrompt}, answering
+     * Opens a document on a loader thread with a {@link org.icepdf.fx.ri.document.PasswordPrompt}, answering
      * each prompt in turn (null cancels).  Records each prompt's header.
      *
      * @return {document or the exception thrown, whether the prompt reports cancelled}
      */
     private Object[] openWithAnswers(Path file, java.util.List<String> headers, String... answers) throws Exception {
-        org.icepdf.fx.view.PasswordPrompt prompt = onFx(() -> new org.icepdf.fx.view.PasswordPrompt(stage,
+        org.icepdf.fx.ri.document.PasswordPrompt prompt = onFx(() -> new org.icepdf.fx.ri.document.PasswordPrompt(stage,
                 file.getFileName().toString()));
         CompletableFuture<Object> result = new CompletableFuture<>();
         Thread loader = new Thread(() -> {

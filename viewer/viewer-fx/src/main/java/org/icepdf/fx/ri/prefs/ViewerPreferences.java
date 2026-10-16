@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.viewer;
+package org.icepdf.fx.ri.prefs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +67,7 @@ public final class ViewerPreferences {
     public static final String ANNOTATION_COLOR = "annotation.color";
     public static final String HIGHLIGHT_FIELDS = "forms.highlightFields";
     public static final String PAINT_ANNOTATIONS = "view.paintAnnotations";
-    /** The look: a {@code org.icepdf.fx.ri.ui.Theme.Mode} name. */
+    /** The look: a {@code org.icepdf.fx.ri.Theme.Mode} name. */
     public static final String THEME = "view.theme";
     public static final String PRINT_PRINTER = "print.printer";
     public static final String PRINT_PAPER = "print.paper";

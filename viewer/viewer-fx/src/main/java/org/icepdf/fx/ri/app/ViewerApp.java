@@ -31,14 +31,14 @@ import org.icepdf.fx.ri.PdfViewer;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
 import org.icepdf.fx.ri.document.DocumentPane;
-import org.icepdf.fx.ri.ui.Theme;
+import org.icepdf.fx.ri.Theme;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.ViewMode;
 import org.icepdf.fx.fonts.FontSettings;
-import org.icepdf.fx.viewer.FontDirectories;
-import org.icepdf.fx.viewer.ImagingSettings;
-import org.icepdf.fx.viewer.PreferencesDialog;
-import org.icepdf.fx.viewer.ViewerPreferences;
+import org.icepdf.fx.ri.prefs.FontDirectories;
+import org.icepdf.fx.ri.prefs.ImagingSettings;
+import org.icepdf.fx.ri.prefs.PreferencesDialog;
+import org.icepdf.fx.ri.prefs.ViewerPreferences;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -111,7 +111,7 @@ public class ViewerApp extends Application {
     @Override
     public void start(Stage stage) {
         preferences = ViewerPreferences.load();
-        signing = org.icepdf.fx.viewer.SigningPreferences.of(preferences);
+        signing = org.icepdf.fx.ri.prefs.SigningPreferences.of(preferences);
         features = loadFeatures();
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
         FontSettings.apply(FontSettings.defaultCacheFile(), FontDirectories.of(preferences));

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.viewer;
+package org.icepdf.fx.ri.prefs;
 
 import org.icepdf.core.pobjects.graphics.images.references.ImageDownsampler;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReferenceFactory;

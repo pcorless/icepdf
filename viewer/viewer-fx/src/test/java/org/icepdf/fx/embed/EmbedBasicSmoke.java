@@ -218,7 +218,7 @@ public final class EmbedBasicSmoke {
         });
         SmokeSupport.waitOpened(onFx(viewer::getSession), doc);
         smoke.check("no header, rail or panel strip", onFx(() -> SmokeSupport.find(root, HeaderBar.class) == null
-                && SmokeSupport.find(root, EdgeDrawer.class) == null && viewer.getShell().getHeader() == null));
+                && SmokeSupport.find(root, EdgeDrawer.class) == null));
         smoke.check("the side panel commands are left out", onFx(() -> !viewer.getActions().isAvailable("view.side-panel")
                 && !viewer.getActions().isAvailable("search.panel") && !viewer.getActions().isAvailable("search.find")));
         fx(next::fire);

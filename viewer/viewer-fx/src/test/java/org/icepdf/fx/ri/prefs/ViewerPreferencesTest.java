@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.viewer;
+package org.icepdf.fx.ri.prefs;
 
 import org.icepdf.fx.view.FitMode;
 import org.junit.jupiter.api.DisplayName;

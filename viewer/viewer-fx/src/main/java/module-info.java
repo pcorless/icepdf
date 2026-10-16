@@ -15,16 +15,29 @@
  */
 
 /**
- * ICEpdf for JavaFX.
+ * ICEpdf for JavaFX, in two layers.
+ * <p>
+ * The components, for an application that builds its own window:
  * <ul>
  *     <li>{@code org.icepdf.fx.view}: {@code PdfView}, the embeddable document control, and its events;</li>
  *     <li>{@code org.icepdf.fx.panels}: side panels for a {@code PdfView} (pages, bookmarks, comments,
  *     attachments, layers, signatures, search, properties);</li>
- *     <li>{@code org.icepdf.fx.print}, {@code org.icepdf.fx.signature}: printing, signature checks and signing;</li>
- *     <li>{@code org.icepdf.fx.ri.actions}: the viewer's commands, as actions menus and bars are built from;</li>
- *     <li>{@code org.icepdf.fx.viewer}: the viewer application.</li>
+ *     <li>{@code org.icepdf.fx.print}, {@code org.icepdf.fx.signature}: printing, signature checks and
+ *     signing, each with its dialog;</li>
+ *     <li>{@code org.icepdf.fx.fonts}: the system font scan core draws with.</li>
  * </ul>
- * The rendering engine behind {@code PdfView} is not exported.
+ * The reference viewer built from them ({@code ri}), for an application that wants a whole viewer:
+ * <ul>
+ *     <li>{@code org.icepdf.fx.ri}: {@code PdfViewer}, the viewer component, and how it is configured
+ *     ({@code ViewerFeatures}, {@code UserLayout}, {@code Theme}, the stores it remembers things in);</li>
+ *     <li>{@code org.icepdf.fx.ri.actions} and its sub-packages: the viewer's commands, as actions an
+ *     application's own menus and tool bars can be built from;</li>
+ *     <li>{@code org.icepdf.fx.ri.document}: one open document - opening, saving, passwords, signing;</li>
+ *     <li>{@code org.icepdf.fx.ri.prefs}: the stand-alone viewer's settings file and preferences dialog;</li>
+ *     <li>{@code org.icepdf.fx.ri.icons}: the icon set, replaceable.</li>
+ * </ul>
+ * The rendering engine behind {@code PdfView} and the viewer's own chrome ({@code ri.ui}) are not
+ * exported.
  */
 module org.icepdf.fx {
     requires transitive javafx.controls;
@@ -37,16 +50,12 @@ module org.icepdf.fx {
     requires org.bouncycastle.provider;
 
     exports org.icepdf.fx.view;
-    exports org.icepdf.fx.fonts;
     exports org.icepdf.fx.panels;
     exports org.icepdf.fx.print;
     exports org.icepdf.fx.signature;
-    exports org.icepdf.fx.viewer;
+    exports org.icepdf.fx.fonts;
     exports org.icepdf.fx.ri;
     exports org.icepdf.fx.ri.actions;
-    exports org.icepdf.fx.ri.document;
-    exports org.icepdf.fx.ri.icons;
-    exports org.icepdf.fx.ri.ui;
     exports org.icepdf.fx.ri.actions.app;
     exports org.icepdf.fx.ri.actions.document;
     exports org.icepdf.fx.ri.actions.edit;
@@ -55,5 +64,8 @@ module org.icepdf.fx {
     exports org.icepdf.fx.ri.actions.search;
     exports org.icepdf.fx.ri.actions.tools;
     exports org.icepdf.fx.ri.actions.view;
+    exports org.icepdf.fx.ri.document;
+    exports org.icepdf.fx.ri.prefs;
+    exports org.icepdf.fx.ri.icons;
     exports org.icepdf.fx.ri.app to javafx.graphics;
 }
