@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
 
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PDate;
@@ -41,7 +41,7 @@ import java.util.List;
  * {@code SquareAnnotationHandler}, {@code CircleAnnotationHandler}, {@code LineAnnotationHandler},
  * {@code InkAnnotationHandler} and {@code FreeTextAnnotationHandler} (see PROVENANCE.md).
  */
-final class AnnotationCreator {
+public final class AnnotationCreator {
 
     /** The sticky-note icon size, as Swing's TextAnnotationHandler. */
     static final int NOTE_ICON_SIZE = 23;
@@ -53,7 +53,7 @@ final class AnnotationCreator {
     static final int FREE_TEXT_HEIGHT = 40;
 
     /** Who and how: author, colour, opacity (0-255) and stroke width for new annotations. */
-    record Style(String author, Color color, int opacity, float strokeWidth) {
+    public record Style(String author, Color color, int opacity, float strokeWidth) {
     }
 
     private AnnotationCreator() {
@@ -63,7 +63,7 @@ final class AnnotationCreator {
      * A highlight, underline, strike-out (or squiggly) over text: {@code viewRects} are the selected
      * text's rectangles in page view space (selection rects through the page transform).
      */
-    static TextMarkupAnnotation textMarkup(Library library, Name subtype, List<Rectangle2D> viewRects, String contents,
+    public static TextMarkupAnnotation textMarkup(Library library, Name subtype, List<Rectangle2D> viewRects, String contents,
                                            AffineTransform toPageSpace, Style style) {
         GeneralPath viewPath = new GeneralPath();
         for (Shape shape : viewRects) viewPath.append(shape, false);
@@ -92,7 +92,7 @@ final class AnnotationCreator {
      * A redaction over {@code viewRects} (selected text's rectangles, or one dragged box) in page view
      * space: black, its /QuadPoints covering the rectangles.  As Swing's RedactionAnnotationHandler.
      */
-    static RedactionAnnotation redaction(Library library, List<Rectangle2D> viewRects, AffineTransform toPageSpace,
+    public static RedactionAnnotation redaction(Library library, List<Rectangle2D> viewRects, AffineTransform toPageSpace,
                                          String author) {
         GeneralPath viewPath = new GeneralPath();
         for (Shape shape : viewRects) viewPath.append(shape, false);
@@ -114,7 +114,7 @@ final class AnnotationCreator {
     }
 
     /** A sticky note with its icon's top-left at a view point. */
-    static TextAnnotation note(Library library, double viewX, double viewY, AffineTransform pageToView,
+    public static TextAnnotation note(Library library, double viewX, double viewY, AffineTransform pageToView,
                                AffineTransform toPageSpace, Style style) {
         Rectangle icon = pageToView.createTransformedShape(new Rectangle(0, 0, NOTE_ICON_SIZE, NOTE_ICON_SIZE)).getBounds();
         Rectangle tBbox = Annotation.commonBoundsNormalization(
@@ -133,7 +133,7 @@ final class AnnotationCreator {
     }
 
     /** A rectangle or ellipse filling a view-space rectangle. */
-    static MarkupAnnotation shape(Library library, boolean ellipse, Rectangle2D viewRect, AffineTransform toPageSpace,
+    public static MarkupAnnotation shape(Library library, boolean ellipse, Rectangle2D viewRect, AffineTransform toPageSpace,
                                   Style style) {
         int stroke = Math.max(1, Math.round(style.strokeWidth()));
         Rectangle draw = new Rectangle((int) Math.round(viewRect.getX()) - stroke, (int) Math.round(viewRect.getY()) - stroke,
@@ -163,7 +163,7 @@ final class AnnotationCreator {
     }
 
     /** A straight line between two view-space points. */
-    static LineAnnotation line(Library library, Point2D viewStart, Point2D viewEnd, AffineTransform toPageSpace,
+    public static LineAnnotation line(Library library, Point2D viewStart, Point2D viewEnd, AffineTransform toPageSpace,
                                Style style) {
         Rectangle2D span = new Rectangle2D.Double(Math.min(viewStart.getX(), viewEnd.getX()) - 8,
                 Math.min(viewStart.getY(), viewEnd.getY()) - 8,
@@ -186,7 +186,7 @@ final class AnnotationCreator {
     }
 
     /** Freehand ink along a view-space path. */
-    static InkAnnotation ink(Library library, GeneralPath viewPath, AffineTransform toPageSpace, Style style) {
+    public static InkAnnotation ink(Library library, GeneralPath viewPath, AffineTransform toPageSpace, Style style) {
         Rectangle bBox = viewPath.getBounds();
         bBox.setRect(bBox.getX() - 5, bBox.getY() - 5, bBox.getWidth() + 10, bBox.getHeight() + 10);
         Rectangle tBbox = Annotation.commonBoundsNormalization(new GeneralPath(bBox), toPageSpace);
@@ -202,7 +202,7 @@ final class AnnotationCreator {
     }
 
     /** A free text box with its top-left at a view point, empty until edited. */
-    static FreeTextAnnotation freeText(Library library, double viewX, double viewY, double zoom,
+    public static FreeTextAnnotation freeText(Library library, double viewX, double viewY, double zoom,
                                        AffineTransform toPageSpace, Style style) {
         Rectangle draw = new Rectangle((int) viewX, (int) viewY, (int) (FREE_TEXT_WIDTH * zoom),
                 (int) (FREE_TEXT_HEIGHT * zoom));
@@ -221,7 +221,7 @@ final class AnnotationCreator {
      * A popup for a new markup annotation, beside it, as Swing's TextAnnotationHandler.createPopupAnnotation:
      * registered with the library and state manager, parented, and open only for sticky notes.
      */
-    static PopupAnnotation popup(Library library, MarkupAnnotation parent, boolean open, AffineTransform toPageSpace) {
+    public static PopupAnnotation popup(Library library, MarkupAnnotation parent, boolean open, AffineTransform toPageSpace) {
         Rectangle2D r = parent.getUserSpaceRectangle();
         Rectangle bbox = new Rectangle((int) Math.round(r.getMaxX() + 10), (int) Math.round(r.getMaxY() - POPUP_HEIGHT),
                 POPUP_WIDTH, POPUP_HEIGHT);

@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
+
+import org.icepdf.fx.view.AnnotationProperties;
+
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;

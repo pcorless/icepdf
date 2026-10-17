@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.annot.AnnotationEdits;
+
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;

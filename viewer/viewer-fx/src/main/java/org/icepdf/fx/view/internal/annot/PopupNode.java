@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,10 +46,10 @@ import java.time.format.FormatStyle;
  * the page's {@link AnnotationUiLayer}, which is not clipped to the page, so a popup can sit past
  * the page edge.  Mouse gestures on it are consumed so they never reach the page tools.
  */
-final class PopupNode extends BorderPane {
+public final class PopupNode extends BorderPane {
 
     /** Edits the node reports; the view turns them into undoable document changes. */
-    interface Listener {
+    public interface Listener {
         /** The popup was dragged or resized: (dx, dy, dw, dh) in view px since the gesture began. */
         void reshaped(PopupNode node, double dx, double dy, double dw, double dh);
 
@@ -63,8 +63,8 @@ final class PopupNode extends BorderPane {
 
     static final Color BACKGROUND = Color.rgb(255, 255, 204);
     static final Color BORDER = Color.rgb(153, 153, 153);
-    static final double MIN_WIDTH = 120;
-    static final double MIN_HEIGHT = 80;
+    public static final double MIN_WIDTH = 120;
+    public static final double MIN_HEIGHT = 80;
 
     private final PopupAnnotation popup;
     private final MarkupAnnotation markup;
@@ -170,7 +170,7 @@ final class PopupNode extends BorderPane {
      * Read-only popups (the document doesn't permit annotating) show their note but can't be
      * edited, moved or resized; they can still be minimised.
      */
-    void setEditable(boolean editable) {
+    public void setEditable(boolean editable) {
         if (this.editable == editable) return;
         this.editable = editable;
         text.setEditable(editable);
@@ -195,7 +195,7 @@ final class PopupNode extends BorderPane {
     }
 
     /** The note's colour: the markup annotation's, or the default note yellow. */
-    Color colour() {
+    public Color colour() {
         return colour;
     }
 
@@ -222,11 +222,11 @@ final class PopupNode extends BorderPane {
                 Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255));
     }
 
-    PopupAnnotation getPopup() {
+    public PopupAnnotation getPopup() {
         return popup;
     }
 
-    MarkupAnnotation getMarkup() {
+    public MarkupAnnotation getMarkup() {
         return markup;
     }
 
@@ -238,7 +238,7 @@ final class PopupNode extends BorderPane {
      * Places the popup: top-left at a view point, sized in points and scaled by the zoom, so it
      * keeps its /Rect proportions at any zoom.
      */
-    void place(double viewX, double viewY, double widthPoints, double heightPoints, double zoom) {
+    public void place(double viewX, double viewY, double widthPoints, double heightPoints, double zoom) {
         setLayoutX(viewX);
         setLayoutY(viewY);
         double w = Math.max(MIN_WIDTH, widthPoints);

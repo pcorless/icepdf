@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
 
 import java.awt.geom.Rectangle2D;
 
@@ -22,16 +22,16 @@ import java.awt.geom.Rectangle2D;
  * toolkit in it.  Handles are numbered clockwise from the top-left as drawn on screen
  * ({@link AnnotationUiLayer#handlePoint}): 0 TL, 1 T, 2 TR, 3 R, 4 BR, 5 B, 6 BL, 7 L.
  */
-final class AnnotationGeometry {
+public final class AnnotationGeometry {
 
     /** The smallest an annotation can be resized to, logical px. */
-    static final double MIN_SIZE = 8;
+    public static final double MIN_SIZE = 8;
 
     private AnnotationGeometry() {
     }
 
     /** The rectangle moved by (dx, dy), kept inside {@code bounds} (the page). */
-    static Rectangle2D move(Rectangle2D rect, double dx, double dy, Rectangle2D bounds) {
+    public static Rectangle2D move(Rectangle2D rect, double dx, double dy, Rectangle2D bounds) {
         double x = clamp(rect.getX() + dx, bounds.getMinX(), bounds.getMaxX() - rect.getWidth());
         double y = clamp(rect.getY() + dy, bounds.getMinY(), bounds.getMaxY() - rect.getHeight());
         return new Rectangle2D.Double(x, y, rect.getWidth(), rect.getHeight());
@@ -42,7 +42,7 @@ final class AnnotationGeometry {
      * handles one.  An edge can't cross its opposite (the size stops at {@link #MIN_SIZE}) nor leave
      * {@code bounds}.
      */
-    static Rectangle2D resize(Rectangle2D rect, int handle, double dx, double dy, Rectangle2D bounds) {
+    public static Rectangle2D resize(Rectangle2D rect, int handle, double dx, double dy, Rectangle2D bounds) {
         double left = rect.getMinX();
         double top = rect.getMinY();
         double right = rect.getMaxX();
@@ -59,7 +59,7 @@ final class AnnotationGeometry {
     }
 
     /** Resize cursor direction for a handle, as a compass string (nw, n, ne, e, se, s, sw, w). */
-    static String direction(int handle) {
+    public static String direction(int handle) {
         return switch (handle) {
             case 0 -> "nw";
             case 1 -> "n";

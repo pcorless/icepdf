@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
+
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;

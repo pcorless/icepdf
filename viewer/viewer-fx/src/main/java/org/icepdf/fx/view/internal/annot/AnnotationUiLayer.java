@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
 
 import org.icepdf.fx.view.internal.raster.RasterBuffer;
 
@@ -41,7 +41,7 @@ import java.util.List;
  * layer, and is created and dropped with it.  Chrome is drawn in page view space (logical px), so
  * outlines and handles keep a constant on-screen size at any zoom.
  */
-final class AnnotationUiLayer extends Group {
+public final class AnnotationUiLayer extends Group {
 
     static final double HANDLE = 7;
     private static final Color CHROME = Color.rgb(0, 119, 255);
@@ -76,7 +76,7 @@ final class AnnotationUiLayer extends Group {
     private Annotation selected;
     private boolean handlesShown;
 
-    AnnotationUiLayer(int pageIndex) {
+    public AnnotationUiLayer(int pageIndex) {
         this.pageIndex = pageIndex;
         setAutoSizeChildren(false);
         hover.setFill(null);
@@ -111,7 +111,7 @@ final class AnnotationUiLayer extends Group {
         getChildren().addAll(handles);
     }
 
-    int getPageIndex() {
+    public int getPageIndex() {
         return pageIndex;
     }
 
@@ -120,25 +120,25 @@ final class AnnotationUiLayer extends Group {
         return popups;
     }
 
-    void setPageToView(AffineTransform pageToView) {
+    public void setPageToView(AffineTransform pageToView) {
         this.pageToView = pageToView;
         place();
     }
 
-    void setHovered(Annotation annotation) {
+    public void setHovered(Annotation annotation) {
         if (annotation == hovered) return;
         hovered = annotation;
         place();
     }
 
     /** The form field with input focus on this page (focus ring), or null. */
-    void setFocusedField(Annotation annotation) {
+    public void setFocusedField(Annotation annotation) {
         if (annotation == focused) return;
         focused = annotation;
         place();
     }
 
-    void setSelected(Annotation annotation, boolean withHandles) {
+    public void setSelected(Annotation annotation, boolean withHandles) {
         if (annotation == selected && withHandles == handlesShown) return;
         selected = annotation;
         handlesShown = withHandles;
@@ -150,7 +150,7 @@ final class AnnotationUiLayer extends Group {
      * region whose top-left is (deviceX, deviceY); {@code from} is the annotation's view bounds when
      * the drag began.
      */
-    void setProxy(RasterBuffer buffer, double deviceX, double deviceY, double scale, Rectangle2D from,
+    public void setProxy(RasterBuffer buffer, double deviceX, double deviceY, double scale, Rectangle2D from,
                   boolean multiply) {
         proxy.setImage(buffer.getImage());
         // a highlight follows the pointer as it shows on the page: multiplied over it.
@@ -164,18 +164,18 @@ final class AnnotationUiLayer extends Group {
         placeProxy();
     }
 
-    boolean hasProxy() {
+    public boolean hasProxy() {
         return proxy.isVisible();
     }
 
-    void clearProxy() {
+    public void clearProxy() {
         proxy.setVisible(false);
         proxy.setImage(null);
         proxyFrom = null;
     }
 
     /** During a drag, the bounds the selection chrome and proxy follow; null when not dragging. */
-    void setDragBounds(Rectangle2D bounds) {
+    public void setDragBounds(Rectangle2D bounds) {
         dragBounds = bounds;
         place();
         placeProxy();
@@ -192,14 +192,14 @@ final class AnnotationUiLayer extends Group {
     }
 
     /** Re-reads the annotations' rectangles (after a move or resize). */
-    void refresh() {
+    public void refresh() {
         place();
     }
 
     /**
      * An annotation's rectangle in this page's view space; axis-aligned for the 90° rotations.
      */
-    Rectangle2D viewBounds(Annotation annotation) {
+    public Rectangle2D viewBounds(Annotation annotation) {
         return pageToView.createTransformedShape(annotation.getUserSpaceRectangle()).getBounds2D();
     }
 
@@ -207,7 +207,7 @@ final class AnnotationUiLayer extends Group {
      * Which handle (0-7, clockwise from top-left: TL, T, TR, R, BR, B, BL, L) is at a point in page
      * view space, or -1.
      */
-    int handleAt(double x, double y) {
+    public int handleAt(double x, double y) {
         if (!handlesShown || selected == null) return -1;
         for (int i = 0; i < handles.size(); i++) {
             Rectangle h = handles.get(i);
@@ -223,7 +223,7 @@ final class AnnotationUiLayer extends Group {
      *
      * @param statuses the page's signature widgets (this page's annotation objects) and their status
      */
-    void setSignatureBadges(java.util.Map<Annotation, org.icepdf.fx.signature.SignatureStatus> statuses,
+    public void setSignatureBadges(java.util.Map<Annotation, org.icepdf.fx.signature.SignatureStatus> statuses,
                             java.util.function.Consumer<org.icepdf.fx.signature.SignatureStatus> clicked) {
         if (statuses.equals(badgeStatuses)) {
             place();
@@ -309,7 +309,7 @@ final class AnnotationUiLayer extends Group {
      * Creates, places and drops popup nodes to match the page's open popups.  Popups are not
      * clipped to the page and are placed exactly from their /Rect, so one can sit past the page edge.
      */
-    void updatePopups(java.util.List<org.icepdf.core.pobjects.annotations.Annotation> annotations, double zoom,
+    public void updatePopups(java.util.List<org.icepdf.core.pobjects.annotations.Annotation> annotations, double zoom,
                       PopupNode.Listener listener, boolean editable) {
         java.util.Set<org.icepdf.core.pobjects.annotations.PopupAnnotation> open = new java.util.HashSet<>();
         if (annotations != null && pageToView != null) {
@@ -344,13 +344,13 @@ final class AnnotationUiLayer extends Group {
     }
 
     /** Live feedback while a popup is dragged or resized (view px since the gesture began). */
-    void setPopupReshape(PopupNode node, double dx, double dy, double dw, double dh, double zoom) {
+    public void setPopupReshape(PopupNode node, double dx, double dy, double dw, double dh, double zoom) {
         reshaping = node;
         reshape = new double[]{dx, dy, dw, dh};
         placePopup(node, zoom);
     }
 
-    void clearPopupReshape(double zoom) {
+    public void clearPopupReshape(double zoom) {
         PopupNode node = reshaping;
         reshaping = null;
         reshape = null;
@@ -358,7 +358,7 @@ final class AnnotationUiLayer extends Group {
     }
 
     /** The popup's top-left in this page's view space: its /Rect's view bounds' minimum. */
-    double[] popupAnchor(org.icepdf.core.pobjects.annotations.PopupAnnotation popup) {
+    public double[] popupAnchor(org.icepdf.core.pobjects.annotations.PopupAnnotation popup) {
         Rectangle2D b = viewBounds(popup);
         return new double[]{b.getMinX(), b.getMinY()};
     }
@@ -430,7 +430,7 @@ final class AnnotationUiLayer extends Group {
     }
 
     /** Open popup nodes, for tests and lookups. */
-    java.util.Collection<PopupNode> popupNodes() {
+    public java.util.Collection<PopupNode> popupNodes() {
         return popupNodes.values();
     }
 
@@ -440,7 +440,7 @@ final class AnnotationUiLayer extends Group {
     private javafx.scene.control.TextArea textEditor;
 
     /** A drawing tool's live outline (view space); null removes it. */
-    void setCreationPreview(Node node) {
+    public void setCreationPreview(Node node) {
         if (creationPreview != null) getChildren().remove(creationPreview);
         creationPreview = node;
         if (node != null) getChildren().add(node);
@@ -450,7 +450,7 @@ final class AnnotationUiLayer extends Group {
      * An inline editor over a free text annotation (view space), committing on focus loss or
      * Ctrl+Enter and cancelling on Esc.
      */
-    void openTextEditor(Rectangle2D viewBounds, String text, double zoom, java.util.function.Consumer<String> commit) {
+    public void openTextEditor(Rectangle2D viewBounds, String text, double zoom, java.util.function.Consumer<String> commit) {
         closeTextEditor();
         javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(text == null ? "" : text);
         area.getStyleClass().add("pdf-free-text-editor");
@@ -491,11 +491,11 @@ final class AnnotationUiLayer extends Group {
     }
 
     /** Adds a form field editor (view space) above everything else on this page. */
-    void addFieldEditor(Node editor) {
+    public void addFieldEditor(Node editor) {
         getChildren().add(editor);
     }
 
-    void removeFieldEditor(Node editor) {
+    public void removeFieldEditor(Node editor) {
         getChildren().remove(editor);
     }
 

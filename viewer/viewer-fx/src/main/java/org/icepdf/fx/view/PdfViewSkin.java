@@ -15,6 +15,12 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.annot.AnnotationCreator;
+import org.icepdf.fx.view.internal.annot.AnnotationEdits;
+import org.icepdf.fx.view.internal.annot.AnnotationGeometry;
+import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
+import org.icepdf.fx.view.internal.annot.PopupNode;
+
 import org.icepdf.fx.view.internal.raster.CacheKey;
 import org.icepdf.fx.view.internal.raster.PageTransforms;
 import org.icepdf.fx.view.internal.raster.RasterBuffer;

@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.annot;
+
+import org.icepdf.fx.view.AnnotationProperties;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.annotations.Annotation;
@@ -44,14 +46,14 @@ import java.util.List;
  * lock, the one the renderer holds while painting annotation tiles, so a worker never sees the
  * annotation list or an appearance half-changed.
  */
-final class AnnotationEdits {
+public final class AnnotationEdits {
 
     /** Runs a mutation of a page's annotations under the renderer's lock for that page. */
-    interface Locker {
+    public interface Locker {
         void withAnnotationLock(int pageIndex, Runnable mutation);
     }
 
-    interface Edit {
+    public interface Edit {
         int pageIndex();
 
         /** Every page the edit touches (a form reset or radio group can span pages). */
@@ -75,7 +77,7 @@ final class AnnotationEdits {
      * @param dx view-space x delta of the gesture (Swing's mouse delta convention)
      * @param dy view-space y delta of the gesture
      */
-    static Edit reshape(Locker locker, Page page, int pageIndex, Annotation annotation, Rectangle2D newView,
+    public static Edit reshape(Locker locker, Page page, int pageIndex, Annotation annotation, Rectangle2D newView,
                         double dx, double dy, AffineTransform toPageSpace) {
         Rectangle2D.Float before = new Rectangle2D.Float();
         before.setRect(annotation.getUserSpaceRectangle());
@@ -116,7 +118,7 @@ final class AnnotationEdits {
      * Moves/resizes a popup to a new /Rect, applied now.  Popups have no appearance stream; only the
      * rectangle changes, and it is not confined to the page.
      */
-    static Edit popupRect(Locker locker, Page page, int pageIndex, PopupAnnotation popup, Rectangle2D after) {
+    public static Edit popupRect(Locker locker, Page page, int pageIndex, PopupAnnotation popup, Rectangle2D after) {
         Rectangle2D.Float before = new Rectangle2D.Float();
         before.setRect(popup.getUserSpaceRectangle());
         Rectangle2D.Float target = new Rectangle2D.Float();
@@ -147,7 +149,7 @@ final class AnnotationEdits {
     }
 
     /** Replaces a markup annotation's contents (its popup note text), applied now. */
-    static Edit contents(Locker locker, Page page, int pageIndex, MarkupAnnotation markup, String after) {
+    public static Edit contents(Locker locker, Page page, int pageIndex, MarkupAnnotation markup, String after) {
         String before = markup.getContents();
         return applied(new Edit() {
             public int pageIndex() {
@@ -182,7 +184,7 @@ final class AnnotationEdits {
      * {@code edits} may be empty when only the extra steps change something (pageIndex -1, no
      * annotation).
      */
-    static Edit group(List<Edit> edits, Runnable alsoUndo, Runnable alsoRedo) {
+    public static Edit group(List<Edit> edits, Runnable alsoUndo, Runnable alsoRedo) {
         List<Edit> all = List.copyOf(edits);
         return new Edit() {
             public int pageIndex() {
@@ -217,7 +219,7 @@ final class AnnotationEdits {
     }
 
     /** Adds a new annotation (and its popup, if any) to the page, applied now; undo deletes it. */
-    static Edit add(Locker locker, Page page, int pageIndex, Annotation annotation, PopupAnnotation popup) {
+    public static Edit add(Locker locker, Page page, int pageIndex, Annotation annotation, PopupAnnotation popup) {
         boolean[] first = {true};
         // the appearance streams as they were before undo deleted them (core drops them from the library).
         org.icepdf.core.pobjects.Stream[] appearances = new org.icepdf.core.pobjects.Stream[2];
@@ -259,7 +261,7 @@ final class AnnotationEdits {
     }
 
     /** Sets a free text annotation's text and regenerates its appearance, applied now. */
-    static Edit freeTextContents(Locker locker, Page page, int pageIndex,
+    public static Edit freeTextContents(Locker locker, Page page, int pageIndex,
                                  org.icepdf.core.pobjects.annotations.FreeTextAnnotation freeText, String after,
                                  AffineTransform toPageSpace) {
         String before = freeText.getContents();
@@ -296,7 +298,7 @@ final class AnnotationEdits {
      * Changes an annotation's properties (colour, opacity, border, fill, ...) as one edit, applied now.
      * Undo restores a full snapshot taken before; the appearance stream is regenerated each way.
      */
-    static Edit properties(Locker locker, Page page, int pageIndex, Annotation annotation,
+    public static Edit properties(Locker locker, Page page, int pageIndex, Annotation annotation,
                            AnnotationProperties change, AffineTransform toPageSpace) {
         AnnotationProperties before = AnnotationProperties.capture(annotation);
         AffineTransform toPage = new AffineTransform(toPageSpace);
@@ -335,7 +337,7 @@ final class AnnotationEdits {
     }
 
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
-    static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
+    public static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;
         org.icepdf.core.pobjects.Stream[] appearances = new org.icepdf.core.pobjects.Stream[2];
         Edit edit = new Edit() {
@@ -415,16 +417,16 @@ final class AnnotationEdits {
     }
 
     /** Undo/redo stacks; confined to the FX thread. */
-    static final class History {
+    public static final class History {
         private final Deque<Edit> undo = new ArrayDeque<>();
         private final Deque<Edit> redo = new ArrayDeque<>();
 
-        void push(Edit edit) {
+        public void push(Edit edit) {
             undo.push(edit);
             redo.clear();
         }
 
-        Edit undo() {
+        public Edit undo() {
             Edit edit = undo.poll();
             if (edit != null) {
                 edit.undo();
@@ -433,7 +435,7 @@ final class AnnotationEdits {
             return edit;
         }
 
-        Edit redo() {
+        public Edit redo() {
             Edit edit = redo.poll();
             if (edit != null) {
                 edit.redo();
@@ -442,15 +444,15 @@ final class AnnotationEdits {
             return edit;
         }
 
-        boolean canUndo() {
+        public boolean canUndo() {
             return !undo.isEmpty();
         }
 
-        boolean canRedo() {
+        public boolean canRedo() {
             return !redo.isEmpty();
         }
 
-        void clear() {
+        public void clear() {
             undo.clear();
             redo.clear();
         }

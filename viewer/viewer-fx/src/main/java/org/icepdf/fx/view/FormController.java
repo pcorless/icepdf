@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.annot.AnnotationEdits;
+
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
