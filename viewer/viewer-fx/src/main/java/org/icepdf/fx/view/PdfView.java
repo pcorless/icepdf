@@ -69,6 +69,8 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
@@ -89,6 +91,8 @@ import java.util.function.Function;
  * Styleable with the {@code pdf-view} style class.
  */
 public class PdfView extends Control {
+
+    private static final Logger logger = Logger.getLogger(PdfView.class.getName());
 
     public static final double MIN_ZOOM = 0.05;
     public static final double MAX_ZOOM = 64;
@@ -758,9 +762,10 @@ public class PdfView extends Control {
 
     /**
      * True while the document has changes not yet saved (core's
-     * {@code StateManager.hasUnsavedUserChanges()}).  Updated after every edit made through the view,
-     * undo and redo, and when the document changes; after changing core objects directly, or after
-     * saving in place, call {@link #refreshModified()}.
+     * {@code StateManager.hasUnsavedUserChanges()}), or a form field holds typed text not yet applied
+     * ({@link #hasPendingFieldEdit()}).  Updated after every edit made through the view, undo and
+     * redo, while a field is typed in, and when the document changes; after changing core objects
+     * directly, or after saving in place, call {@link #refreshModified()}.
      */
     public final ReadOnlyBooleanProperty modifiedProperty() {
         return modified.getReadOnlyProperty();
@@ -773,7 +778,24 @@ public class PdfView extends Control {
     /** Reads {@link #modifiedProperty()} again from the document. */
     public void refreshModified() {
         Document doc = getDocument();
-        modified.set(doc != null && doc.getStateManager().hasUnsavedUserChanges());
+        modified.set(doc != null && (doc.getStateManager().hasUnsavedUserChanges() || hasPendingFieldEdit()));
+    }
+
+    /**
+     * True while a form field's editor holds a value the user changed that isn't in the document
+     * yet: it is applied on Enter, Tab or leaving the field, or by {@link #commitFieldEdit()}.
+     */
+    public boolean hasPendingFieldEdit() {
+        return getSkin() instanceof PdfViewSkin skin && skin.fields().isEditPending();
+    }
+
+    /**
+     * Applies what is being typed in a form field to the document now, as Tab would, and closes
+     * the editor.  Call it before the document is written, printed or signed - a shortcut such as
+     * Ctrl+S doesn't take the focus out of the field, so nothing else commits it.
+     */
+    public void commitFieldEdit() {
+        if (getSkin() instanceof PdfViewSkin skin) skin.fields().closeEditor(true);
     }
 
     public final ReadOnlyBooleanProperty canRedoProperty() {
@@ -911,25 +933,43 @@ public class PdfView extends Control {
         searchAutoSelect = true;
         searchStartPage = getCurrentPageIndex();
         searching.set(true);
-        searchThread = startWorker("icepdf-fx-search", () -> DocumentSearch.run(page -> {
+        searchThread = startWorker("icepdf-fx-search", () -> {
             try {
-                PageText text = doc.getPageViewText(page);
-                return text != null ? text.getTextSequence() : null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return null;
-            }
-        }, list, pages, () -> Thread.currentThread().isInterrupted(), (page, hits, done, total) ->
-                Platform.runLater(() -> {
-                    if (generation != searchGeneration) return;
-                    if (!hits.isEmpty()) {
-                        hitsByPage.put(page, List.copyOf(hits));
-                        searchHits.addAll(hits);
+                DocumentSearch.run(page -> {
+                    try {
+                        PageText text = doc.getPageViewText(page);
+                        return text != null ? text.getTextSequence() : null;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    } catch (RuntimeException e) {
+                        // a page whose text can't be read has no hits; the rest are still searched.
+                        logger.log(Level.WARNING, "Could not read the text of page " + (page + 1) + " to search it", e);
+                        return null;
                     }
-                    searchProgress.set(done / (double) total);
-                    if (done == total) searching.set(false);
-                    autoSelectSearchHit(done == total);
-                })));
+                }, list, pages, () -> Thread.currentThread().isInterrupted(), (page, hits, done, total) ->
+                        Platform.runLater(() -> {
+                            if (generation != searchGeneration) return;
+                            if (!hits.isEmpty()) {
+                                hitsByPage.put(page, List.copyOf(hits));
+                                searchHits.addAll(hits);
+                            }
+                            searchProgress.set(done / (double) total);
+                            if (done == total) searching.set(false);
+                            autoSelectSearchHit(done == total);
+                        }));
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Search failed", e);
+            } finally {
+                // however the worker ends, a search that is still the current one is over.
+                Platform.runLater(() -> {
+                    if (generation == searchGeneration && searching.get()) {
+                        searching.set(false);
+                        autoSelectSearchHit(true);
+                    }
+                });
+            }
+        });
     }
 
     /** Selects the first hit at or after the page the search started from, once one is known. */
@@ -1570,6 +1610,7 @@ public class PdfView extends Control {
      * @throws IllegalStateException with no document, or one that doesn't permit printing
      */
     public Task<Void> print(PrintSettings settings) {
+        commitFieldEdit();
         Document document = getDocument();
         if (document == null || !isPrintAllowed()) {
             throw new IllegalStateException(Messages.get("pdfView.cannotPrint"));

@@ -22,6 +22,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.concurrent.Worker;
 import javafx.stage.Window;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
@@ -57,6 +58,11 @@ import java.util.logging.Logger;
  *     target, closes it, moves the temporary file over the target in one step, and reopens it at
  *     the same page - the open file backs the document, so it can't be written in place, and a
  *     failed save never leaves half a file behind;</li>
+ *     <li>while a background job uses the document - a redacted or signed copy being written, a
+ *     print ({@link #hold}) - it is {@link #busyProperty() busy}: open, close, save and export
+ *     refuse, saying so through onError, rather than dispose or write it under the job;</li>
+ *     <li>what is being typed in a form field counts as a change, and is applied before a write
+ *     ({@link PdfView#commitFieldEdit()});</li>
  *     <li>errors go to {@link #setOnError}; nothing here shows a dialog except the password prompt.</li>
  * </ul>
  * FX thread only.
@@ -69,6 +75,10 @@ public final class DocumentSession {
     private final ReadOnlyObjectWrapper<Path> file = new ReadOnlyObjectWrapper<>(this, "file");
     private final ReadOnlyBooleanWrapper loading = new ReadOnlyBooleanWrapper(this, "loading");
     private final ReadOnlyBooleanWrapper writing = new ReadOnlyBooleanWrapper(this, "writing");
+    private final ReadOnlyBooleanWrapper busy = new ReadOnlyBooleanWrapper(this, "busy");
+    // background jobs using the document: writes (export, signing) and held ones (printing).
+    private int writes;
+    private final java.util.List<Worker<?>> heldJobs = new java.util.ArrayList<>();
     private final ReadOnlyObjectWrapper<Path> loadingFile = new ReadOnlyObjectWrapper<>(this, "loadingFile");
     // bumped by every open and close: a load that finishes under an older ticket is thrown away.
     private int ticket;
@@ -111,13 +121,76 @@ public final class DocumentSession {
         return loading.get();
     }
 
-    /** True while {@link #exportRedacted} writes the redacted copy. */
+    /** True while a copy of the document is written in the background: {@link #exportRedacted}, or signing. */
     public ReadOnlyBooleanProperty writingProperty() {
         return writing.getReadOnlyProperty();
     }
 
     public boolean isWriting() {
         return writing.get();
+    }
+
+    /**
+     * True while a background job uses the document: a copy being written ({@link #writingProperty()})
+     * or a job {@link #hold held} open, such as a print.  Meanwhile open, close, save, save as and
+     * export refuse (and say so through onError); {@link #dispose()} still closes it.
+     */
+    public ReadOnlyBooleanProperty busyProperty() {
+        return busy.getReadOnlyProperty();
+    }
+
+    public boolean isBusy() {
+        return busy.get();
+    }
+
+    /**
+     * Keeps the document from being closed, replaced or saved while {@code job} reads it (a print):
+     * the session is busy until the job succeeds, fails or is cancelled.  Disposing the session
+     * cancels it.
+     */
+    public void hold(Worker<?> job) {
+        if (job == null || done(job.getState()) || heldJobs.contains(job)) return;
+        heldJobs.add(job);
+        updateBusy();
+        job.stateProperty().addListener((o, was, now) -> {
+            if (done(now) && heldJobs.remove(job)) updateBusy();
+        });
+    }
+
+    private static boolean done(Worker.State state) {
+        return state == Worker.State.SUCCEEDED || state == Worker.State.FAILED || state == Worker.State.CANCELLED;
+    }
+
+    /** Marks a write as started (FX thread); the returned action ends it, once. */
+    Runnable startWrite() {
+        writes++;
+        writing.set(true);
+        updateBusy();
+        boolean[] ended = new boolean[1];
+        return () -> {
+            if (ended[0]) return;
+            ended[0] = true;
+            writes--;
+            writing.set(writes > 0);
+            updateBusy();
+        };
+    }
+
+    private void updateBusy() {
+        busy.set(writes > 0 || !heldJobs.isEmpty());
+    }
+
+    /**
+     * While {@link #isBusy() busy}, tells onError the document can't be changed yet.
+     *
+     * @return true if busy (the caller should stop)
+     */
+    public boolean reportBusy() {
+        if (!isBusy()) return false;
+        Path shown = getFile();
+        onError.accept(shown != null && shown.getFileName() != null
+                ? Messages.format("documentSession.busy", shown.getFileName()) : Messages.get("documentSession.busyUntitled"));
+        return true;
     }
 
     /** The file being read (absolute), or null when nothing is loading. */
@@ -158,11 +231,12 @@ public final class DocumentSession {
     }
 
     /**
-     * True when the open document has changes not yet saved; read from the document, so it is current
-     * even before {@link PdfView#modifiedProperty()} is refreshed.
+     * True when the open document has changes not yet saved, or a form field holds typed text not yet
+     * applied; read from the document, so it is current even before {@link PdfView#modifiedProperty()}
+     * is refreshed.
      */
     public boolean isModified() {
-        return document != null && document.getStateManager().hasUnsavedUserChanges();
+        return document != null && (document.getStateManager().hasUnsavedUserChanges() || view.hasPendingFieldEdit());
     }
 
     /** Asks about unsaved changes (when there are any); true to go ahead. */
@@ -182,7 +256,7 @@ public final class DocumentSession {
 
     /** {@link #open(Path)}, then {@code done} with whether the file opened (not called when superseded). */
     public boolean open(Path path, Consumer<Boolean> done) {
-        if (!confirmDiscard()) return false;
+        if (reportBusy() || !confirmDiscard()) return false;
         openAt(path, -1, done);
         return true;
     }
@@ -192,6 +266,12 @@ public final class DocumentSession {
      * open one (a signed copy, say) - at the zero-based page index {@code page} when that's >= 0.
      */
     public void openAt(Path path, int page) {
+        if (reportBusy()) return;
+        reopen(path, page);
+    }
+
+    /** {@link #openAt(Path, int)} for the session's own writes, which have ended (or never started) their job. */
+    void reopen(Path path, int page) {
         openAt(path, page, ok -> { });
     }
 
@@ -251,13 +331,15 @@ public final class DocumentSession {
 
     /** Closes the document, after asking about unsaved changes.  @return false if the user stayed */
     public boolean close() {
-        if (!confirmDiscard()) return false;
+        if (reportBusy() || !confirmDiscard()) return false;
         dispose();
         return true;
     }
 
     /** Closes the document without asking (the window is going away). */
     public void dispose() {
+        // a held job (a print) reads the document being disposed: stop it.
+        for (Worker<?> job : new java.util.ArrayList<>(heldJobs)) job.cancel();
         ticket++;
         loading.set(false);
         loadingFile.set(null);
@@ -279,20 +361,26 @@ public final class DocumentSession {
      * saved in place ({@link #canSaveInPlace()}).
      */
     public boolean save() {
-        if (!canSaveInPlace()) return false;
+        if (!canSaveInPlace() || reportBusy()) return false;
         return writeAndReopen(getFile());
     }
 
     /** Saves to {@code target} (".pdf" added when missing), which becomes the open file. */
     public boolean saveAs(Path target) {
-        if (document == null || target == null) return false;
-        if (!target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
-            target = target.resolveSibling(target.getFileName() + ".pdf");
-        }
-        return writeAndReopen(target);
+        if (document == null || target == null || reportBusy()) return false;
+        return writeAndReopen(withPdfExtension(target));
+    }
+
+    /** {@code target}, with ".pdf" added when its name doesn't end with it (any case). */
+    public static Path withPdfExtension(Path target) {
+        Path name = target.getFileName();
+        if (name == null || name.toString().toLowerCase(Locale.ROOT).endsWith(".pdf")) return target;
+        return target.resolveSibling(name + ".pdf");
     }
 
     private boolean writeAndReopen(Path target) {
+        // a value still being typed in a field goes out with the rest.
+        view.commitFieldEdit();
         Path directory = target.toAbsolutePath().getParent();
         Path temp = null;
         try {
@@ -321,10 +409,10 @@ public final class DocumentSession {
         } catch (IOException e) {
             logger.log(Level.WARNING, "Save failed", e);
             onError.accept(Messages.format("documentSession.replaceFailed", target.getFileName(), e.getMessage(), temp));
-            openAt(previous != null ? previous : temp, page);
+            reopen(previous != null ? previous : temp, page);
             return false;
         }
-        openAt(target, page);
+        reopen(target, page);
         return true;
     }
 
@@ -345,12 +433,12 @@ public final class DocumentSession {
      * document, and {@code done} gets the write's report (null if it failed - see onError).
      */
     public void exportRedacted(Path target, Consumer<RedactionReport> done) {
-        if (document == null || target == null) return;
-        Path out = target.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".pdf") ? target
-                : target.resolveSibling(target.getFileName() + ".pdf");
+        if (document == null || target == null || reportBusy()) return;
+        view.commitFieldEdit();
+        Path out = withPdfExtension(target);
         Document writingDocument = document;
         int page = view.getCurrentPageIndex();
-        writing.set(true);
+        Runnable endWrite = startWrite();
         Thread worker = new Thread(() -> {
             Path temp = null;
             try {
@@ -365,17 +453,18 @@ public final class DocumentSession {
                 }
                 RedactionReport report = writingDocument.getRedactionReport();
                 Platform.runLater(() -> {
-                    writing.set(false);
+                    endWrite.run();
                     // the redacted copy is the document now; the marked original is left as it was.
                     writingDocument.getStateManager().setChangesSnapshot();
-                    if (document == writingDocument) openAt(out, page);
+                    if (document == writingDocument) reopen(out, page);
                     done.accept(report);
                 });
-            } catch (Exception e) {
+            } catch (Exception | Error e) {
+                // an Error too: the session must not stay busy for good.
                 logger.log(Level.WARNING, "Redacted export failed", e);
                 deleteQuietly(temp);
                 Platform.runLater(() -> {
-                    writing.set(false);
+                    endWrite.run();
                     onError.accept(Messages.format("documentSession.writeFailed", out.getFileName(), e.getMessage()));
                     done.accept(null);
                 });

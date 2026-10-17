@@ -30,7 +30,6 @@ import org.icepdf.fx.signature.SigningSettings;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.SignatureEvent;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -109,8 +108,10 @@ public final class SignatureFlow {
     /** Signs an empty field of the session's document. */
     public void sign(SignatureWidgetAnnotation field) {
         Document document = session.getDocument();
-        if (document == null || field == null) return;
+        if (document == null || field == null || session.reportBusy()) return;
         PdfView view = session.getView();
+        // a value still being typed in another field goes into the signed copy.
+        view.commitFieldEdit();
         Window owner = view.getScene() != null ? view.getScene().getWindow() : null;
         SigningSettings settings = store.settings();
         SignDialog.Result result = new SignDialog(owner, document, field, settings).showAndWait().orElse(null);
@@ -127,26 +128,34 @@ public final class SignatureFlow {
         Path file = session.getFile();
         String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
         Path suggested = file != null ? file.resolveSibling(base + "-signed.pdf") : Path.of(base + "-signed.pdf");
-        Path target = chooseTarget.apply(owner, suggested);
-        if (target == null) {
+        Path chosen = chooseTarget.apply(owner, suggested);
+        if (chosen == null || session.isBusy()) {
             DocumentSigning.cancel(field);
+            session.reportBusy();
             return;
         }
+        Path target = DocumentSession.withPdfExtension(chosen);
         onMessage.accept(Messages.get("signatureFlow.signing"));
         int page = view.getCurrentPageIndex();
+        // the document can't be saved, replaced or closed while the signed copy is written.
+        Runnable endWrite = session.startWrite();
         // signing may call a timestamp authority: off the FX thread.
         Thread worker = new Thread(() -> {
             try {
                 DocumentSigning.saveSigned(document, target);
                 Platform.runLater(() -> {
+                    endWrite.run();
                     // the signed copy is the document now; the original's pending signature is gone.
                     document.getStateManager().setChangesSnapshot();
-                    if (session.getDocument() == document) session.openAt(target, page);
+                    if (session.getDocument() == document) session.reopen(target, page);
                     onMessage.accept(Messages.format("signatureFlow.signed", target.getFileName()));
                 });
-            } catch (Exception e) {
-                logger.log(Level.FINE, "Signing failed", e);
-                Platform.runLater(() -> onError.accept(Messages.format("signatureFlow.failed", e.getMessage())));
+            } catch (Exception | Error e) {
+                logger.log(Level.WARNING, "Signing failed", e);
+                Platform.runLater(() -> {
+                    endWrite.run();
+                    onError.accept(Messages.format("signatureFlow.failed", e.getMessage()));
+                });
             }
         }, "pdf-sign");
         worker.setDaemon(true);
@@ -160,7 +169,6 @@ public final class SignatureFlow {
         chooser.setInitialFileName(suggested.getFileName().toString());
         Path folder = suggested.toAbsolutePath().getParent();
         if (folder != null && folder.toFile().isDirectory()) chooser.setInitialDirectory(folder.toFile());
-        File chosen = chooser.showSaveDialog(owner);
-        return chosen != null ? chosen.toPath() : null;
+        return org.icepdf.fx.ri.ui.PdfTargets.confirm(owner, chooser.showSaveDialog(owner));
     }
 }

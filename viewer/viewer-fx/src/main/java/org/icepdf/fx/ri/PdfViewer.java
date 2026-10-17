@@ -417,6 +417,11 @@ public class PdfViewer extends StackPane {
      */
     public boolean removeDocument(DocumentPane pane) {
         if (!documents.contains(pane)) return false;
+        if (pane.getSession().isBusy()) {
+            selectDocument(pane);
+            pane.getSession().reportBusy();
+            return false;
+        }
         // the prompt is about the selected document: show the one being asked about.
         if (pane.getSession().isModified()) selectDocument(pane);
         if (!pane.getSession().confirmDiscard()) return false;
@@ -493,7 +498,7 @@ public class PdfViewer extends StackPane {
 
     /** Saves the selected document in place, or asks for a name when it can't be. @return true if saved */
     public boolean save() {
-        if (session().getDocument() == null) return false;
+        if (session().getDocument() == null || session().reportBusy()) return false;
         if (!redactionsSettled()) return false;
         if (!session().canSaveInPlace()) return saveAsChecked();
         boolean saved = session().save();
@@ -503,7 +508,7 @@ public class PdfViewer extends StackPane {
 
     /** Saves the selected document under a name the user picks. @return true if saved */
     public boolean saveAs() {
-        if (session().getDocument() == null) return false;
+        if (session().getDocument() == null || session().reportBusy()) return false;
         if (!redactionsSettled()) return false;
         return saveAsChecked();
     }
@@ -515,9 +520,10 @@ public class PdfViewer extends StackPane {
         File chosen = chooser.showSaveDialog(context.window());
         if (chosen == null) return false;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        if (!session().saveAs(chosen.toPath())) return false;
+        Path target = PdfTargets.confirm(context.window(), chosen);
+        if (target == null || !session().saveAs(target)) return false;
         Path saved = session().getLoadingFile();
-        showMessage(Messages.format("viewer.savedFile", saved != null ? saved.getFileName() : chosen.getName()));
+        showMessage(Messages.format("viewer.savedFile", (saved != null ? saved : target).getFileName()));
         return true;
     }
 
@@ -530,7 +536,7 @@ public class PdfViewer extends StackPane {
                     File target = chooser.showSaveDialog(window);
                     if (target == null) return null;
                     if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
-                    return target.toPath();
+                    return PdfTargets.confirm(window, target);
                 });
     }
 
@@ -562,7 +568,7 @@ public class PdfViewer extends StackPane {
     public void exportRedacted() {
         DocumentPane pane = pane();
         DocumentSession session = pane.getSession();
-        if (session.getDocument() == null) return;
+        if (session.getDocument() == null || session.reportBusy()) return;
         FileChooser chooser = context.chooser(Messages.get("viewer.exportRedactedTitle"));
         Path file = session.getFile();
         String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
@@ -570,9 +576,11 @@ public class PdfViewer extends StackPane {
         File chosen = chooser.showSaveDialog(context.window());
         if (chosen == null) return;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
+        Path target = PdfTargets.confirm(context.window(), chosen);
+        if (target == null) return;
         showMessage(Messages.get("viewer.redacting"));
-        session.exportRedacted(chosen.toPath(), report -> {
-            if (report != null) showRedactionReport(chosen.getName(), report);
+        session.exportRedacted(target, report -> {
+            if (report != null) showRedactionReport(target.getFileName().toString(), report);
         });
     }
 
@@ -837,6 +845,14 @@ public class PdfViewer extends StackPane {
      * @return false if the user cancelled
      */
     public boolean confirmClose() {
+        // a copy still being written or a print still reading would be cut off.
+        for (DocumentPane pane : documents) {
+            if (pane.getSession().isBusy()) {
+                selectDocument(pane);
+                pane.getSession().reportBusy();
+                return false;
+            }
+        }
         for (DocumentPane pane : new java.util.ArrayList<>(documents)) {
             if (!pane.getSession().isModified()) continue;
             selectDocument(pane);
@@ -1174,6 +1190,8 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void printStarted(Task<Void> task) {
+            // the document stays open (no close, replace or save) until the job has been sent.
+            session().hold(task);
             task.setOnSucceeded(e -> showMessage(Messages.get("viewer.printed")));
             task.setOnFailed(e -> onError.accept(Messages.format("viewer.printFailed", task.getException().getMessage())));
         }

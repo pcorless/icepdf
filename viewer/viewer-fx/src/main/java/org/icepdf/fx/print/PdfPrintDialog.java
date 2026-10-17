@@ -155,6 +155,8 @@ public class PdfPrintDialog extends Dialog<PrintSettings> {
     public static Optional<Task<Void>> show(PdfView view, Consumer<PdfPrintDialog> customize) {
         Document document = view.getDocument();
         if (document == null || !view.isPrintAllowed()) return Optional.empty();
+        // the preview shows what is being typed in a field too.
+        view.commitFieldEdit();
         PdfPrintDialog dialog = new PdfPrintDialog(view.getScene() != null ? view.getScene().getWindow() : null,
                 document, view.getCurrentPageIndex());
         dialog.setLowResolutionOnly(!view.isHighQualityPrintAllowed());

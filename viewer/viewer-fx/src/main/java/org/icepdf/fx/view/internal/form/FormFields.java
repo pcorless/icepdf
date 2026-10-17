@@ -290,6 +290,11 @@ public final class FormFields {
         if (fieldEditor != null) fieldEditor.closeNow(commit);
     }
 
+    /** True while a field editor holds a value that hasn't been applied to the field yet. */
+    public boolean isEditPending() {
+        return fieldEditor != null && fieldEditor.isPending();
+    }
+
     /** The fields a ResetForm action names: all, the /Fields listed, or all but those (Flags bit 1). */
     private List<FormController.Located> fieldsForReset(ResetFormAction reset) {
         List<FormController.Located> all = fieldsInTabOrder();
@@ -337,6 +342,11 @@ public final class FormFields {
 
             public void cancel() {
                 editorListener(holder[0], located).cancel();
+            }
+
+            public void edited() {
+                // what is typed counts as a change (Save, the close prompt) before it is applied.
+                host.view().refreshModified();
             }
         };
         FieldEditor editor = text
@@ -398,6 +408,8 @@ public final class FormFields {
             editing = null;
         }
         host.setExcluded(located.pageIndex(), located.widget(), false);
+        // a cancelled edit is no longer a change (a commit refreshes again as it records).
+        host.view().refreshModified();
         // keyboard focus back to the view, so Tab and the arrows work after an editor closes.
         PdfView view = host.view();
         if (!view.isFocused() && view.getScene() != null && view.getScene().getFocusOwner() == null) {

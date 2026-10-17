@@ -31,6 +31,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -55,12 +56,19 @@ public final class FieldEditor {
         void commit(Object value, int advance);
 
         void cancel();
+
+        /** The value was changed (or changed back): {@link #isPending()} may have changed. */
+        default void edited() {
+        }
     }
 
     private final Control control;
     private final Supplier<Object> value;
     private final Listener listener;
+    private Object initial;
     private boolean finished;
+    // a commit or cancel queued by finish(), not yet run.
+    private Runnable pendingEnd;
 
     private FieldEditor(Control control, Supplier<Object> value, boolean multiLine, Rectangle2D viewBounds,
                         double fontSize, Listener listener) {
@@ -131,7 +139,9 @@ public final class FieldEditor {
         control.setText(maxLength > 0 && text.length() > maxLength ? text.substring(0, maxLength) : text);
         double fontSize = field.getSize() > 0 ? field.getSize() * zoom
                 : Math.max(6, viewBounds.getHeight() * (multiLine ? 0.25 : 0.6));
-        return new FieldEditor(control, control::getText, multiLine, viewBounds, fontSize, listener);
+        FieldEditor editor = new FieldEditor(control, control::getText, multiLine, viewBounds, fontSize, listener);
+        editor.watch(control.textProperty());
+        return editor;
     }
 
     /**
@@ -173,6 +183,8 @@ public final class FieldEditor {
             double fontSize = field.getSize() > 0 ? field.getSize() * zoom : Math.max(6, viewBounds.getHeight() * 0.6);
             FieldEditor editor = new FieldEditor(box, value, false, viewBounds, fontSize, listener);
             self[0] = editor;
+            editor.watch(box.valueProperty());
+            if (editable) editor.watch(box.getEditor().textProperty());
             // picking an entry from the drop-down commits; typing commits on Enter, Tab or leaving.
             box.getSelectionModel().selectedIndexProperty().addListener((obs, was, now) -> {
                 if (box.isShowing() || !editable) self[0].commit(0);
@@ -202,6 +214,7 @@ public final class FieldEditor {
         };
         FieldEditor editor = new FieldEditor(list, value, false, viewBounds, fontSize, listener);
         self[0] = editor;
+        editor.watch(list.getSelectionModel().getSelectedIndices());
         if (!multi || field.isCommitOnSetChange()) {
             list.getSelectionModel().getSelectedIndices().addListener(
                     (javafx.collections.ListChangeListener<Integer>) c -> self[0].commit(0));
@@ -227,6 +240,19 @@ public final class FieldEditor {
                 : quadding == VariableTextFieldDictionary.Quadding.RIGHT_JUSTIFIED ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
     }
 
+    /** Reports changes to what the editor holds; the value as it is now is the one to compare with. */
+    private void watch(javafx.beans.Observable observable) {
+        if (initial == null) initial = value.get();
+        observable.addListener(o -> {
+            if (!finished) listener.edited();
+        });
+    }
+
+    /** True while the editor holds a value that differs from the field's and hasn't been applied. */
+    public boolean isPending() {
+        return !finished && initial != null && !Objects.equals(value.get(), initial);
+    }
+
     private void commit(int advance) {
         Object v = value.get();
         finish(() -> listener.commit(v, advance));
@@ -237,7 +263,14 @@ public final class FieldEditor {
         if (finished) return;
         finished = true;
         if (control instanceof ComboBox<?> box && box.isShowing()) box.hide();
-        javafx.application.Platform.runLater(action);
+        pendingEnd = action;
+        javafx.application.Platform.runLater(this::runPendingEnd);
+    }
+
+    private void runPendingEnd() {
+        Runnable action = pendingEnd;
+        pendingEnd = null;
+        if (action != null) action.run();
     }
 
     /**
@@ -245,7 +278,11 @@ public final class FieldEditor {
      * the application) must not have a pending commit land after it.
      */
     public void closeNow(boolean commit) {
-        if (finished) return;
+        if (finished) {
+            // a commit queued a moment ago (a pick, focus leaving) lands now, not after the caller.
+            runPendingEnd();
+            return;
+        }
         finished = true;
         if (control instanceof ComboBox<?> box && box.isShowing()) box.hide();
         if (commit) listener.commit(value.get(), 0);
