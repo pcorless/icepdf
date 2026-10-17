@@ -14,6 +14,11 @@ Packages, in two layers. The components, for an application that builds its own 
   with its dialog;
 - `org.icepdf.fx.fonts`: system fonts.
 
+Behind `PdfView`, not exported and not API: `org.icepdf.fx.view.internal.raster` (tiles, render
+jobs, cache), `.annot` (annotation editing, popups), `.form` (form filling), `.text` (text
+loading, selection, search) and `.tool` (the tool handlers, which reach the view only through
+`ToolContext`).
+
 The reference viewer built from them:
 - `org.icepdf.fx.ri`: the assembled viewer, `PdfViewer`, and its configuration;
 - `org.icepdf.fx.ri.actions`: the commands;
@@ -215,7 +220,7 @@ the cap. Core decodes images on its own pools (`org.icepdf.core.library.threadPo
 | `./gradlew :viewer:viewer-fx:runDemo --args="file.pdf"` | `PdfViewDemo` (test sources): a bare `PdfView` with every property on a tool bar. |
 | `./gradlew :viewer:viewer-fx:bench` | RasterBench: the raster hand-off paths. |
 
-Render jobs log their region and paint time at `FINE` on `org.icepdf.fx.view.TileRenderer`.
+Render jobs log their region and paint time at `FINE` on `org.icepdf.fx.view.internal.raster.TileRenderer`.
 
 ## Documents
 
