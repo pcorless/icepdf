@@ -29,12 +29,16 @@ Only needed when the matrix changes. The generator is deterministic (same hashes
 
 ```
 git clone --branch v2.5.4 https://github.com/uclouvain/openjpeg.git ~/dev/git/openjpeg   # 6c4a29b0
-cd ~/dev/git/openjpeg && mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_THIRDPARTY=OFF && make -j8
+cd ~/dev/git/openjpeg && mkdir build-strict && cd build-strict
+cmake .. -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=OFF -DBUILD_THIRDPARTY=OFF && make -j8
 gcc -O2 -std=c99 -o bin/jpxref <icepdf>/core/core-awt/tools/jpx-fixtures/jpxref.c \
     -I../src/lib/openjp2 -Isrc/lib/openjp2 bin/libopenjp2.a -lm -lpthread
 cd <icepdf> && python3 -I core/core-awt/tools/jpx-fixtures/generate.py      # OPJ_BIN overrides the tool dir
 ```
+
+**Not `Release`:** OpenJPEG's Release build adds `-ffast-math`. The float reordering it allows
+changes 9/7 encodes and moves some decoded samples by one, and the result depends on the
+compiler version (DECISIONS.md D-13). RelWithDebInfo keeps strict IEEE float.
 
 `baseline/` is left alone. Re-bless afterwards (below) if outcomes moved.
 
@@ -69,4 +73,4 @@ thread spinning until the JVM exits (JJ2000 does this on `ppm` and `ppt`).
 ## Provenance
 
 All files here: `ORIGINAL`. `jpxref.c` links OpenJPEG (BSD-2) through its public API and copies no
-OpenJPEG code; it's a dev tool and never ships. OpenJPEG pinned at v2.5.4 (`6c4a29b0`).
+OpenJPEG code; it's a dev tool and never ships. OpenJPEG pinned at v2.5.4 (`6c4a29b0`), RelWithDebInfo build.

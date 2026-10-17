@@ -1,6 +1,6 @@
 {
  "generator": "core/core-awt/tools/jpx-fixtures/generate.py",
- "oracle": "This is the opj_compress utility from the OpenJPEG project. (libopenjp2 via jpxref.c, no application colour handling)",
+ "oracle": "This is the opj_compress utility from the OpenJPEG project. (libopenjp2 via jpxref.c, no application colour handling; RelWithDebInfo build, IEEE float: no -ffast-math)",
  "note": "Fixtures and references are generated, licence-clean, ours. References are one PGX file per decoded component ('PG ML <+|-> prec w h' then big-endian samples), at the component's own size: subsampled and reduced components are not upsampled.",
  "cases": [
   {
@@ -106,7 +106,7 @@
   {
    "name": "irr97-rgb",
    "file": "irr97-rgb.j2k",
-   "sha1": "5cfec3ab74fc3f708498a5902f65f3d2652c4bb0",
+   "sha1": "657bfb38e4caebfda91fa7962b6832f2f6df9bef",
    "bytes": 11359,
    "width": 64,
    "height": 64,
@@ -146,15 +146,15 @@
      "components": [
       {
        "file": "ref/irr97-rgb.full.0.pgx",
-       "sha1": "056d6178d6f83a54978b32a5c7be8b3b395f9b8d"
+       "sha1": "208d0dc8fd6ca2a3b910454f4bfda14042ad014d"
       },
       {
        "file": "ref/irr97-rgb.full.1.pgx",
-       "sha1": "5d04fc786c60ec6b25811bf46e5633d1c4b89c0d"
+       "sha1": "de32765d03ae260e2f17222a64dbd46fc23d525a"
       },
       {
        "file": "ref/irr97-rgb.full.2.pgx",
-       "sha1": "62876d2f9d15ab34290d3c9f35aff212ca085a02"
+       "sha1": "790800e1eb2f779a98ae1d39502ec81cf6204874"
       }
      ]
     }
@@ -412,7 +412,7 @@
   {
    "name": "irr97-cmyk",
    "file": "irr97-cmyk.j2k",
-   "sha1": "4810e277ce887f3a96c5992135b60ebc60a9d99c",
+   "sha1": "41947c27e054e652db6ca5753cf85ae7d7237c62",
    "bytes": 11554,
    "width": 64,
    "height": 64,
@@ -456,15 +456,15 @@
      "components": [
       {
        "file": "ref/irr97-cmyk.full.0.pgx",
-       "sha1": "056d6178d6f83a54978b32a5c7be8b3b395f9b8d"
+       "sha1": "208d0dc8fd6ca2a3b910454f4bfda14042ad014d"
       },
       {
        "file": "ref/irr97-cmyk.full.1.pgx",
-       "sha1": "5d04fc786c60ec6b25811bf46e5633d1c4b89c0d"
+       "sha1": "de32765d03ae260e2f17222a64dbd46fc23d525a"
       },
       {
        "file": "ref/irr97-cmyk.full.2.pgx",
-       "sha1": "62876d2f9d15ab34290d3c9f35aff212ca085a02"
+       "sha1": "790800e1eb2f779a98ae1d39502ec81cf6204874"
       },
       {
        "file": "ref/irr97-cmyk.full.3.pgx",
@@ -1695,7 +1695,7 @@
   {
    "name": "layers-quality",
    "file": "layers-quality.j2k",
-   "sha1": "2134e57e65a1a85c6044fbd30c68f9a8914bf028",
+   "sha1": "ec8bed34c781468dd3671bf00f13e24a11d0aea9",
    "bytes": 10405,
    "width": 64,
    "height": 64,
@@ -1737,15 +1737,15 @@
      "components": [
       {
        "file": "ref/layers-quality.full.0.pgx",
-       "sha1": "2610e25cb1882cc69de147af65a53b4242054ade"
+       "sha1": "1a2ecdb4cacc941a1c24c40bbb196c64206bf476"
       },
       {
        "file": "ref/layers-quality.full.1.pgx",
-       "sha1": "90f394fb54bf9f608d0c726a1dc730735d487852"
+       "sha1": "a410a68ea044cc92c4e083f03c2f619df0f322b7"
       },
       {
        "file": "ref/layers-quality.full.2.pgx",
-       "sha1": "0eceb169d9ae01fd22a08524c42f8818e29b2d62"
+       "sha1": "09e5ffb3c74489bcae6cb9a3aba097311426cdf7"
       }
      ]
     }
@@ -2526,8 +2526,8 @@
   {
    "name": "prec16-rgb-irr",
    "file": "prec16-rgb-irr.j2k",
-   "sha1": "831292e7dfd94b35600a88d4147051ce7155bd2d",
-   "bytes": 24309,
+   "sha1": "b605c267193f57b9bdf09f63b26d6729218f552e",
+   "bytes": 24310,
    "width": 64,
    "height": 64,
    "components": 3,
@@ -2566,15 +2566,15 @@
      "components": [
       {
        "file": "ref/prec16-rgb-irr.full.0.pgx",
-       "sha1": "d512282cb3fe5a2039646b574d4f9946480271f5"
+       "sha1": "522b2cb2b2976cde5bdd5a8f897537d97d502012"
       },
       {
        "file": "ref/prec16-rgb-irr.full.1.pgx",
-       "sha1": "982746b4fdd72486df018efaeb547957e04f1f3d"
+       "sha1": "d97f1fb7d74142c0c169e6d89339026e63176343"
       },
       {
        "file": "ref/prec16-rgb-irr.full.2.pgx",
-       "sha1": "43d9670baea483ea221911587e4279859b33f3c7"
+       "sha1": "ebc57d225d053cccf84543be31a29064b24af824"
       }
      ]
     }

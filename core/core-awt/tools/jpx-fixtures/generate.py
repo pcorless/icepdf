@@ -22,7 +22,10 @@
 # when the matrix changes.
 #
 # Usage: python3 -I generate.py [outDir]
-#   OPJ_BIN  directory holding opj_compress / opj_decompress (default ~/dev/git/openjpeg/build/bin)
+#   OPJ_BIN  directory holding opj_compress and jpxref (default ~/dev/git/openjpeg/build-strict/bin).
+#            Build OpenJPEG as RelWithDebInfo, NOT Release: Release adds -ffast-math, whose float
+#            reordering changes 9/7 encodes and decodes (and drifts with the compiler); see
+#            DECISIONS.md D-13.
 
 import hashlib
 import json
@@ -38,7 +41,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 OUT = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(
     REPO, "core", "core-awt", "src", "test", "resources", "jpx")
-OPJ = os.environ.get("OPJ_BIN", os.path.expanduser("~/dev/git/openjpeg/build/bin"))
+OPJ = os.environ.get("OPJ_BIN", os.path.expanduser("~/dev/git/openjpeg/build-strict/bin"))
 COMPRESS = os.path.join(OPJ, "opj_compress")
 DECOMPRESS = os.path.join(OPJ, "opj_decompress")
 JPXREF = os.path.join(OPJ, "jpxref")
@@ -545,7 +548,8 @@ def main():
     os.makedirs(os.path.join(OUT, "hostile"))
     manifest = dict(
         generator="core/core-awt/tools/jpx-fixtures/generate.py",
-        oracle=oracle_version() + " (libopenjp2 via jpxref.c, no application colour handling)",
+        oracle=oracle_version() + " (libopenjp2 via jpxref.c, no application colour handling; "
+               "RelWithDebInfo build, IEEE float: no -ffast-math)",
         note="Fixtures and references are generated, licence-clean, ours. References are one PGX "
              "file per decoded component ('PG ML <+|-> prec w h' then big-endian samples), at the "
              "component's own size: subsampled and reduced components are not upsampled.",

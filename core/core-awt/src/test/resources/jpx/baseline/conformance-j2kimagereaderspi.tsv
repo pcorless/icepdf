@@ -31,8 +31,8 @@ noise-irr.full	CLOSE	CLOSE max=1 psnr=51.4
 noise-rev.full	EXACT	EXACT
 plt-tlm.full	EXACT	EXACT
 poc.full	EXACT	EXACT
-ppm.full	TIMEOUT	TIMEOUT no result after 20s
-ppt.full	TIMEOUT	TIMEOUT no result after 20s
+ppm.full	TIMEOUT	TIMEOUT no result after 10s
+ppt.full	TIMEOUT	TIMEOUT no result after 10s
 prec12-gray.full	EXACT	EXACT
 prec16-gray.full	EXACT	EXACT
 prec16-rgb-irr.full	CLOSE	CLOSE max=5 psnr=97.6
