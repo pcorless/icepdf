@@ -1,25 +1,12 @@
 # ICEpdf
+Icepdf is a pure Java PDF document rendering and viewing solution. Icepdf can parse, render and annotate documents based on the latest PDF standards and can do so as fast or faster than some native libraries.   
 
-ICEpdf is a pure Java PDF document rendering and viewing solution. ICEpdf can parse and render documents based on the 
-latest PDF standards (Portable Document Format v1.6/Adobe® Acrobat® 7).
-
-ICEpdf is a community-driven project with the goal of supporting and enhancing the ICEpdf library.  
-
-## Contributing
-ICEpdf is an open source project and is always looking for more contributors.  To get involved, visit:
-
- - [Issue Reporting Guide](https://github.com/pcorless/icepdf/wiki/Issue-Reporting-Guide)
- - [Good Beginner Bugs](https://github.com/pcorless/icepdf/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
- - [Projects](https://github.com/pcorless/icepdf/projects)
- - [Frequently Asked Questions](https://github.com/pcorless/icepdf/wiki/Frequently-Asked-Questions)
-   <!-- Code Contribution Guide --> 
- ## Getting Started
- Whether you are long time user of the API or a new user, there ton of information on the 
- [Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more
- help and feedback we get the better we can make the project.
-
+## Getting Started
+Whether you are long time user of the API or a new user, there ton of information on the 
+[Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more
+help and feedback we get the better we can make the project.
  
- ### Getting the jars, javadoc and source from maven central 
+### Getting the jars, javadoc and source from maven central 
  ```xml
  <dependency>
  <groupId>com.github.pcorless.icepdf</groupId>
@@ -39,17 +26,17 @@ ICEpdf is an open source project and is always looking for more contributors.  T
 </dependency>
  ```
  
- ## Getting the Code
- To get a local copy of the current code, clone it using git:
- ```
+## Getting the Code
+To get a local copy of the current code, clone it using git:
+```
 $ git clone https://github.com/pcorless/icepdf.git
 $ cd icepdf
 ```
  
- ### Building ICEpdf
- In order to use the library you need to build at least the Core library and if you intend you use the Viewer
- component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have
- no preference, pick one that makes you happier.
+### Building ICEpdf
+In order to use the library you need to build at least the Core library and if you intend you use the Viewer
+component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have
+no preference, pick one that makes you happier.
 
 Builds as they are currently configured to target Java 11.
 
@@ -97,17 +84,17 @@ Build the distribution zip and tar archives
 ~$ gradle projectReport, sourcesJar, genPomFileForCoreJarPub, genPomFileForViewerJarPub, osDistZip, osDistTar
 ```
 
- ## Using ICEpdf Viewer Component
- The `org.icepdf.core.ri.common.SwingController` class provides convenience methods for the most common UI actions, 
- such as rotating the document, setting the zoom level, etc. The `org.icepdf.core.ri.common.SwingViewBuilder` class is 
- responsible for creating the PDF Viewer component panel populated with Swing components configured to work with the 
- SwingController.
- 
- When using the SwingViewBuilder and SwingController classes, it is usually not necessary to use the Document object
- directly. The SwingController class does this for you.
- 
- The following code snippet illustrates how to build a PDF Viewer component:
- ```java
+## Using ICEpdf Viewer Swing/AWT Component
+The `org.icepdf.core.ri.common.SwingController` class provides convenience methods for the most common UI actions, 
+such as rotating the document, setting the zoom level, etc. The `org.icepdf.core.ri.common.SwingViewBuilder` class is 
+responsible for creating the PDF Viewer component panel populated with Swing components configured to work with the 
+SwingController.
+
+When using the SwingViewBuilder and SwingController classes, it is usually not necessary to use the Document object
+directly. The SwingController class does this for you.
+
+The following code snippet illustrates how to build a PDF Viewer component:
+```java
 String filePath = "somefilepath/myfile.pdf";
 
 // initiate font caching for faster startups
@@ -128,8 +115,8 @@ ComponentKeyBinding.install(controller, viewerComponentPanel);
 
 // add interactive mouse link annotation support via callback
 controller.getDocumentViewController().setAnnotationCallback(
-      new org.icepdf.ri.common.MyAnnotationCallback(
-             controller.getDocumentViewController()));
+     new org.icepdf.ri.common.MyAnnotationCallback(
+            controller.getDocumentViewController()));
 
 // Create a JFrame to display the panel in
 JFrame window = new JFrame("Using the Viewer Component");
@@ -140,11 +127,11 @@ window.setVisible(true);
 // Open a PDF document to view
 controller.openDocument(filePath);
 ```
- ## Page Captures
- 
- The Document class provides functionality for rendering PDF content into other formats via a Java2D graphics context.
- As a result, rendering PDF content to other formats is a relatively simple process with very powerful results. ICEpdf 
- also supports Java headless mode when rending PDF content, which can be useful for server side solutions.
+## Page Captures
+
+The Document class provides functionality for rendering PDF content into other formats via a Java2D graphics context.
+As a result, rendering PDF content to other formats is a relatively simple process with very powerful results. ICEpdf 
+also supports Java headless mode when rending PDF content, which can be useful for server side solutions.
 
 Examples of extraction techniques like png, svg, and tiff can be found examples/capture folder. The following is an
 example of how to save page captures in an SVG format
@@ -185,10 +172,9 @@ svgGenerator.stream(fileWriter,SVG_CSS);
 Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/Usage-Examples) for more examples of
 extracting content.
 
+## Learning
  
- ## Learning
-  
- ### Examples
+### Examples
 
 There are a bunch of examples located in the root of the project grouped by common usage scenarios. Similarly, the
 Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
