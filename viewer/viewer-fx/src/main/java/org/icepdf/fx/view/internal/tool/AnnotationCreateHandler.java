@@ -129,23 +129,23 @@ public final class AnnotationCreateHandler implements ToolHandler {
         clearPreview();
         boolean click = start.distance(end) < 4;
         switch (mode) {
-            case NOTE -> context.createNote(page, end.getX(), end.getY());
-            case FREE_TEXT -> context.createFreeText(page, end.getX(), end.getY());
+            case NOTE -> context.annotations().createNote(page, end.getX(), end.getY());
+            case FREE_TEXT -> context.annotations().createFreeText(page, end.getX(), end.getY());
             case RECTANGLE, ELLIPSE -> {
-                if (!click) context.createShape(page, mode == ToolMode.ELLIPSE, rect());
+                if (!click) context.annotations().createShape(page, mode == ToolMode.ELLIPSE, rect());
             }
             case LINE -> {
-                if (!click) context.createLine(page, start, end);
+                if (!click) context.annotations().createLine(page, start, end);
             }
             case SIGNATURE -> {
-                if (!click) context.createSignatureField(page, rect());
+                if (!click) context.signatures().createField(page, rect());
             }
             case REDACT -> {
-                if (!click) context.createRedactionBox(page, rect());
+                if (!click) context.annotations().createRedactionBox(page, rect());
             }
             case INK -> {
                 if (ink != null && ink.getBounds2D().getWidth() + ink.getBounds2D().getHeight() > 3) {
-                    context.createInk(page, ink);
+                    context.annotations().createInk(page, ink);
                 }
                 ink = null;
             }

@@ -15,34 +15,6 @@
  */
 package org.icepdf.fx.view;
 
-import org.icepdf.fx.view.internal.tool.AnnotationCreateHandler;
-import org.icepdf.fx.view.internal.tool.PanHandler;
-import org.icepdf.fx.view.internal.tool.RedactHandler;
-import org.icepdf.fx.view.internal.tool.TextSelectHandler;
-import org.icepdf.fx.view.internal.tool.ToolHandler;
-
-import org.icepdf.fx.view.internal.tool.ToolContext;
-import org.icepdf.fx.view.internal.annot.AnnotationHit;
-import org.icepdf.fx.view.internal.text.CaretNavigator;
-import org.icepdf.fx.view.internal.text.PageTextLoader;
-
-import org.icepdf.fx.view.internal.form.FieldEditor;
-import org.icepdf.fx.view.internal.form.FieldOrder;
-import org.icepdf.fx.view.internal.form.FormController;
-
-import org.icepdf.fx.view.internal.annot.AnnotationCreator;
-import org.icepdf.fx.view.internal.annot.AnnotationEdits;
-import org.icepdf.fx.view.internal.annot.AnnotationGeometry;
-import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
-import org.icepdf.fx.view.internal.annot.PopupNode;
-
-import org.icepdf.fx.view.internal.raster.CacheKey;
-import org.icepdf.fx.view.internal.raster.PageTransforms;
-import org.icepdf.fx.view.internal.raster.RasterBuffer;
-import org.icepdf.fx.view.internal.raster.TileCache;
-import org.icepdf.fx.view.internal.raster.TileGrid;
-import org.icepdf.fx.view.internal.raster.TileRenderer;
-
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
@@ -66,10 +38,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.*;
-import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
-import org.icepdf.core.pobjects.acroform.FieldDictionary;
-import org.icepdf.core.pobjects.actions.FormAction;
-import org.icepdf.core.pobjects.actions.ResetFormAction;
 import org.icepdf.core.pobjects.annotations.*;
 import org.icepdf.core.pobjects.graphics.text.Bias;
 import org.icepdf.core.pobjects.graphics.text.Caret;
@@ -78,6 +46,27 @@ import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.fx.render.NodeOwner;
 import org.icepdf.fx.render.RenderService;
 import org.icepdf.fx.view.DocumentLayout.PageSlot;
+import org.icepdf.fx.view.internal.annot.AnnotationController;
+import org.icepdf.fx.view.internal.annot.AnnotationEdits;
+import org.icepdf.fx.view.internal.annot.AnnotationGeometry;
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
+import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
+import org.icepdf.fx.view.internal.form.FormFields;
+import org.icepdf.fx.view.internal.form.SignatureFields;
+import org.icepdf.fx.view.internal.raster.CacheKey;
+import org.icepdf.fx.view.internal.raster.PageTransforms;
+import org.icepdf.fx.view.internal.raster.RasterBuffer;
+import org.icepdf.fx.view.internal.raster.TileCache;
+import org.icepdf.fx.view.internal.raster.TileGrid;
+import org.icepdf.fx.view.internal.raster.TileRenderer;
+import org.icepdf.fx.view.internal.text.CaretNavigator;
+import org.icepdf.fx.view.internal.text.PageTextLoader;
+import org.icepdf.fx.view.internal.tool.AnnotationCreateHandler;
+import org.icepdf.fx.view.internal.tool.PanHandler;
+import org.icepdf.fx.view.internal.tool.RedactHandler;
+import org.icepdf.fx.view.internal.tool.TextSelectHandler;
+import org.icepdf.fx.view.internal.tool.ToolContext;
+import org.icepdf.fx.view.internal.tool.ToolHandler;
 
 import java.awt.geom.AffineTransform;
 import java.util.*;
@@ -127,8 +116,6 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     private final Group pagesGroup = new Group();
     private final Group uiGroup = new Group();
     private final Map<Integer, AnnotationUiLayer> uiLayers = new HashMap<>();
-    // the annotation under the pointer, for the hover outline.
-    private AnnotationHit hovered;
 
     private Document document;
     // page sizes at zoom 1 for the current rotation and boundary.  Only the first pages are read when
@@ -173,6 +160,10 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     private final TextSelectHandler textSelectHandler = new TextSelectHandler(this);
     private final AnnotationCreateHandler createHandler = new AnnotationCreateHandler(this);
     private final RedactHandler redactHandler = new RedactHandler(this, textSelectHandler, createHandler);
+    // what the view does with annotations, form fields and signatures, on the skin's primitives.
+    private final AnnotationController annotations = new AnnotationController(this);
+    private final FormFields fields = new FormFields(this);
+    private final SignatureFields signatures = new SignatureFields(this);
     private ToolHandler activeHandler;
     private ToolHandler gestureHandler;
     private MouseButton gestureButton;
@@ -290,19 +281,13 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         });
         registerListChangeListener(control.getSearchHits(), c -> scheduleRefresh());
         registerListChangeListener(control.getSignatures(), c -> {
-            signatureByReference.clear();
-            for (org.icepdf.fx.signature.SignatureStatus status : control.getSignatures()) {
-                if (status.widget().getPObjectReference() != null) {
-                    signatureByReference.put(status.widget().getPObjectReference(), status);
-                }
-            }
+            signatures.statusesChanged(control.getSignatures());
             scheduleRefresh();
         });
-        registerChangeListener(control.selectedAnnotationProperty(), o ->
-                uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null)));
+        registerChangeListener(control.selectedAnnotationProperty(), o -> annotations.updateChrome());
         registerChangeListener(control.focusedFieldProperty(), o -> {
-            uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null));
-            onFieldFocusChanged();
+            annotations.updateChrome();
+            fields.focusChanged();
         });
         registerChangeListener(control.highlightFormFieldsProperty(), o -> refresh());
         registerChangeListener(control.formFieldsEditableProperty(), o -> {
@@ -423,8 +408,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     }
 
     private void onDocument() {
-        fieldEditor = null;
-        editing = null;
+        fields.documentChanged();
         annotationGenerations.clear();
         document = getSkinnable().getDocument();
         // the wait cursor until refresh finds the first screenful painted.
@@ -714,7 +698,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
 
     // ---- rendering ------------------------------------------------------------------------
 
-    private void scheduleRefresh() {
+    @Override
+    public void scheduleRefresh() {
         if (refreshQueued) return;
         refreshQueued = true;
         Platform.runLater(() -> {
@@ -772,15 +757,15 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
             ui.setLayoutX(layer.getLayoutX());
             ui.setLayoutY(layer.getLayoutY());
             ui.setPageToView(layer.getPageToView());
-            updateAnnotationChrome(ui, layer.getPage());
-            ui.setSignatureBadges(signatureBadges(layer.getPage()), this::signatureClicked);
-            layer.setFieldHighlights(control.isHighlightFormFields() && fieldsEditable()
-                    ? fieldRects(layer.getPage()) : List.of());
+            annotations.updateChrome(ui);
+            ui.setSignatureBadges(signatures.badges(layer.getPage()), signatures::clicked);
+            layer.setFieldHighlights(control.isHighlightFormFields() && fields.editable()
+                    ? fields.fieldRects(layer.getPage()) : List.of());
             if (layer.getPage() != null && layer.getPage().isInitiated() && control.isPaintAnnotations()) {
-                ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, popupListener,
+                ui.updatePopups(layer.getPage().getAnnotations(), layoutZoom, annotations.popupListener,
                         control.isAnnotationEditingAllowed());
             } else {
-                ui.updatePopups(null, layoutZoom, popupListener, false);
+                ui.updatePopups(null, layoutZoom, annotations.popupListener, false);
             }
 
             CacheKey.Preview previewKey = new CacheKey.Preview(index, params.boundary());
@@ -926,122 +911,6 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         return excluded.getOrDefault(pageIndex, Set.of());
     }
 
-    /** True if the annotation may be moved/resized by the user. */
-    static boolean isEditable(Annotation annotation) {
-        return annotation != null && !(annotation instanceof LinkAnnotation)
-                && annotation.allowAlterProperties() && !annotation.getFlagReadOnly();
-    }
-
-    // ---- signatures -----------------------------------------------------------------------
-
-    // checked signatures by their field's object reference: the form's widget objects need not be
-    // the page's own annotation objects.
-    private final Map<org.icepdf.core.pobjects.Reference, org.icepdf.fx.signature.SignatureStatus>
-            signatureByReference = new HashMap<>();
-
-    @Override
-    public org.icepdf.fx.signature.SignatureStatus signatureStatusOf(Annotation annotation) {
-        if (!(annotation instanceof org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation)
-                || annotation.getPObjectReference() == null) return null;
-        return signatureByReference.get(annotation.getPObjectReference());
-    }
-
-    /** The signed fields of a rendered page and their status, for badges. */
-    private Map<Annotation, org.icepdf.fx.signature.SignatureStatus> signatureBadges(Page page) {
-        if (signatureByReference.isEmpty() || page == null || !page.isInitiated() || page.getAnnotations() == null) {
-            return Map.of();
-        }
-        Map<Annotation, org.icepdf.fx.signature.SignatureStatus> out = new HashMap<>();
-        for (Annotation a : page.getAnnotations()) {
-            org.icepdf.fx.signature.SignatureStatus status = signatureStatusOf(a);
-            // empty fields get a "sign here" badge when the application handles signing.
-            boolean shown = status != null && (status.isSigned() || getSkinnable().getOnSignatureClicked() != null);
-            if (shown && !a.isDeleted() && a.allowScreenNormalMode()) out.put(a, status);
-        }
-        return out;
-    }
-
-    /**
-     * The signature field under a viewport point with a checked status (signed, or an empty field
-     * when the application handles clicks), or null.
-     */
-    @Override
-    public AnnotationHit signatureAtViewport(double vx, double vy) {
-        if (signatureByReference.isEmpty()) return null;
-        PagePoint point = pageAtViewport(vx, vy);
-        if (point == null) return null;
-        Page page = document.getPageTree().getPage(point.pageIndex());
-        if (page == null || !page.isInitiated() || page.getAnnotations() == null) return null;
-        List<Annotation> annotations = page.getAnnotations();
-        for (int i = annotations.size() - 1; i >= 0; i--) {
-            Annotation a = annotations.get(i);
-            org.icepdf.fx.signature.SignatureStatus status = signatureStatusOf(a);
-            if (status == null || a.isDeleted() || !a.allowScreenNormalMode()) continue;
-            if (!status.isSigned() && getSkinnable().getOnSignatureClicked() == null) continue;
-            java.awt.geom.Rectangle2D.Float r = a.getUserSpaceRectangle();
-            if (r != null && r.contains(point.x(), point.y())) return new AnnotationHit(point.pageIndex(), a);
-        }
-        return null;
-    }
-
-    /**
-     * The signature tool: adds an empty signature field over a dragged view rectangle and reports it
-     * to the application's onSignatureClicked, as a click on an unsigned field does.
-     */
-    @Override
-    public void createSignatureField(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        java.awt.Rectangle bounds = Annotation.commonBoundsNormalization(new java.awt.geom.GeneralPath(viewRect),
-                toPageSpaceNow(page));
-        org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation[] made =
-                new org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation[1];
-        renderer.withAnnotationLock(pageIndex, () ->
-                made[0] = org.icepdf.fx.signature.DocumentSigning.addSignatureField(document, pageIndex, bounds));
-        org.icepdf.fx.signature.SignatureStatus status = org.icepdf.fx.signature.SignatureVerifier.verify(made[0]);
-        getSkinnable().addSignatureStatus(status);
-        getSkinnable().setToolMode(ToolMode.TEXT_SELECT);
-        signatureClicked(status);
-    }
-
-    /** A click on a signature field or badge: the application's handler, else the properties dialog. */
-    @Override
-    public void signatureClicked(org.icepdf.fx.signature.SignatureStatus status) {
-        PdfView view = getSkinnable();
-        boolean handled = view.getOnSignatureClicked() != null;
-        // after the gesture: a modal dialog opened inside a mouse handler takes the release.
-        Platform.runLater(() -> {
-            if (handled) view.fireEvent(new SignatureEvent(view, view, status));
-            else org.icepdf.fx.signature.SignaturePropertiesDialog.show(view, status);
-        });
-    }
-
-    /**
-     * True for annotations drawn over text - highlight, underline, strike-out, squiggly and redaction:
-     * their quads are the text they mark, so moving or resizing one would only detach it from that
-     * text.  They can still be selected, recoloured and deleted; to change what they cover, delete
-     * and mark again.
-     */
-    static boolean isTextBound(Annotation annotation) {
-        return annotation instanceof TextMarkupAnnotation
-                || annotation instanceof org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-    }
-
-    /** {@link #canEdit}, and not {@link #isTextBound}: it may be moved and resized. */
-    @Override
-    public boolean canMove(Annotation annotation) {
-        return canEdit(annotation) && !isTextBound(annotation);
-    }
-
-    /** {@link #isEditable}, and the document permits annotating. */
-    boolean canEdit(Annotation annotation) {
-        return getSkinnable().isAnnotationEditingAllowed() && isEditable(annotation);
-    }
-
-    /** The application allows filling fields and so does the document. */
-    boolean fieldsEditable() {
-        return getSkinnable().isFormFieldsEditable() && getSkinnable().isFormFillingAllowed();
-    }
-
     /** View bounds of an annotation in its page's view space, or null if the page isn't visible. */
     java.awt.geom.Rectangle2D annotationViewBounds(AnnotationHit hit) {
         AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
@@ -1070,361 +939,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         return -1;
     }
 
-    // ---- form fields -------------------------------------------------------------------------
-
-    /** Fillable widgets of an initialised page, in /Annots order. */
-    private List<AbstractWidgetAnnotation> fillable(Page page) {
-        List<AbstractWidgetAnnotation> out = new ArrayList<>();
-        if (page == null || !page.isInitiated() || page.getAnnotations() == null) return out;
-        for (Annotation a : page.getAnnotations()) {
-            if (a instanceof AbstractWidgetAnnotation w && !w.isDeleted() && !w.getFlagHidden()
-                    && FormController.isFillable(w)) {
-                out.add(w);
-            }
-        }
-        return out;
-    }
-
-    private List<java.awt.geom.Rectangle2D> fieldRects(Page page) {
-        List<java.awt.geom.Rectangle2D> rects = new ArrayList<>();
-        for (AbstractWidgetAnnotation w : fillable(page)) rects.add(w.getUserSpaceRectangle());
-        return rects;
-    }
-
-    /** The fillable widget under a viewport point (top-most), or null; never parses on the FX thread. */
-    @Override
-    public AnnotationHit fieldAtViewport(double vx, double vy) {
-        if (!fieldsEditable()) return null;
-        PagePoint point = pageAtViewport(vx, vy);
-        if (point == null) return null;
-        List<AbstractWidgetAnnotation> widgets = fillable(document.getPageTree().getPage(point.pageIndex()));
-        for (int i = widgets.size() - 1; i >= 0; i--) {
-            if (widgets.get(i).getUserSpaceRectangle().contains(point.x(), point.y())) {
-                return new AnnotationHit(point.pageIndex(), widgets.get(i));
-            }
-        }
-        return null;
-    }
-
-    /**
-     * All fillable fields of the document in tab order: pages in order, each page's fields by its
-     * /Tabs entry (see {@link FieldOrder}).  Reads annotations of pages not yet shown (annotation
-     * dictionaries only, not content); empty for a document without an AcroForm.
-     */
-    List<FormController.Located> fieldsInTabOrder() {
-        List<FormController.Located> out = new ArrayList<>();
-        if (document == null || document.getCatalog().getInteractiveForm() == null) return out;
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            Page page = document.getPageTree().getPage(i);
-            List<Annotation> annotations = page.getAnnotations();
-            if (annotations == null) continue;
-            List<AbstractWidgetAnnotation> widgets = new ArrayList<>();
-            for (Annotation a : annotations) {
-                if (a instanceof AbstractWidgetAnnotation w && !w.isDeleted() && !w.getFlagHidden()
-                        && FormController.isFillable(w)) {
-                    widgets.add(w);
-                }
-            }
-            Object tabs = page.getEntries().get(new org.icepdf.core.pobjects.Name("Tabs"));
-            for (AbstractWidgetAnnotation w : FieldOrder.order(widgets, AbstractWidgetAnnotation::getUserSpaceRectangle,
-                    tabs instanceof org.icepdf.core.pobjects.Name n ? n.getName() : null)) {
-                out.add(new FormController.Located(i, page, w));
-            }
-        }
-        return out;
-    }
-
-    /** The field after (or before) {@code current} in tab order, wrapping; null if there are none. */
-    AbstractWidgetAnnotation adjacentField(AbstractWidgetAnnotation current, boolean backwards) {
-        List<FormController.Located> fields = fieldsInTabOrder();
-        int index = -1;
-        for (int i = 0; i < fields.size(); i++) {
-            if (fields.get(i).widget() == current) index = i;
-        }
-        int next = FieldOrder.next(fields.size(), index, backwards);
-        return next < 0 ? null : fields.get(next).widget();
-    }
-
-    /** Scrolls a field into view, switching page in the non-continuous modes. */
-    void revealField(AbstractWidgetAnnotation widget) {
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            Page page = document.getPageTree().getPage(i);
-            List<Annotation> annotations = page.getAnnotations();
-            if (annotations != null && annotations.contains(widget)) {
-                if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(i) == null) {
-                    getSkinnable().setCurrentPageIndex(i);
-                }
-                java.awt.geom.Rectangle2D r = widget.getUserSpaceRectangle();
-                ensureVisible(new PagePoint(i, r.getCenterX(), r.getCenterY()), 48);
-                return;
-            }
-        }
-    }
-
-    private FormController forms;
-    // the open text field editor, and which field it edits.
-    private FieldEditor fieldEditor;
-    private FormController.Located editing;
-    // a click (not Tab) is focusing a field: a combo opens its drop-down.
-    private boolean openPopupOnFocus;
-
-    FormController forms() {
-        if (forms == null) forms = new FormController(renderer::withAnnotationLock);
-        return forms;
-    }
-
-    /** The located form field (page and widget) of a widget, among the document's pages. */
-    FormController.Located locate(AbstractWidgetAnnotation widget) {
-        for (int i = 0; i < document.getNumberOfPages(); i++) {
-            Page page = document.getPageTree().getPage(i);
-            if (page.getAnnotations() != null && page.getAnnotations().contains(widget)) {
-                return new FormController.Located(i, page, widget);
-            }
-        }
-        return null;
-    }
-
-    /** The focused field changed: commit an open editor elsewhere; open one on a text or choice field. */
-    private void onFieldFocusChanged() {
-        AbstractWidgetAnnotation focused = getSkinnable().getFocusedField();
-        if (focused != null && !fieldsEditable()) {
-            getSkinnable().clearFieldFocus();
-            return;
-        }
-        if (fieldEditor != null && (editing == null || editing.widget() != focused)) {
-            fieldEditor.commitNow();
-        }
-        if (focused != null && fieldEditor == null) openEditor(focused, false);
-    }
-
-    /**
-     * A click on a field: focuses it (opening its editor), toggles a check box or radio, or runs a
-     * push button's action.  A click on the focused text field reopens its editor after an Esc.
-     */
-    @Override
-    public void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
-        AbstractWidgetAnnotation widget = (AbstractWidgetAnnotation) field.annotation();
-        FormController.FieldKind kind = FormController.kindOf(widget);
-        if (getSkinnable().getFocusedField() != widget) {
-            openPopupOnFocus = true;
-            try {
-                getSkinnable().focusField(widget);
-            } finally {
-                openPopupOnFocus = false;
-            }
-        } else if (fieldEditor == null) {
-            openEditor(widget, true);
-        }
-        actuate(widget, kind);
-    }
-
-    void reopenEditor(AbstractWidgetAnnotation widget) {
-        if (fieldEditor == null) openEditor(widget, false);
-    }
-
-    /** Check boxes and radios toggle, push buttons act; as a click or Space does. */
-    private void actuate(AbstractWidgetAnnotation widget, FormController.FieldKind kind) {
-        if (kind != FormController.FieldKind.CHECK && kind != FormController.FieldKind.RADIO
-                && kind != FormController.FieldKind.PUSH) {
-            return;
-        }
-        FormController.Located located = locate(widget);
-        if (located == null) return;
-        switch (kind) {
-            case CHECK -> getSkinnable().recordEdit(forms().toggleCheck(located, toPageSpaceNow(located.page())));
-            case RADIO -> {
-                String name = FormController.fieldNameOf(widget);
-                List<FormController.Located> siblings = new ArrayList<>();
-                for (FormController.Located f : fieldsInTabOrder()) {
-                    if (FormController.kindOf(f.widget()) == FormController.FieldKind.RADIO
-                            && Objects.equals(name, FormController.fieldNameOf(f.widget()))) {
-                        siblings.add(f);
-                    }
-                }
-                if (siblings.stream().noneMatch(f -> f.widget() == widget)) siblings.add(located);
-                getSkinnable().recordEdit(forms().selectRadio(located, siblings, toPageSpaceNow(located.page())));
-            }
-            default -> push(located);
-        }
-    }
-
-    /**
-     * A push button: a ResetForm action resets the form in the view, honouring its /Fields
-     * include/exclude list as core's ResetFormAction does, but through FormController so the reset
-     * is one undoable edit with regenerated appearances (core's button reset() leaves the model to
-     * a listening Swing component).  Anything else (SubmitForm, JavaScript, URI, ...) goes where a
-     * link's action goes.
-     */
-    private void push(FormController.Located button) {
-        if (button.widget().getAction() instanceof ResetFormAction reset) {
-            resetFields(fieldsForReset(reset));
-        } else {
-            getSkinnable().performAnnotationAction(button.widget());
-        }
-    }
-
-    /** Resets fields to their defaults as one undoable edit; every fillable field when null. */
-    void resetFields(List<FormController.Located> fields) {
-        if (fields == null) fields = fieldsInTabOrder();
-        // buttons and signatures have no value to reset (and their appearances must not be redrawn).
-        fields = fields.stream().filter(f -> switch (FormController.kindOf(f.widget())) {
-            case PUSH, SIGNATURE, OTHER -> false;
-            default -> true;
-        }).toList();
-        if (fields.isEmpty()) return;
-        // a reset discards what is being typed (synchronously: a pending commit would land after it).
-        if (fieldEditor != null) fieldEditor.closeNow(false);
-        // the transform is only used to regenerate appearances, which are page-local per field.
-        getSkinnable().recordEdit(forms().reset(fields, toPageSpaceNow(fields.get(0).page())));
-    }
-
-    /** Closes an open field editor at once, committing or discarding what is typed. */
-    void closeFieldEditor(boolean commit) {
-        if (fieldEditor != null) fieldEditor.closeNow(commit);
-    }
-
-    AffineTransform toPageSpace(Page page) {
-        return toPageSpaceNow(page);
-    }
-
-    /** The fields a ResetForm action names: all, the /Fields listed, or all but those (Flags bit 1). */
-    private List<FormController.Located> fieldsForReset(ResetFormAction reset) {
-        List<FormController.Located> all = fieldsInTabOrder();
-        Object listed = reset.getEntries().get(FormAction.FIELDS_KEY);
-        if (listed instanceof Reference ref) listed = document.getCatalog().getLibrary().getObject(ref);
-        if (!(listed instanceof List<?> entries) || entries.isEmpty()) return all;
-        Set<String> names = new HashSet<>();
-        for (Object entry : entries) {
-            if (entry instanceof Reference ref) entry = document.getCatalog().getLibrary().getObject(ref);
-            if (entry instanceof AbstractWidgetAnnotation w) names.add(FormController.fieldNameOf(w));
-            else if (entry instanceof FieldDictionary f) names.add(f.getFullyQualifiedFieldName());
-            else if (entry instanceof StringObject str) names.add(str.getDecryptedLiteralString(
-                    document.getCatalog().getLibrary().getSecurityManager()));
-            else if (entry instanceof String str) names.add(str);
-        }
-        boolean exclude = reset.isIncludeExclude();
-        List<FormController.Located> out = new ArrayList<>();
-        for (FormController.Located f : all) {
-            String name = FormController.fieldNameOf(f.widget());
-            boolean named = names.stream().anyMatch(n -> name.equals(n) || name.startsWith(n + "."));
-            if (named != exclude) out.add(f);
-        }
-        return out;
-    }
-
-    /**
-     * Opens the native editor over a text, password, combo or list field; the widget leaves the
-     * tiles meanwhile.  Buttons have no editor.
-     */
-    private void openEditor(AbstractWidgetAnnotation widget, boolean openPopup) {
-        FormController.FieldKind kind = FormController.kindOf(widget);
-        boolean text = kind == FormController.FieldKind.TEXT || kind == FormController.FieldKind.PASSWORD;
-        boolean choice = kind == FormController.FieldKind.COMBO || kind == FormController.FieldKind.LIST;
-        if (!text && !choice) return;
-        FormController.Located located = locate(widget);
-        if (located == null) return;
-        AnnotationUiLayer ui = uiLayers.get(located.pageIndex());
-        if (ui == null) return;
-        FieldEditor[] holder = new FieldEditor[1];
-        FieldEditor.Listener listener = new FieldEditor.Listener() {
-            public void commit(Object value, int advance) {
-                editorListener(holder[0], located).commit(value, advance);
-            }
-
-            public void cancel() {
-                editorListener(holder[0], located).cancel();
-            }
-        };
-        FieldEditor editor = text
-                ? FieldEditor.text((TextWidgetAnnotation) widget, FormController.textOf((TextWidgetAnnotation) widget),
-                ui.viewBounds(widget), layoutZoom, listener)
-                : FieldEditor.choice((ChoiceWidgetAnnotation) widget, ui.viewBounds(widget), layoutZoom,
-                openPopup || openPopupOnFocus, listener);
-        holder[0] = editor;
-        fieldEditor = editor;
-        editing = located;
-        excluded.computeIfAbsent(located.pageIndex(), k -> new HashSet<>()).add(widget);
-        bumpAnnotationGeneration(located.pageIndex());
-        ui.addFieldEditor(editor.control());
-        editor.control().requestFocus();
-        if (editor.control() instanceof javafx.scene.control.TextInputControl input) input.selectAll();
-    }
-
-    /** Closes an editor (once): commit applies the value as an undoable edit; the widget re-renders. */
-    private FieldEditor.Listener editorListener(FieldEditor editor, FormController.Located located) {
-        return new FieldEditor.Listener() {
-            public void commit(Object value, int advance) {
-                close(editor, located);
-                AnnotationEdits.Edit edit = null;
-                AffineTransform toPage = toPageSpaceNow(located.page());
-                if (located.widget() instanceof TextWidgetAnnotation textWidget) {
-                    if (!value.equals(FormController.textOf(textWidget))) {
-                        edit = forms().setText(located, (String) value, toPage);
-                    }
-                } else if (located.widget() instanceof ChoiceWidgetAnnotation choice) {
-                    ChoiceFieldDictionary field = choice.getFieldDictionary();
-                    if (value instanceof List<?> indexes) {
-                        List<Integer> current = FormController.selectedIndexes(field);
-                        if (!indexes.equals(current)) {
-                            @SuppressWarnings("unchecked") List<Integer> chosen = (List<Integer>) indexes;
-                            edit = forms().chooseIndexes(located, chosen, toPage);
-                        }
-                    } else if (value instanceof String typed) {
-                        Object current = field.getFieldValue();
-                        if (!typed.equals(current instanceof String s ? s : current != null ? current.toString() : "")) {
-                            edit = forms().choose(located, typed, toPage);
-                        }
-                    }
-                }
-                getSkinnable().recordEdit(edit);
-                if (advance > 0) getSkinnable().focusNextField();
-                else if (advance < 0) getSkinnable().focusPreviousField();
-            }
-
-            public void cancel() {
-                close(editor, located);
-            }
-        };
-    }
-
-    private void close(FieldEditor editor, FormController.Located located) {
-        AnnotationUiLayer ui = uiLayers.get(located.pageIndex());
-        if (ui != null) ui.removeFieldEditor(editor.control());
-        if (fieldEditor == editor) {
-            fieldEditor = null;
-            editing = null;
-        }
-        Set<Annotation> set = excluded.get(located.pageIndex());
-        if (set != null) set.remove(located.widget());
-        bumpAnnotationGeneration(located.pageIndex());
-        // keyboard focus back to the view, so Tab and the arrows work after an editor closes.
-        if (!getSkinnable().isFocused() && getSkinnable().getScene() != null
-                && getSkinnable().getScene().getFocusOwner() == null) {
-            getSkinnable().requestFocus();
-        }
-    }
-
-    /** The page an annotation is on (among visible pages), or null. */
-    AnnotationHit hitOf(Annotation annotation) {
-        for (AnnotationUiLayer ui : uiLayers.values()) {
-            if (isOnPage(annotation, ui.getPageIndex())) return new AnnotationHit(ui.getPageIndex(), annotation);
-        }
-        return null;
-    }
-
     void requestRefresh() {
         scheduleRefresh();
-    }
-
-    /** The page the selected annotation is on, or null. */
-    @Override
-    public AnnotationHit selectedHit() {
-        Annotation selected = getSkinnable().getSelectedAnnotation();
-        if (selected == null) return null;
-        for (AnnotationUiLayer ui : uiLayers.values()) {
-            if (isOnPage(selected, ui.getPageIndex())) return new AnnotationHit(ui.getPageIndex(), selected);
-        }
-        return null;
     }
 
     /**
@@ -1504,237 +1020,81 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         return edit;
     }
 
-    // ---- popups ----------------------------------------------------------------------------
+    // ---- controllers and what they ask of the skin ----------------------------------------------
 
-    private final PopupNode.Listener popupListener = new PopupNode.Listener() {
-        @Override
-        public void reshaping(PopupNode node, double dx, double dy, double dw, double dh) {
-            AnnotationUiLayer ui = uiLayerOf(node);
-            if (ui != null) ui.setPopupReshape(node, dx, dy, dw, dh, layoutZoom);
-        }
-
-        @Override
-        public void reshaped(PopupNode node, double dx, double dy, double dw, double dh) {
-            AnnotationUiLayer ui = uiLayerOf(node);
-            if (ui == null) return;
-            ui.clearPopupReshape(layoutZoom);
-            if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(dw) < 0.5 && Math.abs(dh) < 0.5) return;
-            int pageIndex = ui.getPageIndex();
-            java.awt.geom.Rectangle2D.Float rect = node.getPopup().getUserSpaceRectangle();
-            double w = Math.max(PopupNode.MIN_WIDTH, rect.getWidth() + dw / layoutZoom);
-            double h = Math.max(PopupNode.MIN_HEIGHT, rect.getHeight() + dh / layoutZoom);
-            double[] anchor = ui.popupAnchor(node.getPopup());
-            Page page = document.getPageTree().getPage(pageIndex);
-            java.awt.geom.Rectangle2D target = placeUpright(page, anchor[0] + dx, anchor[1] + dy, w, h);
-            getSkinnable().recordEdit(AnnotationEdits.popupRect(renderer::withAnnotationLock, page, pageIndex,
-                    node.getPopup(), target));
-        }
-
-        @Override
-        public void contentsEdited(PopupNode node, String contents) {
-            AnnotationUiLayer ui = uiLayerOf(node);
-            String current = node.getMarkup().getContents();
-            if (ui == null || contents.equals(current == null ? "" : current)) return;
-            Page page = document.getPageTree().getPage(ui.getPageIndex());
-            getSkinnable().recordEdit(AnnotationEdits.contents(renderer::withAnnotationLock, page,
-                    ui.getPageIndex(), node.getMarkup(), contents));
-        }
-
-        @Override
-        public void minimised(PopupNode node) {
-            getSkinnable().setPopupOpen(node.getMarkup(), false);
-        }
-    };
-
-    private AnnotationUiLayer uiLayerOf(PopupNode node) {
-        for (AnnotationUiLayer ui : uiLayers.values()) {
-            if (ui.popupNodes().contains(node)) return ui;
-        }
-        return null;
+    @Override
+    public AnnotationController annotations() {
+        return annotations;
     }
 
-    /**
-     * The user-space rectangle of size (w, h) points whose view-space bounds have their top-left at
-     * (viewX, viewY) - for an upright popup at any page rotation.
-     */
-    private java.awt.geom.Rectangle2D placeUpright(Page page, double viewX, double viewY, double w, double h) {
-        AffineTransform pageToView = PageTransforms.pageToView(page, getSkinnable().getPageBoundary(),
-                layoutRotation, (float) layoutZoom);
-        java.awt.geom.Rectangle2D origin = pageToView.createTransformedShape(
-                new java.awt.geom.Rectangle2D.Double(0, 0, w, h)).getBounds2D();
-        // shift the origin-placed rect so its view bounds start at (viewX, viewY), in user space.
-        try {
-            java.awt.geom.Point2D shift = pageToView.createInverse().deltaTransform(
-                    new java.awt.geom.Point2D.Double(viewX - origin.getMinX(), viewY - origin.getMinY()), null);
-            return new java.awt.geom.Rectangle2D.Double(shift.getX(), shift.getY(), w, h);
-        } catch (java.awt.geom.NoninvertibleTransformException e) {
-            return new java.awt.geom.Rectangle2D.Double(0, 0, w, h);
-        }
+    @Override
+    public FormFields fields() {
+        return fields;
     }
 
-    // ---- creating annotations -----------------------------------------------------------------
+    @Override
+    public SignatureFields signatures() {
+        return signatures;
+    }
+
+    @Override
+    public Document document() {
+        return document;
+    }
+
+    @Override
+    public double zoom() {
+        return layoutZoom;
+    }
+
+    @Override
+    public void addSignatureStatus(org.icepdf.fx.signature.SignatureStatus status) {
+        getSkinnable().addSignatureStatus(status);
+    }
+
+    @Override
+    public void setExcluded(int pageIndex, Annotation annotation, boolean exclude) {
+        if (exclude) {
+            excluded.computeIfAbsent(pageIndex, k -> new HashSet<>()).add(annotation);
+        } else {
+            Set<Annotation> set = excluded.get(pageIndex);
+            if (set != null) set.remove(annotation);
+        }
+        bumpAnnotationGeneration(pageIndex);
+    }
+
+    @Override
+    public void reveal(PagePoint point) {
+        if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(point.pageIndex()) == null) {
+            getSkinnable().setCurrentPageIndex(point.pageIndex());
+        }
+        ensureVisible(point, 48);
+    }
 
     @Override
     public java.util.Collection<AnnotationUiLayer> uiLayers() {
         return uiLayers.values();
     }
 
-    private AffineTransform pageToViewNow(Page page) {
+    @Override
+    public AffineTransform pageToView(Page page) {
         return PageTransforms.pageToView(page, getSkinnable().getPageBoundary(), layoutRotation, (float) layoutZoom);
     }
 
-    private AffineTransform toPageSpaceNow(Page page) {
+    @Override
+    public AffineTransform toPageSpace(Page page) {
         return page.getToPageSpaceTransform(getSkinnable().getPageBoundary(), layoutRotation, (float) layoutZoom);
     }
 
-    private AnnotationCreator.Style style(ToolMode mode) {
-        PdfView control = getSkinnable();
-        javafx.scene.paint.Color fx = control.getAnnotationColor();
-        java.awt.Color color = fx != null
-                ? new java.awt.Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue())
-                : switch (mode) {
-            case HIGHLIGHT, NOTE -> new java.awt.Color(255, 255, 0);
-            case UNDERLINE -> new java.awt.Color(0, 102, 255);
-            case FREE_TEXT -> java.awt.Color.BLACK;
-            default -> new java.awt.Color(230, 0, 0);
-        };
-        int opacity = mode == ToolMode.HIGHLIGHT ? TextMarkupAnnotation.HIGHLIGHT_ALPHA : 255;
-        return new AnnotationCreator.Style(control.getAnnotationAuthor(), color, opacity, 2f);
-    }
-
-    /** Adds a built annotation (with a popup for markup) as one undoable edit and selects it. */
-    private void addCreated(int pageIndex, Page page, Annotation annotation, boolean popupOpen) {
-        PopupAnnotation popup = annotation instanceof MarkupAnnotation markup
-                && !(annotation instanceof FreeTextAnnotation)
-                && !(annotation instanceof org.icepdf.core.pobjects.annotations.RedactionAnnotation)
-                ? AnnotationCreator.popup(page.getLibrary(), markup, popupOpen, toPageSpaceNow(page)) : null;
-        getSkinnable().recordEdit(AnnotationEdits.add(renderer::withAnnotationLock, page, pageIndex, annotation, popup));
-        getSkinnable().selectAnnotation(annotation);
-    }
-
     @Override
-    public void createNote(int pageIndex, double viewX, double viewY) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        TextAnnotation note = AnnotationCreator.note(page.getLibrary(), viewX, viewY, pageToViewNow(page),
-                toPageSpaceNow(page), style(ToolMode.NOTE));
-        addCreated(pageIndex, page, note, true);
-        scheduleRefresh();
-    }
-
-    /**
-     * Marks text on a page for redaction from its page-space rectangles (one match's lines), as the
-     * redact tool does for a selection.  @return the edit, applied, for the caller to record
-     */
-    AnnotationEdits.Edit redactPageRects(int pageIndex, List<java.awt.geom.Rectangle2D> pageRects) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        AffineTransform pageToView = pageToViewNow(page);
-        List<java.awt.geom.Rectangle2D> viewRects = new ArrayList<>();
-        for (java.awt.geom.Rectangle2D r : pageRects) viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
-        return AnnotationEdits.add(renderer::withAnnotationLock, page, pageIndex, AnnotationCreator.redaction(
-                page.getLibrary(), viewRects, toPageSpaceNow(page), getSkinnable().getAnnotationAuthor()), null);
-    }
-
-    /** The redaction tool's box: marks whatever is under it (an image, a drawing) for redaction. */
-    @Override
-    public void createRedactionBox(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        addCreated(pageIndex, page, AnnotationCreator.redaction(page.getLibrary(), List.of(viewRect),
-                toPageSpaceNow(page), getSkinnable().getAnnotationAuthor()), false);
-    }
-
-    @Override
-    public void createShape(int pageIndex, boolean ellipse, java.awt.geom.Rectangle2D viewRect) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        addCreated(pageIndex, page, AnnotationCreator.shape(page.getLibrary(), ellipse, viewRect, toPageSpaceNow(page),
-                style(ellipse ? ToolMode.ELLIPSE : ToolMode.RECTANGLE)), false);
-    }
-
-    @Override
-    public void createLine(int pageIndex, Point2D start, Point2D end) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        addCreated(pageIndex, page, AnnotationCreator.line(page.getLibrary(),
-                new java.awt.geom.Point2D.Double(start.getX(), start.getY()),
-                new java.awt.geom.Point2D.Double(end.getX(), end.getY()), toPageSpaceNow(page), style(ToolMode.LINE)), false);
-    }
-
-    @Override
-    public void createInk(int pageIndex, java.awt.geom.GeneralPath viewPath) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        addCreated(pageIndex, page, AnnotationCreator.ink(page.getLibrary(), viewPath, toPageSpaceNow(page),
-                style(ToolMode.INK)), false);
-    }
-
-    @Override
-    public void createFreeText(int pageIndex, double viewX, double viewY) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        FreeTextAnnotation freeText = AnnotationCreator.freeText(page.getLibrary(), viewX, viewY, layoutZoom,
-                toPageSpaceNow(page), style(ToolMode.FREE_TEXT));
-        addCreated(pageIndex, page, freeText, false);
-        editFreeText(new AnnotationHit(pageIndex, freeText));
-    }
-
-    /** Opens the inline editor over a free text annotation; the text commits as an undoable edit. */
-    @Override
-    public void editFreeText(AnnotationHit hit) {
-        if (!(hit.annotation() instanceof FreeTextAnnotation freeText) || !canEdit(freeText)) return;
-        AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
-        if (ui == null) return;
-        Page page = document.getPageTree().getPage(hit.pageIndex());
-        ui.openTextEditor(ui.viewBounds(freeText), freeText.getContents(), layoutZoom, text -> {
-            String current = freeText.getContents() == null ? "" : freeText.getContents();
-            if (text.equals(current)) return;
-            getSkinnable().recordEdit(AnnotationEdits.freeTextContents(renderer::withAnnotationLock, page,
-                    hit.pageIndex(), freeText, text, toPageSpaceNow(page)));
-        });
-    }
-
-    /**
-     * Turns the current text selection into highlight/underline/strike-out annotations, one per page
-     * it spans (pages whose text isn't loaded are skipped), and clears the selection.
-     *
-     * @return the number created
-     */
-    @Override
-    public int markupSelection(org.icepdf.core.pobjects.Name subtype) {
-        DocumentSelection selection = getSkinnable().getTextSelection();
-        if (selection == null || selection.isCollapsed() || document == null
-                || !getSkinnable().isAnnotationEditingAllowed()) return 0;
-        ToolMode mode = TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) ? ToolMode.HIGHLIGHT
-                : TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) ? ToolMode.UNDERLINE : ToolMode.STRIKE_OUT;
-        int created = 0;
-        Annotation last = null;
-        for (int pageIndex = selection.startPage(); pageIndex <= selection.endPage(); pageIndex++) {
-            TextSequence sequence = textLoader.get(pageIndex);
-            org.icepdf.core.pobjects.graphics.text.OffsetRange range = selection.rangeForPage(pageIndex, sequence);
-            if (range == null || range.isEmpty()) continue;
-            Page page = document.getPageTree().getPage(pageIndex);
-            AffineTransform pageToView = pageToViewNow(page);
-            List<java.awt.geom.Rectangle2D> viewRects = new ArrayList<>();
-            for (java.awt.geom.Rectangle2D r : sequence.rectsFor(range)) {
-                viewRects.add(pageToView.createTransformedShape(r).getBounds2D());
-            }
-            if (viewRects.isEmpty()) continue;
-            Annotation markup = Annotation.SUBTYPE_REDACT.equals(subtype)
-                    ? AnnotationCreator.redaction(page.getLibrary(), viewRects, toPageSpaceNow(page),
-                    getSkinnable().getAnnotationAuthor())
-                    : AnnotationCreator.textMarkup(page.getLibrary(), subtype, viewRects,
-                    sequence.extractText(range), toPageSpaceNow(page), style(mode));
-            addCreated(pageIndex, page, markup, false);
-            last = markup;
-            created++;
-        }
-        getSkinnable().setTextSelection(null);
-        if (last != null) getSkinnable().selectAnnotation(last);
-        return created;
-    }
-
-    AnnotationEdits.Locker annotationLocker() {
+    public AnnotationEdits.Locker annotationLocker() {
         return renderer::withAnnotationLock;
     }
 
-    void refreshAnnotationChrome() {
+    @Override
+    public void refreshAnnotationChrome() {
         uiLayers.values().forEach(ui -> {
-            updateAnnotationChrome(ui, null);
+            annotations.updateChrome(ui);
             ui.refresh();
         });
     }
@@ -1750,6 +1110,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         Map<CacheKey.AnnotationLayer, Integer> empty = emptyAnnotationLayers.get(pageIndex);
         return empty != null && Integer.valueOf(generation).equals(empty.get(layer));
     }
+
+    // ---- current page, text and caret -------------------------------------------------------
 
     private void publishCurrentPage() {
         if (!getSkinnable().getViewMode().isContinuous()) return;
@@ -1877,7 +1239,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         if (layout == null || document == null) return null;
         PageSlot slot = layout.getSlot(pageIndex);
         if (slot == null) return null;
-        java.awt.geom.Rectangle2D view = pageToViewNow(document.getPageTree().getPage(pageIndex))
+        java.awt.geom.Rectangle2D view = pageToView(document.getPageTree().getPage(pageIndex))
                 .createTransformedShape(rect).getBounds2D();
         return viewport.localToScreen(new BoundingBox(slot.x() + view.getX() - scrollX,
                 slot.y() + view.getY() - scrollY, view.getWidth(), view.getHeight()));
@@ -1945,76 +1307,17 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         uiLayers.clear();
     }
 
-    // ---- annotations ----------------------------------------------------------------------
-
-    /**
-     * The topmost annotation under a viewport point that the view lets you interact with: visible,
-     * not a popup (popups are nodes) and not a form widget (a later phase).  Only pages already
-     * initialised by rendering are searched, so this never parses on the FX thread.
-     */
-    @Override
-    public AnnotationHit annotationAtViewport(double vx, double vy) {
-        PagePoint point = pageAtViewport(vx, vy);
-        if (point == null) return null;
-        Page page = document.getPageTree().getPage(point.pageIndex());
-        if (page == null || !page.isInitiated()) return null;
-        List<Annotation> annotations = page.getAnnotations();
-        if (annotations == null) return null;
-        for (int i = annotations.size() - 1; i >= 0; i--) {
-            Annotation a = annotations.get(i);
-            // MarkupGlueAnnotation is core's synthetic popup connector for printing; its rect spans
-            // the markup and its popup, so it would swallow clicks meant for the markup.
-            if (a == null || a.isDeleted() || a instanceof PopupAnnotation || a instanceof AbstractWidgetAnnotation
-                    || a instanceof org.icepdf.core.pobjects.annotations.MarkupGlueAnnotation) continue;
-            if (!a.allowScreenNormalMode() || a.getFlagHidden()) continue;
-            java.awt.geom.Rectangle2D.Float r = a.getUserSpaceRectangle();
-            if (r != null && r.contains(point.x(), point.y())) return new AnnotationHit(point.pageIndex(), a);
-        }
-        return null;
-    }
+    // ---- lookups, visibility and rasters ---------------------------------------------------
 
     AnnotationHit annotationAt(double x, double y) {
         Point2D local = viewport.parentToLocal(x, y);
-        return annotationAtViewport(local.getX(), local.getY());
-    }
-
-    /** Sets the hover outline (null clears). */
-    @Override
-    public void setHovered(AnnotationHit hit) {
-        if (java.util.Objects.equals(hit, hovered)) return;
-        hovered = hit;
-        uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null));
-    }
-
-    private void updateAnnotationChrome(AnnotationUiLayer ui, Page page) {
-        int index = ui.getPageIndex();
-        AbstractWidgetAnnotation field = getSkinnable().getFocusedField();
-        ui.setFocusedField(field != null && isOnPage(field, index) ? field : null);
-        ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
-        Annotation selected = getSkinnable().getSelectedAnnotation();
-        Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
-        ui.setSelected(onPage, canMove(onPage));
-    }
-
-    private boolean isOnPage(Annotation annotation, int pageIndex) {
-        Page page = document.getPageTree().getPage(pageIndex);
-        List<Annotation> annotations = page != null && page.isInitiated() ? page.getAnnotations() : null;
-        return annotations != null && !annotation.isDeleted() && annotations.contains(annotation);
+        return annotations.annotationAtViewport(local.getX(), local.getY());
     }
 
     /** The UI layer of a visible page, or null. */
     @Override
     public AnnotationUiLayer uiLayer(int pageIndex) {
         return uiLayers.get(pageIndex);
-    }
-
-    /** Follows the link (or action) under a viewport point; true if there was one. */
-    @Override
-    public boolean activateLinkAtViewport(double vx, double vy) {
-        AnnotationHit hit = annotationAtViewport(vx, vy);
-        if (hit == null || !hit.isActionable()) return false;
-        getSkinnable().performAnnotationAction(hit.annotation());
-        return true;
     }
 
     /** Scrolls so a page point sits at the viewport's top (and left edge if the page is wider). */
@@ -2197,8 +1500,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         var factory = getSkinnable().annotationMenuFactoryProperty().get();
         if (factory == null || document == null) return;
         Point2D local = viewport.sceneToLocal(e.getSceneX(), e.getSceneY());
-        AnnotationHit hit = local != null ? annotationAtViewport(local.getX(), local.getY()) : null;
-        if (hit == null || !canEdit(hit.annotation())) return;
+        AnnotationHit hit = local != null ? annotations.annotationAtViewport(local.getX(), local.getY()) : null;
+        if (hit == null || !annotations.canEdit(hit.annotation())) return;
         javafx.scene.control.ContextMenu menu = factory.apply(hit.annotation());
         if (menu == null || menu.getItems().isEmpty()) return;
         if (annotationMenu != null) annotationMenu.hide();
@@ -2349,18 +1652,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     private void onKey(KeyEvent e) {
         // typing in a popup note (or any text input inside the view) is not a view command.
         if (e.getTarget() instanceof javafx.scene.control.TextInputControl) return;
-        AbstractWidgetAnnotation focusedField = getSkinnable().getFocusedField();
-        if (focusedField != null && fieldEditor == null
-                && (e.getCode() == KeyCode.SPACE || (e.getCode() == KeyCode.ENTER
-                && FormController.kindOf(focusedField) == FormController.FieldKind.PUSH))) {
-            // Space toggles a focused check box or radio and presses a focused button (Enter too).
-            FormController.FieldKind kind = FormController.kindOf(focusedField);
-            if (kind == FormController.FieldKind.CHECK || kind == FormController.FieldKind.RADIO
-                    || kind == FormController.FieldKind.PUSH) {
-                actuate(focusedField, kind);
-                e.consume();
-                return;
-            }
+        if (fields.actuateFocused(e.getCode())) {
+            e.consume();
+            return;
         }
         if (e.getCode() == KeyCode.SPACE) {
             // hold Space to pan with the primary button; a tap without a drag pages down on release.
@@ -2372,9 +1666,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
             e.consume();
             return;
         }
-        if (e.getCode() == KeyCode.TAB && fieldsEditable()
+        if (e.getCode() == KeyCode.TAB && fields.editable()
                 && getSkinnable().getToolMode() != null && !getSkinnable().getToolMode().createsAnnotations()
-                && !fieldsInTabOrder().isEmpty()) {
+                && !fields.fieldsInTabOrder().isEmpty()) {
             if (e.isShiftDown()) getSkinnable().focusPreviousField();
             else getSkinnable().focusNextField();
             e.consume();

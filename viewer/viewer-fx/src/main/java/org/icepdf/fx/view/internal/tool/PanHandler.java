@@ -59,9 +59,9 @@ public final class PanHandler implements ToolHandler {
         if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY
                 && Math.hypot(e.getX() - pressX, e.getY() - pressY) <= 4) {
             // a click with the hand tool fills a form field or follows a link, as in Acrobat.
-            AnnotationHit field = context.fieldAtViewport(e.getX(), e.getY());
-            if (field != null) context.pressField(field, e);
-            else context.activateLinkAtViewport(e.getX(), e.getY());
+            AnnotationHit field = context.fields().fieldAtViewport(e.getX(), e.getY());
+            if (field != null) context.fields().press(field);
+            else context.annotations().activateLinkAtViewport(e.getX(), e.getY());
         }
     }
 

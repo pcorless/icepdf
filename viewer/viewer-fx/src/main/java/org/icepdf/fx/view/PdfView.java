@@ -400,7 +400,7 @@ public class PdfView extends Control {
     public void setPopupOpen(MarkupAnnotation markup, boolean open) {
         PopupAnnotation popup = markup != null ? markup.getPopupAnnotation() : null;
         if (popup == null || !(getSkin() instanceof PdfViewSkin skin)) return;
-        AnnotationHit hit = skin.hitOf(markup);
+        AnnotationHit hit = skin.annotations().hitOf(markup);
         if (hit == null) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         skin.annotationLocker().withAnnotationLock(hit.pageIndex(), () -> {
@@ -439,17 +439,17 @@ public class PdfView extends Control {
 
     /** Highlights the selected text (one annotation per page), clearing the selection; undoable. */
     public int highlightSelection() {
-        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) : 0;
+        return getSkin() instanceof PdfViewSkin skin ? skin.annotations().markupSelection(TextMarkupAnnotation.SUBTYPE_HIGHLIGHT) : 0;
     }
 
     /** Underlines the selected text; see {@link #highlightSelection()}. */
     public int underlineSelection() {
-        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_UNDERLINE) : 0;
+        return getSkin() instanceof PdfViewSkin skin ? skin.annotations().markupSelection(TextMarkupAnnotation.SUBTYPE_UNDERLINE) : 0;
     }
 
     /** Strikes out the selected text; see {@link #highlightSelection()}. */
     public int strikeOutSelection() {
-        return getSkin() instanceof PdfViewSkin skin ? skin.markupSelection(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) : 0;
+        return getSkin() instanceof PdfViewSkin skin ? skin.annotations().markupSelection(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) : 0;
     }
 
     // ---- forms ----------------------------------------------------------------------------
@@ -493,10 +493,10 @@ public class PdfView extends Control {
     public void focusField(AbstractWidgetAnnotation widget) {
         // reveal first, so the field's page is laid out when its editor opens.
         if (widget != null && getSkin() instanceof PdfViewSkin skin) {
-            skin.revealField(widget);
+            skin.fields().revealField(widget);
             // already focused (an Esc closed its editor): focusing again reopens it, as a click does.
             if (widget == getFocusedField()) {
-                skin.reopenEditor(widget);
+                skin.fields().reopenEditor(widget);
                 return;
             }
         }
@@ -509,12 +509,12 @@ public class PdfView extends Control {
 
     /** Moves focus to the next fillable field in tab order (across pages), wrapping. */
     public void focusNextField() {
-        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.adjacentField(getFocusedField(), false));
+        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.fields().adjacentField(getFocusedField(), false));
     }
 
     /** Moves focus to the previous fillable field in tab order, wrapping. */
     public void focusPreviousField() {
-        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.adjacentField(getFocusedField(), true));
+        if (getSkin() instanceof PdfViewSkin skin) focusField(skin.fields().adjacentField(getFocusedField(), true));
     }
 
     // ---- form values ----------------------------------------------------------------------------
@@ -570,8 +570,8 @@ public class PdfView extends Control {
         if (widgets.isEmpty()) return false;
         FormController.Located first = widgets.get(0);
         PdfViewSkin skin = getSkin() instanceof PdfViewSkin s ? s : null;
-        if (skin != null) skin.closeFieldEditor(false);
-        FormController forms = skin != null ? skin.forms() : new FormController((page, mutation) -> mutation.run());
+        if (skin != null) skin.fields().closeEditor(false);
+        FormController forms = skin != null ? skin.fields().forms() : new FormController((page, mutation) -> mutation.run());
         java.awt.geom.AffineTransform toPage = skin != null ? skin.toPageSpace(first.page())
                 : first.page().getToPageSpaceTransform(getPageBoundary(), 0, 1f);
         AnnotationEdits.Edit edit;
@@ -625,7 +625,7 @@ public class PdfView extends Control {
     /** Resets every fillable form field to its default value (/DV), as one undoable edit. */
     public void resetForm() {
         if (getSkin() instanceof PdfViewSkin skin) {
-            skin.resetFields(null);
+            skin.fields().resetFields(null);
             return;
         }
         List<FormController.Located> fields = new ArrayList<>();
@@ -677,8 +677,8 @@ public class PdfView extends Control {
      */
     public void deleteSelectedAnnotation() {
         if (!(getSkin() instanceof PdfViewSkin skin)) return;
-        AnnotationHit hit = skin.selectedHit();
-        if (hit == null || !skin.canEdit(hit.annotation())) return;
+        AnnotationHit hit = skin.annotations().selectedHit();
+        if (hit == null || !skin.annotations().canEdit(hit.annotation())) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, hit.pageIndex(), hit.annotation()));
         clearAnnotationSelection();
@@ -691,8 +691,8 @@ public class PdfView extends Control {
      */
     public void applyAnnotationProperties(Annotation annotation, AnnotationProperties change) {
         if (change == null || !AnnotationProperties.supports(annotation)) return;
-        if (!(getSkin() instanceof PdfViewSkin skin) || !skin.canEdit(annotation)) return;
-        AnnotationHit hit = skin.hitOf(annotation);
+        if (!(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
+        AnnotationHit hit = skin.annotations().hitOf(annotation);
         if (hit == null) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, hit.pageIndex(), annotation, change,
@@ -994,7 +994,7 @@ public class PdfView extends Control {
                 }
                 List<AnnotationEdits.Edit> edits = new ArrayList<>();
                 rects.forEach((hit, r) -> {
-                    if (!r.isEmpty()) edits.add(skin.redactPageRects(hit.pageIndex(), r));
+                    if (!r.isEmpty()) edits.add(skin.annotations().redactPageRects(hit.pageIndex(), r));
                 });
                 RedactionRequest before = doc.getRedactionRequest();
                 Runnable withTerms = () -> Redactor.configure(doc, RedactionRequest.ofAnnotationsAndTerms(terms));

@@ -80,28 +80,28 @@ public final class TextSelectHandler implements ToolHandler {
 
     @Override
     public void moved(MouseEvent e) {
-        AnnotationHit field = context.fieldAtViewport(e.getX(), e.getY());
+        AnnotationHit field = context.fields().fieldAtViewport(e.getX(), e.getY());
         if (field != null) {
-            context.setHovered(null);
+            context.annotations().setHovered(null);
             context.setViewportCursor(fieldCursor((org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation) field.annotation()));
             return;
         }
         int handle = context.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {
-            context.setHovered(null);
+            context.annotations().setHovered(null);
             context.setViewportCursor(resizeCursor(handle));
             return;
         }
-        if (context.signatureAtViewport(e.getX(), e.getY()) != null) {
-            context.setHovered(null);
+        if (context.signatures().fieldAtViewport(e.getX(), e.getY()) != null) {
+            context.annotations().setHovered(null);
             context.setViewportCursor(Cursor.HAND);
             return;
         }
-        AnnotationHit hit = context.annotationAtViewport(e.getX(), e.getY());
-        context.setHovered(hit != null && !hit.isActionable() ? hit : null);
+        AnnotationHit hit = context.annotations().annotationAtViewport(e.getX(), e.getY());
+        context.annotations().setHovered(hit != null && !hit.isActionable() ? hit : null);
         if (hit != null) {
             boolean selectedEditable = hit.annotation() == context.view().getSelectedAnnotation()
-                    && context.canMove(hit.annotation());
+                    && context.annotations().canMove(hit.annotation());
             context.setViewportCursor(hit.isActionable() ? Cursor.HAND
                     : selectedEditable ? Cursor.MOVE : Cursor.DEFAULT);
         } else {
@@ -134,27 +134,27 @@ public final class TextSelectHandler implements ToolHandler {
         pendingMove = null;
         draggingAnnotation = false;
         // a form field: give it focus (its editor opens); no text selection for this gesture.
-        AnnotationHit field = markupSubtype == null ? context.fieldAtViewport(e.getX(), e.getY()) : null;
+        AnnotationHit field = markupSubtype == null ? context.fields().fieldAtViewport(e.getX(), e.getY()) : null;
         if (field != null) {
             view.clearAnnotationSelection();
-            context.pressField(field, e);
+            context.fields().press(field);
             annotationGesture = true;
             return;
         }
         if (view.getFocusedField() != null) view.clearFieldFocus();
         // a signature field: its properties (or the application's handler); no text selection.
         AnnotationHit signature = markupSubtype == null && e.getClickCount() == 1
-                ? context.signatureAtViewport(e.getX(), e.getY()) : null;
+                ? context.signatures().fieldAtViewport(e.getX(), e.getY()) : null;
         if (signature != null) {
             view.clearAnnotationSelection();
             annotationGesture = true;
-            context.signatureClicked(context.signatureStatusOf(signature.annotation()));
+            context.signatures().clicked(context.signatures().statusOf(signature.annotation()));
             return;
         }
         // a handle of the selected annotation: resize straight away.
         int handle = context.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {
-            AnnotationHit selected = context.selectedHit();
+            AnnotationHit selected = context.annotations().selectedHit();
             if (selected != null) {
                 annotationGesture = true;
                 draggingAnnotation = true;
@@ -162,7 +162,7 @@ public final class TextSelectHandler implements ToolHandler {
                 return;
             }
         }
-        AnnotationHit hit = context.annotationAtViewport(e.getX(), e.getY());
+        AnnotationHit hit = context.annotations().annotationAtViewport(e.getX(), e.getY());
         if (hit != null && hit.isActionable()) {
             pendingLink = hit;
         } else if (hit != null) {
@@ -170,7 +170,7 @@ public final class TextSelectHandler implements ToolHandler {
             view.selectAnnotation(hit.annotation());
             // double-click a free text box to edit its text in place.
             if (e.getClickCount() == 2 && hit.annotation() instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation) {
-                context.editFreeText(hit);
+                context.annotations().editFreeText(hit);
                 annotationGesture = true;
                 return;
             }
@@ -182,7 +182,7 @@ public final class TextSelectHandler implements ToolHandler {
                 return;
             }
             annotationGesture = true;
-            if (context.canMove(hit.annotation())) pendingMove = hit;
+            if (context.annotations().canMove(hit.annotation())) pendingMove = hit;
             return;
         }
         view.clearAnnotationSelection();
@@ -227,7 +227,7 @@ public final class TextSelectHandler implements ToolHandler {
             draggingAnnotation = false;
             context.recordEdit(context.endAnnotationDrag(e.getX() - pressX, e.getY() - pressY, false));
         }
-        if (markupSubtype != null && !annotationGesture) context.markupSelection(markupSubtype);
+        if (markupSubtype != null && !annotationGesture) context.annotations().markupSelection(markupSubtype);
         pendingMove = null;
         annotationGesture = false;
     }

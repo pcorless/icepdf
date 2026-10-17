@@ -48,7 +48,7 @@ public final class RedactHandler implements ToolHandler {
     public void pressed(MouseEvent e) {
         // an annotation under the pointer (to select or move) goes to the text handler, as text does.
         boolean overText = context.isOverText(e.getX(), e.getY())
-                || context.annotationAtViewport(e.getX(), e.getY()) != null;
+                || context.annotations().annotationAtViewport(e.getX(), e.getY()) != null;
         gesture = overText ? text : box;
         gesture.pressed(e);
     }
@@ -68,7 +68,7 @@ public final class RedactHandler implements ToolHandler {
     public void moved(MouseEvent e) {
         text.moved(e);
         // the I-beam over text; a crosshair elsewhere, where a drag draws a box.
-        if (!context.isOverText(e.getX(), e.getY()) && context.annotationAtViewport(e.getX(), e.getY()) == null) {
+        if (!context.isOverText(e.getX(), e.getY()) && context.annotations().annotationAtViewport(e.getX(), e.getY()) == null) {
             context.setViewportCursor(Cursor.CROSSHAIR);
         }
     }
