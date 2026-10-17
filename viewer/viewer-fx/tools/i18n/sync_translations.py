@@ -10,7 +10,8 @@ locale gets the Swing translation (the most common one when several Swing keys m
 
 A locale file has two sections: the first is rewritten from Swing on every run; the second,
 after the line "# ---- translated for the JavaFX viewer", is kept as it is - hand translations
-and drafts - except for keys Swing now supplies.  de_CH holds only differences from de.
+and drafts - except for keys English no longer has.  A key in the second section wins over
+Swing's match, so a hand translation is never replaced.  de_CH holds only differences from de.
 """
 import collections, json, os, re, sys
 
@@ -134,9 +135,10 @@ def main():
         if loc == 'de_CH':
             entries = {k: v for k, v in entries.items() if swing['de'].get(k) != v}
         lines, own = own_section(path)
-        # a kept line for a key Swing now supplies (or one English no longer has) is dropped
-        kept = [l for l in lines if not (re.match(r'([^#!=\s][^=]*)=', l) and
-                                         (l.split('=', 1)[0] in entries or l.split('=', 1)[0] not in fx))]
+        # a hand translation wins over Swing's match
+        entries = {k: v for k, v in entries.items() if k not in own}
+        # a kept line for a key English no longer has is dropped
+        kept = [l for l in lines if not (re.match(r'([^#!=\s][^=]*)=', l) and l.split('=', 1)[0] not in fx)]
         with open(path, 'w', encoding='utf-8') as f:
             f.write(HEADER.format(name=NAMES[loc]))
             for k in fx:
