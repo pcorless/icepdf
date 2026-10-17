@@ -37,7 +37,7 @@ import java.util.List;
  * chrome and markup popups may extend past the page edge into the gap or margin, as the Swing
  * viewer's popups do (it hosts them on the document view's POPUP_LAYER, not the page component).
  * <p>
- * It sits at the same viewport-relative origin as the page's {@link PageLayer}, above every page
+ * It sits at the same viewport-relative origin as the page's {@code PageLayer}, above every page
  * layer, and is created and dropped with it.  Chrome is drawn in page view space (logical px), so
  * outlines and handles keep a constant on-screen size at any zoom.
  */

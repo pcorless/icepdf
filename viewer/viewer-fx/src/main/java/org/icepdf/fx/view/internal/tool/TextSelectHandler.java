@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.tool;
 
+import org.icepdf.fx.view.PdfView;
+
+import org.icepdf.fx.view.internal.form.FormController;
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
 import org.icepdf.fx.view.internal.text.CaretNavigator;
 import org.icepdf.fx.view.internal.text.SelectionController;
 
@@ -34,21 +38,21 @@ import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
  * {@link SelectionController}; adds an I-beam cursor over text and auto-scroll while a drag holds
  * the pointer near or past the viewport edge.
  */
-final class TextSelectHandler implements ToolHandler {
+public final class TextSelectHandler implements ToolHandler {
 
     // auto-scroll starts this close to the edge, in logical px, and speeds up with distance past it.
     private static final double EDGE = 24;
     private static final double MAX_STEP = 60;
 
-    private final PdfViewSkin skin;
+    private final ToolContext context;
     private final SelectionController controller;
     private final Timeline autoScroll;
     private double lastX;
     private double lastY;
 
-    TextSelectHandler(PdfViewSkin skin) {
-        this.skin = skin;
-        this.controller = new SelectionController(skin::textSequence);
+    public TextSelectHandler(ToolContext context) {
+        this.context = context;
+        this.controller = new SelectionController(context::textSequence);
         autoScroll = new Timeline(new KeyFrame(Duration.millis(16), e -> autoScrollTick()));
         autoScroll.setCycleCount(Animation.INDEFINITE);
     }
@@ -59,49 +63,49 @@ final class TextSelectHandler implements ToolHandler {
     }
 
     // a press on a link: followed on release unless the pointer moved (then it was a text drag).
-    private PdfViewSkin.AnnotationHit pendingLink;
+    private AnnotationHit pendingLink;
     private double pressX;
     private double pressY;
     // a press that selected an annotation: no text selection for this gesture.
     private boolean annotationGesture;
     // an editable annotation pressed: becomes a move once the pointer travels a few px.
-    private PdfViewSkin.AnnotationHit pendingMove;
+    private AnnotationHit pendingMove;
     private boolean draggingAnnotation;
     // in a text-markup tool, the subtype the selection becomes on release; null for plain select.
     private org.icepdf.core.pobjects.Name markupSubtype;
 
-    void setMarkupSubtype(org.icepdf.core.pobjects.Name subtype) {
+    public void setMarkupSubtype(org.icepdf.core.pobjects.Name subtype) {
         markupSubtype = subtype;
     }
 
     @Override
     public void moved(MouseEvent e) {
-        PdfViewSkin.AnnotationHit field = skin.fieldAtViewport(e.getX(), e.getY());
+        AnnotationHit field = context.fieldAtViewport(e.getX(), e.getY());
         if (field != null) {
-            skin.setHovered(null);
-            skin.setViewportCursor(PdfViewSkin.fieldCursor((org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation) field.annotation()));
+            context.setHovered(null);
+            context.setViewportCursor(fieldCursor((org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation) field.annotation()));
             return;
         }
-        int handle = skin.handleAtViewport(e.getX(), e.getY());
+        int handle = context.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {
-            skin.setHovered(null);
-            skin.setViewportCursor(resizeCursor(handle));
+            context.setHovered(null);
+            context.setViewportCursor(resizeCursor(handle));
             return;
         }
-        if (skin.signatureAtViewport(e.getX(), e.getY()) != null) {
-            skin.setHovered(null);
-            skin.setViewportCursor(Cursor.HAND);
+        if (context.signatureAtViewport(e.getX(), e.getY()) != null) {
+            context.setHovered(null);
+            context.setViewportCursor(Cursor.HAND);
             return;
         }
-        PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
-        skin.setHovered(hit != null && !PdfViewSkin.isActionable(hit.annotation()) ? hit : null);
+        AnnotationHit hit = context.annotationAtViewport(e.getX(), e.getY());
+        context.setHovered(hit != null && !hit.isActionable() ? hit : null);
         if (hit != null) {
-            boolean selectedEditable = hit.annotation() == skin.getSkinnable().getSelectedAnnotation()
-                    && skin.canMove(hit.annotation());
-            skin.setViewportCursor(PdfViewSkin.isActionable(hit.annotation()) ? Cursor.HAND
+            boolean selectedEditable = hit.annotation() == context.view().getSelectedAnnotation()
+                    && context.canMove(hit.annotation());
+            context.setViewportCursor(hit.isActionable() ? Cursor.HAND
                     : selectedEditable ? Cursor.MOVE : Cursor.DEFAULT);
         } else {
-            skin.setViewportCursor(skin.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
+            context.setViewportCursor(context.isOverText(e.getX(), e.getY()) ? Cursor.TEXT : Cursor.DEFAULT);
         }
     }
 
@@ -124,49 +128,49 @@ final class TextSelectHandler implements ToolHandler {
         lastY = e.getY();
         pressX = e.getX();
         pressY = e.getY();
-        PdfView view = skin.getSkinnable();
+        PdfView view = context.view();
         annotationGesture = false;
         pendingLink = null;
         pendingMove = null;
         draggingAnnotation = false;
         // a form field: give it focus (its editor opens); no text selection for this gesture.
-        PdfViewSkin.AnnotationHit field = markupSubtype == null ? skin.fieldAtViewport(e.getX(), e.getY()) : null;
+        AnnotationHit field = markupSubtype == null ? context.fieldAtViewport(e.getX(), e.getY()) : null;
         if (field != null) {
             view.clearAnnotationSelection();
-            skin.pressField(field, e);
+            context.pressField(field, e);
             annotationGesture = true;
             return;
         }
         if (view.getFocusedField() != null) view.clearFieldFocus();
         // a signature field: its properties (or the application's handler); no text selection.
-        PdfViewSkin.AnnotationHit signature = markupSubtype == null && e.getClickCount() == 1
-                ? skin.signatureAtViewport(e.getX(), e.getY()) : null;
+        AnnotationHit signature = markupSubtype == null && e.getClickCount() == 1
+                ? context.signatureAtViewport(e.getX(), e.getY()) : null;
         if (signature != null) {
             view.clearAnnotationSelection();
             annotationGesture = true;
-            skin.signatureClicked(skin.signatureStatusOf(signature.annotation()));
+            context.signatureClicked(context.signatureStatusOf(signature.annotation()));
             return;
         }
         // a handle of the selected annotation: resize straight away.
-        int handle = skin.handleAtViewport(e.getX(), e.getY());
+        int handle = context.handleAtViewport(e.getX(), e.getY());
         if (handle >= 0) {
-            PdfViewSkin.AnnotationHit selected = skin.selectedHit();
+            AnnotationHit selected = context.selectedHit();
             if (selected != null) {
                 annotationGesture = true;
                 draggingAnnotation = true;
-                skin.beginAnnotationDrag(selected, handle);
+                context.beginAnnotationDrag(selected, handle);
                 return;
             }
         }
-        PdfViewSkin.AnnotationHit hit = skin.annotationAtViewport(e.getX(), e.getY());
-        if (hit != null && PdfViewSkin.isActionable(hit.annotation())) {
+        AnnotationHit hit = context.annotationAtViewport(e.getX(), e.getY());
+        if (hit != null && hit.isActionable()) {
             pendingLink = hit;
         } else if (hit != null) {
             // annotations win over text: select it, no text selection for this gesture.
             view.selectAnnotation(hit.annotation());
             // double-click a free text box to edit its text in place.
             if (e.getClickCount() == 2 && hit.annotation() instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation) {
-                skin.editFreeText(hit);
+                context.editFreeText(hit);
                 annotationGesture = true;
                 return;
             }
@@ -178,11 +182,11 @@ final class TextSelectHandler implements ToolHandler {
                 return;
             }
             annotationGesture = true;
-            if (skin.canMove(hit.annotation())) pendingMove = hit;
+            if (context.canMove(hit.annotation())) pendingMove = hit;
             return;
         }
         view.clearAnnotationSelection();
-        view.setTextSelection(controller.press(view.getTextSelection(), skin.pageAtViewport(e.getX(), e.getY()),
+        view.setTextSelection(controller.press(view.getTextSelection(), context.pageAtViewport(e.getX(), e.getY()),
                 e.getClickCount(), e.isShiftDown()));
     }
 
@@ -192,18 +196,18 @@ final class TextSelectHandler implements ToolHandler {
             double dx = e.getX() - pressX;
             double dy = e.getY() - pressY;
             if (pendingMove != null && Math.hypot(dx, dy) > 3) {
-                skin.beginAnnotationDrag(pendingMove, -1);
+                context.beginAnnotationDrag(pendingMove, -1);
                 pendingMove = null;
                 draggingAnnotation = true;
             }
-            if (draggingAnnotation) skin.updateAnnotationDrag(dx, dy);
+            if (draggingAnnotation) context.updateAnnotationDrag(dx, dy);
             return;
         }
         if (pendingLink != null && Math.hypot(e.getX() - pressX, e.getY() - pressY) > 4) pendingLink = null;
         lastX = e.getX();
         lastY = e.getY();
         extendToLast();
-        if (edgeStep(lastX, skin.getViewportWidth()) != 0 || edgeStep(lastY, skin.getViewportHeight()) != 0) {
+        if (edgeStep(lastX, context.getViewportWidth()) != 0 || edgeStep(lastY, context.getViewportHeight()) != 0) {
             if (autoScroll.getStatus() != Animation.Status.RUNNING) autoScroll.play();
         } else {
             autoScroll.stop();
@@ -215,15 +219,15 @@ final class TextSelectHandler implements ToolHandler {
         autoScroll.stop();
         controller.release();
         if (pendingLink != null) {
-            PdfViewSkin.AnnotationHit link = pendingLink;
+            AnnotationHit link = pendingLink;
             pendingLink = null;
-            skin.getSkinnable().performAnnotationAction(link.annotation());
+            context.view().performAnnotationAction(link.annotation());
         }
         if (draggingAnnotation) {
             draggingAnnotation = false;
-            skin.getSkinnable().recordEdit(skin.endAnnotationDrag(e.getX() - pressX, e.getY() - pressY, false));
+            context.recordEdit(context.endAnnotationDrag(e.getX() - pressX, e.getY() - pressY, false));
         }
-        if (markupSubtype != null && !annotationGesture) skin.markupSelection(markupSubtype);
+        if (markupSubtype != null && !annotationGesture) context.markupSelection(markupSubtype);
         pendingMove = null;
         annotationGesture = false;
     }
@@ -235,7 +239,7 @@ final class TextSelectHandler implements ToolHandler {
      */
     @Override
     public boolean keyPressed(KeyEvent e) {
-        PdfView view = skin.getSkinnable();
+        PdfView view = context.view();
         DocumentSelection selection = view.getTextSelection();
         boolean shortcut = e.isShortcutDown();
         switch (e.getCode()) {
@@ -255,7 +259,7 @@ final class TextSelectHandler implements ToolHandler {
             case ESCAPE:
                 if (draggingAnnotation) {
                     draggingAnnotation = false;
-                    skin.endAnnotationDrag(0, 0, true);
+                    context.endAnnotationDrag(0, 0, true);
                     return true;
                 }
                 if (view.getSelectedAnnotation() != null) {
@@ -294,10 +298,10 @@ final class TextSelectHandler implements ToolHandler {
             default:
                 return false;
         }
-        DocumentSelection moved = skin.caretNavigator().move(selection, move, e.isShiftDown());
+        DocumentSelection moved = context.caretNavigator().move(selection, move, e.isShiftDown());
         if (moved != selection) {
             view.setTextSelection(moved);
-            skin.revealCaret();
+            context.revealCaret();
         }
         // consumed even when nothing moved (page text loading, document edge) so the view doesn't
         // scroll instead.
@@ -310,25 +314,32 @@ final class TextSelectHandler implements ToolHandler {
     }
 
     private void extendToLast() {
-        PdfView view = skin.getSkinnable();
+        PdfView view = context.view();
         // between pages, or past the viewport edge, the nearest page edge stands in for the pointer.
-        view.setTextSelection(controller.drag(view.getTextSelection(), skin.nearestPageAtViewport(lastX, lastY)));
+        view.setTextSelection(controller.drag(view.getTextSelection(), context.nearestPageAtViewport(lastX, lastY)));
     }
 
     private void autoScrollTick() {
-        double dx = edgeStep(lastX, skin.getViewportWidth());
-        double dy = edgeStep(lastY, skin.getViewportHeight());
+        double dx = edgeStep(lastX, context.getViewportWidth());
+        double dy = edgeStep(lastY, context.getViewportHeight());
         if (dx == 0 && dy == 0) {
             autoScroll.stop();
             return;
         }
-        skin.scrollBy(dx, dy);
+        context.scrollBy(dx, dy);
         // the document moved under a still pointer: re-resolve the drag point.
         extendToLast();
     }
 
+    /** Cursor over a fillable field: an I-beam for text, a hand for buttons and lists. */
+    private static Cursor fieldCursor(org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation widget) {
+        FormController.FieldKind kind = FormController.kindOf(widget);
+        return kind == FormController.FieldKind.TEXT || kind == FormController.FieldKind.PASSWORD
+                ? Cursor.TEXT : Cursor.HAND;
+    }
+
     /** Scroll step for one axis: 0 inside the edge band, growing with distance into or past it. */
-    static double edgeStep(double position, double size) {
+    public static double edgeStep(double position, double size) {
         double step;
         if (position < EDGE) step = position - EDGE;
         else if (position > size - EDGE) step = position - (size - EDGE);

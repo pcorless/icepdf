@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.tool;
 
 import javafx.scene.Cursor;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 /**
- * The behaviour behind one {@link ToolMode}.  The skin routes viewport mouse events (coordinates in
+ * The behaviour behind one {@link org.icepdf.fx.view.ToolMode}.  The skin routes viewport mouse events (coordinates in
  * viewport space) to the active handler for the whole of a gesture, and offers it key presses
  * before its own scrolling keys.
  * <p>
  * Deliberately thin: handlers translate events and delegate, so their logic can live in
  * toolkit-free classes that are unit-testable without a display.
  */
-interface ToolHandler {
+public interface ToolHandler {
 
     /** Becomes the active tool. */
     default void install() {

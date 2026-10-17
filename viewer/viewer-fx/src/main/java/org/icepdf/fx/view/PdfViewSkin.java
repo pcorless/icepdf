@@ -15,6 +15,14 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.tool.AnnotationCreateHandler;
+import org.icepdf.fx.view.internal.tool.PanHandler;
+import org.icepdf.fx.view.internal.tool.RedactHandler;
+import org.icepdf.fx.view.internal.tool.TextSelectHandler;
+import org.icepdf.fx.view.internal.tool.ToolHandler;
+
+import org.icepdf.fx.view.internal.tool.ToolContext;
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
 import org.icepdf.fx.view.internal.text.CaretNavigator;
 import org.icepdf.fx.view.internal.text.PageTextLoader;
 
@@ -84,7 +92,7 @@ import java.util.*;
  * document coordinates, which reach tens of millions of px at deep zoom and would lose precision in
  * Prism's float vertices).  Each visible page asks for just its on-screen tiles.
  */
-final class PdfViewSkin extends SkinBase<PdfView> {
+final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
 
     private static final int PREVIEW_LONG_SIDE = 768;
     private static final Duration ZOOM_SETTLE = Duration.millis(150);
@@ -667,7 +675,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     // ---- scrolling ------------------------------------------------------------------------
 
-    void scrollBy(double dx, double dy) {
+    @Override
+    public void scrollBy(double dx, double dy) {
         scrollTo(scrollX + dx, scrollY + dy);
     }
 
@@ -930,7 +939,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     private final Map<org.icepdf.core.pobjects.Reference, org.icepdf.fx.signature.SignatureStatus>
             signatureByReference = new HashMap<>();
 
-    org.icepdf.fx.signature.SignatureStatus signatureStatusOf(Annotation annotation) {
+    @Override
+    public org.icepdf.fx.signature.SignatureStatus signatureStatusOf(Annotation annotation) {
         if (!(annotation instanceof org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation)
                 || annotation.getPObjectReference() == null) return null;
         return signatureByReference.get(annotation.getPObjectReference());
@@ -955,7 +965,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * The signature field under a viewport point with a checked status (signed, or an empty field
      * when the application handles clicks), or null.
      */
-    AnnotationHit signatureAtViewport(double vx, double vy) {
+    @Override
+    public AnnotationHit signatureAtViewport(double vx, double vy) {
         if (signatureByReference.isEmpty()) return null;
         PagePoint point = pageAtViewport(vx, vy);
         if (point == null) return null;
@@ -977,7 +988,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * The signature tool: adds an empty signature field over a dragged view rectangle and reports it
      * to the application's onSignatureClicked, as a click on an unsigned field does.
      */
-    void createSignatureField(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
+    @Override
+    public void createSignatureField(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
         Page page = document.getPageTree().getPage(pageIndex);
         java.awt.Rectangle bounds = Annotation.commonBoundsNormalization(new java.awt.geom.GeneralPath(viewRect),
                 toPageSpaceNow(page));
@@ -992,7 +1004,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** A click on a signature field or badge: the application's handler, else the properties dialog. */
-    void signatureClicked(org.icepdf.fx.signature.SignatureStatus status) {
+    @Override
+    public void signatureClicked(org.icepdf.fx.signature.SignatureStatus status) {
         PdfView view = getSkinnable();
         boolean handled = view.getOnSignatureClicked() != null;
         // after the gesture: a modal dialog opened inside a mouse handler takes the release.
@@ -1014,7 +1027,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** {@link #canEdit}, and not {@link #isTextBound}: it may be moved and resized. */
-    boolean canMove(Annotation annotation) {
+    @Override
+    public boolean canMove(Annotation annotation) {
         return canEdit(annotation) && !isTextBound(annotation);
     }
 
@@ -1035,13 +1049,15 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Converts a viewport point into a page's view space. */
-    Point2D toPageView(int pageIndex, double vx, double vy) {
+    @Override
+    public Point2D toPageView(int pageIndex, double vx, double vy) {
         PageSlot slot = layout != null ? layout.getSlot(pageIndex) : null;
         return slot == null ? null : new Point2D(scrollX + vx - slot.x(), scrollY + vy - slot.y());
     }
 
     /** The selected annotation's handle under a viewport point, or -1. */
-    int handleAtViewport(double vx, double vy) {
+    @Override
+    public int handleAtViewport(double vx, double vy) {
         Annotation selected = getSkinnable().getSelectedAnnotation();
         if (selected == null) return -1;
         for (AnnotationUiLayer ui : uiLayers.values()) {
@@ -1076,7 +1092,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** The fillable widget under a viewport point (top-most), or null; never parses on the FX thread. */
-    AnnotationHit fieldAtViewport(double vx, double vy) {
+    @Override
+    public AnnotationHit fieldAtViewport(double vx, double vy) {
         if (!fieldsEditable()) return null;
         PagePoint point = pageAtViewport(vx, vy);
         if (point == null) return null;
@@ -1087,13 +1104,6 @@ final class PdfViewSkin extends SkinBase<PdfView> {
             }
         }
         return null;
-    }
-
-    /** Cursor over a fillable field: an I-beam for text, a hand for buttons and lists. */
-    static Cursor fieldCursor(AbstractWidgetAnnotation widget) {
-        FormController.FieldKind kind = FormController.kindOf(widget);
-        return kind == FormController.FieldKind.TEXT || kind == FormController.FieldKind.PASSWORD
-                ? Cursor.TEXT : Cursor.HAND;
     }
 
     /**
@@ -1191,7 +1201,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * A click on a field: focuses it (opening its editor), toggles a check box or radio, or runs a
      * push button's action.  A click on the focused text field reopens its editor after an Esc.
      */
-    void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
+    @Override
+    public void pressField(AnnotationHit field, javafx.scene.input.MouseEvent e) {
         AbstractWidgetAnnotation widget = (AbstractWidgetAnnotation) field.annotation();
         FormController.FieldKind kind = FormController.kindOf(widget);
         if (getSkinnable().getFocusedField() != widget) {
@@ -1406,7 +1417,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** The page the selected annotation is on, or null. */
-    AnnotationHit selectedHit() {
+    @Override
+    public AnnotationHit selectedHit() {
         Annotation selected = getSkinnable().getSelectedAnnotation();
         if (selected == null) return null;
         for (AnnotationUiLayer ui : uiLayers.values()) {
@@ -1419,7 +1431,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * Starts a move (handle -1) or resize: the annotation leaves its tiles and a live node rendered
      * from it follows the pointer until the drag ends.
      */
-    void beginAnnotationDrag(AnnotationHit hit, int handle) {
+    @Override
+    public void beginAnnotationDrag(AnnotationHit hit, int handle) {
         java.awt.geom.Rectangle2D from = annotationViewBounds(hit);
         AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
         PageLayer layer = layers.get(hit.pageIndex());
@@ -1446,7 +1459,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Follows the pointer: (dx, dy) is the total view-space movement since the drag began. */
-    void updateAnnotationDrag(double dx, double dy) {
+    @Override
+    public void updateAnnotationDrag(double dx, double dy) {
         if (drag == null) return;
         AnnotationUiLayer ui = uiLayers.get(drag.hit().pageIndex());
         PageSlot slot = layout.getSlot(drag.hit().pageIndex());
@@ -1457,7 +1471,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Ends the drag; commits it through core unless {@code cancel}, and returns the edit (or null). */
-    AnnotationEdits.Edit endAnnotationDrag(double dx, double dy, boolean cancel) {
+    @Override
+    public AnnotationEdits.Edit endAnnotationDrag(double dx, double dy, boolean cancel) {
         Drag ended = drag;
         drag = null;
         if (ended == null) return null;
@@ -1559,7 +1574,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     // ---- creating annotations -----------------------------------------------------------------
 
-    java.util.Collection<AnnotationUiLayer> uiLayers() {
+    @Override
+    public java.util.Collection<AnnotationUiLayer> uiLayers() {
         return uiLayers.values();
     }
 
@@ -1596,7 +1612,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         getSkinnable().selectAnnotation(annotation);
     }
 
-    void createNote(int pageIndex, double viewX, double viewY) {
+    @Override
+    public void createNote(int pageIndex, double viewX, double viewY) {
         Page page = document.getPageTree().getPage(pageIndex);
         TextAnnotation note = AnnotationCreator.note(page.getLibrary(), viewX, viewY, pageToViewNow(page),
                 toPageSpaceNow(page), style(ToolMode.NOTE));
@@ -1618,32 +1635,37 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** The redaction tool's box: marks whatever is under it (an image, a drawing) for redaction. */
-    void createRedactionBox(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
+    @Override
+    public void createRedactionBox(int pageIndex, java.awt.geom.Rectangle2D viewRect) {
         Page page = document.getPageTree().getPage(pageIndex);
         addCreated(pageIndex, page, AnnotationCreator.redaction(page.getLibrary(), List.of(viewRect),
                 toPageSpaceNow(page), getSkinnable().getAnnotationAuthor()), false);
     }
 
-    void createShape(int pageIndex, boolean ellipse, java.awt.geom.Rectangle2D viewRect) {
+    @Override
+    public void createShape(int pageIndex, boolean ellipse, java.awt.geom.Rectangle2D viewRect) {
         Page page = document.getPageTree().getPage(pageIndex);
         addCreated(pageIndex, page, AnnotationCreator.shape(page.getLibrary(), ellipse, viewRect, toPageSpaceNow(page),
                 style(ellipse ? ToolMode.ELLIPSE : ToolMode.RECTANGLE)), false);
     }
 
-    void createLine(int pageIndex, Point2D start, Point2D end) {
+    @Override
+    public void createLine(int pageIndex, Point2D start, Point2D end) {
         Page page = document.getPageTree().getPage(pageIndex);
         addCreated(pageIndex, page, AnnotationCreator.line(page.getLibrary(),
                 new java.awt.geom.Point2D.Double(start.getX(), start.getY()),
                 new java.awt.geom.Point2D.Double(end.getX(), end.getY()), toPageSpaceNow(page), style(ToolMode.LINE)), false);
     }
 
-    void createInk(int pageIndex, java.awt.geom.GeneralPath viewPath) {
+    @Override
+    public void createInk(int pageIndex, java.awt.geom.GeneralPath viewPath) {
         Page page = document.getPageTree().getPage(pageIndex);
         addCreated(pageIndex, page, AnnotationCreator.ink(page.getLibrary(), viewPath, toPageSpaceNow(page),
                 style(ToolMode.INK)), false);
     }
 
-    void createFreeText(int pageIndex, double viewX, double viewY) {
+    @Override
+    public void createFreeText(int pageIndex, double viewX, double viewY) {
         Page page = document.getPageTree().getPage(pageIndex);
         FreeTextAnnotation freeText = AnnotationCreator.freeText(page.getLibrary(), viewX, viewY, layoutZoom,
                 toPageSpaceNow(page), style(ToolMode.FREE_TEXT));
@@ -1652,7 +1674,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Opens the inline editor over a free text annotation; the text commits as an undoable edit. */
-    void editFreeText(AnnotationHit hit) {
+    @Override
+    public void editFreeText(AnnotationHit hit) {
         if (!(hit.annotation() instanceof FreeTextAnnotation freeText) || !canEdit(freeText)) return;
         AnnotationUiLayer ui = uiLayers.get(hit.pageIndex());
         if (ui == null) return;
@@ -1671,7 +1694,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      *
      * @return the number created
      */
-    int markupSelection(org.icepdf.core.pobjects.Name subtype) {
+    @Override
+    public int markupSelection(org.icepdf.core.pobjects.Name subtype) {
         DocumentSelection selection = getSkinnable().getTextSelection();
         if (selection == null || selection.isCollapsed() || document == null
                 || !getSkinnable().isAnnotationEditingAllowed()) return 0;
@@ -1817,7 +1841,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** The page's loaded text, or null if it isn't loaded (or has none). */
-    TextSequence textSequence(int pageIndex) {
+    @Override
+    public TextSequence textSequence(int pageIndex) {
         return textLoader.get(pageIndex);
     }
 
@@ -1859,7 +1884,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Keyboard caret movement over the loader's text; rebuilt per document. */
-    CaretNavigator caretNavigator() {
+    @Override
+    public CaretNavigator caretNavigator() {
         if (caretNavigator == null) {
             caretNavigator = new CaretNavigator(new CaretNavigator.Texts() {
                 public TextSequence get(int pageIndex) {
@@ -1887,7 +1913,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * Brings the selection's focus caret into view, switching page first in the non-continuous
      * modes.  Needs the focus page's text to be loaded, which it is after any caret move.
      */
-    void revealCaret() {
+    @Override
+    public void revealCaret() {
         DocumentSelection selection = getSkinnable().getTextSelection();
         if (selection == null) return;
         int page = selection.getFocusPage();
@@ -1902,7 +1929,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** True if the viewport point is over a glyph of a page whose text is loaded. */
-    boolean isOverText(double vx, double vy) {
+    @Override
+    public boolean isOverText(double vx, double vy) {
         PagePoint point = pageAtViewport(vx, vy);
         if (point == null) return false;
         TextSequence sequence = textLoader.get(point.pageIndex());
@@ -1919,16 +1947,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
 
     // ---- annotations ----------------------------------------------------------------------
 
-    /** An annotation and the page it is on. */
-    record AnnotationHit(int pageIndex, Annotation annotation) {
-    }
-
     /**
      * The topmost annotation under a viewport point that the view lets you interact with: visible,
      * not a popup (popups are nodes) and not a form widget (a later phase).  Only pages already
      * initialised by rendering are searched, so this never parses on the FX thread.
      */
-    AnnotationHit annotationAtViewport(double vx, double vy) {
+    @Override
+    public AnnotationHit annotationAtViewport(double vx, double vy) {
         PagePoint point = pageAtViewport(vx, vy);
         if (point == null) return null;
         Page page = document.getPageTree().getPage(point.pageIndex());
@@ -1954,7 +1979,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** Sets the hover outline (null clears). */
-    void setHovered(AnnotationHit hit) {
+    @Override
+    public void setHovered(AnnotationHit hit) {
         if (java.util.Objects.equals(hit, hovered)) return;
         hovered = hit;
         uiLayers.values().forEach(ui -> updateAnnotationChrome(ui, null));
@@ -1977,21 +2003,18 @@ final class PdfViewSkin extends SkinBase<PdfView> {
     }
 
     /** The UI layer of a visible page, or null. */
-    AnnotationUiLayer uiLayer(int pageIndex) {
+    @Override
+    public AnnotationUiLayer uiLayer(int pageIndex) {
         return uiLayers.get(pageIndex);
     }
 
     /** Follows the link (or action) under a viewport point; true if there was one. */
-    boolean activateLinkAtViewport(double vx, double vy) {
+    @Override
+    public boolean activateLinkAtViewport(double vx, double vy) {
         AnnotationHit hit = annotationAtViewport(vx, vy);
-        if (hit == null || !isActionable(hit.annotation())) return false;
+        if (hit == null || !hit.isActionable()) return false;
         getSkinnable().performAnnotationAction(hit.annotation());
         return true;
-    }
-
-    static boolean isActionable(Annotation annotation) {
-        return annotation instanceof LinkAnnotation
-                || (annotation.getAction() != null && !(annotation instanceof MarkupAnnotation));
     }
 
     /** Scrolls so a page point sits at the viewport's top (and left edge if the page is wider). */
@@ -2117,6 +2140,16 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         zoomFocus = null;
     }
 
+    @Override
+    public PdfView view() {
+        return getSkinnable();
+    }
+
+    @Override
+    public void recordEdit(AnnotationEdits.Edit edit) {
+        getSkinnable().recordEdit(edit);
+    }
+
     // ---- tools ----------------------------------------------------------------------------
 
     private void installTool() {
@@ -2139,13 +2172,15 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         restoreViewportCursor();
     }
 
-    void setViewportCursor(Cursor cursor) {
+    @Override
+    public void setViewportCursor(Cursor cursor) {
         viewportCursor = cursor;
         applyCursor();
     }
 
     /** The cursor for the current state: hand while Space is held, else the active tool's. */
-    void restoreViewportCursor() {
+    @Override
+    public void restoreViewportCursor() {
         setViewportCursor(spaceDown ? Cursor.OPEN_HAND : activeHandler.idleCursor());
     }
 
@@ -2220,7 +2255,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * The page and PDF user-space point under a point in viewport coordinates, or null over the
      * gaps between pages, outside the document, or before a document is laid out.
      */
-    PagePoint pageAtViewport(double vx, double vy) {
+    @Override
+    public PagePoint pageAtViewport(double vx, double vy) {
         if (layout == null || document == null) return null;
         double dx = scrollX + vx;
         double dy = scrollY + vy;
@@ -2239,7 +2275,8 @@ final class PdfViewSkin extends SkinBase<PdfView> {
      * nearest page edge: what a selection drag across a page gap or past the viewport edge means.
      * Null only without a layout or pages.
      */
-    PagePoint nearestPageAtViewport(double vx, double vy) {
+    @Override
+    public PagePoint nearestPageAtViewport(double vx, double vy) {
         PagePoint direct = pageAtViewport(vx, vy);
         if (direct != null || layout == null || document == null) return direct;
         double dx = scrollX + vx;
@@ -2293,11 +2330,13 @@ final class PdfViewSkin extends SkinBase<PdfView> {
         pinCurrentPage(point.pageIndex());
     }
 
-    double getViewportWidth() {
+    @Override
+    public double getViewportWidth() {
         return viewportW;
     }
 
-    double getViewportHeight() {
+    @Override
+    public double getViewportHeight() {
         return viewportH;
     }
 

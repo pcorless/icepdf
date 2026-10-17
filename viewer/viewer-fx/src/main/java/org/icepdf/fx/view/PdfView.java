@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
 import org.icepdf.fx.view.internal.text.DocumentSearch;
 
 import org.icepdf.fx.view.internal.form.FormController;
@@ -388,7 +389,7 @@ public class PdfView extends Control {
      */
     public Optional<Annotation> annotationAt(double x, double y) {
         if (!(getSkin() instanceof PdfViewSkin skin)) return Optional.empty();
-        PdfViewSkin.AnnotationHit hit = skin.annotationAt(x, y);
+        AnnotationHit hit = skin.annotationAt(x, y);
         return hit != null ? Optional.of(hit.annotation()) : Optional.empty();
     }
 
@@ -399,7 +400,7 @@ public class PdfView extends Control {
     public void setPopupOpen(MarkupAnnotation markup, boolean open) {
         PopupAnnotation popup = markup != null ? markup.getPopupAnnotation() : null;
         if (popup == null || !(getSkin() instanceof PdfViewSkin skin)) return;
-        PdfViewSkin.AnnotationHit hit = skin.hitOf(markup);
+        AnnotationHit hit = skin.hitOf(markup);
         if (hit == null) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         skin.annotationLocker().withAnnotationLock(hit.pageIndex(), () -> {
@@ -676,7 +677,7 @@ public class PdfView extends Control {
      */
     public void deleteSelectedAnnotation() {
         if (!(getSkin() instanceof PdfViewSkin skin)) return;
-        PdfViewSkin.AnnotationHit hit = skin.selectedHit();
+        AnnotationHit hit = skin.selectedHit();
         if (hit == null || !skin.canEdit(hit.annotation())) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, hit.pageIndex(), hit.annotation()));
@@ -691,7 +692,7 @@ public class PdfView extends Control {
     public void applyAnnotationProperties(Annotation annotation, AnnotationProperties change) {
         if (change == null || !AnnotationProperties.supports(annotation)) return;
         if (!(getSkin() instanceof PdfViewSkin skin) || !skin.canEdit(annotation)) return;
-        PdfViewSkin.AnnotationHit hit = skin.hitOf(annotation);
+        AnnotationHit hit = skin.hitOf(annotation);
         if (hit == null) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
         recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, hit.pageIndex(), annotation, change,

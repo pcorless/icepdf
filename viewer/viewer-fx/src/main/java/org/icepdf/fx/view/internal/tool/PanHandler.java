@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.tool;
 
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
 import javafx.scene.Cursor;
 import javafx.scene.input.MouseEvent;
 
@@ -22,17 +23,17 @@ import javafx.scene.input.MouseEvent;
  * Hand tool: dragging moves the document with the pointer.  Also used by the skin for the
  * middle-button and Space+drag pans available in every tool.
  */
-final class PanHandler implements ToolHandler {
+public final class PanHandler implements ToolHandler {
 
-    private final PdfViewSkin skin;
+    private final ToolContext context;
     private double lastX;
     private double lastY;
 
     private double pressX;
     private double pressY;
 
-    PanHandler(PdfViewSkin skin) {
-        this.skin = skin;
+    public PanHandler(ToolContext context) {
+        this.context = context;
     }
 
     @Override
@@ -41,26 +42,26 @@ final class PanHandler implements ToolHandler {
         lastY = e.getY();
         pressX = e.getX();
         pressY = e.getY();
-        skin.setViewportCursor(Cursor.CLOSED_HAND);
+        context.setViewportCursor(Cursor.CLOSED_HAND);
     }
 
     @Override
     public void dragged(MouseEvent e) {
-        skin.scrollBy(lastX - e.getX(), lastY - e.getY());
+        context.scrollBy(lastX - e.getX(), lastY - e.getY());
         lastX = e.getX();
         lastY = e.getY();
     }
 
     @Override
     public void released(MouseEvent e) {
-        skin.restoreViewportCursor();
+        context.restoreViewportCursor();
         // a click (not a drag) with the hand tool follows a link, as in Acrobat.
         if (e.getButton() == javafx.scene.input.MouseButton.PRIMARY
                 && Math.hypot(e.getX() - pressX, e.getY() - pressY) <= 4) {
             // a click with the hand tool fills a form field or follows a link, as in Acrobat.
-            PdfViewSkin.AnnotationHit field = skin.fieldAtViewport(e.getX(), e.getY());
-            if (field != null) skin.pressField(field, e);
-            else skin.activateLinkAtViewport(e.getX(), e.getY());
+            AnnotationHit field = context.fieldAtViewport(e.getX(), e.getY());
+            if (field != null) context.pressField(field, e);
+            else context.activateLinkAtViewport(e.getX(), e.getY());
         }
     }
 

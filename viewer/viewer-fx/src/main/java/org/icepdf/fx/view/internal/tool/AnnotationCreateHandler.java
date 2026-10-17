@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.tool;
+
+import org.icepdf.fx.view.PagePoint;
+import org.icepdf.fx.view.ToolMode;
 
 import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
 
@@ -30,11 +33,11 @@ import java.awt.geom.Rectangle2D;
 /**
  * The drawing tools: NOTE and FREE_TEXT are clicks; RECTANGLE, ELLIPSE, LINE and INK are drags with
  * a live preview shape in the page's UI layer, turned into an annotation on release (see
- * {@link AnnotationCreator}).  The gesture stays on the page it started on.
+ * {@link org.icepdf.fx.view.internal.annot.AnnotationCreator}).  The gesture stays on the page it started on.
  */
-final class AnnotationCreateHandler implements ToolHandler {
+public final class AnnotationCreateHandler implements ToolHandler {
 
-    private final PdfViewSkin skin;
+    private final ToolContext context;
     private ToolMode mode = ToolMode.RECTANGLE;
     private int pageIndex = -1;
     private Point2D start;
@@ -43,11 +46,11 @@ final class AnnotationCreateHandler implements ToolHandler {
     private Path inkPreview;
     private Node preview;
 
-    AnnotationCreateHandler(PdfViewSkin skin) {
-        this.skin = skin;
+    public AnnotationCreateHandler(ToolContext context) {
+        this.context = context;
     }
 
-    void setMode(ToolMode mode) {
+    public void setMode(ToolMode mode) {
         this.mode = mode;
     }
 
@@ -59,13 +62,13 @@ final class AnnotationCreateHandler implements ToolHandler {
 
     @Override
     public void pressed(MouseEvent e) {
-        PagePoint point = skin.pageAtViewport(e.getX(), e.getY());
+        PagePoint point = context.pageAtViewport(e.getX(), e.getY());
         if (point == null) {
             pageIndex = -1;
             return;
         }
         pageIndex = point.pageIndex();
-        start = skin.toPageView(pageIndex, e.getX(), e.getY());
+        start = context.toPageView(pageIndex, e.getX(), e.getY());
         end = start;
         if (mode == ToolMode.INK) {
             ink = new GeneralPath();
@@ -80,7 +83,7 @@ final class AnnotationCreateHandler implements ToolHandler {
     @Override
     public void dragged(MouseEvent e) {
         if (pageIndex < 0) return;
-        Point2D p = skin.toPageView(pageIndex, e.getX(), e.getY());
+        Point2D p = context.toPageView(pageIndex, e.getX(), e.getY());
         if (p == null) return;
         end = p;
         switch (mode) {
@@ -126,23 +129,23 @@ final class AnnotationCreateHandler implements ToolHandler {
         clearPreview();
         boolean click = start.distance(end) < 4;
         switch (mode) {
-            case NOTE -> skin.createNote(page, end.getX(), end.getY());
-            case FREE_TEXT -> skin.createFreeText(page, end.getX(), end.getY());
+            case NOTE -> context.createNote(page, end.getX(), end.getY());
+            case FREE_TEXT -> context.createFreeText(page, end.getX(), end.getY());
             case RECTANGLE, ELLIPSE -> {
-                if (!click) skin.createShape(page, mode == ToolMode.ELLIPSE, rect());
+                if (!click) context.createShape(page, mode == ToolMode.ELLIPSE, rect());
             }
             case LINE -> {
-                if (!click) skin.createLine(page, start, end);
+                if (!click) context.createLine(page, start, end);
             }
             case SIGNATURE -> {
-                if (!click) skin.createSignatureField(page, rect());
+                if (!click) context.createSignatureField(page, rect());
             }
             case REDACT -> {
-                if (!click) skin.createRedactionBox(page, rect());
+                if (!click) context.createRedactionBox(page, rect());
             }
             case INK -> {
                 if (ink != null && ink.getBounds2D().getWidth() + ink.getBounds2D().getHeight() > 3) {
-                    skin.createInk(page, ink);
+                    context.createInk(page, ink);
                 }
                 ink = null;
             }
@@ -170,13 +173,13 @@ final class AnnotationCreateHandler implements ToolHandler {
 
     private void showPreview(Node node) {
         preview = node;
-        AnnotationUiLayer ui = skin.uiLayer(pageIndex);
+        AnnotationUiLayer ui = context.uiLayer(pageIndex);
         if (ui != null) ui.setCreationPreview(node);
     }
 
     private void clearPreview() {
         if (preview == null) return;
-        skin.uiLayers().forEach(ui -> ui.setCreationPreview(null));
+        context.uiLayers().forEach(ui -> ui.setCreationPreview(null));
         preview = null;
         inkPreview = null;
     }

@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.tool;
 
 import javafx.scene.Cursor;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 
 /**
- * The redaction tool ({@link ToolMode#REDACT}): a gesture that starts over text selects text, which
+ * The redaction tool ({@link org.icepdf.fx.view.ToolMode#REDACT}): a gesture that starts over text selects text, which
  * becomes a redaction on release (the text-select handler, with the Redact subtype); one that starts
  * anywhere else drags out a box (the create handler, in REDACT mode) - for images and drawings, as
  * Swing's RedactionAnnotationHandler does.  The choice is made at the press and kept for the gesture.
  */
-final class RedactHandler implements ToolHandler {
+public final class RedactHandler implements ToolHandler {
 
-    private final PdfViewSkin skin;
+    private final ToolContext context;
     private final TextSelectHandler text;
     private final AnnotationCreateHandler box;
     private ToolHandler gesture;
 
-    RedactHandler(PdfViewSkin skin, TextSelectHandler text, AnnotationCreateHandler box) {
-        this.skin = skin;
+    public RedactHandler(ToolContext context, TextSelectHandler text, AnnotationCreateHandler box) {
+        this.context = context;
         this.text = text;
         this.box = box;
     }
@@ -47,8 +47,8 @@ final class RedactHandler implements ToolHandler {
     @Override
     public void pressed(MouseEvent e) {
         // an annotation under the pointer (to select or move) goes to the text handler, as text does.
-        boolean overText = skin.isOverText(e.getX(), e.getY())
-                || skin.annotationAtViewport(e.getX(), e.getY()) != null;
+        boolean overText = context.isOverText(e.getX(), e.getY())
+                || context.annotationAtViewport(e.getX(), e.getY()) != null;
         gesture = overText ? text : box;
         gesture.pressed(e);
     }
@@ -68,8 +68,8 @@ final class RedactHandler implements ToolHandler {
     public void moved(MouseEvent e) {
         text.moved(e);
         // the I-beam over text; a crosshair elsewhere, where a drag draws a box.
-        if (!skin.isOverText(e.getX(), e.getY()) && skin.annotationAtViewport(e.getX(), e.getY()) == null) {
-            skin.setViewportCursor(Cursor.CROSSHAIR);
+        if (!context.isOverText(e.getX(), e.getY()) && context.annotationAtViewport(e.getX(), e.getY()) == null) {
+            context.setViewportCursor(Cursor.CROSSHAIR);
         }
     }
 
