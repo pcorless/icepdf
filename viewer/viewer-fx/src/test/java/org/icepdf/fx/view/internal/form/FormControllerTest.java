@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.form;
+
 
 import org.icepdf.fx.view.internal.annot.AnnotationEdits;
 
@@ -22,8 +23,8 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.fx.view.FormController.FieldKind;
-import org.icepdf.fx.view.FormController.Located;
+import org.icepdf.fx.view.internal.form.FormController.FieldKind;
+import org.icepdf.fx.view.internal.form.FormController.Located;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

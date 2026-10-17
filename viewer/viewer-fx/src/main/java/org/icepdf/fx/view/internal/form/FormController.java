@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.form;
 
 import org.icepdf.fx.view.internal.annot.AnnotationEdits;
 
@@ -38,31 +38,31 @@ import java.util.*;
  * appearance through core and records it ({@code resetAppearanceStream}, {@code page.updateAnnotation},
  * the parent field in the state manager), under the renderer's per-page annotation lock.
  */
-final class FormController {
+public final class FormController {
 
     /** What a widget is, for choosing an editor and an interaction. */
-    enum FieldKind {TEXT, PASSWORD, CHECK, RADIO, PUSH, COMBO, LIST, SIGNATURE, OTHER}
+    public enum FieldKind {TEXT, PASSWORD, CHECK, RADIO, PUSH, COMBO, LIST, SIGNATURE, OTHER}
 
     /** A widget and the page it is on. */
-    record Located(int pageIndex, Page page, AbstractWidgetAnnotation widget) {
+    public record Located(int pageIndex, Page page, AbstractWidgetAnnotation widget) {
     }
 
     /** One field's value before and after an edit (values as {@link #valueOf}). */
-    record FieldChange(AbstractWidgetAnnotation widget, String name, Object oldValue, Object newValue) {
+    public record FieldChange(AbstractWidgetAnnotation widget, String name, Object oldValue, Object newValue) {
     }
 
     /** An edit of field values: which fields it changed, from what to what. */
-    interface FieldEdit extends AnnotationEdits.Edit {
+    public interface FieldEdit extends AnnotationEdits.Edit {
         List<FieldChange> changes();
     }
 
     private final AnnotationEdits.Locker locker;
 
-    FormController(AnnotationEdits.Locker locker) {
+    public FormController(AnnotationEdits.Locker locker) {
         this.locker = locker;
     }
 
-    static FieldKind kindOf(AbstractWidgetAnnotation widget) {
+    public static FieldKind kindOf(AbstractWidgetAnnotation widget) {
         if (widget instanceof TextWidgetAnnotation text) {
             return text.getFieldDictionary().getTextFieldType() == TextFieldDictionary.TextFieldType.TEXT_PASSWORD
                     ? FieldKind.PASSWORD : FieldKind.TEXT;
@@ -84,12 +84,12 @@ final class FormController {
     }
 
     /** The field's fully-qualified name (a widget kid without /T takes its parent's, per core). */
-    static String fieldNameOf(AbstractWidgetAnnotation widget) {
+    public static String fieldNameOf(AbstractWidgetAnnotation widget) {
         return widget.getFieldDictionary().getFullyQualifiedFieldName();
     }
 
     /** True if the user may change the field's value. */
-    static boolean isFillable(AbstractWidgetAnnotation widget) {
+    public static boolean isFillable(AbstractWidgetAnnotation widget) {
         FieldDictionary field = widget.getFieldDictionary();
         boolean readOnly = field != null && (field.isReadOnly()
                 || (field.getParent() != null && field.getParent().isReadOnly()));
@@ -98,7 +98,7 @@ final class FormController {
     }
 
     /** The field's current text: its value, else the parent's (as Swing's TextWidgetComponent). */
-    static String textOf(TextWidgetAnnotation widget) {
+    public static String textOf(TextWidgetAnnotation widget) {
         Object value = widget.getFieldDictionary().getFieldValue();
         if ((value == null || "".equals(value)) && widget.getFieldDictionary().getParent() != null) {
             value = widget.getFieldDictionary().getParent().getFieldValue();
@@ -111,7 +111,7 @@ final class FormController {
      * radio group ("Off" when off); a choice's export value, or a List of them for a multi-select
      * list (null when nothing is chosen).
      */
-    static Object valueOf(AbstractWidgetAnnotation widget) {
+    public static Object valueOf(AbstractWidgetAnnotation widget) {
         FieldDictionary dictionary = widget.getFieldDictionary();
         switch (kindOf(widget)) {
             case TEXT, PASSWORD -> {
@@ -148,7 +148,7 @@ final class FormController {
      * A choice's selected option indexes: /I when present, else the options whose export value (or
      * label) matches /V; many writers set only /V.
      */
-    static List<Integer> selectedIndexes(ChoiceFieldDictionary field) {
+    public static List<Integer> selectedIndexes(ChoiceFieldDictionary field) {
         if (field.getIndexes() != null && !field.getIndexes().isEmpty()) return field.getIndexes();
         List<ChoiceFieldDictionary.ChoiceOption> options = field.getOptions();
         Object v = field.getFieldValue();
@@ -163,7 +163,7 @@ final class FormController {
     }
 
     /** The indexes of the options whose export value or label is among {@code values}, in option order. */
-    static List<Integer> indexesOf(List<ChoiceFieldDictionary.ChoiceOption> options, Collection<String> values) {
+    public static List<Integer> indexesOf(List<ChoiceFieldDictionary.ChoiceOption> options, Collection<String> values) {
         List<Integer> out = new ArrayList<>();
         if (options == null) return out;
         for (int i = 0; i < options.size(); i++) {
@@ -181,14 +181,14 @@ final class FormController {
     // ---- changes --------------------------------------------------------------------------------
 
     /** Sets a text field's value. */
-    AnnotationEdits.Edit setText(Located field, String text, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit setText(Located field, String text, AffineTransform toPageSpace) {
         TextWidgetAnnotation widget = (TextWidgetAnnotation) field.widget();
         return change(List.of(field), toPageSpace,
                 () -> widget.getFieldDictionary().setFieldValue(text, widget.getPObjectReference()));
     }
 
     /** Toggles a check box (Swing CheckButtonComponent.buttonActuated). */
-    AnnotationEdits.Edit toggleCheck(Located field, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit toggleCheck(Located field, AffineTransform toPageSpace) {
         ButtonWidgetAnnotation widget = (ButtonWidgetAnnotation) field.widget();
         return change(List.of(field), toPageSpace, () -> {
             ButtonFieldDictionary dictionary = widget.getFieldDictionary();
@@ -206,7 +206,7 @@ final class FormController {
      *
      * @param siblings every kid of the radio's group, with its page (the group can span pages)
      */
-    AnnotationEdits.Edit selectRadio(Located radio, List<Located> siblings, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit selectRadio(Located radio, List<Located> siblings, AffineTransform toPageSpace) {
         ButtonWidgetAnnotation widget = (ButtonWidgetAnnotation) radio.widget();
         ButtonFieldDictionary dictionary = widget.getFieldDictionary();
         FieldDictionary parent = dictionary.getParent() != null ? dictionary.getParent() : dictionary;
@@ -228,14 +228,14 @@ final class FormController {
     }
 
     /** Chooses an entry of a combo or single-select list, or types into an editable combo. */
-    AnnotationEdits.Edit choose(Located field, String label, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit choose(Located field, String label, AffineTransform toPageSpace) {
         ChoiceWidgetAnnotation widget = (ChoiceWidgetAnnotation) field.widget();
         return change(List.of(field), toPageSpace,
                 () -> widget.getFieldDictionary().setFieldValue(label, widget.getPObjectReference()));
     }
 
     /** Selects entries of a combo or list by index (several for a multi-select list). */
-    AnnotationEdits.Edit chooseIndexes(Located field, List<Integer> indexes, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit chooseIndexes(Located field, List<Integer> indexes, AffineTransform toPageSpace) {
         ChoiceWidgetAnnotation widget = (ChoiceWidgetAnnotation) field.widget();
         return change(List.of(field), toPageSpace, () -> {
             ChoiceFieldDictionary dictionary = widget.getFieldDictionary();
@@ -260,7 +260,7 @@ final class FormController {
     }
 
     /** Resets fields to their defaults (/DV), as a ResetForm action does: one undoable edit. */
-    AnnotationEdits.Edit reset(List<Located> fields, AffineTransform toPageSpace) {
+    public AnnotationEdits.Edit reset(List<Located> fields, AffineTransform toPageSpace) {
         return change(fields, toPageSpace, () -> {
             for (Located field : fields) resetOne(field.widget());
         });
@@ -283,7 +283,7 @@ final class FormController {
     // ---- snapshots ------------------------------------------------------------------------------
 
     /** The on-state name of a button (the non-Off normal appearance), or null. */
-    static Name onNameOf(ButtonWidgetAnnotation button) {
+    public static Name onNameOf(ButtonWidgetAnnotation button) {
         Appearance appearance = button.getAppearances().get(button.getCurrentAppearance());
         return appearance != null && appearance.hasAlternativeAppearance() ? appearance.getOnName() : null;
     }
@@ -296,7 +296,7 @@ final class FormController {
     /** Everything a value change can alter on one widget. */
     private record State(Located field, Object value, Object parentValue, Name selected, List<Integer> indexes) {
 
-        static State of(Located field) {
+        public static State of(Located field) {
             AbstractWidgetAnnotation w = field.widget();
             FieldDictionary dictionary = w.getFieldDictionary();
             FieldDictionary parent = dictionary.getParent();
@@ -316,7 +316,7 @@ final class FormController {
             return value instanceof List<?> list ? new ArrayList<>(list) : value;
         }
 
-        void restore() {
+        public void restore() {
             AbstractWidgetAnnotation w = field.widget();
             FieldDictionary dictionary = w.getFieldDictionary();
             put(dictionary, value, w);

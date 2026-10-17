@@ -15,6 +15,10 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.form.FieldEditor;
+import org.icepdf.fx.view.internal.form.FieldOrder;
+import org.icepdf.fx.view.internal.form.FormController;
+
 import org.icepdf.fx.view.internal.annot.AnnotationCreator;
 import org.icepdf.fx.view.internal.annot.AnnotationEdits;
 import org.icepdf.fx.view.internal.annot.AnnotationGeometry;

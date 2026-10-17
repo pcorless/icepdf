@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.form;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.function.Function;
  * bottom), anything else (S structure order, or no entry) the order of the /Annots array.  No
  * toolkit; works on anything with a user-space rectangle.
  */
-final class FieldOrder {
+public final class FieldOrder {
 
     /** Rows/columns this close (points) count as the same line, so slightly ragged forms tab naturally. */
     static final double SAME_LINE = 4;
@@ -40,7 +40,7 @@ final class FieldOrder {
      * @param rectOf   a field's rectangle in PDF user space (y up)
      * @param tabs     the page's /Tabs name, or null
      */
-    static <T> List<T> order(List<T> fields, Function<T, Rectangle2D> rectOf, String tabs) {
+    public static <T> List<T> order(List<T> fields, Function<T, Rectangle2D> rectOf, String tabs) {
         if ("R".equals(tabs)) {
             // rows: top edges within SAME_LINE of each other; then left to right within a row.
             return lines(fields, f -> -rectOf.apply(f).getMaxY(), f -> rectOf.apply(f).getMinX());
@@ -78,7 +78,7 @@ final class FieldOrder {
     }
 
     /** The index after {@code current} (wrapping), or the first when nothing is current. */
-    static int next(int size, int current, boolean backwards) {
+    public static int next(int size, int current, boolean backwards) {
         if (size == 0) return -1;
         if (current < 0) return backwards ? size - 1 : 0;
         return backwards ? (current - 1 + size) % size : (current + 1) % size;

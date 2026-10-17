@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.form;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
@@ -47,10 +47,10 @@ import java.util.function.Supplier;
  * at once; Esc cancels.  The value itself is applied by the caller through {@link FormController}:
  * a String (text, or typed into an editable combo) or a List of option indexes (a choice).
  */
-final class FieldEditor {
+public final class FieldEditor {
 
     /** What the editor reports. */
-    interface Listener {
+    public interface Listener {
         /** Commit the value; {@code advance} is +1/-1 after Tab/Shift+Tab, else 0. */
         void commit(Object value, int advance);
 
@@ -99,7 +99,7 @@ final class FieldEditor {
     }
 
     /** A text field's editor. */
-    static FieldEditor text(TextWidgetAnnotation widget, String text, Rectangle2D viewBounds, double zoom,
+    public static FieldEditor text(TextWidgetAnnotation widget, String text, Rectangle2D viewBounds, double zoom,
                             Listener listener) {
         TextFieldDictionary field = widget.getFieldDictionary();
         boolean multiLine = field.getTextFieldType() == TextFieldDictionary.TextFieldType.TEXT_AREA;
@@ -139,7 +139,7 @@ final class FieldEditor {
      *
      * @param openPopup show a combo's drop-down at once (it was clicked, not tabbed to)
      */
-    static FieldEditor choice(ChoiceWidgetAnnotation widget, Rectangle2D viewBounds, double zoom, boolean openPopup,
+    public static FieldEditor choice(ChoiceWidgetAnnotation widget, Rectangle2D viewBounds, double zoom, boolean openPopup,
                               Listener listener) {
         ChoiceFieldDictionary field = widget.getFieldDictionary();
         List<String> labels = new ArrayList<>();
@@ -244,7 +244,7 @@ final class FieldEditor {
      * Ends the editor now, on this call (not later): a programmatic change (reset, a value set by
      * the application) must not have a pending commit land after it.
      */
-    void closeNow(boolean commit) {
+    public void closeNow(boolean commit) {
         if (finished) return;
         finished = true;
         if (control instanceof ComboBox<?> box && box.isShowing()) box.hide();
@@ -252,12 +252,12 @@ final class FieldEditor {
         else listener.cancel();
     }
 
-    Control control() {
+    public Control control() {
         return control;
     }
 
     /** Commits whatever is entered (focus moving elsewhere); no-op once finished. */
-    void commitNow() {
+    public void commitNow() {
         commit(0);
     }
 
