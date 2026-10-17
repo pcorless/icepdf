@@ -143,14 +143,19 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         for (PerformanceSettings.Pool pool : PerformanceSettings.Pool.values()) {
             ThreadCount count = new ThreadCount(pool);
             threadCounts.put(pool, count);
-            performance.addRow(row++, label("preferences.performance." + pool.name().toLowerCase(Locale.ROOT), count.spinner),
-                    count.automatic, count.spinner, count.inEffect);
+            Label name = label("preferences.performance." + pool.name().toLowerCase(Locale.ROOT), count.spinner);
+            // translations run long: labels keep their full width, and what the pool runs with now
+            // gets its own line under the controls.
+            name.setMinWidth(Region.USE_PREF_SIZE);
+            count.automatic.setMinWidth(Region.USE_PREF_SIZE);
+            performance.addRow(row++, name, count.automatic, count.spinner);
+            performance.add(count.inEffect, 1, row++, 2, 1);
         }
         Label performanceHelp = new Label(Messages.format("preferences.performance.help",
                 Runtime.getRuntime().availableProcessors()));
         performanceHelp.setWrapText(true);
         performanceHelp.setMaxWidth(560);
-        performance.add(performanceHelp, 0, row, 4, 1);
+        performance.add(performanceHelp, 0, row, 3, 1);
 
         TabPane tabs = new TabPane(new Tab(Messages.get("preferences.tab.general"), general), new Tab(Messages.get("preferences.tab.annotations"), annotations),
                 new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.imaging"), imaging),
@@ -209,6 +214,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
             spinner.setEditable(true);
             spinner.setPrefWidth(90);
             automatic.setSelected(saved == null);
+            inEffect.getStyleClass().add("pool-in-effect");
             spinner.disableProperty().bind(automatic.selectedProperty());
             inEffect.setText(switch (now.source()) {
                 case AUTO -> Messages.format("preferences.performance.now.auto", now.threads());

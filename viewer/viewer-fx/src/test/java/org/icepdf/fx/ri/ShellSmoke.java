@@ -105,7 +105,8 @@ public final class ShellSmoke {
             TabPane tabs = (TabPane) prefsStage.getScene().getRoot();
             List<String> lines = new ArrayList<>();
             for (Node n : ((GridPane) tabs.getSelectionModel().getSelectedItem().getContent()).getChildren()) {
-                if (n instanceof Label label && label.getText().startsWith("Now ")) lines.add(label.getText());
+                if (n instanceof Label label && label.getStyleClass().contains("pool-in-effect")
+                        && !label.getText().isBlank()) lines.add(label.getText());
             }
             return lines;
         });
