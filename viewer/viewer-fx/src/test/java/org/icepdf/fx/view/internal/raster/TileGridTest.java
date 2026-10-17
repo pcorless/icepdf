@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
-import org.icepdf.fx.view.TileGrid.Region;
-import org.icepdf.fx.view.TileGrid.Tile;
+
+import org.icepdf.fx.view.internal.raster.TileGrid.Region;
+import org.icepdf.fx.view.internal.raster.TileGrid.Tile;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

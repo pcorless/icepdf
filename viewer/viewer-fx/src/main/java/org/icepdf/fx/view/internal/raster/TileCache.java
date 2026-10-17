@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  * <p>
  * Confined to the FX application thread; no locking.
  */
-final class TileCache {
+public final class TileCache {
 
     private final LinkedHashMap<CacheKey, RasterBuffer> entries = new LinkedHashMap<>(256, 0.75f, true);
     private Set<CacheKey> pinned = Set.of();

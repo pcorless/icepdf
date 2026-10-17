@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.List;
  * <p>
  * Pure math with no toolkit types.
  */
-final class TileGrid {
+public final class TileGrid {
 
     public static final int DEFAULT_TILE_SIZE = 512;
 

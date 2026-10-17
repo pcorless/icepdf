@@ -15,6 +15,12 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.raster.PageTransforms;
+import org.icepdf.fx.view.internal.raster.RasterBuffer;
+import org.icepdf.fx.view.internal.raster.TileGrid;
+
+import org.icepdf.fx.view.internal.raster.CacheKey;
+
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.effect.BlendMode;

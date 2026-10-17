@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.raster.RasterBuffer;
+
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.scene.Group;

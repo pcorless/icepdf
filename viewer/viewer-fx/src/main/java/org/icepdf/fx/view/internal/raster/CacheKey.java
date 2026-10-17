@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 /**
  * Identity of a cached raster.  Everything that changes the pixels is part of the key, so a
  * lookup can never return a buffer rendered for a different zoom, rotation or screen scale.
  */
-sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile, CacheKey.Preview {
+public sealed interface CacheKey permits CacheKey.Tile, CacheKey.AnnotationTile, CacheKey.Preview {
 
     int pageIndex();
 

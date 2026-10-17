@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;
@@ -32,7 +32,7 @@ import java.nio.IntBuffer;
  * never converted either.  Once handed to the scene a buffer is treated as immutable: painting
  * into a displayed buffer would tear, so re-renders produce a new buffer instead.
  */
-final class RasterBuffer {
+public final class RasterBuffer {
 
     /** Stands for "nothing here" (an annotation tile with no annotation on it); never displayed. */
     public static final RasterBuffer EMPTY = new RasterBuffer(1, 1);
@@ -59,7 +59,7 @@ final class RasterBuffer {
     }
 
     /** Copies this buffer into a larger ARGB_PRE raster at (x, y): the inverse of {@link #slice}. */
-    void copyInto(int[] target, int targetStride, int x, int y) {
+    public void copyInto(int[] target, int targetStride, int x, int y) {
         int width = getWidth();
         for (int row = 0; row < getHeight(); row++) {
             System.arraycopy(pixels, row * width, target, (y + row) * targetStride + x, width);

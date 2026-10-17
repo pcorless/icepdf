@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.raster.TileRenderer;
+
 import org.icepdf.fx.render.RenderService;
 
 /**

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 import javafx.application.Platform;
 import org.icepdf.core.pobjects.Document;
@@ -68,7 +68,7 @@ import java.util.logging.Logger;
  * the process-wide {@link RenderService} pool shared with every other view.  Paints go through its
  * out-of-memory gate.
  */
-final class TileRenderer {
+public final class TileRenderer {
 
     private static final Logger logger = Logger.getLogger(TileRenderer.class.getName());
 
@@ -167,7 +167,7 @@ final class TileRenderer {
      * @param service the pool to paint on
      * @param owner   the view the work is for, which decides its priority
      */
-    TileRenderer(RenderService service, RenderService.Owner owner, Sink sink) {
+    public TileRenderer(RenderService service, RenderService.Owner owner, Sink sink) {
         this.service = service;
         this.owner = owner;
         this.sink = sink;
@@ -202,12 +202,12 @@ final class TileRenderer {
     }
 
     /** Jobs queued or running; for diagnostics. */
-    int jobCount() {
+    public int jobCount() {
         return jobs.size();
     }
 
     /** Keys that failed and aren't asked for again; for diagnostics. */
-    int failedCount() {
+    public int failedCount() {
         return failed.size();
     }
 
@@ -278,7 +278,7 @@ final class TileRenderer {
      * {@link CacheKey.AnnotationLayer#MULTIPLY} layer.  Asks the composite itself: an ExtGState
      * {@code /BM /Normal} also leaves a blend command in the appearance, holding a plain src-over.
      */
-    static boolean multiplies(Annotation annotation) {
+    public static boolean multiplies(Annotation annotation) {
         if (!annotation.appearanceHasBlendMode()) return false;
         Appearance appearance = annotation.getAppearances().get(annotation.getCurrentAppearance());
         AppearanceState state = appearance == null ? null : appearance.getSelectedAppearanceState();

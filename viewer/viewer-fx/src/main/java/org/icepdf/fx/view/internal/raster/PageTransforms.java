@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.raster;
 
 import javafx.geometry.Point2D;
 import javafx.scene.transform.Affine;
@@ -30,7 +30,7 @@ import java.awt.geom.NoninvertibleTransformException;
  * Re-mapping between two renders is {@code to ∘ from⁻¹}: that one transform carries a stale
  * tile, or the unrotated preview, onto the current zoom and rotation exactly, whatever the angle.
  */
-final class PageTransforms {
+public final class PageTransforms {
 
     private PageTransforms() {
     }
