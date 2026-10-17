@@ -157,7 +157,7 @@ public class ViewerApp extends Application {
         lastUnexpectedAt = now;
         AppWindow target = windows.stream().filter(w -> w.stage().isFocused()).findFirst()
                 .orElse(windows.isEmpty() ? null : windows.get(windows.size() - 1));
-        if (target != null) target.viewer().showMessage(message);
+        if (target != null) target.viewer().showError(message);
     }
 
     @Override

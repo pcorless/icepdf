@@ -36,6 +36,9 @@
     -icepdf-warning: #fdf0c8;
     -icepdf-warning-fg: #4a3800;
     -icepdf-warning-border: #e5c96a;
+    -icepdf-error: #fbe3e1;
+    -icepdf-error-fg: #5c1410;
+    -icepdf-error-border: #d9534f;
     -fx-base: #f6f5f4;
     -fx-background: #fafafa;
     -fx-control-inner-background: #ffffff;
@@ -62,6 +65,9 @@
     -icepdf-warning: #4a3d12;
     -icepdf-warning-fg: #f6e3a8;
     -icepdf-warning-border: #7a6420;
+    -icepdf-error: #4a1a17;
+    -icepdf-error-fg: #f7d4d0;
+    -icepdf-error-border: #b8483f;
     -fx-base: #383838;
     -fx-background: #242424;
     -fx-control-inner-background: #2d2d2d;
@@ -91,6 +97,9 @@
     -icepdf-warning: #ffff00;
     -icepdf-warning-fg: #000000;
     -icepdf-warning-border: #000000;
+    -icepdf-error: #ffffff;
+    -icepdf-error-fg: #000000;
+    -icepdf-error-border: #000000;
     -fx-base: #ffffff;
     -fx-background: #ffffff;
     -fx-control-inner-background: #ffffff;
@@ -137,6 +146,9 @@
     -icepdf-warning: #000000;
     -icepdf-warning-fg: #ffff00;
     -icepdf-warning-border: #ffff00;
+    -icepdf-error: #000000;
+    -icepdf-error-fg: #ffffff;
+    -icepdf-error-border: #ffffff;
     -fx-base: #000000;
     -fx-background: #000000;
     -fx-control-inner-background: #000000;
@@ -342,6 +354,42 @@
     -fx-border-radius: 18;
     -fx-text-fill: -icepdf-toast-fg;
     -fx-padding: 8 16 8 16;
+}
+
+/* an error stays until dismissed: a card in the error colours, above any passing message */
+.icepdf-viewer .toast-error {
+    -fx-background-color: -icepdf-error-border, -icepdf-error;
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 8, 6;
+    -fx-padding: 8 8 8 12;
+    -fx-spacing: 10;
+    -fx-alignment: center-left;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.25), 8, 0, 0, 2);
+}
+
+.icepdf-viewer .toast-error .label {
+    -fx-text-fill: -icepdf-error-fg;
+}
+
+.icepdf-viewer .toast-error .icon-path {
+    -fx-stroke: -icepdf-error-fg;
+}
+
+.icepdf-viewer .toast-error .button {
+    -fx-text-fill: -icepdf-error-fg;
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 2 6 2 6;
+}
+
+.icepdf-viewer .toast-error .button:hover,
+.icepdf-viewer .toast-error .button:focused {
+    -fx-border-color: -icepdf-error-border;
+    -fx-border-radius: 4;
+}
+
+.icepdf-viewer.high-contrast .toast-error {
+    -fx-background-insets: 0, 3;
 }
 
 /* redaction reminder, floating over the top of the document */

@@ -83,7 +83,7 @@ public class PdfViewer extends StackPane {
     private final ActionControls actions;
     private final IconProvider icons;
     private final ViewerShell shell = new ViewerShell();
-    private final Toast toast = new Toast();
+    private final Toast toast;
     private final Theme theme;
     private final HeaderBar header;
     private final ToolRail rail;
@@ -117,7 +117,7 @@ public class PdfViewer extends StackPane {
     private Consumer<DocumentPane> onDocumentCreated;
     private java.util.function.BooleanSupplier confirmDiscard;
     private javafx.stage.Window owner;
-    private Consumer<String> onError = this::showMessage;
+    private Consumer<String> onError = this::showError;
     private Presenting presenting;
 
     /** Everything, with a layout that isn't saved. */
@@ -137,6 +137,7 @@ public class PdfViewer extends StackPane {
         this.features = features;
         this.layout = layout;
         this.icons = icons;
+        toast = new Toast(icons);
         getStyleClass().add("pdf-viewer");
         theme = new Theme(this);
         // the render devtools window, on the browser devtools key; harmless to leave on, and where
@@ -502,7 +503,11 @@ public class PdfViewer extends StackPane {
         if (!redactionsSettled()) return false;
         if (!session().canSaveInPlace()) return saveAsChecked();
         boolean saved = session().save();
-        if (saved) showMessage(Messages.get("viewer.saved"));
+        if (saved) {
+            // the save worked: an earlier failure's message no longer applies.
+            toast.dismissError();
+            showMessage(Messages.get("viewer.saved"));
+        }
         return saved;
     }
 
@@ -523,6 +528,7 @@ public class PdfViewer extends StackPane {
         Path target = PdfTargets.confirm(context.window(), chosen);
         if (target == null || !session().saveAs(target)) return false;
         Path saved = session().getLoadingFile();
+        toast.dismissError();
         showMessage(Messages.format("viewer.savedFile", (saved != null ? saved : target).getFileName()));
         return true;
     }
@@ -741,6 +747,15 @@ public class PdfViewer extends StackPane {
         toast.show(message);
     }
 
+    /**
+     * Shows an error that stays, in the error colours, until the user dismisses it (it can be
+     * copied); a newer error replaces it, and a successful save clears it.  (Opening doesn't: a
+     * failed save reopens the copy it kept, and its message says where that is.)
+     */
+    public void showError(String message) {
+        toast.showError(message);
+    }
+
     /** Offers "New Window" (app.new-window) and runs this for it. */
     public void setOnNewWindow(Runnable onNewWindow) {
         this.onNewWindow = onNewWindow;
@@ -861,9 +876,9 @@ public class PdfViewer extends StackPane {
         return true;
     }
 
-    /** Receives errors (could not open, could not save); a message toast by default. */
+    /** Receives errors (could not open, could not save); {@link #showError} by default. */
     public void setOnError(Consumer<String> onError) {
-        this.onError = onError != null ? onError : this::showMessage;
+        this.onError = onError != null ? onError : this::showError;
     }
 
     /** Asked before unsaved changes are dropped; false to stay.  By default they're dropped. */
