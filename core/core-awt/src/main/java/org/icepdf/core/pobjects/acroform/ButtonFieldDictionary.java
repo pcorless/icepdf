@@ -50,8 +50,11 @@ public class ButtonFieldDictionary extends VariableTextFieldDictionary {
      * that use the same value for the on state will turn on and off in unison;
      * that is if one is checked, they are all checked. If clear, the buttons are
      * mutually exclusive (the same behavior as HTML radio buttons).
+     * <p>
+     * Bit position 26 (ISO 32000-1 Table 226), so {@code 1 << 25}.  This was {@code 0x1000000}
+     * (bit 25, a text field's Comb flag), which never matched a real RadiosInUnison group.
      */
-    public static final int RADIO_IN_UNISON_BIT_FLAG = 0x1000000;
+    public static final int RADIO_IN_UNISON_BIT_FLAG = 0x2000000;
 
     public enum ButtonFieldType {
         PUSH_BUTTON, RADIO_BUTTON, CHECK_BUTTON

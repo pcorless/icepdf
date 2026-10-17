@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Installs the ICEpdf viewer desktop entry, icon and launcher for the current user.
 #
-#   ./packaging/linux/install-desktop.sh [path/to/icepdf-viewer-*.jar]
+#   ./packaging/linux/install-desktop.sh [path/to/icepdf-viewer-*.jar]     the Swing viewer
+#   ./packaging/linux/install-desktop.sh --fx [path/to/lib/folder]         the JavaFX viewer
 #
-# Without an argument the most recent jar under viewer/viewer-awt/build/libs is used.
-# Pass --uninstall to remove everything this script installed.
+# Without an argument the most recent jar under viewer/viewer-awt/build/libs is used (Swing), or
+# viewer/viewer-fx/build/launcher/lib (JavaFX; build it with ./gradlew :viewer:viewer-fx:launcherLibs).
+# Pass --uninstall to remove everything this script installed, both viewers.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -14,15 +16,55 @@ BIN_DIR="$HOME/.local/bin"
 LIB_DIR="$HOME/.local/lib/icepdf"
 APP_DIR="$HOME/.local/share/applications"
 ICON_DIR="$HOME/.local/share/icons/hicolor/64x64/apps"
+FX_LIB_DIR="$HOME/.local/lib/icepdf-fx"
 
 if [ "${1:-}" = "--uninstall" ]; then
     rm -f "$BIN_DIR/icepdf-viewer" \
           "$APP_DIR/icepdf-viewer.desktop" \
-          "$ICON_DIR/icepdf-viewer.png"
-    rm -rf "$LIB_DIR"
+          "$ICON_DIR/icepdf-viewer.png" \
+          "$BIN_DIR/icepdf-viewer-fx" \
+          "$APP_DIR/icepdf-viewer-fx.desktop" \
+          "$ICON_DIR/icepdf-viewer-fx.png"
+    rm -rf "$LIB_DIR" "$FX_LIB_DIR"
     update-desktop-database "$APP_DIR" 2>/dev/null || true
     gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
     echo "Removed ICEpdf desktop entry."
+    exit 0
+fi
+
+if [ "${1:-}" = "--fx" ]; then
+    SRC="${2:-$REPO_ROOT/viewer/viewer-fx/build/launcher/lib}"
+    if ! ls "$SRC"/icepdf-viewer-fx-*.jar >/dev/null 2>&1; then
+        echo "No JavaFX viewer libraries in $SRC. Build them first:" >&2
+        echo "  ./gradlew :viewer:viewer-fx:launcherLibs" >&2
+        exit 1
+    fi
+    ICON_SRC="$REPO_ROOT/viewer/viewer-fx/src/main/resources/org/icepdf/fx/images/icepdf-app-icon-64x64.png"
+    [ -f "$ICON_SRC" ] || { echo "Missing icon: $ICON_SRC" >&2; exit 1; }
+
+    mkdir -p "$BIN_DIR" "$APP_DIR" "$ICON_DIR"
+    rm -rf "$FX_LIB_DIR" && mkdir -p "$FX_LIB_DIR"
+    install -m 0644 "$SRC"/*.jar "$FX_LIB_DIR/"
+    install -m 0644 "$ICON_SRC" "$ICON_DIR/icepdf-viewer-fx.png"
+    install -m 0755 "$HERE/icepdf-viewer-fx" "$BIN_DIR/icepdf-viewer-fx"
+    install -m 0644 "$HERE/icepdf-viewer-fx.desktop" "$APP_DIR/icepdf-viewer-fx.desktop"
+
+    case ":$PATH:" in
+        *":$BIN_DIR:"*) ;;
+        *)  sed -i "s|^Exec=icepdf-viewer-fx|Exec=$BIN_DIR/icepdf-viewer-fx|; s|^TryExec=icepdf-viewer-fx|TryExec=$BIN_DIR/icepdf-viewer-fx|" \
+                "$APP_DIR/icepdf-viewer-fx.desktop"
+            echo "Note: $BIN_DIR is not on your PATH; desktop entry uses the absolute path." ;;
+    esac
+
+    update-desktop-database "$APP_DIR" 2>/dev/null || true
+    gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+    desktop-file-validate "$APP_DIR/icepdf-viewer-fx.desktop" 2>/dev/null || true
+
+    echo "Installed:"
+    echo "  libs     $FX_LIB_DIR"
+    echo "  launcher $BIN_DIR/icepdf-viewer-fx"
+    echo "  desktop  $APP_DIR/icepdf-viewer-fx.desktop"
+    echo "  icon     $ICON_DIR/icepdf-viewer-fx.png"
     exit 0
 fi
 

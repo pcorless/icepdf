@@ -10,16 +10,22 @@
     <packaging>jar</packaging>
     <name>ICEpdf :: Examples :: JavaFx</name>
 
+    <properties>
+        <javafx.version>22.0.2</javafx.version>
+        <!-- the JavaFX viewer needs JavaFX 22, which runs on Java 17 -->
+        <maven.compiler.release>17</maven.compiler.release>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>11</version>
+            <groupId>com.github.pcorless.icepdf</groupId>
+            <artifactId>icepdf-viewer-fx</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
-            <artifactId>javafx-swing</artifactId>
-            <version>11</version>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
         </dependency>
     </dependencies>
 
@@ -33,9 +39,9 @@
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.4</version>
+                <version>0.0.8</version>
                 <configuration>
-                    <mainClass>PdfFXViewer</mainClass>
+                    <mainClass>org.icepdf.examples.javafx.PdfViewerExample</mainClass>
                 </configuration>
             </plugin>
         </plugins>

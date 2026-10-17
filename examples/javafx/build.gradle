@@ -3,16 +3,23 @@ plugins {
     id 'org.openjfx.javafxplugin' version '0.1.0'
 }
 
-description = 'javafx SwingNode example'
+description = 'JavaFX viewer component example'
+
+// the JavaFX viewer needs JavaFX 22, which runs on Java 17.
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
 
 application {
-    mainClass = "org.icepdf.examples.javafx.PdfFXViewer"
+    mainClass = "org.icepdf.examples.javafx.PdfViewerExample"
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 
 javafx {
-    version = "11.0.2"
-    modules = [ 'javafx.controls', 'javafx.swing' ]
+    version = "22.0.2"
+    modules = [ 'javafx.controls' ]
 }
 
 repositories {
@@ -20,6 +27,5 @@ repositories {
 }
 
 dependencies {
-    implementation project(':core:core-awt'), project(':viewer:viewer-awt')
+    implementation project(':core:core-awt'), project(':viewer:viewer-fx')
 }
-

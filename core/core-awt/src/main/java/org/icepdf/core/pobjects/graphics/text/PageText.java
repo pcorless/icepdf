@@ -223,10 +223,14 @@ public class PageText implements TextSelect {
      * sorted page lines that maps between page-space points, character offsets, and the
      * underlying glyph/word/line structure.  The value is cached and rebuilt whenever the
      * page re-sorts (see {@link #sortAndFormatText}).
+     * <p>
+     * Synchronized on this PageText (the same monitor the content parser holds while merging a
+     * shared form's text) so that two threads asking at once - a viewer's text loader and its
+     * search - build and publish one sequence rather than racing the lazy initialisation.
      *
      * @return reading-order sequence for this page's visible text.
      */
-    public TextSequence getTextSequence() {
+    public synchronized TextSequence getTextSequence() {
         if (textSequence == null) {
             textSequence = new TextSequence(this);
         }
