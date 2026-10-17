@@ -133,7 +133,7 @@ public final class DevToolsWindow {
                 column("devtools.document", 160, RenderService.ViewStats::document),
                 column("devtools.pages", 55, v -> v.currentPage() + "/" + v.pages()),
                 column("devtools.zoom", 60, v -> Math.round(v.zoom() * 100) + "%"),
-                column("devtools.cache", 110, v -> v.cacheUsed() / MB + " / " + v.cacheBudget() / MB + " MB"),
+                column("devtools.cache", 110, v -> Messages.format("devtools.cacheValue", v.cacheUsed() / MB, v.cacheBudget() / MB)),
                 column("devtools.tiles", 55, v -> String.valueOf(v.cacheEntries())),
                 column("devtools.inFlight", 65, v -> String.valueOf(v.inFlight())),
                 column("devtools.failed", 55, v -> String.valueOf(v.failed())),
