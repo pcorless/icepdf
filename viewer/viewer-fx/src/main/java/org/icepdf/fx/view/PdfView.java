@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.text.DocumentSearch;
+
 import org.icepdf.fx.view.internal.form.FormController;
 
 import org.icepdf.fx.view.internal.annot.AnnotationEdits;

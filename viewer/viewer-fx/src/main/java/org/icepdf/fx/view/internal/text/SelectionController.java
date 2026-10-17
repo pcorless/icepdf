@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.text;
+
+import org.icepdf.fx.view.PagePoint;
 
 import org.icepdf.core.pobjects.graphics.text.ColumnBlock;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
@@ -43,7 +45,7 @@ import java.util.function.IntFunction;
  * <p>
  * Pages whose text isn't loaded yet are ignored: the selection is returned unchanged.
  */
-final class SelectionController {
+public final class SelectionController {
 
     private final IntFunction<TextSequence> texts;
     // where the drag started, for the gutter fallback.
@@ -55,7 +57,7 @@ final class SelectionController {
     /**
      * @param texts page index &#8594; that page's loaded sequence, or null if it isn't loaded
      */
-    SelectionController(IntFunction<TextSequence> texts) {
+    public SelectionController(IntFunction<TextSequence> texts) {
         this.texts = texts;
     }
 
@@ -66,7 +68,7 @@ final class SelectionController {
      * @param extend     shift held
      * @return the new selection, which may be {@code current} unchanged or null
      */
-    DocumentSelection press(DocumentSelection current, PagePoint point, int clickCount, boolean extend) {
+    public DocumentSelection press(DocumentSelection current, PagePoint point, int clickCount, boolean extend) {
         granular = false;
         if (point == null) {
             // a press between pages starts nothing; a drag onto a page will start a selection.
@@ -99,7 +101,7 @@ final class SelectionController {
      * @param point   the pointer, already snapped onto the nearest page if it is between pages
      * @return the extended selection
      */
-    DocumentSelection drag(DocumentSelection current, PagePoint point) {
+    public DocumentSelection drag(DocumentSelection current, PagePoint point) {
         if (granular || point == null) return current;
         TextSequence sequence = texts.apply(point.pageIndex());
         if (sequence == null) return current;
@@ -113,7 +115,7 @@ final class SelectionController {
         return current.withFocus(point.pageIndex(), offset);
     }
 
-    void release() {
+    public void release() {
         granular = false;
     }
 

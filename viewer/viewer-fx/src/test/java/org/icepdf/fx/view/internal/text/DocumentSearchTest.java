@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.text;
+
+import org.icepdf.fx.view.SearchHit;
+
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;

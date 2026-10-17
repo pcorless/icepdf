@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.text;
 
 import javafx.application.Platform;
 import org.icepdf.core.pobjects.Document;
@@ -48,11 +48,11 @@ import java.util.logging.Logger;
  * core builds a page's view text under {@code Page.init}'s lock and its sequence under
  * {@code PageText.getTextSequence}'s, so each is built once and the other caller gets it.
  */
-final class PageTextLoader {
+public final class PageTextLoader {
 
     private static final Logger logger = Logger.getLogger(PageTextLoader.class.getName());
 
-    interface Sink {
+    public interface Sink {
         /** On the FX thread; {@code sequence} is null for a page with no text layer. */
         void textReady(int pageIndex, TextSequence sequence);
     }
@@ -70,34 +70,34 @@ final class PageTextLoader {
     private final LinkedHashSet<Integer> extra = new LinkedHashSet<>();
     private Document document;
 
-    PageTextLoader(RenderService service, RenderService.Owner owner, Sink sink) {
+    public PageTextLoader(RenderService service, RenderService.Owner owner, Sink sink) {
         this.service = service;
         this.owner = owner;
         this.sink = sink;
     }
 
-    void setDocument(Document document) {
+    public void setDocument(Document document) {
         clear();
         this.document = document;
     }
 
     /** The page's sequence if loaded, else null (also null for a page with no text). */
-    TextSequence get(int pageIndex) {
+    public TextSequence get(int pageIndex) {
         Optional<TextSequence> sequence = loaded.get(pageIndex);
         return sequence != null ? sequence.orElse(null) : null;
     }
 
-    boolean isLoaded(int pageIndex) {
+    public boolean isLoaded(int pageIndex) {
         return loaded.containsKey(pageIndex);
     }
 
     /** Pages whose text is loaded; for diagnostics. */
-    int loadedCount() {
+    public int loadedCount() {
         return loaded.size();
     }
 
     /** Queues the page unless it is loaded, pending or has failed. */
-    void request(int pageIndex) {
+    public void request(int pageIndex) {
         Document doc = document;
         if (doc == null || loaded.containsKey(pageIndex) || pending.containsKey(pageIndex)
                 || failed.contains(pageIndex)) return;
@@ -109,7 +109,7 @@ final class PageTextLoader {
     }
 
     /** Like {@link #request}, and keeps the page through {@link #retain} even while off-screen. */
-    void requestKept(int pageIndex) {
+    public void requestKept(int pageIndex) {
         extra.remove(pageIndex);
         extra.add(pageIndex);
         if (extra.size() > MAX_EXTRA) extra.remove(extra.iterator().next());
@@ -117,7 +117,7 @@ final class PageTextLoader {
     }
 
     /** Cancels pending loads and drops loaded text for pages no longer wanted. */
-    void retain(IntPredicate wanted) {
+    public void retain(IntPredicate wanted) {
         IntPredicate keep = page -> wanted.test(page) || extra.contains(page);
         pending.entrySet().removeIf(e -> {
             if (keep.test(e.getKey())) return false;
@@ -131,7 +131,7 @@ final class PageTextLoader {
      * Extracts a selection's text on the render pool, loading (and initialising) every page it
      * spans - for select-all on a long document that is real work, hence asynchronous.
      */
-    CompletableFuture<String> extractAsync(DocumentSelection selection) {
+    public CompletableFuture<String> extractAsync(DocumentSelection selection) {
         Document doc = document;
         if (doc == null || selection == null) return CompletableFuture.completedFuture("");
         CompletableFuture<String> result = new CompletableFuture<>();
@@ -154,7 +154,7 @@ final class PageTextLoader {
         return result;
     }
 
-    void clear() {
+    public void clear() {
         pending.values().forEach(service::cancel);
         pending.clear();
         loaded.clear();

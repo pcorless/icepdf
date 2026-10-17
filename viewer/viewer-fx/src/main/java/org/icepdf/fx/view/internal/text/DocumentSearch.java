@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.text;
+
+import org.icepdf.fx.view.SearchHit;
 
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
@@ -34,9 +36,9 @@ import java.util.function.IntFunction;
  * page's hits to a listener as soon as the page is done, so results appear progressively and a
  * cancel takes effect between pages.  Navigation is a pair of pure functions over the hit list.
  */
-final class DocumentSearch {
+public final class DocumentSearch {
 
-    interface Listener {
+    public interface Listener {
         /** A page has been searched; {@code hits} may be empty.  Called on the searching thread. */
         void pageSearched(int pageIndex, List<SearchHit> hits, int pagesDone, int pageCount);
     }
@@ -52,7 +54,7 @@ final class DocumentSearch {
      * @param listener  receives each page's hits
      * @return false if cancelled before the last page
      */
-    static boolean run(IntFunction<TextSequence> texts, List<SearchTerm> terms, int pageCount,
+    public static boolean run(IntFunction<TextSequence> texts, List<SearchTerm> terms, int pageCount,
                        BooleanSupplier cancelled, Listener listener) {
         for (int page = 0; page < pageCount; page++) {
             if (cancelled.getAsBoolean()) return false;
@@ -62,7 +64,7 @@ final class DocumentSearch {
     }
 
     /** One page's hits for all terms, in document order. */
-    static List<SearchHit> searchPage(TextSequence sequence, int pageIndex, List<SearchTerm> terms) {
+    public static List<SearchHit> searchPage(TextSequence sequence, int pageIndex, List<SearchTerm> terms) {
         if (sequence == null) return Collections.emptyList();
         List<SearchHit> hits = new ArrayList<>();
         for (SearchTerm term : terms) {
@@ -83,7 +85,7 @@ final class DocumentSearch {
     }
 
     /** Characters of context kept on each side of a hit. */
-    static final int CONTEXT = 40;
+    public static final int CONTEXT = 40;
 
     /** Up to {@link #CONTEXT} characters before {@code start} on its line, starting at a word. */
     static String contextBefore(TextSequence sequence, int start) {
@@ -122,7 +124,7 @@ final class DocumentSearch {
      *
      * @return an index into {@code hits}, or -1 if there are none
      */
-    static int next(List<SearchHit> hits, int current, int fromPage) {
+    public static int next(List<SearchHit> hits, int current, int fromPage) {
         if (hits.isEmpty()) return -1;
         if (current >= 0 && current < hits.size()) return (current + 1) % hits.size();
         for (int i = 0; i < hits.size(); i++) {
@@ -135,7 +137,7 @@ final class DocumentSearch {
      * The hit before the current one, wrapping; with no current hit, the last hit at or before
      * {@code fromPage} (else the last hit).
      */
-    static int previous(List<SearchHit> hits, int current, int fromPage) {
+    public static int previous(List<SearchHit> hits, int current, int fromPage) {
         if (hits.isEmpty()) return -1;
         if (current >= 0 && current < hits.size()) return (current - 1 + hits.size()) % hits.size();
         for (int i = hits.size() - 1; i >= 0; i--) {

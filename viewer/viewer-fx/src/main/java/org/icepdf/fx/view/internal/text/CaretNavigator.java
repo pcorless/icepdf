@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.icepdf.fx.view;
+package org.icepdf.fx.view.internal.text;
 
 import org.icepdf.core.pobjects.graphics.text.*;
 
@@ -32,12 +32,12 @@ import org.icepdf.core.pobjects.graphics.text.*;
  * Up/down keep a sticky goal x, as editors do: moving through a short line and back returns to the
  * original column.  Any change not made by a vertical move resets it.
  */
-final class CaretNavigator {
+public final class CaretNavigator {
 
-    enum Move {LEFT, RIGHT, WORD_LEFT, WORD_RIGHT, LINE_START, LINE_END, UP, DOWN}
+    public enum Move {LEFT, RIGHT, WORD_LEFT, WORD_RIGHT, LINE_START, LINE_END, UP, DOWN}
 
     /** Page text as the view has it. */
-    interface Texts {
+    public interface Texts {
         /** The page's sequence, or null if not loaded or the page has no text. */
         TextSequence get(int pageIndex);
 
@@ -56,7 +56,7 @@ final class CaretNavigator {
     // the selection this navigator last produced by a vertical move; anything else resets goalX.
     private DocumentSelection lastVertical;
 
-    CaretNavigator(Texts texts, int pageCount) {
+    public CaretNavigator(Texts texts, int pageCount) {
         this.texts = texts;
         this.pageCount = pageCount;
     }
@@ -65,7 +65,7 @@ final class CaretNavigator {
      * @return the selection after the move; {@code current} itself if nothing moved (no selection,
      * text not loaded, or already at the document's edge)
      */
-    DocumentSelection move(DocumentSelection current, Move move, boolean extend) {
+    public DocumentSelection move(DocumentSelection current, Move move, boolean extend) {
         if (current == null) return null;
         if (current != lastVertical) goalX = -1;
         int page = current.getFocusPage();

@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.text.SelectionController;
+
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.graphics.text.*;
 import org.junit.jupiter.api.AfterAll;

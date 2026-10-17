@@ -15,6 +15,9 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.text.CaretNavigator;
+import org.icepdf.fx.view.internal.text.SelectionController;
+
 import org.icepdf.fx.view.internal.annot.AnnotationGeometry;
 
 import javafx.animation.Animation;
