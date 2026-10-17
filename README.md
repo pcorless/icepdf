@@ -1,5 +1,5 @@
-# ICEpdf
-Icepdf is a pure Java PDF document rendering and viewing solution. Icepdf can parse, render and annotate documents based on the latest PDF standards and can do so as fast or faster than some native libraries.   
+# icepdf
+Icepdf is a pure Java library for rendering and viewing PDF documents. It parses, renders, and annotates files to the latest PDF standards, with performance that rivals or beats many native libraries
 
 ## Getting Started
 Whether you are long time user of the API or a new user, there ton of information on the 
