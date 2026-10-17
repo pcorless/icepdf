@@ -116,6 +116,7 @@ public final class HeaderBar extends VBox {
             if (e.getCode() == KeyCode.ESCAPE) {
                 searchToggle.setSelected(false);
                 if (view.getValue() != null) view.getValue().requestFocus();
+                e.consume();
             }
         });
         searchBar = new HBox(searchField);

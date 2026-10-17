@@ -153,7 +153,10 @@ public class SearchPanel extends BorderPane {
         query.setPromptText(Messages.get("searchPanel.prompt"));
         query.setOnAction(e -> search(query.getText()));
         query.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) clear();
+            if (e.getCode() == KeyCode.ESCAPE) {
+                clear();
+                e.consume();
+            }
         });
         Button go = new Button(Messages.get("searchPanel.search"));
         go.setOnAction(e -> search(query.getText()));

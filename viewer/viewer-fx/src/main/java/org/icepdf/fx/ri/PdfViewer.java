@@ -149,6 +149,13 @@ public class PdfViewer extends StackPane {
                 e.consume();
             }
         });
+        // an Esc nothing else used (a field editor, a selection, an overlay, the search box) dismisses the error card.
+        addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE && !toast.getError().isEmpty()) {
+                toast.dismissError();
+                e.consume();
+            }
+        });
         actions = new ActionControls(registry, context, features::allows).setIcons(icons, 20, 16);
 
         sceneProperty().addListener((o, a, scene) -> {
@@ -822,9 +829,10 @@ public class PdfViewer extends StackPane {
     }
 
     /**
-     * Shows an error that stays, in the error colours, until the user dismisses it (it can be
-     * copied); a newer error replaces it, and a successful save clears it.  (Opening doesn't: a
-     * failed save reopens the copy it kept, and its message says where that is.)
+     * Shows an error that stays, in the error colours, until the user dismisses it (its ×, or Esc
+     * anywhere in the viewer that nothing else uses); it can be copied.  A newer error replaces it,
+     * and a successful save clears it.  (Opening doesn't: a failed save reopens the copy it kept,
+     * and its message says where that is.)
      */
     public void showError(String message) {
         toast.showError(message);

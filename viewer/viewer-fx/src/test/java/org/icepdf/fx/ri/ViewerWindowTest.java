@@ -128,6 +128,42 @@ class ViewerWindowTest {
         return Fx.call(() -> viewer.getToast().getMessage());
     }
 
+    // ---- the error card -----------------------------------------------------------------------
+
+    @DisplayName("Esc in the document dismisses the error card")
+    @Test
+    void escapeInDocument() throws Exception {
+        open(pdf("a.pdf"));
+        Fx.run(() -> viewer.showError("Could not print a.pdf"));
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.ESCAPE, false));
+        assertEquals("", error());
+    }
+
+    @DisplayName("Esc that closes a field editor or clears the search leaves the error card")
+    @Test
+    void escapeUsedElsewhere() throws Exception {
+        open(form());
+        TextField editor = typeIntoName("Grace");
+        Fx.run(() -> viewer.showError("Could not print form.pdf"));
+        Fx.run(() -> Fx.press(editor, KeyCode.ESCAPE, false));
+        assertEquals("Could not print form.pdf", error(), "the first Esc cancels the edit");
+        assertFalse(Fx.call(() -> viewer.getSession().isModified()), "the typed text is dropped");
+
+        TextField query = Fx.call(() -> (TextField) viewer.getCurrentDocument().getSearchPanel().lookup(".text-field"));
+        Fx.run(() -> {
+            query.setText("bravo");
+            Fx.press(query, KeyCode.ESCAPE, false);
+        });
+        assertEquals("Could not print form.pdf", error(), "Esc in the search box clears the search");
+
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.ESCAPE, false));
+        assertNull(Fx.call(() -> viewer.getView().getFocusedField()), "the next Esc leaves the field");
+        assertEquals("Could not print form.pdf", error());
+
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.ESCAPE, false));
+        assertEquals("", error(), "then an Esc nothing uses dismisses it");
+    }
+
     // ---- saving -------------------------------------------------------------------------------
 
     @DisplayName("a successful save clears the error card")
