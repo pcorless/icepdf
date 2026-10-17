@@ -212,7 +212,7 @@ the cap. Core decodes images on its own pools (`org.icepdf.core.library.threadPo
 
 | Command | What it does |
 |---|---|
-| `./gradlew :viewer:viewer-fx:test` | Unit tests: layout, tile grid and cache, selection, search, annotation edits, form controller and field order. No display needed. |
+| `./gradlew :viewer:viewer-fx:test` | Unit tests: layout, tile grid and cache, selection, search, annotation edits, form controller and field order. Also the UI tests (below), which are skipped without a display. |
 | `./gradlew :viewer:viewer-fx:smoke -PsmokeArgs="file.pdf;outdir" -PsmokeJvmArgs="-Dsmoke.only=MODE"` | Scripted view runs with snapshots. Modes: `tools`, `annotations`, `annotation-ui`, `forms`, `forms-corpus`, `pan-fps`, `first-paint`, `reopen` (`a.pdf\|b.pdf`), `encryption` (the encryption corpus directory), `print` (prints to PostScript files in the output directory, never to a printer), `signatures` (the signature corpus directory), `signing` (a PDF to sign; `-Dsmoke.keystore=` a PKCS#12 test keystore). Separate JVM args with `;` (for example `-PsmokeXmx=512m`, `-Dglass.gtk.uiScale=2`). |
 | `./gradlew :viewer:viewer-fx:embedSmoke -PsmokeArgs="outdir;file.pdf[;term]"` | An application's own tool bar driving a bare `PdfView` (pages, zoom, find, labels bound to properties), then `PdfViewer` without chrome. |
 | `./gradlew :viewer:viewer-fx:embedInteractionSmoke -PsmokeArgs="outdir;file.pdf[;keystore.pfx]"` | The same host with copy/paste keys, undo/redo, the annotation menu and properties dialog, and signing. The document must allow copying, annotating and filling in. |
@@ -221,6 +221,44 @@ the cap. Core decodes images on its own pools (`org.icepdf.core.library.threadPo
 | `./gradlew :viewer:viewer-fx:bench` | RasterBench: the raster hand-off paths. |
 
 Render jobs log their region and paint time at `FINE` on `org.icepdf.fx.view.internal.raster.TileRenderer`.
+
+### UI tests
+
+These are JUnit tests that drive the viewer as a user would, part of `test` above. They build
+the viewer in a scene that is never shown and fire key events straight at its nodes. No Robot is
+used, so nothing appears on screen, focus is never taken, and they work on Wayland, where Robot
+input doesn't arrive. Every file chooser and question is answered by a script through
+`PdfViewer.setDialogs`, so no modal dialog can block a run.
+
+| Class | What it covers |
+|---|---|
+| `ri.ui.ErrorCardTest` | The error card: ×, Esc, Copy, a newer error replacing it, a message showing below it. |
+| `ri.ViewerWindowTest` | Save As replace prompt and other-tab refusal, the unsaved-redactions prompt, redacted export, busy refusals (save, Ctrl+S, Ctrl+W, open, window close), Ctrl+S and Ctrl+W while typing in a form field, the Esc order (editor, field, error card), drops, attachments. |
+| `ri.app.LinkFollowingTest` | GoToR, Launch, web links, `file:` and `smb:` links (asked first), relative links. |
+| `signature.SignDialogKeystoreTest` | The sign dialog's keystore status: "Opening…", a wrong password, the right one. |
+
+Run one class, or all four:
+
+```
+./gradlew :viewer:viewer-fx:test --tests '*ViewerWindowTest'
+./gradlew :viewer:viewer-fx:test --tests '*ErrorCardTest' --tests '*ViewerWindowTest' --tests '*LinkFollowingTest' --tests '*SignDialogKeystoreTest'
+```
+
+The JavaFX toolkit needs a display to start (`DISPLAY` or `WAYLAND_DISPLAY`). Without one, as on
+a headless CI machine, these tests are reported as skipped rather than failed. To run them there,
+start a virtual display, for example `xvfb-run ./gradlew :viewer:viewer-fx:test`.
+
+To write one, use the helpers in `org.icepdf.fx.testing` (test sources):
+
+- `Fx`: `start()` in `@BeforeAll`; `call`/`run` to work on the FX thread; `waitFor` for background
+  work (opening, saving, export); `scene`/`layout` in place of a pulse; `press`/`type` for keys.
+- `ScriptedDialogs`: queue the files choosers pick (`choose`) and the questions' answers (`answer`).
+  An unanswered question is cancelled. Each question asked is recorded in `asked`.
+- `TinyPdf`: one-page PDFs written in the test, with links, embedded files or anything else in the
+  catalog or page dictionary.
+
+Build the viewer with `ViewerFeatures...multipleDocuments(true)` when the test needs tabs, since
+`PdfViewer.create()` has none.
 
 ## Documents
 
