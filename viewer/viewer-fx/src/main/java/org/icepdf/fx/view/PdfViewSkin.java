@@ -15,10 +15,7 @@
  */
 package org.icepdf.fx.view;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
 import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.BoundingBox;
@@ -39,8 +36,6 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.*;
-import org.icepdf.core.pobjects.graphics.text.Bias;
-import org.icepdf.core.pobjects.graphics.text.Caret;
 import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
 import org.icepdf.fx.render.NodeOwner;
@@ -61,6 +56,7 @@ import org.icepdf.fx.view.internal.raster.TileGrid;
 import org.icepdf.fx.view.internal.raster.TileRenderer;
 import org.icepdf.fx.view.internal.text.CaretNavigator;
 import org.icepdf.fx.view.internal.text.PageTextLoader;
+import org.icepdf.fx.view.internal.text.TextLayers;
 import org.icepdf.fx.view.internal.tool.InputRouter;
 
 import java.awt.geom.AffineTransform;
@@ -94,15 +90,12 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     private final NodeOwner renderOwner = new NodeOwner(getSkinnable(), RenderService.shared(), this::scheduleRefresh,
             this::renderStats);
     private final TileRenderer renderer;
-    private final PageTextLoader textLoader = new PageTextLoader(RenderService.shared(), renderOwner,
-            (page, sequence) -> onTextReady(page));
+    // page text: loading, selection, search hits and the caret on each page.
+    private final TextLayers text = new TextLayers(getSkinnable(),
+            new PageTextLoader(RenderService.shared(), renderOwner, (page, sequence) -> onTextReady(page)),
+            page -> getSkinnable().searchHitsOnPage(page), () -> this.sizes.count(), () -> this.layers.values());
     // what a screen reader sees: set in the constructor.
     private PdfViewAccessibility accessibility;
-    private CaretNavigator caretNavigator;
-    // caret blink phase; the caret is drawn on the focus page's layer only (see updateText).
-    private static final Duration CARET_BLINK = Duration.millis(500);
-    private final Timeline caretBlink = new Timeline();
-    private boolean caretOn = true;
     private final Map<Integer, PageLayer> layers = new HashMap<>();
     // page layers (clipped to their pages) under the annotation UI layers (not clipped: popups and
     // chrome may extend past a page edge, as Swing's document-level popup layer allows).
@@ -255,7 +248,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         });
         registerChangeListener(control.toolModeProperty(), o -> {
             installTool();
-            updateCaretBlink(false);
+            text.updateCaretBlink(false);
             refresh();
         });
         registerListChangeListener(control.getSearchHits(), c -> scheduleRefresh());
@@ -274,9 +267,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             refresh();
         });
         registerChangeListener(control.textSelectionProperty(), o -> {
-            // solid again whenever the caret moves, so it is visible straight after interaction.
-            caretOn = true;
-            updateCaretBlink(true);
+            text.selectionChanged();
             refresh();
             accessibility.selectionChanged();
         });
@@ -284,14 +275,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         // refresh here ran in the middle of a click on a header control, as the view lost focus to it.
         registerChangeListener(control.focusedProperty(), o -> {
             if (control.isFocused()) accessibility.focusGained();
-            updateCaretBlink(false);
-            layers.values().forEach(this::updateText);
+            text.updateCaretBlink(false);
+            layers.values().forEach(text::update);
         });
-        caretBlink.getKeyFrames().add(new KeyFrame(CARET_BLINK, e -> {
-            caretOn = !caretOn;
-            layers.values().forEach(layer -> layer.setCaretVisible(caretOn));
-        }));
-        caretBlink.setCycleCount(Animation.INDEFINITE);
 
         control.addEventHandler(ScrollEvent.SCROLL, scrollHandler);
         control.addEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -319,8 +305,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         // the pool's threads are shared: cancelling this view's work is all there is to stop.
         renderOwner.dispose();
         renderer.cancelAll();
-        textLoader.clear();
-        caretBlink.stop();
+        text.dispose();
         cache.clear();
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
         getSkinnable().removeEventHandler(ZoomEvent.ZOOM, pinchHandler);
@@ -394,8 +379,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         firstPaintPending = document != null;
         applyCursor();
         renderer.setDocument(document);
-        textLoader.setDocument(document);
-        caretNavigator = null;
+        text.documentChanged(document);
         accessibility.documentChanged();
         // drop the previous document's layout before anything refreshes: its slots index pages the
         // new document may not have.
@@ -677,7 +661,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
                 ui.clearProxy();
                 ui.refresh();
             }
-            updateText(layer);
+            text.update(layer);
         }
         layers.entrySet().removeIf(e -> {
             if (keep.contains(e.getKey())) return false;
@@ -691,7 +675,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             return true;
         });
         cache.pin(wanted);
-        textLoader.retain(needsText() ? keep::contains : page -> false);
+        text.retain(keep::contains);
         renderer.retain(wanted::contains);
         control.setRendering(zoomSettling || incomplete);
         if (firstPaintPending && !zoomSettling && !incomplete) {
@@ -1050,64 +1034,20 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         return Math.round(v * outputScale) / outputScale;
     }
 
-    /** Page text is needed to select, or to draw a selection or search hits. */
-    private boolean needsText() {
-        PdfView control = getSkinnable();
-        return control.getToolMode().selectsText() || control.getTextSelection() != null
-                || !control.getSearchHits().isEmpty();
-    }
-
-    private void updateText(PageLayer layer) {
-        if (!needsText()) {
-            layer.setSelection(null, null);
-            layer.setSearchHits(null, List.of());
-            layer.setCaret(null);
-            return;
-        }
-        int index = layer.getPageIndex();
-        textLoader.request(index);
-        TextSequence sequence = textLoader.get(index);
-        DocumentSelection selection = getSkinnable().getTextSelection();
-        layer.setSelection(sequence, selection != null ? selection.rangeForPage(index, sequence) : null);
-        layer.setSearchHits(sequence, getSkinnable().searchHitsOnPage(index));
-        // the caret sits at the focus end, as in the Swing viewer.
-        boolean caretHere = isCaretActive() && sequence != null && selection.getFocusPage() == index;
-        layer.setCaret(caretHere ? sequence.caretRect(
-                new Caret(Math.min(selection.getFocusOffset(), sequence.length()), Bias.FORWARD)) : null);
-        layer.setCaretVisible(caretOn);
-    }
-
-    /** A caret shows in the select tool, while focused, when there is a selection. */
-    private boolean isCaretActive() {
-        PdfView control = getSkinnable();
-        return control.getToolMode().selectsText() && control.isFocused()
-                && control.getTextSelection() != null;
-    }
-
-    /** Runs the blink while a caret is active; {@code restart} resets the cycle (caret moved). */
-    private void updateCaretBlink(boolean restart) {
-        if (!isCaretActive()) {
-            caretBlink.stop();
-            caretOn = true;
-        } else if (restart || caretBlink.getStatus() != Animation.Status.RUNNING) {
-            caretBlink.playFromStart();
-        }
-    }
-
     /** The page's loaded text, or null if it isn't loaded (or has none). */
     @Override
     public TextSequence textSequence(int pageIndex) {
-        return textLoader.get(pageIndex);
+        return text.sequence(pageIndex);
     }
 
     /** True once the page's text is loaded, even if it has none. */
     boolean isTextLoaded(int pageIndex) {
-        return textLoader.isLoaded(pageIndex);
+        return text.isLoaded(pageIndex);
     }
 
     /** Loads a page's text, keeping it while off-screen (for the screen reader's page). */
     void requestText(int pageIndex) {
-        textLoader.requestKept(pageIndex);
+        text.requestKept(pageIndex);
     }
 
     private void onTextReady(int pageIndex) {
@@ -1137,30 +1077,15 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
                 slot.y() + view.getY() - scrollY, view.getWidth(), view.getHeight()));
     }
 
-    /** Keyboard caret movement over the loader's text; rebuilt per document. */
+    /** Keyboard caret movement over the loaded text; rebuilt per document. */
     @Override
     public CaretNavigator caretNavigator() {
-        if (caretNavigator == null) {
-            caretNavigator = new CaretNavigator(new CaretNavigator.Texts() {
-                public TextSequence get(int pageIndex) {
-                    return textLoader.get(pageIndex);
-                }
-
-                public boolean isLoaded(int pageIndex) {
-                    return textLoader.isLoaded(pageIndex);
-                }
-
-                public void request(int pageIndex) {
-                    textLoader.requestKept(pageIndex);
-                }
-            }, sizes.count());
-        }
-        return caretNavigator;
+        return text.caretNavigator();
     }
 
     /** Text of a selection, extracted off the FX thread. */
     java.util.concurrent.CompletableFuture<String> selectedTextAsync(DocumentSelection selection) {
-        return textLoader.extractAsync(selection);
+        return text.loader().extractAsync(selection);
     }
 
     /**
@@ -1175,20 +1100,16 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         if (!getSkinnable().getViewMode().isContinuous() && layout != null && layout.getSlot(page) == null) {
             getSkinnable().setCurrentPageIndex(page);
         }
-        TextSequence sequence = textLoader.get(page);
+        TextSequence sequence = text.sequence(page);
         if (sequence == null) return;
-        java.awt.geom.Rectangle2D.Double caret = sequence.caretRect(
-                new Caret(Math.min(selection.getFocusOffset(), sequence.length()), Bias.FORWARD));
+        java.awt.geom.Rectangle2D.Double caret = TextLayers.caretRect(sequence, selection);
         ensureVisible(new PagePoint(page, caret.getCenterX(), caret.getCenterY()), 48);
     }
 
     /** True if the viewport point is over a glyph of a page whose text is loaded. */
     @Override
     public boolean isOverText(double vx, double vy) {
-        PagePoint point = pageAtViewport(vx, vy);
-        if (point == null) return false;
-        TextSequence sequence = textLoader.get(point.pageIndex());
-        return sequence != null && sequence.hitsText(point.toAwt());
+        return text.isOverText(pageAtViewport(vx, vy));
     }
 
     private void clearLayers() {
@@ -1243,7 +1164,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         renderer.retain(key -> false);
         cache.clear();
         layers.values().forEach(PageLayer::releaseRasters);
-        textLoader.retain(page -> false);
+        text.loader().retain(page -> false);
     }
 
     /** This view for the render pool's diagnostics (the devtools window).  FX thread. */
@@ -1255,7 +1176,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         }
         return new RenderService.ViewStats(name, document != null ? view.getPageCount() : 0, view.getZoom(),
                 view.getCurrentPageIndex() + 1, cache.getUsedBytes(), cache.getBudget(), cache.size(), layers.size(),
-                renderer.jobCount(), renderer.failedCount(), textLoader.loadedCount(), renderOwner.isForeground());
+                renderer.jobCount(), renderer.failedCount(), text.loader().loadedCount(), renderOwner.isForeground());
     }
 
     /** Whether this view's render work is ahead in the shared queue; for the smoke runs. */

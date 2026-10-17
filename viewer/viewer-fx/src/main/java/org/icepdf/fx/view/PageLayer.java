@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.text.TextLayers;
 import org.icepdf.fx.view.internal.raster.PageTransforms;
 import org.icepdf.fx.view.internal.raster.RasterBuffer;
 import org.icepdf.fx.view.internal.raster.TileGrid;
@@ -58,7 +59,7 @@ import java.util.*;
  * only the tiles on screen.  Effects or {@code setCache(true)} on a page-sized node would rasterise
  * the whole zoomed page - the same O(zoom²) trap the Swing viewer hit in GH-495.
  */
-final class PageLayer extends Group {
+final class PageLayer extends Group implements TextLayers.Overlay {
 
     private final int pageIndex;
     private final Page page;
@@ -139,7 +140,8 @@ final class PageLayer extends Group {
         return shadow;
     }
 
-    int getPageIndex() {
+    @Override
+    public int getPageIndex() {
         return pageIndex;
     }
 
@@ -338,7 +340,8 @@ final class PageLayer extends Group {
      * Shows {@code range} of the page's text highlighted; null or empty clears.  Rebuilt only when
      * the sequence or range changes - zoom and rotation are carried by the overlay transform.
      */
-    void setSelection(TextSequence sequence, OffsetRange range) {
+    @Override
+    public void setSelection(TextSequence sequence, OffsetRange range) {
         if (range != null && range.isEmpty()) range = null;
         if (sequence == null) range = null;
         if (Objects.equals(range, selectionRange) && (range == null || sequence == selectionSequence)) return;
@@ -361,7 +364,8 @@ final class PageLayer extends Group {
      * Highlights search hits, under the selection (the current hit is the selection).  Rebuilt only
      * when the hit list or sequence changes.
      */
-    void setSearchHits(TextSequence sequence, List<SearchHit> hits) {
+    @Override
+    public void setSearchHits(TextSequence sequence, List<SearchHit> hits) {
         if (sequence == null) hits = List.of();
         if (hits == searchHitList && (hits.isEmpty() || sequence == searchSequence)) return;
         searchSequence = sequence;
@@ -405,13 +409,15 @@ final class PageLayer extends Group {
      * Places the caret at a user-space caret rectangle (from {@code TextSequence.caretRect}); null
      * hides it.  Drawn as the rectangle's centre line, mapped to view space.
      */
-    void setCaret(Rectangle2D.Double userRect) {
+    @Override
+    public void setCaret(Rectangle2D.Double userRect) {
         caretRect = userRect;
         placeCaret();
     }
 
     /** Blink phase; the caret only shows if one is placed. */
-    void setCaretVisible(boolean visible) {
+    @Override
+    public void setCaretVisible(boolean visible) {
         caret.setVisible(visible && caretRect != null);
     }
 
