@@ -21,20 +21,25 @@ import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Line;
 import javafx.scene.transform.Scale;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.fx.i18n.Messages;
 
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 
 /**
  * A markup annotation's popup note as a native control: title bar (author, date, minimise), the
- * contents in a {@link TextArea}, and a resize grip.
+ * contents in a {@link TextArea}, and a resize grip.  Like the Swing viewer's popups, the frame and
+ * title bar take the markup annotation's colour (falling back to a pale yellow note when it has
+ * none), with the title text in black or white for contrast.
  * <p>
  * It is laid out in PDF points (its /Rect size) and scaled by the zoom, so it grows and shrinks with
  * the page like the Swing viewer's popups; it stays upright when the page is rotated.  It lives in
@@ -57,6 +62,7 @@ final class PopupNode extends BorderPane {
     }
 
     static final Color BACKGROUND = Color.rgb(255, 255, 204);
+    static final Color BORDER = Color.rgb(153, 153, 153);
     static final double MIN_WIDTH = 120;
     static final double MIN_HEIGHT = 80;
 
@@ -71,6 +77,11 @@ final class PopupNode extends BorderPane {
     private boolean editable = true;
     private final HBox header;
     private final Region grip = new Region();
+    private final Label title;
+    private final Label date;
+    private final Button minimise = new Button();
+    private final Line minimiseGlyph = new Line(0, 0, 6, 0);
+    private Color colour;
 
     PopupNode(PopupAnnotation popup, MarkupAnnotation markup, Listener listener) {
         this.popup = popup;
@@ -79,25 +90,26 @@ final class PopupNode extends BorderPane {
         // lets applications (and tests) find the node for a given popup annotation.
         setUserData(popup);
         getTransforms().add(scale);
-        setBackground(new Background(new BackgroundFill(BACKGROUND, CornerRadii.EMPTY, Insets.EMPTY)));
-        setBorder(new Border(new BorderStroke(Color.rgb(153, 153, 153), BorderStrokeStyle.SOLID,
+        setBorder(new Border(new BorderStroke(BORDER, BorderStrokeStyle.SOLID,
                 CornerRadii.EMPTY, new BorderWidths(1))));
-        setPadding(new Insets(2));
+        setPadding(new Insets(2, 6, 2, 6));
 
-        Label title = new Label(markup.getTitleText() != null ? markup.getTitleText() : "");
-        title.setStyle("-fx-font-weight: bold; -fx-font-size: 9px;");
-        Label date = new Label(format(markup.getCreationDate()));
-        date.setStyle("-fx-font-size: 8px;");
+        title = new Label(markup.getTitleText() != null ? markup.getTitleText() : "");
+        date = new Label(format(markup.getCreationDate()));
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        Button minimise = new Button("_");
-        minimise.setStyle("-fx-font-size: 8px; -fx-padding: 0 4 0 4;");
+        // the minimise button is a small outlined box with a dash, on the note's own colour.
+        minimiseGlyph.setStrokeWidth(1);
+        minimise.setGraphic(minimiseGlyph);
+        minimise.setTooltip(new Tooltip(Messages.get("popupNote.minimise")));
         minimise.setFocusTraversable(false);
         minimise.setOnAction(e -> listener.minimised(this));
+        minimise.hoverProperty().addListener((obs, was, now) -> styleMinimise());
+        minimise.armedProperty().addListener((obs, was, now) -> styleMinimise());
         header = new HBox(4, title, spacer, date, minimise);
         header.getStyleClass().add("pdf-annotation-popup-header");
         header.setAlignment(Pos.CENTER_LEFT);
-        header.setPadding(new Insets(1, 2, 1, 2));
+        header.setPadding(new Insets(2, 0, 3, 0));
         header.setCursor(Cursor.MOVE);
         setTop(header);
 
@@ -114,6 +126,7 @@ final class PopupNode extends BorderPane {
         grip.getStyleClass().add("pdf-annotation-popup-grip");
         BorderPane.setAlignment(grip, Pos.BOTTOM_RIGHT);
         setBottom(grip);
+        refreshColour();
 
         // drags: the header moves, the grip resizes; both report in view px (this node's local
         // coordinates times the scale).
@@ -163,6 +176,50 @@ final class PopupNode extends BorderPane {
         text.setEditable(editable);
         grip.setVisible(editable);
         header.setCursor(editable ? Cursor.MOVE : Cursor.DEFAULT);
+    }
+
+    /**
+     * Re-reads the markup annotation's colour (it can change in the properties panel while the
+     * popup is open).
+     */
+    void refreshColour() {
+        java.awt.Color c = markup.getColor();
+        Color next = c != null ? Color.rgb(c.getRed(), c.getGreen(), c.getBlue()) : BACKGROUND;
+        if (next.equals(colour)) return;
+        colour = next;
+        setBackground(new Background(new BackgroundFill(colour, CornerRadii.EMPTY, Insets.EMPTY)));
+        String fill = web(contrast(colour));
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 9px; -fx-text-fill: " + fill + ";");
+        date.setStyle("-fx-font-size: 8px; -fx-text-fill: " + fill + ";");
+        styleMinimise();
+    }
+
+    /** The note's colour: the markup annotation's, or the default note yellow. */
+    Color colour() {
+        return colour;
+    }
+
+    private void styleMinimise() {
+        if (colour == null) return;
+        Color ink = contrast(colour);
+        // subtle: the border only picks up the contrast colour while the pointer is over it.
+        Color border = minimise.isHover() ? ink : BORDER;
+        Color fill = minimise.isArmed() ? colour.interpolate(ink, 0.15) : colour;
+        minimiseGlyph.setStroke(ink);
+        minimise.setStyle("-fx-background-color: " + web(fill) + "; -fx-background-radius: 0; "
+                + "-fx-background-insets: 0; -fx-border-color: " + web(border) + "; -fx-border-width: 1; "
+                + "-fx-border-radius: 0; -fx-padding: 3 3 3 3; -fx-min-width: 14; -fx-min-height: 10;");
+    }
+
+    /** Black or white, whichever reads better on the colour (relative luminance). */
+    static Color contrast(Color c) {
+        double l = 0.2126 * c.getRed() + 0.7152 * c.getGreen() + 0.0722 * c.getBlue();
+        return l < 0.5 ? Color.WHITE : Color.rgb(26, 26, 26);
+    }
+
+    private static String web(Color c) {
+        return String.format("#%02x%02x%02x", Math.round(c.getRed() * 255),
+                Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255));
     }
 
     PopupAnnotation getPopup() {

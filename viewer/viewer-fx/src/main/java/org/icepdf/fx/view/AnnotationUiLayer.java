@@ -57,10 +57,10 @@ final class AnnotationUiLayer extends Group {
     private final javafx.scene.transform.Affine proxyTransform = new javafx.scene.transform.Affine();
     private Rectangle2D proxyFrom;
     private Rectangle2D dragBounds;
-    // open popups: one node and one connector line each.
+    // open popups: one node and one connector tail each.
     private final java.util.Map<org.icepdf.core.pobjects.annotations.PopupAnnotation, PopupNode> popupNodes =
             new java.util.LinkedHashMap<>();
-    private final java.util.Map<PopupNode, javafx.scene.shape.Line> glue = new java.util.HashMap<>();
+    private final java.util.Map<PopupNode, javafx.scene.shape.Path> glue = new java.util.HashMap<>();
     private final Group glueLines = new Group();
     // signature validity badges, top-left of each signed field on this page.
     private final Group badges = new Group();
@@ -322,12 +322,13 @@ final class AnnotationUiLayer extends Group {
                     node = new PopupNode(popup, parent, listener);
                     popupNodes.put(popup, node);
                     popups.getChildren().add(node);
-                    javafx.scene.shape.Line line = new javafx.scene.shape.Line();
-                    line.setStroke(Color.rgb(153, 153, 153));
-                    glue.put(node, line);
-                    glueLines.getChildren().add(line);
+                    javafx.scene.shape.Path tail = new javafx.scene.shape.Path();
+                    tail.setStroke(null);
+                    glue.put(node, tail);
+                    glueLines.getChildren().add(tail);
                 }
                 node.setEditable(editable);
+                node.refreshColour();
                 placePopup(node, zoom);
             }
         }
@@ -374,20 +375,56 @@ final class AnnotationUiLayer extends Group {
             h = Math.max(PopupNode.MIN_HEIGHT, h + reshape[3] / zoom);
         }
         node.place(x, y, w, h, zoom);
-        // connector: from the markup annotation's centre to the popup's nearest corner.
-        javafx.scene.shape.Line line = glue.get(node);
-        if (line != null) {
+        javafx.scene.shape.Path tail = glue.get(node);
+        if (tail != null) {
             Rectangle2D m = viewBounds(node.getMarkup());
             double pw = Math.max(PopupNode.MIN_WIDTH, w) * zoom;
             double ph = Math.max(PopupNode.MIN_HEIGHT, h) * zoom;
-            double cx = m.getCenterX();
-            double cy = m.getCenterY();
-            line.setStartX(cx);
-            line.setStartY(cy);
-            line.setEndX(Math.abs(cx - x) < Math.abs(cx - (x + pw)) ? x : x + pw);
-            line.setEndY(Math.abs(cy - y) < Math.abs(cy - (y + ph)) ? y : y + ph);
-            line.setVisible(!m.intersects(x, y, pw, ph));
+            boolean apart = !m.intersects(x, y, pw, ph);
+            tail.setVisible(apart);
+            if (apart) {
+                tail.getElements().setAll(glueTail(m.getCenterX(), m.getCenterY(), x, y, pw, ph, GLUE_BASE * zoom));
+                tail.setFill(Color.color(node.colour().getRed(), node.colour().getGreen(),
+                        node.colour().getBlue(), 0.5));
+            }
         }
+    }
+
+    /** Width (points) where the glue tail meets the popup. */
+    static final double GLUE_BASE = 14;
+
+    /**
+     * The glue between a markup annotation and its popup: a tail from the markup's centre that
+     * widens, with gently concave sides, to {@code base} where it meets the popup edge facing the
+     * markup.  A narrower take on the Swing viewer's sweep, which spans the whole popup edge.
+     */
+    static java.util.List<javafx.scene.shape.PathElement> glueTail(double tipX, double tipY, double x, double y,
+                                                                 double w, double h, double base) {
+        // nearest point on the popup rectangle; at a corner, the edge on the axis of greater gap.
+        double ex = Math.max(x, Math.min(tipX, x + w));
+        double ey = Math.max(y, Math.min(tipY, y + h));
+        double gapX = Math.max(x - tipX, tipX - (x + w));
+        double gapY = Math.max(y - tipY, tipY - (y + h));
+        double ax, ay, bx, by;
+        if (gapX >= gapY) {
+            double half = Math.min(base, h) / 2;
+            double cy = Math.max(y + half, Math.min(ey, y + h - half));
+            ax = ex; ay = cy - half; bx = ex; by = cy + half;
+        } else {
+            double half = Math.min(base, w) / 2;
+            double cx = Math.max(x + half, Math.min(ex, x + w - half));
+            ax = cx - half; ay = ey; bx = cx + half; by = ey;
+        }
+        // each side's control point sits halfway between that side's midpoint and the centre
+        // line's, so the sides bow inward.
+        double mx = (tipX + (ax + bx) / 2) / 2;
+        double my = (tipY + (ay + by) / 2) / 2;
+        return java.util.List.of(
+                new javafx.scene.shape.MoveTo(tipX, tipY),
+                new javafx.scene.shape.QuadCurveTo((mx + (tipX + ax) / 2) / 2, (my + (tipY + ay) / 2) / 2, ax, ay),
+                new javafx.scene.shape.LineTo(bx, by),
+                new javafx.scene.shape.QuadCurveTo((mx + (tipX + bx) / 2) / 2, (my + (tipY + by) / 2) / 2, tipX, tipY),
+                new javafx.scene.shape.ClosePath());
     }
 
     /** Open popup nodes, for tests and lookups. */
