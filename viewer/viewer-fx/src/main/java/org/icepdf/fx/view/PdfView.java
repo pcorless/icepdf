@@ -721,18 +721,42 @@ public class PdfView extends Control {
         return annotationMenuFactory.get();
     }
 
-    /** Undoes the last annotation edit (move, resize, delete, add). */
+    /**
+     * Undoes the last annotation edit (move, resize, delete, add).  If it fails part way, the undo
+     * history is cleared (it no longer matches the document) and a {@link PdfViewErrorEvent} says so.
+     */
     public void undo() {
-        AnnotationEdits.Edit edit = history.undo();
+        AnnotationEdits.Edit edit;
+        try {
+            edit = history.undo();
+        } catch (AnnotationEdits.StepFailedException e) {
+            historyFailed(e, "pdfView.undoFailed");
+            return;
+        }
         afterHistory(edit);
         fireFieldChanges(edit, true);
     }
 
-    /** Redoes the last undone annotation edit. */
+    /** Redoes the last undone annotation edit; a failure is handled as {@link #undo()}'s is. */
     public void redo() {
-        AnnotationEdits.Edit edit = history.redo();
+        AnnotationEdits.Edit edit;
+        try {
+            edit = history.redo();
+        } catch (AnnotationEdits.StepFailedException e) {
+            historyFailed(e, "pdfView.redoFailed");
+            return;
+        }
         afterHistory(edit);
         fireFieldChanges(edit, false);
+    }
+
+    /** An undo or redo threw: the rest of the history can't be trusted against the document any more. */
+    private void historyFailed(AnnotationEdits.StepFailedException e, String key) {
+        logger.log(Level.WARNING, "Undo/redo failed", e.getCause());
+        history.clear();
+        // repaint what the edit touched, whatever state it was left in.
+        afterHistory(e.edit());
+        fireEvent(new PdfViewErrorEvent(this, this, Messages.format(key, Messages.reason(e.getCause())), e.getCause()));
     }
 
     public final ReadOnlyBooleanProperty canUndoProperty() {
@@ -1024,7 +1048,7 @@ public class PdfView extends Control {
                 Platform.runLater(() -> result.complete(0));
                 return;
             } catch (RuntimeException e) {
-                Platform.runLater(() -> result.completeExceptionally(e));
+                Platform.runLater(() -> redactFailed(result, e, List.of(), null));
                 return;
             }
             Platform.runLater(() -> {
@@ -1033,18 +1057,42 @@ public class PdfView extends Control {
                     return;
                 }
                 List<AnnotationEdits.Edit> edits = new ArrayList<>();
-                rects.forEach((hit, r) -> {
-                    if (!r.isEmpty()) edits.add(skin.annotations().redactPageRects(hit.pageIndex(), r));
-                });
                 RedactionRequest before = doc.getRedactionRequest();
-                Runnable withTerms = () -> Redactor.configure(doc, RedactionRequest.ofAnnotationsAndTerms(terms));
-                Runnable restore = () -> Redactor.configure(doc, before);
-                withTerms.run();
-                recordEdit(AnnotationEdits.group(edits, restore, withTerms));
-                result.complete(edits.size());
+                try {
+                    rects.forEach((hit, r) -> {
+                        if (!r.isEmpty()) edits.add(skin.annotations().redactPageRects(hit.pageIndex(), r));
+                    });
+                    Runnable withTerms = () -> Redactor.configure(doc, RedactionRequest.ofAnnotationsAndTerms(terms));
+                    Runnable restore = () -> Redactor.configure(doc, before);
+                    withTerms.run();
+                    recordEdit(AnnotationEdits.group(edits, restore, withTerms));
+                    result.complete(edits.size());
+                } catch (RuntimeException e) {
+                    redactFailed(result, e, edits, () -> Redactor.configure(doc, before));
+                }
             });
         });
         return result;
+    }
+
+    /**
+     * Marking search hits failed: the redactions made so far are taken out again (all or nothing),
+     * the user is told ({@link PdfViewErrorEvent}), and the future fails.
+     */
+    private void redactFailed(CompletableFuture<Integer> result, RuntimeException e, List<AnnotationEdits.Edit> made,
+                              Runnable restoreRequest) {
+        logger.log(Level.WARNING, "Marking search hits for redaction failed", e);
+        for (int i = made.size() - 1; i >= 0; i--) {
+            try {
+                made.get(i).undo();
+            } catch (RuntimeException ignored) {
+                // already failing; the history below is refreshed either way.
+            }
+        }
+        if (restoreRequest != null) restoreRequest.run();
+        if (!made.isEmpty()) afterHistory(AnnotationEdits.group(made, () -> { }, () -> { }));
+        fireEvent(new PdfViewErrorEvent(this, this, Messages.format("pdfView.redactHitsFailed", Messages.reason(e)), e));
+        result.completeExceptionally(e);
     }
 
     /** Starts a one-off background job: a daemon thread below normal priority. */

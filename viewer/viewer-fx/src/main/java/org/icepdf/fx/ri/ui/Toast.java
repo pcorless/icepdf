@@ -45,6 +45,7 @@ public final class Toast extends StackPane {
 
     /** Shows a message for a few seconds. */
     public void show(String message) {
+        if (message == null || message.isBlank()) return;
         if (running != null) running.stop();
         label.setText(message);
         FadeTransition in = new FadeTransition(Duration.millis(150), label);

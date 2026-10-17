@@ -94,4 +94,14 @@ class MessagesTest {
         }
         return properties;
     }
+
+    @DisplayName("reason is the exception's message, else its cause's, else its kind - never null")
+    @Test
+    void reasonNeverNull() {
+        assertEquals("disk full", Messages.reason(new java.io.IOException("disk full")));
+        assertEquals("NullPointerException", Messages.reason(new NullPointerException()));
+        assertEquals("inner", Messages.reason(new RuntimeException(null, new IllegalStateException("inner"))));
+        assertEquals("IllegalStateException", Messages.reason(new IllegalStateException("  ")));
+        assertEquals("", Messages.reason(null));
+    }
 }

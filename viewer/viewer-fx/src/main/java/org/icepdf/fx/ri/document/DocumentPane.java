@@ -87,6 +87,8 @@ public final class DocumentPane {
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
         session.loadingFileProperty().addListener((o, a, b) -> refreshTitle());
         // the wait cursor while the file is read or a redacted copy written; the view keeps it until the first pages are painted.
+        // what fails in the view (an undo, marking search hits) reaches the user with the session's errors.
+        view.addEventHandler(org.icepdf.fx.view.PdfViewErrorEvent.ERROR, e -> session.reportError(e.getMessage()));
         view.busyProperty().bind(session.loadingProperty().or(session.writingProperty()));
     }
 

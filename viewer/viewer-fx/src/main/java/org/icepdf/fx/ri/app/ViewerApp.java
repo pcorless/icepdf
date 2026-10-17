@@ -112,6 +112,7 @@ public class ViewerApp extends Application {
 
     @Override
     public void start(Stage stage) {
+        installErrorHandler();
         preferences = ViewerPreferences.load();
         // before anything loads core's Library or renders: the pools size themselves once.
         PerformanceSettings.apply(preferences);
@@ -128,6 +129,35 @@ public class ViewerApp extends Application {
             if (features.isMultipleDocuments()) first.viewer().openInNewTab(Paths.get(args.get(i)));
             else newWindow(Paths.get(args.get(i)));
         }
+    }
+
+    // ---- unexpected errors --------------------------------------------------------------------------
+
+    private String lastUnexpected;
+    private long lastUnexpectedAt;
+
+    /**
+     * An exception nothing caught: always logged; on the FX thread (an event handler, a layout
+     * pass) the user is also told, since a packaged application has no console to show it.
+     * Background workers report their own failures, so theirs are only logged.
+     */
+    private void installErrorHandler() {
+        Thread.setDefaultUncaughtExceptionHandler((thread, e) -> {
+            logger.log(Level.SEVERE, "Uncaught exception on " + thread.getName(), e);
+            if (Platform.isFxApplicationThread()) unexpected(e);
+        });
+    }
+
+    private void unexpected(Throwable e) {
+        String message = Messages.format("viewerApp.unexpected", Messages.reason(e));
+        long now = System.currentTimeMillis();
+        // a failing layout pass throws on every pulse: one message is enough.
+        if (message.equals(lastUnexpected) && now - lastUnexpectedAt < 5000) return;
+        lastUnexpected = message;
+        lastUnexpectedAt = now;
+        AppWindow target = windows.stream().filter(w -> w.stage().isFocused()).findFirst()
+                .orElse(windows.isEmpty() ? null : windows.get(windows.size() - 1));
+        if (target != null) target.viewer().showMessage(message);
     }
 
     @Override

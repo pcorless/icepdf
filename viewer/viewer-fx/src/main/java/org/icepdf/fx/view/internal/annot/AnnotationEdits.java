@@ -416,6 +416,20 @@ public final class AnnotationEdits {
         }
     }
 
+    /** An undo or redo that threw; {@link #edit()} names the pages it touched. */
+    public static final class StepFailedException extends RuntimeException {
+        private final transient Edit edit;
+
+        StepFailedException(Edit edit, RuntimeException cause) {
+            super(cause);
+            this.edit = edit;
+        }
+
+        public Edit edit() {
+            return edit;
+        }
+    }
+
     /** Undo/redo stacks; confined to the FX thread. */
     public static final class History {
         private final Deque<Edit> undo = new ArrayDeque<>();
@@ -426,22 +440,32 @@ public final class AnnotationEdits {
             redo.clear();
         }
 
+        /** @throws StepFailedException when the edit failed part way: the document may hold half of it */
         public Edit undo() {
             Edit edit = undo.poll();
             if (edit != null) {
-                edit.undo();
+                run(edit, edit::undo);
                 redo.push(edit);
             }
             return edit;
         }
 
+        /** @throws StepFailedException when the edit failed part way: the document may hold half of it */
         public Edit redo() {
             Edit edit = redo.poll();
             if (edit != null) {
-                edit.redo();
+                run(edit, edit::redo);
                 undo.push(edit);
             }
             return edit;
+        }
+
+        private static void run(Edit edit, Runnable step) {
+            try {
+                step.run();
+            } catch (RuntimeException e) {
+                throw new StepFailedException(edit, e);
+            }
         }
 
         public boolean canUndo() {

@@ -59,6 +59,19 @@ public final class Messages {
         return bundle.containsKey(key) ? bundle.getString(key) : fallback;
     }
 
+    /**
+     * Why something failed, for a message: the exception's own message, or its kind when it has
+     * none (an NPE, many printer errors) - never "null".
+     */
+    public static String reason(Throwable failure) {
+        if (failure == null) return "";
+        String message = failure.getLocalizedMessage();
+        if (message != null && !message.isBlank()) return message;
+        Throwable cause = failure.getCause();
+        if (cause != null && cause != failure) return reason(cause);
+        return failure.getClass().getSimpleName();
+    }
+
     /** The text for a key, its {@code {0}}, {@code {1}}... filled in. */
     public static String format(String key, Object... arguments) {
         return new MessageFormat(get(key), Locale.getDefault()).format(arguments);

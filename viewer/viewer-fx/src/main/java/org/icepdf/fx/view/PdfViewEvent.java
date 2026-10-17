@@ -28,7 +28,8 @@ import javafx.event.EventType;
  *     <li>{@link FormFieldEvent#FIELD_CHANGED}: a form field's value changed;</li>
  *     <li>{@link SignatureEvent#SIGNATURE_CLICKED}: a signature field or badge was clicked;</li>
  *     <li>{@link #ANNOTATIONS_CHANGED}: an annotation or field was added, removed or edited through
- *     the view (including undo and redo).</li>
+ *     the view (including undo and redo);</li>
+ *     <li>{@link PdfViewErrorEvent#ERROR}: something the user asked for failed, with a message to show.</li>
  * </ul>
  */
 public class PdfViewEvent extends Event {

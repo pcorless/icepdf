@@ -185,7 +185,13 @@ public class SearchPanel extends BorderPane {
             int elsewhere = fieldHitCount.get();
             view.redactSearchHits().whenComplete((count, failure) -> {
                 redacting.set(false);
-                if (failure != null) return;
+                if (failure != null) {
+                    // the view has told the application (PdfViewErrorEvent); the panel says it too.
+                    Throwable cause = failure instanceof java.util.concurrent.CompletionException && failure.getCause() != null
+                            ? failure.getCause() : failure;
+                    status.setText(Messages.format("pdfView.redactHitsFailed", Messages.reason(cause)));
+                    return;
+                }
                 StringBuilder text = new StringBuilder();
                 if (count > 0) text.append(Messages.format("searchPanel.markedForRedaction", count));
                 if (elsewhere > 0 && view.hasTermRedaction()) {

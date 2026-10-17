@@ -220,9 +220,14 @@ public final class DocumentSession {
         this.confirmDiscard = confirm;
     }
 
-    /** Receives what went wrong, for the user; by default it's logged. */
+    /** Receives what went wrong, for the user - the session's failures and the view's ({@code PdfViewErrorEvent}); by default it's logged. */
     public void setOnError(Consumer<String> onError) {
         this.onError = onError != null ? onError : message -> logger.warning(message);
+    }
+
+    /** Hands a failure in the view (a {@code PdfViewErrorEvent}) to onError, with the session's own. */
+    void reportError(String message) {
+        onError.accept(message);
     }
 
     /** Called on the FX thread after a file is opened (or reopened after a save). */
