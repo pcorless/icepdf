@@ -69,6 +69,16 @@ dependencies {
     testImplementation('org.verapdf:validation-model:1.30.2')
 }
 
+// The JPEG 2000 decoder ships with the viewer application only, never in its published POM: core
+// leaves it out because of its licence (JJ2000), but a viewer that blanks JPXDecode images isn't
+// much use.  Licence texts are in the root licenses/ directory; see viewer-fx/PROVENANCE.md.
+configurations {
+    jpeg2000
+}
+dependencies {
+    jpeg2000 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+}
+
 // generatePomFileForViewerJarPublication
 publishing {
     publications {
@@ -125,6 +135,7 @@ test {
 }
 
 run {
+    classpath += configurations.jpeg2000
     forwardProperties(delegate)
 }
 
@@ -140,8 +151,8 @@ jar {
             // executable jar
             attributes("Main-Class": 'org.icepdf.ri.viewer.Launcher')
             if (!configurations.runtimeClasspath.isEmpty()) {
-                attributes('Class-Path':
-                        configurations.runtimeClasspath.files.collect{it.name}.join(' '))
+                attributes('Class-Path': (configurations.runtimeClasspath + configurations.jpeg2000)
+                        .files.collect{it.name}.join(' '))
             }
         }
     }

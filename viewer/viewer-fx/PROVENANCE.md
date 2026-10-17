@@ -46,8 +46,13 @@ Transitive through core-awt. Already shipped by the Swing viewer, so not new to 
 | `commons-logging:commons-logging` | 1.4.0 | Apache 2.0 |
 | `com.twelvemonkeys.imageio:imageio-tiff` (+ `imageio-core`, `imageio-metadata`, `common-*`) | 3.15.2 | BSD-3-Clause |
 
-Not shipped: `com.github.jai-imageio:jai-imageio-core`, `jai-imageio-jpeg2000` (BSD-3-Clause (Sun) / JJ2000)
-are `provided` / test-runtime in core; an application adds them for JPEG 2000.
+### Shipped in the viewer applications only
+
+| Artifact | Version | License | Notes |
+|---|---|---|---|
+| `com.github.jai-imageio:jai-imageio-jpeg2000` (+ `jai-imageio-core`) | 1.4.0 | BSD-3-Clause + nuclear disclaimer (Sun ImageIO code); JJ2000 licence (the codec) | JPEG 2000 (`JPXDecode`) decoding. Core leaves it out (`provided` in Maven, test-only in Gradle) because the JJ2000 terms only cover products conforming to the JPEG 2000 Standard and aren't OSI-approved, so library users must opt in. The viewer apps bundle it: Gradle's `jpeg2000` configuration feeds `run`, `runDemo`, `launcherLibs`, `jarWithDependencies`, the jar's `Class-Path` and `osDistZip`; Maven adds it in the `assembly` profile only. It never appears in a published POM's dependencies. Licence texts: `licenses/JAI-ImageIO-JPEG2000LICENSE.txt`, `JAI-ImageIO-CoreLICENSE.txt`, `JAI-ImageIO-CoreNOTICE.txt`; NOTICE entry in the root `NOTICE`. A pure-Java Apache-2.0 replacement is sketched in `JPX-DECODER-PORT-PLAN.md`. |
+
+Without it core skips JPX images and logs one WARNING; `JpxDecoder.isDecoderAvailable()` reports it.
 
 ### Not shipped (test scope)
 

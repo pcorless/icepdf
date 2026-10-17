@@ -47,6 +47,7 @@ subprojects{
 
 evaluationDependsOn(':core:core-awt')
 evaluationDependsOn(':viewer:viewer-fx')
+evaluationDependsOn(':viewer:viewer-awt')
 
 defaultTasks 'osDistZip', 'osDistTar'
 
@@ -68,6 +69,8 @@ distributions {
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
                 from project(':core:core-fonts').jar
+                // the viewers' JPEG 2000 decoder (JJ2000 licence, in licenses/); core doesn't need it
+                from { project(':viewer:viewer-awt').configurations.jpeg2000 }
                 // the JavaFX viewer and what it needs beyond the above, but not JavaFX itself: it's
                 // per platform, and applications bring their own (22 or later).
                 // (launcherLibs collects the viewer jar and its runtime jars inside its own project.)

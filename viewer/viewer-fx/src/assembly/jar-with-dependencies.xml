@@ -27,6 +27,13 @@
         <format>jar</format>
     </formats>
     <includeBaseDirectory>false</includeBaseDirectory>
+    <!-- several jars register ImageIO plug-ins (TIFF, JBIG2, JPEG 2000); merge their service files
+         rather than keep only the first -->
+    <containerDescriptorHandlers>
+        <containerDescriptorHandler>
+            <handlerName>metaInf-services</handlerName>
+        </containerDescriptorHandler>
+    </containerDescriptorHandlers>
     <dependencySets>
         <dependencySet>
             <outputDirectory>/</outputDirectory>
@@ -45,4 +52,15 @@
             </unpackOptions>
         </dependencySet>
     </dependencySets>
+    <!-- the unpacked jars' own META-INF/LICENSE files collide, and the JJ2000 notice must go with
+         every copy of the JPEG 2000 decoder -->
+    <fileSets>
+        <fileSet>
+            <directory>${project.basedir}/../../licenses</directory>
+            <outputDirectory>META-INF/licenses</outputDirectory>
+            <includes>
+                <include>JAI-ImageIO-*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
 </assembly>

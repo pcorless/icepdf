@@ -36,6 +36,19 @@ def javafxModulePath = { JavaExec task ->
     }
 }
 
+// The JPEG 2000 decoder ships with the viewer application only, never in its published POM: core
+// leaves it out because of its licence (JJ2000), but a viewer that blanks JPXDecode images isn't
+// much use.  Licence texts are in the root licenses/ directory; see PROVENANCE.md.
+configurations {
+    jpeg2000
+}
+dependencies {
+    jpeg2000 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+}
+run {
+    classpath += configurations.jpeg2000
+}
+
 // The viewer jar with the jars it needs (JavaFX, core, fonts...) in one folder, for the Linux launcher:
 // ./gradlew :viewer:viewer-fx:launcherLibs, then packaging/linux/install-desktop.sh --fx
 tasks.register('launcherLibs', Sync) {
@@ -43,7 +56,33 @@ tasks.register('launcherLibs', Sync) {
     description = 'Collects the viewer jar and its runtime jars in build/launcher/lib'
     from(jar)
     from(configurations.runtimeClasspath)
+    from(configurations.jpeg2000)
     into layout.buildDirectory.dir('launcher/lib')
+}
+
+// Several runtime jars register ImageIO plug-ins in META-INF/services (TIFF, JBIG2, JPEG 2000);
+// unpacked into one jar only the first copy of each file would survive, so they're merged here.
+def mergedServices = layout.buildDirectory.dir('merged-services')
+tasks.register('mergeServices') {
+    def jars = configurations.runtimeClasspath + configurations.jpeg2000
+    inputs.files jars
+    outputs.dir mergedServices
+    doLast {
+        def merged = [:].withDefault { new LinkedHashSet<String>() }
+        jars.files.findAll { it.name.endsWith('.jar') }.each { f ->
+            new java.util.zip.ZipFile(f).withCloseable { zip ->
+                zip.entries().findAll { !it.directory && it.name.startsWith('META-INF/services/') }.each { e ->
+                    zip.getInputStream(e).text.readLines()*.trim()
+                            .findAll { it && !it.startsWith('#') }
+                            .each { merged[e.name.substring('META-INF/services/'.length())] << it }
+                }
+            }
+        }
+        def out = mergedServices.get().asFile
+        project.delete(out)
+        out.mkdirs()
+        merged.each { name, lines -> new File(out, name).text = lines.join('\n') + '\n' }
+    }
 }
 
 // The viewer with everything it needs, JavaFX for this platform included, in one jar (as Maven's
@@ -64,10 +103,17 @@ tasks.register('jarWithDependencies', Jar) {
         attributes('Implementation-Version': "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}")
         attributes('Implementation-Vendor': "${COMPANY}")
     }
+    from(tasks.named('mergeServices')) { into 'META-INF/services' }
     from sourceSets.main.output
-    dependsOn configurations.runtimeClasspath
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    dependsOn configurations.runtimeClasspath, configurations.jpeg2000
+    from({
+        (configurations.runtimeClasspath + configurations.jpeg2000).collect { it.isDirectory() ? it : zipTree(it) }
+    }) {
+        exclude 'META-INF/services/**'
+    }
+    // the unpacked jars' own META-INF/LICENSE files collide, and the JJ2000 notice must go with every copy
+    into('META-INF/licenses') {
+        from(rootProject.file('licenses')) { include 'JAI-ImageIO-*' }
     }
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.EC',
             'module-info.class', 'META-INF/versions/*/module-info.class'
@@ -79,7 +125,7 @@ tasks.register('runDemo', JavaExec) {
     group = 'application'
     description = 'Runs PdfViewDemo, a bare PdfView test host'
     dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath
+    classpath = sourceSets.test.runtimeClasspath + configurations.jpeg2000
     mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
     jvmArgs = [viewerXmx]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
@@ -159,7 +205,8 @@ jar {
             // a plain class that launches ViewerApp: java -jar refuses an Application main class on the class path
             attributes("Main-Class": 'org.icepdf.fx.ri.app.Launcher')
             if (!configurations.runtimeClasspath.isEmpty()) {
-                attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
+                attributes('Class-Path': (configurations.runtimeClasspath + configurations.jpeg2000)
+                        .files.collect{it.name}.join(' '))
             }
         }
     }

@@ -28,6 +28,7 @@ import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,8 +37,25 @@ public class JpxDecoder extends AbstractImageDecoder {
     private static final Logger logger =
             Logger.getLogger(JpxDecoder.class.getName());
 
+    private static final String MISSING_DECODER =
+            "No JPEG 2000 ImageIO plug-in is installed, so JPXDecode images are not drawn. " +
+                    "Add com.github.jai-imageio:jai-imageio-jpeg2000 to the class path to render them.";
+
+    private static final AtomicBoolean missingDecoderWarned = new AtomicBoolean();
+
     public JpxDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
+    }
+
+    /**
+     * JPEG 2000 decoding is optional: core doesn't ship a decoder because the usual one,
+     * jai-imageio-jpeg2000, isn't Apache licensed.  Applications can use this to tell their users why
+     * JPXDecode images are missing.
+     *
+     * @return true if an ImageIO reader for JPEG 2000 is on the class path.
+     */
+    public static boolean isDecoderAvailable() {
+        return ImageIO.getImageReadersByFormatName("JPEG2000").hasNext();
     }
 
     @Override
@@ -45,14 +63,13 @@ public class JpxDecoder extends AbstractImageDecoder {
 
         BufferedImage tmpImage = null;
         try {
-            // Verify that ImageIO can read JPEG2000
-            Iterator<ImageReader> iterator = ImageIO.getImageReadersByFormatName("JPEG2000");
-            if (!iterator.hasNext()) {
-                logger.info(
-                        "ImageIO missing required plug-in to read JPEG 2000 images. " +
-                                "You can download the JAI ImageIO Tools from: " +
-                                "https://www.oracle.com/technetwork/java/javasebusiness/" +
-                                "downloads/java-archive-downloads-java-client-419417.html");
+            if (!isDecoderAvailable()) {
+                // the image is skipped, which leaves a hole in the page; say so loudly once, then quietly
+                if (missingDecoderWarned.compareAndSet(false, true)) {
+                    logger.warning(MISSING_DECODER);
+                } else {
+                    logger.fine(MISSING_DECODER);
+                }
                 return null;
             }
             ImageParams imageParams = imageStream.getImageParams();
