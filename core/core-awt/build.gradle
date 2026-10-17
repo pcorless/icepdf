@@ -144,6 +144,13 @@ test {
     if (System.getProperty('redaction.bless') != null) {
         systemProperty('redaction.bless', System.getProperty('redaction.bless'))
     }
+    // JPEG 2000 fixture baselines (GH-613): -Djpx.bless=true rewrites the reader's baseline,
+    // -Djpx.reader=<SPI class name fragment> picks the reader when more than one is installed.
+    for (String p : ['jpx.bless', 'jpx.reader']) {
+        if (System.getProperty(p) != null) {
+            systemProperty(p, System.getProperty(p))
+        }
+    }
 }
 
 // Phase 0 parsing performance baseline harness.  Not part of the test task.

@@ -1,0 +1,70 @@
+# GH-613 conformance baseline for com.github.jaiimageio.jpeg2000.impl.J2KImageReaderSpi 1.4.0
+# id	outcome	detail (not asserted)
+cblk-all.full	EXACT	EXACT
+cblk-bypass-termall.full	CLOSE	CLOSE max=1 psnr=52.4
+cblk-bypass.full	EXACT	EXACT
+cblk-predterm.full	EXACT	EXACT
+cblk-reset-termall-segsym.full	EXACT	EXACT
+cblk-reset.full	EXACT	EXACT
+cblk-segsym.full	EXACT	EXACT
+cblk-small.full	EXACT	EXACT
+cblk-termall.full	EXACT	EXACT
+cblk-vcausal.full	EXACT	EXACT
+cblk-wide.full	EXACT	EXACT
+coc-qcc.full	EXACT	EXACT
+comment.full	EXACT	EXACT
+irr97-cmyk.full	CLOSE	CLOSE max=1 psnr=51.5
+irr97-mct-off.full	CLOSE	CLOSE max=1 psnr=76.5
+irr97-rgb-rate.full	CLOSE	CLOSE max=2 psnr=52.6
+irr97-rgb.full	CLOSE	CLOSE max=1 psnr=52.1
+jp2-cdef-rgba.full	EXACT	EXACT
+jp2-cmyk.full	EXACT	EXACT
+jp2-gray.full	EXACT	EXACT
+jp2-icc-gray.full	EXACT	EXACT
+jp2-pclr-cmyk.full	EQUIVALENT	EQUIVALENT [palette applied through IndexColorModel]
+jp2-pclr-rgb.full	EQUIVALENT	EQUIVALENT [palette applied through IndexColorModel]
+jp2-rgb.full	EXACT	EXACT
+layers-quality.full	CLOSE	CLOSE max=1 psnr=52.2
+layers3.full	EXACT	EXACT
+mct-off-rgb.full	EXACT	EXACT
+noise-irr.full	CLOSE	CLOSE max=1 psnr=51.4
+noise-rev.full	EXACT	EXACT
+plt-tlm.full	EXACT	EXACT
+poc.full	EXACT	EXACT
+ppm.full	TIMEOUT	TIMEOUT no result after 20s
+ppt.full	TIMEOUT	TIMEOUT no result after 20s
+prec12-gray.full	EXACT	EXACT
+prec16-gray.full	EXACT	EXACT
+prec16-rgb-irr.full	CLOSE	CLOSE max=5 psnr=97.6
+prec4-gray.full	EXACT	EXACT
+precincts.full	EXACT	EXACT
+prog-cprl.full	EXACT	EXACT
+prog-lrcp.full	EXACT	EXACT
+prog-pcrl.full	EXACT	EXACT
+prog-rlcp.full	EXACT	EXACT
+prog-rpcl.full	EXACT	EXACT
+reduce.full	EXACT	EXACT
+reduce.reduce1	MISMATCH	MISMATCH max=157 psnr=18.3
+reduce.reduce2	MISMATCH	MISMATCH max=178 psnr=11.9
+reduce.reduce3	MISMATCH	MISMATCH max=189 psnr=10.5
+region.full	EXACT	EXACT
+region.region10_20_70_50	EXACT	EXACT
+rev53-cmyk.full	EXACT	EXACT
+rev53-dwt0.full	EXACT	EXACT
+rev53-dwt6.full	EXACT	EXACT
+rev53-gray.full	EXACT	EXACT
+rev53-rgb.full	EXACT	EXACT
+rgba.full	EXACT	EXACT
+roi.full	EXACT	EXACT
+signed8-gray.full	EQUIVALENT	EQUIVALENT [component 0 signed samples as two's-complement bits in a 8-bit unsigned raster]
+size-1x1.full	EXACT	EXACT
+size-odd.full	EXACT	EXACT
+size-tall.full	EXACT	EXACT
+sop-eph-tiles.full	EXACT	EXACT
+sop-eph.full	EXACT	EXACT
+subsampled-420.full	ERROR	ERROR ArrayIndexOutOfBoundsException: Index 1055 out of bounds for length 1024
+subsampled-422-irr.full	MISMATCH	MISMATCH max=255 psnr=5.8 [component 1 upsampled 2x1]
+tileparts-res.full	EXACT	EXACT
+tiles-offset.full	CLOSE	CLOSE max=1 psnr=70.4
+tiles.full	EXACT	EXACT
+tnsot-undercount.full	ERROR	ERROR ArrayIndexOutOfBoundsException: Index 5 out of bounds for length 5
