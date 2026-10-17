@@ -16,7 +16,7 @@ Packages, in two layers. The components, for an application that builds its own 
 
 Behind `PdfView`, not exported and not API: `org.icepdf.fx.view.internal.raster` (tiles, render
 jobs, cache), `.annot` (annotation editing, popups), `.form` (form filling), `.text` (text
-loading, selection, search) and `.tool` (the tool handlers, which reach the view only through
+loading, selection, search) and `.tool` (input routing and the tool handlers, which reach the view only through
 `ToolContext`).
 
 The reference viewer built from them:
