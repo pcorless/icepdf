@@ -118,13 +118,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     private final Map<Integer, AnnotationUiLayer> uiLayers = new HashMap<>();
 
     private Document document;
-    // page sizes at zoom 1 for the current rotation and boundary.  Only the first pages are read when
-    // a document opens - reading every page's size of a long document stalls the FX thread - the
-    // rest take their average until they come into view (estimated[i]), as the Swing viewer does.
-    private static final int SIZE_READ_AHEAD = 10;
-    private double[] unitWidths = new double[0];
-    private double[] unitHeights = new double[0];
-    private boolean[] estimated = new boolean[0];
+    // page sizes at zoom 1 for the current rotation and boundary; most are estimates until shown.
+    private final PageSizes sizes = new PageSizes();
     private DocumentLayout layout;
     // the zoom/rotation the current layout was built for; the properties may already differ when
     // a listener runs, and anchoring needs the old values.
@@ -477,45 +472,15 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
         return (float) ((360 - getSkinnable().getRotation()) % 360);
     }
 
-    /**
-     * Reads the sizes of the first pages, and of any page already read for the previous rotation or
-     * boundary; the rest get the average of the first ones until {@link #resolveSizes} reads them.
-     *
-     * @param keepResolved false for a new document, true to re-read the pages read so far
-     */
+    /** Reads the page sizes for the current boundary and rotation (see {@link PageSizes#load}). */
     private void loadUnitSizes(boolean keepResolved) {
-        int count = document != null ? document.getNumberOfPages() : 0;
-        boolean[] read = keepResolved && estimated.length == count ? estimated : null;
-        unitWidths = new double[count];
-        unitHeights = new double[count];
-        estimated = new boolean[count];
-        int ahead = Math.min(count, SIZE_READ_AHEAD);
-        double sumW = 0;
-        double sumH = 0;
-        for (int i = 0; i < ahead; i++) {
-            readUnitSize(i);
-            sumW += unitWidths[i];
-            sumH += unitHeights[i];
-        }
-        double avgW = ahead > 0 ? sumW / ahead : 612;
-        double avgH = ahead > 0 ? sumH / ahead : 792;
-        for (int i = ahead; i < count; i++) {
-            if (read != null && !read[i]) {
-                readUnitSize(i);
-            } else {
-                unitWidths[i] = avgW;
-                unitHeights[i] = avgH;
-                estimated[i] = true;
-            }
-        }
-    }
-
-    private void readUnitSize(int i) {
-        Page page = document.getPageTree().getPage(i);
-        PDimension size = page != null ? page.getSize(getSkinnable().getPageBoundary(), coreRotation(), 1f) : null;
-        unitWidths[i] = size != null ? size.getWidth() : 612;
-        unitHeights[i] = size != null ? size.getHeight() : 792;
-        estimated[i] = false;
+        int boundary = getSkinnable().getPageBoundary();
+        float rotation = coreRotation();
+        Document doc = document;
+        sizes.load(doc != null ? doc.getNumberOfPages() : 0, i -> {
+            Page page = doc.getPageTree().getPage(i);
+            return page != null ? page.getSize(boundary, rotation, 1f) : null;
+        }, keepResolved);
     }
 
     /**
@@ -525,28 +490,17 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
      * @return true if the layout was rebuilt, so the slots are stale
      */
     private boolean resolveSizes(List<PageSlot> slots) {
-        Anchor anchor = null;
-        boolean changed = false;
-        boolean currentChanged = false;
-        int current = getSkinnable().getCurrentPageIndex();
-        for (PageSlot slot : slots) {
-            int i = slot.pageIndex();
-            if (i >= estimated.length || !estimated[i]) continue;
-            if (anchor == null) anchor = captureAnchor(viewportW / 2, viewportH / 2);
-            double w = unitWidths[i];
-            double h = unitHeights[i];
-            readUnitSize(i);
-            if (Math.abs(w - unitWidths[i]) > 0.5 || Math.abs(h - unitHeights[i]) > 0.5) {
-                changed = true;
-                currentChanged |= i == current;
-            }
-        }
-        if (!changed) return false;
+        if (slots.stream().noneMatch(slot -> sizes.isEstimated(slot.pageIndex()))) return false;
+        // the anchor is taken before the sizes change under it.
+        Anchor anchor = captureAnchor(viewportW / 2, viewportH / 2);
+        PageSizes.Resolution resolved = sizes.resolve(slots.stream().map(PageSlot::pageIndex).toList(),
+                getSkinnable().getCurrentPageIndex());
+        if (!resolved.changed()) return false;
         // a fit to the current page follows its real size; a continuous fit width doesn't re-fit
         // as each wider page scrolls in.
         PdfView control = getSkinnable();
         boolean continuousWidth = control.getFitMode() == FitMode.WIDTH && control.getViewMode().isContinuous();
-        if (currentChanged && control.getFitMode() != FitMode.NONE && !continuousWidth) applyFit();
+        if (resolved.currentChanged() && control.getFitMode() != FitMode.NONE && !continuousWidth) applyFit();
         relayout(anchor);
         return true;
     }
@@ -555,23 +509,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     private void relayout(Anchor anchor) {
         PdfView control = getSkinnable();
         double zoom = control.getZoom();
-        int count = unitWidths.length;
-        double[] w = unitWidths;
-        double[] h = unitHeights;
-        layout = new DocumentLayout(new DocumentLayout.PageSizes() {
-            public int count() {
-                return count;
-            }
-
-            public double width(int i) {
-                return w[i] * zoom;
-            }
-
-            public double height(int i) {
-                return h[i] * zoom;
-            }
-        }, control.getViewMode(), control.isCoverPage(), control.getCurrentPageIndex(), control.getPageGap(),
-                viewportW, viewportH);
+        layout = new DocumentLayout(sizes.atZoom(zoom), control.getViewMode(), control.isCoverPage(),
+                control.getCurrentPageIndex(), control.getPageGap(), viewportW, viewportH);
         layoutZoom = zoom;
         layoutRotation = coreRotation();
         if (anchor != null && !applyAnchor(anchor)) anchor = null;
@@ -586,42 +525,10 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
     // ---- fit ------------------------------------------------------------------------------
 
     private void applyFit() {
-        FitMode mode = getSkinnable().getFitMode();
-        if (mode == FitMode.NONE || unitWidths.length == 0 || viewportW <= 0 || viewportH <= 0) return;
         PdfView control = getSkinnable();
-        double gap = control.getPageGap();
-        boolean facing = control.getViewMode().isFacing();
-        int current = control.getCurrentPageIndex();
-        double width;
-        double height;
-        if (mode == FitMode.WIDTH && control.getViewMode().isContinuous()) {
-            width = 0;
-            for (double uw : unitWidths) width = Math.max(width, uw);
-            height = 0;
-        } else {
-            width = unitWidths[current];
-            height = unitHeights[current];
-            if (facing) {
-                int partner = partnerOf(current);
-                if (partner >= 0) {
-                    width = Math.max(width, unitWidths[partner]);
-                    height = Math.max(height, unitHeights[partner]);
-                }
-            }
-        }
-        double across = facing ? 2 * width : width;
-        double gaps = facing ? 3 * gap : 2 * gap;
-        double zoom = (viewportW - gaps) / Math.max(1, across);
-        if (mode == FitMode.PAGE) zoom = Math.min(zoom, (viewportH - 2 * gap) / Math.max(1, height));
-        control.setZoom(zoom);
-    }
-
-    private int partnerOf(int page) {
-        boolean cover = getSkinnable().isCoverPage();
-        int offset = cover ? page - 1 : page;
-        if (cover && page == 0) return -1;
-        int partner = offset % 2 == 0 ? page + 1 : page - 1;
-        return partner >= 0 && partner < unitWidths.length ? partner : -1;
+        double zoom = sizes.fitZoom(control.getFitMode(), control.getViewMode(), control.isCoverPage(),
+                control.getCurrentPageIndex(), control.getPageGap(), viewportW, viewportH);
+        if (!Double.isNaN(zoom)) control.setZoom(zoom);
     }
 
     // ---- anchoring ------------------------------------------------------------------------
@@ -1261,7 +1168,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements ToolContext {
                 public void request(int pageIndex) {
                     textLoader.requestKept(pageIndex);
                 }
-            }, unitWidths.length);
+            }, sizes.count());
         }
         return caretNavigator;
     }
