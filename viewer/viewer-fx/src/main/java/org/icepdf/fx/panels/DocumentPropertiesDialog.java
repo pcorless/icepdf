@@ -115,6 +115,7 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
         BorderPane.setMargin(progress, new Insets(4));
         int pages = document.getNumberOfPages();
         Thread scan = new Thread(() -> {
+            RuntimeException failure = null;
             try {
                 DocumentFonts.scan(document, cancelled::get,
                         done -> Platform.runLater(() -> progress.setProgress(pages == 0 ? 1 : done / (double) pages)),
@@ -122,11 +123,21 @@ public class DocumentPropertiesDialog extends Dialog<Void> {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (RuntimeException e) {
-                // show what was found
+                java.util.logging.Logger.getLogger(DocumentPropertiesDialog.class.getName())
+                        .log(java.util.logging.Level.WARNING, "Could not list the document's fonts", e);
+                failure = e;
             }
+            RuntimeException failed = failure;
             Platform.runLater(() -> {
-                pane.setBottom(null);
-                table.setPlaceholder(new Label(Messages.get("documentProperties.noFonts")));
+                // what was found stays; the list says it may be incomplete.
+                Label note = failed != null
+                        ? new Label(Messages.format("documentProperties.fontsIncomplete", Messages.reason(failed))) : null;
+                if (note != null) {
+                    note.setWrapText(true);
+                    BorderPane.setMargin(note, new Insets(4));
+                }
+                pane.setBottom(note != null && !items.isEmpty() ? note : null);
+                table.setPlaceholder(new Label(failed != null ? note.getText() : Messages.get("documentProperties.noFonts")));
             });
         }, "icepdf-fx-fonts");
         scan.setDaemon(true);

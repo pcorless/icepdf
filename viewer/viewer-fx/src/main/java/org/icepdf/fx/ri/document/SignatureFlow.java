@@ -154,6 +154,13 @@ public final class SignatureFlow {
                 logger.log(Level.WARNING, "Signing failed", e);
                 Platform.runLater(() -> {
                     endWrite.run();
+                    // the field goes back to empty: it isn't signed, and a retry starts clean.
+                    try {
+                        DocumentSigning.cancel(field);
+                    } catch (RuntimeException cleanup) {
+                        logger.log(Level.WARNING, "Could not clear the failed signature", cleanup);
+                    }
+                    view.refreshModified();
                     onError.accept(Messages.format("signatureFlow.failed", Messages.reason(e)));
                 });
             }

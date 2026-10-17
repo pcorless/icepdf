@@ -61,14 +61,10 @@ public final class DocumentPane {
     private final ReadOnlyStringWrapper title = new ReadOnlyStringWrapper(this, "title", "");
     private Consumer<String> onMessage = m -> { };
     private Consumer<String> onLink;
+    private Consumer<Path> onOpenFile;
 
     public DocumentPane() {
-        view.setOnAnnotationAction(event -> {
-            if (event.getAction() instanceof URIAction uri && uri.getURI() != null) {
-                if (onLink != null) onLink.accept(uri.getURI());
-                else onMessage.accept(Messages.format("documentPane.link", uri.getURI()));
-            }
-        });
+        view.setOnAnnotationAction(event -> action(event.getAction()));
         collection.setVisible(false);
         collection.setOnOpen(attachments::open);
         view.documentProperty().addListener((o, a, b) -> {
@@ -84,6 +80,13 @@ public final class DocumentPane {
             updateRedactionBanner();
         });
         view.modifiedProperty().addListener((o, a, b) -> refreshTitle());
+        // once per document: a blank part of a page, or slow drawing, has a reason the user can see.
+        view.pageNotDrawnProperty().addListener((o, was, now) -> {
+            if (now) onMessage.accept(Messages.get("documentPane.pageNotDrawn"));
+        });
+        view.lowMemoryProperty().addListener((o, was, now) -> {
+            if (now) onMessage.accept(Messages.get("documentPane.lowMemory"));
+        });
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
         session.loadingFileProperty().addListener((o, a, b) -> refreshTitle());
         // the wait cursor while the file is read or a redacted copy written; the view keeps it until the first pages are painted.
@@ -244,6 +247,62 @@ public final class DocumentPane {
         // a file still loading names its tab already.
         if (loading != null && file == null) title.set(loading.getFileName().toString());
         else title.set(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
+    }
+
+    /**
+     * A link or button action the view leaves to the application.  A web link goes to onLink; a
+     * link to another PDF opens it (onOpenFile); anything that would run a program or script, or
+     * send the form somewhere, is not followed - the user is told so rather than nothing happening.
+     */
+    private void action(org.icepdf.core.pobjects.actions.Action action) {
+        if (action instanceof URIAction uri) {
+            String target = uri.getURI();
+            if (target == null || target.isBlank()) return;
+            if (onLink != null) onLink.accept(target);
+            else onMessage.accept(Messages.format("documentPane.link", target));
+        } else if (action instanceof org.icepdf.core.pobjects.actions.GoToRAction remote) {
+            String name = remote.getFileSpecification() != null ? remote.getFileSpecification().getFileSpecification()
+                    : remote.getFile();
+            openLinkedPdf(name);
+        } else if (action instanceof org.icepdf.core.pobjects.actions.LaunchAction launch) {
+            String name = launch.getExternalFile();
+            if (name != null && name.toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) {
+                openLinkedPdf(name);
+            } else {
+                onMessage.accept(Messages.format("documentPane.launchRefused", name != null ? name : "?"));
+            }
+        } else if (action instanceof org.icepdf.core.pobjects.actions.JavaScriptAction) {
+            onMessage.accept(Messages.get("documentPane.javaScriptUnsupported"));
+        } else if (action instanceof org.icepdf.core.pobjects.actions.SubmitFormAction) {
+            onMessage.accept(Messages.get("documentPane.submitUnsupported"));
+        }
+    }
+
+    /** A PDF another one links to, by a name relative to the linking document's folder. */
+    private void openLinkedPdf(String name) {
+        Path base = session.getFile();
+        Path target = null;
+        if (name != null && !name.isBlank()) {
+            try {
+                Path named = Path.of(name);
+                target = named.isAbsolute() || base == null || base.getParent() == null ? named
+                        : base.getParent().resolve(named).normalize();
+            } catch (java.nio.file.InvalidPathException e) {
+                target = null;
+            }
+        }
+        if (target == null || !java.nio.file.Files.isRegularFile(target)) {
+            session.reportError(Messages.format("documentPane.linkedFileMissing", name != null ? name : "?"));
+        } else if (onOpenFile != null) {
+            onOpenFile.accept(target);
+        } else {
+            onMessage.accept(Messages.format("documentPane.link", target));
+        }
+    }
+
+    /** Opens a PDF another one links to (a new tab, in the viewer); without it the link is shown as a message. */
+    public void setOnOpenFile(Consumer<Path> onOpenFile) {
+        this.onOpenFile = onOpenFile;
     }
 
     /** Receives the URI of a link the user follows; without one the link is shown as a message. */

@@ -193,6 +193,11 @@ public class AnnotationListPanel extends BorderPane {
                 Thread.currentThread().interrupt();
             } catch (RuntimeException e) {
                 logger.log(Level.WARNING, "Reading the document's comments failed", e);
+                // not "Reading..." for good: say it failed.
+                String message = Messages.format("commentsPanel.readFailed", Messages.reason(e));
+                Platform.runLater(() -> {
+                    if (run == generation && document == view.getDocument()) status.setText(message);
+                });
             }
         }, "icepdf-fx-comments");
         scan.setDaemon(true);

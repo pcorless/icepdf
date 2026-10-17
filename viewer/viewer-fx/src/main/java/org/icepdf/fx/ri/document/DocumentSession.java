@@ -165,6 +165,8 @@ public final class DocumentSession {
     Runnable startWrite() {
         writes++;
         writing.set(true);
+        // the copy is written from the document as it is: no edits meanwhile.
+        view.setReadOnly(true);
         updateBusy();
         boolean[] ended = new boolean[1];
         return () -> {
@@ -172,6 +174,7 @@ public final class DocumentSession {
             ended[0] = true;
             writes--;
             writing.set(writes > 0);
+            view.setReadOnly(writes > 0);
             updateBusy();
         };
     }
@@ -288,21 +291,26 @@ public final class DocumentSession {
         Thread worker = new Thread(() -> {
             Document next = new Document();
             next.setSecurityCallback(callback);
-            Exception failure = null;
+            Throwable failure = null;
             try {
                 next.setFile(path.toString());
-            } catch (Exception e) {
-                next.dispose();
+            } catch (Exception | Error e) {
+                // an Error too (a hostile file can exhaust the heap or the stack): loading must end.
                 failure = e;
+                try {
+                    next.dispose();
+                } catch (RuntimeException ignored) {
+                    // half-read; nothing more to release
+                }
             }
-            Exception failed = failure;
+            Throwable failed = failure;
             Platform.runLater(() -> loaded(mine, path, page, failed == null ? next : null, failed, callback, done));
         }, "pdf-open");
         worker.setDaemon(true);
         worker.start();
     }
 
-    private void loaded(int mine, Path path, int page, Document next, Exception failure, SecurityCallback callback,
+    private void loaded(int mine, Path path, int page, Document next, Throwable failure, SecurityCallback callback,
                         Consumer<Boolean> done) {
         if (mine != ticket) {
             // a newer open or a close came first.
@@ -318,15 +326,31 @@ public final class DocumentSession {
             return;
         }
         if (failure != null) {
-            logger.log(Level.FINE, "Open failed", failure);
+            logger.log(Level.WARNING, "Could not open " + path, failure);
             onError.accept(Messages.format("documentSession.openFailed", path.getFileName(), Messages.reason(failure)));
             done.accept(false);
             return;
         }
         Document old = document;
+        Path oldFile = file.get();
         document = next;
         file.set(path.toAbsolutePath());
-        view.setDocument(next);
+        try {
+            view.setDocument(next);
+        } catch (RuntimeException e) {
+            // read, but the view can't show it (a broken page tree, say): keep the old document.
+            logger.log(Level.WARNING, "Could not show " + path, e);
+            document = old;
+            file.set(oldFile);
+            try {
+                view.setDocument(old);
+            } finally {
+                next.dispose();
+            }
+            onError.accept(Messages.format("documentSession.openFailed", path.getFileName(), Messages.reason(e)));
+            done.accept(false);
+            return;
+        }
         if (old != null) old.dispose();
         if (page >= 0) view.setCurrentPageIndex(Math.min(page, view.getPageCount() - 1));
         view.refreshModified();
@@ -358,7 +382,10 @@ public final class DocumentSession {
 
     /** Whether {@link #save()} can write to the open file (else it needs {@link #saveAs}). */
     public boolean canSaveInPlace() {
-        return document != null && getFile() != null && Files.isWritable(getFile());
+        if (document == null || getFile() == null || !Files.isWritable(getFile())) return false;
+        // the copy is written beside the file and moved over it: the folder must be writable too.
+        Path folder = getFile().toAbsolutePath().getParent();
+        return folder != null && Files.isWritable(folder);
     }
 
     /**

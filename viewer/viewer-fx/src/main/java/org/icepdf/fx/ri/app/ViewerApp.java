@@ -124,10 +124,77 @@ public class ViewerApp extends Application {
         List<String> args = getParameters().getUnnamed();
         AppWindow first = createWindow(stage);
         if (Boolean.getBoolean(DevToolsWindow.OPEN_PROPERTY)) DevToolsWindow.show(first.viewer().getTheme());
-        if (!args.isEmpty()) first.viewer().open(Paths.get(args.get(0)));
-        for (int i = 1; i < args.size(); i++) {
-            if (features.isMultipleDocuments()) first.viewer().openInNewTab(Paths.get(args.get(i)));
-            else newWindow(Paths.get(args.get(i)));
+        boolean firstFile = true;
+        for (String arg : args) {
+            Path file = argumentPath(arg);
+            if (file == null) {
+                first.viewer().showError(Messages.format("viewerApp.badArgument", arg));
+            } else if (firstFile) {
+                first.viewer().open(file);
+                firstFile = false;
+            } else if (features.isMultipleDocuments()) {
+                first.viewer().openInNewTab(file);
+            } else {
+                newWindow(file);
+            }
+        }
+    }
+
+    /**
+     * A command-line argument as a file: a path, or a {@code file:} URI (what a desktop launcher's
+     * {@code %U} passes).
+     *
+     * @return null when it names no local file path
+     */
+    static Path argumentPath(String arg) {
+        if (arg == null || arg.isBlank()) return null;
+        try {
+            if (arg.regionMatches(true, 0, "file:", 0, 5)) return Paths.get(java.net.URI.create(arg));
+            if (arg.matches("(?i)[a-z][a-z0-9+.-]+://.*")) return null;
+            return Paths.get(arg);
+        } catch (IllegalArgumentException | java.nio.file.FileSystemNotFoundException e) {
+            // InvalidPathException is an IllegalArgumentException
+            return null;
+        }
+    }
+
+    // ---- links ------------------------------------------------------------------------------------
+
+    /**
+     * A link the user clicked in a document: a web or mail link opens in the system's browser or
+     * mail client; anything else (a file: link, an application's own scheme) is asked about first,
+     * since the document chose it and it may start a program.  A link with no scheme can't be
+     * followed.
+     */
+    private void followLink(AppWindow window, String uri) {
+        String scheme = linkScheme(uri);
+        if (scheme == null) {
+            window.viewer().showMessage(Messages.format("viewerApp.linkNotFollowed", uri));
+            return;
+        }
+        if (!SAFE_SCHEMES.contains(scheme)) {
+            ButtonType open = new ButtonType(Messages.get("viewerApp.openLink"), ButtonBar.ButtonData.YES);
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, Messages.format("viewerApp.confirmLink", uri),
+                    open, ButtonType.CANCEL);
+            alert.setHeaderText(null);
+            alert.initOwner(window.stage());
+            if (alert.showAndWait().filter(b -> b == open).isEmpty()) return;
+        }
+        getHostServices().showDocument(uri);
+    }
+
+    private static final java.util.Set<String> SAFE_SCHEMES = java.util.Set.of("http", "https", "mailto");
+
+    /** The URI's scheme, lower case, or null when it has none (a relative link) or isn't a URI. */
+    static String linkScheme(String uri) {
+        if (uri == null) return null;
+        try {
+            String scheme = new java.net.URI(uri.strip()).getScheme();
+            return scheme != null ? scheme.toLowerCase(java.util.Locale.ROOT) : null;
+        } catch (java.net.URISyntaxException e) {
+            // "http://example.com/a b" - links in PDFs are often not escaped; the scheme still shows.
+            java.util.regex.Matcher m = java.util.regex.Pattern.compile("^([A-Za-z][A-Za-z0-9+.-]*):").matcher(uri.strip());
+            return m.find() ? m.group(1).toLowerCase(java.util.Locale.ROOT) : null;
         }
     }
 
@@ -250,7 +317,7 @@ public class ViewerApp extends Application {
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));
-        viewer.setOnLink(uri -> getHostServices().showDocument(uri));
+        viewer.setOnLink(uri -> followLink(window, uri));
         viewer.setConfirmDiscard(() -> askAboutChanges(window));
         viewer.setOnDocumentCreated(this::applyPreferences);
         viewer.setOnTearOff(this::newWindow);
@@ -442,7 +509,11 @@ public class ViewerApp extends Application {
         public Path lastDirectory() {
             if (!preferences.getBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, true)) return null;
             String folder = preferences.get(ViewerPreferences.LAST_DIRECTORY, null);
-            return folder != null ? Paths.get(folder) : null;
+            try {
+                return folder != null ? Paths.get(folder) : null;
+            } catch (java.nio.file.InvalidPathException e) {
+                return null; // written on another system
+            }
         }
 
         @Override

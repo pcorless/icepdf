@@ -214,6 +214,18 @@ public class PdfView extends Control {
         }
     };
     private final ReadOnlyBooleanWrapper modified = new ReadOnlyBooleanWrapper(this, "modified", false);
+    // what the document's permissions allow; readOnly can take editing away on top of them.
+    private boolean annotatePermitted = true;
+    private boolean fillPermitted = true;
+    private final BooleanProperty readOnly = new SimpleBooleanProperty(this, "readOnly", false) {
+        @Override
+        protected void invalidated() {
+            if (get()) commitFieldEdit();
+            applyEditing();
+        }
+    };
+    private final ReadOnlyBooleanWrapper pageNotDrawn = new ReadOnlyBooleanWrapper(this, "pageNotDrawn", false);
+    private final ReadOnlyBooleanWrapper lowMemory = new ReadOnlyBooleanWrapper(this, "lowMemory", false);
     // what an encrypted document's permissions (/P) allow the user; all true for an unencrypted one.
     private final ReadOnlyBooleanWrapper copyAllowed = new ReadOnlyBooleanWrapper(this, "copyAllowed", true);
     private final ReadOnlyBooleanWrapper annotationEditingAllowed =
@@ -279,6 +291,8 @@ public class PdfView extends Control {
             signatureGeneration++;
             signatures.clear();
             verifyingSignatures.set(false);
+            pageNotDrawn.set(false);
+            lowMemory.set(false);
             if (doc != null && isVerifySignaturesOnOpen()) verifySignatures();
             refreshModified();
         });
@@ -726,6 +740,7 @@ public class PdfView extends Control {
      * history is cleared (it no longer matches the document) and a {@link PdfViewErrorEvent} says so.
      */
     public void undo() {
+        if (isReadOnly()) return;
         AnnotationEdits.Edit edit;
         try {
             edit = history.undo();
@@ -739,6 +754,7 @@ public class PdfView extends Control {
 
     /** Redoes the last undone annotation edit; a failure is handled as {@link #undo()}'s is. */
     public void redo() {
+        if (isReadOnly()) return;
         AnnotationEdits.Edit edit;
         try {
             edit = history.redo();
@@ -822,6 +838,28 @@ public class PdfView extends Control {
         if (getSkin() instanceof PdfViewSkin skin) skin.fields().closeEditor(true);
     }
 
+    /**
+     * True once part of a page of this document couldn't be drawn (a broken content stream, say):
+     * it shows blank.  The cause is logged.  Reset when the document changes.
+     */
+    public final ReadOnlyBooleanProperty pageNotDrawnProperty() {
+        return pageNotDrawn.getReadOnlyProperty();
+    }
+
+    /**
+     * True once memory ran short drawing this document: pages are drawn one at a time and may
+     * take longer, and a page that still doesn't fit is left blank.  Reset when the document changes.
+     */
+    public final ReadOnlyBooleanProperty lowMemoryProperty() {
+        return lowMemory.getReadOnlyProperty();
+    }
+
+    /** A tile or preview failed (the skin's renderer, FX thread). */
+    void renderTrouble(boolean outOfMemory) {
+        if (outOfMemory) lowMemory.set(true);
+        else pageNotDrawn.set(true);
+    }
+
     public final ReadOnlyBooleanProperty canRedoProperty() {
         return canRedo.getReadOnlyProperty();
     }
@@ -851,8 +889,8 @@ public class PdfView extends Control {
     }
 
     private void updateHistoryState() {
-        canUndo.set(history.canUndo());
-        canRedo.set(history.canRedo());
+        canUndo.set(history.canUndo() && !isReadOnly());
+        canRedo.set(history.canRedo() && !isReadOnly());
     }
 
     /**
@@ -1621,16 +1659,26 @@ public class PdfView extends Control {
         CompletableFuture<List<SignatureStatus>> result = new CompletableFuture<>();
         startWorker("icepdf-fx-signature-check", () -> {
             List<SignatureStatus> found;
+            RuntimeException failure = null;
             try {
                 found = SignatureVerifier.verifyAll(document);
             } catch (RuntimeException e) {
+                // each signature's own problem is reported in its status; this is the whole check failing.
+                logger.log(Level.WARNING, "Could not check the document's signatures", e);
                 found = List.of();
+                failure = e;
             }
             List<SignatureStatus> done = found;
+            RuntimeException failed = failure;
             Platform.runLater(() -> {
                 if (generation == signatureGeneration && document == getDocument()) {
                     signatures.setAll(done);
                     verifyingSignatures.set(false);
+                    // "no signatures" would be wrong: say the check failed.
+                    if (failed != null) {
+                        fireEvent(new PdfViewErrorEvent(this, this,
+                                Messages.format("pdfView.signatureCheckFailed", Messages.reason(failed)), failed));
+                    }
                 }
                 result.complete(done);
             });
@@ -1710,11 +1758,36 @@ public class PdfView extends Control {
         Permissions permissions = security != null ? security.getPermissions() : null;
         boolean annotate = permissions == null || permissions.getPermissions(Permissions.AUTHORING_FORM_FIELDS);
         copyAllowed.set(permissions == null || permissions.getPermissions(Permissions.CONTENT_EXTRACTION));
-        annotationEditingAllowed.set(annotate);
-        formFillingAllowed.set(annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING));
+        annotatePermitted = annotate;
+        fillPermitted = annotate || permissions.getPermissions(Permissions.FORM_FIELD_FILL_SIGNING);
+        applyEditing();
         printAllowed.set(doc != null && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT)));
         highQualityPrintAllowed.set(printAllowed.get()
                 && (permissions == null || permissions.getPermissions(Permissions.PRINT_DOCUMENT_QUALITY)));
+    }
+
+    private void applyEditing() {
+        annotationEditingAllowed.set(annotatePermitted && !isReadOnly());
+        formFillingAllowed.set(fillPermitted && !isReadOnly());
         if (!toolPermitted(getToolMode())) setToolMode(ToolMode.TEXT_SELECT);
+        updateHistoryState();
+    }
+
+    /**
+     * While true nothing in the document can be changed through the view - annotation tools and
+     * edits, form filling, undo and redo - whatever its permissions allow.  For a document being
+     * written in the background ({@code DocumentSession} sets it meanwhile); what is being typed in
+     * a field is applied first.
+     */
+    public final BooleanProperty readOnlyProperty() {
+        return readOnly;
+    }
+
+    public final boolean isReadOnly() {
+        return readOnly.get();
+    }
+
+    public final void setReadOnly(boolean value) {
+        readOnly.set(value);
     }
 }

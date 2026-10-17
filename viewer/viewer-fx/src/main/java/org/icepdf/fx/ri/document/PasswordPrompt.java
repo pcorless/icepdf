@@ -97,7 +97,8 @@ public class PasswordPrompt implements SecurityCallback {
         Dialog<String> dialog = new Dialog<>();
         if (owner != null) dialog.initOwner(owner);
         dialog.setTitle(Messages.get("passwordPrompt.title"));
-        dialog.setHeaderText(attempts > 1 ? Messages.get("passwordPrompt.incorrect")
+        dialog.setHeaderText(attempts > 1 ? (documentName != null
+                ? Messages.format("passwordPrompt.incorrectFor", documentName) : Messages.get("passwordPrompt.incorrect"))
                 : documentName != null ? Messages.format("passwordPrompt.protected", documentName)
                 : Messages.get("passwordPrompt.protectedUntitled"));
         PasswordField field = new PasswordField();

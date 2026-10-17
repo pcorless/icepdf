@@ -161,12 +161,28 @@ public class AttachmentPanel extends BorderPane {
         chooser.setInitialFileName(attachment.name());
         File file = chooser.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
         if (file == null) return;
-        try {
-            attachment.saveTo(file.toPath());
-        } catch (IOException e) {
-            new Alert(Alert.AlertType.ERROR, Messages.format("attachmentPanel.saveFailed", attachment.name(), Messages.reason(e)))
-                    .showAndWait();
-        }
+        // a large attachment is decoded and written off the FX thread.
+        Thread worker = new Thread(() -> {
+            try {
+                attachment.saveTo(file.toPath());
+            } catch (IOException | RuntimeException e) {
+                String message = Messages.format("attachmentPanel.saveFailed", attachment.name(), Messages.reason(e));
+                javafx.application.Platform.runLater(() -> onError.accept(message));
+            }
+        }, "icepdf-fx-attachment-save");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private java.util.function.Consumer<String> onError = AttachmentPanel::showErrorDialog;
+
+    /** Receives what went wrong saving an attachment; an error dialog by default. */
+    public void setOnError(java.util.function.Consumer<String> onError) {
+        this.onError = onError != null ? onError : AttachmentPanel::showErrorDialog;
+    }
+
+    private static void showErrorDialog(String message) {
+        new Alert(Alert.AlertType.ERROR, message).showAndWait();
     }
 
     /** "12 KB" style sizes; empty when unknown. */

@@ -190,7 +190,12 @@ public final class ViewerPreferences {
         List<Path> files = new ArrayList<>();
         for (String entry : value.split("\n")) {
             if (entry.isEmpty()) continue;
-            Path path = Paths.get(entry);
+            Path path;
+            try {
+                path = Paths.get(entry);
+            } catch (java.nio.file.InvalidPathException e) {
+                continue; // written on another system, or edited by hand
+            }
             if (Files.isRegularFile(path) && !files.contains(path)) files.add(path);
         }
         return files;

@@ -164,6 +164,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         tiles = new TileScheduler(RenderService.shared(), renderOwner, this::scheduleRefresh);
         renderer = tiles.renderer();
         cache = tiles.cache();
+        tiles.setOnRenderFailure(failure -> control.renderTrouble(failure == TileScheduler.Failure.LOW_MEMORY));
         renderer.setPaintAnnotations(control.isPaintAnnotations());
 
         viewport.setClip(viewportClip);

@@ -103,7 +103,12 @@ public class SignDialog extends Dialog<SignDialog.Result> {
     private final Spinner<Integer> fontSize = new Spinner<>(4, 36, 7);
     private final TextField timestampAuthority = new TextField();
     private final ImageView preview = new ImageView();
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(SignDialog.class.getName());
     private SignerHandler signer;
+    // a keystore or token being opened (off the FX thread: a token can take seconds); a newer open
+    // or a change of keystore type makes an older one's answer stale.
+    private final javafx.beans.property.BooleanProperty opening = new javafx.beans.property.SimpleBooleanProperty();
+    private int keystoreGeneration;
     private BufferedImage drawn;
     private boolean drawnStale = true;
     private String loadedPath;
@@ -270,6 +275,8 @@ public class SignDialog extends Dialog<SignDialog.Result> {
             certificates.getItems().clear();
             keystoreStatus.setText("");
             signer = null;
+            keystoreGeneration++;
+            opening.set(false);
         });
         HBox.setHgrow(keystore, Priority.ALWAYS);
         Button browse = new Button(Messages.get("signDialog.browse"));
@@ -294,7 +301,10 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         Button open = new Button(Messages.get("signDialog.open"));
         open.setDefaultButton(false);
         open.setOnAction(e -> openKeystore());
-        password.setOnAction(e -> openKeystore());
+        open.disableProperty().bind(opening);
+        password.setOnAction(e -> {
+            if (!opening.get()) openKeystore();
+        });
         HBox keystoreRow = new HBox(6, keystore, browse);
         HBox passwordRow = new HBox(6, password, open);
         HBox.setHgrow(password, Priority.ALWAYS);
@@ -431,25 +441,53 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         SimplePasswordCallbackHandler secret = new SimplePasswordCallbackHandler(password.getText());
         SignerHandler handler = token ? new Pkcs11SignerHandler(null, file.getAbsolutePath(), null, secret)
                 : new Pkcs12SignerHandler(null, file, null, secret);
-        try {
-            List<DocumentSigning.KeyEntry> entries = DocumentSigning.keyEntries(handler);
-            if (entries.isEmpty()) {
-                keystoreStatus.setText(token ? Messages.get("signDialog.tokenEmpty")
-                        : Messages.get("signDialog.keystoreEmpty"));
-                return;
+        int mine = ++keystoreGeneration;
+        opening.set(true);
+        keystoreStatus.setText(Messages.get(token ? "signDialog.openingToken" : "signDialog.openingKeystore"));
+        Thread worker = new Thread(() -> {
+            List<DocumentSigning.KeyEntry> entries = null;
+            Throwable failure = null;
+            try {
+                entries = DocumentSigning.keyEntries(handler);
+            } catch (Exception | Error e) {
+                // a missing PKCS#11 library is a ProviderException (or an Error from the native side).
+                failure = e;
             }
-            signer = handler;
-            if (token) settings.setPkcs11Config(file.getAbsolutePath());
-            else settings.setPkcs12Path(file.getAbsolutePath());
-            certificates.getItems().setAll(entries);
-            DocumentSigning.KeyEntry last = entries.stream()
-                    .filter(entry -> entry.alias().equals(settings.getCertificateAlias())).findFirst().orElse(null);
-            if (last != null) certificates.getSelectionModel().select(last);
-            else certificates.getSelectionModel().selectFirst();
-        } catch (Exception e) {
-            keystoreStatus.setText(token ? Messages.get("signDialog.tokenFailed")
-                    : Messages.get("signDialog.keystoreFailed"));
+            List<DocumentSigning.KeyEntry> found = entries;
+            Throwable failed = failure;
+            Platform.runLater(() -> {
+                if (mine != keystoreGeneration) return;
+                opening.set(false);
+                keystoreOpened(token, file, handler, found, failed);
+            });
+        }, "icepdf-fx-keystore");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void keystoreOpened(boolean token, File file, SignerHandler handler, List<DocumentSigning.KeyEntry> entries,
+                                Throwable failure) {
+        if (failure != null) {
+            logger.log(java.util.logging.Level.WARNING, "Could not open " + file, failure);
+            keystoreStatus.setText(Messages.get(token ? "signDialog.tokenFailed" : "signDialog.keystoreFailed"));
+            keystoreStatus.setTooltip(new Tooltip(Messages.reason(failure)));
+            return;
         }
+        keystoreStatus.setTooltip(null);
+        if (entries.isEmpty()) {
+            keystoreStatus.setText(token ? Messages.get("signDialog.tokenEmpty")
+                    : Messages.get("signDialog.keystoreEmpty"));
+            return;
+        }
+        keystoreStatus.setText("");
+        signer = handler;
+        if (token) settings.setPkcs11Config(file.getAbsolutePath());
+        else settings.setPkcs12Path(file.getAbsolutePath());
+        certificates.getItems().setAll(entries);
+        DocumentSigning.KeyEntry last = entries.stream()
+                .filter(entry -> entry.alias().equals(settings.getCertificateAlias())).findFirst().orElse(null);
+        if (last != null) certificates.getSelectionModel().select(last);
+        else certificates.getSelectionModel().selectFirst();
     }
 
     private DocumentSigning.Request request() {

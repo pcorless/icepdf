@@ -119,10 +119,18 @@ public record Attachment(String name, String description, long size, LocalDateTi
         }
     }
 
-    /** Writes the file's bytes to {@code path}, replacing it. */
+    /** Writes the file's bytes to {@code path}, replacing it; a failure leaves what was there before. */
     public void saveTo(Path path) throws IOException {
-        try (OutputStream out = Files.newOutputStream(path)) {
-            writeTo(out);
+        Path folder = path.toAbsolutePath().getParent();
+        Path temp = Files.createTempFile(folder, "." + path.getFileName(), ".tmp");
+        try {
+            try (OutputStream out = Files.newOutputStream(temp)) {
+                writeTo(out);
+            }
+            Files.move(temp, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(temp);
+            throw e;
         }
     }
 }

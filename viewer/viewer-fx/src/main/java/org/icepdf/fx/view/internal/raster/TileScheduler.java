@@ -95,6 +95,7 @@ public final class TileScheduler {
 
             @Override
             public void failed(boolean outOfMemory, long retryAfterMs) {
+                onRenderFailure.accept(outOfMemory && retryAfterMs > 0 ? Failure.LOW_MEMORY : Failure.NOT_DRAWN);
                 if (outOfMemory) cache.trimToPinned();
                 if (retryAfterMs > 0) {
                     // the keys stay requestable; ask again once the heap has had a moment.
@@ -106,6 +107,16 @@ public final class TileScheduler {
                 }
             }
         });
+    }
+
+    /** What went wrong drawing: memory ran short (it will be tried again), or a part gave up for good. */
+    public enum Failure { LOW_MEMORY, NOT_DRAWN }
+
+    private java.util.function.Consumer<Failure> onRenderFailure = failure -> { };
+
+    /** Told (on the FX thread) whenever a tile or preview fails. */
+    public void setOnRenderFailure(java.util.function.Consumer<Failure> onRenderFailure) {
+        this.onRenderFailure = onRenderFailure != null ? onRenderFailure : failure -> { };
     }
 
     public TileCache cache() {

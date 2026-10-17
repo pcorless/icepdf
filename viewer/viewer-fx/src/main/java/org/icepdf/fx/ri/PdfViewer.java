@@ -186,7 +186,7 @@ public class PdfViewer extends StackPane {
                     () -> onTearOff != null && documents.size() > 1);
             header.setTabs(strip);
             addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
-            strip.setOnFilesDropped(board -> !droppedPdfs(board).isEmpty(), (pane, board) -> {
+            strip.setOnFilesDropped(PdfViewer::hasFiles, (pane, board) -> {
                 java.util.List<Path> pdfs = droppedPdfs(board);
                 if (pdfs.isEmpty()) return;
                 javafx.application.Platform.runLater(() -> {
@@ -273,14 +273,38 @@ public class PdfViewer extends StackPane {
         return null;
     }
 
-    private static java.util.List<Path> droppedPdfs(javafx.scene.input.Dragboard board) {
+    /** The dropped files that are PDFs; the rest are named in a message. */
+    private java.util.List<Path> droppedPdfs(javafx.scene.input.Dragboard board) {
         java.util.List<Path> pdfs = new java.util.ArrayList<>();
-        if (board != null && board.hasFiles()) {
+        java.util.List<String> others = new java.util.ArrayList<>();
+        if (hasFiles(board)) {
             for (File f : board.getFiles()) {
-                if (f.isFile() && f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) pdfs.add(f.toPath());
+                if (isPdf(f)) pdfs.add(f.toPath());
+                else if (f.isFile()) others.add(f.getName());
             }
         }
+        if (!others.isEmpty()) {
+            showMessage(others.size() == 1 ? Messages.format("viewer.notPdf", others.get(0))
+                    : Messages.format("viewer.notPdfs", others.size()));
+        }
         return pdfs;
+    }
+
+    private static boolean hasFiles(javafx.scene.input.Dragboard board) {
+        return board != null && board.hasFiles() && board.getFiles().stream().anyMatch(File::isFile);
+    }
+
+    /** True for a ".pdf" name, or a file that starts like one (a PDF saved without the extension). */
+    static boolean isPdf(File file) {
+        if (!file.isFile()) return false;
+        if (file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) return true;
+        // the header may follow some junk; readers look in the first 1024 bytes (ISO 32000-1, annex H).
+        try (java.io.InputStream in = java.nio.file.Files.newInputStream(file.toPath())) {
+            String head = new String(in.readNBytes(1024), java.nio.charset.StandardCharsets.ISO_8859_1);
+            return head.contains("%PDF-");
+        } catch (java.io.IOException | RuntimeException e) {
+            return false;
+        }
     }
 
     /**
@@ -288,8 +312,9 @@ public class PdfViewer extends StackPane {
      * on a tab they replace that tab's document.
      */
     private void acceptDroppedFiles() {
+        // any file is taken: one that isn't a PDF is then turned away with a message, not silently.
         setOnDragOver(e -> {
-            if (!droppedPdfs(e.getDragboard()).isEmpty()) e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
+            if (hasFiles(e.getDragboard())) e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
             e.consume();
         });
         setOnDragDropped(e -> {
@@ -454,6 +479,7 @@ public class PdfViewer extends StackPane {
         documents.remove(pane);
         pane.setOnMessage(null);
         pane.setOnLink(null);
+        pane.setOnOpenFile(null);
         pane.setOnExportRedacted(null);
         pane.getSession().setOnError(null);
         pane.getSession().setOnLoaded(null);
@@ -525,7 +551,7 @@ public class PdfViewer extends StackPane {
         File chosen = chooser.showSaveDialog(context.window());
         if (chosen == null) return false;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        Path target = PdfTargets.confirm(context.window(), chosen);
+        Path target = writableTarget(PdfTargets.confirm(context.window(), chosen));
         if (target == null || !session().saveAs(target)) return false;
         Path saved = session().getLoadingFile();
         toast.dismissError();
@@ -542,7 +568,7 @@ public class PdfViewer extends StackPane {
                     File target = chooser.showSaveDialog(window);
                     if (target == null) return null;
                     if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
-                    return PdfTargets.confirm(window, target);
+                    return writableTarget(PdfTargets.confirm(window, target));
                 });
     }
 
@@ -582,7 +608,7 @@ public class PdfViewer extends StackPane {
         File chosen = chooser.showSaveDialog(context.window());
         if (chosen == null) return;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        Path target = PdfTargets.confirm(context.window(), chosen);
+        Path target = writableTarget(PdfTargets.confirm(context.window(), chosen));
         if (target == null) return;
         showMessage(Messages.get("viewer.redacting"));
         session.exportRedacted(target, report -> {
@@ -645,11 +671,13 @@ public class PdfViewer extends StackPane {
         if (confirmDiscard != null) session.setConfirmDiscard(confirmDiscard);
         pane.setOnMessage(this::showMessage);
         pane.setOnLink(onLink);
+        pane.setOnOpenFile(this::openInNewTab);
         pane.getSearchPanel().setRedactionEnabled(features.allows("annotation.redact"));
         pane.setOnExportRedacted(() -> {
             if (pane == current.get()) exportRedacted();
         });
         pane.getAttachments().setOnOpen(this::openAttachment);
+        pane.getAttachments().setOnError(message -> onError.accept(message));
         // a new flow per click: it picks up the signing store as it is then.
         pane.getView().setOnSignatureClicked(event -> signatureFlow(pane).handle(event));
         AnnotationContextMenu.install(pane.getView(), colors);
@@ -660,16 +688,44 @@ public class PdfViewer extends StackPane {
 
     /** Opens an embedded PDF in a new tab, from a temporary copy; the panel saves anything else. */
     private void openAttachment(org.icepdf.fx.panels.Attachment attachment) {
+        // opened before: the same copy, so its tab is found again rather than a second one opened.
+        Path copied = attachmentCopies.get(attachment);
+        if (copied != null && java.nio.file.Files.isRegularFile(copied)) {
+            openInNewTab(copied);
+            return;
+        }
         try {
             Path dir = java.nio.file.Files.createTempDirectory("icepdf-attachment");
             Path file = dir.resolve(java.nio.file.Paths.get(attachment.name()).getFileName().toString());
             attachment.saveTo(file);
             file.toFile().deleteOnExit();
             dir.toFile().deleteOnExit();
+            attachmentCopies.put(attachment, file);
+            temporaryCopies.add(file.toAbsolutePath());
             openInNewTab(file);
-        } catch (java.io.IOException | java.nio.file.InvalidPathException e) {
+        } catch (java.io.IOException | RuntimeException e) {
             onError.accept(Messages.format("viewer.attachmentOpenFailed", attachment.name(), Messages.reason(e)));
         }
+    }
+
+    // attachments opened from a document: their temporary copies, kept out of Open Recent.
+    private final java.util.Map<org.icepdf.fx.panels.Attachment, Path> attachmentCopies = new java.util.HashMap<>();
+    private final java.util.Set<Path> temporaryCopies = new java.util.HashSet<>();
+
+    /**
+     * A file to write a copy to (save as, export, a signed copy), unless it is open in another tab:
+     * writing it would replace that document's file under it.
+     *
+     * @return null (after saying why) when it can't be used
+     */
+    private Path writableTarget(Path target) {
+        if (target == null) return null;
+        DocumentPane other = paneShowing(target);
+        if (other != null && other != pane()) {
+            onError.accept(Messages.format("viewer.openInAnotherTab", target.getFileName()));
+            return null;
+        }
+        return target;
     }
 
     private static String panelLabel(SidePanel panel) {
@@ -985,7 +1041,8 @@ public class PdfViewer extends StackPane {
     private void loaded(DocumentPane pane) {
         pane.refreshTitle();
         pane.applyPageLayout(PageLayout.of(pane.getSession().getDocument().getCatalog()));
-        if (history != null && pane.getSession().getFile() != null) history.opened(pane.getSession().getFile());
+        Path opened = pane.getSession().getFile();
+        if (history != null && opened != null && !temporaryCopies.contains(opened.toAbsolutePath())) history.opened(opened);
         if (pane != current.get()) return;
         updateTitle();
         // the document's /PageMode picks the panel it opens with, as Acrobat does.
