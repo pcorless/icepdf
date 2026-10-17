@@ -319,7 +319,7 @@ public final class DocumentSession {
         }
         if (failure != null) {
             logger.log(Level.FINE, "Open failed", failure);
-            onError.accept(Messages.format("documentSession.openFailed", path, failure.getMessage()));
+            onError.accept(Messages.format("documentSession.openFailed", path.getFileName(), Messages.reason(failure)));
             done.accept(false);
             return;
         }
@@ -396,7 +396,7 @@ public final class DocumentSession {
         } catch (Exception e) {
             logger.log(Level.WARNING, "Save failed", e);
             deleteQuietly(temp);
-            onError.accept(Messages.format("documentSession.saveFailed", target.getFileName(), e.getMessage()));
+            onError.accept(Messages.format("documentSession.saveFailed", target.getFileName(), Messages.reason(e)));
             return false;
         }
         int page = view.getCurrentPageIndex();
@@ -413,7 +413,7 @@ public final class DocumentSession {
             }
         } catch (IOException e) {
             logger.log(Level.WARNING, "Save failed", e);
-            onError.accept(Messages.format("documentSession.replaceFailed", target.getFileName(), e.getMessage(), temp));
+            onError.accept(Messages.format("documentSession.replaceFailed", target.getFileName(), Messages.reason(e), temp));
             reopen(previous != null ? previous : temp, page);
             return false;
         }
@@ -470,7 +470,7 @@ public final class DocumentSession {
                 deleteQuietly(temp);
                 Platform.runLater(() -> {
                     endWrite.run();
-                    onError.accept(Messages.format("documentSession.writeFailed", out.getFileName(), e.getMessage()));
+                    onError.accept(Messages.format("documentSession.writeFailed", out.getFileName(), Messages.reason(e)));
                     done.accept(null);
                 });
             }

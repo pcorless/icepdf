@@ -95,7 +95,7 @@ public final class SignatureVerifier {
         } catch (SignatureIntegrityException | RuntimeException e) {
             return new SignatureStatus(field, pageIndex, name, SignatureStatus.Verdict.ERROR, dictionary.getName(),
                     null, null, reason, location, contact, signingTime, false, certification, false, false, false,
-                    false, false, false, List.of(), e.getMessage() != null ? e.getMessage() : e.toString());
+                    false, false, false, List.of(), org.icepdf.fx.i18n.Messages.reason(e));
         }
 
         // the best time available: a timestamp authority's, then the signature's own CMS signingTime,

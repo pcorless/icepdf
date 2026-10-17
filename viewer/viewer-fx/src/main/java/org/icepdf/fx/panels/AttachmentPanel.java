@@ -164,7 +164,7 @@ public class AttachmentPanel extends BorderPane {
         try {
             attachment.saveTo(file.toPath());
         } catch (IOException e) {
-            new Alert(Alert.AlertType.ERROR, Messages.format("attachmentPanel.saveFailed", attachment.name(), e.getMessage()))
+            new Alert(Alert.AlertType.ERROR, Messages.format("attachmentPanel.saveFailed", attachment.name(), Messages.reason(e)))
                     .showAndWait();
         }
     }

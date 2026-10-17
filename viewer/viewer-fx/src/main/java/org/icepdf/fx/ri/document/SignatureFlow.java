@@ -122,7 +122,7 @@ public final class SignatureFlow {
             DocumentSigning.prepare(field, result.signer(), result.request(), result.appearance());
         } catch (IllegalStateException e) {
             DocumentSigning.cancel(field);
-            onError.accept(e.getMessage());
+            onError.accept(Messages.reason(e));
             return;
         }
         Path file = session.getFile();
@@ -154,7 +154,7 @@ public final class SignatureFlow {
                 logger.log(Level.WARNING, "Signing failed", e);
                 Platform.runLater(() -> {
                     endWrite.run();
-                    onError.accept(Messages.format("signatureFlow.failed", e.getMessage()));
+                    onError.accept(Messages.format("signatureFlow.failed", Messages.reason(e)));
                 });
             }
         }, "pdf-sign");

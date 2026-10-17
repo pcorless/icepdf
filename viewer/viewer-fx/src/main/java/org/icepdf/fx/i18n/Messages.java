@@ -61,15 +61,37 @@ public final class Messages {
 
     /**
      * Why something failed, for a message: the exception's own message, or its kind when it has
-     * none (an NPE, many printer errors) - never "null".
+     * none (an NPE, many printer errors) - never "null".  A wrapper that only repeats its cause
+     * gives the cause's reason; a file error gives what went wrong rather than the file's path,
+     * which the message around it names already.
      */
     public static String reason(Throwable failure) {
         if (failure == null) return "";
-        String message = failure.getLocalizedMessage();
-        if (message != null && !message.isBlank()) return message;
         Throwable cause = failure.getCause();
-        if (cause != null && cause != failure) return reason(cause);
+        String message = failure.getLocalizedMessage();
+        if (cause != null && cause != failure && (message == null || message.isBlank() || message.equals(cause.toString()))) {
+            return reason(cause);
+        }
+        String file = fileReason(failure);
+        if (file != null) return file;
+        if (message != null && !message.isBlank()) return message;
         return failure.getClass().getSimpleName();
+    }
+
+    private static String fileReason(Throwable failure) {
+        if (failure instanceof java.nio.file.NoSuchFileException) return get("reason.noSuchFile");
+        if (failure instanceof java.nio.file.AccessDeniedException) return get("reason.accessDenied");
+        if (failure instanceof java.nio.file.FileAlreadyExistsException) return get("reason.fileExists");
+        if (failure instanceof java.nio.file.FileSystemException fs && fs.getReason() != null && !fs.getReason().isBlank()) {
+            return fs.getReason();
+        }
+        // java.io's form: "/path/file.pdf (No such file or directory)" - the part in brackets.
+        if (failure instanceof java.io.FileNotFoundException && failure.getMessage() != null) {
+            String m = failure.getMessage();
+            int open = m.lastIndexOf(" (");
+            if (open > 0 && m.endsWith(")")) return m.substring(open + 2, m.length() - 1);
+        }
+        return null;
     }
 
     /** The text for a key, its {@code {0}}, {@code {1}}... filled in. */

@@ -219,7 +219,7 @@ public final class DocumentSigning {
             Files.move(temp, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
             Files.deleteIfExists(temp);
-            throw e instanceof IOException io ? io : new IOException("Signing failed: " + e.getMessage(), e);
+            throw e instanceof IOException io ? io : new IOException(Messages.reason(e), e);
         }
     }
 

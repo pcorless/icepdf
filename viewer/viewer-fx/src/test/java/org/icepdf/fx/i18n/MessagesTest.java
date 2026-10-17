@@ -103,5 +103,25 @@ class MessagesTest {
         assertEquals("inner", Messages.reason(new RuntimeException(null, new IllegalStateException("inner"))));
         assertEquals("IllegalStateException", Messages.reason(new IllegalStateException("  ")));
         assertEquals("", Messages.reason(null));
+        // a wrapper that only repeats its cause
+        assertEquals("inner", Messages.reason(new RuntimeException(new IllegalStateException("inner"))));
+    }
+
+    @DisplayName("a file error's reason says what went wrong, not the path again")
+    @Test
+    void fileReasons() {
+        Locale was = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
+        try {
+            assertEquals("the file doesn't exist", Messages.reason(new java.nio.file.NoSuchFileException("/a/b.pdf")));
+            assertEquals("permission denied", Messages.reason(new java.nio.file.AccessDeniedException("/a/b.pdf")));
+            assertEquals("Read-only file system",
+                    Messages.reason(new java.nio.file.FileSystemException("/a/b.pdf", null, "Read-only file system")));
+            assertEquals("No such file or directory",
+                    Messages.reason(new java.io.FileNotFoundException("/a/b.pdf (No such file or directory)")));
+            assertEquals("plain", Messages.reason(new java.io.FileNotFoundException("plain")));
+        } finally {
+            Locale.setDefault(was);
+        }
     }
 }

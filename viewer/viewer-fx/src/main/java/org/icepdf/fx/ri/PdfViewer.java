@@ -662,7 +662,7 @@ public class PdfViewer extends StackPane {
             dir.toFile().deleteOnExit();
             openInNewTab(file);
         } catch (java.io.IOException | java.nio.file.InvalidPathException e) {
-            onError.accept(Messages.format("viewer.attachmentOpenFailed", attachment.name(), e.getMessage()));
+            onError.accept(Messages.format("viewer.attachmentOpenFailed", attachment.name(), Messages.reason(e)));
         }
     }
 
@@ -1193,7 +1193,7 @@ public class PdfViewer extends StackPane {
             // the document stays open (no close, replace or save) until the job has been sent.
             session().hold(task);
             task.setOnSucceeded(e -> showMessage(Messages.get("viewer.printed")));
-            task.setOnFailed(e -> onError.accept(Messages.format("viewer.printFailed", task.getException().getMessage())));
+            task.setOnFailed(e -> onError.accept(Messages.format("viewer.printFailed", Messages.reason(task.getException()))));
         }
 
         @Override
