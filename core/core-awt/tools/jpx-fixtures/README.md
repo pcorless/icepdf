@@ -1,7 +1,8 @@
 # JPEG 2000 fixtures (GH-613)
 
 Licence-clean JPEG 2000 test streams and reference decodes for `src/test/resources/jpx`, plus the
-tests that score any installed ImageIO reader against them. Plan: repo-root `JPX-GH613-PLAN.md`.
+tests that score any installed ImageIO reader against them. Requirements: `IMAGEIO-CONTRACT.md`;
+audit-trail rules: `PROVENANCE-RULES.md`; evidence log: `DECISIONS.md`.
 
 Everything here is generated from images synthesised by `generate.py`, so all of it is ours
 (Apache 2.0). No corpus or conformance-suite file is ever committed.
@@ -12,6 +13,8 @@ Everything here is generated from images synthesised by `generate.py`, so all of
 |---|---|
 | `generate.py` | builds the fixture matrix, derived fixtures (PPM/PPT, COC/QCC, JP2 palette/ICC/cdef) and hostile streams; checks every lossless case round-trips |
 | `jpxref.c` | reference decoder: libopenjp2 API, no colour handling, one PGX per component |
+| `IMAGEIO-CONTRACT.md` | what a JPEG 2000 reader must do to be a drop-in ImageIO plug-in |
+| `PROVENANCE-RULES.md` | origin tags (PORTED/ADAPTED/SPEC/ORIGINAL/INFERRED) and where they're recorded |
 | `DECISIONS.md` | observations that drove a choice (the `INFERRED` evidence log) |
 | `src/test/resources/jpx/*.j2k, *.jp2` | fixtures |
 | `src/test/resources/jpx/ref/*.pgx` | reference components (`PG ML <+/-> prec w h`, big-endian samples) |
@@ -45,7 +48,7 @@ cd <icepdf> && python3 -I core/core-awt/tools/jpx-fixtures/generate.py      # OP
 | Test | Checks |
 |---|---|
 | `Jpeg2000ConformanceTest` | each fixture decoded like ICEpdf does (`read(0, param).getRaster()`) vs the reference: EXACT / EQUIVALENT / CLOSE / MISMATCH / ERROR / TIMEOUT |
-| `Jpeg2000ImageReaderContractTest` | the ImageIO plug-in surface (plan §1a): PASS / FAIL per check |
+| `Jpeg2000ImageReaderContractTest` | the ImageIO plug-in surface (`IMAGEIO-CONTRACT.md`): PASS / FAIL per check |
 | `Jpeg2000HostileInputTest` | damaged streams end in bounded time without OOM or a hang |
 | `Jpeg2000TilePartsRepairTest` | ICEpdf's TNsot repair restores the GH-553 stream and it decodes exactly |
 

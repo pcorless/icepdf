@@ -1,6 +1,6 @@
 # JPEG 2000 decisions and observations (GH-613)
 
-The `INFERRED` evidence log from `JPX-GH613-PLAN.md` §1b. Each entry: what we observed, how to
+The `INFERRED` evidence log required by `PROVENANCE-RULES.md`. Each entry: what we observed, how to
 reproduce it, and what it decided. This file moves to the decoder repository when that exists.
 
 Oracle versions: OpenJPEG v2.5.4 (`6c4a29b0`, built locally), jai-imageio-jpeg2000 1.4.0 (JJ2000).
@@ -55,7 +55,7 @@ Oracle versions: OpenJPEG v2.5.4 (`6c4a29b0`, built locally), jai-imageio-jpeg20
   `reduce.reduceK` references are OpenJPEG's reduced-resolution decode (the LL band), and JJ2000
   differs from them by up to 189.
 - **Decision:** the new reader maps power-of-two subsampling onto discarded resolution levels
-  (plan §1a), so it's expected to score EXACT. For JJ2000, MISMATCH is the recorded baseline.
+  (`IMAGEIO-CONTRACT.md`), so it's expected to score EXACT. For JJ2000, MISMATCH is the recorded baseline.
 - **ICEpdf impact:** really-big JPX images will render smoother (low-pass instead of aliasing).
   This needs a page-level A/B before switch-over.
 
@@ -75,12 +75,32 @@ Oracle versions: OpenJPEG v2.5.4 (`6c4a29b0`, built locally), jai-imageio-jpeg20
 - **ICEpdf impact:** `JpxDecoder.decode` catches only IOException. Runtime exceptions are caught
   further up by the `catch (Exception)` blocks in the image references. `ThreadDeath` is an
   `Error`, so it isn't.
-- **Decision:** the new reader throws IIOException only (plan §1a). No core change on this branch;
+- **Decision:** the new reader throws IIOException only (`IMAGEIO-CONTRACT.md`). No core change on this branch;
   revisit when switching over.
 
 ## D-8 Corpus census: the corpus exercises very little of Part 1 (2026-10-17)
 
-- **Observed:** see `JPX-GH613-PLAN.md` §2.2 results.
+- **Observed:** an extractor run over all 5,264 QA PDFs found 3,744 unique JPX streams (8,864
+  references) in about 194 documents, written to `~/dev/jpx-corpus/` (local only). A marker census
+  (T.800 Annex A/I walker) gave the table below. Both tools, `JpxExtract.java` and `JpxCensus.java`,
+  and the full `census.csv` are local scratch in `<repo>/scratchpad/jpx/`, not committed.
+
+  | Feature | Corpus |
+  |---|---|
+  | container | JP2 100% (no raw codestreams) |
+  | colr | enum sRGB 2,691 · CMYK (12) 574 · gray (17) 410 · ICC 67 |
+  | palette (`pclr`) | 161 (RGB and CMYK palettes, up to 256 entries) |
+  | components | 3: 2,638 · 1: 573 · 4: 533 |
+  | precision / sign / subsampling | **all 8-bit unsigned, none subsampled** |
+  | transform | 9/7 3,464 · 5/3 280 |
+  | progression | RLCP 3,654 · LRCP 90 |
+  | levels | 5: 3,689 · 6: 55 |
+  | tiled (>1 tile) | 1,799 |
+  | TNsot under-count (6 vs 5) | **1,312 (35%)** |
+  | code-block style | **0 everywhere** |
+  | COC / POC / PPM / PPT / RGN / SOP / EPH / precincts | **none** |
+  | QCC / TLM / COM | 498 / 55 / 571 |
+  | encoders (COM) | LuraTech 481, Kakadu 88, JasPer 2, unmarked 3,173 |
 - **Decision:** corpus parity is necessary but tells us little about a decoder's completeness.
   The synthetic fixtures are the completeness bar. Option B (port OpenJPEG) stands; jpx.js parity
   would pass the corpus while failing much of the fixture matrix.
