@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view;
 
+import org.icepdf.fx.view.internal.raster.TileScheduler;
 import org.icepdf.fx.view.internal.text.TextLayers;
 import org.icepdf.fx.view.internal.raster.PageTransforms;
 import org.icepdf.fx.view.internal.raster.RasterBuffer;
@@ -59,7 +60,7 @@ import java.util.*;
  * only the tiles on screen.  Effects or {@code setCache(true)} on a page-sized node would rasterise
  * the whole zoomed page - the same O(zoom²) trap the Swing viewer hit in GH-495.
  */
-final class PageLayer extends Group implements TextLayers.Overlay {
+final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler.TiledPage {
 
     private final int pageIndex;
     private final Page page;
@@ -191,12 +192,14 @@ final class PageLayer extends Group implements TextLayers.Overlay {
         placeCaret();
     }
 
-    TileSet content() {
+    @Override
+    public TileSet content() {
         return content;
     }
 
     /** The annotation tile set for a layer, moved to {@code generation} (older tiles go stale). */
-    TileSet annotations(CacheKey.AnnotationLayer layer, int generation) {
+    @Override
+    public TileSet annotations(CacheKey.AnnotationLayer layer, int generation) {
         TileSet set = layer == CacheKey.AnnotationLayer.MULTIPLY ? multiplyAnnotations : annotations;
         if (set.generation != generation) {
             set.generation = generation;
@@ -213,7 +216,7 @@ final class PageLayer extends Group implements TextLayers.Overlay {
      * mapped onto the current transform - until the current set covers the viewport, so a zoom, a
      * rotation or an annotation edit never flashes a hole.
      */
-    final class TileSet {
+    final class TileSet implements TileScheduler.Tiles {
         final Group root = new Group();
         private final Group current = new Group();
         private final Group stale = new Group();
@@ -248,12 +251,14 @@ final class PageLayer extends Group implements TextLayers.Overlay {
             }
         }
 
-        boolean has(CacheKey key) {
+        @Override
+        public boolean has(CacheKey key) {
             return views.containsKey(key);
         }
 
         /** Adds a tile at the current params; {@link RasterBuffer#EMPTY} records it with no node. */
-        void add(CacheKey key, TileGrid.Tile tile, RasterBuffer buffer) {
+        @Override
+        public void add(CacheKey key, TileGrid.Tile tile, RasterBuffer buffer) {
             if (views.containsKey(key)) return;
             if (buffer == RasterBuffer.EMPTY) {
                 views.put(key, null);
@@ -272,7 +277,8 @@ final class PageLayer extends Group implements TextLayers.Overlay {
         }
 
         /** Drops tile nodes not in {@code keep} (they stay in the cache). */
-        void retain(Set<? extends CacheKey> keep) {
+        @Override
+        public void retain(Set<? extends CacheKey> keep) {
             Iterator<Map.Entry<CacheKey, ImageView>> it = views.entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<CacheKey, ImageView> e = it.next();
@@ -283,13 +289,15 @@ final class PageLayer extends Group implements TextLayers.Overlay {
             }
         }
 
-        void clearStale() {
+        @Override
+        public void clearStale() {
             stale.getChildren().clear();
             staleParams = null;
         }
 
         /** Removes everything, current and stale (annotations switched off). */
-        void clear() {
+        @Override
+        public void clear() {
             views.clear();
             current.getChildren().clear();
             clearStale();

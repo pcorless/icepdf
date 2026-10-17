@@ -54,6 +54,7 @@ import org.icepdf.fx.view.internal.raster.RasterBuffer;
 import org.icepdf.fx.view.internal.raster.TileCache;
 import org.icepdf.fx.view.internal.raster.TileGrid;
 import org.icepdf.fx.view.internal.raster.TileRenderer;
+import org.icepdf.fx.view.internal.raster.TileScheduler;
 import org.icepdf.fx.view.internal.text.CaretNavigator;
 import org.icepdf.fx.view.internal.text.PageTextLoader;
 import org.icepdf.fx.view.internal.text.TextLayers;
@@ -84,12 +85,14 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     private final ScrollBar vbar = new ScrollBar();
     private final ScrollBar hbar = new ScrollBar();
 
-    private final TileCache cache = new TileCache(TileCache.defaultBudget());
     // this view's place in the shared render pool's queue: ahead while its window is focused.  Coming
     // to the front re-ranks what is queued and refreshes, so anything retain() dropped is asked for.
     private final NodeOwner renderOwner = new NodeOwner(getSkinnable(), RenderService.shared(), this::scheduleRefresh,
             this::renderStats);
+    // tiles on screen, the cache and the renderer behind them, and annotation tile bookkeeping.
+    private final TileScheduler tiles;
     private final TileRenderer renderer;
+    private final TileCache cache;
     // page text: loading, selection, search hits and the caret on each page.
     private final TextLayers text = new TextLayers(getSkinnable(),
             new PageTextLoader(RenderService.shared(), renderOwner, (page, sequence) -> onTextReady(page)),
@@ -158,38 +161,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     PdfViewSkin(PdfView control) {
         super(control);
-        renderer = new TileRenderer(RenderService.shared(), renderOwner, new TileRenderer.Sink() {
-            @Override
-            public void tileReady(CacheKey key, RasterBuffer buffer) {
-                cache.put(key, buffer);
-                scheduleRefresh();
-            }
-
-            @Override
-            public void previewReady(CacheKey.Preview key, RasterBuffer buffer, float zoom) {
-                cache.put(key, buffer);
-                scheduleRefresh();
-            }
-
-            @Override
-            public void annotationLayerEmpty(int pageIndex, CacheKey.AnnotationLayer layer, int generation) {
-                emptyAnnotationLayers.computeIfAbsent(pageIndex, k -> new EnumMap<>(CacheKey.AnnotationLayer.class))
-                        .put(layer, generation);
-            }
-
-            @Override
-            public void failed(boolean outOfMemory, long retryAfterMs) {
-                if (outOfMemory) cache.trimToPinned();
-                if (retryAfterMs > 0) {
-                    // the keys stay requestable; ask again once the heap has had a moment.
-                    PauseTransition retry = new PauseTransition(Duration.millis(retryAfterMs));
-                    retry.setOnFinished(e -> scheduleRefresh());
-                    retry.play();
-                } else {
-                    scheduleRefresh();
-                }
-            }
-        });
+        tiles = new TileScheduler(RenderService.shared(), renderOwner, this::scheduleRefresh);
+        renderer = tiles.renderer();
+        cache = tiles.cache();
         renderer.setPaintAnnotations(control.isPaintAnnotations());
 
         viewport.setClip(viewportClip);
@@ -304,9 +278,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         releaseHidden.stop();
         // the pool's threads are shared: cancelling this view's work is all there is to stop.
         renderOwner.dispose();
-        renderer.cancelAll();
+        tiles.dispose();
         text.dispose();
-        cache.clear();
         getSkinnable().removeEventHandler(ScrollEvent.SCROLL, scrollHandler);
         getSkinnable().removeEventHandler(ZoomEvent.ZOOM, pinchHandler);
         getSkinnable().removeEventHandler(KeyEvent.KEY_PRESSED, keyHandler);
@@ -373,7 +346,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     private void onDocument() {
         fields.documentChanged();
-        annotationGenerations.clear();
+        tiles.clearGenerations();
         document = getSkinnable().getDocument();
         // the wait cursor until refresh finds the first screenful painted.
         firstPaintPending = document != null;
@@ -674,9 +647,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             uiGroup.getChildren().remove(e.getValue());
             return true;
         });
-        cache.pin(wanted);
         text.retain(keep::contains);
-        renderer.retain(wanted::contains);
+        tiles.retain(wanted);
         control.setRendering(zoomSettling || incomplete);
         if (firstPaintPending && !zoomSettling && !incomplete) {
             firstPaintPending = false;
@@ -687,90 +659,14 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     /** @return true when every visible tile of the page is showing (or has failed) */
     private boolean updateTiles(PageLayer layer, PageSlot slot, CacheKey.Params params, Set<CacheKey> wanted) {
-        double scale = params.scale();
         // the part of the page inside the viewport, in page-local logical px.
         double x0 = Math.max(slot.x(), scrollX) - slot.x();
         double y0 = Math.max(slot.y(), scrollY) - slot.y();
         double x1 = Math.min(slot.maxX(), scrollX + viewportW) - slot.x();
         double y1 = Math.min(slot.maxY(), scrollY + viewportH) - slot.y();
         boolean annotationsOn = getSkinnable().isPaintAnnotations() && !TileRenderer.SINGLE_PASS_ANNOTATIONS;
-        if (x1 <= x0 || y1 <= y0) {
-            layer.content().retain(Set.of());
-            if (annotationsOn) {
-                for (CacheKey.AnnotationLayer kind : CacheKey.AnnotationLayer.values()) {
-                    layer.annotations(kind, annotationGeneration(slot.pageIndex())).retain(Set.of());
-                }
-            }
-            return true;
-        }
-        TileGrid grid = new TileGrid(TileGrid.deviceSize(slot.width(), scale),
-                TileGrid.deviceSize(slot.height(), scale), TileGrid.DEFAULT_TILE_SIZE);
-        List<TileGrid.Tile> visible = grid.tilesIntersecting(x0 * scale, y0 * scale, (x1 - x0) * scale,
-                (y1 - y0) * scale);
-        int page = slot.pageIndex();
-
-        boolean complete = updateTileSet(layer.content(), visible, wanted,
-                t -> new CacheKey.Tile(page, params, t.column(), t.row()),
-                missing -> renderer.requestTiles(page, params, grid, missing));
-
-        for (CacheKey.AnnotationLayer kind : CacheKey.AnnotationLayer.values()) {
-            int generation = annotationGeneration(page);
-            PageLayer.TileSet set = layer.annotations(kind, generation);
-            if (!annotationsOn || isAnnotationLayerEmpty(page, kind, generation)) {
-                set.clear();
-                continue;
-            }
-            complete &= updateTileSet(set, visible, wanted,
-                    t -> new CacheKey.AnnotationTile(page, params, kind, t.column(), t.row(), generation),
-                    missing -> renderer.requestAnnotationTiles(page, params, kind, generation, grid, missing,
-                            excludedAnnotations(page)));
-        }
-        return complete;
-    }
-
-    /**
-     * Shows a tile set's cached tiles for the visible grid cells, requests the missing ones (unless a
-     * zoom is settling) and drops nodes that scrolled away; stale tiles go once the set is complete.
-     *
-     * @return true when every visible tile is showing (or has failed)
-     */
-    private boolean updateTileSet(PageLayer.TileSet set, List<TileGrid.Tile> visible, Set<CacheKey> wanted,
-                                  java.util.function.Function<TileGrid.Tile, CacheKey> keyOf,
-                                  java.util.function.Consumer<List<TileGrid.Tile>> request) {
-        Set<CacheKey> keys = new HashSet<>();
-        List<TileGrid.Tile> missing = new ArrayList<>();
-        boolean complete = true;
-        for (TileGrid.Tile tile : visible) {
-            CacheKey key = keyOf.apply(tile);
-            keys.add(key);
-            wanted.add(key);
-            if (set.has(key) || renderer.hasFailed(key)) continue;
-            RasterBuffer buffer = cache.get(key);
-            if (buffer != null) {
-                set.add(key, tile, buffer);
-            } else {
-                complete = false;
-                if (!renderer.isPending(key)) missing.add(tile);
-            }
-        }
-        set.retain(keys);
-        if (complete) {
-            set.clearStale();
-        } else if (!zoomSettling && !missing.isEmpty()) {
-            request.accept(missing);
-        }
-        return complete;
-    }
-
-    // ---- annotation generations ------------------------------------------------------------
-
-    /** Per page, bumped on every annotation add/edit/delete; part of the annotation tile keys. */
-    private final Map<Integer, Integer> annotationGenerations = new HashMap<>();
-    // layers found to hold no annotations at a page's generation: not requested again.
-    private final Map<Integer, Map<CacheKey.AnnotationLayer, Integer>> emptyAnnotationLayers = new HashMap<>();
-
-    int annotationGeneration(int pageIndex) {
-        return annotationGenerations.getOrDefault(pageIndex, 0);
+        return tiles.update(layer, slot.pageIndex(), slot.width(), slot.height(), x0, y0, x1, y1, params, wanted,
+                zoomSettling, annotationsOn);
     }
 
     // ---- annotation move/resize -------------------------------------------------------------
@@ -780,12 +676,6 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     }
 
     private Drag drag;
-    // drag-excluded annotations per page: left out of the annotation tiles while a live node shows them.
-    private final Map<Integer, Set<Annotation>> excluded = new HashMap<>();
-
-    private Set<Annotation> excludedAnnotations(int pageIndex) {
-        return excluded.getOrDefault(pageIndex, Set.of());
-    }
 
     /** View bounds of an annotation in its page's view space, or null if the page isn't visible. */
     java.awt.geom.Rectangle2D annotationViewBounds(AnnotationHit hit) {
@@ -845,7 +735,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         renderer.requestAnnotationProxy(hit.pageIndex(), params, hit.annotation(), region, buffer -> {
             if (drag != started) return;
             ui.setProxy(buffer, region.x(), region.y(), scale, from, TileRenderer.multiplies(hit.annotation()));
-            excluded.computeIfAbsent(hit.pageIndex(), k -> new HashSet<>()).add(hit.annotation());
+            tiles.setExcluded(hit.pageIndex(), hit.annotation(), true);
             bumpAnnotationGeneration(hit.pageIndex());
         });
     }
@@ -885,8 +775,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             edit = AnnotationEdits.reshape(renderer::withAnnotationLock, p, pageIndex, ended.hit().annotation(),
                     to, edx, edy, toPageSpace);
         }
-        Set<Annotation> set = excluded.get(pageIndex);
-        if (set != null) set.remove(ended.hit().annotation());
+        tiles.setExcluded(pageIndex, ended.hit().annotation(), false);
         if (ui != null) {
             ui.setDragBounds(null);
             // keep the live node until the re-rendered tiles cover it (see refresh), so no flash.
@@ -930,12 +819,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void setExcluded(int pageIndex, Annotation annotation, boolean exclude) {
-        if (exclude) {
-            excluded.computeIfAbsent(pageIndex, k -> new HashSet<>()).add(annotation);
-        } else {
-            Set<Annotation> set = excluded.get(pageIndex);
-            if (set != null) set.remove(annotation);
-        }
+        tiles.setExcluded(pageIndex, annotation, exclude);
         bumpAnnotationGeneration(pageIndex);
     }
 
@@ -977,14 +861,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     /** Invalidates a page's annotation layers: they re-render; page content tiles are untouched. */
     void bumpAnnotationGeneration(int pageIndex) {
-        annotationGenerations.merge(pageIndex, 1, Integer::sum);
-        emptyAnnotationLayers.remove(pageIndex);
+        tiles.bumpGeneration(pageIndex);
         scheduleRefresh();
-    }
-
-    private boolean isAnnotationLayerEmpty(int pageIndex, CacheKey.AnnotationLayer layer, int generation) {
-        Map<CacheKey.AnnotationLayer, Integer> empty = emptyAnnotationLayers.get(pageIndex);
-        return empty != null && Integer.valueOf(generation).equals(empty.get(layer));
     }
 
     // ---- current page, text and caret -------------------------------------------------------
@@ -1161,8 +1039,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
      * the page layers stay (an open field editor or a selection lives on them).
      */
     private void releaseRasters() {
-        renderer.retain(key -> false);
-        cache.clear();
+        tiles.release();
         layers.values().forEach(PageLayer::releaseRasters);
         text.loader().retain(page -> false);
     }
@@ -1190,9 +1067,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     }
 
     private void resetRasters() {
-        emptyAnnotationLayers.clear();
-        renderer.cancelAll();
-        cache.clear();
+        tiles.reset();
         clearLayers();
         refresh();
     }
