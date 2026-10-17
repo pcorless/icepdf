@@ -118,6 +118,7 @@ public class PdfViewer extends StackPane {
     private java.util.function.BooleanSupplier confirmDiscard;
     private javafx.stage.Window owner;
     private Consumer<String> onError = this::showError;
+    private ViewerDialogs dialogs = ViewerDialogs.SYSTEM;
     private Presenting presenting;
 
     /** Everything, with a layout that isn't saved. */
@@ -187,7 +188,7 @@ public class PdfViewer extends StackPane {
             header.setTabs(strip);
             addEventFilter(KeyEvent.KEY_PRESSED, this::tabKeys);
             strip.setOnFilesDropped(PdfViewer::hasFiles, (pane, board) -> {
-                java.util.List<Path> pdfs = droppedPdfs(board);
+                java.util.List<Path> pdfs = droppedPdfs(board.getFiles());
                 if (pdfs.isEmpty()) return;
                 javafx.application.Platform.runLater(() -> {
                     open(pdfs.get(0), pane);
@@ -274,14 +275,12 @@ public class PdfViewer extends StackPane {
     }
 
     /** The dropped files that are PDFs; the rest are named in a message. */
-    private java.util.List<Path> droppedPdfs(javafx.scene.input.Dragboard board) {
+    java.util.List<Path> droppedPdfs(java.util.List<File> files) {
         java.util.List<Path> pdfs = new java.util.ArrayList<>();
         java.util.List<String> others = new java.util.ArrayList<>();
-        if (hasFiles(board)) {
-            for (File f : board.getFiles()) {
-                if (isPdf(f)) pdfs.add(f.toPath());
-                else if (f.isFile()) others.add(f.getName());
-            }
+        for (File f : files != null ? files : java.util.List.<File>of()) {
+            if (isPdf(f)) pdfs.add(f.toPath());
+            else if (f.isFile()) others.add(f.getName());
         }
         if (!others.isEmpty()) {
             showMessage(others.size() == 1 ? Messages.format("viewer.notPdf", others.get(0))
@@ -318,11 +317,17 @@ public class PdfViewer extends StackPane {
             e.consume();
         });
         setOnDragDropped(e -> {
-            java.util.List<Path> pdfs = droppedPdfs(e.getDragboard());
-            e.setDropCompleted(!pdfs.isEmpty());
+            boolean any = filesDropped(hasFiles(e.getDragboard()) ? e.getDragboard().getFiles() : java.util.List.of());
+            e.setDropCompleted(any);
             e.consume();
-            javafx.application.Platform.runLater(() -> pdfs.forEach(this::openInNewTab));
         });
+    }
+
+    /** Files dropped on the viewer: the PDFs open in new tabs (after the drop ends), the rest are named.  @return true if any is a PDF */
+    boolean filesDropped(java.util.List<File> files) {
+        java.util.List<Path> pdfs = droppedPdfs(files);
+        javafx.application.Platform.runLater(() -> pdfs.forEach(this::openInNewTab));
+        return !pdfs.isEmpty();
     }
 
     private static Path real(Path file) {
@@ -548,10 +553,10 @@ public class PdfViewer extends StackPane {
         FileChooser chooser = context.chooser(Messages.get("viewer.saveAsTitle"));
         Path file = session().getFile();
         chooser.setInitialFileName(file != null ? file.getFileName().toString() : "document.pdf");
-        File chosen = chooser.showSaveDialog(context.window());
+        File chosen = dialogs.showSaveDialog(chooser, context.window());
         if (chosen == null) return false;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        Path target = writableTarget(PdfTargets.confirm(context.window(), chosen));
+        Path target = writableTarget(PdfTargets.confirm(dialogs, context.window(), chosen));
         if (target == null || !session().saveAs(target)) return false;
         Path saved = session().getLoadingFile();
         toast.dismissError();
@@ -565,10 +570,10 @@ public class PdfViewer extends StackPane {
                 .setOnError(message -> onError.accept(message)).setTargetChooser((window, suggested) -> {
                     FileChooser chooser = context.chooser(Messages.get("viewer.saveSignedTitle"));
                     chooser.setInitialFileName(suggested.getFileName().toString());
-                    File target = chooser.showSaveDialog(window);
+                    File target = dialogs.showSaveDialog(chooser, window);
                     if (target == null) return null;
                     if (history != null && target.getParentFile() != null) history.setLastDirectory(target.getParentFile().toPath());
-                    return writableTarget(PdfTargets.confirm(window, target));
+                    return writableTarget(PdfTargets.confirm(dialogs, window, target));
                 });
     }
 
@@ -588,7 +593,7 @@ public class PdfViewer extends StackPane {
                 export, keep, javafx.scene.control.ButtonType.CANCEL);
         alert.setHeaderText(Messages.get("viewer.redactionsNotApplied"));
         alert.initOwner(context.window());
-        javafx.scene.control.ButtonType choice = alert.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL);
+        javafx.scene.control.ButtonType choice = dialogs.showAndWait(alert).orElse(javafx.scene.control.ButtonType.CANCEL);
         if (choice == export) exportRedacted();
         return choice == keep;
     }
@@ -605,10 +610,10 @@ public class PdfViewer extends StackPane {
         Path file = session.getFile();
         String base = file != null ? file.getFileName().toString().replaceFirst("(?i)\\.pdf$", "") : "document";
         chooser.setInitialFileName(base + "-redacted.pdf");
-        File chosen = chooser.showSaveDialog(context.window());
+        File chosen = dialogs.showSaveDialog(chooser, context.window());
         if (chosen == null) return;
         if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
-        Path target = writableTarget(PdfTargets.confirm(context.window(), chosen));
+        Path target = writableTarget(PdfTargets.confirm(dialogs, context.window(), chosen));
         if (target == null) return;
         showMessage(Messages.get("viewer.redacting"));
         session.exportRedacted(target, report -> {
@@ -640,7 +645,7 @@ public class PdfViewer extends StackPane {
                 text.toString(), javafx.scene.control.ButtonType.OK);
         alert.setHeaderText(Messages.format("viewer.redactedSavedAs", name));
         alert.initOwner(context.window());
-        alert.show();
+        dialogs.show(alert);
     }
 
     private DocumentPane pane() {
@@ -678,6 +683,15 @@ public class PdfViewer extends StackPane {
         });
         pane.getAttachments().setOnOpen(this::openAttachment);
         pane.getAttachments().setOnError(message -> onError.accept(message));
+        pane.getAttachments().setTargetChooser((window, name) -> {
+            FileChooser chooser = context.chooser(Messages.get("attachmentPanel.saveTitle"));
+            chooser.getExtensionFilters().clear();
+            chooser.setInitialFileName(name);
+            File chosen = dialogs.showSaveDialog(chooser, window);
+            if (chosen == null) return null;
+            if (history != null && chosen.getParentFile() != null) history.setLastDirectory(chosen.getParentFile().toPath());
+            return chosen.toPath();
+        });
         // a new flow per click: it picks up the signing store as it is then.
         pane.getView().setOnSignatureClicked(event -> signatureFlow(pane).handle(event));
         AnnotationContextMenu.install(pane.getView(), colors);
@@ -788,6 +802,10 @@ public class PdfViewer extends StackPane {
 
     UtilityPanel getUtilityPanel() {
         return utility;
+    }
+
+    Toast getToast() {
+        return toast;
     }
 
     ViewerShell getShell() {
@@ -930,6 +948,15 @@ public class PdfViewer extends StackPane {
             if (!pane.getSession().confirmDiscard()) return false;
         }
         return true;
+    }
+
+    /** Shows the file choosers and questions; {@link ViewerDialogs#SYSTEM} by default. */
+    public void setDialogs(ViewerDialogs dialogs) {
+        this.dialogs = dialogs != null ? dialogs : ViewerDialogs.SYSTEM;
+    }
+
+    public ViewerDialogs getDialogs() {
+        return dialogs;
     }
 
     /** Receives errors (could not open, could not save); {@link #showError} by default. */
@@ -1156,7 +1183,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void openDocument() {
-            File chosen = chooser(Messages.get("viewer.openTitle")).showOpenDialog(window());
+            File chosen = dialogs.showOpenDialog(chooser(Messages.get("viewer.openTitle")), window());
             if (chosen != null) {
                 rememberFolder(chosen);
                 open(chosen.toPath());
@@ -1165,7 +1192,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void openDocumentInNewTab() {
-            File chosen = chooser(Messages.get("viewer.openNewTabTitle")).showOpenDialog(window());
+            File chosen = dialogs.showOpenDialog(chooser(Messages.get("viewer.openNewTabTitle")), window());
             if (chosen != null) {
                 rememberFolder(chosen);
                 openInNewTab(chosen.toPath());

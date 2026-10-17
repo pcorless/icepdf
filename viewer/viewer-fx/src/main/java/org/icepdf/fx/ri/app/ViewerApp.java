@@ -167,9 +167,15 @@ public class ViewerApp extends Application {
      * followed.
      */
     private void followLink(AppWindow window, String uri) {
+        followLink(window.viewer(), window.stage(), uri, getHostServices()::showDocument);
+    }
+
+    /** {@link #followLink(AppWindow, String)}: {@code browser} gets the links that are followed. */
+    static void followLink(org.icepdf.fx.ri.PdfViewer viewer, javafx.stage.Window owner, String uri,
+                           java.util.function.Consumer<String> browser) {
         String scheme = linkScheme(uri);
         if (scheme == null) {
-            window.viewer().showMessage(Messages.format("viewerApp.linkNotFollowed", uri));
+            viewer.showMessage(Messages.format("viewerApp.linkNotFollowed", uri));
             return;
         }
         if (!SAFE_SCHEMES.contains(scheme)) {
@@ -177,10 +183,10 @@ public class ViewerApp extends Application {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, Messages.format("viewerApp.confirmLink", uri),
                     open, ButtonType.CANCEL);
             alert.setHeaderText(null);
-            alert.initOwner(window.stage());
-            if (alert.showAndWait().filter(b -> b == open).isEmpty()) return;
+            if (owner != null) alert.initOwner(owner);
+            if (viewer.getDialogs().showAndWait(alert).filter(b -> b == open).isEmpty()) return;
         }
-        getHostServices().showDocument(uri);
+        browser.accept(uri);
     }
 
     private static final java.util.Set<String> SAFE_SCHEMES = java.util.Set.of("http", "https", "mailto");
@@ -456,7 +462,7 @@ public class ViewerApp extends Application {
                 save, discard, ButtonType.CANCEL);
         alert.setHeaderText(null);
         alert.initOwner(window.stage());
-        Optional<ButtonType> answer = alert.showAndWait();
+        Optional<ButtonType> answer = window.viewer().getDialogs().showAndWait(alert);
         if (answer.isEmpty() || answer.get() == ButtonType.CANCEL) return false;
         return answer.get() != save || window.viewer().save();
     }

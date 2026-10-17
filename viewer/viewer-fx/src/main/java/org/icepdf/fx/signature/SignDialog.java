@@ -428,7 +428,7 @@ public class SignDialog extends Dialog<SignDialog.Result> {
 
     // ---- behaviour ----------------------------------------------------------------------
 
-    private void openKeystore() {
+    void openKeystore() {
         keystoreStatus.setText("");
         certificates.getItems().clear();
         signer = null;
@@ -562,5 +562,23 @@ public class SignDialog extends Dialog<SignDialog.Result> {
         WritableImage fx = new WritableImage(w, h);
         fx.getPixelWriter().setPixels(0, 0, w, h, PixelFormat.getIntArgbInstance(), pixels, 0, w);
         return fx;
+    }
+
+    // ---- for tests ----------------------------------------------------------------------
+
+    TextField keystoreField() {
+        return keystore;
+    }
+
+    PasswordField passwordField() {
+        return password;
+    }
+
+    Label keystoreStatus() {
+        return keystoreStatus;
+    }
+
+    ListView<DocumentSigning.KeyEntry> certificateList() {
+        return certificates;
     }
 }

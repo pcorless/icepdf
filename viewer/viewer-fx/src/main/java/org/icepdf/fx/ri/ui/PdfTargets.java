@@ -41,6 +41,11 @@ public final class PdfTargets {
      * replace the existing file that names
      */
     public static Path confirm(Window owner, File chosen) {
+        return confirm(ViewerDialogs.SYSTEM, owner, chosen);
+    }
+
+    /** {@link #confirm(Window, File)}, asking through {@code dialogs}. */
+    public static Path confirm(ViewerDialogs dialogs, Window owner, File chosen) {
         if (chosen == null) return null;
         Path typed = chosen.toPath();
         Path target = DocumentSession.withPdfExtension(typed);
@@ -50,6 +55,6 @@ public final class PdfTargets {
                 Messages.format("pdfTargets.exists", target.getFileName()), replace, ButtonType.CANCEL);
         alert.setHeaderText(null);
         if (owner != null) alert.initOwner(owner);
-        return alert.showAndWait().filter(b -> b == replace).isPresent() ? target : null;
+        return dialogs.showAndWait(alert).filter(b -> b == replace).isPresent() ? target : null;
     }
 }

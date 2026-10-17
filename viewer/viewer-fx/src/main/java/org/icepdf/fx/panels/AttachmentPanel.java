@@ -29,15 +29,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Window;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.view.PdfView;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -156,15 +159,12 @@ public class AttachmentPanel extends BorderPane {
 
     private void save(Attachment attachment) {
         if (attachment == null) return;
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle(Messages.get("attachmentPanel.saveTitle"));
-        chooser.setInitialFileName(attachment.name());
-        File file = chooser.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
+        Path file = chooseTarget.apply(getScene() != null ? getScene().getWindow() : null, attachment.name());
         if (file == null) return;
         // a large attachment is decoded and written off the FX thread.
         Thread worker = new Thread(() -> {
             try {
-                attachment.saveTo(file.toPath());
+                attachment.saveTo(file);
             } catch (IOException | RuntimeException e) {
                 String message = Messages.format("attachmentPanel.saveFailed", attachment.name(), Messages.reason(e));
                 javafx.application.Platform.runLater(() -> onError.accept(message));
@@ -175,6 +175,23 @@ public class AttachmentPanel extends BorderPane {
     }
 
     private java.util.function.Consumer<String> onError = AttachmentPanel::showErrorDialog;
+    private BiFunction<Window, String, Path> chooseTarget = AttachmentPanel::chooseWithFileChooser;
+
+    /**
+     * Asks where to save an attachment that isn't opened, given the owner window and the
+     * attachment's name; returns null to cancel.  A save {@link FileChooser} by default.
+     */
+    public void setTargetChooser(BiFunction<Window, String, Path> chooseTarget) {
+        this.chooseTarget = chooseTarget != null ? chooseTarget : AttachmentPanel::chooseWithFileChooser;
+    }
+
+    private static Path chooseWithFileChooser(Window owner, String name) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle(Messages.get("attachmentPanel.saveTitle"));
+        chooser.setInitialFileName(name);
+        File file = chooser.showSaveDialog(owner);
+        return file != null ? file.toPath() : null;
+    }
 
     /** Receives what went wrong saving an attachment; an error dialog by default. */
     public void setOnError(java.util.function.Consumer<String> onError) {
