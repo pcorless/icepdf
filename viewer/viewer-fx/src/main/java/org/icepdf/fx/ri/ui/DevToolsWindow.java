@@ -84,9 +84,17 @@ public final class DevToolsWindow {
 
     private final ProgressBar heapBar = new ProgressBar(0);
     private final Label heapText = new Label();
-    private final Sparkline heapLine = new Sparkline();
-    private final Sparkline queueLine = new Sparkline();
-    private final Sparkline activeLine = new Sparkline();
+    // one colour per figure, mid-tones that read on the light and dark themes; high contrast keeps
+    // the theme's text colour instead.
+    // the heap goes green, orange, red as it fills: below 60% of the max, to 85%, above.
+    private static final Color HEAP_OK = Color.web("#2eaa5c");
+    private static final Color HEAP_HIGH = Color.web("#f28c28");
+    private static final Color HEAP_FULL = Color.web("#e5484d");
+    private static final Color QUEUE = Color.web("#3b82f6");
+    private static final Color ACTIVE = Color.web("#2eaa5c");
+    private final Sparkline heapLine = new Sparkline(HEAP_OK);
+    private final Sparkline queueLine = new Sparkline(QUEUE);
+    private final Sparkline activeLine = new Sparkline(ACTIVE);
     private final Label heapCaption = new Label();
     private final Label queueCaption = new Label();
     private final Label activeCaption = new Label();
@@ -215,7 +223,11 @@ public final class DevToolsWindow {
         queueCaption.setText(Messages.format("devtools.queueLine", s.queue().size()));
         activeCaption.setText(Messages.format("devtools.activeLine", s.active(), s.size().threads()));
         Paint ink = heapCaption.getTextFill();
-        for (Sparkline line : List.of(heapLine, queueLine, activeLine)) line.draw(ink);
+        boolean plain = theme != null && theme.isHighContrast();
+        double fill = s.heapMax() > 0 ? s.heapUsed() / (double) s.heapMax() : 0;
+        heapLine.setColour(fill < 0.60 ? HEAP_OK : fill < 0.85 ? HEAP_HIGH : HEAP_FULL);
+        heapBar.setStyle(plain ? "" : "-fx-accent: " + web(heapLine.colour) + ";");
+        for (Sparkline line : List.of(heapLine, queueLine, activeLine)) line.draw(ink, plain);
 
         threads.getItems().setAll(s.threads());
         queue.getItems().setAll(s.queue());
@@ -253,25 +265,50 @@ public final class DevToolsWindow {
     }
 
     private static VBox caption(Sparkline line, Label caption) {
+        caption.setGraphic(line.dot);
         return new VBox(2, line, caption);
     }
 
+    private static String web(Color c) {
+        return String.format(Locale.ROOT, "#%02x%02x%02x", Math.round(c.getRed() * 255),
+                Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255));
+    }
+
     private static <T> TableColumn<T, String> column(String key, double width, Function<T, String> value) {
-        TableColumn<T, String> column = new TableColumn<>(Messages.get(key));
+        TableColumn<T, String> column = new TableColumn<>();
+        // the header is a label so a terse heading ("Rasters") can explain itself on hover.
+        Label header = new Label(Messages.get(key));
+        String tip = Messages.get(key + ".tooltip", "");
+        if (!tip.isEmpty()) {
+            javafx.scene.control.Tooltip tooltip = new javafx.scene.control.Tooltip(tip);
+            tooltip.setWrapText(true);
+            tooltip.setMaxWidth(360);
+            header.setTooltip(tooltip);
+        }
+        column.setGraphic(header);
         column.setCellValueFactory(c -> new ReadOnlyObjectWrapper<>(value.apply(c.getValue())));
         column.setPrefWidth(width);
         column.setSortable(false);
         return column;
     }
 
-    /** The last minute of one figure, scaled to its own peak. */
+    /** The last minute of one figure, scaled to its own peak, in its own colour. */
     private static final class Sparkline extends Canvas {
+        Color colour;
+        // the caption's legend dot, kept in the line's colour.
+        final javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(4);
         private final double[] samples = new double[HISTORY];
         private int count;
         private int next;
 
-        Sparkline() {
+        Sparkline(Color colour) {
             super(HISTORY, 40);
+            setColour(colour);
+        }
+
+        void setColour(Color colour) {
+            this.colour = colour;
+            dot.setFill(colour);
         }
 
         void add(double value) {
@@ -280,7 +317,8 @@ public final class DevToolsWindow {
             count = Math.min(HISTORY, count + 1);
         }
 
-        void draw(Paint ink) {
+        /** @param plain draw in {@code ink} only (high contrast) */
+        void draw(Paint ink, boolean plain) {
             GraphicsContext g = getGraphicsContext2D();
             g.clearRect(0, 0, getWidth(), getHeight());
             g.setStroke(ink instanceof Color c ? c.deriveColor(0, 1, 1, 0.3) : Color.GRAY);
@@ -288,15 +326,27 @@ public final class DevToolsWindow {
             if (count == 0) return;
             double peak = 1;
             for (int i = 0; i < count; i++) peak = Math.max(peak, samples[(next - count + i + HISTORY) % HISTORY]);
-            g.setStroke(ink);
+            double[] xs = new double[count];
+            double[] ys = new double[count];
+            for (int i = 0; i < count; i++) {
+                xs[i] = getWidth() - count + i;
+                ys[i] = getHeight() - 2 - samples[(next - count + i + HISTORY) % HISTORY] / peak * (getHeight() - 4);
+            }
+            if (!plain) {
+                // a soft wash under the line.
+                g.setFill(colour.deriveColor(0, 1, 1, 0.18));
+                g.beginPath();
+                g.moveTo(xs[0], getHeight());
+                for (int i = 0; i < count; i++) g.lineTo(xs[i], ys[i]);
+                g.lineTo(xs[count - 1], getHeight());
+                g.closePath();
+                g.fill();
+            }
+            g.setStroke(plain ? ink : colour);
             g.setLineWidth(1.5);
             g.beginPath();
-            for (int i = 0; i < count; i++) {
-                double x = getWidth() - count + i;
-                double y = getHeight() - 2 - samples[(next - count + i + HISTORY) % HISTORY] / peak * (getHeight() - 4);
-                if (i == 0) g.moveTo(x, y);
-                else g.lineTo(x, y);
-            }
+            g.moveTo(xs[0], ys[0]);
+            for (int i = 1; i < count; i++) g.lineTo(xs[i], ys[i]);
             g.stroke();
         }
     }
