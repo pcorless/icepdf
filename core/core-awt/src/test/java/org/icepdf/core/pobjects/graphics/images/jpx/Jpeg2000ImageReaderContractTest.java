@@ -127,7 +127,8 @@ public class Jpeg2000ImageReaderContractTest {
             p.setDestination(dest);
             p.setDestinationOffset(new Point(8, 8));
             BufferedImage i = r.read(0, p);
-            return i == dest && dest.getRGB(0, 0) == 0 && dest.getRGB(8, 8) != 0 ? "ok"
+            // getRGB of TYPE_INT_RGB always carries alpha FF: compare the colour only
+            return i == dest && (dest.getRGB(0, 0) & 0xFFFFFF) == 0 && (dest.getRGB(8, 8) & 0xFFFFFF) != 0 ? "ok"
                     : fail("destination not used at the offset");
         }));
         CHECKS.put("listener.progress", () -> withReader(RGB, r -> {

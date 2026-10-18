@@ -1,0 +1,30 @@
+# GH-613 contract baseline for org.icepdf.jpx.imageio.Jpeg2000ImageReaderSpi 0.1.0
+# id	outcome	detail (not asserted)
+imageio.read-applies-palette	PASS	5979a
+imageio.read-plain	PASS	64x64
+listener.abort	PASS	ok
+listener.progress	PASS	1/1
+lookup.by-format-name	PASS	ok
+lookup.by-mime-type	PASS	ok
+lookup.by-suffix	PASS	ok
+metadata.standard-tree	PASS	ok
+param.destination-offset	PASS	ok
+param.source-bands	PASS	1
+param.source-region	PASS	50x30
+param.source-subsampling	PASS	25x18
+reader.can-read-raster	PASS	ok
+reader.image-types	PASS	ok
+reader.num-images	PASS	1
+reader.raw-image-type	PASS	ok
+reader.read-raster	PASS	64x64x3
+reader.read-tile	PASS	32x32
+reader.reusable-after-read	PASS	64x64
+reader.size-before-read	PASS	100x70
+reader.tiling-reported	PASS	true 32x32
+sniff.j2k	PASS	true
+sniff.jp2	PASS	true
+sniff.rejects-jpeg	PASS	false
+sniff.rejects-png	PASS	false
+spi.format-names	PASS	jpeg2000,jpeg2000,jpeg 2000,jpeg 2000,jp2,jp2,j2k,j2k,jpx,jpx
+spi.mime-types	PASS	image/jp2,image/jpx,image/jpeg2000
+spi.suffixes	PASS	jp2,j2k,j2c,jpx,jpf

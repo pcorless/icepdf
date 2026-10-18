@@ -67,6 +67,21 @@ git diff core/core-awt/src/test/resources/jpx/baseline                    # revi
 `-Djpx.reader=<SPI class name fragment>` picks the reader when more than one is installed. Full
 reports (with max error / PSNR detail) are written to `build/reports/jpx/` on every run.
 
+The new reader (icepdf-jpx, `~/dev/git/jpx-imageio`, not published yet) is added with
+`-PjpxJar=<path to icepdf-jpx jar>`; its baselines are `baseline/*-jpeg2000imagereaderspi.tsv`:
+
+```
+./gradlew :core:core-awt:test --tests '...jpx.*' \
+    -PjpxJar=$HOME/dev/git/jpx-imageio/build/libs/icepdf-jpx-0.1.0-SNAPSHOT.jar \
+    -Djpx.reader=Jpeg2000ImageReaderSpi
+```
+
+| Suite | JJ2000 1.4.0 | icepdf-jpx 0.1.0 (2026-10-17) |
+|---|---|---|
+| conformance (68 decodes) | 48 EXACT, 3 EQUIVALENT, 9 CLOSE, 4 MISMATCH, 2 ERROR, 2 TIMEOUT | 65 EXACT, 3 EQUIVALENT (level-shifted signed, upsampled 4:2:0 / 4:2:2) |
+| contract (28 checks) | 23 PASS, 5 FAIL | 28 PASS |
+| hostile (18 inputs) | 4 decoded, 14 unchecked exceptions | 6 decoded, 12 `JpxException` (an IOException), all < 1 s |
+
 A reader that hangs can't be stopped; the test gives up after 10 s, records TIMEOUT and leaves the
 thread spinning until the JVM exits (JJ2000 does this on `ppm` and `ppt`).
 
