@@ -43,7 +43,12 @@ configurations {
     jpeg2000
 }
 dependencies {
-    jpeg2000 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    // GH-613: -PjpxJar=<path to icepdf-jpx jar> swaps JJ2000 for the new pure-Java reader
+    if (project.hasProperty('jpxJar')) {
+        jpeg2000 files(project.property('jpxJar'))
+    } else {
+        jpeg2000 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
+    }
 }
 run {
     classpath += configurations.jpeg2000
