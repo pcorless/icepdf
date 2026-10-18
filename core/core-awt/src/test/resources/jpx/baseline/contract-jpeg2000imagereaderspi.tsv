@@ -1,4 +1,4 @@
-# GH-613 contract baseline for org.icepdf.jpx.imageio.Jpeg2000ImageReaderSpi 0.1.0
+# GH-613 contract baseline for io.github.pcorless.jpx.imageio.Jpeg2000ImageReaderSpi 0.1.0
 # id	outcome	detail (not asserted)
 imageio.read-applies-palette	PASS	5979a
 imageio.read-plain	PASS	64x64

@@ -1,5 +1,5 @@
 {
- "generator": "core/core-awt/tools/jpx-fixtures/generate.py",
+ "generator": "tools/fixtures/generate.py",
  "oracle": "This is the opj_compress utility from the OpenJPEG project. (libopenjp2 via jpxref.c, no application colour handling; RelWithDebInfo build, IEEE float: no -ffast-math)",
  "note": "Fixtures and references are generated, licence-clean, ours. References are one PGX file per decoded component ('PG ML <+|-> prec w h' then big-endian samples), at the component's own size: subsampled and reduced components are not upsampled.",
  "cases": [

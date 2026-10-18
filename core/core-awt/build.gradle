@@ -19,11 +19,12 @@ dependencies {
     implementation 'commons-logging:commons-logging:' + "${COMMONS_LOGGING_VERSION}"
     // JPEG 2000 is optional and never shipped (its licence is unusual): applications that need
     // JPXDecode add jai-imageio-jpeg2000 themselves; core finds it through ImageIO.  Tests use it.
-    testRuntimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
-    // GH-613: -PjpxJar=<path to icepdf-jpx.jar> adds the new JPEG 2000 reader to the tests, so
-    // the fixture suites can be run against it with -Djpx.reader=Jpeg2000ImageReaderSpi
+    // GH-613: -PjpxJar=<path to the jpx-imageio jar> tests with that JPEG 2000 reader instead
+    // (JpxDecoder takes the first reader ImageIO offers, so it replaces JJ2000 rather than joining it)
     if (project.hasProperty('jpxJar')) {
         testRuntimeOnly files(project.property('jpxJar'))
+    } else {
+        testRuntimeOnly 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
     }
     // tests
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))

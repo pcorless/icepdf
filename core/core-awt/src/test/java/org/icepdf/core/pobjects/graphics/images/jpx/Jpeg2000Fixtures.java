@@ -39,7 +39,7 @@ import java.util.Locale;
  * Provenance: ORIGINAL.
  * <p>
  * Access to the generated JPEG 2000 fixtures in {@code src/test/resources/jpx} (see
- * {@code core/core-awt/tools/jpx-fixtures}) and a reader-agnostic comparison of an ImageIO decode
+ * {@code core/core-awt/tools/jpx-fixtures/README.md}) and a reader-agnostic comparison of an ImageIO decode
  * against the OpenJPEG reference components.
  * <p>
  * The reader under test is the first JPEG 2000 {@link ImageReader} that ImageIO offers, or the one

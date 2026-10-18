@@ -43,7 +43,7 @@ configurations {
     jpeg2000
 }
 dependencies {
-    // GH-613: -PjpxJar=<path to icepdf-jpx jar> swaps JJ2000 for the new pure-Java reader
+    // GH-613: -PjpxJar=<path to the jpx-imageio jar> swaps JJ2000 for that pure-Java reader
     if (project.hasProperty('jpxJar')) {
         jpeg2000 files(project.property('jpxJar'))
     } else {

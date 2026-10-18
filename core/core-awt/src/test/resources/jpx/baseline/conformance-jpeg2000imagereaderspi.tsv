@@ -1,4 +1,4 @@
-# GH-613 conformance baseline for org.icepdf.jpx.imageio.Jpeg2000ImageReaderSpi 0.1.0
+# GH-613 conformance baseline for io.github.pcorless.jpx.imageio.Jpeg2000ImageReaderSpi 0.1.0
 # id	outcome	detail (not asserted)
 cblk-all.full	EXACT	EXACT
 cblk-bypass-termall.full	EXACT	EXACT

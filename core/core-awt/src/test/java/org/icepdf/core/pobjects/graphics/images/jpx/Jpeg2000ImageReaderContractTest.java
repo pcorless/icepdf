@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
- * Provenance: ORIGINAL (the requirement list is core/core-awt/tools/jpx-fixtures/IMAGEIO-CONTRACT.md).
+ * Provenance: ORIGINAL (the requirement list is jpx-imageio's docs/IMAGEIO-CONTRACT.md).
  * <p>
  * The ImageIO plug-in contract a JPEG 2000 reader must meet to be a drop-in for ICEpdf and for
  * plain {@code ImageIO.read} users. Each check is PASS or FAIL and pinned per reader in
