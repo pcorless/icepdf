@@ -1,7 +1,7 @@
 # JPEG 2000 tests (GH-613)
 
 The JPEG 2000 decoder, its fixtures and their generator live in **jpx-imageio**
-(`~/dev/git/jpx-imageio`, `io.github.pcorless:jpx-imageio`; not published yet):
+(`~/dev/git/jpx-imageio`, `com.github.pcorless:jpx-imageio`; not published yet):
 
 | What | Where in jpx-imageio |
 |---|---|
