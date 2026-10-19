@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.HexStringObject;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.images.jpx.Jpeg2000Fixtures;
@@ -32,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -74,13 +76,18 @@ public class JpxDecoderTest {
 
     /** Decodes a fixture as a JPXDecode image XObject with the given /ColorSpace, as a page would. */
     static BufferedImage decodeFixture(String fixture, int width, int height, String colourSpace) {
+        return decodeFixture(fixture, width, height, new Name(colourSpace));
+    }
+
+    /** As above, with /ColorSpace given as the PDF object (a name or an array). */
+    static BufferedImage decodeFixture(String fixture, int width, int height, Object colourSpace) {
         DictionaryEntries entries = new DictionaryEntries();
         entries.put(new Name("Type"), new Name("XObject"));
         entries.put(new Name("Subtype"), new Name("Image"));
         entries.put(new Name("Width"), width);
         entries.put(new Name("Height"), height);
         entries.put(new Name("BitsPerComponent"), 8);
-        entries.put(new Name("ColorSpace"), new Name(colourSpace));
+        entries.put(new Name("ColorSpace"), colourSpace);
         entries.put(new Name("Filter"), new Name("JPXDecode"));
         Library library = new Library();
         ImageStream imageStream = new ImageStream(library, entries, Jpeg2000Fixtures.bytes(fixture));
@@ -134,6 +141,29 @@ public class JpxDecoderTest {
             }
             assertEquals(0, bad, name + ": pixels differing from the reference");
         }
+    }
+
+    @DisplayName("a JP2 palette image under a PDF /Indexed colour space decodes (docGris.pdf)")
+    @Test
+    public void palettedFixtureUnderIndexed() {
+        assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
+        // jpx-imageio expands the pclr box, so the raster arrives as three bands of RGB rather than
+        // one band of indices; putting the PDF's IndexColorModel over it threw. JJ2000 hands back
+        // the indices, which the PDF's table (one black entry here) then colours.
+        BufferedImage image = decodeFixture("jp2-pclr-rgb.jp2", 64, 64,
+                Arrays.asList(new Name("Indexed"), new Name("DeviceRGB"), 0, new HexStringObject("000000")));
+        assertNotNull(image);
+        if (readerIsJj2000("jp2-pclr-rgb.jp2")) return;
+        List<Jpeg2000Fixtures.Component> c = reference("jp2-pclr-rgb");
+        int bad = 0;
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                int p = y * 64 + x;
+                int want = (c.get(0).samples[p] << 16) | (c.get(1).samples[p] << 8) | c.get(2).samples[p];
+                if ((image.getRGB(x, y) & 0xFFFFFF) != want) bad++;
+            }
+        }
+        assertEquals(0, bad, "pixels differing from the reader's palette expansion");
     }
 
     @DisplayName("a lossless grey JPX image comes out exactly as the reference decode")

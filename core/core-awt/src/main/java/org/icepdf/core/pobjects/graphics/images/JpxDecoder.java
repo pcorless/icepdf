@@ -158,6 +158,10 @@ public class JpxDecoder extends AbstractImageDecoder {
                 } else {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                 }
+            } else if (colourSpace instanceof Indexed && wr.getNumBands() == 3) {
+                // the codestream carried its own palette (pclr box) and the reader already expanded the
+                // indices through it, so there are no indices left to look up in the PDF's table.
+                tmpImage = ImageUtility.makeRGBBufferedImage(wr);
             } else if (colourSpace instanceof Indexed) {
                 // still some issue here with Chevron.pdf
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
