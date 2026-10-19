@@ -74,7 +74,8 @@ public class ImageStreamReference extends CachedImageReference {
         BufferedImage image = null;
         long start = System.nanoTime();
         try {
-            image = imageStream.getImage(graphicsState, resources);
+            // the paint form: an explicit stencil mask stays apart until drawImage (see MaskedImage)
+            image = imageStream.getPaintImage(graphicsState, resources);
         } catch (Exception e) {
             logger.log(Level.WARNING, e, () -> "Error loading image: " + imageStream.getPObjectReference() +
                     " " + describe(imageStream));

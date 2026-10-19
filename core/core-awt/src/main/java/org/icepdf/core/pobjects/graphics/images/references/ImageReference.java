@@ -25,6 +25,7 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
+import org.icepdf.core.pobjects.graphics.images.MaskedImage;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -218,6 +219,21 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             return;
         }
         BufferedImage image = getImage();
+        if (image instanceof MaskedImage) {
+            MaskedImage masked = (MaskedImage) image;
+            if (MaskedImagePainter.canPaint(aG) && !ImageUtility.isCmykInkCapturing()) {
+                try {
+                    MaskedImagePainter.paint(aG, masked, aX, aY, aW, aH);
+                    return;
+                } catch (OutOfMemoryError e) {
+                    logger.warning("Out of memory painting masked image, skipping " +
+                            imageStream.getPObjectReference());
+                    return;
+                }
+            }
+            // a printer or vector target, or a CMYK group capture: draw it combined, as before
+            image = masked.composite();
+        }
         if (image != null) {
             Object interpolation = null;
             try {
