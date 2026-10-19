@@ -230,7 +230,25 @@ public class ImageStream extends Stream {
      * @param resources     resources containing image reference
      * @return new image object
      */
-    public BufferedImage getImage(GraphicsState graphicsState, Resources resources){
+    public BufferedImage getImage(GraphicsState graphicsState, Resources resources) {
+        BufferedImage image = decode(graphicsState, resources, false);
+        // a paint image left in the pool by a reference: its mask has not been applied yet
+        return image instanceof MaskedImage ? ((MaskedImage) image).composite() : image;
+    }
+
+    /**
+     * The image as the paint path wants it: like {@link #getImage}, except that an explicit stencil
+     * {@code /Mask} may be left unapplied, as a {@link MaskedImage} combined only where it is drawn.
+     *
+     * @param graphicsState graphic state for image or parent form
+     * @param resources     resources containing image reference
+     * @return new image object, possibly a {@link MaskedImage}
+     */
+    public BufferedImage getPaintImage(GraphicsState graphicsState, Resources resources) {
+        return decode(graphicsState, resources, true);
+    }
+
+    private BufferedImage decode(GraphicsState graphicsState, Resources resources, boolean deferMask) {
         // check the pool encase we already parse this image.
         imageParams = new ImageParams(library, entries, resources);
         if (pObjectReference != null) {
@@ -280,7 +298,14 @@ public class ImageStream extends Stream {
             if (maskDecoder != null) {
                 BufferedImage maskImage = maskDecoder.decode();
 //                ImageUtility.displayImage(maskImage, "Mask " + entries.get(MASK_KEY).toString());
-                decodedImage = ImageUtility.applyExplicitMask(decodedImage, maskImage);
+                if (deferMask && smaskDecoder == null && !imageParams.isImageMask()
+                        && maskImage != null) {
+                    // keep the two apart, each at its own resolution, until the paint (see MaskedImage)
+                    decodedImage = new MaskedImage(ImageUtility.compactImage(decodedImage),
+                            MaskedImage.toStencil(maskImage));
+                } else {
+                    decodedImage = ImageUtility.applyExplicitMask(decodedImage, maskImage);
+                }
             }
 //            if (maskDecoder != null || smaskDecoder != null)
 //                ImageUtility.displayImage(decodedImage, "Final " + pObjectReference.toString());
@@ -292,7 +317,10 @@ public class ImageStream extends Stream {
         // (common for DeviceN / Separation / DeviceGray scans that decode through
         // the sRGB ARGB path) is repacked to 8-bit, 1/4 the memory, no visual
         // change.  No-op for coloured/translucent/CMYK-preserving images.
-        decodedImage = ImageUtility.compactImage(decodedImage);
+        if (!(decodedImage instanceof MaskedImage)) {
+            // a MaskedImage's base was compacted as it was made
+            decodedImage = ImageUtility.compactImage(decodedImage);
+        }
         if (decodedImage != null && pObjectReference != null) {
             // the image goes to the pool; the inflated samples behind it are only a cache
             // (re-inflated from the compressed stream if the pool ever lets the image go),
