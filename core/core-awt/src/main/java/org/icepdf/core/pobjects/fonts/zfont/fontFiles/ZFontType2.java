@@ -138,6 +138,29 @@ public class ZFontType2 extends ZSimpleFont { //extends ZFontTrueType {
     }
 
     @Override
+    protected int getUnitsPerEm() {
+        try {
+            return trueTypeFont != null ? trueTypeFont.getUnitsPerEm() : 0;
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    @Override
+    protected Shape getGridFitGlyphShape(char estr, int ppem) throws IOException {
+        // only embedded glyf outlines carry executable hinting; CFF/OTF PostScript outlines don't
+        if (trueTypeFont instanceof OpenTypeFont && ((OpenTypeFont) trueTypeFont).isPostScript()) {
+            return null;
+        }
+        int gid = getCharToGid(estr);
+        if (gid == 0) {
+            return null;
+        }
+        // getHintedPath returns the grid-fit outline already in font units (null when it cannot)
+        return trueTypeFont.getHintedPath(gid, ppem);
+    }
+
+    @Override
     public org.apache.fontbox.encoding.Encoding getEncoding() {
         return null;
     }
