@@ -52,14 +52,14 @@
             </unpackOptions>
         </dependencySet>
     </dependencySets>
-    <!-- the unpacked jars' own META-INF/LICENSE files collide, and the JJ2000 notice must go with
-         every copy of the JPEG 2000 decoder -->
+    <!-- the unpacked jars' own META-INF/LICENSE and NOTICE files collide, and the OpenJPEG (BSD-2)
+         notice must go with every copy of the JPEG 2000 decoder -->
     <fileSets>
         <fileSet>
             <directory>${project.basedir}/../../licenses</directory>
             <outputDirectory>META-INF/licenses</outputDirectory>
             <includes>
-                <include>JAI-ImageIO-*</include>
+                <include>jpx-imageio-*</include>
             </includes>
         </fileSet>
     </fileSets>

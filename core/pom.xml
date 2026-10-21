@@ -60,11 +60,9 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
-                <groupId>com.github.jai-imageio</groupId>
-                <artifactId>jai-imageio-jpeg2000</artifactId>
-                <version>${jai-imageio.version}</version>
-                <scope>provided</scope>
-                <optional>true</optional>
+                <groupId>com.github.pcorless</groupId>
+                <artifactId>jpx-imageio</artifactId>
+                <version>${jpx-imageio.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit</groupId>

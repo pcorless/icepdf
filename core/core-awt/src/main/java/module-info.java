@@ -30,6 +30,7 @@ module org.icepdf.core {
     requires org.apache.fontbox;
     requires org.apache.pdfbox.io;
     requires org.apache.pdfbox.jbig2;
+    requires io.github.pcorless.jpx;
     requires org.apache.commons.logging;
     requires com.twelvemonkeys.common.image;
     requires com.twelvemonkeys.common.io;

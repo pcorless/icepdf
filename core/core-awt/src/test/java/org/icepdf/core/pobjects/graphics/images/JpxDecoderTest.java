@@ -48,32 +48,41 @@ public class JpxDecoderTest {
 
     @DisplayName("a JPEG 2000 image within the size limit is decoded at full size")
     @Test
-    public void normalImageIsNotScaled() throws IOException {
-        // the image is made with a JPEG 2000 ImageIO writer: JJ2000 has one, jpx-imageio doesn't
-        assumeTrue(ImageIO.getImageWritersByFormatName("jpeg2000").hasNext(), "no JPEG 2000 ImageIO writer");
-        BufferedImage image = DctDecoderTest.decode(400, 16, "jpeg2000", "JPXDecode", true);
+    public void normalImageIsNotScaled() {
+        assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
+        BufferedImage image = decodeFixture("rev53-gray.j2k", 64, 64, "DeviceGray");
         assertNotNull(image);
-        assertEquals(400, image.getWidth());
-        assertEquals(16, image.getHeight());
+        assertEquals(64, image.getWidth());
+        assertEquals(64, image.getHeight());
     }
 
     @DisplayName("a really big JPEG 2000 image is subsampled while decoding, to about the preferred size")
     @Test
-    public void reallyBigImageIsSubsampled() throws IOException {
-        // the image is made with a JPEG 2000 ImageIO writer: JJ2000 has one, jpx-imageio doesn't
-        assumeTrue(ImageIO.getImageWritersByFormatName("jpeg2000").hasNext(), "no JPEG 2000 ImageIO writer");
-        BufferedImage image = DctDecoderTest.decode(12000, 16, "jpeg2000", "JPXDecode", true);
+    public void reallyBigImageIsSubsampled() {
+        assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
+        // shrink the limits rather than encode a 10000-pixel image: 64 pixels is then really big, and the
+        // preferred 16 asks for a subsampling of 4, which the reader takes as two discarded resolution levels
+        int maxWidth = AbstractImageDecoder.maxImageWidth, maxHeight = AbstractImageDecoder.maxImageHeight;
+        int preferred = AbstractImageDecoder.preferredSize;
+        BufferedImage image;
+        try {
+            AbstractImageDecoder.maxImageWidth = 32;
+            AbstractImageDecoder.maxImageHeight = 32;
+            AbstractImageDecoder.preferredSize = 16;
+            image = decodeFixture("rev53-gray.j2k", 64, 64, "DeviceGray");
+        } finally {
+            AbstractImageDecoder.maxImageWidth = maxWidth;
+            AbstractImageDecoder.maxImageHeight = maxHeight;
+            AbstractImageDecoder.preferredSize = preferred;
+        }
         assertNotNull(image);
-        assertEquals(12000 / 8, image.getWidth());
-        assertEquals(2, image.getHeight());
-        assertTrue((image.getRGB(10, 0) & 0xFF) < 64);
-        assertTrue((image.getRGB(image.getWidth() - 10, 0) & 0xFF) > 192);
+        assertEquals(16, image.getWidth());
+        assertEquals(16, image.getHeight());
     }
 
     // ------------------------------------------------------------------
-    // ICEpdf's JPXDecode path over real streams (GH-613 fixtures), with whichever JPEG 2000
-    // reader is installed: the PDF's colour space applied to the reader's raster, and the TNsot
-    // repair applied before decoding.
+    // ICEpdf's JPXDecode path over real streams (GH-613 fixtures): the PDF's colour space applied
+    // to the reader's raster.
     // ------------------------------------------------------------------
 
     /** Decodes a fixture as a JPXDecode image XObject with the given /ColorSpace, as a page would. */
@@ -103,20 +112,6 @@ public class JpxDecoderTest {
         return imageStream.getImage(null, new Resources(library, new DictionaryEntries()));
     }
 
-    /** Whether the reader JpxDecoder would pick for this fixture (the first that reads rasters) is JJ2000. */
-    static boolean readerIsJj2000(String fixture) {
-        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(Jpeg2000Fixtures.bytes(fixture)))) {
-            Iterator<ImageReader> it = ImageIO.getImageReaders(in);
-            while (it.hasNext()) {
-                ImageReader r = it.next();
-                if (r.canReadRaster()) return r.getClass().getName().contains("jaiimageio");
-            }
-            return false;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
     static List<Jpeg2000Fixtures.Component> reference(String name) {
         return Jpeg2000Fixtures.components(Jpeg2000Fixtures.references().stream()
                 .filter(r -> r.name.equals(name) && r.region == null && r.reduce == 0)
@@ -130,11 +125,6 @@ public class JpxDecoderTest {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
         {
             String file = name + (name.startsWith("jp2") ? ".jp2" : ".j2k");
-            // Known gap (GH-613): JJ2000 returns a JP2 palette image as one band of indices, and
-            // JpxDecoder's DeviceRGB path (PColorSpaceRasterOp) reads three bands per pixel and
-            // runs off the end of the raster. jpx-imageio applies the palette, so it passes.
-            assumeTrue(!name.equals("jp2-pclr-rgb") || !readerIsJj2000(file),
-                    "JJ2000 hands JpxDecoder palette indices for a DeviceRGB image (known gap)");
             BufferedImage image = decodeFixture(file, 64, 64, "DeviceRGB");
             assertNotNull(image, name);
             List<Jpeg2000Fixtures.Component> c = reference(name);
@@ -150,19 +140,17 @@ public class JpxDecoderTest {
         }
     }
 
-    @DisplayName("a JP2 wrapper with a broken cmap box falls back to its codestream (attachment.pdf)")
+    @DisplayName("a JP2 wrapper the reader rejects falls back to its codestream")
     @Test
-    public void brokenComponentMappingFallsBackToCodestream() {
+    public void brokenWrapperFallsBackToCodestream() {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
-        // attachment.pdf's cmap box sits outside jp2h and only its first entry is sane; JJ2000 and older
-        // jpx-imageio releases reject the whole file. /Indexed never reads the wrapper, so take another
-        // colour space to reach the retry with the codestream alone.
+        // the pclr box renamed cmap: a cmap ahead of its pclr, and a second cmap, fail the JP2 header in
+        // jpx-imageio (as in OpenJPEG). /Indexed never reads the wrapper, so take another colour space to
+        // reach the retry with the codestream alone.
         byte[] jp2 = Jpeg2000Fixtures.bytes("jp2-pclr-cmyk.jp2").clone();
-        int cmap = indexOf(jp2, "cmap".getBytes(StandardCharsets.US_ASCII));
-        assertTrue(cmap > 0, "fixture has a cmap box");
-        for (int entry = 1; entry < 4; entry++) {
-            jp2[cmap + 4 + entry * 4 + 2] = (byte) 0x98;  // MTYP: neither 0 (direct) nor 1 (palette)
-        }
+        int pclr = indexOf(jp2, "pclr".getBytes(StandardCharsets.US_ASCII));
+        assertTrue(pclr > 0, "fixture has a pclr box");
+        System.arraycopy("cmap".getBytes(StandardCharsets.US_ASCII), 0, jp2, pclr, 4);
         BufferedImage image = decodeImage(jp2, 64, 64, new Name("DeviceGray"));
         assertNotNull(image, "decoder gave up on the broken wrapper");
         assertEquals(64, image.getWidth());
@@ -210,7 +198,7 @@ public class JpxDecoderTest {
 
     /** The palette indices: the fixture's codestream, read without its JP2 wrapper. */
     static Raster codestreamIndices(String fixture) {
-        byte[] codestream = Jpeg2000TileParts.unwrapCodestream(Jpeg2000Fixtures.bytes(fixture));
+        byte[] codestream = Jp2Codestream.unwrap(Jpeg2000Fixtures.bytes(fixture));
         try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(codestream))) {
             Iterator<ImageReader> it = ImageIO.getImageReaders(in);
             ImageReader r = it.next();
@@ -249,16 +237,17 @@ public class JpxDecoderTest {
         assertEquals(3, image.getColorModel().getColorSpace().getNumComponents(), "converted to RGB");
     }
 
-    @DisplayName("a stream with TNsot one short is repaired before decoding (GH-553)")
+    @DisplayName("a stream with TNsot one short decodes the same as the intact one (GH-553)")
     @Test
-    public void tnsotUndercountRepaired() {
+    public void tnsotUndercountDecodes() {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
-        // tnsot-undercount is tileparts-res with TNsot one short: repaired, it must decode the same
-        BufferedImage repaired = decodeFixture("tnsot-undercount.j2k", 64, 64, "DeviceRGB");
+        // tnsot-undercount is tileparts-res with TNsot one short. JJ2000 trusted the count and dropped the last
+        // tile-part, which ICEpdf repaired; jpx-imageio walks the tile-parts by their lengths (D-10), so no repair
+        BufferedImage undercount = decodeFixture("tnsot-undercount.j2k", 64, 64, "DeviceRGB");
         BufferedImage intact = decodeFixture("tileparts-res.j2k", 64, 64, "DeviceRGB");
-        assertNotNull(repaired);
+        assertNotNull(undercount);
         for (int y = 0; y < 64; y++) {
-            for (int x = 0; x < 64; x++) assertEquals(intact.getRGB(x, y), repaired.getRGB(x, y), "pixel " + x + "," + y);
+            for (int x = 0; x < 64; x++) assertEquals(intact.getRGB(x, y), undercount.getRGB(x, y), "pixel " + x + "," + y);
         }
     }
 }

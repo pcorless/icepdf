@@ -36,24 +36,6 @@ def javafxModulePath = { JavaExec task ->
     }
 }
 
-// The JPEG 2000 decoder ships with the viewer application only, never in its published POM: core
-// leaves it out because of its licence (JJ2000), but a viewer that blanks JPXDecode images isn't
-// much use.  Licence texts are in the root licenses/ directory; see PROVENANCE.md.
-configurations {
-    jpeg2000
-}
-dependencies {
-    // GH-613: -PjpxJar=<path to the jpx-imageio jar> swaps JJ2000 for that pure-Java reader
-    if (project.hasProperty('jpxJar')) {
-        jpeg2000 files(project.property('jpxJar'))
-    } else {
-        jpeg2000 'com.github.jai-imageio:jai-imageio-jpeg2000:' + "${JAI_VERSION}"
-    }
-}
-run {
-    classpath += configurations.jpeg2000
-}
-
 // The viewer jar with the jars it needs (JavaFX, core, fonts...) in one folder, for the Linux launcher:
 // ./gradlew :viewer:viewer-fx:launcherLibs, then packaging/linux/install-desktop.sh --fx
 tasks.register('launcherLibs', Sync) {
@@ -61,7 +43,6 @@ tasks.register('launcherLibs', Sync) {
     description = 'Collects the viewer jar and its runtime jars in build/launcher/lib'
     from(jar)
     from(configurations.runtimeClasspath)
-    from(configurations.jpeg2000)
     into layout.buildDirectory.dir('launcher/lib')
 }
 
@@ -69,7 +50,7 @@ tasks.register('launcherLibs', Sync) {
 // unpacked into one jar only the first copy of each file would survive, so they're merged here.
 def mergedServices = layout.buildDirectory.dir('merged-services')
 tasks.register('mergeServices') {
-    def jars = configurations.runtimeClasspath + configurations.jpeg2000
+    def jars = configurations.runtimeClasspath
     inputs.files jars
     outputs.dir mergedServices
     doLast {
@@ -110,15 +91,16 @@ tasks.register('jarWithDependencies', Jar) {
     }
     from(tasks.named('mergeServices')) { into 'META-INF/services' }
     from sourceSets.main.output
-    dependsOn configurations.runtimeClasspath, configurations.jpeg2000
+    dependsOn configurations.runtimeClasspath
     from({
-        (configurations.runtimeClasspath + configurations.jpeg2000).collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }) {
         exclude 'META-INF/services/**'
     }
-    // the unpacked jars' own META-INF/LICENSE files collide, and the JJ2000 notice must go with every copy
+    // the unpacked jars' own META-INF/LICENSE and NOTICE files collide, and the JPEG 2000 decoder's
+    // OpenJPEG (BSD-2) notice must go with every copy of it
     into('META-INF/licenses') {
-        from(rootProject.file('licenses')) { include 'JAI-ImageIO-*' }
+        from(rootProject.file('licenses')) { include 'jpx-imageio-*' }
     }
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/*.EC',
             'module-info.class', 'META-INF/versions/*/module-info.class'
@@ -130,7 +112,7 @@ tasks.register('runDemo', JavaExec) {
     group = 'application'
     description = 'Runs PdfViewDemo, a bare PdfView test host'
     dependsOn testClasses
-    classpath = sourceSets.test.runtimeClasspath + configurations.jpeg2000
+    classpath = sourceSets.test.runtimeClasspath
     mainClass = 'org.icepdf.fx.demo.PdfViewDemo'
     jvmArgs = [viewerXmx]
     if (project.hasProperty('args')) args project.property('args').toString().split(' ')
@@ -210,8 +192,7 @@ jar {
             // a plain class that launches ViewerApp: java -jar refuses an Application main class on the class path
             attributes("Main-Class": 'org.icepdf.fx.ri.app.Launcher')
             if (!configurations.runtimeClasspath.isEmpty()) {
-                attributes('Class-Path': (configurations.runtimeClasspath + configurations.jpeg2000)
-                        .files.collect{it.name}.join(' '))
+                attributes('Class-Path': configurations.runtimeClasspath.files.collect{it.name}.join(' '))
             }
         }
     }

@@ -13,8 +13,8 @@ Swing/FX viewers.
 - Digital signatures via Bouncy Castle
 - Embedded font support with Apache PDFBox FontBox
 - Optional image format extensions (TIFF, JBIG2) – included as optional Maven dependencies
-- JPEG 2000 (`JPXDecode`) needs `com.github.jai-imageio:jai-imageio-jpeg2000`, which ICEpdf does not ship
-  because of its licence terms; add it to your application if you need it (core finds it through ImageIO)
+- JPEG 2000 (`JPXDecode`) through `com.github.pcorless:jpx-imageio`, a pure-Java ImageIO reader
+  (Apache 2.0, derived from OpenJPEG under BSD-2) that comes in as a core dependency
 - Multi‑threaded rendering; the library exposes a thread pool that can be configured
 
 ## Maven Coordinates
