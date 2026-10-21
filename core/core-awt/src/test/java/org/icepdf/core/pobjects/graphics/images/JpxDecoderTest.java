@@ -30,6 +30,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
+import java.awt.image.Raster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -151,29 +152,21 @@ public class JpxDecoderTest {
 
     @DisplayName("a JP2 wrapper with a broken cmap box falls back to its codestream (attachment.pdf)")
     @Test
-    public void brokenComponentMappingUnderIndexed() {
+    public void brokenComponentMappingFallsBackToCodestream() {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
-        // attachment.pdf's cmap box sits outside jp2h and only its first entry is sane; both readers
-        // reject the whole file. The codestream alone is one band of indices, which the PDF's table colours.
+        // attachment.pdf's cmap box sits outside jp2h and only its first entry is sane; JJ2000 and older
+        // jpx-imageio releases reject the whole file. /Indexed never reads the wrapper, so take another
+        // colour space to reach the retry with the codestream alone.
         byte[] jp2 = Jpeg2000Fixtures.bytes("jp2-pclr-cmyk.jp2").clone();
         int cmap = indexOf(jp2, "cmap".getBytes(StandardCharsets.US_ASCII));
         assertTrue(cmap > 0, "fixture has a cmap box");
         for (int entry = 1; entry < 4; entry++) {
             jp2[cmap + 4 + entry * 4 + 2] = (byte) 0x98;  // MTYP: neither 0 (direct) nor 1 (palette)
         }
-        // every index looks up the same colour, so any pixel that differs did not come from the PDF's table
-        StringBuilder table = new StringBuilder();
-        for (int i = 0; i < 256; i++) table.append("000000FF");
-        BufferedImage image = decodeImage(jp2, 64, 64, Arrays.asList(new Name("Indexed"), new Name("DeviceCMYK"),
-                255, new HexStringObject(table.toString())));
+        BufferedImage image = decodeImage(jp2, 64, 64, new Name("DeviceGray"));
         assertNotNull(image, "decoder gave up on the broken wrapper");
-        int black = image.getRGB(0, 0) & 0xFFFFFF;
-        assertTrue((black >> 16) < 64 && ((black >> 8) & 0xFF) < 64 && (black & 0xFF) < 64, "not the table's black");
-        for (int y = 0; y < 64; y++) {
-            for (int x = 0; x < 64; x++) {
-                assertEquals(black, image.getRGB(x, y) & 0xFFFFFF, "pixel " + x + "," + y);
-            }
-        }
+        assertEquals(64, image.getWidth());
+        assertEquals(64, image.getHeight());
     }
 
     private static int indexOf(byte[] data, byte[] pattern) {
@@ -187,27 +180,47 @@ public class JpxDecoderTest {
         return -1;
     }
 
-    @DisplayName("a JP2 palette image under a PDF /Indexed colour space decodes (docGris.pdf)")
-    @Test
-    public void palettedFixtureUnderIndexed() {
+    @DisplayName("a JP2 palette image under a PDF /Indexed colour space takes the PDF's table (docGris.pdf, Chevron_2010.pdf)")
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"jp2-pclr-rgb.jp2", "jp2-pclr-cmyk.jp2"})
+    public void palettedFixtureUnderIndexed(String fixture) {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
-        // jpx-imageio expands the pclr box, so the raster arrives as three bands of RGB rather than
-        // one band of indices; putting the PDF's IndexColorModel over it threw. JJ2000 hands back
-        // the indices, which the PDF's table (one black entry here) then colours.
-        BufferedImage image = decodeFixture("jp2-pclr-rgb.jp2", 64, 64,
-                Arrays.asList(new Name("Indexed"), new Name("DeviceRGB"), 0, new HexStringObject("000000")));
-        assertNotNull(image);
-        if (readerIsJj2000("jp2-pclr-rgb.jp2")) return;
-        List<Jpeg2000Fixtures.Component> c = reference("jp2-pclr-rgb");
-        int bad = 0;
+        // the PDF's table replaces the JP2's own palette: jpx-imageio used to expand the pclr box into three
+        // (docGris) or four (Chevron, CMYK) bands, and the IndexColorModel over them threw. A grey ramp
+        // makes each pixel show the index it was looked up with.
+        StringBuilder ramp = new StringBuilder();
+        for (int i = 0; i < 256; i++) ramp.append(String.format("%02X%02X%02X", i, i, i));
+        BufferedImage image = decodeFixture(fixture, 64, 64,
+                Arrays.asList(new Name("Indexed"), new Name("DeviceRGB"), 255, new HexStringObject(ramp.toString())));
+        assertNotNull(image, fixture);
+        Raster indices = codestreamIndices(fixture);
+        int bad = 0, distinct = 0;
+        boolean[] seen = new boolean[256];
         for (int y = 0; y < 64; y++) {
             for (int x = 0; x < 64; x++) {
-                int p = y * 64 + x;
-                int want = (c.get(0).samples[p] << 16) | (c.get(1).samples[p] << 8) | c.get(2).samples[p];
-                if ((image.getRGB(x, y) & 0xFFFFFF) != want) bad++;
+                int i = indices.getSample(x, y, 0);
+                if (!seen[i]) distinct++;
+                seen[i] = true;
+                if ((image.getRGB(x, y) & 0xFFFFFF) != (i << 16 | i << 8 | i)) bad++;
             }
         }
-        assertEquals(0, bad, "pixels differing from the reader's palette expansion");
+        assertTrue(distinct > 1, fixture + ": a fixture of one index proves nothing");
+        assertEquals(0, bad, fixture + ": pixels not coloured by the PDF's table");
+    }
+
+    /** The palette indices: the fixture's codestream, read without its JP2 wrapper. */
+    static Raster codestreamIndices(String fixture) {
+        byte[] codestream = Jpeg2000TileParts.unwrapCodestream(Jpeg2000Fixtures.bytes(fixture));
+        try (ImageInputStream in = ImageIO.createImageInputStream(new ByteArrayInputStream(codestream))) {
+            Iterator<ImageReader> it = ImageIO.getImageReaders(in);
+            ImageReader r = it.next();
+            r.setInput(in);
+            Raster raster = r.read(0).getRaster();
+            assertEquals(1, raster.getNumBands(), fixture + ": codestream components");
+            return raster;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @DisplayName("a lossless grey JPX image comes out exactly as the reference decode")

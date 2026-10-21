@@ -78,6 +78,16 @@ public class JpxDecoder extends AbstractImageDecoder {
             // presizing it to the decoded raster size would allocate far more than it holds.
             // some encoders under-count tile-parts, which makes the reader drop the last one (see Jpeg2000TileParts)
             byte[] data = Jpeg2000TileParts.repairTilePartCounts(imageStream.getDecodedStreamBytes(0));
+            PColorSpace colourSpace = imageParams.getColourSpace();
+            if (colourSpace instanceof Indexed) {
+                // the samples are indices into the PDF's table, which replaces any palette (pclr) in the JP2
+                // wrapper; a reader would expand that palette (Chevron_2010.pdf: four bands of CMYK), so decode
+                // the bare codestream and every reader hands back the indices.
+                byte[] codestream = Jpeg2000TileParts.unwrapCodestream(data);
+                if (codestream != null) {
+                    data = codestream;
+                }
+            }
             try {
                 tmpImage = read(data);
             } catch (IOException | RuntimeException e) {
@@ -100,7 +110,6 @@ public class JpxDecoder extends AbstractImageDecoder {
                 wr = scaleReallyBigImages(wr);
             }
 
-            PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
 
@@ -136,12 +145,7 @@ public class JpxDecoder extends AbstractImageDecoder {
                 } else {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                 }
-            } else if (colourSpace instanceof Indexed && wr.getNumBands() == 3) {
-                // the codestream carried its own palette (pclr box) and the reader already expanded the
-                // indices through it, so there are no indices left to look up in the PDF's table.
-                tmpImage = ImageUtility.makeRGBBufferedImage(wr);
             } else if (colourSpace instanceof Indexed) {
-                // still some issue here with Chevron.pdf
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
             }
         } catch (IOException e) {
