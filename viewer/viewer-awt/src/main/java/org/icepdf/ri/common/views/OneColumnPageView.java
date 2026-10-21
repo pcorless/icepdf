@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 
@@ -124,19 +125,9 @@ public class OneColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        // still used by page fit code
-        float pageViewWidth = 0;
-        float pageViewHeight = 0;
-        int currCompIndex = documentViewController.getCurrentPageIndex();
-        Rectangle bounds = documentViewModel.getPageBounds(currCompIndex);
-        if (bounds != null) {
-            pageViewWidth = bounds.width;
-            pageViewHeight = bounds.height;
-        }
-        // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        final PDimension dimension = getMaxPageDimension();
+        float pageViewWidth = (float) dimension.getWidth();
+        float pageViewHeight = (float) dimension.getHeight();
 
         // add any horizontal padding from layout manager
         pageViewWidth += PAGE_SPACING_HORIZONTAL;

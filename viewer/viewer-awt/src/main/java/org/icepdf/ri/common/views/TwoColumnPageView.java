@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.views;
 
+import org.icepdf.core.pobjects.PDimension;
 import org.icepdf.ri.common.CurrentPageChanger;
 import org.icepdf.ri.common.KeyListenerPageColumnChanger;
 
@@ -139,58 +140,9 @@ public class TwoColumnPageView extends AbstractDocumentView {
     }
 
     public Dimension getDocumentSize() {
-        float pageViewWidth = 0;
-        float pageViewHeight = 0;
-        // The page index and corresponding component index are approximately equal
-        // If the first page is on the right, then there's a spacer on the left,
-        //  bumping indexes up by one.
-        int currPageIndex = documentViewController.getCurrentPageIndex();
-        int currCompIndex = currPageIndex;
-        int numComponents = getComponentCount();
-        boolean foundCurrent = false;
-        while (currCompIndex >= 0 && currCompIndex < numComponents) {
-            Component comp = getComponent(currCompIndex);
-            if (comp instanceof PageViewDecorator) {
-                PageViewDecorator pvd = (PageViewDecorator) comp;
-                PageViewComponent pvc = pvd.getPageViewComponent();
-                if (pvc.getPageIndex() == currPageIndex) {
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                    foundCurrent = true;
-                    break;
-                }
-            }
-            currCompIndex++;
-        }
-        if (foundCurrent) {
-            // Determine if the page at (currPageIndex,currCompIndex) was
-            //  on the left or right, so that if there's a page next to
-            //  it, whether it's earlier or later in the component list,
-            //  so we can get it's pageViewHeight and use that for our pageViewHeight
-            //  calculation.
-            // If the other component is past the ends of the component
-            //  list, or not a PageViewDecorator, then current was either
-            //  the first or last page in the document
-            boolean evenPageIndex = ((currPageIndex & 0x1) == 0);
-            boolean bumpedIndex = (currCompIndex != currPageIndex);
-            boolean onLeft = evenPageIndex ^ bumpedIndex; // XOR
-            int otherCompIndex = onLeft ? (currCompIndex + 1) : (currCompIndex - 1);
-            if (otherCompIndex >= 0 && otherCompIndex < numComponents) {
-                Component comp = getComponent(otherCompIndex);
-                if (comp instanceof PageViewDecorator) {
-                    PageViewDecorator pvd = (PageViewDecorator) comp;
-                    Dimension dim = pvd.getPreferredSize();
-                    pageViewWidth = dim.width;
-                    pageViewHeight = dim.height;
-                }
-            }
-        }
-
-        // normalize the dimensions to a zoom level of zero.
-        float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
-        pageViewWidth = Math.abs(pageViewWidth / currentZoom);
-        pageViewHeight = Math.abs(pageViewHeight / currentZoom);
+        final PDimension dimension = getMaxPageDimension();
+        float pageViewWidth = (float) dimension.getWidth();
+        float pageViewHeight = (float) dimension.getHeight();
 
         // two pages wide, generalization, pages are usually the same size we
         // don't bother to look at the second pages size for the time being.
