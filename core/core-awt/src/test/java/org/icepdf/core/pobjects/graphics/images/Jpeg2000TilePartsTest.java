@@ -49,6 +49,14 @@ public class Jpeg2000TilePartsTest {
         assertArrayEquals(new int[]{3, 3, 3}, declaredCounts(inner));
     }
 
+    @DisplayName("the codestream comes out of a JP2 file; a raw codestream has nothing to unwrap")
+    @Test
+    public void codestreamIsUnwrapped() throws IOException {
+        byte[] codestream = codestream(1, 3, 3);
+        assertArrayEquals(codestream, Jpeg2000TileParts.unwrapCodestream(jp2(codestream)));
+        assertNull(Jpeg2000TileParts.unwrapCodestream(codestream));
+    }
+
     @DisplayName("a consistent stream, or one with TNsot 0 (unspecified), is returned as-is")
     @Test
     public void consistentStreamIsUntouched() throws IOException {

@@ -78,42 +78,20 @@ public class JpxDecoder extends AbstractImageDecoder {
             // presizing it to the decoded raster size would allocate far more than it holds.
             // some encoders under-count tile-parts, which makes the reader drop the last one (see Jpeg2000TileParts)
             byte[] data = Jpeg2000TileParts.repairTilePartCounts(imageStream.getDecodedStreamBytes(0));
-            ImageInputStream imageInputStream = ImageIO.createImageInputStream(
-                    new ByteArrayInputStream(data));
-
-
-            // getting the raster for JPX seems to fail in most cases.
-            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-            ImageReader reader = null;
-            while (iter.hasNext()) {
-                reader = iter.next();
-                if (reader.canReadRaster()) {
-                    if (logger.isLoggable(Level.FINER)) {
-                        logger.finer("JPXDecode Image reader: " + reader);
-                    }
-                    break;
-                }
-            }
-
-            // read the raster data only, as we have our own logic to covert
-            // the raster data to RGB colours.
-            if (reader == null) {
-                imageInputStream.close();
-                return null;
-            }
-            ImageReadParam param = reader.getDefaultReadParam();
-            reader.setInput(imageInputStream, true, true);
             try {
-                // subsample a really big image while decoding rather than build the full raster and scale it
-                // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
-                int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
-                if (subsampling > 1) {
-                    param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+                tmpImage = read(data);
+            } catch (IOException | RuntimeException e) {
+                // a JP2 wrapper with a broken box (attachment.pdf: a cmap of junk outside jp2h) fails the whole
+                // read; the PDF's /ColorSpace stands in for the wrapper's colour boxes, so decode the bare codestream.
+                byte[] codestream = Jpeg2000TileParts.unwrapCodestream(data);
+                if (codestream == null) {
+                    throw e;
                 }
-                tmpImage = reader.read(0, param);
-            } finally {
-                reader.dispose();
-                imageInputStream.close();
+                logger.log(Level.FINE, "JPEG2000 wrapper unreadable, decoding its codestream alone: ", e);
+                tmpImage = read(codestream);
+            }
+            if (tmpImage == null) {
+                return null;
             }
             WritableRaster wr = tmpImage.getRaster();
 
@@ -171,5 +149,44 @@ public class JpxDecoder extends AbstractImageDecoder {
         }
 
         return tmpImage;
+    }
+
+    private BufferedImage read(byte[] data) throws IOException {
+        ImageInputStream imageInputStream = ImageIO.createImageInputStream(
+                new ByteArrayInputStream(data));
+
+        // getting the raster for JPX seems to fail in most cases.
+        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+        ImageReader reader = null;
+        while (iter.hasNext()) {
+            reader = iter.next();
+            if (reader.canReadRaster()) {
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer("JPXDecode Image reader: " + reader);
+                }
+                break;
+            }
+        }
+
+        // read the raster data only, as we have our own logic to covert
+        // the raster data to RGB colours.
+        if (reader == null) {
+            imageInputStream.close();
+            return null;
+        }
+        ImageReadParam param = reader.getDefaultReadParam();
+        reader.setInput(imageInputStream, true, true);
+        try {
+            // subsample a really big image while decoding rather than build the full raster and scale it
+            // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
+            int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
+            if (subsampling > 1) {
+                param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+            }
+            return reader.read(0, param);
+        } finally {
+            reader.dispose();
+            imageInputStream.close();
+        }
     }
 }

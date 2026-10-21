@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -81,6 +82,11 @@ public class JpxDecoderTest {
 
     /** As above, with /ColorSpace given as the PDF object (a name or an array). */
     static BufferedImage decodeFixture(String fixture, int width, int height, Object colourSpace) {
+        return decodeImage(Jpeg2000Fixtures.bytes(fixture), width, height, colourSpace);
+    }
+
+    /** As above, for JPX data that is not a fixture as stored. */
+    static BufferedImage decodeImage(byte[] data, int width, int height, Object colourSpace) {
         DictionaryEntries entries = new DictionaryEntries();
         entries.put(new Name("Type"), new Name("XObject"));
         entries.put(new Name("Subtype"), new Name("Image"));
@@ -90,7 +96,7 @@ public class JpxDecoderTest {
         entries.put(new Name("ColorSpace"), colourSpace);
         entries.put(new Name("Filter"), new Name("JPXDecode"));
         Library library = new Library();
-        ImageStream imageStream = new ImageStream(library, entries, Jpeg2000Fixtures.bytes(fixture));
+        ImageStream imageStream = new ImageStream(library, entries, data);
         // the render path: ImageParams needs Resources to resolve /ColorSpace (without them every
         // image is taken as DeviceGray), and the factory picks JpxDecoder from /Filter
         return imageStream.getImage(null, new Resources(library, new DictionaryEntries()));
@@ -141,6 +147,44 @@ public class JpxDecoderTest {
             }
             assertEquals(0, bad, name + ": pixels differing from the reference");
         }
+    }
+
+    @DisplayName("a JP2 wrapper with a broken cmap box falls back to its codestream (attachment.pdf)")
+    @Test
+    public void brokenComponentMappingUnderIndexed() {
+        assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
+        // attachment.pdf's cmap box sits outside jp2h and only its first entry is sane; both readers
+        // reject the whole file. The codestream alone is one band of indices, which the PDF's table colours.
+        byte[] jp2 = Jpeg2000Fixtures.bytes("jp2-pclr-cmyk.jp2").clone();
+        int cmap = indexOf(jp2, "cmap".getBytes(StandardCharsets.US_ASCII));
+        assertTrue(cmap > 0, "fixture has a cmap box");
+        for (int entry = 1; entry < 4; entry++) {
+            jp2[cmap + 4 + entry * 4 + 2] = (byte) 0x98;  // MTYP: neither 0 (direct) nor 1 (palette)
+        }
+        // every index looks up the same colour, so any pixel that differs did not come from the PDF's table
+        StringBuilder table = new StringBuilder();
+        for (int i = 0; i < 256; i++) table.append("000000FF");
+        BufferedImage image = decodeImage(jp2, 64, 64, Arrays.asList(new Name("Indexed"), new Name("DeviceCMYK"),
+                255, new HexStringObject(table.toString())));
+        assertNotNull(image, "decoder gave up on the broken wrapper");
+        int black = image.getRGB(0, 0) & 0xFFFFFF;
+        assertTrue((black >> 16) < 64 && ((black >> 8) & 0xFF) < 64 && (black & 0xFF) < 64, "not the table's black");
+        for (int y = 0; y < 64; y++) {
+            for (int x = 0; x < 64; x++) {
+                assertEquals(black, image.getRGB(x, y) & 0xFFFFFF, "pixel " + x + "," + y);
+            }
+        }
+    }
+
+    private static int indexOf(byte[] data, byte[] pattern) {
+        outer:
+        for (int i = 0; i + pattern.length <= data.length; i++) {
+            for (int j = 0; j < pattern.length; j++) {
+                if (data[i + j] != pattern[j]) continue outer;
+            }
+            return i;
+        }
+        return -1;
     }
 
     @DisplayName("a JP2 palette image under a PDF /Indexed colour space decodes (docGris.pdf)")

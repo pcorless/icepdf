@@ -9,6 +9,7 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -96,6 +97,27 @@ final class Jpeg2000TileParts {
             }
         }
         return repaired != null ? repaired : data;
+    }
+
+    /**
+     * @param data a JP2 file or a raw JPEG 2000 codestream
+     * @return the codestream inside a JP2 file's {@code jp2c} box, or null when {@code data} is not a JP2 file
+     */
+    static byte[] unwrapCodestream(byte[] data) {
+        if (data == null) {
+            return null;
+        }
+        int start = codestreamStart(data);
+        if (start <= 0) {
+            return null;
+        }
+        // the jp2c box header sits just before the codestream; length 0 runs to the end of the data
+        int header = data[start - 4] == 'j' && data[start - 1] == 'c' ? 8 : 16;
+        long length = header == 16
+                ? (u32(data, start - 8) << 32) | u32(data, start - 4)
+                : u32(data, start - 8);
+        long end = length == 0 ? data.length : Math.min(data.length, (long) start - header + length);
+        return Arrays.copyOfRange(data, start, (int) end);
     }
 
     /**
