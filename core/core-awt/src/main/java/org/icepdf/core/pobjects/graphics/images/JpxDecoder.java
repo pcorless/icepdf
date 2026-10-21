@@ -21,9 +21,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorConvertOp;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -113,22 +111,10 @@ public class JpxDecoder extends AbstractImageDecoder {
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
 
-            // special fallback scenario for ICCBased colours.
+            // like raw images (ImageUtility), an ICCBased image is drawn through its alternate (from /N):
+            // the profile isn't applied to image samples. Applying it here only ever worked for N=3.
             if (colourSpace instanceof ICCBased) {
-                ICCBased iccBased = (ICCBased) colourSpace;
-                // first try and apply the color space
-                try {
-                    ColorSpace cs = iccBased.getColorSpace();
-                    ColorConvertOp cco = new ColorConvertOp(cs, null);
-                    tmpImage = ImageUtility.makeRGBBufferedImage(wr);
-                    cco.filter(tmpImage, tmpImage);
-                } catch (Exception e) {
-                    logger.warning("Error processing ICC Color profile, falling " +
-                            "back to alternative.");
-                    // set the alternate as the current and try and process
-                    // using the below rules.
-                    colourSpace = iccBased.getAlternate();
-                }
+                colourSpace = ((ICCBased) colourSpace).getAlternate();
             }
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
