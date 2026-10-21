@@ -33,6 +33,10 @@ import java.awt.image.*;
  * @since 6.2.3
  */
 public class IccCmykRasterOp implements RasterOp {
+    // colour cache slots: a small table for small images, at most 1M slots (8 MB) for the largest
+    private static final int MIN_CACHE = 1 << 10;
+    private static final int MAX_CACHE = 1 << 20;
+
     private final RenderingHints hints;
     private final ColorSpace colorSpace;
 
@@ -57,32 +61,54 @@ public class IccCmykRasterOp implements RasterOp {
         // ICC colorSpace.toRGB is a per-pixel native round-trip and is by far the
         // most expensive step here.  Flat regions (common in scanned CMYK pages)
         // repeat the same sample, so skip the conversion when the four CMYK bytes
-        // match the previous pixel and reuse the last computed ARGB.
-        int lastC = -1, lastM = -1, lastY = -1, lastK = -1;
-        int lastArgb = 0xff000000;
+        // match the previous pixel and reuse the last computed ARGB.  Photos rarely
+        // repeat their neighbour but reuse far fewer colours than they have pixels
+        // (Mass 3D 8.pdf: 161k colours in 12.8M pixels), so every converted colour is
+        // also remembered.  A whole-raster ColorConvertOp was tried instead: barely
+        // faster, and it renders with a different intent (up to 35 levels off).
+        int pixelCount = destPixels.length;
+        int capacity = Integer.highestOneBit(Math.max(MIN_CACHE, Math.min(pixelCount, MAX_CACHE)) * 2 - 1);
+        int mask = capacity - 1;
+        int limit = capacity / 2;
+        int[] cacheKeys = new int[capacity];
+        // 0 marks an empty slot: a cached ARGB always has its alpha set
+        int[] cacheArgb = new int[capacity];
+        int cached = 0;
+        int lastCmyk = 0;
+        int lastArgb = 0;
         for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
-            int c = srcPixels[pixel] & 0xff;
-            int m = srcPixels[pixel + 1] & 0xff;
-            int y = srcPixels[pixel + 2] & 0xff;
-            int k = srcPixels[pixel + 3] & 0xff;
+            int cmyk = (srcPixels[pixel] & 0xff) << 24 |
+                    (srcPixels[pixel + 1] & 0xff) << 16 |
+                    (srcPixels[pixel + 2] & 0xff) << 8 |
+                    (srcPixels[pixel + 3] & 0xff);
 
-            if (!(c == lastC && m == lastM && y == lastY && k == lastK)) {
-                colorValue[0] = c / 255.0f;
-                colorValue[1] = m / 255.0f;
-                colorValue[2] = y / 255.0f;
-                colorValue[3] = k / 255.0f;
+            if (cmyk != lastCmyk || lastArgb == 0) {
+                int slot = (cmyk * 0x9E3779B9) >>> 12 & mask;
+                while (cacheArgb[slot] != 0 && cacheKeys[slot] != cmyk) {
+                    slot = (slot + 1) & mask;
+                }
+                lastArgb = cacheArgb[slot];
+                if (lastArgb == 0) {
+                    colorValue[0] = (cmyk >>> 24) / 255.0f;
+                    colorValue[1] = (cmyk >>> 16 & 0xff) / 255.0f;
+                    colorValue[2] = (cmyk >>> 8 & 0xff) / 255.0f;
+                    colorValue[3] = (cmyk & 0xff) / 255.0f;
 
-                rgbColorValue = colorSpace.toRGB(colorValue);
+                    rgbColorValue = colorSpace.toRGB(colorValue);
 
-                lastArgb = (0xff << 24) |
-                        (((int) (rgbColorValue[0] * 255) & 0xff) << 16) |
-                        (((int) (rgbColorValue[1] * 255) & 0xff) << 8) |
-                        ((int) (rgbColorValue[2] * 255) & 0xff);
-                lastC = c;
-                lastM = m;
-                lastY = y;
-                lastK = k;
+                    lastArgb = (0xff << 24) |
+                            (((int) (rgbColorValue[0] * 255) & 0xff) << 16) |
+                            (((int) (rgbColorValue[1] * 255) & 0xff) << 8) |
+                            ((int) (rgbColorValue[2] * 255) & 0xff);
+                    // once full, later colours are converted every time rather than evicting
+                    if (cached < limit) {
+                        cacheKeys[slot] = cmyk;
+                        cacheArgb[slot] = lastArgb;
+                        cached++;
+                    }
+                }
+                lastCmyk = cmyk;
             }
             destPixels[intPixels] = lastArgb;
         }
