@@ -107,10 +107,12 @@ public class Separation extends PColorSpace {
         // see if name can be converted to a known colour.
         if (name instanceof Name) {
             String colorName = ((Name) name).getName().toLowerCase();
-            // check for additive colours we can work with .
+            // check for additive colours we can work with. Not cyan: it is a process ink, whose alternate
+            // (tint transform into DeviceCMYK) is exact, while the screen colour cyan (#00FFFF) is far more
+            // saturated than the ink (Chevron_2010.pdf cover).
             if (!(colorName.equals("red")
                     || colorName.equals("blue") || colorName.equals("black")
-                    || colorName.equals("cyan") || colorName.equals("brown")
+                    || colorName.equals("brown")
                     || colorName.equals("auto"))) {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
