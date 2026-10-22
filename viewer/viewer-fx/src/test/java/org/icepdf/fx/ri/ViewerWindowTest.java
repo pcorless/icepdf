@@ -264,6 +264,21 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> annotations.get().isEmpty()));
     }
 
+    @DisplayName("the redaction report lists a few warnings and counts the rest, however many there are")
+    @Test
+    void reportWarningsAreCapped() {
+        List<org.icepdf.core.util.redaction.RedactionWarning> warnings = new java.util.ArrayList<>();
+        for (int i = 0; i < 400; i++) {
+            warnings.add(new org.icepdf.core.util.redaction.RedactionWarning(
+                    org.icepdf.core.util.redaction.RedactionWarning.Kind.UNSUPPORTED_CONTENT, "warning " + i));
+        }
+        String summary = PdfViewer.warningsSummary(warnings);
+        assertEquals(PdfViewer.REPORT_WARNINGS + 1, summary.strip().lines().count(), summary);
+        assertTrue(summary.contains("warning 4") && !summary.contains("warning 5\n"), summary);
+        assertTrue(summary.endsWith(Messages.format("viewer.report.moreWarnings", 395)), summary);
+        assertEquals(2, PdfViewer.warningsSummary(warnings.subList(0, 2)).strip().lines().count(), "a few: all listed");
+    }
+
     @DisplayName("search hits are highlighted while the search bar shows, hidden with it, and F3 brings it back")
     @Test
     void searchHighlightsFollowTheBar() throws Exception {
