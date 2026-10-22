@@ -310,6 +310,47 @@ class ViewerWindowTest {
         assertEquals(2, Fx.call(() -> viewer.getView().getCurrentPageIndex()));
     }
 
+    /**
+     * Redact all from a search, on lines set closer than their glyph bounds are tall (2005CAT.pdf):
+     * the boxes reach a sliver into the neighbouring lines, which must survive, and the report must
+     * not call the result a failure.
+     */
+    @DisplayName("search, redact all and export a number on tightly set lines: neighbours survive, the report verifies")
+    @Test
+    void redactAllOnTightLines() throws Exception {
+        String content = "BT /F1 10 Tf 12.4 TL 20 160 Td (dates to even before) Tj T* (in 1949 when the) Tj "
+                + "T* (insisted that their) Tj T* (dates to come) Tj ET";
+        TinyPdf pdf = TinyPdf.onePage("/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >>", "");
+        pdf.addStream("", content.getBytes(StandardCharsets.ISO_8859_1));
+        pdf.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+        open(pdf.write(dir.resolve("tight.pdf")));
+
+        Fx.run(() -> viewer.getView().search("1949"));
+        Fx.waitFor("the hit", () -> !viewer.getView().isSearching() && viewer.getView().getSearchHits().size() == 1);
+        assertEquals(1, Fx.call(() -> viewer.getView().redactSearchHits()).get(30, java.util.concurrent.TimeUnit.SECONDS));
+
+        java.util.concurrent.CompletableFuture<org.icepdf.core.util.redaction.RedactionReport> done =
+                new java.util.concurrent.CompletableFuture<>();
+        Path out = dir.resolve("tight-redacted.pdf");
+        Fx.run(() -> viewer.getSession().exportRedacted(out, done::complete));
+        org.icepdf.core.util.redaction.RedactionReport report = done.get(60, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(org.icepdf.core.util.redaction.RedactionConfidence.VERIFIED, report.getConfidence(), report.toString());
+
+        org.icepdf.core.pobjects.Document written = new org.icepdf.core.pobjects.Document();
+        written.setFile(out.toString());
+        try {
+            Page page = written.getPageTree().getPage(0);
+            page.init();
+            String text = page.getViewText().toString().replaceAll("\\s+", " ");
+            assertFalse(text.contains("1949"), text);
+            for (String kept : new String[]{"dates", "insisted"}) {
+                assertTrue(text.contains(kept), "'" + kept + "' on a neighbouring line survives: " + text);
+            }
+        } finally {
+            written.dispose();
+        }
+    }
+
     @DisplayName("the redaction report lists a few warnings and counts the rest, however many there are")
     @Test
     void reportWarningsAreCapped() {

@@ -41,7 +41,14 @@ public class RedactionOptions {
      */
     public static final float ANY_INTERSECTION = 0f;
 
-    private float glyphCoverageThreshold = ANY_INTERSECTION;
+    /**
+     * The default: a glyph goes when the redaction covers a quarter of its height. A redaction drawn
+     * over a word covers far more than that, while the sliver where a neighbouring line's glyph
+     * bounds overlap it under tight leading (about a tenth) does not.
+     */
+    public static final float DEFAULT_GLYPH_COVERAGE = 0.25f;
+
+    private float glyphCoverageThreshold = DEFAULT_GLYPH_COVERAGE;
     private String maskString = "****";
     private Color redactionColor = Color.BLACK;
     private Set<RedactionTarget> targets = EnumSet.allOf(RedactionTarget.class);
@@ -53,8 +60,8 @@ public class RedactionOptions {
     }
 
     /**
-     * @return options that redact everything, mask with {@code ****}, and err towards removing a
-     * glyph rather than leaving it
+     * @return options that redact everything, mask with {@code ****}, and remove a glyph a quarter
+     * covered (see {@link #glyphCoverageThreshold})
      */
     public static RedactionOptions defaults() {
         return new RedactionOptions();
@@ -62,13 +69,13 @@ public class RedactionOptions {
 
     /**
      * How much of a glyph a redaction must cover before the glyph is removed, as a fraction of the
-     * glyph's area.
+     * glyph's height (where the two overlap across).
      * <p>
-     * {@link #ANY_INTERSECTION}, the default, removes a glyph the redaction touches at all. That
-     * errs towards over-redacting: where lines are set tightly enough that their glyph bounds
-     * overlap, a redaction sized to a word on one line can also clip a glyph on the line above.
-     * Raising the threshold trades that back, at the risk of leaving a partly covered glyph in the
-     * file.
+     * Glyph bounds carry the font's ascent and descent, so where lines are set tightly the bounds of
+     * neighbouring lines overlap, and a redaction sized to a word reaches into the lines above and
+     * below it. {@link #DEFAULT_GLYPH_COVERAGE}, the default, passes over that sliver.
+     * {@link #ANY_INTERSECTION} removes a glyph the redaction touches at all, erring towards
+     * over-redacting; a higher threshold risks leaving a partly covered glyph in the file.
      *
      * @param glyphCoverageThreshold fraction between 0 and 1
      * @return this
@@ -76,7 +83,7 @@ public class RedactionOptions {
     public RedactionOptions glyphCoverageThreshold(float glyphCoverageThreshold) {
         if (glyphCoverageThreshold < 0 || glyphCoverageThreshold > 1) {
             throw new IllegalArgumentException(
-                    "glyph coverage threshold is a fraction of a glyph's area, got " + glyphCoverageThreshold);
+                    "glyph coverage threshold is a fraction of a glyph's height, got " + glyphCoverageThreshold);
         }
         this.glyphCoverageThreshold = glyphCoverageThreshold;
         return this;
