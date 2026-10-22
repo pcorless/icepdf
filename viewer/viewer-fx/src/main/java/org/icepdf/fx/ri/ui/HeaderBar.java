@@ -17,6 +17,7 @@ package org.icepdf.fx.ri.ui;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -182,6 +183,11 @@ public final class HeaderBar extends VBox {
     }
 
     /** Shows the search bar with the caret in it. */
+    /** Whether the search bar is showing. */
+    public ObservableBooleanValue searchBarShown() {
+        return searchToggle.selectedProperty();
+    }
+
     public void showSearch() {
         searchToggle.setSelected(true);
         searchField.requestFocus();

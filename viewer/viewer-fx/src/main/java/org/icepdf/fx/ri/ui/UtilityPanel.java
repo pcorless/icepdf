@@ -50,7 +50,8 @@ public final class UtilityPanel {
     private final StackPane body = new StackPane();
     private final ToggleButton pin = new ToggleButton();
     private final EdgeDrawer drawer;
-    private SidePanel shown;
+    private final javafx.beans.property.ReadOnlyObjectWrapper<SidePanel> shownPanel =
+            new javafx.beans.property.ReadOnlyObjectWrapper<>(this, "shown");
     private SidePanel hovered;
 
     public UtilityPanel(UserLayout.Side side, IconProvider icons) {
@@ -83,8 +84,8 @@ public final class UtilityPanel {
             drawer.close();
         });
         drawer.stateProperty().addListener((o, was, now) -> {
-            if (now == EdgeDrawer.State.OVERLAY && hovered != null && shown != hovered && !isClickOpened()) show(hovered);
-            if (now != EdgeDrawer.State.COLLAPSED && shown == null) showFirstAvailable();
+            if (now == EdgeDrawer.State.OVERLAY && hovered != null && shownPanel.get() != hovered && !isClickOpened()) show(hovered);
+            if (now != EdgeDrawer.State.COLLAPSED && shownPanel.get() == null) showFirstAvailable();
             syncButtons();
         });
     }
@@ -124,7 +125,7 @@ public final class UtilityPanel {
         javafx.beans.InvalidationListener listener = o -> refreshStrip();
         entries.put(panel, new Entry(panel, node, available, old.button(), listener));
         available.addListener(listener);
-        if (shown == panel) show(panel);
+        if (shownPanel.get() == panel) show(panel);
         refreshStrip();
     }
 
@@ -134,7 +135,12 @@ public final class UtilityPanel {
 
     /** The panel showing (or shown last), or null. */
     public SidePanel getShown() {
-        return shown;
+        return shownPanel.get();
+    }
+
+    /** {@link #getShown()}, to follow. */
+    public javafx.beans.property.ReadOnlyObjectProperty<SidePanel> shownProperty() {
+        return shownPanel.getReadOnlyProperty();
     }
 
     /** Opens at a panel and keeps it open (as a click would). */
@@ -160,7 +166,7 @@ public final class UtilityPanel {
 
     private void clicked(SidePanel panel) {
         boolean open = drawer.isOpen();
-        if (open && shown == panel && drawer.getState() == EdgeDrawer.State.OVERLAY && clickOpened) {
+        if (open && shownPanel.get() == panel && drawer.getState() == EdgeDrawer.State.OVERLAY && clickOpened) {
             clickOpened = false;
             drawer.close();
             return;
@@ -173,7 +179,7 @@ public final class UtilityPanel {
     private void show(SidePanel panel) {
         Entry entry = entries.get(panel);
         if (entry == null) return;
-        shown = panel;
+        shownPanel.set(panel);
         title.setText((String) entry.button().getUserData());
         body.getChildren().setAll(entry.node());
         syncButtons();
@@ -193,8 +199,8 @@ public final class UtilityPanel {
         for (Entry entry : entries.values()) {
             if (entry.available().get()) buttons.getChildren().add(entry.button());
         }
-        if (shown != null && !entries.get(shown).available().get()) {
-            shown = null;
+        if (shownPanel.get() != null && !entries.get(shownPanel.get()).available().get()) {
+            shownPanel.set(null);
             showFirstAvailable();
         }
     }
@@ -203,8 +209,8 @@ public final class UtilityPanel {
         if (!drawer.isOpen()) {
             clickOpened = false;
             group.selectToggle(null);
-        } else if (shown != null) {
-            group.selectToggle(entries.get(shown).button());
+        } else if (shownPanel.get() != null) {
+            group.selectToggle(entries.get(shownPanel.get()).button());
         }
     }
 

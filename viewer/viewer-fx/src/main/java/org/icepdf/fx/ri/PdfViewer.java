@@ -220,6 +220,7 @@ public class PdfViewer extends StackPane {
             if (features.allows(panel)) utility.addPanel(panel, panelLabel(panel), panelNode(first, panel), panelAvailable(first, panel));
         }
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
+        if (features.shows(Chrome.HEADER) && actions.isAvailable("search.find")) followSearchVisibility();
 
         if (features.shows(Chrome.HEADER)) shell.setHeader(header);
         shell.setCenter(first.getNode());
@@ -343,6 +344,33 @@ public class PdfViewer extends StackPane {
             e.setDropCompleted(any);
             e.consume();
         });
+    }
+
+    /**
+     * Search hits are highlighted while the results are on screen - the header's search bar or the
+     * search side panel - and hidden while neither is, as a way to put the highlighting away
+     * without losing the results.  Moving to another hit (F3) while they're hidden brings the bar
+     * back, so the move isn't to a hit nobody can see.
+     */
+    private void followSearchVisibility() {
+        javafx.beans.binding.BooleanBinding shown = javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> header.searchBarShown().get() || utility.getDrawer().isOpen() && utility.getShown() == SidePanel.SEARCH,
+                header.searchBarShown(), utility.getDrawer().stateProperty(), utility.shownProperty());
+        Runnable apply = () -> {
+            PdfView v = currentView.get();
+            if (v != null) v.setShowSearchHits(shown.get());
+        };
+        shown.addListener((o, was, now) -> apply.run());
+        javafx.beans.value.ChangeListener<Number> revealOnMove = (o, was, now) -> {
+            if (now.intValue() >= 0 && !shown.get()) header.showSearch();
+        };
+        currentView.addListener((o, was, now) -> {
+            if (was != null) was.currentSearchHitIndexProperty().removeListener(revealOnMove);
+            if (now != null) now.currentSearchHitIndexProperty().addListener(revealOnMove);
+            apply.run();
+        });
+        if (currentView.get() != null) currentView.get().currentSearchHitIndexProperty().addListener(revealOnMove);
+        apply.run();
     }
 
     /** Files dropped on the document: the first PDF replaces it unless it has unsaved changes (after the drop ends), the rest open in new tabs and the non-PDFs are named.  @return true if any is a PDF */

@@ -97,7 +97,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     // page text: loading, selection, search hits and the caret on each page.
     private final TextLayers text = new TextLayers(getSkinnable(),
             new PageTextLoader(RenderService.shared(), renderOwner, (page, sequence) -> onTextReady(page)),
-            page -> getSkinnable().searchHitsOnPage(page), () -> this.sizes.count(), () -> this.layers.values());
+            page -> getSkinnable().isShowSearchHits() ? getSkinnable().searchHitsOnPage(page) : List.of(), () -> this.sizes.count(), () -> this.layers.values());
     // what a screen reader sees: set in the constructor.
     private PdfViewAccessibility accessibility;
     private final Map<Integer, PageLayer> layers = new HashMap<>();
@@ -236,6 +236,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             refresh();
         });
         registerListChangeListener(control.getSearchHits(), c -> scheduleRefresh());
+        registerChangeListener(control.showSearchHitsProperty(), o -> scheduleRefresh());
         registerListChangeListener(control.getSignatures(), c -> {
             signatures.statusesChanged(control.getSignatures());
             scheduleRefresh();

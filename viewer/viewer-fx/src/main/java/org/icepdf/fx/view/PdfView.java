@@ -129,6 +129,7 @@ public class PdfView extends Control {
     private final IntegerProperty pageBoundary =
             new SimpleIntegerProperty(this, "pageBoundary", Page.BOUNDARY_CROPBOX);
     private final BooleanProperty paintAnnotations = new SimpleBooleanProperty(this, "paintAnnotations", true);
+    private final BooleanProperty showSearchHits = new SimpleBooleanProperty(this, "showSearchHits", true);
     private final BooleanProperty busy = new SimpleBooleanProperty(this, "busy", false);
     private final ObjectProperty<PageOverlayFactory> pageOverlayFactory =
             new SimpleObjectProperty<>(this, "pageOverlayFactory");
@@ -1437,6 +1438,22 @@ public class PdfView extends Control {
 
     public final void setPaintAnnotations(boolean value) {
         paintAnnotations.set(value);
+    }
+
+    /**
+     * Whether search hits are highlighted on the pages.  Turning it off keeps the hits (and the
+     * current one), so turning it back on shows them again without searching again.  True by default.
+     */
+    public final BooleanProperty showSearchHitsProperty() {
+        return showSearchHits;
+    }
+
+    public final boolean isShowSearchHits() {
+        return showSearchHits.get();
+    }
+
+    public final void setShowSearchHits(boolean value) {
+        showSearchHits.set(value);
     }
 
     /**

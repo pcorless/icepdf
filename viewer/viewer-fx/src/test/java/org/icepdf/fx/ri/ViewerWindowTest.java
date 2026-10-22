@@ -264,6 +264,31 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> annotations.get().isEmpty()));
     }
 
+    @DisplayName("search hits are highlighted while the search bar shows, hidden with it, and F3 brings it back")
+    @Test
+    void searchHighlightsFollowTheBar() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("search.pdf"));
+        open(copy);
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()), "no bar, no highlighting");
+
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "the bar shows: highlighted");
+        Fx.run(() -> viewer.getView().search("bravo"));
+        Fx.waitFor("a hit", () -> viewer.getView().getCurrentSearchHitIndex() >= 0);
+
+        TextField query = Fx.call(() -> (TextField) viewer.lookup(".search-bar .text-field"));
+        Fx.run(() -> Fx.press(query, KeyCode.ESCAPE, false));
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()), "the bar hidden: so is the highlighting");
+        assertFalse(Fx.call(() -> viewer.getView().getSearchHits().isEmpty()), "the hits are kept");
+
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "shown again with the bar");
+
+        Fx.run(() -> Fx.press(query, KeyCode.ESCAPE, false));
+        Fx.run(() -> viewer.getView().search("charlie"));
+        Fx.waitFor("the hit to move", () -> viewer.getView().isShowSearchHits());
+    }
+
     @DisplayName("Save with redactions marked asks first; cancelling writes nothing")
     @Test
     void saveAsksAboutRedactions() throws Exception {
