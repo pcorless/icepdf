@@ -48,8 +48,40 @@ reactor still trips on the stale `qa` module:
 
 `icepdf-viewer-fx-<version>.jar` (Maven `com.github.pcorless.icepdf:icepdf-viewer-fx`) holds the page
 view, the viewer component and the viewer application. It needs `icepdf-core` and JavaFX 22 or
-later, which your application brings. The `osDistZip` bundle has it in `libs/` with everything else
+later (see [Java and JavaFX versions](#java-and-javafx-versions)). The `osDistZip` bundle has it in `libs/` with everything else
 it needs except JavaFX, its sources in `libs-source/`, and its pom in `maven2/`.
+
+### Java and JavaFX versions
+
+`viewer-fx` is compiled for **Java 17** against **JavaFX 22**, the newest JavaFX that runs on Java 17.
+It uses `Platform.Preferences` (JavaFX 22) to follow the system's light/dark setting, so it can't use
+JavaFX 21. Core and the Swing viewer still run on Java 11.
+
+The JavaFX 22 line no longer gets updates. Run on a newer JavaFX when your JDK allows:
+
+| Your JDK | JavaFX to use |
+|---|---|
+| 17 to 22 | 22.0.2 (the default this module brings) |
+| 23 or later | **25 LTS**, still updated (25.0.5 at the time of writing) |
+
+Each JavaFX release needs a newer JDK: 23 needs Java 21, 24 needs 22, 25 needs 23, 26 needs 24 and
+27 needs 25. JavaFX 23 and 24 are also out of updates, so on Java 21 or 22 you can stay on 22.0.2.
+`viewer-fx` runs unchanged on a newer JavaFX (its 189 tests pass on JavaFX 25.0.5 with JDK 26). To
+move up, declare JavaFX yourself. In Maven, your own declaration wins over the one `viewer-fx` brings:
+
+```xml
+<dependency>
+    <groupId>org.openjfx</groupId>
+    <artifactId>javafx-controls</artifactId>
+    <version>25.0.5</version>
+</dependency>
+```
+
+In Gradle, the newer version wins on its own: `implementation 'org.openjfx:javafx-controls:25.0.5'`, or
+`javafx { version = '25.0.5' }` with the OpenJFX plugin. The jar with dependencies below bundles 22.0.2;
+build it with a newer JavaFX the same way.
+
+### Runnable jar
 
 A single runnable jar with JavaFX for the build platform inside:
 
