@@ -349,9 +349,34 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> viewer.filesDropped(List.of(noExtension.toFile(), notes.toFile()))));
         assertEquals(Messages.format("viewer.notPdf", "notes.txt"), message());
         awaitShowing(noExtension);
-        assertEquals(2, Fx.call(() -> viewer.getDocuments().size()));
+        assertEquals(1, Fx.call(() -> viewer.getDocuments().size()), "dropped on an unchanged document: it's replaced");
 
         assertFalse(Fx.call(() -> viewer.filesDropped(List.of(notes.toFile()))), "only a non-PDF: the drop is refused");
+    }
+
+    @DisplayName("a PDF dropped on a document with unsaved changes opens in a new tab, keeping the changes")
+    @Test
+    void dropOnModifiedOpensNewTab() throws Exception {
+        openMarked("marked.pdf");
+        assertTrue(Fx.call(() -> viewer.getSession().isModified()));
+        DocumentPane marked = Fx.call(viewer::getCurrentDocument);
+        Path b = pdf("b.pdf");
+        assertTrue(Fx.call(() -> viewer.filesDropped(List.of(b.toFile()))));
+        awaitShowing(b);
+        assertEquals(2, Fx.call(() -> viewer.getDocuments().size()));
+        assertTrue(Fx.call(() -> marked.getSession().isModified()), "the changed document is still open, unsaved");
+        assertTrue(dialogs.shown.isEmpty(), "nothing was asked");
+    }
+
+    @DisplayName("PDFs dropped on the tab bar open in new tabs")
+    @Test
+    void dropOnTabBarOpensNewTabs() throws Exception {
+        open(pdf("a.pdf"));
+        Path b = pdf("b.pdf");
+        Path c = pdf("c.pdf");
+        assertTrue(Fx.call(() -> viewer.filesDroppedOnTabBar(List.of(b.toFile(), c.toFile()))));
+        Fx.waitFor("three tabs", () -> viewer.getDocuments().size() == 3);
+        awaitShowing(c);
     }
 
     // ---- attachments --------------------------------------------------------------------------

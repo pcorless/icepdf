@@ -24,6 +24,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
@@ -84,6 +85,7 @@ public class PdfViewer extends StackPane {
     private final IconProvider icons;
     private final ViewerShell shell = new ViewerShell();
     private final Toast toast;
+    private final javafx.scene.control.Label dropHint = new javafx.scene.control.Label();
     private final Theme theme;
     private final HeaderBar header;
     private final ToolRail rail;
@@ -198,7 +200,7 @@ public class PdfViewer extends StackPane {
                 java.util.List<Path> pdfs = droppedPdfs(board.getFiles());
                 if (pdfs.isEmpty()) return;
                 javafx.application.Platform.runLater(() -> {
-                    open(pdfs.get(0), pane);
+                    replaceOrAdd(pdfs.get(0), pane);
                     pdfs.stream().skip(1).forEach(this::openInNewTab);
                 });
             });
@@ -314,27 +316,87 @@ public class PdfViewer extends StackPane {
     }
 
     /**
-     * PDFs dropped on the viewer open in new tabs (or replace the document, without tabs); dropped
-     * on a tab they replace that tab's document.
+     * Where dropped PDFs go.  On the document: the first replaces it, or opens in a new tab when the
+     * document has unsaved changes.  On a tab: the same for that tab's document (see the tab strip).
+     * Anywhere else on the header (the bar, the + button): new tabs.  Without tabs every drop
+     * replaces the document, asking about unsaved changes.  While a drag is over the viewer a hint
+     * says which it will be.
      */
     private void acceptDroppedFiles() {
+        dropHint.getStyleClass().add("drop-hint");
+        dropHint.setMouseTransparent(true);
+        dropHint.setVisible(false);
+        getChildren().add(dropHint);
         // any file is taken: one that isn't a PDF is then turned away with a message, not silently.
         setOnDragOver(e -> {
             if (hasFiles(e.getDragboard())) e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
             e.consume();
         });
+        // a filter, so the hint follows the drag over the tabs too (they take the drag event).
+        addEventFilter(javafx.scene.input.DragEvent.DRAG_OVER, e -> showDropHint(hasFiles(e.getDragboard())
+                ? dropHintText(e.getPickResult().getIntersectedNode()) : null));
+        addEventFilter(javafx.scene.input.DragEvent.DRAG_DROPPED, e -> showDropHint(null));
+        setOnDragExited(e -> showDropHint(null));
         setOnDragDropped(e -> {
-            boolean any = filesDropped(hasFiles(e.getDragboard()) ? e.getDragboard().getFiles() : java.util.List.of());
+            java.util.List<File> files = hasFiles(e.getDragboard()) ? e.getDragboard().getFiles() : java.util.List.of();
+            boolean any = inHeader(e.getPickResult().getIntersectedNode()) ? filesDroppedOnTabBar(files) : filesDropped(files);
             e.setDropCompleted(any);
             e.consume();
         });
     }
 
-    /** Files dropped on the viewer: the PDFs open in new tabs (after the drop ends), the rest are named.  @return true if any is a PDF */
+    /** Files dropped on the document: the first PDF replaces it unless it has unsaved changes (after the drop ends), the rest open in new tabs and the non-PDFs are named.  @return true if any is a PDF */
     boolean filesDropped(java.util.List<File> files) {
+        java.util.List<Path> pdfs = droppedPdfs(files);
+        if (pdfs.isEmpty()) return false;
+        javafx.application.Platform.runLater(() -> {
+            replaceOrAdd(pdfs.get(0), pane());
+            pdfs.stream().skip(1).forEach(this::openInNewTab);
+        });
+        return true;
+    }
+
+    /** Files dropped on the header, off the tabs: the PDFs open in new tabs.  @return true if any is a PDF */
+    boolean filesDroppedOnTabBar(java.util.List<File> files) {
         java.util.List<Path> pdfs = droppedPdfs(files);
         javafx.application.Platform.runLater(() -> pdfs.forEach(this::openInNewTab));
         return !pdfs.isEmpty();
+    }
+
+    /** Opens a file in {@code target}, or in a new tab when that has unsaved changes (or is busy). */
+    private void replaceOrAdd(Path file, DocumentPane target) {
+        if (!features.isMultipleDocuments()) {
+            session().open(file);
+            return;
+        }
+        DocumentSession session = target.getSession();
+        if (session.isModified() || session.isBusy()) openInNewTab(file);
+        else open(file, target);
+    }
+
+    /** What a drop on {@code node} would do, or null where the drop shows its own target (a tab). */
+    private String dropHintText(Node node) {
+        if (!features.isMultipleDocuments()) return Messages.get("viewer.drop.replace");
+        for (Node n = node; n != null && n != this; n = n.getParent()) {
+            if (n.getStyleClass().contains("doc-tab")) return null;
+        }
+        if (inHeader(node)) return Messages.get("viewer.drop.newTab");
+        DocumentSession session = session();
+        return session.isModified() || session.isBusy() ? Messages.get("viewer.drop.newTab")
+                : Messages.get("viewer.drop.replace");
+    }
+
+    private boolean inHeader(Node node) {
+        if (!features.isMultipleDocuments()) return false;
+        for (Node n = node; n != null && n != this; n = n.getParent()) {
+            if (n == header) return true;
+        }
+        return false;
+    }
+
+    private void showDropHint(String text) {
+        dropHint.setVisible(text != null);
+        if (text != null) dropHint.setText(text);
     }
 
     private static Path real(Path file) {
