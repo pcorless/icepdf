@@ -1304,6 +1304,7 @@ public class PdfViewer extends StackPane {
                 case EXIT -> onExit != null;
                 case PREFERENCES -> onPreferences != null;
                 case FIND -> features.shows(Chrome.HEADER);
+                case PAGE_NUMBER -> features.shows(Chrome.HEADER) && header != null && header.hasPageField();
                 case SIDE_PANEL -> features.shows(Chrome.SIDE_PANELS);
                 default -> true;
             };
@@ -1402,6 +1403,11 @@ public class PdfViewer extends StackPane {
         @Override
         public BooleanProperty fullScreenProperty() {
             return fullScreen;
+        }
+
+        @Override
+        public void focusPageNumber() {
+            header.focusPageNumber();
         }
 
         @Override

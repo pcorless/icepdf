@@ -61,9 +61,23 @@ public final class PageField extends HBox {
             show();
             view.requestFocus();
         });
+        field.setOnKeyPressed(e -> {
+            if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                show();
+                if (view != null) view.requestFocus();
+                e.consume();
+            }
+        });
         getChildren().addAll(field, count);
         source.addListener((o, was, now) -> follow(now));
         follow(source.getValue());
+    }
+
+    /** Puts the caret in the field with the page number selected, to type over (Go to page). */
+    public void focusField() {
+        if (isDisabled()) return;
+        field.requestFocus();
+        field.selectAll();
     }
 
     private void follow(PdfView next) {

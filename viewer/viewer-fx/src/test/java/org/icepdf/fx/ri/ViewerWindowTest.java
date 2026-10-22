@@ -280,6 +280,36 @@ class ViewerWindowTest {
         assertEquals(first + 1, Fx.call(() -> viewer.getView().getCurrentSearchHitIndex()), "F3: the next hit");
     }
 
+    @DisplayName("Ctrl+G puts the caret in the page number field, its number selected; Enter goes there, Esc puts it back")
+    @Test
+    void goToPageFocusesThePageField() throws Exception {
+        TinyPdf pdf = TinyPdf.onePage("", "");
+        pdf.add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>");
+        pdf.add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>");
+        Path file = dir.resolve("three.pdf");
+        java.nio.file.Files.write(file, new String(pdf.bytes(), StandardCharsets.ISO_8859_1)
+                .replace("/Kids [3 0 R] /Count 1", "/Kids [3 0 R 4 0 R 5 0 R] /Count 3").getBytes(StandardCharsets.ISO_8859_1));
+        open(file);
+        TextField field = Fx.call(() -> (TextField) viewer.lookup(".page-field .text-field"));
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.G, true));
+        assertSame(field, Fx.call(() -> viewer.getScene().getFocusOwner()), "Ctrl+G: the page field has the caret");
+        assertEquals("1", Fx.call(field::getSelectedText), "the page number is selected to type over");
+
+        Fx.run(() -> {
+            field.replaceSelection("3");
+            field.fireEvent(new javafx.event.ActionEvent());
+        });
+        assertEquals(2, Fx.call(() -> viewer.getView().getCurrentPageIndex()), "Enter goes to page 3");
+
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.G, true));
+        Fx.run(() -> {
+            field.replaceSelection("2");
+            Fx.press(field, KeyCode.ESCAPE, false);
+        });
+        assertEquals("3", Fx.call(field::getText), "Esc puts the current page back");
+        assertEquals(2, Fx.call(() -> viewer.getView().getCurrentPageIndex()));
+    }
+
     @DisplayName("the redaction report lists a few warnings and counts the rest, however many there are")
     @Test
     void reportWarningsAreCapped() {
