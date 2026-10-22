@@ -1,0 +1,16 @@
+ICEpdf Fonts
+Copyright 2006-2026 ICEsoft Technologies Canada Corp. and Patrick Corless
+
+The ICEpdf code in this jar is licensed under the Apache License, Version 2.0
+(see LICENSE).
+
+The fonts in org/icepdf/core/fonts are licensed under the SIL Open Font License,
+Version 1.1 (see OFL.txt):
+
+  - Noto Serif, Noto Sans Symbols, Noto Sans Symbols 2
+    Copyright 2022 The Noto Project Authors
+    (https://github.com/notofonts/latin-greek-cyrillic, https://github.com/notofonts/symbols)
+  - Roboto
+    Copyright 2011 The Roboto Project Authors (https://github.com/googlefonts/roboto-classic)
+  - Roboto Mono
+    Copyright 2015 The Roboto Mono Project Authors (https://github.com/googlefonts/robotomono)

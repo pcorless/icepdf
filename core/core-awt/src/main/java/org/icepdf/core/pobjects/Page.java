@@ -176,8 +176,10 @@ public class Page extends Dictionary {
 
     // resources for page's parent pages, default fonts, etc.
     private Resources resources;
-    // Vector of annotations
-    private List<Annotation> annotations;
+    // Vector of annotations; published whole (never filled in place) under annotationsLock, so a
+    // reader on another thread sees either null or the complete list.
+    private volatile List<Annotation> annotations;
+    private final Object annotationsLock = new Object();
     // Contents
     private List<Stream> contents;
     // Container for all shapes stored on page
@@ -295,7 +297,28 @@ public class Page extends Dictionary {
         return null;
     }
 
+    /**
+     * Initializes the annotations once, for callers outside {@link #init()}: a viewer may read a
+     * page's annotations on one thread (tab order, form values) while a render thread initializes
+     * the same page.
+     */
+    private void ensureAnnotations() throws InterruptedException {
+        if (annotations != null) return;
+        synchronized (annotationsLock) {
+            if (annotations == null) initPageAnnotations();
+        }
+    }
+
     private void initPageAnnotations() throws InterruptedException {
+        synchronized (annotationsLock) {
+            List<Annotation> list = buildPageAnnotations();
+            if (list != null) annotations = list;
+        }
+    }
+
+    /** The page's annotations, built from /Annots; null if it has none. */
+    private List<Annotation> buildPageAnnotations() throws InterruptedException {
+        List<Annotation> annotations = null;
         // find annotations in main library for our pages dictionary
         Object annots = library.getObject(entries, ANNOTS_KEY);
         if (annots instanceof List) {
@@ -356,7 +379,7 @@ public class Page extends Dictionary {
                         }
                         // create synthetic annotation to paint the glue between a markup annotation and the popup
                         // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
-                        createPrintableMarkupAnnotationGlue(a);
+                        createPrintableMarkupAnnotationGlue(annotations, a);
                     }
                 } catch (IllegalStateException e) {
                     Annotation finalA = a;
@@ -376,6 +399,7 @@ public class Page extends Dictionary {
                 }
             }
         }
+        return annotations;
     }
 
     /**
@@ -979,7 +1003,7 @@ public class Page extends Dictionary {
         return path.createTransformedShape(at);
     }
 
-    private void createPrintableMarkupAnnotationGlue(Annotation annotation) {
+    private void createPrintableMarkupAnnotationGlue(List<Annotation> annotations, Annotation annotation) {
         // create synthetic annotation to paint the glue between a markup annotation and the popup
         // this is only used for print purposes.  A similar pattern is also used in the Viewer RI
         if (annotation instanceof PopupAnnotation) {
@@ -1042,12 +1066,10 @@ public class Page extends Dictionary {
     private Annotation addAnnotationInternal(Annotation newAnnotation) {
 
         // make sure the page annotations have been initialized.
-        if (annotations == null) {
-            try {
-                initPageAnnotations();
-            } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interrupted");
-            }
+        try {
+            ensureAnnotations();
+        } catch (InterruptedException e) {
+            logger.warning("Annotation Initialization interrupted");
         }
 
         StateManager stateManager = library.getStateManager();
@@ -1098,7 +1120,7 @@ public class Page extends Dictionary {
         this.annotations.add(newAnnotation);
 
         // add visual glue for markup annotation
-        createPrintableMarkupAnnotationGlue(newAnnotation);
+        createPrintableMarkupAnnotationGlue(this.annotations, newAnnotation);
 
         // add the new annotations to the library
         library.addObject(newAnnotation, newAnnotation.getPObjectReference());
@@ -1122,12 +1144,10 @@ public class Page extends Dictionary {
     public void deleteAnnotation(Annotation annot) {
 
         // make sure the page annotations have been initialized.
-        if (annotations == null) {
-            try {
-                initPageAnnotations();
-            } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interrupted");
-            }
+        try {
+            ensureAnnotations();
+        } catch (InterruptedException e) {
+            logger.warning("Annotation Initialization interrupted");
         }
 
         AnnotationRemovalModifier annotationRemovalModifier =
@@ -1152,12 +1172,10 @@ public class Page extends Dictionary {
         }
 
         // make sure the page annotations have been initialized.
-        if (annotations == null) {
-            try {
-                initPageAnnotations();
-            } catch (InterruptedException e) {
-                logger.warning("Annotation Initialization interrupted");
-            }
+        try {
+            ensureAnnotations();
+        } catch (InterruptedException e) {
+            logger.warning("Annotation Initialization interrupted");
         }
 
         StateManager stateManager = library.getStateManager();
@@ -1505,23 +1523,19 @@ public class Page extends Dictionary {
      * @return annotation associated with page; null, if there are no annotations.
      */
     public List<Annotation> getAnnotations() {
-        if (annotations == null) {
-            try {
-                initPageAnnotations();
-            } catch (InterruptedException e) {
-                logger.finer("Interrupt exception getting annotations. ");
-            }
+        try {
+            ensureAnnotations();
+        } catch (InterruptedException e) {
+            logger.finer("Interrupt exception getting annotations. ");
         }
         return annotations;
     }
 
     public List<RedactionAnnotation> getRedactionAnnotations() {
-        if (annotations == null) {
-            try {
-                initPageAnnotations();
-            } catch (InterruptedException e) {
-                logger.finer("Interrupt exception getting annotations. ");
-            }
+        try {
+            ensureAnnotations();
+        } catch (InterruptedException e) {
+            logger.finer("Interrupt exception getting annotations. ");
         }
         // todo make this method more generic to any Annotation subtype
         if (annotations != null) {

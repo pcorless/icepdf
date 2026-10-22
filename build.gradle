@@ -46,6 +46,8 @@ subprojects{
 }
 
 evaluationDependsOn(':core:core-awt')
+evaluationDependsOn(':viewer:viewer-fx')
+evaluationDependsOn(':viewer:viewer-awt')
 
 defaultTasks 'osDistZip', 'osDistTar'
 
@@ -59,6 +61,7 @@ distributions {
             into('libs-source') {
                 from 'core/core-awt/build/libs/'
                 from 'viewer/viewer-awt/build/libs/'
+                from 'viewer/viewer-fx/build/libs/'
                 include '*-sources.jar'
             }
             into('libs') {
@@ -66,6 +69,14 @@ distributions {
                 from project(':core:core-awt').jar
                 from project(':viewer:viewer-awt').jar
                 from project(':core:core-fonts').jar
+                // the viewers' JPEG 2000 decoder (JJ2000 licence, in licenses/); core doesn't need it
+                from { project(':viewer:viewer-awt').configurations.jpeg2000 }
+                // the JavaFX viewer and what it needs beyond the above, but not JavaFX itself: it's
+                // per platform, and applications bring their own (22 or later).
+                // (launcherLibs collects the viewer jar and its runtime jars inside its own project.)
+                from(project(':viewer:viewer-fx').tasks.named('launcherLibs')) {
+                    exclude 'javafx-*', 'icepdf-core*'
+                }
             }
             // dependencies information
             into('dependencies') {
@@ -89,6 +100,12 @@ distributions {
                     fileName.replace("pom-default.xml", "icepdf-viewer.xml")
                 }
             }
+            into ('maven2') {
+                from 'viewer/viewer-fx/build/publications/viewerJar/pom-default.xml'
+                rename { String fileName ->
+                    fileName.replace("pom-default.xml", "icepdf-viewer-fx.xml")
+                }
+            }
             // examples
 //            into ('examples') {
 //                from 'examples'
@@ -105,6 +122,12 @@ distributions {
 
 // Fix Gradle 9 task dependency validation
 tasks.named('osDistZip') {
+    dependsOn ':viewer:viewer-fx:launcherLibs'
+    dependsOn ':core:core-awt:generatePomFileForCoreJarPublication'
+    dependsOn ':viewer:viewer-awt:generatePomFileForViewerJarPublication'
+    dependsOn ':viewer:viewer-fx:sourcesJar'
+    dependsOn ':viewer:viewer-fx:jar'
+    dependsOn ':viewer:viewer-fx:generatePomFileForViewerJarPublication'
     dependsOn ':core:core-awt:sourcesJar'
     dependsOn ':core:core-awt:jar'
     dependsOn ':viewer:viewer-awt:sourcesJar'
@@ -113,6 +136,12 @@ tasks.named('osDistZip') {
 }
 
 tasks.named('osDistTar') {
+    dependsOn ':viewer:viewer-fx:launcherLibs'
+    dependsOn ':core:core-awt:generatePomFileForCoreJarPublication'
+    dependsOn ':viewer:viewer-awt:generatePomFileForViewerJarPublication'
+    dependsOn ':viewer:viewer-fx:sourcesJar'
+    dependsOn ':viewer:viewer-fx:jar'
+    dependsOn ':viewer:viewer-fx:generatePomFileForViewerJarPublication'
     dependsOn ':core:core-awt:sourcesJar'
     dependsOn ':core:core-awt:jar'
     dependsOn ':viewer:viewer-awt:sourcesJar'

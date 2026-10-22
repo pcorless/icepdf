@@ -14,7 +14,13 @@
         The ICEpdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
     </description>
 
+    <!-- the code is Apache 2.0, the bundled fonts OFL 1.1 (see META-INF/NOTICE) -->
     <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
         <license>
             <name>SIL OPEN FONT LICENSE Version 1.1</name>
             <url>https://openfontlicense.org</url>

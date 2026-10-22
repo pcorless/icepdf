@@ -51,14 +51,8 @@ public class FontPropertiesManager {
 
     public static final String PREFERENCES_KEY_CLASS = "org.icepdf.ri.util.FontPreferencesKey";
 
-    /**
-     * Version of the cached font list held in the backing store.  Raise it whenever {@link FontManager}
-     * learns to discover fonts it previously skipped, so existing installations re-scan once instead
-     * of loading a list that predates the change.
-     * <p>
-     * 1 -&gt; 2: TrueType/OpenType collections (.ttc/.otc) are now read, one entry per contained face.
-     */
-    private static final int FONT_CACHE_VERSION = 2;
+    /** Version of the cached font list held in the backing store: core's {@link FontManager#FONT_LIST_VERSION}. */
+    private static final int FONT_CACHE_VERSION = FontManager.FONT_LIST_VERSION;
     /**
      * Held in a child node, not alongside the font entries: {@link FontManager#setFontProperties} reads
      * every key of the font node and parses its value as {@code family|decorations|path}, so a key
@@ -191,7 +185,7 @@ public class FontPropertiesManager {
      * scanner improvement would never reach an existing installation: it would keep loading the list
      * it wrote the first time it ran, missing whatever the new scanner can now see.
      * <p>
-     * Bump {@link #FONT_CACHE_VERSION} whenever the set of fonts {@link FontManager} can discover
+     * {@link FontManager#FONT_LIST_VERSION} is raised whenever the set of fonts it can discover
      * changes, so installations re-scan once and then carry on using the cache.
      */
     private boolean isFontCacheStale() {

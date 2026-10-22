@@ -1,6 +1,7 @@
 include 'core:core-awt',
         'core:core-fonts',
         'viewer:viewer-awt',
+        'viewer:viewer-fx',
         'qa:viewer-jfx',
         'examples:annotation:callback',
         'examples:annotation:creation',

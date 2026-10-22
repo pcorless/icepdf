@@ -90,6 +90,16 @@
     <profiles>
         <profile>
             <id>assembly</id>
+            <!-- the JPEG 2000 decoder goes in the viewer application only (JJ2000 licence, so core
+                 and the published viewer leave it out); see viewer-fx/PROVENANCE.md -->
+            <dependencies>
+                <dependency>
+                    <groupId>com.github.jai-imageio</groupId>
+                    <artifactId>jai-imageio-jpeg2000</artifactId>
+                    <version>${jai-imageio.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>
@@ -100,9 +110,9 @@
                                     <mainClass>org.icepdf.ri.viewer.Launcher</mainClass>
                                 </manifest>
                             </archive>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
+                            <descriptors>
+                                <descriptor>src/assembly/jar-with-dependencies.xml</descriptor>
+                            </descriptors>
                         </configuration>
                         <executions>
                             <execution>

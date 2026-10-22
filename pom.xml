@@ -16,6 +16,7 @@
         <module>core</module>
         <module>viewer</module>
         <module>examples</module>
+        <module>qa</module>
     </modules>
 
     <properties>
@@ -101,6 +102,34 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- the javadoc jar carries the module's own LICENSE / NOTICE (/ OFL.txt) like its
+                         other jars; javadoc only adds the JDK's legal/ files for its scripts. -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>javadoc-legal</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/apidocs/META-INF</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.outputDirectory}/META-INF</directory>
+                                            <includes>
+                                                <include>LICENSE</include>
+                                                <include>NOTICE</include>
+                                                <include>OFL.txt</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

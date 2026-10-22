@@ -1,0 +1,44 @@
+%PDF-1.5
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /PageLayout /TwoPageRight /OCProperties << /OCGs [5 0 R 6 0 R 7 0 R 8 0 R] /D << /Order [5 0 R [6 0 R 7 0 R] [(Labelled) 8 0 R]] /OFF [] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Count 1 /Kids [3 0 R] >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 25 >>
+stream
+0 0 1 rg 20 20 50 50 re f
+endstream
+endobj
+5 0 obj
+<< /Type /OCG /Name (A) >>
+endobj
+6 0 obj
+<< /Type /OCG /Name (B) >>
+endobj
+7 0 obj
+<< /Type /OCG /Name (C) >>
+endobj
+8 0 obj
+<< /Type /OCG /Name (D) >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000201 00000 n 
+0000000258 00000 n 
+0000000345 00000 n 
+0000000420 00000 n 
+0000000462 00000 n 
+0000000504 00000 n 
+0000000546 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+588
+%%EOF

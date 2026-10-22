@@ -1,0 +1,13 @@
+ICEpdf Viewer
+Copyright 2006-2026 ICEsoft Technologies Canada Corp. and Patrick Corless
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/):
+
+  - org.icepdf.ri.util.Pair and org.icepdf.ri.util.ImmutablePair are from
+    Apache Commons Lang (org.apache.commons.lang3.tuple).
+
+Apache Commons Lang
+Copyright The Apache Software Foundation
