@@ -264,6 +264,22 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> annotations.get().isEmpty()));
     }
 
+    @DisplayName("Ctrl+F on the page opens the search bar; F3 moves to the next hit")
+    @Test
+    void findShortcuts() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("keys.pdf"));
+        open(copy);
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()));
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.F, true));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "Ctrl+F shows the search bar");
+
+        Fx.run(() -> viewer.getView().search("a"));
+        Fx.waitFor("the hits", () -> !viewer.getView().isSearching() && viewer.getView().getSearchHits().size() > 1);
+        int first = Fx.call(() -> viewer.getView().getCurrentSearchHitIndex());
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.F3, false));
+        assertEquals(first + 1, Fx.call(() -> viewer.getView().getCurrentSearchHitIndex()), "F3: the next hit");
+    }
+
     @DisplayName("the redaction report lists a few warnings and counts the rest, however many there are")
     @Test
     void reportWarningsAreCapped() {

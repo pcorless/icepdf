@@ -170,9 +170,11 @@ public class PdfViewer extends StackPane {
             actionKeys = java.util.List.of();
             if (scene != null) {
                 // the header button and the drop-down menu are not a menu bar: their shortcuts (Ctrl+O...) go on the
-                // scene.
+                // scene, with those of the header's and the rail's buttons.  Zoom, copy, select all and undo
+                // are the view's own keys; fit page/width (Shortcut+1/2) would take the recent files' keys.
                 java.util.List<String> ids = new java.util.ArrayList<>(java.util.Arrays.asList(MENU));
-                ids.addAll(java.util.List.of("document.open", "document.save"));
+                ids.addAll(java.util.List.of("document.open", "document.save", "search.find", "search.next",
+                        "search.previous", "search.panel", "view.side-panel", "navigation.go-to", "view.comments"));
                 actionKeys = actions.installAccelerators(scene, ids.toArray(new String[0]));
                 // Shortcut+1..9 open the nth recent file, read when pressed (the menu is built only when shown).
                 for (int i = 1; i <= 9; i++) {
