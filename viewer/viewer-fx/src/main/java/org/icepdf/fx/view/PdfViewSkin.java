@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -118,6 +119,10 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     private double scrollX;
     private double scrollY;
+    // a Page Up/Down scroll in flight, and where it ends.
+    private AnimationTimer pageScroll;
+    private double pageScrollTargetY;
+    private static final long PAGE_SCROLL_NANOS = 150_000_000L;
     private double viewportW;
     private double viewportH;
     private double outputScale = 1;
@@ -273,6 +278,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void dispose() {
+        stopPageScroll();
         if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         zoomSettle.stop();
@@ -515,6 +521,54 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void scrollTo(double x, double y) {
+        stopPageScroll();
+        applyScroll(x, y);
+    }
+
+    /**
+     * Page Up/Down in a continuous mode: onto the next page edge or a screen on (see
+     * {@link DocumentLayout#pageDownTarget}), eased over a moment so the eye can follow the text.
+     * A key pressed again mid-scroll steps on from where the first was going.
+     */
+    @Override
+    public void scrollByPage(boolean down) {
+        if (layout == null) return;
+        double from = pageScroll != null ? pageScrollTargetY : scrollY;
+        double gap = getSkinnable().getPageGap();
+        double target = down ? layout.pageDownTarget(from, viewportH, gap) : layout.pageUpTarget(from, viewportH, gap);
+        target = clamp(target, 0, Math.max(0, layout.getHeight() - viewportH));
+        stopPageScroll();
+        double start = scrollY;
+        if (start == target) return;
+        double end = target;
+        pageScrollTargetY = end;
+        pageScroll = new AnimationTimer() {
+            private long begin = -1;
+
+            @Override
+            public void handle(long now) {
+                if (begin < 0) begin = now;
+                double t = Math.min(1, (now - begin) / (double) PAGE_SCROLL_NANOS);
+                // ease out: quick to start, settling onto the target.
+                applyScroll(scrollX, start + (end - start) * (1 - Math.pow(1 - t, 3)));
+                if (t >= 1) stopPageScroll();
+            }
+        };
+        pageScroll.start();
+    }
+
+    /** The current layout, or null before a document is laid out. */
+    DocumentLayout layout() {
+        return layout;
+    }
+
+    private void stopPageScroll() {
+        if (pageScroll == null) return;
+        pageScroll.stop();
+        pageScroll = null;
+    }
+
+    private void applyScroll(double x, double y) {
         if (layout == null) return;
         scrollX = clamp(x, 0, Math.max(0, layout.getWidth() - viewportW));
         scrollY = clamp(y, 0, Math.max(0, layout.getHeight() - viewportH));

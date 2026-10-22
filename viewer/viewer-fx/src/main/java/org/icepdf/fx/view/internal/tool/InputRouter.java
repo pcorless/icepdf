@@ -55,6 +55,9 @@ public final class InputRouter {
         /** Scrolls to a document-space position, clamped to the document. */
         void scrollTo(double x, double y);
 
+        /** Page Up/Down in a continuous mode: to the next page edge or about a screen on. */
+        void scrollByPage(boolean down);
+
         /** Zooms by {@code factor} holding the document point under a viewport point still. */
         void zoomAround(double vx, double vy, double factor);
 
@@ -260,7 +263,7 @@ public final class InputRouter {
             case LEFT -> host.scrollTo(x - SCROLL_UNIT, y);
             case RIGHT -> host.scrollTo(x + SCROLL_UNIT, y);
             case PAGE_UP -> {
-                if (continuous) host.scrollTo(x, y - host.getViewportHeight() * 0.9);
+                if (continuous) host.scrollByPage(false);
                 else control.previousPage();
             }
             case PAGE_DOWN -> pageDown();
@@ -302,7 +305,7 @@ public final class InputRouter {
 
     private void pageDown() {
         if (host.view().getViewMode().isContinuous()) {
-            host.scrollTo(host.scrollX(), host.scrollY() + host.getViewportHeight() * 0.9);
+            host.scrollByPage(true);
         } else {
             host.view().nextPage();
         }

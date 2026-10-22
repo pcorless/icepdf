@@ -167,6 +167,45 @@ class DocumentLayoutTest {
     }
 
     @Test
+    void pageKeysFlipWholePagesWhenAPageFits() {
+        // a viewport one page (and its gap) tall: page tops are at i * 210.
+        DocumentLayout layout = new DocumentLayout(uniform(5, 100, 200), ViewMode.CONTINUOUS, false, 0,
+                GAP, 100, 210);
+        assertEquals(210, layout.pageDownTarget(0, 210, GAP));
+        assertEquals(420, layout.pageDownTarget(210, 210, GAP));
+        assertEquals(210, layout.pageUpTarget(420, 210, GAP));
+        assertEquals(0, layout.pageUpTarget(210, 210, GAP));
+        // from part way down a page, onto the next page's top / back onto this page's top.
+        assertEquals(420, layout.pageDownTarget(300, 210, GAP));
+        assertEquals(210, layout.pageUpTarget(300, 210, GAP));
+        assertEquals(0, layout.pageUpTarget(0, 210, GAP), "nothing above the first page");
+    }
+
+    @Test
+    void pageKeysStepThroughATallPageThenSnapToTheNext() {
+        // 1000 px pages in a 300 px viewport: page 1's top is at 1010.
+        DocumentLayout layout = new DocumentLayout(uniform(3, 100, 1000), ViewMode.CONTINUOUS, false, 0,
+                GAP, 100, 300);
+        assertEquals(270, layout.pageDownTarget(0, 300, GAP), "a screen less a tenth, within the page");
+        assertEquals(540, layout.pageDownTarget(270, 300, GAP));
+        assertEquals(1010, layout.pageDownTarget(810, 300, GAP), "the next page's top is on screen: onto it");
+        assertEquals(1010, layout.pageDownTarget(750, 300, GAP), "never past the next page's top");
+        assertEquals(740, layout.pageUpTarget(1010, 300, GAP), "back a screen into the page above");
+        assertEquals(1010, layout.pageUpTarget(1200, 300, GAP), "this page's top within a screen: onto it");
+        assertEquals(0, layout.pageUpTarget(200, 300, GAP));
+    }
+
+    @Test
+    void pageKeysMoveByRowsWhenFacing() {
+        DocumentLayout layout = new DocumentLayout(uniform(6, 100, 200), ViewMode.FACING_CONTINUOUS, false, 0,
+                GAP, 300, 210);
+        double secondRow = layout.getSlot(2).y() - GAP;
+        assertEquals(layout.getSlot(3).y(), layout.getSlot(2).y(), "pages 3 and 4 share a row");
+        assertEquals(secondRow, layout.pageDownTarget(0, 210, GAP));
+        assertEquals(0, layout.pageUpTarget(secondRow, 210, GAP));
+    }
+
+    @Test
     void emptyDocument() {
         DocumentLayout layout = new DocumentLayout(uniform(0, 0, 0), ViewMode.CONTINUOUS, false, 0,
                 GAP, 400, 300);
