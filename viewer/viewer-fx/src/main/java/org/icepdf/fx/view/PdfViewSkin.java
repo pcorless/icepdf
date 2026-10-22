@@ -119,6 +119,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     private double scrollX;
     private double scrollY;
+    // set by dispose: work queued for later (a refresh) finds the skin gone and does nothing.
+    private boolean disposed;
     // a Page Up/Down scroll in flight, and where it ends.
     private AnimationTimer pageScroll;
     private double pageScrollTargetY;
@@ -203,7 +205,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         registerChangeListener(control.currentPageIndexProperty(), o -> onCurrentPage());
         // after the page settles, so a caret placed for a screen reader doesn't fight the scroll.
         registerChangeListener(control.currentPageIndexProperty(),
-                o -> Platform.runLater(() -> accessibility.currentPageChanged()));
+                o -> Platform.runLater(() -> {
+                    if (!disposed) accessibility.currentPageChanged();
+                }));
         registerChangeListener(control.paintAnnotationsProperty(), o -> {
             renderer.setPaintAnnotations(control.isPaintAnnotations());
             resetRasters();
@@ -278,6 +282,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void dispose() {
+        disposed = true;
         stopPageScroll();
         if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
@@ -613,7 +618,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         refreshQueued = true;
         Platform.runLater(() -> {
             refreshQueued = false;
-            refresh();
+            // the view may have been closed (the skin disposed) while this waited.
+            if (!disposed) refresh();
         });
     }
 
@@ -793,7 +799,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
                 (int) Math.ceil((vx1 - vx0) * scale) + 1, (int) Math.ceil((vy1 - vy0) * scale) + 1);
         Drag started = drag;
         renderer.requestAnnotationProxy(hit.pageIndex(), params, hit.annotation(), region, buffer -> {
-            if (drag != started) return;
+            if (disposed || drag != started) return;
             ui.setProxy(buffer, region.x(), region.y(), scale, from, TileRenderer.multiplies(hit.annotation()));
             tiles.setExcluded(hit.pageIndex(), hit.annotation(), true);
             bumpAnnotationGeneration(hit.pageIndex());
