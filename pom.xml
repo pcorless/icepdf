@@ -23,7 +23,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>11</maven.compiler.release>
         <bouncy.version>1.86</bouncy.version>
-        <twelve-monkey.version>3.15.2</twelve-monkey.version>
+        <twelve-monkey.version>3.15.3</twelve-monkey.version>
         <jpx-imageio.version>0.1.0</jpx-imageio.version>
         <jbig2.version>3.0.4</jbig2.version>   <!-- 3.0.5 fails some embedded streams ("Page 1 missing", 10578.pdf) -->
         <font-box.version>3.0.8</font-box.version>
