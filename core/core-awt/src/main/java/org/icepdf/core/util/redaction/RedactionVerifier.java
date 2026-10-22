@@ -103,7 +103,7 @@ public class RedactionVerifier {
                 before.put(key, countIn(textOf(original, regions), term));
                 int hits = countIn(writtenText, term);
                 after.put(key, hits);
-                rawMatches += countIn(writtenStreams, term) + countRawBytes(writtenBytes, term);
+                rawMatches += countInSyntax(writtenStreams, term) + countRawBytes(writtenBytes, term);
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Redaction verification could not read the written document", e);
@@ -216,8 +216,52 @@ public class RedactionVerifier {
      * uncompressed and outside any page: metadata, names, an annotation's own strings.
      */
     private static int countRawBytes(byte[] pdf, String term) {
-        return countIn(new String(pdf, StandardCharsets.ISO_8859_1), term)
-                + countIn(new String(pdf, StandardCharsets.UTF_16BE), term);
+        return countInSyntax(new String(pdf, StandardCharsets.ISO_8859_1), term)
+                + countInSyntax(new String(pdf, StandardCharsets.UTF_16BE), term);
+    }
+
+    /**
+     * {@link #countIn}, for PDF syntax rather than text: a match that is only part of a longer
+     * number token isn't the term. A year or an amount is otherwise found inside the coordinates of
+     * any drawing ("1949" in {@code 787.05 444.19495 l}) and in the cross-reference table, and every
+     * redaction of a number fails. Only a bare token is passed over - delimited by white space or
+     * syntax - so a number inside a string, {@code (19495)}, still counts.
+     */
+    static int countInSyntax(String haystack, String needle) {
+        if (haystack == null || needle == null || needle.isEmpty()) {
+            return 0;
+        }
+        boolean numeric = needle.chars().allMatch(RedactionVerifier::isNumberChar);
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length())) {
+            if (!numeric || !insideNumberToken(haystack, i, i + needle.length())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** True when [start, end) is part of a longer number token, delimited by white space or syntax. */
+    private static boolean insideNumberToken(String s, int start, int end) {
+        int from = start;
+        while (from > 0 && isNumberChar(s.charAt(from - 1))) from--;
+        if (from > 0 && (s.charAt(from - 1) == '-' || s.charAt(from - 1) == '+')) from--;
+        int to = end;
+        while (to < s.length() && isNumberChar(s.charAt(to))) to++;
+        if (from == start && to == end) {
+            return false; // the whole token: the term itself
+        }
+        return (from == 0 || isTokenEdge(s.charAt(from - 1))) && (to == s.length() || isTokenEdge(s.charAt(to)));
+    }
+
+    private static boolean isNumberChar(int c) {
+        return c >= '0' && c <= '9' || c == '.';
+    }
+
+    // white space and the delimiters that end a number token; not ( and ), which would put it in a string.
+    private static boolean isTokenEdge(char c) {
+        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == 0
+                || c == '[' || c == ']' || c == '/' || c == '<' || c == '>' || c == '{' || c == '}' || c == '%';
     }
 
     private static int countIn(String haystack, String needle) {

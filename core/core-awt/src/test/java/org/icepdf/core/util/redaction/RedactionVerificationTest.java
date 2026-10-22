@@ -247,4 +247,23 @@ public class RedactionVerificationTest {
         words.add(word);
         return Collections.singletonList(new SearchTerm(word, words, false, false, false));
     }
+
+    /**
+     * Redacting a number (a year, an amount) must not fail because the same digits occur inside the
+     * coordinates of a drawing or a cross-reference offset: those are other numbers, not the term.
+     * 2005CAT.pdf with "1949" reported 66 leaks, every one inside a path coordinate.
+     */
+    @DisplayName("a number term inside a longer number token is not a leak; as a token or in a string it is")
+    @Test
+    public void numberTokensAreNotLeaks() {
+        assertEquals(0, RedactionVerifier.countInSyntax("787.05896 444.19495 l 858.19495 440.06 l", "1949"),
+                "coordinates that contain the digits");
+        assertEquals(0, RedactionVerifier.countInSyntax("0000194912 00000 n\n", "1949"), "an xref offset");
+        assertEquals(0, RedactionVerifier.countInSyntax("[-19490.5 2]", "1949"), "a signed number in an array");
+        assertEquals(1, RedactionVerifier.countInSyntax("BT (Since 1949) Tj ET", "1949"), "the term in a string");
+        assertEquals(1, RedactionVerifier.countInSyntax("BT (19495) Tj ET", "1949"),
+                "digits in a string count, even inside a longer number");
+        assertEquals(1, RedactionVerifier.countInSyntax("12 1949 Td", "1949"), "the term as a whole token");
+        assertEquals(2, RedactionVerifier.countInSyntax("(bravo) 12.5 (bravo)", "bravo"), "words are unaffected");
+    }
 }
