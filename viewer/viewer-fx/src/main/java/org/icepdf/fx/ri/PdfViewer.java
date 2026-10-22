@@ -734,20 +734,23 @@ public class PdfViewer extends StackPane {
             case VERIFIED_WITH_WARNINGS -> "viewer.report.warnings";
             default -> "viewer.report.verified";
         })));
-        java.util.List<org.icepdf.core.util.redaction.RedactionWarning> warnings = report.getWarnings();
-        text.append(warningsSummary(warnings));
+        // what could not be checked (why "unverified"), then the warnings.
+        java.util.List<String> details = new java.util.ArrayList<>();
+        report.getUnverifiableRegions().forEach(region -> details.add(region.getDetail()));
+        report.getWarnings().forEach(warning -> details.add(warning.getDetail()));
+        text.append(detailsSummary(details));
         boolean clean = confidence == org.icepdf.core.util.redaction.RedactionConfidence.VERIFIED
                 && report.getWarnings().isEmpty();
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(clean
                 ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING,
                 text.toString(), javafx.scene.control.ButtonType.OK);
         alert.setHeaderText(Messages.format("viewer.redactedSavedAs", name));
-        if (warnings.size() > REPORT_WARNINGS) {
+        if (details.size() > REPORT_DETAILS) {
             // the whole list, scrolling, under Show Details: a dialog sized to hundreds of lines
             // outgrows the largest window the graphics card can draw.
             StringBuilder all = new StringBuilder();
-            for (org.icepdf.core.util.redaction.RedactionWarning warning : warnings) {
-                all.append("\u2022 ").append(warning.getDetail()).append('\n');
+            for (String detail : details) {
+                all.append("\u2022 ").append(detail).append('\n');
             }
             javafx.scene.control.TextArea list = new javafx.scene.control.TextArea(all.toString());
             list.setEditable(false);
@@ -760,17 +763,17 @@ public class PdfViewer extends StackPane {
         dialogs.show(alert);
     }
 
-    /** The redaction report shows this many warnings; the rest are under Show Details. */
-    static final int REPORT_WARNINGS = 5;
+    /** The redaction report lists this many reasons and warnings; the rest are under Show Details. */
+    static final int REPORT_DETAILS = 5;
 
-    /** The first few warnings as bullets, and how many more there are. */
-    static String warningsSummary(java.util.List<org.icepdf.core.util.redaction.RedactionWarning> warnings) {
+    /** The first few reasons and warnings as bullets, and how many more there are. */
+    static String detailsSummary(java.util.List<String> details) {
         StringBuilder text = new StringBuilder();
-        for (int i = 0; i < Math.min(REPORT_WARNINGS, warnings.size()); i++) {
-            text.append("\n\u2022 ").append(warnings.get(i).getDetail());
+        for (int i = 0; i < Math.min(REPORT_DETAILS, details.size()); i++) {
+            text.append("\n\u2022 ").append(details.get(i));
         }
-        if (warnings.size() > REPORT_WARNINGS) {
-            text.append('\n').append(Messages.format("viewer.report.moreWarnings", warnings.size() - REPORT_WARNINGS));
+        if (details.size() > REPORT_DETAILS) {
+            text.append('\n').append(Messages.format("viewer.report.moreWarnings", details.size() - REPORT_DETAILS));
         }
         return text.toString();
     }
