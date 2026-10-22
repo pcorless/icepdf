@@ -17,10 +17,12 @@ package org.icepdf.fx.ri.actions.tools;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableBooleanValue;
+import org.icepdf.core.pobjects.graphics.text.DocumentSelection;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.Conditions;
 import org.icepdf.fx.ri.actions.ToggleAction;
 import org.icepdf.fx.ri.actions.ViewerContext;
+import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
 
 import java.util.Locale;
@@ -31,6 +33,8 @@ import java.util.Locale;
  * {@code annotation.<kind>} for the annotation tools ({@code annotation.highlight},
  * {@code annotation.free-text}...), {@code signature.sign} for the signature tool.  The annotation
  * tools need a document that permits annotating, the signature tool one that permits filling in.
+ * A text-markup tool chosen while text is selected marks up that selection and leaves the tool
+ * as it was.
  */
 public final class ToolModeAction extends AbstractViewerAction implements ToggleAction {
 
@@ -76,6 +80,22 @@ public final class ToolModeAction extends AbstractViewerAction implements Toggle
 
     @Override
     public void execute(ViewerContext context) {
-        context.view().setToolMode(mode);
+        PdfView view = context.view();
+        DocumentSelection selection = view.getTextSelection();
+        if (marksUpText() && selection != null && !selection.isCollapsed() && view.isAnnotationEditingAllowed()) {
+            switch (mode) {
+                case HIGHLIGHT -> view.highlightSelection();
+                case UNDERLINE -> view.underlineSelection();
+                case STRIKE_OUT -> view.strikeOutSelection();
+                default -> view.squigglySelection();
+            }
+            return;
+        }
+        view.setToolMode(mode);
+    }
+
+    private boolean marksUpText() {
+        return mode == ToolMode.HIGHLIGHT || mode == ToolMode.UNDERLINE || mode == ToolMode.STRIKE_OUT
+                || mode == ToolMode.SQUIGGLY;
     }
 }

@@ -230,6 +230,40 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> viewer.getSession().hasRedactions()));
     }
 
+    @DisplayName("a markup tool chosen with text selected marks up the selection and keeps the tool")
+    @Test
+    void markupToolUsesSelection() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("markup.pdf"));
+        open(copy);
+        java.util.function.Supplier<List<Annotation>> annotations = () -> {
+            // the markups alone: each comes with a popup.
+            List<Annotation> list = viewer.getSession().getDocument().getPageTree().getPage(0).getAnnotations();
+            return list == null ? List.of() : list.stream()
+                    .filter(a -> a instanceof org.icepdf.core.pobjects.annotations.TextMarkupAnnotation).toList();
+        };
+        // the page's text loads in the background; a markup made before it has nothing to cover.
+        Fx.waitFor("the squiggly", () -> {
+            if (!annotations.get().isEmpty()) return true;
+            viewer.getView().selectAll();
+            viewer.getActions().execute("annotation.squiggly");
+            return !annotations.get().isEmpty();
+        });
+        assertEquals(1, Fx.call(() -> annotations.get().size()));
+        assertEquals(org.icepdf.core.pobjects.annotations.TextMarkupAnnotation.SUBTYPE_SQUIGGLY,
+                Fx.call(() -> annotations.get().get(0).getSubType()));
+        assertEquals(org.icepdf.fx.view.ToolMode.TEXT_SELECT, Fx.call(() -> viewer.getView().getToolMode()),
+                "the tool is unchanged");
+        assertNull(Fx.call(() -> viewer.getView().getTextSelection()), "the selection is used up");
+
+        Fx.run(() -> viewer.getView().undo());
+        assertTrue(Fx.call(() -> annotations.get().isEmpty()), "undo takes it away");
+
+        // with nothing selected, the same action arms the tool.
+        Fx.run(() -> viewer.getActions().execute("annotation.squiggly"));
+        assertEquals(org.icepdf.fx.view.ToolMode.SQUIGGLY, Fx.call(() -> viewer.getView().getToolMode()));
+        assertTrue(Fx.call(() -> annotations.get().isEmpty()));
+    }
+
     @DisplayName("Save with redactions marked asks first; cancelling writes nothing")
     @Test
     void saveAsksAboutRedactions() throws Exception {
