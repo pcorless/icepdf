@@ -1,0 +1,3777 @@
+{
+ "generator": "tools/fixtures/generate.py",
+ "oracle": "This is the opj_compress utility from the OpenJPEG project. (libopenjp2 via jpxref.c, no application colour handling; RelWithDebInfo build, IEEE float: no -ffast-math)",
+ "note": "Fixtures and references are generated, licence-clean, ours. References are one PGX file per decoded component ('PG ML <+|-> prec w h' then big-endian samples), at the component's own size: subsampled and reduced components are not upsampled.",
+ "cases": [
+  {
+   "name": "rev53-gray",
+   "file": "rev53-gray.j2k",
+   "sha1": "48d1c5aab87f6f20b7cfbec41d7155cb82885f34",
+   "bytes": 197,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,8,u@1x1",
+    "-o",
+    "rev53-gray.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rev53-gray.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "rev53-rgb",
+   "file": "rev53-rgb.j2k",
+   "sha1": "9c2b183aade3e08a8ae04696a0f30e2d3ac3d481",
+   "bytes": 11446,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "rev53-rgb.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rev53-rgb.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/rev53-rgb.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/rev53-rgb.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "irr97-rgb",
+   "file": "irr97-rgb.j2k",
+   "sha1": "657bfb38e4caebfda91fa7962b6832f2f6df9bef",
+   "bytes": 11359,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "irr97-rgb.j2k",
+    "-I"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/irr97-rgb.full.0.pgx",
+       "sha1": "208d0dc8fd6ca2a3b910454f4bfda14042ad014d"
+      },
+      {
+       "file": "ref/irr97-rgb.full.1.pgx",
+       "sha1": "de32765d03ae260e2f17222a64dbd46fc23d525a"
+      },
+      {
+       "file": "ref/irr97-rgb.full.2.pgx",
+       "sha1": "790800e1eb2f779a98ae1d39502ec81cf6204874"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "irr97-rgb-rate",
+   "file": "irr97-rgb-rate.j2k",
+   "sha1": "c11135a278264188eecf73a6c881db4dc2f5569c",
+   "bytes": 582,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "irr97-rgb-rate.j2k",
+    "-I",
+    "-r",
+    "20"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/irr97-rgb-rate.full.0.pgx",
+       "sha1": "ebdea6210b19c7d252861afbfb49a7a71c5470c9"
+      },
+      {
+       "file": "ref/irr97-rgb-rate.full.1.pgx",
+       "sha1": "64a3ea47a88bc9241422a1898e6b9d19e3180d04"
+      },
+      {
+       "file": "ref/irr97-rgb-rate.full.2.pgx",
+       "sha1": "16b0e8819b84959adf2124860b9e3b3ed416f782"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "rev53-dwt0",
+   "file": "rev53-dwt0.j2k",
+   "sha1": "96f34dad3df2764c730901cfe5e6b82434695f7a",
+   "bytes": 11943,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "rev53-dwt0.j2k",
+    "-n",
+    "1"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rev53-dwt0.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/rev53-dwt0.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/rev53-dwt0.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "no wavelet decomposition",
+   "roundTripFailure": null
+  },
+  {
+   "name": "rev53-dwt6",
+   "file": "rev53-dwt6.j2k",
+   "sha1": "519011ff3354453f3171f38e57a5da5300fad233",
+   "bytes": 11478,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "rev53-dwt6.j2k",
+    "-n",
+    "7"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rev53-dwt6.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/rev53-dwt6.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/rev53-dwt6.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "6 decomposition levels (seen in the corpus)",
+   "roundTripFailure": null
+  },
+  {
+   "name": "rev53-cmyk",
+   "file": "rev53-cmyk.j2k",
+   "sha1": "9597369136761b89db0e2ca5d643e44fb4b500cb",
+   "bytes": 11618,
+   "width": 64,
+   "height": 64,
+   "components": 4,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,4,8,u@1x1:1x1:1x1:1x1",
+    "-o",
+    "rev53-cmyk.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rev53-cmyk.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/rev53-cmyk.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/rev53-cmyk.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      },
+      {
+       "file": "ref/rev53-cmyk.full.3.pgx",
+       "sha1": "296ff6ec580901bf3ce9745f91f20144db1bd829"
+      }
+     ]
+    }
+   ],
+   "notes": "4 components, no MCT: CMYK-shaped",
+   "roundTripFailure": null
+  },
+  {
+   "name": "irr97-cmyk",
+   "file": "irr97-cmyk.j2k",
+   "sha1": "41947c27e054e652db6ca5753cf85ae7d7237c62",
+   "bytes": 11554,
+   "width": 64,
+   "height": 64,
+   "components": 4,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,4,8,u@1x1:1x1:1x1:1x1",
+    "-o",
+    "irr97-cmyk.j2k",
+    "-I"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/irr97-cmyk.full.0.pgx",
+       "sha1": "208d0dc8fd6ca2a3b910454f4bfda14042ad014d"
+      },
+      {
+       "file": "ref/irr97-cmyk.full.1.pgx",
+       "sha1": "de32765d03ae260e2f17222a64dbd46fc23d525a"
+      },
+      {
+       "file": "ref/irr97-cmyk.full.2.pgx",
+       "sha1": "790800e1eb2f779a98ae1d39502ec81cf6204874"
+      },
+      {
+       "file": "ref/irr97-cmyk.full.3.pgx",
+       "sha1": "629419b6e02c58ea4e67203286d9d5e469446c74"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "mct-off-rgb",
+   "file": "mct-off-rgb.j2k",
+   "sha1": "61671d961bcea8f4682433b79761d58022444f2c",
+   "bytes": 7201,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "mct-off-rgb.j2k",
+    "-mct",
+    "0"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/mct-off-rgb.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/mct-off-rgb.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/mct-off-rgb.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "irr97-mct-off",
+   "file": "irr97-mct-off.j2k",
+   "sha1": "75d19d1fa4e8fe10c169b056c8050b8828c074fd",
+   "bytes": 8123,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "irr97-mct-off.j2k",
+    "-I",
+    "-mct",
+    "0"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/irr97-mct-off.full.0.pgx",
+       "sha1": "01e1d4cb028f1a05fce29914f05338f1d6306273"
+      },
+      {
+       "file": "ref/irr97-mct-off.full.1.pgx",
+       "sha1": "879d24c0d2da5ba229c0bbc0adf5774ca5446b86"
+      },
+      {
+       "file": "ref/irr97-mct-off.full.2.pgx",
+       "sha1": "a20cb5659c2b1fbc169f1c6c2ad3f4f84d922aed"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prog-lrcp",
+   "file": "prog-lrcp.j2k",
+   "sha1": "62b6617938475834a4137fc363f3f549e8444476",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "prog-lrcp.j2k",
+    "-p",
+    "LRCP",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prog-lrcp.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/prog-lrcp.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/prog-lrcp.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prog-rlcp",
+   "file": "prog-rlcp.j2k",
+   "sha1": "94240580eaf3a26c45f952874becbbf2ef1a2a73",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "prog-rlcp.j2k",
+    "-p",
+    "RLCP",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prog-rlcp.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/prog-rlcp.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/prog-rlcp.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prog-rpcl",
+   "file": "prog-rpcl.j2k",
+   "sha1": "cba075df60afba09ab30cd41d8977ab8968dd119",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "prog-rpcl.j2k",
+    "-p",
+    "RPCL",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prog-rpcl.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/prog-rpcl.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/prog-rpcl.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prog-pcrl",
+   "file": "prog-pcrl.j2k",
+   "sha1": "4b18e631a229fba5a00703f67a12f805b297541d",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "prog-pcrl.j2k",
+    "-p",
+    "PCRL",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prog-pcrl.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/prog-pcrl.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/prog-pcrl.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prog-cprl",
+   "file": "prog-cprl.j2k",
+   "sha1": "43cc5683977540d54dee537bb36868d8a2bd434e",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "prog-cprl.j2k",
+    "-p",
+    "CPRL",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prog-cprl.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/prog-cprl.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/prog-cprl.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "poc",
+   "file": "poc.j2k",
+   "sha1": "505b33c66abc19d92f9488ad4d832e6878aacc7e",
+   "bytes": 11478,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "poc.j2k",
+    "-POC",
+    "T1=0,0,1,3,3,CPRL/T1=3,0,1,6,3,LRCP",
+    "-n",
+    "6"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/poc.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/poc.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/poc.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "progression order change in the main header",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-bypass",
+   "file": "cblk-bypass.j2k",
+   "sha1": "2589aba6a903c4b22a1111549a5a72a342553ccf",
+   "bytes": 12534,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-bypass.j2k",
+    "-M",
+    "1"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-bypass.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-bypass.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-bypass.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-reset",
+   "file": "cblk-reset.j2k",
+   "sha1": "daefdd9473a0dd43e36378b676e0154a3792e77f",
+   "bytes": 11349,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-reset.j2k",
+    "-M",
+    "2"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-reset.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-reset.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-reset.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-termall",
+   "file": "cblk-termall.j2k",
+   "sha1": "9a7c404d256f95b9d65c33dd70c7f325c1ee2bc9",
+   "bytes": 12814,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-termall.j2k",
+    "-M",
+    "4"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-termall.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-termall.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-termall.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-vcausal",
+   "file": "cblk-vcausal.j2k",
+   "sha1": "be868220c61a6d15d4b8bd371f732f3c35b668f0",
+   "bytes": 11462,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-vcausal.j2k",
+    "-M",
+    "8"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-vcausal.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-vcausal.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-vcausal.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-predterm",
+   "file": "cblk-predterm.j2k",
+   "sha1": "11353765abeef2e3d3bef3772186bde07335910f",
+   "bytes": 11454,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-predterm.j2k",
+    "-M",
+    "16"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-predterm.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-predterm.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-predterm.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-segsym",
+   "file": "cblk-segsym.j2k",
+   "sha1": "53c37871bd9543cbf35a8dd11daf611fe5dc5fba",
+   "bytes": 11618,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-segsym.j2k",
+    "-M",
+    "32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-segsym.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-segsym.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-segsym.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-all",
+   "file": "cblk-all.j2k",
+   "sha1": "5f0ad5c9d8469bd755d28655919ef6e6d348fc9c",
+   "bytes": 12963,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-all.j2k",
+    "-M",
+    "63"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-all.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-all.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-all.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-bypass-termall",
+   "file": "cblk-bypass-termall.j2k",
+   "sha1": "97f8668feee73c7903a3b45ddaa6d77f73ace7c6",
+   "bytes": 1180,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-bypass-termall.j2k",
+    "-M",
+    "5",
+    "-I",
+    "-r",
+    "10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-bypass-termall.full.0.pgx",
+       "sha1": "874b1c2cda9e6c4c7f9a3b7ea9e9237aa8fef8c8"
+      },
+      {
+       "file": "ref/cblk-bypass-termall.full.1.pgx",
+       "sha1": "3ef032e5291497e89483e6db68d8aa0dea17e474"
+      },
+      {
+       "file": "ref/cblk-bypass-termall.full.2.pgx",
+       "sha1": "2641ccc7831c2e8fed1cd40270d0a24463ec8001"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-reset-termall-segsym",
+   "file": "cblk-reset-termall-segsym.j2k",
+   "sha1": "6c5d7e712a4eeef8f0b3edef767348f83ff8b6b3",
+   "bytes": 12547,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-reset-termall-segsym.j2k",
+    "-M",
+    "38"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-reset-termall-segsym.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-reset-termall-segsym.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-reset-termall-segsym.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-small",
+   "file": "cblk-small.j2k",
+   "sha1": "f2e96d10e84909d9ddc655e22303636241265d9e",
+   "bytes": 11857,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-small.j2k",
+    "-b",
+    "16,16"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-small.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-small.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-small.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "cblk-wide",
+   "file": "cblk-wide.j2k",
+   "sha1": "d738e8fcf5e3323697798863abd3c3a6bafb126b",
+   "bytes": 11611,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "cblk-wide.j2k",
+    "-b",
+    "64,16"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/cblk-wide.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/cblk-wide.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/cblk-wide.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "layers3",
+   "file": "layers3.j2k",
+   "sha1": "62b6617938475834a4137fc363f3f549e8444476",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "layers3.j2k",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/layers3.full.0.pgx",
+       "sha1": "5254790539a799549b213ecd80c83a1347497578"
+      },
+      {
+       "file": "ref/layers3.full.1.pgx",
+       "sha1": "11333f94c12aa2e06a777753066d0ff32987eacc"
+      },
+      {
+       "file": "ref/layers3.full.2.pgx",
+       "sha1": "2c616ded10b963959d8fd5e8cb8de80ac5bc37df"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "layers-quality",
+   "file": "layers-quality.j2k",
+   "sha1": "ec8bed34c781468dd3671bf00f13e24a11d0aea9",
+   "bytes": 10405,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "layers-quality.j2k",
+    "-q",
+    "30,40,50",
+    "-I"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/layers-quality.full.0.pgx",
+       "sha1": "1a2ecdb4cacc941a1c24c40bbb196c64206bf476"
+      },
+      {
+       "file": "ref/layers-quality.full.1.pgx",
+       "sha1": "a410a68ea044cc92c4e083f03c2f619df0f322b7"
+      },
+      {
+       "file": "ref/layers-quality.full.2.pgx",
+       "sha1": "09e5ffb3c74489bcae6cb9a3aba097311426cdf7"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "precincts",
+   "file": "precincts.j2k",
+   "sha1": "401a0c936da1882ef747356bad2f5e9988ff7067",
+   "bytes": 12445,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "precincts.j2k",
+    "-c",
+    "[32,32],[16,16]"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/precincts.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/precincts.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/precincts.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "sop-eph",
+   "file": "sop-eph.j2k",
+   "sha1": "41c32f6374a1a779d801ff2d38113fd19dac8dd0",
+   "bytes": 1235,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "sop-eph.j2k",
+    "-SOP",
+    "-EPH",
+    "-r",
+    "40,20,10"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/sop-eph.full.0.pgx",
+       "sha1": "c16398e7702809c3f7198cc9f70df9b78a3d4c7e"
+      },
+      {
+       "file": "ref/sop-eph.full.1.pgx",
+       "sha1": "2cf621f332ce30d29e1823f8d0e4bbfe50b22b6e"
+      },
+      {
+       "file": "ref/sop-eph.full.2.pgx",
+       "sha1": "30019da2a4aaeb78fcbcef2237b00115413c4102"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "sop-eph-tiles",
+   "file": "sop-eph-tiles.j2k",
+   "sha1": "f5f7e2c2eafdcaef8e9de8167ebfd387cfd6b804",
+   "bytes": 9272,
+   "width": 96,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "noise",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "96,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "sop-eph-tiles.j2k",
+    "-SOP",
+    "-EPH",
+    "-r",
+    "8,4,2",
+    "-t",
+    "32,32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/sop-eph-tiles.full.0.pgx",
+       "sha1": "fda9332019c5831fb568dadcc36ed2a9792e814c"
+      },
+      {
+       "file": "ref/sop-eph-tiles.full.1.pgx",
+       "sha1": "884b3dc65e4ddc49ea8a53290d87a282feead5db"
+      },
+      {
+       "file": "ref/sop-eph-tiles.full.2.pgx",
+       "sha1": "53aa98895bdf50e487ca94f5d1e367f41a3dbad6"
+      }
+     ]
+    }
+   ],
+   "notes": "source for the PPM/PPT derived fixtures",
+   "roundTripFailure": null
+  },
+  {
+   "name": "rgba",
+   "file": "rgba.j2k",
+   "sha1": "9597369136761b89db0e2ca5d643e44fb4b500cb",
+   "bytes": 11618,
+   "width": 64,
+   "height": 64,
+   "components": 4,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,4,8,u@1x1:1x1:1x1:1x1",
+    "-o",
+    "rgba.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/rgba.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/rgba.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/rgba.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      },
+      {
+       "file": "ref/rgba.full.3.pgx",
+       "sha1": "296ff6ec580901bf3ce9745f91f20144db1bd829"
+      }
+     ]
+    }
+   ],
+   "notes": "source for jp2-cdef-rgba",
+   "roundTripFailure": null
+  },
+  {
+   "name": "plt-tlm",
+   "file": "plt-tlm.j2k",
+   "sha1": "4869a8aa3ec0fd2255bd267f89d014b4e1dcbafb",
+   "bytes": 12633,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "plt-tlm.j2k",
+    "-PLT",
+    "-TLM",
+    "-t",
+    "32,32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/plt-tlm.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/plt-tlm.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/plt-tlm.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "roi",
+   "file": "roi.j2k",
+   "sha1": "80db809d89655dbe706cff978eb3f67120995f57",
+   "bytes": 11453,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "roi.j2k",
+    "-ROI",
+    "c=0,U=4"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/roi.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/roi.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/roi.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "RGN marker, max-shift ROI",
+   "roundTripFailure": null
+  },
+  {
+   "name": "comment",
+   "file": "comment.j2k",
+   "sha1": "ebfd062f824887578f4ee004509784d3d4e692ed",
+   "bytes": 11427,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "comment.j2k",
+    "-C",
+    "GH-613 fixture"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/comment.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/comment.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/comment.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "tiles",
+   "file": "tiles.j2k",
+   "sha1": "67fb15a289501cd87ed5b6320a5d6ad82e267463",
+   "bytes": 22210,
+   "width": 100,
+   "height": 70,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "100,70,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "tiles.j2k",
+    "-t",
+    "32,32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/tiles.full.0.pgx",
+       "sha1": "8151f11805e9bef6a27ad43b296ed15815a8ae58"
+      },
+      {
+       "file": "ref/tiles.full.1.pgx",
+       "sha1": "1c48a654fd6adfebe13566adc410ea0fbad93293"
+      },
+      {
+       "file": "ref/tiles.full.2.pgx",
+       "sha1": "ea0cd74e3cb18580a91a10cc5efcc37628b01907"
+      }
+     ]
+    }
+   ],
+   "notes": "edge tiles are partial",
+   "roundTripFailure": null
+  },
+  {
+   "name": "tiles-offset",
+   "file": "tiles-offset.j2k",
+   "sha1": "40b0cb99cb917c1feca72a9680c493c1efa19387",
+   "bytes": 22036,
+   "width": 100,
+   "height": 70,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "100,70,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "tiles-offset.j2k",
+    "-t",
+    "32,32",
+    "-T",
+    "5,7",
+    "-d",
+    "5,7"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/tiles-offset.full.0.pgx",
+       "sha1": "c593572df5af2481f0e470c0311aa05c6bb8a505"
+      },
+      {
+       "file": "ref/tiles-offset.full.1.pgx",
+       "sha1": "0a21b8076792fa1aa3d3d1cc3f31e435a859aa95"
+      },
+      {
+       "file": "ref/tiles-offset.full.2.pgx",
+       "sha1": "91a4729dd771ed9633de78ecbf13964db832be7d"
+      }
+     ]
+    }
+   ],
+   "notes": "image and tile grid offsets",
+   "roundTripFailure": "ENCODER bug, OpenJPEG 2.5.4 opj_compress: the 4-px-wide partial edge tile (image x 101..105, tile origin 5) is written wrong; OpenJPEG and JJ2000 decode the same wrong values in columns 96..99 (JJ2000 within 1), so the reference is what the stream says, not the source; see DECISIONS.md D-3 component 0: 256 samples differ; component 1: 144 samples differ; component 2: 250 samples differ"
+  },
+  {
+   "name": "tileparts-res",
+   "file": "tileparts-res.j2k",
+   "sha1": "fe208db5b4c5df24a34d60dfe125f6115db4afc7",
+   "bytes": 19275,
+   "width": 96,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "96,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "tileparts-res.j2k",
+    "-TP",
+    "R",
+    "-n",
+    "6",
+    "-t",
+    "32,32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/tileparts-res.full.0.pgx",
+       "sha1": "9eae50366ff1d940507d5fa0b0a5bb2e1496b329"
+      },
+      {
+       "file": "ref/tileparts-res.full.1.pgx",
+       "sha1": "bc6997a08b55f19fc9f50fc24ab38f8e79515780"
+      },
+      {
+       "file": "ref/tileparts-res.full.2.pgx",
+       "sha1": "a53a7c0572da94b076c8b0375125875fda86389e"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "tnsot-undercount",
+   "file": "tnsot-undercount.j2k",
+   "sha1": "abf31b920cddeb81284e1abdc110ffbd74e63db8",
+   "bytes": 19275,
+   "width": 96,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "96,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "tnsot-undercount.j2k",
+    "-TP",
+    "R",
+    "-n",
+    "6",
+    "-t",
+    "32,32"
+   ],
+   "patch": "tnsot-minus-one",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/tnsot-undercount.full.0.pgx",
+       "sha1": "9eae50366ff1d940507d5fa0b0a5bb2e1496b329"
+      },
+      {
+       "file": "ref/tnsot-undercount.full.1.pgx",
+       "sha1": "bc6997a08b55f19fc9f50fc24ab38f8e79515780"
+      },
+      {
+       "file": "ref/tnsot-undercount.full.2.pgx",
+       "sha1": "a53a7c0572da94b076c8b0375125875fda86389e"
+      }
+     ]
+    }
+   ],
+   "notes": "TNsot rewritten to 5 with 6 tile-parts: the GH-553 encoder bug; reference is the intact stream",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prec12-gray",
+   "file": "prec12-gray.j2k",
+   "sha1": "cf3628d1e6c776ee0dfd622a8472e925504dc95a",
+   "bytes": 216,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 12,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,12,u@1x1",
+    "-o",
+    "prec12-gray.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prec12-gray.full.0.pgx",
+       "sha1": "5771764e49b24c44adb5ff245e3b594d341e9701"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prec16-gray",
+   "file": "prec16-gray.j2k",
+   "sha1": "2c8e55cbc952709d4a78209c996e15ffdd2a4af3",
+   "bytes": 269,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 16,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,16,u@1x1",
+    "-o",
+    "prec16-gray.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prec16-gray.full.0.pgx",
+       "sha1": "7f07ee5e3411b2678bee1394f18dd5b56023a9f3"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prec16-rgb-irr",
+   "file": "prec16-rgb-irr.j2k",
+   "sha1": "b605c267193f57b9bdf09f63b26d6729218f552e",
+   "bytes": 24310,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 16,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,16,u@1x1:1x1:1x1",
+    "-o",
+    "prec16-rgb-irr.j2k",
+    "-I"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prec16-rgb-irr.full.0.pgx",
+       "sha1": "522b2cb2b2976cde5bdd5a8f897537d97d502012"
+      },
+      {
+       "file": "ref/prec16-rgb-irr.full.1.pgx",
+       "sha1": "d97f1fb7d74142c0c169e6d89339026e63176343"
+      },
+      {
+       "file": "ref/prec16-rgb-irr.full.2.pgx",
+       "sha1": "ebc57d225d053cccf84543be31a29064b24af824"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "prec4-gray",
+   "file": "prec4-gray.j2k",
+   "sha1": "3fec1b425c14dae1b56d3797c6bce2e8d92dd927",
+   "bytes": 185,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 4,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,4,u@1x1",
+    "-o",
+    "prec4-gray.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/prec4-gray.full.0.pgx",
+       "sha1": "0a200d9d55ee5fe07f574d56f871c2fb4c6bfb02"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "signed8-gray",
+   "file": "signed8-gray.j2k",
+   "sha1": "3c34b7f57f2043d97f4b0d351296945eec58e63a",
+   "bytes": 197,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 8,
+   "signed": true,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,8,s@1x1",
+    "-o",
+    "signed8-gray.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/signed8-gray.full.0.pgx",
+       "sha1": "d239174609ff14c4b3b024d35bc7ef2675ea483e"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "subsampled-420",
+   "file": "subsampled-420.j2k",
+   "sha1": "d02d479f467976a025ab5b4e60a2665ab123d3b1",
+   "bytes": 2311,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     2,
+     2
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:2x2:2x2",
+    "-o",
+    "subsampled-420.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/subsampled-420.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/subsampled-420.full.1.pgx",
+       "sha1": "7f475e0d5a69e1bbc0ee1d003c1063f4198a3457"
+      },
+      {
+       "file": "ref/subsampled-420.full.2.pgx",
+       "sha1": "a210c4e82ae7c4a911dfee77d5e1979fc1c0ce0c"
+      }
+     ]
+    }
+   ],
+   "notes": "YCbCr 4:2:0-shaped; MCT not allowed",
+   "roundTripFailure": null
+  },
+  {
+   "name": "subsampled-422-irr",
+   "file": "subsampled-422-irr.j2k",
+   "sha1": "d818eec87df2371f0cda07a0f13fd55761dd4708",
+   "bytes": 4548,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     2,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:2x1:2x1",
+    "-o",
+    "subsampled-422-irr.j2k",
+    "-I"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/subsampled-422-irr.full.0.pgx",
+       "sha1": "01e1d4cb028f1a05fce29914f05338f1d6306273"
+      },
+      {
+       "file": "ref/subsampled-422-irr.full.1.pgx",
+       "sha1": "5b9000a7a8ea4be6322b48aedf29b513b079ded2"
+      },
+      {
+       "file": "ref/subsampled-422-irr.full.2.pgx",
+       "sha1": "a6a4c8b7b224508e7063464d3d4add5c7b6f1a3c"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "size-1x1",
+   "file": "size-1x1.j2k",
+   "sha1": "0dc83db0a2810e8de67ea73e10aefc04ca554964",
+   "bytes": 140,
+   "width": 1,
+   "height": 1,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "1,1,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "size-1x1.j2k",
+    "-n",
+    "1"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/size-1x1.full.0.pgx",
+       "sha1": "6d3816bafbf4001961ceefcfbd34f573cb1b7b0a"
+      },
+      {
+       "file": "ref/size-1x1.full.1.pgx",
+       "sha1": "7aa24af715adcbaaa8e144ccc141f1ef86379ae2"
+      },
+      {
+       "file": "ref/size-1x1.full.2.pgx",
+       "sha1": "d3beab10f2eaf753c1636dafd0bedf46cd9555e8"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "size-odd",
+   "file": "size-odd.j2k",
+   "sha1": "1d4d46fd1a490e6a0e91ae75dea6f7854d7470b3",
+   "bytes": 1688,
+   "width": 37,
+   "height": 13,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "37,13,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "size-odd.j2k",
+    "-n",
+    "4"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/size-odd.full.0.pgx",
+       "sha1": "4c9f06007ef660b5f212a03dbbd87e46aa547a56"
+      },
+      {
+       "file": "ref/size-odd.full.1.pgx",
+       "sha1": "a5864c60ad508541fa5900060e5dac08183274bf"
+      },
+      {
+       "file": "ref/size-odd.full.2.pgx",
+       "sha1": "56b5a169c1658e496e17bd13ddf43dbf658de848"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "size-tall",
+   "file": "size-tall.j2k",
+   "sha1": "5d472426d4ed752bfb705f3ff406788bd75318c4",
+   "bytes": 1766,
+   "width": 3,
+   "height": 200,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "3,200,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "size-tall.j2k",
+    "-n",
+    "2"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/size-tall.full.0.pgx",
+       "sha1": "e37b1bdeb4398b01ecf5156d8ce134397d7792dd"
+      },
+      {
+       "file": "ref/size-tall.full.1.pgx",
+       "sha1": "74dc3f41a2683c322dff9dcc4c7c37eacf80e0a6"
+      },
+      {
+       "file": "ref/size-tall.full.2.pgx",
+       "sha1": "cb2bfb5ebe9f532a5b4126ce4219d307e88f1a11"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "jp2-rgb",
+   "file": "jp2-rgb.jp2",
+   "sha1": "6e66f5a7e53dfc4d06fc8f6d514ef24d440085e6",
+   "bytes": 11531,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "jp2-rgb.jp2"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-rgb.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/jp2-rgb.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/jp2-rgb.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "jp2-gray",
+   "file": "jp2-gray.jp2",
+   "sha1": "f959a95c683561aeb4e35bbb67ab6e27968ece40",
+   "bytes": 282,
+   "width": 64,
+   "height": 64,
+   "components": 1,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,1,8,u@1x1",
+    "-o",
+    "jp2-gray.jp2"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-gray.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "jp2-cmyk",
+   "file": "jp2-cmyk.jp2",
+   "sha1": "5817fb7779fa0945b431a6f24444309789a67d3c",
+   "bytes": 11703,
+   "width": 64,
+   "height": 64,
+   "components": 4,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,4,8,u@1x1:1x1:1x1:1x1",
+    "-o",
+    "jp2-cmyk.jp2"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-cmyk.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/jp2-cmyk.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/jp2-cmyk.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      },
+      {
+       "file": "ref/jp2-cmyk.full.3.pgx",
+       "sha1": "296ff6ec580901bf3ce9745f91f20144db1bd829"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "reduce",
+   "file": "reduce.j2k",
+   "sha1": "0e444ee1ac56e3a9b0a6ba005bb7a3803ab200f1",
+   "bytes": 25063,
+   "width": 96,
+   "height": 96,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "96,96,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "reduce.j2k",
+    "-n",
+    "4"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/reduce.full.0.pgx",
+       "sha1": "38993447ad8907ea32382299fe500ee92a958881"
+      },
+      {
+       "file": "ref/reduce.full.1.pgx",
+       "sha1": "e49fe27b7b5df683470bd751b73dfa458f1eedec"
+      },
+      {
+       "file": "ref/reduce.full.2.pgx",
+       "sha1": "5402f376de06149ba08b0887e530313b701e52ea"
+      }
+     ]
+    },
+    {
+     "decode": {
+      "reduce": 1
+     },
+     "components": [
+      {
+       "file": "ref/reduce.reduce1.0.pgx",
+       "sha1": "e341ebfb20372299270c2e525e1f135958f29133"
+      },
+      {
+       "file": "ref/reduce.reduce1.1.pgx",
+       "sha1": "7724e4e2841bf7a0576c7b44d1f60bf11b6873bf"
+      },
+      {
+       "file": "ref/reduce.reduce1.2.pgx",
+       "sha1": "b153b1fb6369ba9a75e51d12253604bbc2cdb6de"
+      }
+     ]
+    },
+    {
+     "decode": {
+      "reduce": 2
+     },
+     "components": [
+      {
+       "file": "ref/reduce.reduce2.0.pgx",
+       "sha1": "90fd551146d40587e662829b298d21d7c558e360"
+      },
+      {
+       "file": "ref/reduce.reduce2.1.pgx",
+       "sha1": "d16f0e0c001684eb56ffec93a4583a95b213f744"
+      },
+      {
+       "file": "ref/reduce.reduce2.2.pgx",
+       "sha1": "814f93b32d661746fb0c6e0c3e7b3d131db7916b"
+      }
+     ]
+    },
+    {
+     "decode": {
+      "reduce": 3
+     },
+     "components": [
+      {
+       "file": "ref/reduce.reduce3.0.pgx",
+       "sha1": "b2276ba7de015bf9dedfda207419410c0d819231"
+      },
+      {
+       "file": "ref/reduce.reduce3.1.pgx",
+       "sha1": "25cd6c4bd247eea3ed5302fe05db400e9b2db462"
+      },
+      {
+       "file": "ref/reduce.reduce3.2.pgx",
+       "sha1": "b4cfe4f7945aafcd99447f23d55ff2a4f33d0669"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "region",
+   "file": "region.j2k",
+   "sha1": "de51b64d3e54f5e518ca713b6bd3d47fb491a1c1",
+   "bytes": 28197,
+   "width": 96,
+   "height": 96,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "mixed",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "96,96,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "region.j2k",
+    "-t",
+    "32,32"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/region.full.0.pgx",
+       "sha1": "38993447ad8907ea32382299fe500ee92a958881"
+      },
+      {
+       "file": "ref/region.full.1.pgx",
+       "sha1": "e49fe27b7b5df683470bd751b73dfa458f1eedec"
+      },
+      {
+       "file": "ref/region.full.2.pgx",
+       "sha1": "5402f376de06149ba08b0887e530313b701e52ea"
+      }
+     ]
+    },
+    {
+     "decode": {
+      "region": [
+       10,
+       20,
+       70,
+       50
+      ]
+     },
+     "components": [
+      {
+       "file": "ref/region.region10_20_70_50.0.pgx",
+       "sha1": "1de7dcd6cd145333284ccb6166276fd1e25624d4"
+      },
+      {
+       "file": "ref/region.region10_20_70_50.1.pgx",
+       "sha1": "3e802f1d4f3bc40e440e81e3b55e300cbc1c6d09"
+      },
+      {
+       "file": "ref/region.region10_20_70_50.2.pgx",
+       "sha1": "68d11d4005f6b8663d72365b275b890435ef2a81"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "noise-rev",
+   "file": "noise-rev.j2k",
+   "sha1": "7a2780565d8aa3e101448f48731c9509f4e92d13",
+   "bytes": 13961,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "noise",
+   "lossless": true,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "noise-rev.j2k"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/noise-rev.full.0.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      },
+      {
+       "file": "ref/noise-rev.full.1.pgx",
+       "sha1": "64fd2a4b36018e527e708d9ae3ba72f5310ff07a"
+      },
+      {
+       "file": "ref/noise-rev.full.2.pgx",
+       "sha1": "81729054873bcc472dc9514859d1fb4c1bd95459"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "noise-irr",
+   "file": "noise-irr.j2k",
+   "sha1": "ea59ef0d637c17dcf59005eaf0bb44c9e507dc34",
+   "bytes": 1551,
+   "width": 64,
+   "height": 64,
+   "components": 3,
+   "precision": 8,
+   "signed": false,
+   "subsampling": [
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     1,
+     1
+    ]
+   ],
+   "image": "noise",
+   "lossless": false,
+   "encode": [
+    "opj_compress",
+    "-i",
+    "<source>.raw",
+    "-F",
+    "64,64,3,8,u@1x1:1x1:1x1",
+    "-o",
+    "noise-irr.j2k",
+    "-I",
+    "-r",
+    "8"
+   ],
+   "patch": null,
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/noise-irr.full.0.pgx",
+       "sha1": "c98c6db13d407b78da0ff507c00309b265e72824"
+      },
+      {
+       "file": "ref/noise-irr.full.1.pgx",
+       "sha1": "330a92c258ae104ff48f5791740041810bce2fe9"
+      },
+      {
+       "file": "ref/noise-irr.full.2.pgx",
+       "sha1": "70ba2d44e5080948973020dbc83bd075eefe5a3a"
+      }
+     ]
+    }
+   ],
+   "notes": "",
+   "roundTripFailure": null
+  },
+  {
+   "name": "ppt",
+   "file": "ppt.j2k",
+   "sha1": "7ba3b9868943f3baf7290e90078ed12998ef5c36",
+   "bytes": 6710,
+   "derivedFrom": "sop-eph-tiles.j2k",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/ppt.full.0.pgx",
+       "sha1": "fda9332019c5831fb568dadcc36ed2a9792e814c"
+      },
+      {
+       "file": "ref/ppt.full.1.pgx",
+       "sha1": "884b3dc65e4ddc49ea8a53290d87a282feead5db"
+      },
+      {
+       "file": "ref/ppt.full.2.pgx",
+       "sha1": "53aa98895bdf50e487ca94f5d1e367f41a3dbad6"
+      }
+     ]
+    }
+   ],
+   "decodesLike": "sop-eph-tiles",
+   "notes": "packet headers moved into PPT markers"
+  },
+  {
+   "name": "ppm",
+   "file": "ppm.j2k",
+   "sha1": "b1ceb499c8c6a616d73f6ffb34f224c522fea61d",
+   "bytes": 6709,
+   "derivedFrom": "sop-eph-tiles.j2k",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/ppm.full.0.pgx",
+       "sha1": "fda9332019c5831fb568dadcc36ed2a9792e814c"
+      },
+      {
+       "file": "ref/ppm.full.1.pgx",
+       "sha1": "884b3dc65e4ddc49ea8a53290d87a282feead5db"
+      },
+      {
+       "file": "ref/ppm.full.2.pgx",
+       "sha1": "53aa98895bdf50e487ca94f5d1e367f41a3dbad6"
+      }
+     ]
+    }
+   ],
+   "decodesLike": "sop-eph-tiles",
+   "notes": "packet headers moved into a PPM marker"
+  },
+  {
+   "name": "coc-qcc",
+   "file": "coc-qcc.j2k",
+   "sha1": "0540f96cd044e4b7af7fcec5c23d72006fd5002e",
+   "bytes": 11479,
+   "derivedFrom": "rev53-rgb.j2k",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/coc-qcc.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/coc-qcc.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/coc-qcc.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      }
+     ]
+    }
+   ],
+   "decodesLike": "rev53-rgb",
+   "notes": "COC/QCC restating COD/QCD for component 1 (parse-only)"
+  },
+  {
+   "name": "jp2-pclr-rgb",
+   "file": "jp2-pclr-rgb.jp2",
+   "sha1": "c3775f6aef6f9dee916b694b69fae30bc783119d",
+   "bytes": 580,
+   "derivedFrom": "opj_compress index image",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-pclr-rgb.full.0.pgx",
+       "sha1": "07c05ac64a079715ce81a455415395a80bf5b7b0"
+      },
+      {
+       "file": "ref/jp2-pclr-rgb.full.1.pgx",
+       "sha1": "9ba222eb39a19c3a4f4d7a5942e192f575a3b1e6"
+      },
+      {
+       "file": "ref/jp2-pclr-rgb.full.2.pgx",
+       "sha1": "a5a4ea33f063d708d8c84a44bf2e5dd149c62bff"
+      }
+     ]
+    }
+   ],
+   "decodesLike": null,
+   "notes": "16-entry palette, 3 channels, colr enum 16"
+  },
+  {
+   "name": "jp2-pclr-cmyk",
+   "file": "jp2-pclr-cmyk.jp2",
+   "sha1": "e4e54274d63992e3ac4adc39d6324090654251ee",
+   "bytes": 575,
+   "derivedFrom": "opj_compress index image",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-pclr-cmyk.full.0.pgx",
+       "sha1": "e96cb30f9d34e10376f95130478c9afec621eb6b"
+      },
+      {
+       "file": "ref/jp2-pclr-cmyk.full.1.pgx",
+       "sha1": "448273a6be136974ec82d31ff77ee2ddf98b73ae"
+      },
+      {
+       "file": "ref/jp2-pclr-cmyk.full.2.pgx",
+       "sha1": "fe02e919f69bdee62560482309784ebc638510e9"
+      },
+      {
+       "file": "ref/jp2-pclr-cmyk.full.3.pgx",
+       "sha1": "7d985552d62d0247adb13ad759679e382522de4f"
+      }
+     ]
+    }
+   ],
+   "decodesLike": null,
+   "notes": "24-entry palette, 4 channels, colr enum 12"
+  },
+  {
+   "name": "jp2-icc-gray",
+   "file": "jp2-icc-gray.jp2",
+   "sha1": "77af3648f17b255ff66b22cb15c2b0152da14b44",
+   "bytes": 638,
+   "derivedFrom": "rev53-gray.j2k",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-icc-gray.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      }
+     ]
+    }
+   ],
+   "decodesLike": "rev53-gray",
+   "notes": "restricted ICC gray profile in colr"
+  },
+  {
+   "name": "jp2-cdef-rgba",
+   "file": "jp2-cdef-rgba.jp2",
+   "sha1": "d1eac5d94f9b7c7d9a2adc5458eeaa1296153aae",
+   "bytes": 11737,
+   "derivedFrom": "rgba.j2k",
+   "references": [
+    {
+     "decode": {},
+     "components": [
+      {
+       "file": "ref/jp2-cdef-rgba.full.0.pgx",
+       "sha1": "b15e4142817bb1bf30cc149b720066fc4895724f"
+      },
+      {
+       "file": "ref/jp2-cdef-rgba.full.1.pgx",
+       "sha1": "18c14b6ed39e62e28e2f59c9fb8ad57e21a7a361"
+      },
+      {
+       "file": "ref/jp2-cdef-rgba.full.2.pgx",
+       "sha1": "86194a2322ccb1ff1dddabf9e5b65b369d0a8014"
+      },
+      {
+       "file": "ref/jp2-cdef-rgba.full.3.pgx",
+       "sha1": "296ff6ec580901bf3ce9745f91f20144db1bd829"
+      }
+     ]
+    }
+   ],
+   "decodesLike": "rgba",
+   "notes": "cdef: channel 3 is opacity (PDF SMaskInData shape)"
+  }
+ ],
+ "hostile": [
+  {
+   "name": "truncated-at-ff51-2",
+   "file": "hostile/truncated-at-ff51-2.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "a59d5ae71a9605eb9af5ee87bd8c2e9bb5a66871",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "truncated-at-ff52-51",
+   "file": "hostile/truncated-at-ff52-51.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "66be0b823aada9c1b5d5d00c9277aebfd8c7ecba",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "truncated-at-ff5c-65",
+   "file": "hostile/truncated-at-ff5c-65.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "3d07da89f37ab85165a00962c76c536c2a961b8b",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "truncated-at-ff64-86",
+   "file": "hostile/truncated-at-ff64-86.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "7ab125eae4096cbf145a00cd9d4b18fd206cedfd",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "truncated-at-ff90-125",
+   "file": "hostile/truncated-at-ff90-125.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "e12382856bf6fc70197223ebcd20eb8e6f1145c5",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "truncated-mid-packet",
+   "file": "hostile/truncated-mid-packet.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "626edbccdf2afc10f1bc3b36c3e40b2ef8c6337f",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "siz-length-lies",
+   "file": "hostile/siz-length-lies.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "30faee534bf4d1a7de57a002864e93e9c2c1843b",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "siz-huge",
+   "file": "hostile/siz-huge.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "3c8375508f564a76de7f43b5c62e2e2977a0a4ce",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "siz-zero-tile",
+   "file": "hostile/siz-zero-tile.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "4cf51b95c008c7f99338800aaca6475a4ed60b49",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "siz-zero-components",
+   "file": "hostile/siz-zero-components.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "fe837138b7a9d69875cb0632100f425cfcf0fc3b",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "psot-past-eof",
+   "file": "hostile/psot-past-eof.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "ca1700f246621212a349101ddb3087bc272dd886",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "isot-out-of-range",
+   "file": "hostile/isot-out-of-range.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "1d8ca95cb633dc2d62292cf7812a1bc86a323f05",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "cod-levels-33",
+   "file": "hostile/cod-levels-33.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "e43e4037b325674c7feb57ebb7fbe99a3766102e",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "cod-cblk-too-big",
+   "file": "hostile/cod-cblk-too-big.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "8390c62db6a92ae23bc70a2df96af133c98a251f",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "packet-garbage-0",
+   "file": "hostile/packet-garbage-0.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "a9cdb250684e59aea3ded4ea2451d99d934ca94d",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "packet-garbage-1",
+   "file": "hostile/packet-garbage-1.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "5a23041019edb2ed24f6a92cbeab086595193302",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "packet-garbage-2",
+   "file": "hostile/packet-garbage-2.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "c95d6d77759fc9b109d853b720d6b07b92813f6e",
+   "expect": "exception or warning; bounded time and memory"
+  },
+  {
+   "name": "packet-garbage-3",
+   "file": "hostile/packet-garbage-3.j2k",
+   "derivedFrom": "rev53-rgb.j2k",
+   "sha1": "38ec2b8a137777f983bc3d7095534b5e8e1a20fa",
+   "expect": "exception or warning; bounded time and memory"
+  }
+ ]
+}

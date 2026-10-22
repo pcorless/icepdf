@@ -16,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.*;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -35,6 +36,24 @@ public class ColorComponentRangeTest {
         assertEquals(Color.WHITE, assertDoesNotThrow(() -> red.getColor(new float[]{-0.5f}, true)),
                 "tint below 0 is no colour");
         assertEquals(new Color(255, 128, 128), red.getColor(new float[]{0.5f}, true), "in-range tints are unchanged");
+    }
+
+    @DisplayName("a Separation Cyan takes its tint transform and alternate, not the screen colour cyan")
+    @Test
+    public void separationCyanUsesAlternate() {
+        Library library = new Library();
+        DictionaryEntries tint = new DictionaryEntries();
+        tint.put(new Name("FunctionType"), 2);
+        tint.put(new Name("Domain"), Arrays.asList(0f, 1f));
+        tint.put(new Name("C0"), Arrays.asList(0f, 0f, 0f, 0f));
+        tint.put(new Name("C1"), Arrays.asList(1f, 0f, 0f, 0f));
+        tint.put(new Name("N"), 1f);
+        Separation cyan = new Separation(library, new DictionaryEntries(), new Name("Cyan"),
+                new Name("DeviceCMYK"), tint);
+        assertFalse(cyan.isNamedColor());
+        // the chevron shading on Chevron_2010.pdf's cover: a 24% tint came out as (194, 255, 255)
+        Color expected = new DeviceCMYK(library, null).getColor(new float[]{0.24f, 0f, 0f, 0f}, true);
+        assertEquals(expected, cyan.getColor(new float[]{0.24f}, true));
     }
 
     @DisplayName("CalRGB clamps out-of-range components")

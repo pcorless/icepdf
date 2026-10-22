@@ -16,7 +16,7 @@
         <module>core</module>
         <module>viewer</module>
         <module>examples</module>
-        <module>qa</module>
+<!--        <module>qa</module>-->
     </modules>
 
     <properties>
@@ -24,7 +24,7 @@
         <maven.compiler.release>11</maven.compiler.release>
         <bouncy.version>1.86</bouncy.version>
         <twelve-monkey.version>3.15.2</twelve-monkey.version>
-        <jai-imageio.version>1.4.0</jai-imageio.version>
+        <jpx-imageio.version>0.1.0</jpx-imageio.version>
         <jbig2.version>3.0.4</jbig2.version>   <!-- 3.0.5 fails some embedded streams ("Page 1 missing", 10578.pdf) -->
         <font-box.version>3.0.8</font-box.version>
         <commons-logging.version>1.4.0</commons-logging.version>

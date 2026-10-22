@@ -20,9 +20,7 @@ Copyright 2014 The Apache Software Foundation
 Third-party libraries distributed with ICEpdf, and their licenses and notices,
 are listed in the licenses/ directory of the binary distribution.
 
-The viewer applications (not the core library or the viewers' published Maven
-artifacts) include jai-imageio-jpeg2000 and jai-imageio-core to decode JPEG 2000
-images.  Their ImageIO code is BSD licensed (Copyright (c) 2005 Sun Microsystems,
-Inc. and contributors); the JJ2000 codec inside is Copyright (c) 1999/2000 JJ2000
-Partners and is used under the JJ2000 terms, which cover products conforming to
-the JPEG 2000 Standard.  See licenses/JAI-ImageIO-JPEG2000LICENSE.txt.
+JPEG 2000 images are decoded by jpx-imageio (Apache License 2.0), which includes
+software derived from OpenJPEG (https://github.com/uclouvain/openjpeg) under the
+2-clause BSD licence.  See licenses/jpx-imageio-NOTICE.txt and
+licenses/jpx-imageio-OpenJPEG-LICENSE.txt.

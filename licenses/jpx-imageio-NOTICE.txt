@@ -1,0 +1,31 @@
+jpx-imageio: a pure-Java JPEG 2000 decoder and ImageIO reader
+Copyright 2026 Patrick Corless
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes software derived from OpenJPEG (https://github.com/uclouvain/openjpeg),
+version 2.5.4 (6c4a29b0), under the 2-clause BSD licence (see licenses/OpenJPEG-LICENSE.txt):
+
+  Copyright (c) 2001-2003, David Janssens
+  Copyright (c) 2002-2003, Yannick Verschueren
+  Copyright (c) 2002-2014, Professor Benoit Macq
+  Copyright (c) 2002-2014, Universite catholique de Louvain (UCL), Belgium
+  Copyright (c) 2003-2007, Francois-Olivier Devaux
+  Copyright (c) 2003-2014, Antonin Descampe
+  Copyright (c) 2005, Herve Drolon, FreeImage Team
+  Copyright (c) 2006-2007, Parvatha Elangovan
+  Copyright (c) 2007, Callum Lerwick <seg@haxxed.com>
+  Copyright (c) 2007, Jonathan Ballard <dzonatas@dzonux.net>
+  Copyright (c) 2008, 2011-2012, Centre National d'Etudes Spatiales (CNES), FR
+  Copyright (c) 2008, Jerome Fimes, Communications & Systemes <jerome.fimes@c-s.fr>
+  Copyright (c) 2010-2011, Kaori Hagihara
+  Copyright (c) 2011-2012, Centre National d'Etudes Spatiales (CNES), France
+  Copyright (c) 2012, Carl Hetherington
+  Copyright (c) 2012, CS Systemes d'Information, France
+  Copyright (c) 2017, IntoPix SA <contact@intopix.com>
+  Copyright (c) 2017, IntoPIX SA <support@intopix.com>
+  All rights reserved.
+
+The per-file copyright lines of each OpenJPEG source a file is derived from are kept in that
+file's header. PROVENANCE.md lists every derived file. The list above is the union of the
+copyright lines of the OpenJPEG decoder sources the port draws on.

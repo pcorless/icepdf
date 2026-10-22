@@ -21,9 +21,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorConvertOp;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,7 +37,10 @@ public class JpxDecoder extends AbstractImageDecoder {
 
     private static final String MISSING_DECODER =
             "No JPEG 2000 ImageIO plug-in is installed, so JPXDecode images are not drawn. " +
-                    "Add com.github.jai-imageio:jai-imageio-jpeg2000 to the class path to render them.";
+                    "Add com.github.pcorless:jpx-imageio (a core dependency) to the class path to render them.";
+
+    // jpx-imageio's ImageIO plug-in, preferred over any other JPEG 2000 reader on the class path (JJ2000)
+    private static final String JPX_IMAGEIO_PACKAGE = "io.github.pcorless.jpx.";
 
     private static final AtomicBoolean missingDecoderWarned = new AtomicBoolean();
 
@@ -48,9 +49,9 @@ public class JpxDecoder extends AbstractImageDecoder {
     }
 
     /**
-     * JPEG 2000 decoding is optional: core doesn't ship a decoder because the usual one,
-     * jai-imageio-jpeg2000, isn't Apache licensed.  Applications can use this to tell their users why
-     * JPXDecode images are missing.
+     * Core depends on jpx-imageio for JPEG 2000, but an application can still leave it off the class path
+     * (excluded, or a trimmed distribution).  Applications can use this to tell their users why JPXDecode
+     * images are missing.
      *
      * @return true if an ImageIO reader for JPEG 2000 is on the class path.
      */
@@ -76,44 +77,31 @@ public class JpxDecoder extends AbstractImageDecoder {
 
             // the filter passes this encoding through undecoded, so the result is the compressed data;
             // presizing it to the decoded raster size would allocate far more than it holds.
-            // some encoders under-count tile-parts, which makes the reader drop the last one (see Jpeg2000TileParts)
-            byte[] data = Jpeg2000TileParts.repairTilePartCounts(imageStream.getDecodedStreamBytes(0));
-            ImageInputStream imageInputStream = ImageIO.createImageInputStream(
-                    new ByteArrayInputStream(data));
-
-
-            // getting the raster for JPX seems to fail in most cases.
-            Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
-            ImageReader reader = null;
-            while (iter.hasNext()) {
-                reader = iter.next();
-                if (reader.canReadRaster()) {
-                    if (logger.isLoggable(Level.FINER)) {
-                        logger.finer("JPXDecode Image reader: " + reader);
-                    }
-                    break;
+            byte[] data = imageStream.getDecodedStreamBytes(0);
+            PColorSpace colourSpace = imageParams.getColourSpace();
+            if (colourSpace instanceof Indexed) {
+                // the samples are indices into the PDF's table, which replaces any palette (pclr) in the JP2
+                // wrapper; a reader would expand that palette (Chevron_2010.pdf: four bands of CMYK), so decode
+                // the bare codestream and every reader hands back the indices.
+                byte[] codestream = Jp2Codestream.unwrap(data);
+                if (codestream != null) {
+                    data = codestream;
                 }
             }
-
-            // read the raster data only, as we have our own logic to covert
-            // the raster data to RGB colours.
-            if (reader == null) {
-                imageInputStream.close();
-                return null;
-            }
-            ImageReadParam param = reader.getDefaultReadParam();
-            reader.setInput(imageInputStream, true, true);
             try {
-                // subsample a really big image while decoding rather than build the full raster and scale it
-                // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
-                int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
-                if (subsampling > 1) {
-                    param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+                tmpImage = read(data);
+            } catch (IOException | RuntimeException e) {
+                // a JP2 wrapper with a broken box (attachment.pdf: a cmap of junk outside jp2h) fails the whole
+                // read; the PDF's /ColorSpace stands in for the wrapper's colour boxes, so decode the bare codestream.
+                byte[] codestream = Jp2Codestream.unwrap(data);
+                if (codestream == null) {
+                    throw e;
                 }
-                tmpImage = reader.read(0, param);
-            } finally {
-                reader.dispose();
-                imageInputStream.close();
+                logger.log(Level.FINE, "JPEG2000 wrapper unreadable, decoding its codestream alone: ", e);
+                tmpImage = read(codestream);
+            }
+            if (tmpImage == null) {
+                return null;
             }
             WritableRaster wr = tmpImage.getRaster();
 
@@ -122,26 +110,13 @@ public class JpxDecoder extends AbstractImageDecoder {
                 wr = scaleReallyBigImages(wr);
             }
 
-            PColorSpace colourSpace = imageParams.getColourSpace();
             int bitsPerComponent = imageParams.getBitsPerComponent();
             float[] decode = imageParams.getDecode();
 
-            // special fallback scenario for ICCBased colours.
+            // like raw images (ImageUtility), an ICCBased image is drawn through its alternate (from /N):
+            // the profile isn't applied to image samples. Applying it here only ever worked for N=3.
             if (colourSpace instanceof ICCBased) {
-                ICCBased iccBased = (ICCBased) colourSpace;
-                // first try and apply the color space
-                try {
-                    ColorSpace cs = iccBased.getColorSpace();
-                    ColorConvertOp cco = new ColorConvertOp(cs, null);
-                    tmpImage = ImageUtility.makeRGBBufferedImage(wr);
-                    cco.filter(tmpImage, tmpImage);
-                } catch (Exception e) {
-                    logger.warning("Error processing ICC Color profile, falling " +
-                            "back to alternative.");
-                    // set the alternate as the current and try and process
-                    // using the below rules.
-                    colourSpace = iccBased.getAlternate();
-                }
+                colourSpace = ((ICCBased) colourSpace).getAlternate();
             }
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
@@ -159,7 +134,6 @@ public class JpxDecoder extends AbstractImageDecoder {
                     tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
                 }
             } else if (colourSpace instanceof Indexed) {
-                // still some issue here with Chevron.pdf
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
             }
         } catch (IOException e) {
@@ -167,5 +141,53 @@ public class JpxDecoder extends AbstractImageDecoder {
         }
 
         return tmpImage;
+    }
+
+    private BufferedImage read(byte[] data) throws IOException {
+        ImageInputStream imageInputStream = ImageIO.createImageInputStream(
+                new ByteArrayInputStream(data));
+
+        // jpx-imageio when it's installed, otherwise the first reader that can hand back a raster
+        Iterator<ImageReader> iter = ImageIO.getImageReaders(imageInputStream);
+        ImageReader reader = null;
+        while (iter.hasNext()) {
+            ImageReader candidate = iter.next();
+            if (candidate.getClass().getName().startsWith(JPX_IMAGEIO_PACKAGE)) {
+                if (reader != null) {
+                    reader.dispose();
+                }
+                reader = candidate;
+                break;
+            }
+            if (reader == null && candidate.canReadRaster()) {
+                reader = candidate;
+            } else {
+                candidate.dispose();
+            }
+        }
+        if (reader != null && logger.isLoggable(Level.FINER)) {
+            logger.finer("JPXDecode Image reader: " + reader);
+        }
+
+        // read the raster data only, as we have our own logic to covert
+        // the raster data to RGB colours.
+        if (reader == null) {
+            imageInputStream.close();
+            return null;
+        }
+        ImageReadParam param = reader.getDefaultReadParam();
+        reader.setInput(imageInputStream, true, true);
+        try {
+            // subsample a really big image while decoding rather than build the full raster and scale it
+            // down after (see DctDecoder); the JPEG 2000 reader decodes a lower resolution level for it.
+            int subsampling = subsamplingFor(reader.getWidth(0), reader.getHeight(0));
+            if (subsampling > 1) {
+                param.setSourceSubsampling(subsampling, subsampling, 0, 0);
+            }
+            return reader.read(0, param);
+        } finally {
+            reader.dispose();
+            imageInputStream.close();
+        }
     }
 }
