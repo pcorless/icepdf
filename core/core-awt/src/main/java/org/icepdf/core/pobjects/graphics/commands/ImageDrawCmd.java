@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.OptionalContentState;
 import org.icepdf.core.pobjects.graphics.PaintTimer;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.MaskedImage;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.util.Defs;
 
@@ -83,7 +84,9 @@ public class ImageDrawCmd extends AbstractDrawCmd {
     }
 
     public Image getImage() throws InterruptedException {
-        return image.getImage();
+        Image decoded = image.getImage();
+        // the pixels, so a mask kept apart for painting is applied here
+        return decoded instanceof MaskedImage ? ((MaskedImage) decoded).composite() : decoded;
     }
 
     /**
