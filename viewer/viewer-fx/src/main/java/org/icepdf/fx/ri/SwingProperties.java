@@ -53,6 +53,7 @@ public final class SwingProperties {
         ACTIONS.put("application.toolbar.annotation.highlight.enabled", List.of("annotation.highlight"));
         ACTIONS.put("application.toolbar.annotation.underline.enabled", List.of("annotation.underline"));
         ACTIONS.put("application.toolbar.annotation.strikeout.enabled", List.of("annotation.strike-out"));
+        ACTIONS.put("application.toolbar.annotation.squiggly.enabled", List.of("annotation.squiggly"));
         ACTIONS.put("application.toolbar.annotation.line.enabled", List.of("annotation.line"));
         ACTIONS.put("application.toolbar.annotation.rectangle.enabled", List.of("annotation.rectangle"));
         ACTIONS.put("application.toolbar.annotation.circle.enabled", List.of("annotation.ellipse"));

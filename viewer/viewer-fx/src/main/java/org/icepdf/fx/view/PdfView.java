@@ -470,6 +470,11 @@ public class PdfView extends Control {
         return getSkin() instanceof PdfViewSkin skin ? skin.annotations().markupSelection(TextMarkupAnnotation.SUBTYPE_STRIKE_OUT) : 0;
     }
 
+    /** Puts a wavy underline under the selected text; see {@link #highlightSelection()}. */
+    public int squigglySelection() {
+        return getSkin() instanceof PdfViewSkin skin ? skin.annotations().markupSelection(TextMarkupAnnotation.SUBTYPE_SQUIGGLY) : 0;
+    }
+
     // ---- forms ----------------------------------------------------------------------------
 
     /** Whether form fields can be filled in (in the text-select and hand tools).  True by default. */

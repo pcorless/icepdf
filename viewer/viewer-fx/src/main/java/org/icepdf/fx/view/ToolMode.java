@@ -30,6 +30,8 @@ public enum ToolMode {
     UNDERLINE,
     /** Select text; on release it is struck out. */
     STRIKE_OUT,
+    /** Select text; on release it gets a wavy underline. */
+    SQUIGGLY,
     /** Click to place a sticky note; its popup opens for typing. */
     NOTE,
     /** Click to place a free text box and type into it. */
@@ -56,7 +58,8 @@ public enum ToolMode {
 
     /** The tool selects text (plain selection, a text-markup tool, or redaction over text). */
     public boolean selectsText() {
-        return this == TEXT_SELECT || this == HIGHLIGHT || this == UNDERLINE || this == STRIKE_OUT || this == REDACT;
+        return this == TEXT_SELECT || this == HIGHLIGHT || this == UNDERLINE || this == STRIKE_OUT || this == SQUIGGLY
+                || this == REDACT;
     }
 
     /** The tool creates annotations. */

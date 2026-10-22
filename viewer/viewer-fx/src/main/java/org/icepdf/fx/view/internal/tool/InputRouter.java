@@ -92,6 +92,7 @@ public final class InputRouter {
             case HIGHLIGHT -> TextMarkupAnnotation.SUBTYPE_HIGHLIGHT;
             case UNDERLINE -> TextMarkupAnnotation.SUBTYPE_UNDERLINE;
             case STRIKE_OUT -> TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
+            case SQUIGGLY -> TextMarkupAnnotation.SUBTYPE_SQUIGGLY;
             case REDACT -> Annotation.SUBTYPE_REDACT;
             default -> null;
         });
