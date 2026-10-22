@@ -58,6 +58,9 @@ public final class InputRouter {
         /** Page Up/Down in a continuous mode: to the next page edge or about a screen on. */
         void scrollByPage(boolean down);
 
+        /** The largest {@link #scrollY()}: the bottom of the document is at the viewport's bottom. */
+        double maxScrollY();
+
         /** Zooms by {@code factor} holding the document point under a viewport point still. */
         void zoomAround(double vx, double vy, double factor);
 
@@ -66,6 +69,12 @@ public final class InputRouter {
     }
 
     public static final double SCROLL_UNIT = 40;
+    private static final long PAGE_TURN_PAUSE = 250_000_000L;
+
+    // wheeling past the page's edge in a non-continuous mode, toward turning the page.
+    private double overscroll;
+    private boolean overscrollDown;
+    private long lastPageTurn;
 
     private final Host host;
     private final PanHandler panHandler;
@@ -133,9 +142,46 @@ public final class InputRouter {
                 dx = dy;
                 dy = 0;
             }
+            if (wheelTurnsPage(e, dy)) {
+                e.consume();
+                return;
+            }
             host.scrollTo(host.scrollX() - dx, host.scrollY() - dy);
         }
         e.consume();
+    }
+
+    /**
+     * In a non-continuous mode, wheeling on past the bottom of the page turns to the next one (shown
+     * from its top), and past the top back to the previous one (shown from its bottom), as the Swing
+     * viewer does.  The turn waits for about a notch of wheeling at the edge, ignores a touchpad's
+     * coasting, and pauses briefly after a turn, so one swipe turns one page.
+     *
+     * @return true if the event was used (a page turned, or wheeling held at the edge)
+     */
+    private boolean wheelTurnsPage(ScrollEvent e, double dy) {
+        PdfView view = host.view();
+        if (view.getViewMode().isContinuous() || dy == 0 || e.isInertia()) return false;
+        boolean down = dy < 0;
+        double y = host.scrollY();
+        boolean atEdge = down ? y >= host.maxScrollY() - 0.5 : y <= 0.5;
+        if (!atEdge || down != overscrollDown) {
+            overscroll = 0;
+            overscrollDown = down;
+            if (!atEdge) return false;
+        }
+        long now = System.nanoTime();
+        if (now - lastPageTurn < PAGE_TURN_PAUSE) return true;
+        overscroll += Math.abs(dy);
+        if (overscroll < SCROLL_UNIT) return true;
+        overscroll = 0;
+        int before = view.getCurrentPageIndex();
+        if (down) view.nextPage();
+        else view.previousPage();
+        if (view.getCurrentPageIndex() == before) return true;
+        lastPageTurn = now;
+        if (!down) host.scrollTo(host.scrollX(), Double.MAX_VALUE);
+        return true;
     }
 
     public void onPinch(ZoomEvent e) {

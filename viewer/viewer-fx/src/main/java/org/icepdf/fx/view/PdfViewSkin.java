@@ -562,6 +562,11 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         return layout;
     }
 
+    @Override
+    public double maxScrollY() {
+        return layout == null ? 0 : Math.max(0, layout.getHeight() - viewportH);
+    }
+
     private void stopPageScroll() {
         if (pageScroll == null) return;
         pageScroll.stop();

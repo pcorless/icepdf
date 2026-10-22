@@ -15,7 +15,9 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.event.Event;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.ScrollEvent;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.testing.Fx;
 import org.icepdf.fx.testing.TinyPdf;
@@ -31,7 +33,8 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Turning pages from the keyboard: Page Down/Up land on page edges in a continuous mode.
+ * Turning pages from the keyboard and the wheel: Page Down/Up land on page edges in a continuous
+ * mode, and in a single-page mode wheeling past the page's edge turns it.
  */
 class PageTurnTest {
 
@@ -78,8 +81,44 @@ class PageTurnTest {
         return Fx.call(() -> skin().scrollY());
     }
 
+    private void wheel(double deltaY, boolean inertia) {
+        Fx.run(() -> Event.fireEvent(view, new ScrollEvent(ScrollEvent.SCROLL, 100, 100, 100, 100,
+                false, false, false, false, false, inertia, 0, deltaY, 0, deltaY,
+                ScrollEvent.HorizontalTextScrollUnits.NONE, 0, ScrollEvent.VerticalTextScrollUnits.NONE, 0,
+                0, null)));
+    }
+
     private int page() {
         return Fx.call(view::getCurrentPageIndex);
+    }
+
+    @DisplayName("single page: wheeling past the bottom turns to the next page's top, past the top back to the previous page's bottom")
+    @Test
+    void wheelTurnsPages() throws Exception {
+        Fx.run(() -> {
+            view.setViewMode(ViewMode.SINGLE_PAGE);
+            view.setZoom(3); // taller than the viewport, so the page scrolls
+            Fx.layout(view);
+        });
+        assertEquals(0, page());
+        wheel(-40, false);
+        assertEquals(0, page(), "within the page the wheel scrolls");
+        assertTrue(scrollY() > 0);
+
+        Fx.run(() -> skin().scrollTo(0, Double.MAX_VALUE));
+        double bottom = scrollY();
+        wheel(-40, true);
+        assertEquals(0, page(), "a touchpad's coasting doesn't turn the page");
+        wheel(-40, false);
+        assertEquals(1, page(), "a notch past the bottom turns the page");
+        assertEquals(0, scrollY(), "the next page shows from its top");
+
+        wheel(40, false);
+        assertEquals(1, page(), "no second turn straight after the first");
+        Thread.sleep(300);
+        wheel(40, false);
+        assertEquals(0, page(), "a notch past the top turns back");
+        assertEquals(bottom, scrollY(), 0.5, "the previous page shows from its bottom");
     }
 
     @DisplayName("continuous: Page Down lands on the next page's top, Page Up back on the first")
