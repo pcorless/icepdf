@@ -655,7 +655,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             keep.add(index);
             PageLayer layer = layers.get(index);
             if (layer == null) {
-                layer = new PageLayer(index, document.getPageTree().getPage(index));
+                layer = new PageLayer(index, document.getPageTree());
                 layers.put(index, layer);
                 shadowGroup.getChildren().add(layer.getShadow());
                 pagesGroup.getChildren().add(layer);
