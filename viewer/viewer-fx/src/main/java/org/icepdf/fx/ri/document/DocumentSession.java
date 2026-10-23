@@ -35,6 +35,7 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -433,11 +434,7 @@ public final class DocumentSession {
         view.setDocument(null);
         old.dispose();
         try {
-            try {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException e) {
-                Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            replaceFile(temp, target);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Save failed", e);
             onError.accept(Messages.format("documentSession.replaceFailed", target.getFileName(), Messages.reason(e), temp));
@@ -446,6 +443,34 @@ public final class DocumentSession {
         }
         reopen(target, page);
         return true;
+    }
+
+    /**
+     * Moves a written copy over {@code target}, atomically where the file system can.  When the
+     * document being replaced was mapped into memory ({@link Document#MAP_FILE_PROPERTY}) Windows
+     * refuses to replace the file until the disposed document's mapping is garbage collected, so a
+     * refused move is retried after a collection.
+     */
+    static void replaceFile(Path source, Path target) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                try {
+                    Files.move(source, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                return;
+            } catch (FileSystemException e) {
+                if (attempt >= 4 || !Files.exists(source)) throw e;
+                System.gc();
+                try {
+                    Thread.sleep(50L << attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
     }
 
     /** True when the open document has redactions marked but not yet burned in. */
@@ -478,11 +503,7 @@ public final class DocumentSession {
                 try (OutputStream stream = new BufferedOutputStream(Files.newOutputStream(temp))) {
                     writingDocument.saveToOutputStream(stream, WriteMode.FULL_UPDATE);
                 }
-                try {
-                    Files.move(temp, out, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException e) {
-                    Files.move(temp, out, StandardCopyOption.REPLACE_EXISTING);
-                }
+                replaceFile(temp, out);
                 RedactionReport report = writingDocument.getRedactionReport();
                 Platform.runLater(() -> {
                     endWrite.run();
