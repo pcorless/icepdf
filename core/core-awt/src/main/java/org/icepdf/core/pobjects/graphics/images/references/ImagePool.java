@@ -18,7 +18,10 @@ package org.icepdf.core.pobjects.graphics.images.references;
 import org.icepdf.core.pobjects.Reference;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
 import java.lang.ref.SoftReference;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
@@ -27,8 +30,8 @@ import java.util.concurrent.FutureTask;
  * Caches decoded images keyed by their PDF object {@link Reference}.  Values are
  * held via {@link SoftReference} so an image survives normal garbage collection
  * (letting a page repaint, or a shared XObject on another page, reuse it without
- * re-decoding) but is reclaimed automatically when the heap is under pressure --
- * so the pool self-limits its memory footprint without an explicit size cap.
+ * re-decoding) but is reclaimed automatically when the heap is under pressure; a byte
+ * budget, least recently used first out, also caps it (see {@link #BUDGET_PROPERTY}).
  * <br>
  * The pool also tracks decodes currently in flight ({@link #registerInProgress})
  * so that two references to the same image de-duplicate onto a single decode
@@ -58,16 +61,65 @@ public class ImagePool {
     // single decode instead of each starting their own.
     private final Map<Reference, FutureTask<BufferedImage>> inProgress = new ConcurrentHashMap<>();
 
+    // Soft references alone don't bound the pool: G1 clears them only when the heap is all but full,
+    // so scrolling a document of scans fills the whole heap with decoded images, every collection
+    // then runs against a full heap, and an allocation that fails while a native decoder holds the
+    // GC locker throws OutOfMemoryError without the soft references ever being cleared.  So the
+    // pool also keeps a byte budget, least recently used first out; past it an image is dropped
+    // from the pool (and re-decoded if drawn again).  {@value #BUDGET_PROPERTY} sets the budget in
+    // MB, an eighth of the max heap by default: GH-608 mip levels ride on top (about a third more),
+    // beside the viewer's own raster cache, the document bytes and the decodes in flight.
+    public static final String BUDGET_PROPERTY = "org.icepdf.core.images.poolBudget";
+
+    private final long budgetBytes;
+    // access order, eldest first; guarded by itself.
+    private final LinkedHashMap<Reference, Long> sizes = new LinkedHashMap<>(64, 0.75f, true);
+    private long usedBytes;
+
     public ImagePool() {
+        this(Long.getLong(BUDGET_PROPERTY, Runtime.getRuntime().maxMemory() / 8 >> 20) << 20);
+    }
+
+    /**
+     * @param budgetBytes the most decoded image bytes the pool keeps
+     */
+    public ImagePool(long budgetBytes) {
+        this.budgetBytes = budgetBytes;
         fCache = new ConcurrentHashMap<>(50);
+    }
+
+    /** Decoded bytes of an image: its raster's data buffer. */
+    static long byteSize(BufferedImage image) {
+        DataBuffer buffer = image.getRaster().getDataBuffer();
+        return (long) buffer.getSize() * buffer.getNumBanks() * DataBuffer.getDataTypeSize(buffer.getDataType()) / 8;
+    }
+
+    /** Decoded image bytes the pool is keeping. */
+    public long getUsedBytes() {
+        synchronized (sizes) {
+            return usedBytes;
+        }
     }
 
     public void put(Reference ref, BufferedImage image) {
         if (ref != null && image != null) {
             // copy the reference for the key so the map never holds the caller's
             // Reference instance (keeps parity with the previous behaviour).
-            fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()),
-                    new SoftReference<>(image));
+            Reference key = new Reference(ref.getObjectNumber(), ref.getGenerationNumber());
+            fCache.put(key, new SoftReference<>(image));
+            synchronized (sizes) {
+                Long old = sizes.put(key, byteSize(image));
+                usedBytes += sizes.get(key) - (old != null ? old : 0);
+                // the newest entry stays even if it alone is over the budget: it is being drawn.
+                Iterator<Map.Entry<Reference, Long>> it = sizes.entrySet().iterator();
+                while (usedBytes > budgetBytes && sizes.size() > 1 && it.hasNext()) {
+                    Map.Entry<Reference, Long> eldest = it.next();
+                    if (eldest.getKey().equals(key)) continue;
+                    usedBytes -= eldest.getValue();
+                    fCache.remove(eldest.getKey());
+                    it.remove();
+                }
+            }
         }
     }
 
@@ -83,7 +135,17 @@ public class ImagePool {
         if (image == null) {
             // the soft reference was cleared under memory pressure; drop the dead
             // entry so the map doesn't accumulate empty holders.
-            fCache.remove(ref, softReference);
+            if (fCache.remove(ref, softReference)) {
+                synchronized (sizes) {
+                    Long size = sizes.remove(ref);
+                    if (size != null) usedBytes -= size;
+                }
+            }
+        } else {
+            synchronized (sizes) {
+                // a hit makes it the most recently used.
+                sizes.get(ref);
+            }
         }
         return image;
     }

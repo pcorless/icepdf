@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.image.BufferedImage;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -69,6 +70,36 @@ public class ImagePoolTest {
         assertSame(b, pool.get(new Reference(2, 0)));
         assertNull(pool.get(new Reference(3, 0)));
         assertFalse(pool.containsKey(new Reference(3, 0)));
+    }
+
+    @Test
+    public void budgetDropsLeastRecentlyUsed() {
+        // 4x4 ARGB is 64 bytes: room for two.
+        ImagePool pool = new ImagePool(128);
+        BufferedImage a = img();
+        BufferedImage b = img();
+        BufferedImage c = img();
+        pool.put(new Reference(1, 0), a);
+        pool.put(new Reference(2, 0), b);
+        // a is used again, so b is now the least recently used.
+        assertSame(a, pool.get(new Reference(1, 0)));
+        pool.put(new Reference(3, 0), c);
+
+        assertSame(a, pool.get(new Reference(1, 0)));
+        assertNull(pool.get(new Reference(2, 0)), "the least recently used image is dropped past the budget");
+        assertSame(c, pool.get(new Reference(3, 0)));
+        assertEquals(128, pool.getUsedBytes());
+    }
+
+    @Test
+    public void imageOverBudgetIsStillKept() {
+        ImagePool pool = new ImagePool(16);
+        BufferedImage a = img();
+        BufferedImage b = img();
+        pool.put(new Reference(1, 0), a);
+        pool.put(new Reference(2, 0), b);
+        assertNull(pool.get(new Reference(1, 0)));
+        assertSame(b, pool.get(new Reference(2, 0)), "the newest image stays: it is the one being drawn");
     }
 
     @Test
