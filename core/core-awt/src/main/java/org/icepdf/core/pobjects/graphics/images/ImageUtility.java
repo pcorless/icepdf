@@ -1614,6 +1614,26 @@ public class ImageUtility {
         return rgbImage;
     }
 
+    /**
+     * A YCbCr JPEG whose colour space isn't RGB (Lab, a three-colorant DeviceN): the inverse colour transform
+     * gives back the space's own components, which then go through the space like any other samples.
+     * {@link #convertYCbCrToRGB} took the result for sRGB whatever the space.
+     */
+    static BufferedImage convertYCbCrToSpace(WritableRaster yCbCrRaster, PColorSpace colorSpace, float[] decode,
+                                             float[] decodeRange) {
+        int w = yCbCrRaster.getWidth(), h = yCbCrRaster.getHeight();
+        BufferedImage components = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        new YCbCrRasterOp(null).filter(yCbCrRaster, components.getRaster());
+        int[] packed = ((DataBufferInt) components.getRaster().getDataBuffer()).getData();
+        byte[] samples = ((DataBufferByte) yCbCrRaster.getDataBuffer()).getData();
+        for (int i = 0; i < packed.length; i++) {
+            samples[i * 3] = (byte) (packed[i] >> 16);
+            samples[i * 3 + 1] = (byte) (packed[i] >> 8);
+            samples[i * 3 + 2] = (byte) packed[i];
+        }
+        return convertSpaceToRgb(yCbCrRaster, colorSpace, decode, decodeRange);
+    }
+
     static BufferedImage convertYCCKToRgb(Raster ycckRaster, float[] decode) {
         BufferedImage rgbImage = makeBufferedImage(ycckRaster);
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {

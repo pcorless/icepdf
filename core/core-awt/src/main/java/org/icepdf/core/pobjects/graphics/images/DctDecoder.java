@@ -24,6 +24,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -168,7 +169,7 @@ public class DctDecoder extends AbstractImageDecoder {
             } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
             } else if (jpegEncoding == JPEG_ENC_YCbCr && bitsPerComponent == 8 && bands > 1) {
-                tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                tmpImage = convertYCbCr(wr, colourSpace, decode, imageParams);
             } else if (jpegEncoding == JPEG_ENC_YCCK && bitsPerComponent == 8 && bands > 1) {
                 // YCCK to RGB works better if an CMYK intermediate is used, but slower.
                 tmpImage = ImageUtility.convertYCCKToRgb(wr, decode);
@@ -207,7 +208,7 @@ public class DctDecoder extends AbstractImageDecoder {
                 }
                 // otherwise assume YCbCr bands = 3.
                 else if (wr.getNumBands() == 3) {
-                    tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
+                    tmpImage = convertYCbCr(wr, colourSpace, decode, imageParams);
                 }
                 // still some corner cases around 4  components and one or the other.
                 else if (wr.getNumBands() == 4 && !(colourSpace instanceof ICCBased)) {
@@ -398,5 +399,19 @@ public class DctDecoder extends AbstractImageDecoder {
             }
         }
         return JPEG_ENC_UNKNOWN_PROBABLY_YCbCr;
+    }
+
+    /**
+     * Undoes the YCbCr transform.  For a colour space that isn't RGB (Lab, a three-colorant DeviceN) that gives
+     * its components, which go through it; anything else is taken as RGB, as it always was.
+     */
+    private static BufferedImage convertYCbCr(WritableRaster wr, PColorSpace colourSpace, float[] decode,
+                                              ImageParams imageParams) {
+        if (wr.getNumBands() == 3 && colourSpace.getNumComponents() == 3
+                && (colourSpace instanceof Lab || colourSpace instanceof DeviceN)
+                && wr.getDataBuffer() instanceof DataBufferByte) {
+            return ImageUtility.convertYCbCrToSpace(wr, colourSpace, decode, imageParams.getDecodeRange());
+        }
+        return ImageUtility.convertYCbCrToRGB(wr, decode);
     }
 }
