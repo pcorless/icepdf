@@ -64,11 +64,13 @@ public class PColorSpaceRasterOp implements RasterOp {
             }
         } else {
             int bands = src.getNumBands();
-            float[] values = new float[3];
-            // getColor() can be costly (colour-space conversion plus a Color
-            // allocation); reuse the previous result when the raw samples for a
-            // pixel are unchanged, which covers the flat runs typical of these
-            // images even when the colour space caches internally.
+            float[] values = new float[bands];
+            // getColor() can be costly (an ICC toRGB or a tint transform plus a Color
+            // allocation); reuse the previous result when the raw samples for a pixel
+            // are unchanged, which covers flat runs, and remember every converted
+            // colour (GH-617), which covers photos.  More than four bands don't pack
+            // into a key, so those only get the previous-pixel reuse.
+            ColourMemo memo = ColourMemo.fits(8, bands) ? new ColourMemo(destPixels.length, 8 * bands) : null;
             int[] lastSamples = new int[bands];
             java.util.Arrays.fill(lastSamples, -1);
             int lastRgb = 0;
@@ -76,16 +78,31 @@ public class PColorSpaceRasterOp implements RasterOp {
             for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
                 boolean same = haveLast;
+                int key = 0;
                 for (int i = 0; i < bands; i++) {
                     int sample = srcPixels[pixel + i] & 0xff;
                     if (sample != lastSamples[i]) {
                         same = false;
                         lastSamples[i] = sample;
                     }
-                    values[i] = sample / 255.0f;
+                    key = key << 8 | sample;
                 }
                 if (!same) {
-                    lastRgb = colorSpace.getColor(values).getRGB();
+                    int slot = 0;
+                    lastRgb = 0;
+                    if (memo != null) {
+                        slot = memo.slot(key);
+                        lastRgb = memo.argb(slot);
+                    }
+                    if (lastRgb == 0) {
+                        for (int i = 0; i < bands; i++) {
+                            values[i] = lastSamples[i] / 255.0f;
+                        }
+                        lastRgb = colorSpace.getColor(values).getRGB();
+                        if (memo != null) {
+                            memo.put(slot, key, lastRgb);
+                        }
+                    }
                     haveLast = true;
                 }
                 destPixels[intPixels] = lastRgb;
