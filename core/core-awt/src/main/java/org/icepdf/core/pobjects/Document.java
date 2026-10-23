@@ -115,13 +115,16 @@ public class Document {
     private static boolean isCachingEnabled;
 
     /**
-     * Experimental: {@link #setFile} maps a file of at least {@link #MAP_FILE_THRESHOLD_PROPERTY} MB
-     * (default 64) read-only into memory instead of copying it onto the heap, so a 300MB document
-     * doesn't hold 300MB of heap for as long as it is open.  Off by default.  Caveats: the mapping
+     * {@link #setFile} maps a file of at least {@link #MAP_FILE_THRESHOLD_PROPERTY} MB read-only into
+     * memory instead of copying it onto the heap, so a 300MB document doesn't hold 300MB of heap for
+     * as long as it is open.  On by default; the threshold defaults to 64MB or a sixteenth of the
+     * maximum heap, whichever is smaller, and a file that can't be mapped is copied.  Caveats: the mapping
      * is released only when the buffer is garbage collected, so on Windows the file can't be
      * replaced or deleted while it lingers (the GH-323 problem); and the file must not be truncated
      * or overwritten in place while open - write a save to a temporary file and move it over the
-     * original, as the JavaFX viewer does, never a {@code FileOutputStream} on the open file itself.
+     * original, as both viewers do, never a {@code FileOutputStream} on the open file itself.  Another
+     * program truncating the file while it is open makes reads fail with an {@link InternalError}
+     * rather than an {@link IOException}.
      */
     public static final String MAP_FILE_PROPERTY = "org.icepdf.core.document.mapFile";
     public static final String MAP_FILE_THRESHOLD_PROPERTY = "org.icepdf.core.document.mapFileThreshold";
@@ -232,14 +235,28 @@ public class Document {
     /** The file mapped read-only when {@link #MAP_FILE_PROPERTY} is on and it is big enough, else copied. */
     private ByteBuffer mapOrCopyFile(File file) throws IOException {
         long size = file.length();
-        long threshold = (long) Defs.intProperty(MAP_FILE_THRESHOLD_PROPERTY, 64) << 20;
-        if (!Defs.booleanProperty(MAP_FILE_PROPERTY, false) || size < threshold || size > Integer.MAX_VALUE) {
+        long threshold = (long) Defs.intProperty(MAP_FILE_THRESHOLD_PROPERTY, defaultMapThresholdMb()) << 20;
+        if (!Defs.booleanProperty(MAP_FILE_PROPERTY, true) || size < threshold || size > Integer.MAX_VALUE) {
             return copyFileToByteBuffer(file);
         }
-        randomAccessFile = new RandomAccessFile(file, "r");
-        documentFileChannel = randomAccessFile.getChannel();
-        fileMapped = true;
-        return documentFileChannel.map(FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
+        RandomAccessFile mapped = new RandomAccessFile(file, "r");
+        try {
+            FileChannel channel = mapped.getChannel();
+            ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            randomAccessFile = mapped;
+            documentFileChannel = channel;
+            fileMapped = true;
+            return buffer;
+        } catch (IOException | RuntimeException e) {
+            logger.log(Level.FINE, "Could not map the file, copying it: ", e);
+            mapped.close();
+            return copyFileToByteBuffer(file);
+        }
+    }
+
+    /** 64MB, or a sixteenth of the maximum heap on a smaller one. */
+    static int defaultMapThresholdMb() {
+        return (int) Math.max(1, Math.min(64, Runtime.getRuntime().maxMemory() / 16 >> 20));
     }
 
     /**
