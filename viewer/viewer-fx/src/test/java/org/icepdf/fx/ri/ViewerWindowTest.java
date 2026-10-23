@@ -264,6 +264,38 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> annotations.get().isEmpty()));
     }
 
+    @DisplayName("opening the search panel puts the caret in its query; closing it puts the caret back on the page")
+    @Test
+    void searchPanelTakesFocus() throws Exception {
+        open(pdf("panel.pdf"));
+        javafx.scene.control.ToggleButton icon = Fx.call(() -> (javafx.scene.control.ToggleButton) viewer.lookupAll(".toggle-button")
+                .stream().filter(n -> ("panel." + SidePanel.SEARCH.id()).equals(n.getId())).findFirst().orElse(null));
+        assertNotNull(icon, "the search panel's icon");
+        TextField query = Fx.call(() -> (TextField) viewer.getCurrentDocument().getSearchPanel().lookup(".text-field"));
+
+        Fx.run(() -> {
+            icon.fire();
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(query, Fx.call(() -> viewer.getScene().getFocusOwner()), "clicked open: the query has the caret");
+
+        Fx.run(() -> {
+            icon.fire();
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(viewer.getView(), Fx.call(() -> viewer.getScene().getFocusOwner()), "closed: back to the page");
+
+        // F4 reopens the panel shown last - the search panel - and focuses it the same way.
+        Fx.run(() -> {
+            Fx.press(viewer.getView(), KeyCode.F4, false);
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(query, Fx.call(() -> viewer.getScene().getFocusOwner()), "F4: the query has the caret");
+    }
+
     @DisplayName("Ctrl+0 fits the page, Ctrl+1 is actual size, Ctrl+2 fits the width - on the page or anywhere else")
     @Test
     void fitShortcuts() throws Exception {

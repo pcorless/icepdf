@@ -223,6 +223,10 @@ public class PdfViewer extends StackPane {
             if (features.allows(panel)) utility.addPanel(panel, panelLabel(panel), panelNode(first, panel), panelAvailable(first, panel));
         }
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
+        utility.setOnActivated(panel -> {
+            if (panel == SidePanel.SEARCH) pane().getSearchPanel().focusQuery();
+        });
+        utility.setOnClosedWithFocus(() -> view().requestFocus());
         if (features.shows(Chrome.HEADER) && actions.isAvailable("search.find")) followSearchVisibility();
 
         if (features.shows(Chrome.HEADER)) shell.setHeader(header);
@@ -1188,7 +1192,7 @@ public class PdfViewer extends StackPane {
             if (utility.getShown() != null) layout.setLastPanel(utility.getShown().id());
         });
         sidePanelVisible.addListener((o, a, b) -> {
-            if (b && !panel.isOpen()) panel.open(true);
+            if (b && !panel.isOpen()) utility.openShown();
             else if (!b && panel.isOpen()) {
                 panel.pinnedProperty().set(false);
                 panel.close();
@@ -1421,8 +1425,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void showSearch() {
-            utility.open(SidePanel.SEARCH);
-            pane().getSearchPanel().focusQuery();
+            utility.open(SidePanel.SEARCH); // focuses the query once it shows
         }
 
         @Override

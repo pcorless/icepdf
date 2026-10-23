@@ -86,6 +86,8 @@ public final class UtilityPanel {
         drawer.stateProperty().addListener((o, was, now) -> {
             if (now == EdgeDrawer.State.OVERLAY && hovered != null && shownPanel.get() != hovered && !isClickOpened()) show(hovered);
             if (now != EdgeDrawer.State.COLLAPSED && shownPanel.get() == null) showFirstAvailable();
+            // closing with the caret in a panel: hand it back, or keys go to a field nobody sees.
+            if (now == EdgeDrawer.State.COLLAPSED && focusInside()) onClosedWithFocus.run();
             syncButtons();
         });
     }
@@ -150,6 +152,59 @@ public final class UtilityPanel {
         show(panel);
         clickOpened = true;
         drawer.open(true);
+        activated(panel);
+    }
+
+    /** Opens at the panel shown last (or the first there is), as {@link #open(SidePanel)}. */
+    public void openShown() {
+        if (shownPanel.get() == null) showFirstAvailable();
+        if (shownPanel.get() != null) open(shownPanel.get());
+        else drawer.open(true);
+    }
+
+    /**
+     * Called with a panel opened on purpose - its icon clicked, or {@link #open} - once it shows, to
+     * put the caret in it (the search panel's query).  Not for a hover peek: passing the pointer over
+     * the strip mustn't take the keys from the page.
+     */
+    public void setOnActivated(java.util.function.Consumer<SidePanel> onActivated) {
+        this.onActivated = onActivated;
+    }
+
+    /** Called when the panel closes with the caret inside it, to put the caret back (on the page). */
+    public void setOnClosedWithFocus(Runnable onClosedWithFocus) {
+        this.onClosedWithFocus = onClosedWithFocus;
+    }
+
+    private java.util.function.Consumer<SidePanel> onActivated = panel -> { };
+    private Runnable onClosedWithFocus = () -> { };
+
+    private void activated(SidePanel panel) {
+        // the shell shows the content at its next layout; a hidden field can't take the caret.
+        Runnable activate = () -> {
+            if (drawer.isOpen() && shownPanel.get() == panel) onActivated.accept(panel);
+        };
+        Region content = drawer.getContent();
+        if (content.isVisible()) {
+            javafx.application.Platform.runLater(activate);
+            return;
+        }
+        content.visibleProperty().addListener(new javafx.beans.value.ChangeListener<>() {
+            @Override
+            public void changed(javafx.beans.value.ObservableValue<? extends Boolean> o, Boolean was, Boolean now) {
+                if (!now) return;
+                o.removeListener(this);
+                javafx.application.Platform.runLater(activate);
+            }
+        });
+    }
+
+    private boolean focusInside() {
+        javafx.scene.Scene scene = body.getScene();
+        for (Node n = scene != null ? scene.getFocusOwner() : null; n != null; n = n.getParent()) {
+            if (n == body) return true;
+        }
+        return false;
     }
 
     /** Whether a panel is in this viewer and has content now. */
@@ -174,6 +229,7 @@ public final class UtilityPanel {
         show(panel);
         clickOpened = true;
         drawer.open(true);
+        activated(panel);
     }
 
     private void show(SidePanel panel) {
