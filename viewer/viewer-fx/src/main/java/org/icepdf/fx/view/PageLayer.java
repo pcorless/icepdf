@@ -31,11 +31,13 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
 import javafx.scene.transform.Affine;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.graphics.text.OffsetRange;
 import org.icepdf.core.pobjects.graphics.text.TextSequence;
 
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
+import java.lang.ref.WeakReference;
 import java.util.*;
 
 /**
@@ -63,7 +65,11 @@ import java.util.*;
 final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler.TiledPage {
 
     private final int pageIndex;
-    private final Page page;
+    // the page is looked up, not held: the core caches pages weakly, as the Swing viewer relies on, so
+    // a page's parsed content goes once nothing draws it.  Held here, every layer in the viewport and
+    // prefetch band pinned its display list and text - over 100 pages at a low zoom.
+    private final PageTree pageTree;
+    private WeakReference<Page> page = new WeakReference<>(null);
     private final Rectangle paper = new Rectangle();
     private final Rectangle clip = new Rectangle();
     private final Group shadow = new Group();
@@ -95,9 +101,9 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
 
     private static final int SHADOW_RINGS = 4;
 
-    PageLayer(int pageIndex, Page page) {
+    PageLayer(int pageIndex, PageTree pageTree) {
         this.pageIndex = pageIndex;
-        this.page = page;
+        this.pageTree = pageTree;
         // a soft shadow from a few translucent rings, not a DropShadow effect (see class comment).
         for (int i = 0; i < SHADOW_RINGS; i++) {
             Rectangle ring = new Rectangle();
@@ -147,7 +153,12 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
     }
 
     Page getPage() {
-        return page;
+        Page current = page.get();
+        if (current == null) {
+            current = pageTree.getPage(pageIndex);
+            page = new WeakReference<>(current);
+        }
+        return current;
     }
 
     CacheKey.Params getParams() {
@@ -180,7 +191,7 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
         }
         if (newParams.equals(params)) return;
         params = newParams;
-        pageToView = PageTransforms.pageToView(page, newParams.boundary(), newParams.rotation(), newParams.zoom());
+        pageToView = PageTransforms.pageToView(getPage(), newParams.boundary(), newParams.rotation(), newParams.zoom());
         content.setToken(newParams, newParams);
         annotations.setToken(new AnnotationToken(newParams, annotations.generation), newParams);
         multiplyAnnotations.setToken(new AnnotationToken(newParams, multiplyAnnotations.generation), newParams);
@@ -245,7 +256,7 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
             views.clear();
             token = newToken;
             if (staleParams != null && newParams != null) {
-                AffineTransform from = PageTransforms.pageToView(page, staleParams.boundary(),
+                AffineTransform from = PageTransforms.pageToView(getPage(), staleParams.boundary(),
                         staleParams.rotation(), staleParams.zoom());
                 PageTransforms.setFx(staleTransform, PageTransforms.between(from, pageToView));
             }
@@ -324,7 +335,7 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
     }
 
     void setPreview(RasterBuffer buffer, float previewZoom) {
-        previewPageToView = PageTransforms.pageToView(page, params.boundary(), 0f, previewZoom);
+        previewPageToView = PageTransforms.pageToView(getPage(), params.boundary(), 0f, previewZoom);
         PageTransforms.setFx(previewTransform, PageTransforms.between(previewPageToView, pageToView));
         preview.setImage(buffer.getImage());
         preview.setVisible(true);
@@ -335,7 +346,7 @@ final class PageLayer extends Group implements TextLayers.Overlay, TileScheduler
     void ensureOverlay(PageOverlayFactory factory) {
         if (overlayCreated || factory == null) return;
         overlayCreated = true;
-        Node node = factory.createOverlay(pageIndex, page);
+        Node node = factory.createOverlay(pageIndex, getPage());
         if (node != null) appOverlay.getChildren().setAll(node);
     }
 
