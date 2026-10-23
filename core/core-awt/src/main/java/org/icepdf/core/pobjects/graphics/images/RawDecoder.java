@@ -15,13 +15,17 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
-import org.icepdf.core.pobjects.graphics.*;
-import org.icepdf.core.pobjects.graphics.RasterOps.ColourMemo;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
+import org.icepdf.core.pobjects.graphics.PColorSpace;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 
+/**
+ * Decodes an image sample by sample, for what the raster path ({@link RasterDecoder}) leaves: DeviceCMYK,
+ * Separation, DeviceN, Lab, CalGray and ICCBased images, and depths it has no raster for.  The samples come
+ * from a {@link SampleReader} and each pixel's colour from a {@link PixelConverter} picked for the image.
+ */
 public class RawDecoder extends AbstractImageDecoder {
 
     public RawDecoder(ImageStream imageStream, GraphicsState graphicsState) {
@@ -30,273 +34,47 @@ public class RawDecoder extends AbstractImageDecoder {
 
     @Override
     public BufferedImage decode() {
-
         ImageParams imageParams = imageStream.getImageParams();
         PColorSpace colorSpace = imageParams.getColourSpace();
         int bitsPerComponent = imageParams.getBitsPerComponent();
-        float[] decode = imageParams.getDecode();
         int width = imageParams.getWidth();
         int height = imageParams.getHeight();
-        boolean isMask = imageParams.isImageMask();
 
-        // store for manipulating bits in image
-        int[] imageBits = new int[width];
-
-        // RGB value for colour used as fill for image
-        int fillRGB = 1;
-        if (graphicsState != null) {
-            fillRGB = graphicsState.getFillColor().getRGB();
-        }
-
-        // Number of colour components in image, should be 3 for RGB or 4
-        // for ARGB.
-        int colorSpaceCompCount = colorSpace.getNumComponents();
-        boolean isDeviceRGB = colorSpace instanceof DeviceRGB;
-        boolean isDeviceGray = colorSpace instanceof DeviceGray;
-
-        // Max value used to represent a colour,  usually 255, min is 0
-        int maxColourValue = ((1 << bitsPerComponent) - 1);
-
-        int[] f = new int[colorSpaceCompCount];
-        float[] ff = new float[colorSpaceCompCount];
-
-        // last-sample cache for the colorSpace.getColor() paths below; getColor
-        // (plus its Color allocation) is the per-pixel cost, and flat runs repeat
-        // the same sample.  -1 is an impossible bit-stream value so the first
-        // pixel always misses.
-        int[] lastF = new int[colorSpaceCompCount];
-        java.util.Arrays.fill(lastF, -1);
-        int[] lastRgb = new int[1];
-        // GH-617: photos rarely repeat their neighbour, so every converted colour is
-        // remembered too; a raw DeviceCMYK image otherwise makes an ICC toRGB call
-        // per pixel.  16-bit or many-component samples don't pack into a key.
-        ColourMemo memo = !isMask && ColourMemo.fits(bitsPerComponent, colorSpaceCompCount)
-                ? new ColourMemo(width * height, bitsPerComponent * colorSpaceCompCount) : null;
-
-        // image mask from
-        float imageMaskValue = decode[0];
-
-        // Create the memory hole where where the buffered image will be written
-        // too, bit by painful bit.
-        BufferedImage bim = ImageUtility.createTranslucentCompatibleImage(width, height);
-
-        // GH-501: when a CMYK group is being rasterised, capture the true CMYK
-        // samples alongside the sRGB image so the group can blend in CMYK.  This
-        // per-pixel decoder is the raw FlateDecode path (no intermediate CMYK
-        // raster); cmykCapture is null (no cost) unless preservation is on for an
-        // 8-bit DeviceCMYK image.
-        byte[] cmykCapture = (ImageUtility.isPreserveCmyk() && bitsPerComponent == 8
-                && colorSpaceCompCount == 4 && colorSpace instanceof DeviceCMYK)
-                ? new byte[width * height * 4] : null;
-
-        // create the buffer and get the first series of bytes from the cached
-        // stream
-        // get the full image data.
         byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
         if (data == null) {
             return null;
         }
-        SampleReader in = new SampleReader(data);
+
+        // the colour a stencil mask paints
+        int fillRgb = graphicsState != null ? graphicsState.getFillColor().getRGB() : 1;
+        // GH-501: when a CMYK group is being rasterised, keep the true CMYK samples alongside the sRGB image so
+        // the group can blend in CMYK
+        byte[] cmykCapture = !imageParams.isImageMask() && PixelConverter.capturesCmyk(colorSpace, bitsPerComponent)
+                ? new byte[width * height * 4] : null;
+        PixelConverter pixels = PixelConverter.forImage(colorSpace, bitsPerComponent, imageParams.getDecode(),
+                imageParams.isImageMask(), fillRgb, width * height, cmykCapture);
+
+        BufferedImage image = ImageUtility.createTranslucentCompatibleImage(width, height);
         // GH-617: a TYPE_INT_ARGB row is written with one copy; setRGB converts each pixel through the
         // colour model, which matters for other layouts (a premultiplied buffer) but not this one
-        WritableRaster argbRaster = bim.getType() == BufferedImage.TYPE_INT_ARGB ? bim.getRaster() : null;
-
-        // Start encoding bit stream into an image,  we work one pixel at
-        // a time,  and grap the need bit information for the images
-        // colour space and bits per colour
+        WritableRaster argbRaster = image.getType() == BufferedImage.TYPE_INT_ARGB ? image.getRaster() : null;
+        SampleReader in = new SampleReader(data);
+        int[] row = new int[width];
         for (int y = 0; y < height; y++) {
-            // each row starts on a byte boundary (8.9.3), so a row whose bits don't fill its last byte is padded
             in.startRow();
-
             for (int x = 0; x < width; x++) {
-
-                // if image has mask apply it
-                if (isMask) {
-                    int bit = in.getBits(bitsPerComponent);
-                    bit = (bit == imageMaskValue) ? fillRGB : 0x00000000;
-                    imageBits[x] = bit;
-                }
-                // other wise start colour bit parsing
-                else {
-                    // set some default values
-                    int red = 255;
-                    int blue = 255;
-                    int green = 255;
-                    int alpha = 255;
-
-                    // indexed colour
-                    if (colorSpaceCompCount == 1) {
-                        // get value used for this bit
-                        int bit = in.getBits(bitsPerComponent);
-                        // check decode array if a colour inversion is needed
-                        // if index 0 > index 1 then we have a need for ainversion
-                        if (decode[0] > decode[1]) {
-                            bit = (bit == maxColourValue) ? 0x00000000 : maxColourValue;
-                        }
-
-                        if (isDeviceGray) {
-                            if (bitsPerComponent == 1)
-                                bit = ImageUtility.GRAY_1_BIT_INDEX_TO_RGB[bit];
-                            else if (bitsPerComponent == 2)
-                                bit = ImageUtility.GRAY_2_BIT_INDEX_TO_RGB[bit];
-                            else if (bitsPerComponent == 4)
-                                bit = ImageUtility.GRAY_4_BIT_INDEX_TO_RGB[bit];
-                            else if (bitsPerComponent == 8) {
-                                bit = ((bit << 24) |
-                                        (bit << 16) |
-                                        (bit << 8) |
-                                        bit);
-                            }
-                            imageBits[x] = bit;
-                        } else {
-                            f[0] = bit;
-                            imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
-                        }
-                    }
-                    // normal RGB colour
-                    else if (colorSpaceCompCount == 3) {
-                        // We can have an ICCBased color space that has 3 components,
-                        //  but where we can't assume it's RGB.
-                        // But, when it is DeviceRGB, we don't want the performance hit
-                        //  of converting the pixels via the PColorSpace, so we'll
-                        //  break this into the two cases
-                        if (isDeviceRGB && bitsPerComponent == 8) {
-                            // binary values  so either 0 or 1, we must convert to 0-255
-                            red = in.getBits(bitsPerComponent) * 255;
-                            green = in.getBits(bitsPerComponent) * 255;
-                            blue = in.getBits(bitsPerComponent) * 255;
-                            // combine the colour together
-                            imageBits[x] = (alpha << 24) | (red << 16) |
-                                    (green << 8) | blue;
-                        } else {
-                            for (int i = 0; i < colorSpaceCompCount; i++) {
-                                f[i] = in.getBits(bitsPerComponent);
-                            }
-                            imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
-                        }
-                    }
-                    // normal aRGB colour,  this could use some more
-                    // work for optimizing.
-                    else if (colorSpaceCompCount == 4 || colorSpace instanceof DeviceN) {
-                        for (int i = 0; i < colorSpaceCompCount; i++) {
-                            f[i] = in.getBits(bitsPerComponent);
-                            // apply decode
-                            if (decode[0] > decode[1]) {
-                                f[i] = maxColourValue - f[i];
-                            }
-                        }
-                        if (cmykCapture != null) {
-                            // f holds the decoded C,M,Y,K samples (0..255) -- the
-                            // true CMYK, before colorSpace.getColor() flattens to sRGB.
-                            int idx = (y * width + x) * 4;
-                            cmykCapture[idx] = (byte) f[0];
-                            cmykCapture[idx + 1] = (byte) f[1];
-                            cmykCapture[idx + 2] = (byte) f[2];
-                            cmykCapture[idx + 3] = (byte) f[3];
-                        }
-                        imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
-                    }
-                    // else just set pixel with the default values
-                    else {
-                        // combine the colour together
-                        imageBits[x] = (alpha << 24) | (red << 16) |
-                                (green << 8) | blue;
-                    }
-                }
+                row[x] = pixels.next(in);
             }
-            // Assign the new bits for this pixel
             if (argbRaster != null) {
-                argbRaster.setDataElements(0, y, width, 1, imageBits);
+                argbRaster.setDataElements(0, y, width, 1, row);
             } else {
-                bim.setRGB(0, y, width, 1, imageBits, 0, 1);
+                image.setRGB(0, y, width, 1, row, 0, width);
             }
         }
 
         if (cmykCapture != null) {
-            ImageUtility.preserveCmykBytes(bim, cmykCapture, width, height);
+            ImageUtility.preserveCmykBytes(image, cmykCapture, width, height);
         }
-
-        return bim;
-
-    }
-
-    /**
-     * Normalises and converts a colour sample to an ARGB int, reusing the last
-     * result when the raw components are unchanged, and otherwise any result the
-     * memo remembers.  Avoids the per-pixel normalise/getColor/Color-allocation
-     * cost across flat runs and repeated colours.
-     *
-     * @param colorSpace     colour space used to resolve the colour.
-     * @param f              raw sample components for this pixel.
-     * @param ff             scratch buffer for normalised components.
-     * @param maxColourValue maximum raw component value.
-     * @param lastF          previous sample components (mutated); seed with -1.
-     * @param lastRgb        single-element holder for the previous ARGB result.
-     * @param memo           converted colours keyed by packed sample, or null when samples don't pack.
-     * @param bitsPerComponent bits per raw component, the packing width.
-     * @return ARGB value for the sample.
-     */
-    private static int convertSample(PColorSpace colorSpace, int[] f, float[] ff, int maxColourValue,
-                                     int[] lastF, int[] lastRgb, ColourMemo memo, int bitsPerComponent) {
-        boolean same = true;
-        int key = 0;
-        for (int i = 0; i < f.length; i++) {
-            if (f[i] != lastF[i]) {
-                same = false;
-                lastF[i] = f[i];
-            }
-            key = key << bitsPerComponent | f[i];
-        }
-        if (same) {
-            return lastRgb[0];
-        }
-        int slot = 0;
-        if (memo != null) {
-            slot = memo.slot(key);
-            int argb = memo.argb(slot);
-            if (argb != 0) {
-                lastRgb[0] = argb;
-                return argb;
-            }
-        }
-        colorSpace.normaliseComponentsToFloats(f, ff, maxColourValue);
-        lastRgb[0] = colorSpace.getColor(ff).getRGB();
-        if (memo != null) {
-            memo.put(slot, key, lastRgb[0]);
-        }
-        return lastRgb[0];
-    }
-
-    /**
-     * Reads samples most significant bit first from the decoded bytes, as {@link org.icepdf.core.io.BitStream}
-     * did, without an InputStream call for every byte (GH-617), and starts each row on a byte boundary, which
-     * BitStream never did.  Past the end of the data it reads zeros.
-     */
-    private static final class SampleReader {
-        private final byte[] data;
-        private int pos;
-        private int bits;
-        private int bitsLeft;
-
-        SampleReader(byte[] data) {
-            this.data = data;
-        }
-
-        /** Drops the padding bits left in the previous row's last byte. */
-        void startRow() {
-            bitsLeft = 0;
-        }
-
-        int getBits(int count) {
-            if (count == 8 && bitsLeft == 0) {
-                return pos < data.length ? data[pos++] & 0xff : 0;
-            }
-            while (bitsLeft < count) {
-                bits = bits << 8 | (pos < data.length ? data[pos++] & 0xff : 0);
-                bitsLeft += 8;
-            }
-            bitsLeft -= count;
-            return (bits >>> bitsLeft) & ((1 << count) - 1);
-        }
+        return image;
     }
 }
