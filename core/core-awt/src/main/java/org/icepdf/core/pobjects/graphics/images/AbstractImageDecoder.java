@@ -55,6 +55,8 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
 
     protected ImageStream imageStream;
     protected GraphicsState graphicsState;
+    // GH-625: the reduction a decoder that can subsample reads at, a power of two (see ReducedDecode).
+    private int reduction = 1;
 
     public AbstractImageDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         this.imageStream = imageStream;
@@ -66,6 +68,16 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
 
     public ImageStream getImageStream() {
         return imageStream;
+    }
+
+    /**
+     * Asks a decoder that can subsample (JPEG, JPEG 2000) to read at most one pixel in {@code reduction}
+     * each way, for an image drawn far smaller than its size (see {@link ReducedDecode}).
+     *
+     * @param reduction a power of two; 1 reads every pixel.
+     */
+    void setReduction(int reduction) {
+        this.reduction = Math.max(1, reduction);
     }
 
     /**
@@ -87,7 +99,7 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
     /**
      * The sampling step a decoder that can subsample should read a really big image at, so its longest edge comes
      * out at about preferredSize (never shorter), the size {@link #scaleReallyBigImages} would have scaled the full
-     * raster down to.  Images that aren't really big are read whole.
+     * raster down to.  Images that aren't really big are read whole, or at the {@link #setReduction reduction}.
      *
      * @param width  image width in pixels.
      * @param height image height in pixels.
@@ -95,9 +107,9 @@ public abstract class AbstractImageDecoder implements ImageDecoder {
      */
     int subsamplingFor(int width, int height) {
         if (!isImageReallyBig(width, height)) {
-            return 1;
+            return reduction;
         }
-        return Math.max(1, Math.max(width, height) / preferredSize);
+        return Math.max(reduction, Math.max(width, height) / preferredSize);
     }
 
     /**

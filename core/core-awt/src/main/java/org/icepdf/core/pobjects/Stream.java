@@ -188,19 +188,8 @@ public class Stream extends Dictionary {
         // decompress the stream
         if (compressed) {
             try {
-                // Decode straight from the document-buffer view when in view mode (no rawBytes copy); a private
-                // duplicate() gives this decode its own cursor over the shared, read-only bytes.
-                InputStream streamInput;
-                long rawStreamLength;
-                if (rawBytes == null && streamDataView != null) {
-                    ByteBuffer view = streamDataView.duplicate();
-                    rawStreamLength = view.remaining();
-                    streamInput = new ByteBufferBackedInputStream(view);
-                } else {
-                    streamInput = new ByteArrayInputStream(rawBytes);
-                    rawStreamLength = rawBytes.length;
-                }
-                InputStream input = getDecodedInputStream(streamInput, rawStreamLength);
+                long rawStreamLength = rawStreamLength();
+                InputStream input = openCompressedDecoded();
                 if (input == null) return null;
                 // Size the output buffer to at least the raw (still-compressed) length: the decoded result is
                 // almost always larger, so this floor skips the early grow-and-copy reallocations that otherwise
@@ -224,6 +213,42 @@ public class Stream extends Dictionary {
             }
         }
         return null;
+    }
+
+    /**
+     * The decoded bytes as a stream, inflated as they are read rather than gathered into one array
+     * first: for a big image, holding them all at once costs as much as the image.  Nothing is
+     * cached; served from the cached bytes when there are some.
+     *
+     * @return the decoded data, or null when there is nothing to decode
+     */
+    public InputStream openDecodedInputStream() {
+        byte[] cached = decompressedBytes;
+        if (cached != null) {
+            return new ByteArrayInputStream(cached);
+        }
+        return compressed ? openCompressedDecoded() : null;
+    }
+
+    private long rawStreamLength() {
+        if (rawBytes == null && streamDataView != null) {
+            return streamDataView.remaining();
+        }
+        return rawBytes != null ? rawBytes.length : 0;
+    }
+
+    private InputStream openCompressedDecoded() {
+        // Decode straight from the document-buffer view when in view mode (no rawBytes copy); a private
+        // duplicate() gives this decode its own cursor over the shared, read-only bytes.
+        InputStream streamInput;
+        if (rawBytes == null && streamDataView != null) {
+            streamInput = new ByteBufferBackedInputStream(streamDataView.duplicate());
+        } else if (rawBytes != null) {
+            streamInput = new ByteArrayInputStream(rawBytes);
+        } else {
+            return null;
+        }
+        return getDecodedInputStream(streamInput, rawStreamLength());
     }
 
     public ByteBuffer getDecodedStreamByteBuffer() {

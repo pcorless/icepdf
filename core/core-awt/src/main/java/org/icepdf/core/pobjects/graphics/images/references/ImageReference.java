@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.MaskedImage;
+import org.icepdf.core.pobjects.graphics.images.ReducedDecode;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -107,6 +108,13 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * may recover and a later repaint should retry the decode.
      */
     protected volatile boolean transientFailure;
+
+    /**
+     * GH-625: true when this image may be decoded at a reduced size where it is drawn small (see
+     * {@link ReducedDecode#isCandidate}); such a reference decodes when first drawn, at the size
+     * drawn, not eagerly in full.
+     */
+    protected boolean reducible;
 
     /**
      * Wall-clock time of the last transient (out-of-memory) decode failure.  Repaints
@@ -218,7 +226,10 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (isOutsideClip(aG, aX, aY, aW, aH)) {
             return;
         }
-        BufferedImage image = getImage();
+        BufferedImage image = getReducedImage(aG, aX, aY, aW, aH);
+        if (image == null) {
+            image = getImage();
+        }
         if (image instanceof MaskedImage) {
             MaskedImage masked = (MaskedImage) image;
             if (MaskedImagePainter.canPaint(aG) && !ImageUtility.isCmykInkCapturing()) {
@@ -302,6 +313,72 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                     aG.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation);
                 }
             }
+        }
+    }
+
+    /**
+     * GH-625: for an image drawn far smaller than its size, the image decoded at a reduced size
+     * (see {@link ReducedDecode}): the largest one kept when it is detailed enough, else a new
+     * decode, shared by the tiles the image spans.  Only for a {@link #reducible} reference, drawn on
+     * a raster target, and only while the full image isn't already decoded.
+     *
+     * @return the reduced image to draw, or null to draw the full image
+     */
+    private BufferedImage getReducedImage(Graphics2D aG, int aX, int aY, int aW, int aH)
+            throws InterruptedException {
+        if (!reducible || reference == null || ImageUtility.isCmykInkCapturing()
+                || !ImageDownsampler.isRasterTarget(aG)) {
+            return null;
+        }
+        int width = imageStream.getWidth();
+        int height = imageStream.getHeight();
+        int factor = ReducedDecode.factorFor(aG, width, height, aX, aY, aW, aH);
+        ImagePool pool = imageStream.getLibrary().getImagePool();
+        if (factor < 2 || pool.get(reference) != null) {
+            return null;
+        }
+        int needed = ReducedDecode.reduced(width, factor);
+        BufferedImage kept = pool.getReduced(reference);
+        if (kept != null && kept.getWidth() >= needed) {
+            return kept;
+        }
+        if (isInTransientBackoff()) {
+            return null;
+        }
+        FutureTask<BufferedImage> mine = new FutureTask<>(() -> {
+            BufferedImage reduced = imageStream.getReducedImage(graphicsState, resources, factor);
+            pool.putReduced(reference, reduced);
+            return reduced;
+        });
+        FutureTask<BufferedImage> running = pool.registerReducedInProgress(reference, mine);
+        try {
+            BufferedImage reduced = null;
+            if (running != null) {
+                // another tile is decoding it: use that when it is detailed enough.
+                reduced = running.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
+                if (reduced != null && reduced.getWidth() >= needed) {
+                    return reduced;
+                }
+            }
+            try {
+                mine.run();
+            } finally {
+                if (running == null) {
+                    pool.removeReducedInProgress(reference, mine);
+                }
+            }
+            return mine.get();
+        } catch (ExecutionException e) {
+            if (isTransientDecodeFailure(e.getCause())) {
+                // skip the image for now rather than try the full decode, which is bigger still
+                markTransientFailure(e.getCause());
+            } else {
+                logger.log(Level.WARNING, e, () -> "Reduced image decode failed, decoding in full: " +
+                        imageStream.getPObjectReference());
+            }
+            return null;
+        } catch (TimeoutException e) {
+            return null;
         }
     }
 

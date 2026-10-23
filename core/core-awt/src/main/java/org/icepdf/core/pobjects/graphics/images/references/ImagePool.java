@@ -54,12 +54,15 @@ public class ImagePool {
     // of zooming, entries were purged as fast as they were inserted and get()
     // returned null, forcing constant re-decodes (and masking as a timing bug that
     // "went away" when a breakpoint changed GC timing).
-    private final Map<Reference, SoftReference<BufferedImage>> fCache;
+    // keyed by the image's Reference, or by a Reduced key for a GH-625 reduced decode of it.
+    private final Map<Object, SoftReference<BufferedImage>> fCache;
 
     // Decodes currently in flight, keyed by image object reference, so that two references to the same image
     // (e.g. the same XObject drawn on multiple pages, or an eager pre-decode racing the content parser) share a
     // single decode instead of each starting their own.
     private final Map<Reference, FutureTask<BufferedImage>> inProgress = new ConcurrentHashMap<>();
+    // GH-625: reduced decodes in flight, so the tiles an image spans share one decode of it.
+    private final Map<Reference, FutureTask<BufferedImage>> inProgressReduced = new ConcurrentHashMap<>();
 
     // Soft references alone don't bound the pool: G1 clears them only when the heap is all but full,
     // so scrolling a document of scans fills the whole heap with decoded images, every collection
@@ -73,7 +76,7 @@ public class ImagePool {
 
     private final long budgetBytes;
     // access order, eldest first; guarded by itself.
-    private final LinkedHashMap<Reference, Long> sizes = new LinkedHashMap<>(64, 0.75f, true);
+    private final LinkedHashMap<Object, Long> sizes = new LinkedHashMap<>(64, 0.75f, true);
     private long usedBytes;
 
     public ImagePool() {
@@ -106,19 +109,59 @@ public class ImagePool {
             // copy the reference for the key so the map never holds the caller's
             // Reference instance (keeps parity with the previous behaviour).
             Reference key = new Reference(ref.getObjectNumber(), ref.getGenerationNumber());
-            fCache.put(key, new SoftReference<>(image));
+            // the full image serves every size, so a reduced decode of it is no longer needed.
+            remove(new Reduced(key));
+            store(key, image);
+        }
+    }
+
+    /**
+     * GH-625: keeps a reduced decode of an image, apart from the full one, which {@link #get} alone
+     * returns.  Only the largest reduced decode is kept: it serves any smaller drawing too.
+     *
+     * @param ref   image object reference
+     * @param image the image decoded at a reduced size
+     */
+    public void putReduced(Reference ref, BufferedImage image) {
+        if (ref != null && image != null) {
+            Reduced key = new Reduced(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()));
+            BufferedImage kept = get(key);
+            if (kept == null || kept.getWidth() < image.getWidth()) {
+                store(key, image);
+            }
+        }
+    }
+
+    /**
+     * @param ref image object reference
+     * @return the reduced decode of the image kept by {@link #putReduced}, or null
+     */
+    public BufferedImage getReduced(Reference ref) {
+        return ref == null ? null : get(new Reduced(ref));
+    }
+
+    private void remove(Object key) {
+        if (fCache.remove(key) != null) {
             synchronized (sizes) {
-                Long old = sizes.put(key, byteSize(image));
-                usedBytes += sizes.get(key) - (old != null ? old : 0);
-                // the newest entry stays even if it alone is over the budget: it is being drawn.
-                Iterator<Map.Entry<Reference, Long>> it = sizes.entrySet().iterator();
-                while (usedBytes > budgetBytes && sizes.size() > 1 && it.hasNext()) {
-                    Map.Entry<Reference, Long> eldest = it.next();
-                    if (eldest.getKey().equals(key)) continue;
-                    usedBytes -= eldest.getValue();
-                    fCache.remove(eldest.getKey());
-                    it.remove();
-                }
+                Long size = sizes.remove(key);
+                if (size != null) usedBytes -= size;
+            }
+        }
+    }
+
+    private void store(Object key, BufferedImage image) {
+        fCache.put(key, new SoftReference<>(image));
+        synchronized (sizes) {
+            Long old = sizes.put(key, byteSize(image));
+            usedBytes += sizes.get(key) - (old != null ? old : 0);
+            // the newest entry stays even if it alone is over the budget: it is being drawn.
+            Iterator<Map.Entry<Object, Long>> it = sizes.entrySet().iterator();
+            while (usedBytes > budgetBytes && sizes.size() > 1 && it.hasNext()) {
+                Map.Entry<Object, Long> eldest = it.next();
+                if (eldest.getKey().equals(key)) continue;
+                usedBytes -= eldest.getValue();
+                fCache.remove(eldest.getKey());
+                it.remove();
             }
         }
     }
@@ -127,6 +170,10 @@ public class ImagePool {
         if (ref == null) {
             return null;
         }
+        return get((Object) ref);
+    }
+
+    private BufferedImage get(Object ref) {
         SoftReference<BufferedImage> softReference = fCache.get(ref);
         if (softReference == null) {
             return null;
@@ -150,8 +197,42 @@ public class ImagePool {
         return image;
     }
 
+    /** The key of a reduced decode: its own entry, never mistaken for the full image's. */
+    private static final class Reduced {
+        private final Reference ref;
+
+        Reduced(Reference ref) {
+            this.ref = ref;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Reduced && ((Reduced) o).ref.equals(ref);
+        }
+
+        @Override
+        public int hashCode() {
+            return ~ref.hashCode();
+        }
+    }
+
     public boolean containsKey(Reference ref) {
         return get(ref) != null;
+    }
+
+    /**
+     * Like {@link #registerInProgress}, for a reduced decode ({@link #putReduced}).
+     *
+     * @return an existing in-flight reduced decode of this image to wait on, or null if the caller
+     * should run its own {@code task} (now registered)
+     */
+    public FutureTask<BufferedImage> registerReducedInProgress(Reference ref, FutureTask<BufferedImage> task) {
+        return inProgressReduced.putIfAbsent(ref, task);
+    }
+
+    /** Removes {@code task} as the in-flight reduced decode of an image. */
+    public void removeReducedInProgress(Reference ref, FutureTask<BufferedImage> task) {
+        inProgressReduced.remove(ref, task);
     }
 
     /**

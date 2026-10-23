@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ReducedDecode;
 
 import java.awt.image.BufferedImage;
 import java.util.logging.Level;
@@ -46,8 +47,13 @@ public class ImageStreamReference extends CachedImageReference {
                                    Page page) {
         super(imageStream, xobjectName, graphicsState, resources, imageIndex, page);
 
+        // a big image that may be drawn reduced decodes when drawn, at the size it is drawn (GH-625).
+        reducible = ReducedDecode.isCandidate(imageStream);
         // kick off a new thread to load the image, if not already in pool.
         ImagePool imagePool = imageStream.getLibrary().getImagePool();
+        if (reducible) {
+            return;
+        }
         if (useProxy && imagePool.get(reference) == null) {
             submitDecode();
         } else if (!useProxy && imagePool.get(reference) == null) {

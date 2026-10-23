@@ -337,6 +337,32 @@ public class ImageStream extends Stream {
         return decodedImage;
     }
 
+    /**
+     * GH-625: the image decoded at a reduced size, for a placement drawn far smaller than the image
+     * (see {@link ReducedDecode}).  Not pooled here, and nothing of the full decode is touched: the
+     * caller keeps the result apart from full images.
+     *
+     * @param graphicsState graphic state for image or parent form
+     * @param resources     resources containing image reference
+     * @param factor        the reduction wanted, a power of two
+     * @return the reduced image, or null when this image or factor has no reduced decode; the caller
+     * then draws the full image
+     */
+    public BufferedImage getReducedImage(GraphicsState graphicsState, Resources resources, int factor) {
+        ImageParams params = new ImageParams(library, entries, resources);
+        AbstractImageDecoder decoder = ReducedDecode.decoderFor(this, params, graphicsState, factor);
+        if (decoder == null) {
+            return null;
+        }
+        imageParams = params;
+        int reduction = ReducedDecode.decodeFactor(this, factor);
+        try (DecodeBudget.Permit ignored = DecodeBudget.acquire(ReducedDecode.reduced(params.getWidth(), reduction),
+                ReducedDecode.reduced(params.getHeight(), reduction))) {
+            BufferedImage image = decoder.decode();
+            return image == null ? null : ImageUtility.compactImage(image);
+        }
+    }
+
     public void setDecodedImage(BufferedImage decodedImage) {
         this.decodedImage = decodedImage;
     }
