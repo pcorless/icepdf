@@ -33,10 +33,6 @@ import java.awt.image.*;
  * @since 6.2.3
  */
 public class IccCmykRasterOp implements RasterOp {
-    // colour cache slots: a small table for small images, at most 1M slots (8 MB) for the largest
-    private static final int MIN_CACHE = 1 << 10;
-    private static final int MAX_CACHE = 1 << 20;
-
     private final RenderingHints hints;
     private final ColorSpace colorSpace;
 
@@ -66,14 +62,7 @@ public class IccCmykRasterOp implements RasterOp {
         // (Mass 3D 8.pdf: 161k colours in 12.8M pixels), so every converted colour is
         // also remembered.  A whole-raster ColorConvertOp was tried instead: barely
         // faster, and it renders with a different intent (up to 35 levels off).
-        int pixelCount = destPixels.length;
-        int capacity = Integer.highestOneBit(Math.max(MIN_CACHE, Math.min(pixelCount, MAX_CACHE)) * 2 - 1);
-        int mask = capacity - 1;
-        int limit = capacity / 2;
-        int[] cacheKeys = new int[capacity];
-        // 0 marks an empty slot: a cached ARGB always has its alpha set
-        int[] cacheArgb = new int[capacity];
-        int cached = 0;
+        ColourMemo memo = new ColourMemo(destPixels.length, 32);
         int lastCmyk = 0;
         int lastArgb = 0;
         for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
@@ -84,11 +73,8 @@ public class IccCmykRasterOp implements RasterOp {
                     (srcPixels[pixel + 3] & 0xff);
 
             if (cmyk != lastCmyk || lastArgb == 0) {
-                int slot = (cmyk * 0x9E3779B9) >>> 12 & mask;
-                while (cacheArgb[slot] != 0 && cacheKeys[slot] != cmyk) {
-                    slot = (slot + 1) & mask;
-                }
-                lastArgb = cacheArgb[slot];
+                int slot = memo.slot(cmyk);
+                lastArgb = memo.argb(slot);
                 if (lastArgb == 0) {
                     colorValue[0] = (cmyk >>> 24) / 255.0f;
                     colorValue[1] = (cmyk >>> 16 & 0xff) / 255.0f;
@@ -101,12 +87,7 @@ public class IccCmykRasterOp implements RasterOp {
                             (((int) (rgbColorValue[0] * 255) & 0xff) << 16) |
                             (((int) (rgbColorValue[1] * 255) & 0xff) << 8) |
                             ((int) (rgbColorValue[2] * 255) & 0xff);
-                    // once full, later colours are converted every time rather than evicting
-                    if (cached < limit) {
-                        cacheKeys[slot] = cmyk;
-                        cacheArgb[slot] = lastArgb;
-                        cached++;
-                    }
+                    memo.put(slot, cmyk, lastArgb);
                 }
                 lastCmyk = cmyk;
             }
