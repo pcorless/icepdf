@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.Test;
 

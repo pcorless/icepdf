@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
+
 /**
  * A stencil mask (8.9.6.2): a sample paints the fill colour where the decoded value is 0 and leaves the page
  * alone elsewhere.  With the default Decode [0 1] that is sample 0, with [1 0] sample 1.

@@ -18,6 +18,7 @@ package org.icepdf.core.pobjects.graphics.images;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
 
 /**
  * Turns one pixel's samples into an ARGB value, for {@link RawDecoder}.  One converter is picked per image, so

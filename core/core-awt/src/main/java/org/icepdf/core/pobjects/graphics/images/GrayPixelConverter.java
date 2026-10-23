@@ -15,6 +15,8 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
+
 /**
  * A DeviceGray image: every sample value's grey, after its Decode, is worked out once, up front, into a table.
  *

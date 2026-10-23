@@ -163,7 +163,8 @@ public class DctDecoder extends AbstractImageDecoder {
             float[] decode = imageParams.getDecode();
 
             if (jpegEncoding == JPEG_ENC_RGB && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                        imageParams.getDecodeRange());
             } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
             } else if (jpegEncoding == JPEG_ENC_YCbCr && bitsPerComponent == 8 && bands > 1) {
@@ -182,7 +183,8 @@ public class DctDecoder extends AbstractImageDecoder {
                             ((Separation) colourSpace).isNamedColor()) {
                         tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
                     } else {
-                        tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                        tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                                imageParams.getDecodeRange());
                     }
                 } else {
                     if (colourSpace instanceof Indexed) {
@@ -198,7 +200,8 @@ public class DctDecoder extends AbstractImageDecoder {
                     return ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
                 } // assume gray based jpeg.
                 if (wr.getNumBands() == 1) {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                            imageParams.getDecodeRange());
                 } else if (wr.getNumBands() == 2) {
                     tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
                 }

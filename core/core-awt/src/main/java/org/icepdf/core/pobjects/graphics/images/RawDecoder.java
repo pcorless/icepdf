@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;

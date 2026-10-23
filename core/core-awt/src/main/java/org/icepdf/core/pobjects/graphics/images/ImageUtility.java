@@ -1505,14 +1505,26 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    static BufferedImage convertSpaceToRgb(Raster colourRaster, PColorSpace colorSpace, float[] decode) {
+    /**
+     * @param decode      {@link ImageParams#getDecode()}.
+     * @param decodeRange {@link ImageParams#getDecodeRange()}.
+     */
+    static BufferedImage convertSpaceToRgb(Raster colourRaster, PColorSpace colorSpace, float[] decode,
+                                           float[] decodeRange) {
         BufferedImage rgbImage = makeBufferedImage(colourRaster);
         WritableRaster rgbRaster = rgbImage.getRaster();
-        // apply the decode filter
-        DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
-        decodeRasterOp.filter(colourRaster, (WritableRaster) colourRaster);
+        PColorSpaceRasterOp pColorSpaceRasterOp;
+        if (isUnitRange(colorSpace.getDefaultDecode(8))) {
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(colourRaster, (WritableRaster) colourRaster);
+            pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
+        } else {
+            // Lab or an ICCBased Range: DecodeRasterOp works in 0..255 and can't hold these units, so each sample
+            // is decoded straight into them (GH-617; a Lab image reached the space as 0..1, nearly black)
+            pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, decodeRange, null);
+        }
         // apply colour space
-        PColorSpaceRasterOp pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
         pColorSpaceRasterOp.filter(colourRaster, rgbRaster);
         // GH-501: raw (FlateDecode) DeviceCMYK images reach RGB through this generic
         // path, not convertCmykToRgb -- keep their true CMYK samples too.
@@ -1520,6 +1532,15 @@ public class ImageUtility {
             preserveCmyk(rgbImage, colourRaster);
         }
         return rgbImage;
+    }
+
+    private static boolean isUnitRange(float[] range) {
+        for (int i = 0; i < range.length; i += 2) {
+            if (range[i] != 0 || range[i + 1] != 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static BufferedImage convertGrayToRgb(Raster grayRaster, float[] decode) {

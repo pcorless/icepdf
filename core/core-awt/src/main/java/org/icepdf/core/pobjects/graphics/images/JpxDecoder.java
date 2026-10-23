@@ -120,7 +120,8 @@ public class JpxDecoder extends AbstractImageDecoder {
             }
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                        imageParams.getDecodeRange());
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
             } else if ((colourSpace instanceof DeviceGray)
@@ -131,10 +132,14 @@ public class JpxDecoder extends AbstractImageDecoder {
                     tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
 //                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                 } else {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                            imageParams.getDecodeRange());
                 }
             } else if (colourSpace instanceof Indexed) {
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
+            } else if (colourSpace instanceof Lab && bitsPerComponent == 8) {
+                // the samples are L*, a*, b*; drawn as the reader's raster they came out as if RGB
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode, imageParams.getDecodeRange());
             }
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
