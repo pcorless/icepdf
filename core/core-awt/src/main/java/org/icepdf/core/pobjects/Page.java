@@ -1206,8 +1206,18 @@ public class Page extends Dictionary {
             // update parent page reference.
             annotation.getEntries().put(Annotation.PARENT_PAGE_KEY, this.getPObjectReference());
 
-            // add the annotations to the parsed annotations list
-            this.annotations.add(annotation);
+            // add the annotation to the parsed annotations list, unless it is already there: an
+            // annotation read from the file is, and adding it again listed (and painted) it twice.
+            boolean listed = false;
+            for (Annotation a : this.annotations) {
+                if (a == annotation) {
+                    listed = true;
+                    break;
+                }
+            }
+            if (!listed) {
+                this.annotations.add(annotation);
+            }
 
             // add the new annotations to the library
             library.addObject(annotation, annotation.getPObjectReference());
