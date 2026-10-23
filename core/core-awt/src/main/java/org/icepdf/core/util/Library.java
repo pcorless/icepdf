@@ -242,8 +242,13 @@ public class Library {
             // streams and malformed files can contain reference cycles, so a
             // load-time lock could deadlock); the rare double-load is only wasted
             // parsing, never a duplicate live instance.
+            // The cache holds the object itself, not its PObject wrapper: callers keep only the object, so
+            // nothing held a weakly cached wrapper and every GC emptied the entry while the object was still
+            // in use.  The next lookup then loaded a second instance - a second TilingPattern, initialised
+            // from a different graphics state, painted one icon of 2011-ski-yoho_en.pdf differently on a
+            // cold start.  A hit gets a new wrapper (below), as objects added with addObject always have.
             java.lang.ref.Reference<Object> newRef = isSoftReferenceAble(object)
-                    ? new SoftReference<>(obj) : new WeakReference<>(obj);
+                    ? new SoftReference<>(object.getObject()) : new WeakReference<>(object.getObject());
             if (!useCache) {
                 objectStore.put(reference, newRef);
                 return object;
