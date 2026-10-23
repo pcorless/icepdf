@@ -114,6 +114,19 @@ public class Document {
     // disable/enable file caching when downloading url data streams
     private static boolean isCachingEnabled;
 
+    /**
+     * Experimental: {@link #setFile} maps a file of at least {@link #MAP_FILE_THRESHOLD_PROPERTY} MB
+     * (default 64) read-only into memory instead of copying it onto the heap, so a 300MB document
+     * doesn't hold 300MB of heap for as long as it is open.  Off by default.  Caveats: the mapping
+     * is released only when the buffer is garbage collected, so on Windows the file can't be
+     * replaced or deleted while it lingers (the GH-323 problem); and the file must not be truncated
+     * or overwritten in place while open - write a save to a temporary file and move it over the
+     * original, as the JavaFX viewer does, never a {@code FileOutputStream} on the open file itself.
+     */
+    public static final String MAP_FILE_PROPERTY = "org.icepdf.core.document.mapFile";
+    public static final String MAP_FILE_THRESHOLD_PROPERTY = "org.icepdf.core.document.mapFileThreshold";
+    private boolean fileMapped;
+
     private final Library library;
 
     private FileChannel documentFileChannel;
@@ -209,11 +222,32 @@ public class Document {
 
         File file = new File(filepath);
         try {
-            setInputStream(copyFileToByteBuffer(file));
+            setInputStream(mapOrCopyFile(file));
         } catch (Exception e) {
             logLoadFailure("Failed to set document file path", e);
             throw e;
         }
+    }
+
+    /** The file mapped read-only when {@link #MAP_FILE_PROPERTY} is on and it is big enough, else copied. */
+    private ByteBuffer mapOrCopyFile(File file) throws IOException {
+        long size = file.length();
+        long threshold = (long) Defs.intProperty(MAP_FILE_THRESHOLD_PROPERTY, 64) << 20;
+        if (!Defs.booleanProperty(MAP_FILE_PROPERTY, false) || size < threshold || size > Integer.MAX_VALUE) {
+            return copyFileToByteBuffer(file);
+        }
+        randomAccessFile = new RandomAccessFile(file, "r");
+        documentFileChannel = randomAccessFile.getChannel();
+        fileMapped = true;
+        return documentFileChannel.map(FileChannel.MapMode.READ_ONLY, 0, documentFileChannel.size());
+    }
+
+    /**
+     * @return true if the document's bytes are a read-only mapping of its file rather than a copy on
+     * the heap (see {@link #MAP_FILE_PROPERTY})
+     */
+    public boolean isFileMapped() {
+        return fileMapped;
     }
 
     private ByteBuffer copyFileToByteBuffer(File file) throws IOException {
@@ -563,6 +597,13 @@ public class Document {
 
         if (documentByteBuffer != null) {
             documentByteBuffer.clear();
+        }
+        if (fileMapped) {
+            // the mapping goes only when its buffer is collected, and until then Windows won't let
+            // the file be replaced: let go of it, leaving an empty buffer for any late reader.
+            synchronized (library.getMappedFileByteBufferLock()) {
+                library.setDocumentByteBuffer(ByteBuffer.allocate(0));
+            }
         }
 
         String fileToDelete = getDocumentCachedFilePath();
