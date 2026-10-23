@@ -36,7 +36,7 @@ final class ColourSpacePixelConverter extends PixelConverter {
     private final int[] samples;
     private final int[] lastSamples;
     private final float[] components;
-    // null when the samples don't pack into an int: 16-bit, or many components
+    // null when the samples don't pack into a long: more than 64 bits a pixel
     private final ColourMemo memo;
     private final byte[] cmykCapture;
     private int lastArgb;
@@ -61,7 +61,7 @@ final class ColourSpacePixelConverter extends PixelConverter {
     @Override
     int next(SampleReader in) {
         boolean same = true;
-        int key = 0;
+        long key = 0;
         for (int i = 0; i < samples.length; i++) {
             int sample = in.getBits(bitsPerComponent);
             samples[i] = sample;

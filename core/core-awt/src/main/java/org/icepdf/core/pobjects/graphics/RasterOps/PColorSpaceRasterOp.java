@@ -85,7 +85,7 @@ public class PColorSpaceRasterOp implements RasterOp {
             // getColor() can be costly (an ICC toRGB or a tint transform plus a Color
             // allocation); reuse the previous result when the raw samples for a pixel
             // are unchanged, which covers flat runs, and remember every converted
-            // colour (GH-617), which covers photos.  More than four bands don't pack
+            // colour (GH-617), which covers photos.  More than eight bands don't pack
             // into a key, so those only get the previous-pixel reuse.
             ColourMemo memo = ColourMemo.fits(8, bands) ? new ColourMemo(destPixels.length, 8 * bands) : null;
             int[] lastSamples = new int[bands];
@@ -95,7 +95,7 @@ public class PColorSpaceRasterOp implements RasterOp {
             for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
                 boolean same = haveLast;
-                int key = 0;
+                long key = 0;
                 for (int i = 0; i < bands; i++) {
                     int sample = srcPixels[pixel + i] & 0xff;
                     if (sample != lastSamples[i]) {

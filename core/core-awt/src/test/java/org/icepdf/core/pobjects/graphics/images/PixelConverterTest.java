@@ -15,11 +15,20 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
+import org.icepdf.core.pobjects.DictionaryEntries;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Resources;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
+import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -92,5 +101,42 @@ public class PixelConverterTest {
         assertEquals(expected, argb[0]);
         assertEquals(expected, argb[1]);
         assertEquals(40, capture[7]);
+    }
+
+    /** Six 8-bit colorants pack into a 48-bit key; colours are still exactly getColor's. */
+    @Test
+    public void sixColorantDeviceNMatchesGetColor() {
+        Library library = new Library();
+        DictionaryEntries function = new DictionaryEntries();
+        function.put(new Name("FunctionType"), 4);
+        function.put(new Name("Domain"), Arrays.asList(0f, 1f, 0f, 1f, 0f, 1f, 0f, 1f, 0f, 1f, 0f, 1f));
+        function.put(new Name("Range"), Arrays.asList(0f, 1f, 0f, 1f, 0f, 1f, 0f, 1f));
+        // keep C M Y K, drop the two spot colorants
+        Stream tint = new Stream(library, function, "{ pop pop }".getBytes(StandardCharsets.US_ASCII));
+        PColorSpace deviceN = new Resources(library, new DictionaryEntries()).getColorSpace(Arrays.asList(
+                new Name("DeviceN"),
+                Arrays.asList(new Name("Cyan"), new Name("Magenta"), new Name("Yellow"), new Name("Black"),
+                        new Name("Orange"), new Name("Green")),
+                new Name("DeviceCMYK"), tint));
+        assertEquals(6, deviceN.getNumComponents());
+        int pixels = 400;
+        Random random = new Random(617);
+        int[] bytes = new int[pixels * 6];
+        for (int i = 0; i < pixels; i++) {
+            // 40 colours repeated out of order, so the memo hits
+            int colour = random.nextInt(40);
+            for (int c = 0; c < 6; c++) {
+                bytes[i * 6 + c] = (colour * 37 + c * 53) & 0xff;
+            }
+        }
+        int[] argb = convert(PixelConverter.forImage(deviceN, 8, decode(6, 8, false), false, 0, pixels, null),
+                pixels, bytes);
+        float[] components = new float[6];
+        for (int i = 0; i < pixels; i++) {
+            for (int c = 0; c < 6; c++) {
+                components[c] = bytes[i * 6 + c] / 255f;
+            }
+            assertEquals(deviceN.getColor(components.clone()).getRGB(), argb[i], "pixel " + i);
+        }
     }
 }
