@@ -55,6 +55,11 @@ public class PageTree extends Dictionary {
     private List kidsReferences;
     // vector of the pages associated with tree
     private HashMap<Integer, WeakReference<Object>> kidsPageAndPages;
+    // pages under each kid (1 for a page, the subtree's /Count for a Pages node; 0 not yet known),
+    // learned as kids are visited: a lookup steps over a counted kid without loading it, so page
+    // n of a flat tree no longer loads (and, once the weak kids are collected, re-parses) the n
+    // page dictionaries before it.
+    private volatile int[] kidPageCounts;
     // pointer to parent page tree
     private PageTree parent;
     // inheritable page boundary data.
@@ -110,6 +115,7 @@ public class PageTree extends Dictionary {
         kidsCount = library.getNumber(entries, COUNT_KEY).intValue();
         kidsReferences = (List) library.getObject(entries, KIDS_KEY);
         kidsPageAndPages = new HashMap<>(kidsReferences.size());
+        kidPageCounts = null;
         // Rotation is only respected if child pages do not have their own
         // rotation value.
         Object tmpRotation = library.getObject(entries, ROTATE_KEY);
@@ -294,10 +300,20 @@ public class PageTree extends Dictionary {
     private Page getPagePotentiallyNotInitedByRecursiveIndex(int globalIndex) {
         int globalIndexSoFar = 0;
         int numLocalKids = kidsReferences.size();
+        int[] counts = kidPageCounts;
+        if (counts == null || counts.length != numLocalKids) {
+            counts = new int[numLocalKids];
+            kidPageCounts = counts;
+        }
         Object pageOrPages;
         for (int i = 0; i < numLocalKids; i++) {
+            if (counts[i] > 0 && globalIndex >= globalIndexSoFar + counts[i]) {
+                globalIndexSoFar += counts[i];
+                continue;
+            }
             pageOrPages = getPageOrPagesPotentiallyNotInitedFromReferenceAt(i);
             if (pageOrPages instanceof Page) {
+                counts[i] = 1;
                 if (globalIndex == globalIndexSoFar)
                     return (Page) pageOrPages;
                 globalIndexSoFar++;
@@ -305,6 +321,7 @@ public class PageTree extends Dictionary {
                 PageTree childPageTree = (PageTree) pageOrPages;
                 childPageTree.init();
                 int numChildPages = childPageTree.getNumberOfPages();
+                counts[i] = Math.max(0, numChildPages);
                 if (globalIndex >= globalIndexSoFar && globalIndex < (globalIndexSoFar + numChildPages)) {
                     return childPageTree.getPagePotentiallyNotInitedByRecursiveIndex(
                             globalIndex - globalIndexSoFar);
@@ -318,6 +335,7 @@ public class PageTree extends Dictionary {
                     PageTree childPageTree = new PageTree(library, dictionary);
                     childPageTree.init();
                     int numChildPages = childPageTree.getNumberOfPages();
+                    counts[i] = Math.max(0, numChildPages);
                     if (globalIndex >= globalIndexSoFar && globalIndex < (globalIndexSoFar + numChildPages)) {
                         return childPageTree.getPagePotentiallyNotInitedByRecursiveIndex(
                                 globalIndex - globalIndexSoFar);
