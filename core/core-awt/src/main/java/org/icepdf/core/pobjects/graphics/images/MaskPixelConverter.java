@@ -23,18 +23,21 @@ package org.icepdf.core.pobjects.graphics.images;
  */
 final class MaskPixelConverter extends PixelConverter {
     private final int bitsPerComponent;
-    private final float paintSample;
     private final int fillRgb;
+    // whether each sample value paints
+    private final boolean[] paints;
 
-    MaskPixelConverter(int bitsPerComponent, float[] decode, int fillRgb) {
+    MaskPixelConverter(int bitsPerComponent, SampleDecode decode, int fillRgb) {
         this.bitsPerComponent = bitsPerComponent;
-        // Dmin is the sample that decodes to 0 for a one-bit mask
-        this.paintSample = decode[0];
         this.fillRgb = fillRgb;
+        paints = new boolean[1 << bitsPerComponent];
+        for (int sample = 0; sample < paints.length; sample++) {
+            paints[sample] = decode.value(0, sample) < 0.5f;
+        }
     }
 
     @Override
     int next(SampleReader in) {
-        return in.getBits(bitsPerComponent) == paintSample ? fillRgb : 0;
+        return paints[in.getBits(bitsPerComponent)] ? fillRgb : 0;
     }
 }

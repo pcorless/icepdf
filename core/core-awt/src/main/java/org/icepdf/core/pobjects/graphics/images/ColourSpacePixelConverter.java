@@ -15,14 +15,14 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
-import org.icepdf.core.pobjects.graphics.DeviceN;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.pobjects.graphics.RasterOps.ColourMemo;
 
 import java.util.Arrays;
 
 /**
- * Any colour space without a cheaper path: each pixel's colour comes from {@link PColorSpace#getColor}.
+ * Any colour space without a cheaper path: each pixel's decoded components, in the colour space's own units,
+ * get their colour from {@link PColorSpace#getColor}.
  * getColor (an ICC toRGB, a tint transform, plus a Color) is the cost, so a pixel whose samples repeat the
  * previous pixel's reuses its colour, and every converted colour is remembered by its packed samples (GH-617).
  *
@@ -31,9 +31,7 @@ import java.util.Arrays;
 final class ColourSpacePixelConverter extends PixelConverter {
     private final PColorSpace colorSpace;
     private final int bitsPerComponent;
-    private final int maxValue;
-    private final boolean inverted;
-    private final boolean invertEach;
+    private final SampleDecode decode;
     private final int[] samples;
     private final int[] lastSamples;
     private final float[] components;
@@ -43,15 +41,13 @@ final class ColourSpacePixelConverter extends PixelConverter {
     private int lastArgb;
     private int pixel;
 
-    ColourSpacePixelConverter(PColorSpace colorSpace, int bitsPerComponent, float[] decode, int pixelCount,
+    ColourSpacePixelConverter(PColorSpace colorSpace, int bitsPerComponent, SampleDecode decode, int pixelCount,
                               byte[] cmykCapture) {
         this.colorSpace = colorSpace;
         this.bitsPerComponent = bitsPerComponent;
+        this.decode = decode;
         this.cmykCapture = cmykCapture;
         int count = colorSpace.getNumComponents();
-        maxValue = (1 << bitsPerComponent) - 1;
-        inverted = decode[0] > decode[1];
-        invertEach = count == 4 || (colorSpace instanceof DeviceN && count != 1 && count != 3);
         samples = new int[count];
         // -1 is an impossible sample, so the first pixel always converts
         lastSamples = new int[count];
@@ -77,7 +73,7 @@ final class ColourSpacePixelConverter extends PixelConverter {
         if (cmykCapture != null) {
             int at = pixel++ * 4;
             for (int i = 0; i < 4; i++) {
-                cmykCapture[at + i] = (byte) adjust(samples[i]);
+                cmykCapture[at + i] = (byte) SampleDecode.toByte(decode.value(i, samples[i]));
             }
         }
         if (same) {
@@ -93,30 +89,12 @@ final class ColourSpacePixelConverter extends PixelConverter {
             }
         }
         for (int i = 0; i < samples.length; i++) {
-            samples[i] = adjust(samples[i]);
+            components[i] = decode.value(i, samples[i]);
         }
-        colorSpace.normaliseComponentsToFloats(samples, components, maxValue);
         lastArgb = colorSpace.getColor(components).getRGB();
         if (memo != null) {
             memo.put(slot, key, lastArgb);
         }
         return lastArgb;
-    }
-
-    /**
-     * The inverted Decode [1 0], as RawDecoder always applied it: one component snaps to 0 or max, four
-     * components (or DeviceN) flip.
-     */
-    private int adjust(int sample) {
-        if (!inverted) {
-            return sample;
-        }
-        if (invertEach) {
-            return maxValue - sample;
-        }
-        if (samples.length == 1) {
-            return sample == maxValue ? 0 : maxValue;
-        }
-        return sample;
     }
 }

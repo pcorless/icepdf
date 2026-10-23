@@ -105,6 +105,14 @@ public class Lab extends PColorSpace {
         return r;
     }
 
+    /**
+     * {@code [0 100 amin amax bmin bmax]}: L*, a* and b* in their own units (Table 90).
+     */
+    @Override
+    public float[] getDefaultDecode(int bitsPerComponent) {
+        return new float[]{lBase, lBase + lSpread, aBase, aBase + aSpread, bBase, bBase + bSpread};
+    }
+
     public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
         super.normaliseComponentsToFloats(in, out, maxval);
         out[2] = lBase + (lSpread * out[2]); // L

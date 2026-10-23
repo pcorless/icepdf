@@ -28,15 +28,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class PixelConverterTest {
 
-    /** ImageParams.getDecode(): each component's Dmin and step per sample. */
-    private static float[] decode(int components, int bitsPerComponent, boolean inverted) {
-        float max = (1 << bitsPerComponent) - 1;
-        float[] decode = new float[components * 2];
+    /** A Decode array of [0 1] per component, or [1 0] inverted. */
+    private static SampleDecode decode(int components, int bitsPerComponent, boolean inverted) {
+        float[] range = new float[components * 2];
         for (int i = 0; i < components; i++) {
-            decode[i * 2] = inverted ? 1 : 0;
-            decode[i * 2 + 1] = (inverted ? -1 : 1) / max;
+            range[i * 2] = inverted ? 1 : 0;
+            range[i * 2 + 1] = inverted ? 0 : 1;
         }
-        return decode;
+        return new SampleDecode(range, bitsPerComponent);
     }
 
     private static int[] convert(PixelConverter converter, int pixels, int... bytes) {

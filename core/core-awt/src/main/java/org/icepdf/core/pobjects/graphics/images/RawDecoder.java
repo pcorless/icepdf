@@ -51,7 +51,8 @@ public class RawDecoder extends AbstractImageDecoder {
         // the group can blend in CMYK
         byte[] cmykCapture = !imageParams.isImageMask() && PixelConverter.capturesCmyk(colorSpace, bitsPerComponent)
                 ? new byte[width * height * 4] : null;
-        PixelConverter pixels = PixelConverter.forImage(colorSpace, bitsPerComponent, imageParams.getDecode(),
+        PixelConverter pixels = PixelConverter.forImage(colorSpace, bitsPerComponent,
+                new SampleDecode(imageParams.getDecodeRange(), bitsPerComponent),
                 imageParams.isImageMask(), fillRgb, width * height, cmykCapture);
 
         BufferedImage image = ImageUtility.createTranslucentCompatibleImage(width, height);

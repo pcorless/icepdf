@@ -43,6 +43,7 @@ public class ICCBased extends PColorSpace {
 
     public static final Name ICCBASED_KEY = new Name("ICCBased");
     public static final Name N_KEY = new Name("N");
+    public static final Name RANGE_KEY = new Name("Range");
 
     private final int numcomp;
     private PColorSpace alternate;
@@ -208,6 +209,24 @@ public class ICCBased extends PColorSpace {
                 ((((int) (frgbvalue[0] * 255)) & 0xFF) << 16) |
                 ((((int) (frgbvalue[1] * 255)) & 0xFF) << 8) |
                 ((((int) (frgbvalue[2] * 255)) & 0xFF));
+    }
+
+    /**
+     * The profile dictionary's Range, {@code [0 1]} for each component without one (Table 90).
+     */
+    @Override
+    public float[] getDefaultDecode(int bitsPerComponent) {
+        float[] decode = super.getDefaultDecode(bitsPerComponent);
+        Object range = library.getObject(entries, RANGE_KEY);
+        if (range instanceof java.util.List) {
+            java.util.List<?> values = (java.util.List<?>) range;
+            for (int i = 0; i < decode.length && i < values.size(); i++) {
+                if (values.get(i) instanceof Number) {
+                    decode[i] = ((Number) values.get(i)).floatValue();
+                }
+            }
+        }
+        return decode;
     }
 
     public ColorSpace getColorSpace() {

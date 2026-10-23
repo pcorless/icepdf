@@ -38,13 +38,13 @@ abstract class PixelConverter {
     /**
      * @param colorSpace       the image's colour space.
      * @param bitsPerComponent bits per sample.
-     * @param decode           {@link ImageParams#getDecode()}: each component's Dmin and its step per sample.
+     * @param decode           the image's Decode array.
      * @param imageMask        true for a stencil mask.
      * @param fillRgb          the fill colour a stencil mask paints.
      * @param pixelCount       pixels in the image.
      * @param cmykCapture      receives each pixel's CMYK samples (GH-501), or null.
      */
-    static PixelConverter forImage(PColorSpace colorSpace, int bitsPerComponent, float[] decode,
+    static PixelConverter forImage(PColorSpace colorSpace, int bitsPerComponent, SampleDecode decode,
                                    boolean imageMask, int fillRgb, int pixelCount, byte[] cmykCapture) {
         if (imageMask) {
             return new MaskPixelConverter(bitsPerComponent, decode, fillRgb);

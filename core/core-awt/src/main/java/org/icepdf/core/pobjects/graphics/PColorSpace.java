@@ -206,6 +206,22 @@ public abstract class PColorSpace extends Dictionary {
 
     public abstract Color getColor(float[] components, boolean fillAndStroke);
 
+    /**
+     * The Decode array an image in this colour space has when it gives none (8.9.5.2, Table 90), as a
+     * {@code [Dmin Dmax]} pair per component: {@code [0 1]} for each, unless the colour space says otherwise.
+     *
+     * @param bitsPerComponent the image's bits per component.
+     * @return {@code 2 * getNumComponents()} values.
+     * @since 7.5.0
+     */
+    public float[] getDefaultDecode(int bitsPerComponent) {
+        float[] decode = new float[2 * getNumComponents()];
+        for (int i = 1; i < decode.length; i += 2) {
+            decode[i] = 1;
+        }
+        return decode;
+    }
+
     public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
         int count = getNumComponents();
         for (int i = 0; i < count; i++)
