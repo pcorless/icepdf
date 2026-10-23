@@ -86,6 +86,27 @@ public class RawCmykImageTest {
         assertMatchesDirect(decode(data, w, h, 8), samples, 255);
     }
 
+    /**
+     * Rows start on a byte boundary (8.9.3). Three 1-bit CMYK pixels fill 12 bits, so each row is padded to two
+     * bytes; read as one continuous stream, the second and third rows started in the padding.
+     */
+    @Test
+    public void paddedRowsStartOnAByteBoundary() {
+        // per row: C, M, Y, K pixels... 0001 (black) 1000 (cyan) 0000 (white), then 4 bits of padding set to 1
+        byte[] row = {(byte) 0b0001_1000, (byte) 0b0000_1111};
+        int w = 3, h = 3;
+        byte[] data = new byte[row.length * h];
+        for (int y = 0; y < h; y++) {
+            System.arraycopy(row, 0, data, y * row.length, row.length);
+        }
+        int[] samples = new int[w * h * 4];
+        int[][] pixels = {{0, 0, 0, 1}, {1, 0, 0, 0}, {0, 0, 0, 0}};
+        for (int i = 0; i < w * h; i++) {
+            System.arraycopy(pixels[i % w], 0, samples, i * 4, 4);
+        }
+        assertMatchesDirect(decode(data, w, h, 1), samples, 1);
+    }
+
     @Test
     public void fourBitSamplesMatch() {
         int w = 32, h = 32;

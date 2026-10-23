@@ -105,6 +105,8 @@ public class RawDecoder extends AbstractImageDecoder {
         // a time,  and grap the need bit information for the images
         // colour space and bits per colour
         for (int y = 0; y < height; y++) {
+            // each row starts on a byte boundary (8.9.3), so a row whose bits don't fill its last byte is padded
+            in.startRow();
 
             for (int x = 0; x < width; x++) {
 
@@ -267,7 +269,8 @@ public class RawDecoder extends AbstractImageDecoder {
 
     /**
      * Reads samples most significant bit first from the decoded bytes, as {@link org.icepdf.core.io.BitStream}
-     * did, without an InputStream call for every byte (GH-617).  Past the end of the data it reads zeros.
+     * did, without an InputStream call for every byte (GH-617), and starts each row on a byte boundary, which
+     * BitStream never did.  Past the end of the data it reads zeros.
      */
     private static final class SampleReader {
         private final byte[] data;
@@ -277,6 +280,11 @@ public class RawDecoder extends AbstractImageDecoder {
 
         SampleReader(byte[] data) {
             this.data = data;
+        }
+
+        /** Drops the padding bits left in the previous row's last byte. */
+        void startRow() {
+            bitsLeft = 0;
         }
 
         int getBits(int count) {
