@@ -261,6 +261,13 @@ public class ImageStream extends Stream {
         if (decodedImage != null) {
             return decodedImage;
         }
+        // a big decode waits for heap budget, so a screenful of scans doesn't decode all at once.
+        try (DecodeBudget.Permit ignored = DecodeBudget.acquire(imageParams.getWidth(), imageParams.getHeight())) {
+            return decodeSamples(graphicsState, deferMask);
+        }
+    }
+
+    private BufferedImage decodeSamples(GraphicsState graphicsState, boolean deferMask) {
         // decode the given image.
         ImageDecoder imageDecoder = ImageDecoderFactory.createDecoder(this, graphicsState);
         BufferedImage decodedImage = imageDecoder.decode();
