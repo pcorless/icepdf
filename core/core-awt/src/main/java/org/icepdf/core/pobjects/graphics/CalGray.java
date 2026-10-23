@@ -58,8 +58,8 @@ public class CalGray extends PColorSpace {
         }
 
         Object o = h.get(GAMMA_KEY);
-        if (o instanceof Float) {
-            gamma = (Float) o;
+        if (o instanceof Number) {
+            gamma = ((Number) o).floatValue();
         }
     }
 
@@ -89,7 +89,8 @@ public class CalGray extends PColorSpace {
         if (Z > 1) {
             Z = 1;
         }
-        return new Color(grayCS, new float[]{Z, Y, Z}, 1.0f);
+        // the grey is the luminance Y; Z (the first of {Z, Y, Z}) made a D50 space, Z 0.82, too dark
+        return new Color(grayCS, new float[]{Y}, 1.0f);
     }
 
     @Override
