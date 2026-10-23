@@ -105,8 +105,7 @@ public class RawDecodeArrayTest {
         int white = decode(lab, 8, null, 1, 255, 128, 128).getRGB(0, 0);
         int black = decode(lab, 8, null, 1, 0, 128, 128).getRGB(0, 0);
         int grey = decode(lab, 8, null, 1, 128, 128, 128).getRGB(0, 0);
-        // Lab.getColor's own conversion puts the white point at (255, 254, 244)
-        assertTrue(gray(white) >= 240 && ((white >> 8) & 0xff) >= 250 && ((white >> 16) & 0xff) >= 250,
+        assertTrue(gray(white) >= 250 && ((white >> 8) & 0xff) >= 250 && ((white >> 16) & 0xff) >= 250,
                 Integer.toHexString(white));
         assertTrue(gray(black) <= 5, Integer.toHexString(black));
         assertTrue(Math.abs(gray(grey) - 119) <= 4, Integer.toHexString(grey));
