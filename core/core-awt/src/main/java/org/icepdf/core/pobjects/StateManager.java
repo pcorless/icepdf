@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -61,9 +62,11 @@ public class StateManager {
      */
     public StateManager(CrossReferenceRoot crossReferenceRoot) {
         this.crossReferenceRoot = crossReferenceRoot;
-        // cache of objects that have changed.
-        changes = new HashMap<>();
-        tempChanges = new HashMap<>();
+        // cache of objects that have changed.  Pages initialise on several render threads at once, and
+        // initialising a page's form fields records repairs here, so the maps must take concurrent
+        // writes: two threads in a plain HashMap broke its buckets (ClassCastException in merge, PDF-399).
+        changes = new ConcurrentHashMap<>();
+        tempChanges = Collections.synchronizedMap(new HashMap<>());
 
         // number of objects is always one more than the current size and
         // thus the next available number.
@@ -222,7 +225,8 @@ public class StateManager {
      * @return true if reference is already a key in the cache; otherwise, false.
      */
     public boolean contains(Reference reference) {
-        return changes.containsKey(reference) || tempChanges.containsKey(reference);
+        // a ConcurrentHashMap takes no null key; an object not yet numbered has no change.
+        return reference != null && (changes.containsKey(reference) || tempChanges.containsKey(reference));
     }
 
     /**
@@ -232,7 +236,7 @@ public class StateManager {
      * @return Change of corresponding reference if present
      */
     public Change getChange(Reference reference) {
-        Change change = changes.get(reference);
+        Change change = reference != null ? changes.get(reference) : null;
         if (change != null) {
             return change;
         } else {
@@ -271,7 +275,9 @@ public class StateManager {
      * @param pObject pObject to removed from the cache.
      */
     public void removeChange(PObject pObject) {
-        changes.remove(pObject.getReference());
+        if (pObject.getReference() != null) {
+            changes.remove(pObject.getReference());
+        }
     }
 
     /**
