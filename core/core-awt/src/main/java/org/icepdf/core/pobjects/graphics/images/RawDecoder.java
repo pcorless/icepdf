@@ -15,21 +15,14 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
-import org.icepdf.core.io.BitStream;
 import org.icepdf.core.pobjects.graphics.*;
 import org.icepdf.core.pobjects.graphics.RasterOps.ColourMemo;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.awt.image.WritableRaster;
 
 public class RawDecoder extends AbstractImageDecoder {
-
-    private static final Logger logger =
-            Logger.getLogger(RawDecoder.class.getName());
 
     public RawDecoder(ImageStream imageStream, GraphicsState graphicsState) {
         super(imageStream, graphicsState);
@@ -100,118 +93,121 @@ public class RawDecoder extends AbstractImageDecoder {
         // stream
         // get the full image data.
         byte[] data = imageStream.getDecodedStreamBytes(imageParams.getDataLength());
-        BitStream in = new BitStream(new ByteArrayInputStream(data));
+        if (data == null) {
+            return null;
+        }
+        SampleReader in = new SampleReader(data);
+        // GH-617: a TYPE_INT_ARGB row is written with one copy; setRGB converts each pixel through the
+        // colour model, which matters for other layouts (a premultiplied buffer) but not this one
+        WritableRaster argbRaster = bim.getType() == BufferedImage.TYPE_INT_ARGB ? bim.getRaster() : null;
 
+        // Start encoding bit stream into an image,  we work one pixel at
+        // a time,  and grap the need bit information for the images
+        // colour space and bits per colour
+        for (int y = 0; y < height; y++) {
 
-        try {
-            // Start encoding bit stream into an image,  we work one pixel at
-            // a time,  and grap the need bit information for the images
-            // colour space and bits per colour
-            for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
 
-                for (int x = 0; x < width; x++) {
+                // if image has mask apply it
+                if (isMask) {
+                    int bit = in.getBits(bitsPerComponent);
+                    bit = (bit == imageMaskValue) ? fillRGB : 0x00000000;
+                    imageBits[x] = bit;
+                }
+                // other wise start colour bit parsing
+                else {
+                    // set some default values
+                    int red = 255;
+                    int blue = 255;
+                    int green = 255;
+                    int alpha = 255;
 
-                    // if image has mask apply it
-                    if (isMask) {
+                    // indexed colour
+                    if (colorSpaceCompCount == 1) {
+                        // get value used for this bit
                         int bit = in.getBits(bitsPerComponent);
-                        bit = (bit == imageMaskValue) ? fillRGB : 0x00000000;
-                        imageBits[x] = bit;
-                    }
-                    // other wise start colour bit parsing
-                    else {
-                        // set some default values
-                        int red = 255;
-                        int blue = 255;
-                        int green = 255;
-                        int alpha = 255;
-
-                        // indexed colour
-                        if (colorSpaceCompCount == 1) {
-                            // get value used for this bit
-                            int bit = in.getBits(bitsPerComponent);
-                            // check decode array if a colour inversion is needed
-                            // if index 0 > index 1 then we have a need for ainversion
-                            if (decode[0] > decode[1]) {
-                                bit = (bit == maxColourValue) ? 0x00000000 : maxColourValue;
-                            }
-
-                            if (isDeviceGray) {
-                                if (bitsPerComponent == 1)
-                                    bit = ImageUtility.GRAY_1_BIT_INDEX_TO_RGB[bit];
-                                else if (bitsPerComponent == 2)
-                                    bit = ImageUtility.GRAY_2_BIT_INDEX_TO_RGB[bit];
-                                else if (bitsPerComponent == 4)
-                                    bit = ImageUtility.GRAY_4_BIT_INDEX_TO_RGB[bit];
-                                else if (bitsPerComponent == 8) {
-                                    bit = ((bit << 24) |
-                                            (bit << 16) |
-                                            (bit << 8) |
-                                            bit);
-                                }
-                                imageBits[x] = bit;
-                            } else {
-                                f[0] = bit;
-                                imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
-                            }
+                        // check decode array if a colour inversion is needed
+                        // if index 0 > index 1 then we have a need for ainversion
+                        if (decode[0] > decode[1]) {
+                            bit = (bit == maxColourValue) ? 0x00000000 : maxColourValue;
                         }
-                        // normal RGB colour
-                        else if (colorSpaceCompCount == 3) {
-                            // We can have an ICCBased color space that has 3 components,
-                            //  but where we can't assume it's RGB.
-                            // But, when it is DeviceRGB, we don't want the performance hit
-                            //  of converting the pixels via the PColorSpace, so we'll
-                            //  break this into the two cases
-                            if (isDeviceRGB && bitsPerComponent == 8) {
-                                // binary values  so either 0 or 1, we must convert to 0-255
-                                red = in.getBits(bitsPerComponent) * 255;
-                                green = in.getBits(bitsPerComponent) * 255;
-                                blue = in.getBits(bitsPerComponent) * 255;
-                                // combine the colour together
-                                imageBits[x] = (alpha << 24) | (red << 16) |
-                                        (green << 8) | blue;
-                            } else {
-                                for (int i = 0; i < colorSpaceCompCount; i++) {
-                                    f[i] = in.getBits(bitsPerComponent);
-                                }
-                                imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
+
+                        if (isDeviceGray) {
+                            if (bitsPerComponent == 1)
+                                bit = ImageUtility.GRAY_1_BIT_INDEX_TO_RGB[bit];
+                            else if (bitsPerComponent == 2)
+                                bit = ImageUtility.GRAY_2_BIT_INDEX_TO_RGB[bit];
+                            else if (bitsPerComponent == 4)
+                                bit = ImageUtility.GRAY_4_BIT_INDEX_TO_RGB[bit];
+                            else if (bitsPerComponent == 8) {
+                                bit = ((bit << 24) |
+                                        (bit << 16) |
+                                        (bit << 8) |
+                                        bit);
                             }
-                        }
-                        // normal aRGB colour,  this could use some more
-                        // work for optimizing.
-                        else if (colorSpaceCompCount == 4 || colorSpace instanceof DeviceN) {
-                            for (int i = 0; i < colorSpaceCompCount; i++) {
-                                f[i] = in.getBits(bitsPerComponent);
-                                // apply decode
-                                if (decode[0] > decode[1]) {
-                                    f[i] = maxColourValue - f[i];
-                                }
-                            }
-                            if (cmykCapture != null) {
-                                // f holds the decoded C,M,Y,K samples (0..255) -- the
-                                // true CMYK, before colorSpace.getColor() flattens to sRGB.
-                                int idx = (y * width + x) * 4;
-                                cmykCapture[idx] = (byte) f[0];
-                                cmykCapture[idx + 1] = (byte) f[1];
-                                cmykCapture[idx + 2] = (byte) f[2];
-                                cmykCapture[idx + 3] = (byte) f[3];
-                            }
+                            imageBits[x] = bit;
+                        } else {
+                            f[0] = bit;
                             imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
                         }
-                        // else just set pixel with the default values
-                        else {
+                    }
+                    // normal RGB colour
+                    else if (colorSpaceCompCount == 3) {
+                        // We can have an ICCBased color space that has 3 components,
+                        //  but where we can't assume it's RGB.
+                        // But, when it is DeviceRGB, we don't want the performance hit
+                        //  of converting the pixels via the PColorSpace, so we'll
+                        //  break this into the two cases
+                        if (isDeviceRGB && bitsPerComponent == 8) {
+                            // binary values  so either 0 or 1, we must convert to 0-255
+                            red = in.getBits(bitsPerComponent) * 255;
+                            green = in.getBits(bitsPerComponent) * 255;
+                            blue = in.getBits(bitsPerComponent) * 255;
                             // combine the colour together
                             imageBits[x] = (alpha << 24) | (red << 16) |
                                     (green << 8) | blue;
+                        } else {
+                            for (int i = 0; i < colorSpaceCompCount; i++) {
+                                f[i] = in.getBits(bitsPerComponent);
+                            }
+                            imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
                         }
                     }
+                    // normal aRGB colour,  this could use some more
+                    // work for optimizing.
+                    else if (colorSpaceCompCount == 4 || colorSpace instanceof DeviceN) {
+                        for (int i = 0; i < colorSpaceCompCount; i++) {
+                            f[i] = in.getBits(bitsPerComponent);
+                            // apply decode
+                            if (decode[0] > decode[1]) {
+                                f[i] = maxColourValue - f[i];
+                            }
+                        }
+                        if (cmykCapture != null) {
+                            // f holds the decoded C,M,Y,K samples (0..255) -- the
+                            // true CMYK, before colorSpace.getColor() flattens to sRGB.
+                            int idx = (y * width + x) * 4;
+                            cmykCapture[idx] = (byte) f[0];
+                            cmykCapture[idx + 1] = (byte) f[1];
+                            cmykCapture[idx + 2] = (byte) f[2];
+                            cmykCapture[idx + 3] = (byte) f[3];
+                        }
+                        imageBits[x] = convertSample(colorSpace, f, ff, maxColourValue, lastF, lastRgb, memo, bitsPerComponent);
+                    }
+                    // else just set pixel with the default values
+                    else {
+                        // combine the colour together
+                        imageBits[x] = (alpha << 24) | (red << 16) |
+                                (green << 8) | blue;
+                    }
                 }
-                // Assign the new bits for this pixel
+            }
+            // Assign the new bits for this pixel
+            if (argbRaster != null) {
+                argbRaster.setDataElements(0, y, width, 1, imageBits);
+            } else {
                 bim.setRGB(0, y, width, 1, imageBits, 0, 1);
             }
-            // final clean up.
-            in.close();
-        } catch (IOException e) {
-            logger.log(Level.FINE, "Error parsing image.", e);
         }
 
         if (cmykCapture != null) {
@@ -267,5 +263,32 @@ public class RawDecoder extends AbstractImageDecoder {
             memo.put(slot, key, lastRgb[0]);
         }
         return lastRgb[0];
+    }
+
+    /**
+     * Reads samples most significant bit first from the decoded bytes, as {@link org.icepdf.core.io.BitStream}
+     * did, without an InputStream call for every byte (GH-617).  Past the end of the data it reads zeros.
+     */
+    private static final class SampleReader {
+        private final byte[] data;
+        private int pos;
+        private int bits;
+        private int bitsLeft;
+
+        SampleReader(byte[] data) {
+            this.data = data;
+        }
+
+        int getBits(int count) {
+            if (count == 8 && bitsLeft == 0) {
+                return pos < data.length ? data[pos++] & 0xff : 0;
+            }
+            while (bitsLeft < count) {
+                bits = bits << 8 | (pos < data.length ? data[pos++] & 0xff : 0);
+                bitsLeft += 8;
+            }
+            bitsLeft -= count;
+            return (bits >>> bitsLeft) & ((1 << count) - 1);
+        }
     }
 }
