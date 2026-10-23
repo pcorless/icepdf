@@ -152,6 +152,10 @@ public final class PdfViewSmoke {
             System.out.println(failures == 0 ? "reopen checks: all passed" : "reopen checks: " + failures + " FAILED");
             return;
         }
+        if ("scroll-heap".equals(System.getProperty("smoke.only"))) {
+            scrollHeap(file);
+            return;
+        }
         if ("annotation-ui".equals(System.getProperty("smoke.only"))) {
             checkAnnotationUi(file);
             System.out.println(failures == 0 ? "annotation UI checks: all passed"
@@ -207,6 +211,60 @@ public final class PdfViewSmoke {
         act("overlay rotated 270", v -> v.setRotation(270));
         checkTools(document);
         finish(document);
+    }
+
+    /**
+     * Facing continuous at the minimum zoom, scrolled down a viewport at a time: post-GC heap every
+     * smoke.scrollReport steps, to tell a leak (heap climbs with pages visited) from a single heavy page.
+     * smoke.scrollWait=false flings instead: a step every 16ms without waiting for the renders, then
+     * settles at the end.  smoke.heapDumpAt=N writes a live heap dump (smoke.heapDump) after step N.
+     */
+    private void scrollHeap(Path file) throws Exception {
+        Document document = new Document();
+        long open = System.nanoTime();
+        document.setFile(file.toString());
+        System.out.printf("setFile %.0fms%s%n", (System.nanoTime() - open) / 1e6, document.isFileMapped() ? " (mapped)" : "");
+        act("open facing continuous, min zoom", v -> {
+            v.setDocument(document);
+            v.setViewMode(ViewMode.FACING_CONTINUOUS);
+            v.setFitMode(FitMode.NONE);
+            v.setZoom(PdfView.MIN_ZOOM);
+        });
+        int steps = Integer.getInteger("smoke.scrollSteps", 400);
+        int report = Integer.getInteger("smoke.scrollReport", 20);
+        boolean wait = !"false".equals(System.getProperty("smoke.scrollWait"));
+        int dumpAt = Integer.getInteger("smoke.heapDumpAt", -1);
+        long t0 = System.nanoTime();
+        for (int i = 1; i <= steps; i++) {
+            fx(() -> view.scrollBy(0, view.getHeight()));
+            if (wait) {
+                waitIdle(Long.getLong("smoke.idleTimeout", 120_000));
+            } else {
+                Thread.sleep(16);
+            }
+            if (i % report == 0) reportHeap("scroll " + i, t0);
+            if (i == dumpAt) dumpHeap();
+        }
+        if (!wait) {
+            waitIdle(Long.getLong("smoke.idleTimeout", 120_000));
+            reportHeap("settled", t0);
+        }
+        finish(document);
+    }
+
+    private void reportHeap(String label, long t0) throws Exception {
+        System.gc();
+        long heap = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) >> 20;
+        int page = onFx(view::getCurrentPageIndex);
+        System.out.printf("%-12s page %6d  heap %4dMB  %6.1fs%n", label, page + 1, heap, (System.nanoTime() - t0) / 1e9);
+    }
+
+    private static void dumpHeap() throws Exception {
+        String path = System.getProperty("smoke.heapDump", "build/smoke/live.hprof");
+        Files.deleteIfExists(Paths.get(path));
+        java.lang.management.ManagementFactory.getPlatformMXBean(com.sun.management.HotSpotDiagnosticMXBean.class)
+                .dumpHeap(path, true);
+        System.out.println("heap dump " + path);
     }
 
     private void finish(Document document) throws Exception {
@@ -480,6 +538,7 @@ public final class PdfViewSmoke {
         System.gc();
         Thread.sleep(300);
         report(file.getFileName() + " warm", pan(step, (int) (range / step)));
+        if (System.getProperty("smoke.heapDump") != null) dumpHeap();
         // cold: further down, never visited
         fx(() -> view.scrollBy(0, range * 2));
         waitIdle(60_000);
