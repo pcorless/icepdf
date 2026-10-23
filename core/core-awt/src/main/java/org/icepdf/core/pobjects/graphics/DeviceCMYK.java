@@ -25,6 +25,7 @@ import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -52,6 +53,15 @@ public class DeviceCMYK extends PColorSpace {
 
         // check for a custom CMYK ICC colour profile specified using system properties.
         iccCmykColorSpace = getIccCmykColorSpace();
+        // every thread converts through this one space; JDK 11 builds its transform and component scaling
+        // unsynchronized on the first toRGB, so build them now
+        if (iccCmykColorSpace != null) {
+            try {
+                iccCmykColorSpace.toRGB(new float[4]);
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Error preparing the CMYK colour profile", e);
+            }
+        }
     }
 
     public DeviceCMYK(Library l, DictionaryEntries h) {

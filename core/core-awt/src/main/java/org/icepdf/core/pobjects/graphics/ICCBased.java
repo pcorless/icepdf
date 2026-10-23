@@ -24,7 +24,6 @@ import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.color.ICC_ColorSpace;
 import java.awt.color.ICC_Profile;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,7 +35,11 @@ public class ICCBased extends PColorSpace {
     private static final Logger logger =
             Logger.getLogger(ICCBased.class.getName());
 
+    // guards profile parsing only (JDK-8033238); converting a colour takes no lock
     private static final Object lock = new Object();
+
+    // 16384 slots: the colours a page's fills, strokes and shadings use; images remember their own (GH-617)
+    private static final int CACHE_BITS = 14;
 
     public static final Name ICCBASED_KEY = new Name("ICCBased");
     public static final Name N_KEY = new Name("N");
@@ -45,20 +48,20 @@ public class ICCBased extends PColorSpace {
     private PColorSpace alternate;
     private final Stream stream;
     private ColorSpace colorSpace;
+    // each component's minimum and 255 / (max - min), read once from the profile for the cache key
+    private float[] keyMin;
+    private float[] keyScale;
 
-    // basic cache to speed up the lookup, can't be static as we handle
-    // 3 and 4 band colours.
-    private final ConcurrentHashMap<Integer, Color> iccColorCache3B;
-    private final ConcurrentHashMap<Integer, Color> iccColorCache4B;
+    // converted colours keyed by components quantised to 8 bits, for profiles of up to 4 components;
+    // made with the colour space, so a profile that never converts a colour costs no table
+    private ColorCache colorCache;
 
     // setting up an ICC colour look up is expensive, so if we get a failure
     // we just fallback to the alternative space to safe cpu time.
-    private boolean failed;
+    private volatile boolean failed;
 
     public ICCBased(Library l, Stream h) {
         super(l, h.getEntries());
-        iccColorCache3B = new ConcurrentHashMap<>();
-        iccColorCache4B = new ConcurrentHashMap<>();
         numcomp = h.getInt(N_KEY);
         switch (numcomp) {
             case 1:
@@ -92,7 +95,20 @@ public class ICCBased extends PColorSpace {
                 }
                 if (in != null) {
                     ICC_Profile profile = ICC_Profile.getInstance(in);
-                    colorSpace = new ICC_ColorSpace(profile);
+                    ICC_ColorSpace iccColorSpace = new ICC_ColorSpace(profile);
+                    // the first toRGB builds the transform and component scaling, and JDK 11 does so
+                    // unsynchronized; build them here, under the lock and before inited publishes the space,
+                    // so getColor can convert without one
+                    int n = iccColorSpace.getNumComponents();
+                    iccColorSpace.toRGB(new float[n]);
+                    keyMin = new float[n];
+                    keyScale = new float[n];
+                    for (int i = 0; i < n; i++) {
+                        keyMin[i] = iccColorSpace.getMinValue(i);
+                        keyScale[i] = 255 / (iccColorSpace.getMaxValue(i) - keyMin[i]);
+                    }
+                    colorCache = new ColorCache(CACHE_BITS);
+                    colorSpace = iccColorSpace;
                 }
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error Processing ICCBased Colour Profile, falling back on alternative.");
@@ -112,53 +128,57 @@ public class ICCBased extends PColorSpace {
         return alternate;
     }
 
-    private static int generateKey(float[] f) {
+    /**
+     * Packs the components into a cache key, each quantised to 8 bits across its range; a missing component
+     * counts as 0, as in {@link #calculateColor(float[], ColorSpace)}.  For the usual 0..1 range this is the
+     * {@code (int) (f * 255)} the cache always keyed on.
+     */
+    private int generateKey(float[] f) {
         int key = 0;
-        if (f.length == 1) {
-            key = ((int) (f[0] * 255) & 0xff);
-        } else if (f.length == 2) {
-            key = (((int) (f[0] * 255) & 0xff) << 8) |
-                    (((int) (f[1] * 255) & 0xff) & 0xff);
-        } else if (f.length == 3) {
-            key = (((int) (f[0] * 255) & 0xff) << 16) |
-                    (((int) (f[1] * 255) & 0xff) << 8) |
-                    (((int) (f[2] * 255) & 0xff) & 0xff);
-        } else if (f.length == 4) {
-            key = (((int) (f[0] * 255) & 0xff) << 24) |
-                    (((int) (f[1] * 255) & 0xff) << 16) |
-                    (((int) (f[2] * 255) & 0xff) << 8) |
-                    (((int) (f[3] * 255) & 0xff) & 0xff);
+        for (int i = 0, n = keyMin.length; i < n; i++) {
+            float value = i < f.length ? f[i] : 0f;
+            int q = (int) ((value - keyMin[i]) * keyScale[i]);
+            key = key << 8 | Math.max(0, Math.min(255, q));
         }
         return key;
     }
 
-    private static Color addColorToCache(
-            ConcurrentHashMap<Integer, Color> iccColorCache, int key,
-            ColorSpace colorSpace, float[] f) {
-        Color color = iccColorCache.get(key);
-        if (color == null) {
-            color = new Color(calculateColor(f, colorSpace));
-            iccColorCache.put(key, color);
+    /**
+     * The components a cache key stands for.  The cached colour is converted from these rather than from the
+     * caller's values, so it depends on the key alone and threads sharing the cache always agree.
+     */
+    private float[] keyComponents(int key) {
+        int n = keyMin.length;
+        float[] f = new float[n];
+        for (int i = 0; i < n; i++) {
+            int q = key >>> (8 * (n - 1 - i)) & 0xff;
+            f[i] = keyMin[i] + q / keyScale[i];
         }
-        return color;
+        return f;
     }
 
     public Color getColor(float[] f, boolean fillAndStroke) {
-        init();
-        synchronized (lock) {
-            if (colorSpace != null && !failed) {
-                try {
-                    // generate a key for the colour
-                    int key = generateKey(f);
-                    if (f.length <= 3) {
-                        return addColorToCache(iccColorCache3B, key, colorSpace, f);
-                    } else {
-                        return addColorToCache(iccColorCache4B, key, colorSpace, f);
-                    }
-                } catch (Exception e) {
-                    logger.log(Level.FINE, "Error getting ICCBased colour", e);
-                    failed = true;
+        if (!inited) {
+            init();
+        }
+        // init() wrote colorSpace before the volatile inited and already made its first conversion, so no lock
+        // is needed from here on (GH-617: a static lock serialised every colour of every document)
+        ColorSpace colorSpace = this.colorSpace;
+        if (colorSpace != null && !failed) {
+            try {
+                if (colorSpace.getNumComponents() > 4) {
+                    return new Color(calculateColor(f, colorSpace));
                 }
+                int key = generateKey(f);
+                Color color = colorCache.get(key);
+                if (color == null) {
+                    color = new Color(calculateColor(keyComponents(key), colorSpace));
+                    colorCache.put(key, color);
+                }
+                return color;
+            } catch (Exception e) {
+                logger.log(Level.FINE, "Error getting ICCBased colour", e);
+                failed = true;
             }
         }
         return alternate.getColor(f);
