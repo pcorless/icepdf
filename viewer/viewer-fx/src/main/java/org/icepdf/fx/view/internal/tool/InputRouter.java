@@ -329,10 +329,19 @@ public final class InputRouter {
                 if (!e.isShortcutDown()) return;
                 control.zoomOut();
             }
+            // as Acrobat: Ctrl+0 fit page, Ctrl+1 actual size, Ctrl+2 fit width (Shift is left to the application).
             case DIGIT0, NUMPAD0 -> {
-                if (!e.isShortcutDown()) return;
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
+                control.setFitMode(FitMode.PAGE);
+            }
+            case DIGIT1, NUMPAD1 -> {
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
                 control.setFitMode(FitMode.NONE);
                 control.setZoom(1);
+            }
+            case DIGIT2, NUMPAD2 -> {
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
+                control.setFitMode(FitMode.WIDTH);
             }
             default -> {
                 return;

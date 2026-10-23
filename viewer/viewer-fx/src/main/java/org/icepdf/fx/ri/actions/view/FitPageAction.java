@@ -27,7 +27,7 @@ public final class FitPageAction extends AbstractViewerAction {
     public static final String ID = "view.fit-page";
 
     public FitPageAction() {
-        super(ID, "Shortcut+1");
+        super(ID, "Shortcut+0");
     }
 
     @Override

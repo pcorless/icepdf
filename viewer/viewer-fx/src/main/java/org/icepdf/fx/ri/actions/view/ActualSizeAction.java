@@ -27,7 +27,7 @@ public final class ActualSizeAction extends AbstractViewerAction {
     public static final String ID = "view.actual-size";
 
     public ActualSizeAction() {
-        super(ID, "Shortcut+0");
+        super(ID, "Shortcut+1");
     }
 
     @Override

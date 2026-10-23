@@ -264,6 +264,31 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> annotations.get().isEmpty()));
     }
 
+    @DisplayName("Ctrl+0 fits the page, Ctrl+1 is actual size, Ctrl+2 fits the width - on the page or anywhere else")
+    @Test
+    void fitShortcuts() throws Exception {
+        open(pdf("fit.pdf"));
+        org.icepdf.fx.view.PdfView view = Fx.call(viewer::getView);
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT0, true));
+        assertEquals(org.icepdf.fx.view.FitMode.PAGE, Fx.call(view::getFitMode));
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT2, true));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT1, true));
+        assertEquals(org.icepdf.fx.view.FitMode.NONE, Fx.call(view::getFitMode));
+        assertEquals(1, Fx.call(view::getZoom), 1e-9);
+
+        // from the search field: the scene's shortcut, not the view's key handling.
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        TextField query = Fx.call(() -> (TextField) viewer.lookup(".search-bar .text-field"));
+        Fx.run(() -> Fx.press(query, KeyCode.DIGIT2, true));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+
+        // Ctrl+Shift+digit is left to the application (recent files), not taken by the view.
+        Fx.run(() -> javafx.event.Event.fireEvent(view, new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                "", "", KeyCode.DIGIT0, true, true, false, false)));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+    }
+
     @DisplayName("Ctrl+F on the page opens the search bar; F3 moves to the next hit")
     @Test
     void findShortcuts() throws Exception {
