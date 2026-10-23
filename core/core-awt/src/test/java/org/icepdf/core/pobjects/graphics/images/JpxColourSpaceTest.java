@@ -109,4 +109,20 @@ public class JpxColourSpaceTest {
                 Arrays.asList(new Name("Spot1"), new Name("Spot2"), new Name("Spot3")), new Name("DeviceCMYK"),
                 tint));
     }
+
+    /** DeviceGray reads back (getRGB, as a soft mask is read) as its samples; on CS_GRAY it was gamma-lifted. */
+    @Test
+    public void deviceGrayReadsBackAsItsSamples() {
+        assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
+        BufferedImage image = JpxDecoderTest.decodeFixture("rev53-gray.j2k", 64, 64, "DeviceGray");
+        assertNotNull(image);
+        int[] samples = JpxDecoderTest.reference("rev53-gray").get(0).samples;
+        int bad = 0;
+        for (int p = 0; p < samples.length; p++) {
+            if ((image.getRGB(p % 64, p / 64) & 0xffffff) != samples[p] * 0x010101) {
+                bad++;
+            }
+        }
+        assertEquals(0, bad, "pixels not reading back as their sample");
+    }
 }

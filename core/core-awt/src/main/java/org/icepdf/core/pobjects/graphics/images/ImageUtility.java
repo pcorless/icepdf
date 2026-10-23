@@ -913,7 +913,16 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
+    /**
+     * An 8-bit grey image over the samples as they are.  Held on the {@link #GRAY_256} ramp, so getRGB gives
+     * back the sample: on CS_GRAY, which is linear, getRGB gamma-lifted it (64 read as 137) while drawing
+     * copied it, and a soft mask, which is read through getRGB, came out too opaque.
+     */
     static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
+        if (wr.getNumBands() == 1 && wr.getDataBuffer() instanceof DataBufferByte
+                && wr.getSampleModel().getSampleSize(0) == 8) {
+            return new BufferedImage(GRAY_256, wr, false, null);
+        }
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
         Arrays.fill(bits, 8);
