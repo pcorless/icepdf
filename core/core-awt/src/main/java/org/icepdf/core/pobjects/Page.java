@@ -737,6 +737,8 @@ public class Page extends Dictionary {
             // the caller's clip, for code sizing offscreen buffers (paint() widened the clip above).
             Object previousViewport = viewportClip != null ? PaintViewport.set(g2, viewportClip) : null;
             try {
+                // the page's big images start decoding now, side by side, at the size they're drawn
+                shapes.prefetchImages(g2);
                 if (isPageGroupBufferCandidate()) {
                     paintPageGroupBuffered(g2, viewportClip);
                 } else {

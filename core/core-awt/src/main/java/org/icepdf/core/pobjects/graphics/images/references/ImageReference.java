@@ -334,7 +334,15 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         int height = imageStream.getHeight();
         int factor = ReducedDecode.factorFor(aG, width, height, aX, aY, aW, aH);
         ImagePool pool = imageStream.getLibrary().getImagePool();
-        if (factor < 2 || pool.get(reference) != null) {
+        if (pool.get(reference) != null) {
+            return null;
+        }
+        if (factor < 2) {
+            // drawn near full size: the full decode, through the pool's in-flight decode so the tiles
+            // the image spans share one.
+            if (futureTask == null && !isInTransientBackoff()) {
+                submitDecode();
+            }
             return null;
         }
         int needed = ReducedDecode.reduced(width, factor);
@@ -345,28 +353,17 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (isInTransientBackoff()) {
             return null;
         }
-        FutureTask<BufferedImage> mine = new FutureTask<>(() -> {
-            BufferedImage reduced = imageStream.getReducedImage(graphicsState, resources, factor);
-            pool.putReduced(reference, reduced);
-            return reduced;
-        });
+        FutureTask<BufferedImage> mine = reducedDecode(pool, factor);
         FutureTask<BufferedImage> running = pool.registerReducedInProgress(reference, mine);
         try {
-            BufferedImage reduced = null;
             if (running != null) {
-                // another tile is decoding it: use that when it is detailed enough.
-                reduced = running.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
+                // a prefetch or another tile is decoding it: use that when it is detailed enough.
+                BufferedImage reduced = running.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
                 if (reduced != null && reduced.getWidth() >= needed) {
                     return reduced;
                 }
             }
-            try {
-                mine.run();
-            } finally {
-                if (running == null) {
-                    pool.removeReducedInProgress(reference, mine);
-                }
-            }
+            mine.run();
             return mine.get();
         } catch (ExecutionException e) {
             if (isTransientDecodeFailure(e.getCause())) {
@@ -379,6 +376,71 @@ public abstract class ImageReference implements Callable<BufferedImage> {
             return null;
         } catch (TimeoutException e) {
             return null;
+        }
+    }
+
+    /** A reduced decode of the image by {@code factor} that pools its result and clears its in-flight entry. */
+    private FutureTask<BufferedImage> reducedDecode(ImagePool pool, int factor) {
+        return new FutureTask<BufferedImage>(() -> {
+            BufferedImage reduced = imageStream.getReducedImage(graphicsState, resources, factor);
+            pool.putReduced(reference, reduced);
+            return reduced;
+        }) {
+            @Override
+            protected void done() {
+                pool.removeReducedInProgress(reference, this);
+            }
+        };
+    }
+
+    /**
+     * GH-625: starts decoding a {@link #reducible} image on the image pool at the size this paint will
+     * draw it, so a page's big images decode at once, side by side, as they did when they were
+     * decoded while the page was parsed; {@link #drawImage} then waits for it.  Does nothing for an
+     * image outside the clip, already decoded, already being decoded, or drawn to a printer or
+     * vector target.
+     *
+     * @param g the graphics the page is about to be painted to, in the page's user space: the space
+     *          the {@link #getPlacement placement} is in
+     */
+    public void prefetch(Graphics2D g) {
+        if (!reducible || reference == null || placement == null || ImageUtility.isCmykInkCapturing()
+                || !ImageDownsampler.isRasterTarget(g) || isInTransientBackoff()) {
+            return;
+        }
+        AffineTransform device = new AffineTransform(g.getTransform());
+        device.concatenate(placement);
+        Shape clip = g.getClip();
+        if (clip != null) {
+            Rectangle2D deviceClip = g.getTransform().createTransformedShape(clip).getBounds2D();
+            Rectangle2D deviceImage = device.createTransformedShape(UNIT_SQUARE).getBounds2D();
+            deviceImage.setRect(deviceImage.getX() - 1, deviceImage.getY() - 1,
+                    deviceImage.getWidth() + 2, deviceImage.getHeight() + 2);
+            if (!deviceClip.intersects(deviceImage)) {
+                return;
+            }
+        }
+        ImagePool pool = imageStream.getLibrary().getImagePool();
+        if (pool.get(reference) != null) {
+            return;
+        }
+        int width = imageStream.getWidth();
+        int height = imageStream.getHeight();
+        int factor = ReducedDecode.factorFor(width, height, Math.hypot(device.getScaleX(), device.getShearY()),
+                Math.hypot(device.getShearX(), device.getScaleY()));
+        if (factor < 2) {
+            if (futureTask == null) {
+                submitDecode();
+            }
+            return;
+        }
+        BufferedImage kept = pool.getReduced(reference);
+        if (kept != null && kept.getWidth() >= ReducedDecode.reduced(width, factor)) {
+            return;
+        }
+        FutureTask<BufferedImage> mine = reducedDecode(pool, factor);
+        if (pool.registerReducedInProgress(reference, mine) == null) {
+            Library.executeImage(mine);
         }
     }
 
