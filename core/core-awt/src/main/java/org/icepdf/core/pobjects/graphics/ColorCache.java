@@ -18,12 +18,14 @@ package org.icepdf.core.pobjects.graphics;
 import java.awt.*;
 
 /**
- * A colour space's converted colours, keyed by packed (quantised) components, shared by every thread rendering
- * with that colour space. Lock free and bounded: one entry per slot, a colliding key replaces it.
+ * A colour space's converted colours, keyed by its components packed into an int (ICCBased quantises them,
+ * Separation keys on its one tint's float bits), shared by every thread rendering with that colour space. Lock
+ * free and bounded: one entry per slot, a colliding key replaces it.
  * <br>
  * The races are benign. A slot holds an immutable entry, so a reader sees a whole entry or none; a lost write
  * costs one extra conversion. That needs the cached colour to depend on the key alone, never on which input
- * filled the slot first, so a caller converts the colour its key stands for, not the value it was given.
+ * filled the slot first: when keys are quantised, a caller converts the colour its key stands for, not the
+ * value it was given.
  *
  * @since 7.5.0
  */
