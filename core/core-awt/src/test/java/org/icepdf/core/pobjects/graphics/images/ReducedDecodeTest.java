@@ -114,6 +114,25 @@ class ReducedDecodeTest {
         assertFalse(ReducedDecode.isCandidate(image(big)));
     }
 
+    @DisplayName("JPEG 2000 has a lower threshold, 4MB, and palette images aren't candidates")
+    @Test
+    void jpxCandidates() throws Exception {
+        byte[] data = new byte[16];
+        // 1100 x 1000 is 4.4MB decoded: under the general threshold, over the JPEG 2000 one
+        assertTrue(ReducedDecode.isCandidate(image(document(pdf(
+                "/Width 1100 /Height 1000 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /JPXDecode", data)))));
+        assertFalse(ReducedDecode.isCandidate(image(document(imagePdf("/DeviceRGB", 8, 3, 1100, 1000, null, "")))),
+                "a Flate image that size is not");
+        assertFalse(ReducedDecode.isCandidate(image(document(pdf(
+                "/Width 1100 /Height 1000 /Filter /JPXDecode", data)))), "no /ColorSpace: the JP2 may hold a palette");
+        assertFalse(ReducedDecode.isCandidate(image(document(pdf(
+                "/Width 1100 /Height 1000 /ColorSpace [/Indexed /DeviceRGB 1 <FF000000FF00>] /BitsPerComponent 8"
+                        + " /Filter /JPXDecode", data)))), "indices can't be averaged");
+        assertFalse(ReducedDecode.isCandidate(image(document(pdf(
+                "/Width 900 /Height 900 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /JPXDecode", data)))),
+                "3.1MB is under it");
+    }
+
     @DisplayName("drawn small, the page keeps only a reduced image; drawn large, the full image replaces it")
     @Test
     void drawnSmallThenLarge() throws Exception {

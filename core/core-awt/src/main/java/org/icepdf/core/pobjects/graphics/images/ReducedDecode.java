@@ -41,12 +41,15 @@ import java.awt.geom.AffineTransform;
  * </ul>
  * Only images without masks are reduced, and only on a raster target: printing and export get the
  * full image.  {@value #ENABLED_PROPERTY} turns it off; {@value #THRESHOLD_PROPERTY} (MB, of the full
- * decode at four bytes a pixel) is the size an image must reach to be reduced.
+ * decode at four bytes a pixel) is the size an image must reach to be reduced.  A JPEG 2000 image
+ * has its own, lower threshold, {@value #JPX_THRESHOLD_PROPERTY}: dropping resolution levels is
+ * also much faster than a full decode, so it pays well below the size where memory matters.
  */
 public final class ReducedDecode {
 
     public static final String ENABLED_PROPERTY = "org.icepdf.core.images.reducedDecode";
     public static final String THRESHOLD_PROPERTY = "org.icepdf.core.images.reducedDecodeThreshold";
+    public static final String JPX_THRESHOLD_PROPERTY = "org.icepdf.core.images.reducedDecodeJpxThreshold";
 
     private static final Name SMASK_IN_DATA_KEY = new Name("SMaskInData");
 
@@ -66,7 +69,12 @@ public final class ReducedDecode {
             return false;
         }
         ImageParams params = imageStream.getImageParams();
-        long threshold = (long) Defs.intProperty(THRESHOLD_PROPERTY, 16) << 20;
+        boolean jpx = ImageDecoderFactory.containsFilter(imageStream, ImageDecoderFactory.JPX_DECODE_FILTERS);
+        if (jpx && !isJpxReducible(imageStream)) {
+            return false;
+        }
+        long threshold = (long) (jpx ? Defs.intProperty(JPX_THRESHOLD_PROPERTY, 4)
+                : Defs.intProperty(THRESHOLD_PROPERTY, 16)) << 20;
         if ((long) params.getWidth() * params.getHeight() * 4 < threshold) {
             return false;
         }
@@ -141,6 +149,23 @@ public final class ReducedDecode {
         }
         decoder.setReduction(reduction);
         return decoder;
+    }
+
+    /**
+     * False for a JPEG 2000 image whose samples may be palette indices, which can't be averaged: one
+     * with no /ColorSpace (the JP2 wrapper's palette may apply) or a direct /Indexed one.  A named
+     * colour space is resolved later, against the page's resources ({@link #decoderFor}).
+     */
+    private static boolean isJpxReducible(ImageStream imageStream) {
+        Object colourSpace = imageStream.getLibrary().getObject(imageStream.getEntries(), ImageParams.COLORSPACE_KEY);
+        if (colourSpace == null) {
+            return false;
+        }
+        if (colourSpace instanceof java.util.List && !((java.util.List<?>) colourSpace).isEmpty()) {
+            Object family = ((java.util.List<?>) colourSpace).get(0);
+            return !"Indexed".equals(String.valueOf(family)) && !"I".equals(String.valueOf(family));
+        }
+        return true;
     }
 
     /**
