@@ -101,6 +101,36 @@ class ReducedDecodeTest {
         assertBoxFiltered("/DeviceRGB", 16, 3, null);
     }
 
+    @DisplayName("DeviceCMYK with an inverting decode array")
+    @Test
+    void cmykInverted() throws Exception {
+        assertBoxFiltered("/DeviceCMYK /Decode [1 0 1 0 1 0 1 0]", 8, 4, null);
+    }
+
+    @DisplayName("16 bit RGB with a partial decode range")
+    @Test
+    void rgbSixteenBitPartialDecode() throws Exception {
+        assertBoxFiltered("/DeviceRGB /Decode [0 0.5 0 1 0.2 0.8]", 16, 3, null);
+    }
+
+    @DisplayName("Lab: samples decode into L*a*b* units, the colour space's default range")
+    @Test
+    void lab() throws Exception {
+        assertBoxFiltered("[/Lab << /WhitePoint [0.9505 1 1.089] /Range [-100 100 -100 100] >>]", 8, 3, null);
+    }
+
+    @DisplayName("DeviceGray 4 bit with an inverting decode array")
+    @Test
+    void grayFourBitInverted() throws Exception {
+        assertBoxFiltered("/DeviceGray /Decode [1 0]", 4, 1, null);
+    }
+
+    @DisplayName("DeviceGray 8 with a partial decode range")
+    @Test
+    void grayPartialDecode() throws Exception {
+        assertBoxFiltered("/DeviceGray /Decode [0.2 0.8]", 8, 1, null);
+    }
+
     @DisplayName("only big, unmasked images are candidates")
     @Test
     void candidates() throws Exception {

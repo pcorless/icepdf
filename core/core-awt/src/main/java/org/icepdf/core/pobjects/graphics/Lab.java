@@ -23,7 +23,8 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * put your documentation comment here
+ * A CIE L*a*b* colour space (8.6.5.4): L* 0..100 and a*, b* across the dictionary's Range, relative to its
+ * WhitePoint, converted to sRGB.
  */
 public class Lab extends PColorSpace {
 
@@ -44,6 +45,24 @@ public class Lab extends PColorSpace {
     private final float ySpread;
     private final float zBase;
     private final float zSpread;
+
+    // Bradford adaptation (white point to D65) followed by XYZ to linear sRGB, row major
+    private final double[] xyzToRgb;
+
+    // linear sRGB from D65 XYZ (IEC 61966-2-1)
+    private static final double[] SRGB = {
+            3.2406, -1.5372, -0.4986,
+            -0.9689, 1.8758, 0.0415,
+            0.0557, -0.2040, 1.0570};
+    private static final double[] BRADFORD = {
+            0.8951, 0.2664, -0.1614,
+            -0.7502, 1.7135, 0.0367,
+            0.0389, -0.0685, 1.0296};
+    private static final double[] BRADFORD_INVERSE = {
+            0.9869929, -0.1470543, 0.1599627,
+            0.4323053, 0.5183603, 0.0492912,
+            -0.0085287, 0.0400428, 0.9684867};
+    private static final double[] D65 = {0.95047, 1.0, 1.08883};
 
     Lab(Library l, DictionaryEntries h) {
         super(l, h);
@@ -83,6 +102,41 @@ public class Lab extends PColorSpace {
         ySpread = whitePoint[1] - yBase;
         zBase = blackPoint[2];
         zSpread = whitePoint[2] - zBase;
+
+        xyzToRgb = multiply(SRGB, adaptation(whitePoint));
+    }
+
+    /**
+     * The Bradford transform taking XYZ relative to this white point to XYZ relative to D65, the white sRGB
+     * expects.  Most Lab spaces declare D50; without it their white comes out yellow.
+     */
+    private static double[] adaptation(float[] whitePoint) {
+        double[] source = apply(BRADFORD, whitePoint[0], whitePoint[1], whitePoint[2]);
+        double[] destination = apply(BRADFORD, D65[0], D65[1], D65[2]);
+        double[] scale = new double[9];
+        for (int i = 0; i < 3; i++) {
+            scale[i * 4] = destination[i] / source[i];
+        }
+        return multiply(BRADFORD_INVERSE, multiply(scale, BRADFORD));
+    }
+
+    private static double[] multiply(double[] a, double[] b) {
+        double[] product = new double[9];
+        for (int row = 0; row < 3; row++) {
+            for (int column = 0; column < 3; column++) {
+                for (int k = 0; k < 3; k++) {
+                    product[row * 3 + column] += a[row * 3 + k] * b[k * 3 + column];
+                }
+            }
+        }
+        return product;
+    }
+
+    private static double[] apply(double[] m, double x, double y, double z) {
+        return new double[]{
+                m[0] * x + m[1] * y + m[2] * z,
+                m[3] * x + m[4] * y + m[5] * z,
+                m[6] * x + m[7] * y + m[8] * z};
     }
 
     public int getNumComponents() {
@@ -105,11 +159,19 @@ public class Lab extends PColorSpace {
         return r;
     }
 
+    /**
+     * {@code [0 100 amin amax bmin bmax]}: L*, a* and b* in their own units (Table 90).
+     */
+    @Override
+    public float[] getDefaultDecode(int bitsPerComponent) {
+        return new float[]{lBase, lBase + lSpread, aBase, aBase + aSpread, bBase, bBase + bSpread};
+    }
+
     public void normaliseComponentsToFloats(int[] in, float[] out, float maxval) {
         super.normaliseComponentsToFloats(in, out, maxval);
-        out[2] = lBase + (lSpread * out[2]); // L
+        out[0] = lBase + (lSpread * out[0]); // L
         out[1] = aBase + (aSpread * out[1]); // a
-        out[0] = bBase + (bSpread * out[0]); // b
+        out[2] = bBase + (bSpread * out[2]); // b
     }
 
     public Color getColor(float[] f, boolean fillAndStroke) {
@@ -126,25 +188,15 @@ public class Lab extends PColorSpace {
         X = xBase + X * xSpread;
         Y = yBase + Y * ySpread;
         Z = zBase + Z * zSpread;
-        X = Math.max(0, Math.min(1, X));
-        Y = Math.max(0, Math.min(1, Y));
-        Z = Math.max(0, Math.min(1, Z));
 
-        /*
-         * Algorithm from online
-        double r = X *  3.2406 + Y * -1.5372 + Z * -0.4986;
-        double g = X * -0.9689 + Y *  1.8758 + Z *  0.0415;
-        double b = X *  0.0557 + Y * -0.2040 + Z *  1.0570;
-        */
-        double r = X * 3.241 + Y * -1.5374 + Z * -0.4986;
-        double g = X * -0.9692 + Y * 1.876 + Z * 0.0416;
-        double b = X * 0.0556 + Y * -0.204 + Z * 1.057;
-        r = gg(r);
-        g = gg(g);
-        b = gg(b);
-        int ir = (int) (r * 255.0);
-        int ig = (int) (g * 255.0);
-        int ib = (int) (b * 255.0);
+        // XYZ is not clamped to 1: the white point's own Z is 1.089 for D65, and clamping it tinted white
+        double[] m = xyzToRgb;
+        double r = gg(m[0] * X + m[1] * Y + m[2] * Z);
+        double g = gg(m[3] * X + m[4] * Y + m[5] * Z);
+        double b = gg(m[6] * X + m[7] * Y + m[8] * Z);
+        int ir = (int) Math.round(r * 255.0);
+        int ig = (int) Math.round(g * 255.0);
+        int ib = (int) Math.round(b * 255.0);
         ir = Math.max(0, Math.min(255, ir));
         ig = Math.max(0, Math.min(255, ig));
         ib = Math.max(0, Math.min(255, ib));

@@ -176,6 +176,27 @@ public class ImageParams extends Dictionary {
         return decode;
     }
 
+    /**
+     * The Decode array as a {@code [Dmin Dmax]} pair per colour component (8.9.5.2): the image's own, with
+     * the colour space's default ({@link PColorSpace#getDefaultDecode(int)}) for any it leaves out.
+     * {@link #getDecode()} holds the same as Dmin and a step per sample, but always defaults to [0 1].
+     *
+     * @return {@code 2 *} the colour space's component count values.
+     */
+    float[] getDecodeRange() {
+        float[] range = getColourSpace().getDefaultDecode(getBitsPerComponent());
+        Object decode = library.getObject(entries, DECODE_KEY);
+        if (decode instanceof List) {
+            List<?> values = (List<?>) decode;
+            for (int i = 0; i < range.length && i < values.size(); i++) {
+                if (values.get(i) instanceof Number) {
+                    range[i] = ((Number) values.get(i)).floatValue();
+                }
+            }
+        }
+        return range;
+    }
+
     public boolean isColorKeyMask() {
         return library.getObject(entries, MASK_KEY) instanceof List;
     }

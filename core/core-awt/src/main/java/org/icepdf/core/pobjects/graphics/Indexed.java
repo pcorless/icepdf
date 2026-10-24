@@ -91,6 +91,14 @@ public class Indexed extends PColorSpace {
         return 1;
     }
 
+    /**
+     * {@code [0 2^bitsPerComponent - 1]}: a sample is the palette index itself (Table 90).
+     */
+    @Override
+    public float[] getDefaultDecode(int bitsPerComponent) {
+        return new float[]{0, (1 << bitsPerComponent) - 1};
+    }
+
     public String getDescription() {
         String desc = super.getDescription();
         if (colorSpace != null)

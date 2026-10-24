@@ -22,6 +22,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -120,7 +121,8 @@ public class JpxDecoder extends AbstractImageDecoder {
             }
             // apply respective colour models to the JPEG2000 image.
             if (colourSpace instanceof DeviceRGB && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                        imageParams.getDecodeRange());
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
             } else if ((colourSpace instanceof DeviceGray)
@@ -131,16 +133,36 @@ public class JpxDecoder extends AbstractImageDecoder {
                     tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
 //                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
                 } else {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode);
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                            imageParams.getDecodeRange());
                 }
             } else if (colourSpace instanceof Indexed) {
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
+            } else if ((colourSpace instanceof DeviceN || colourSpace instanceof CalGray
+                    || colourSpace instanceof CalRGB || colourSpace instanceof Lab)
+                    && wr.getDataBuffer() instanceof DataBufferByte
+                    && wr.getNumBands() == colourSpace.getNumComponents()) {
+                // drawn as the reader's raster these came out as if grey or RGB: no tint transform, no CalGray
+                // gamma, Lab samples as RGB.  JPXDecode ignores /Decode (8.9.5.2), so the colour space's default.
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, unitDecode(colourSpace),
+                        colourSpace.getDefaultDecode(8));
             }
         } catch (IOException e) {
             logger.log(Level.FINE, "Problem loading JPEG2000 image: ", e);
         }
 
         return tmpImage;
+    }
+
+    /**
+     * {@link ImageParams#getDecode()}'s form of the default Decode, which DecodeRasterOp passes through.
+     */
+    private static float[] unitDecode(PColorSpace colourSpace) {
+        float[] decode = new float[colourSpace.getNumComponents() * 2];
+        for (int i = 1; i < decode.length; i += 2) {
+            decode[i] = 1.0f / 255;
+        }
+        return decode;
     }
 
     private BufferedImage read(byte[] data) throws IOException {

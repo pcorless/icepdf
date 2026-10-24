@@ -32,10 +32,26 @@ public class PColorSpaceRasterOp implements RasterOp {
 
     private final RenderingHints hints;
     private final PColorSpace colorSpace;
+    // null: samples are already 0..255 in a 0..1 colour space (DecodeRasterOp ran first)
+    private final float[] decodeRange;
 
     public PColorSpaceRasterOp(PColorSpace colorSpace, RenderingHints hints) {
+        this(colorSpace, null, hints);
+    }
+
+    /**
+     * Converts raw 8-bit samples, decoding each across its {@code [Dmin Dmax]} pair into the colour space's own
+     * units: for a space whose values aren't 0..1 (Lab, an ICCBased Range), which DecodeRasterOp can't hold.
+     *
+     * @param colorSpace  colour space of the samples.
+     * @param decodeRange the image's Decode, or the colour space's default, as a pair per component.
+     * @param hints       rendering hints.
+     * @since 7.5.0
+     */
+    public PColorSpaceRasterOp(PColorSpace colorSpace, float[] decodeRange, RenderingHints hints) {
         this.hints = hints;
         this.colorSpace = colorSpace;
+        this.decodeRange = decodeRange;
     }
 
     public WritableRaster filter(Raster src, WritableRaster dest) {
@@ -47,7 +63,7 @@ public class PColorSpaceRasterOp implements RasterOp {
         int[] destPixels = ((DataBufferInt) dest.getDataBuffer()).getData();
 
         // already RGB not much to do so we just build the colour
-        if (colorSpace instanceof DeviceRGB) {
+        if (colorSpace instanceof DeviceRGB && decodeRange == null) {
             int bands = src.getNumBands();
             int[] rgbValues = new int[3];
             for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
@@ -64,11 +80,14 @@ public class PColorSpaceRasterOp implements RasterOp {
             }
         } else {
             int bands = src.getNumBands();
-            float[] values = new float[3];
-            // getColor() can be costly (colour-space conversion plus a Color
-            // allocation); reuse the previous result when the raw samples for a
-            // pixel are unchanged, which covers the flat runs typical of these
-            // images even when the colour space caches internally.
+            float[] values = new float[bands];
+            SampleDecode decode = decodeRange != null ? new SampleDecode(decodeRange, 8) : null;
+            // getColor() can be costly (an ICC toRGB or a tint transform plus a Color
+            // allocation); reuse the previous result when the raw samples for a pixel
+            // are unchanged, which covers flat runs, and remember every converted
+            // colour (GH-617), which covers photos.  More than eight bands don't pack
+            // into a key, so those only get the previous-pixel reuse.
+            ColourMemo memo = ColourMemo.fits(8, bands) ? new ColourMemo(destPixels.length, 8 * bands) : null;
             int[] lastSamples = new int[bands];
             java.util.Arrays.fill(lastSamples, -1);
             int lastRgb = 0;
@@ -76,16 +95,31 @@ public class PColorSpaceRasterOp implements RasterOp {
             for (int pixel = 0, intPixels = 0; pixel < srcPixels.length; pixel += bands, intPixels++) {
 
                 boolean same = haveLast;
+                long key = 0;
                 for (int i = 0; i < bands; i++) {
                     int sample = srcPixels[pixel + i] & 0xff;
                     if (sample != lastSamples[i]) {
                         same = false;
                         lastSamples[i] = sample;
                     }
-                    values[i] = sample / 255.0f;
+                    key = key << 8 | sample;
                 }
                 if (!same) {
-                    lastRgb = colorSpace.getColor(values).getRGB();
+                    int slot = 0;
+                    lastRgb = 0;
+                    if (memo != null) {
+                        slot = memo.slot(key);
+                        lastRgb = memo.argb(slot);
+                    }
+                    if (lastRgb == 0) {
+                        for (int i = 0; i < bands; i++) {
+                            values[i] = decode != null ? decode.value(i, lastSamples[i]) : lastSamples[i] / 255.0f;
+                        }
+                        lastRgb = colorSpace.getColor(values).getRGB();
+                        if (memo != null) {
+                            memo.put(slot, key, lastRgb);
+                        }
+                    }
                     haveLast = true;
                 }
                 destPixels[intPixels] = lastRgb;

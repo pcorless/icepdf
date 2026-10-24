@@ -913,7 +913,16 @@ public class ImageUtility {
         return new BufferedImage(cm, wr, false, null);
     }
 
+    /**
+     * An 8-bit grey image over the samples as they are.  Held on the {@link #GRAY_256} ramp, so getRGB gives
+     * back the sample: on CS_GRAY, which is linear, getRGB gamma-lifted it (64 read as 137) while drawing
+     * copied it, and a soft mask, which is read through getRGB, came out too opaque.
+     */
     static BufferedImage makeGrayBufferedImage(WritableRaster wr) {
+        if (wr.getNumBands() == 1 && wr.getDataBuffer() instanceof DataBufferByte
+                && wr.getSampleModel().getSampleSize(0) == 8) {
+            return new BufferedImage(GRAY_256, wr, false, null);
+        }
         ColorSpace cs = ColorSpace.getInstance(ColorSpace.CS_GRAY);
         int[] bits = new int[1];
         Arrays.fill(bits, 8);
@@ -1505,14 +1514,26 @@ public class ImageUtility {
         return rgbImage;
     }
 
-    static BufferedImage convertSpaceToRgb(Raster colourRaster, PColorSpace colorSpace, float[] decode) {
+    /**
+     * @param decode      {@link ImageParams#getDecode()}.
+     * @param decodeRange {@link ImageParams#getDecodeRange()}.
+     */
+    static BufferedImage convertSpaceToRgb(Raster colourRaster, PColorSpace colorSpace, float[] decode,
+                                           float[] decodeRange) {
         BufferedImage rgbImage = makeBufferedImage(colourRaster);
         WritableRaster rgbRaster = rgbImage.getRaster();
-        // apply the decode filter
-        DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
-        decodeRasterOp.filter(colourRaster, (WritableRaster) colourRaster);
+        PColorSpaceRasterOp pColorSpaceRasterOp;
+        if (isUnitRange(colorSpace.getDefaultDecode(8))) {
+            // apply the decode filter
+            DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
+            decodeRasterOp.filter(colourRaster, (WritableRaster) colourRaster);
+            pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
+        } else {
+            // Lab or an ICCBased Range: DecodeRasterOp works in 0..255 and can't hold these units, so each sample
+            // is decoded straight into them (GH-617; a Lab image reached the space as 0..1, nearly black)
+            pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, decodeRange, null);
+        }
         // apply colour space
-        PColorSpaceRasterOp pColorSpaceRasterOp = new PColorSpaceRasterOp(colorSpace, null);
         pColorSpaceRasterOp.filter(colourRaster, rgbRaster);
         // GH-501: raw (FlateDecode) DeviceCMYK images reach RGB through this generic
         // path, not convertCmykToRgb -- keep their true CMYK samples too.
@@ -1520,6 +1541,15 @@ public class ImageUtility {
             preserveCmyk(rgbImage, colourRaster);
         }
         return rgbImage;
+    }
+
+    private static boolean isUnitRange(float[] range) {
+        for (int i = 0; i < range.length; i += 2) {
+            if (range[i] != 0 || range[i + 1] != 1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     static BufferedImage convertGrayToRgb(Raster grayRaster, float[] decode) {
@@ -1582,6 +1612,26 @@ public class ImageUtility {
         rasterOp = new YCbCrRasterOp(null);
         rasterOp.filter(yCbCrRaster, rgbRaster);
         return rgbImage;
+    }
+
+    /**
+     * A YCbCr JPEG whose colour space isn't RGB (Lab, a three-colorant DeviceN): the inverse colour transform
+     * gives back the space's own components, which then go through the space like any other samples.
+     * {@link #convertYCbCrToRGB} took the result for sRGB whatever the space.
+     */
+    static BufferedImage convertYCbCrToSpace(WritableRaster yCbCrRaster, PColorSpace colorSpace, float[] decode,
+                                             float[] decodeRange) {
+        int w = yCbCrRaster.getWidth(), h = yCbCrRaster.getHeight();
+        BufferedImage components = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        new YCbCrRasterOp(null).filter(yCbCrRaster, components.getRaster());
+        int[] packed = ((DataBufferInt) components.getRaster().getDataBuffer()).getData();
+        byte[] samples = ((DataBufferByte) yCbCrRaster.getDataBuffer()).getData();
+        for (int i = 0; i < packed.length; i++) {
+            samples[i * 3] = (byte) (packed[i] >> 16);
+            samples[i * 3 + 1] = (byte) (packed[i] >> 8);
+            samples[i * 3 + 2] = (byte) packed[i];
+        }
+        return convertSpaceToRgb(yCbCrRaster, colorSpace, decode, decodeRange);
     }
 
     static BufferedImage convertYCCKToRgb(Raster ycckRaster, float[] decode) {
