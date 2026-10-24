@@ -59,6 +59,10 @@ final class DocumentLayout {
     private record Row(double y, double height, List<PageSlot> slots) {
     }
 
+    // a page step keeps a tenth of the screen in view; a page top within EDGE px counts as reached.
+    private static final double PAGE_STEP = 0.9;
+    private static final double EDGE = 1;
+
     private final ViewMode viewMode;
     private final List<Row> rows;
     // indexed by page; null when the page isn't laid out (non-continuous modes).
@@ -242,6 +246,32 @@ final class DocumentLayout {
             best = rows.get(i).slots().get(0).pageIndex();
         }
         return best;
+    }
+
+    /**
+     * Where Page Down goes from scroll position {@code y}: about a screen on, but never past the
+     * next page's top (less {@code gap}), and onto that top when it's already on screen - so a
+     * reader always lands on a page edge or the next part of the same page.
+     */
+    public double pageDownTarget(double y, double viewportHeight, double gap) {
+        double step = y + viewportHeight * PAGE_STEP;
+        for (Row r : rows) {
+            double top = r.y() - gap;
+            if (top <= y + EDGE) continue;
+            return top <= y + viewportHeight ? top : Math.min(step, top);
+        }
+        return step;
+    }
+
+    /** Page Up's mirror of {@link #pageDownTarget}: onto a page top within a screen above, else a screen back. */
+    public double pageUpTarget(double y, double viewportHeight, double gap) {
+        double step = y - viewportHeight * PAGE_STEP;
+        for (int i = rows.size() - 1; i >= 0; i--) {
+            double top = rows.get(i).y() - gap;
+            if (top >= y - EDGE) continue;
+            return Math.max(0, top >= y - viewportHeight ? top : step);
+        }
+        return Math.max(0, step);
     }
 
     // binary search for the first row whose bottom edge is below y.

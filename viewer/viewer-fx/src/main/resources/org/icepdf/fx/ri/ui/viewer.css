@@ -356,6 +356,18 @@
     -fx-padding: 8 16 8 16;
 }
 
+/* what a file dragged over the viewer will do when dropped */
+.icepdf-viewer .drop-hint {
+    -fx-background-color: -icepdf-toast;
+    -fx-background-radius: 18;
+    -fx-border-color: -icepdf-accent;
+    -fx-border-width: 2;
+    -fx-border-radius: 18;
+    -fx-text-fill: -icepdf-toast-fg;
+    -fx-padding: 12 24 12 24;
+    -fx-font-size: 1.2em;
+}
+
 /* an error stays until dismissed: a card in the error colours, above any passing message */
 .icepdf-viewer .toast-error {
     -fx-background-color: -icepdf-error-border, -icepdf-error;

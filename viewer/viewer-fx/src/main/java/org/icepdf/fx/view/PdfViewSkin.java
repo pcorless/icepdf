@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view;
 
+import javafx.animation.AnimationTimer;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -96,7 +97,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     // page text: loading, selection, search hits and the caret on each page.
     private final TextLayers text = new TextLayers(getSkinnable(),
             new PageTextLoader(RenderService.shared(), renderOwner, (page, sequence) -> onTextReady(page)),
-            page -> getSkinnable().searchHitsOnPage(page), () -> this.sizes.count(), () -> this.layers.values());
+            page -> getSkinnable().isShowSearchHits() ? getSkinnable().searchHitsOnPage(page) : List.of(), () -> this.sizes.count(), () -> this.layers.values());
     // what a screen reader sees: set in the constructor.
     private PdfViewAccessibility accessibility;
     private final Map<Integer, PageLayer> layers = new HashMap<>();
@@ -118,6 +119,12 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     private double scrollX;
     private double scrollY;
+    // set by dispose: work queued for later (a refresh) finds the skin gone and does nothing.
+    private boolean disposed;
+    // a Page Up/Down scroll in flight, and where it ends.
+    private AnimationTimer pageScroll;
+    private double pageScrollTargetY;
+    private static final long PAGE_SCROLL_NANOS = 150_000_000L;
     private double viewportW;
     private double viewportH;
     private double outputScale = 1;
@@ -198,7 +205,9 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         registerChangeListener(control.currentPageIndexProperty(), o -> onCurrentPage());
         // after the page settles, so a caret placed for a screen reader doesn't fight the scroll.
         registerChangeListener(control.currentPageIndexProperty(),
-                o -> Platform.runLater(() -> accessibility.currentPageChanged()));
+                o -> Platform.runLater(() -> {
+                    if (!disposed) accessibility.currentPageChanged();
+                }));
         registerChangeListener(control.paintAnnotationsProperty(), o -> {
             renderer.setPaintAnnotations(control.isPaintAnnotations());
             resetRasters();
@@ -227,6 +236,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             refresh();
         });
         registerListChangeListener(control.getSearchHits(), c -> scheduleRefresh());
+        registerChangeListener(control.showSearchHitsProperty(), o -> scheduleRefresh());
         registerListChangeListener(control.getSignatures(), c -> {
             signatures.statusesChanged(control.getSignatures());
             scheduleRefresh();
@@ -273,6 +283,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void dispose() {
+        disposed = true;
+        stopPageScroll();
         if (watchedScene != null) watchedScene.windowProperty().removeListener(windowListener);
         if (window != null) window.outputScaleXProperty().removeListener(outputScaleListener);
         zoomSettle.stop();
@@ -515,6 +527,59 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
 
     @Override
     public void scrollTo(double x, double y) {
+        stopPageScroll();
+        applyScroll(x, y);
+    }
+
+    /**
+     * Page Up/Down in a continuous mode: onto the next page edge or a screen on (see
+     * {@link DocumentLayout#pageDownTarget}), eased over a moment so the eye can follow the text.
+     * A key pressed again mid-scroll steps on from where the first was going.
+     */
+    @Override
+    public void scrollByPage(boolean down) {
+        if (layout == null) return;
+        double from = pageScroll != null ? pageScrollTargetY : scrollY;
+        double gap = getSkinnable().getPageGap();
+        double target = down ? layout.pageDownTarget(from, viewportH, gap) : layout.pageUpTarget(from, viewportH, gap);
+        target = clamp(target, 0, Math.max(0, layout.getHeight() - viewportH));
+        stopPageScroll();
+        double start = scrollY;
+        if (start == target) return;
+        double end = target;
+        pageScrollTargetY = end;
+        pageScroll = new AnimationTimer() {
+            private long begin = -1;
+
+            @Override
+            public void handle(long now) {
+                if (begin < 0) begin = now;
+                double t = Math.min(1, (now - begin) / (double) PAGE_SCROLL_NANOS);
+                // ease out: quick to start, settling onto the target.
+                applyScroll(scrollX, start + (end - start) * (1 - Math.pow(1 - t, 3)));
+                if (t >= 1) stopPageScroll();
+            }
+        };
+        pageScroll.start();
+    }
+
+    /** The current layout, or null before a document is laid out. */
+    DocumentLayout layout() {
+        return layout;
+    }
+
+    @Override
+    public double maxScrollY() {
+        return layout == null ? 0 : Math.max(0, layout.getHeight() - viewportH);
+    }
+
+    private void stopPageScroll() {
+        if (pageScroll == null) return;
+        pageScroll.stop();
+        pageScroll = null;
+    }
+
+    private void applyScroll(double x, double y) {
         if (layout == null) return;
         scrollX = clamp(x, 0, Math.max(0, layout.getWidth() - viewportW));
         scrollY = clamp(y, 0, Math.max(0, layout.getHeight() - viewportH));
@@ -554,7 +619,8 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         refreshQueued = true;
         Platform.runLater(() -> {
             refreshQueued = false;
-            refresh();
+            // the view may have been closed (the skin disposed) while this waited.
+            if (!disposed) refresh();
         });
     }
 
@@ -734,7 +800,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
                 (int) Math.ceil((vx1 - vx0) * scale) + 1, (int) Math.ceil((vy1 - vy0) * scale) + 1);
         Drag started = drag;
         renderer.requestAnnotationProxy(hit.pageIndex(), params, hit.annotation(), region, buffer -> {
-            if (drag != started) return;
+            if (disposed || drag != started) return;
             ui.setProxy(buffer, region.x(), region.y(), scale, from, TileRenderer.multiplies(hit.annotation()));
             tiles.setExcluded(hit.pageIndex(), hit.annotation(), true);
             bumpAnnotationGeneration(hit.pageIndex());

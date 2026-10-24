@@ -230,6 +230,221 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> viewer.getSession().hasRedactions()));
     }
 
+    @DisplayName("a markup tool chosen with text selected marks up the selection and keeps the tool")
+    @Test
+    void markupToolUsesSelection() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("markup.pdf"));
+        open(copy);
+        java.util.function.Supplier<List<Annotation>> annotations = () -> {
+            // the markups alone: each comes with a popup.
+            List<Annotation> list = viewer.getSession().getDocument().getPageTree().getPage(0).getAnnotations();
+            return list == null ? List.of() : list.stream()
+                    .filter(a -> a instanceof org.icepdf.core.pobjects.annotations.TextMarkupAnnotation).toList();
+        };
+        // the page's text loads in the background; a markup made before it has nothing to cover.
+        Fx.waitFor("the squiggly", () -> {
+            if (!annotations.get().isEmpty()) return true;
+            viewer.getView().selectAll();
+            viewer.getActions().execute("annotation.squiggly");
+            return !annotations.get().isEmpty();
+        });
+        assertEquals(1, Fx.call(() -> annotations.get().size()));
+        assertEquals(org.icepdf.core.pobjects.annotations.TextMarkupAnnotation.SUBTYPE_SQUIGGLY,
+                Fx.call(() -> annotations.get().get(0).getSubType()));
+        assertEquals(org.icepdf.fx.view.ToolMode.TEXT_SELECT, Fx.call(() -> viewer.getView().getToolMode()),
+                "the tool is unchanged");
+        assertNull(Fx.call(() -> viewer.getView().getTextSelection()), "the selection is used up");
+
+        Fx.run(() -> viewer.getView().undo());
+        assertTrue(Fx.call(() -> annotations.get().isEmpty()), "undo takes it away");
+
+        // with nothing selected, the same action arms the tool.
+        Fx.run(() -> viewer.getActions().execute("annotation.squiggly"));
+        assertEquals(org.icepdf.fx.view.ToolMode.SQUIGGLY, Fx.call(() -> viewer.getView().getToolMode()));
+        assertTrue(Fx.call(() -> annotations.get().isEmpty()));
+    }
+
+    @DisplayName("opening the search panel puts the caret in its query; closing it puts the caret back on the page")
+    @Test
+    void searchPanelTakesFocus() throws Exception {
+        open(pdf("panel.pdf"));
+        javafx.scene.control.ToggleButton icon = Fx.call(() -> (javafx.scene.control.ToggleButton) viewer.lookupAll(".toggle-button")
+                .stream().filter(n -> ("panel." + SidePanel.SEARCH.id()).equals(n.getId())).findFirst().orElse(null));
+        assertNotNull(icon, "the search panel's icon");
+        TextField query = Fx.call(() -> (TextField) viewer.getCurrentDocument().getSearchPanel().lookup(".text-field"));
+
+        Fx.run(() -> {
+            icon.fire();
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(query, Fx.call(() -> viewer.getScene().getFocusOwner()), "clicked open: the query has the caret");
+
+        Fx.run(() -> {
+            icon.fire();
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(viewer.getView(), Fx.call(() -> viewer.getScene().getFocusOwner()), "closed: back to the page");
+
+        // F4 reopens the panel shown last - the search panel - and focuses it the same way.
+        Fx.run(() -> {
+            Fx.press(viewer.getView(), KeyCode.F4, false);
+            Fx.layout(viewer);
+        });
+        Fx.settle();
+        assertSame(query, Fx.call(() -> viewer.getScene().getFocusOwner()), "F4: the query has the caret");
+    }
+
+    @DisplayName("Ctrl+0 fits the page, Ctrl+1 is actual size, Ctrl+2 fits the width - on the page or anywhere else")
+    @Test
+    void fitShortcuts() throws Exception {
+        open(pdf("fit.pdf"));
+        org.icepdf.fx.view.PdfView view = Fx.call(viewer::getView);
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT0, true));
+        assertEquals(org.icepdf.fx.view.FitMode.PAGE, Fx.call(view::getFitMode));
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT2, true));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+        Fx.run(() -> Fx.press(view, KeyCode.DIGIT1, true));
+        assertEquals(org.icepdf.fx.view.FitMode.NONE, Fx.call(view::getFitMode));
+        assertEquals(1, Fx.call(view::getZoom), 1e-9);
+
+        // from the search field: the scene's shortcut, not the view's key handling.
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        TextField query = Fx.call(() -> (TextField) viewer.lookup(".search-bar .text-field"));
+        Fx.run(() -> Fx.press(query, KeyCode.DIGIT2, true));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+
+        // Ctrl+Shift+digit is left to the application (recent files), not taken by the view.
+        Fx.run(() -> javafx.event.Event.fireEvent(view, new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                "", "", KeyCode.DIGIT0, true, true, false, false)));
+        assertEquals(org.icepdf.fx.view.FitMode.WIDTH, Fx.call(view::getFitMode));
+    }
+
+    @DisplayName("Ctrl+F on the page opens the search bar; F3 moves to the next hit")
+    @Test
+    void findShortcuts() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("keys.pdf"));
+        open(copy);
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()));
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.F, true));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "Ctrl+F shows the search bar");
+
+        Fx.run(() -> viewer.getView().search("a"));
+        Fx.waitFor("the hits", () -> !viewer.getView().isSearching() && viewer.getView().getSearchHits().size() > 1);
+        int first = Fx.call(() -> viewer.getView().getCurrentSearchHitIndex());
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.F3, false));
+        assertEquals(first + 1, Fx.call(() -> viewer.getView().getCurrentSearchHitIndex()), "F3: the next hit");
+    }
+
+    @DisplayName("Ctrl+G puts the caret in the page number field, its number selected; Enter goes there, Esc puts it back")
+    @Test
+    void goToPageFocusesThePageField() throws Exception {
+        TinyPdf pdf = TinyPdf.onePage("", "");
+        pdf.add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>");
+        pdf.add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>");
+        Path file = dir.resolve("three.pdf");
+        java.nio.file.Files.write(file, new String(pdf.bytes(), StandardCharsets.ISO_8859_1)
+                .replace("/Kids [3 0 R] /Count 1", "/Kids [3 0 R 4 0 R 5 0 R] /Count 3").getBytes(StandardCharsets.ISO_8859_1));
+        open(file);
+        TextField field = Fx.call(() -> (TextField) viewer.lookup(".page-field .text-field"));
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.G, true));
+        assertSame(field, Fx.call(() -> viewer.getScene().getFocusOwner()), "Ctrl+G: the page field has the caret");
+        assertEquals("1", Fx.call(field::getSelectedText), "the page number is selected to type over");
+
+        Fx.run(() -> {
+            field.replaceSelection("3");
+            field.fireEvent(new javafx.event.ActionEvent());
+        });
+        assertEquals(2, Fx.call(() -> viewer.getView().getCurrentPageIndex()), "Enter goes to page 3");
+
+        Fx.run(() -> Fx.press(viewer.getView(), KeyCode.G, true));
+        Fx.run(() -> {
+            field.replaceSelection("2");
+            Fx.press(field, KeyCode.ESCAPE, false);
+        });
+        assertEquals("3", Fx.call(field::getText), "Esc puts the current page back");
+        assertEquals(2, Fx.call(() -> viewer.getView().getCurrentPageIndex()));
+    }
+
+    /**
+     * Redact all from a search, on lines set closer than their glyph bounds are tall (2005CAT.pdf):
+     * the boxes reach a sliver into the neighbouring lines, which must survive, and the report must
+     * not call the result a failure.
+     */
+    @DisplayName("search, redact all and export a number on tightly set lines: neighbours survive, the report verifies")
+    @Test
+    void redactAllOnTightLines() throws Exception {
+        String content = "BT /F1 10 Tf 12.4 TL 20 160 Td (dates to even before) Tj T* (in 1949 when the) Tj "
+                + "T* (insisted that their) Tj T* (dates to come) Tj ET";
+        TinyPdf pdf = TinyPdf.onePage("/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >>", "");
+        pdf.addStream("", content.getBytes(StandardCharsets.ISO_8859_1));
+        pdf.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
+        open(pdf.write(dir.resolve("tight.pdf")));
+
+        Fx.run(() -> viewer.getView().search("1949"));
+        Fx.waitFor("the hit", () -> !viewer.getView().isSearching() && viewer.getView().getSearchHits().size() == 1);
+        assertEquals(1, Fx.call(() -> viewer.getView().redactSearchHits()).get(30, java.util.concurrent.TimeUnit.SECONDS));
+
+        java.util.concurrent.CompletableFuture<org.icepdf.core.util.redaction.RedactionReport> done =
+                new java.util.concurrent.CompletableFuture<>();
+        Path out = dir.resolve("tight-redacted.pdf");
+        Fx.run(() -> viewer.getSession().exportRedacted(out, done::complete));
+        org.icepdf.core.util.redaction.RedactionReport report = done.get(60, java.util.concurrent.TimeUnit.SECONDS);
+        assertEquals(org.icepdf.core.util.redaction.RedactionConfidence.VERIFIED, report.getConfidence(), report.toString());
+
+        org.icepdf.core.pobjects.Document written = new org.icepdf.core.pobjects.Document();
+        written.setFile(out.toString());
+        try {
+            Page page = written.getPageTree().getPage(0);
+            page.init();
+            String text = page.getViewText().toString().replaceAll("\\s+", " ");
+            assertFalse(text.contains("1949"), text);
+            for (String kept : new String[]{"dates", "insisted"}) {
+                assertTrue(text.contains(kept), "'" + kept + "' on a neighbouring line survives: " + text);
+            }
+        } finally {
+            written.dispose();
+        }
+    }
+
+    @DisplayName("the redaction report lists a few reasons and warnings and counts the rest, however many there are")
+    @Test
+    void reportDetailsAreCapped() {
+        List<String> details = new java.util.ArrayList<>();
+        for (int i = 0; i < 400; i++) details.add("warning " + i);
+        String summary = PdfViewer.detailsSummary(details);
+        assertEquals(PdfViewer.REPORT_DETAILS + 1, summary.strip().lines().count(), summary);
+        assertTrue(summary.contains("warning 4") && !summary.contains("warning 5\n"), summary);
+        assertTrue(summary.endsWith(Messages.format("viewer.report.moreWarnings", 395)), summary);
+        assertEquals(2, PdfViewer.detailsSummary(details.subList(0, 2)).strip().lines().count(), "a few: all listed");
+    }
+
+    @DisplayName("search hits are highlighted while the search bar shows, hidden with it, and F3 brings it back")
+    @Test
+    void searchHighlightsFollowTheBar() throws Exception {
+        Path copy = Files.copy(Paths.get("../../core/core-awt/src/test/resources/redaction/simple_tj.pdf"), dir.resolve("search.pdf"));
+        open(copy);
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()), "no bar, no highlighting");
+
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "the bar shows: highlighted");
+        Fx.run(() -> viewer.getView().search("bravo"));
+        Fx.waitFor("a hit", () -> viewer.getView().getCurrentSearchHitIndex() >= 0);
+
+        TextField query = Fx.call(() -> (TextField) viewer.lookup(".search-bar .text-field"));
+        Fx.run(() -> Fx.press(query, KeyCode.ESCAPE, false));
+        assertFalse(Fx.call(() -> viewer.getView().isShowSearchHits()), "the bar hidden: so is the highlighting");
+        assertFalse(Fx.call(() -> viewer.getView().getSearchHits().isEmpty()), "the hits are kept");
+
+        Fx.run(() -> viewer.getActions().execute("search.find"));
+        assertTrue(Fx.call(() -> viewer.getView().isShowSearchHits()), "shown again with the bar");
+
+        Fx.run(() -> Fx.press(query, KeyCode.ESCAPE, false));
+        Fx.run(() -> viewer.getView().search("charlie"));
+        Fx.waitFor("the hit to move", () -> viewer.getView().isShowSearchHits());
+    }
+
     @DisplayName("Save with redactions marked asks first; cancelling writes nothing")
     @Test
     void saveAsksAboutRedactions() throws Exception {
@@ -315,9 +530,34 @@ class ViewerWindowTest {
         assertTrue(Fx.call(() -> viewer.filesDropped(List.of(noExtension.toFile(), notes.toFile()))));
         assertEquals(Messages.format("viewer.notPdf", "notes.txt"), message());
         awaitShowing(noExtension);
-        assertEquals(2, Fx.call(() -> viewer.getDocuments().size()));
+        assertEquals(1, Fx.call(() -> viewer.getDocuments().size()), "dropped on an unchanged document: it's replaced");
 
         assertFalse(Fx.call(() -> viewer.filesDropped(List.of(notes.toFile()))), "only a non-PDF: the drop is refused");
+    }
+
+    @DisplayName("a PDF dropped on a document with unsaved changes opens in a new tab, keeping the changes")
+    @Test
+    void dropOnModifiedOpensNewTab() throws Exception {
+        openMarked("marked.pdf");
+        assertTrue(Fx.call(() -> viewer.getSession().isModified()));
+        DocumentPane marked = Fx.call(viewer::getCurrentDocument);
+        Path b = pdf("b.pdf");
+        assertTrue(Fx.call(() -> viewer.filesDropped(List.of(b.toFile()))));
+        awaitShowing(b);
+        assertEquals(2, Fx.call(() -> viewer.getDocuments().size()));
+        assertTrue(Fx.call(() -> marked.getSession().isModified()), "the changed document is still open, unsaved");
+        assertTrue(dialogs.shown.isEmpty(), "nothing was asked");
+    }
+
+    @DisplayName("PDFs dropped on the tab bar open in new tabs")
+    @Test
+    void dropOnTabBarOpensNewTabs() throws Exception {
+        open(pdf("a.pdf"));
+        Path b = pdf("b.pdf");
+        Path c = pdf("c.pdf");
+        assertTrue(Fx.call(() -> viewer.filesDroppedOnTabBar(List.of(b.toFile(), c.toFile()))));
+        Fx.waitFor("three tabs", () -> viewer.getDocuments().size() == 3);
+        awaitShowing(c);
     }
 
     // ---- attachments --------------------------------------------------------------------------

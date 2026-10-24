@@ -254,11 +254,12 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     /**
      * Whether a redaction removes this glyph.
      * <p>
-     * Any overlap counts by default. A redaction drawn snugly over a word does not contain the glyph
-     * bounds, which carry ascender, descender and side-bearing slack, so requiring containment left
-     * the text in the file with the annotation painted over it. Raising
-     * {@link RedactionOptions#getGlyphCoverageThreshold()} trades that back against clipping a glyph
-     * on a neighbouring line when leading is tight.
+     * A redaction drawn snugly over a word does not contain the glyph bounds, which carry ascender,
+     * descender and side-bearing slack, so requiring containment would leave the text in the file
+     * with the annotation painted over it. Nor can any overlap count: under tight leading the bounds
+     * of neighbouring lines overlap, and a redaction sized to a word would take a sliver of the lines
+     * above and below. So a glyph goes when the redaction covers
+     * {@link RedactionOptions#getGlyphCoverageThreshold()} of its height.
      */
     private boolean covers(GeneralPath redactionPath, Rectangle2D glyphBounds) {
         if (redactionPath == null || !redactionPath.intersects(glyphBounds)) {
@@ -268,15 +269,12 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
         if (threshold <= RedactionOptions.ANY_INTERSECTION) {
             return true;
         }
-        double glyphArea = glyphBounds.getWidth() * glyphBounds.getHeight();
-        if (glyphArea <= 0) {
+        if (glyphBounds.getHeight() <= 0 || glyphBounds.getWidth() <= 0) {
             return true;
         }
         Area covered = new Area(redactionPath);
         covered.intersect(new Area(glyphBounds));
-        Rectangle2D coveredBounds = covered.getBounds2D();
-        double coveredArea = coveredBounds.getWidth() * coveredBounds.getHeight();
-        return coveredArea / glyphArea >= threshold;
+        return covered.getBounds2D().getHeight() / glyphBounds.getHeight() >= threshold;
     }
 
 

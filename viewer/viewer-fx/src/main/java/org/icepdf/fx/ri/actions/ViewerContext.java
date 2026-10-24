@@ -33,7 +33,7 @@ public interface ViewerContext {
 
     /** Application-level operations a host may offer. */
     enum Capability {
-        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND
+        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER
     }
 
     /**
@@ -131,6 +131,11 @@ public interface ViewerContext {
     /** Puts the caret in the quick find field. */
     default void focusFind() {
         throw new UnsupportedOperationException("find");
+    }
+
+    /** Puts the caret in the page number field, its text selected to type over. */
+    default void focusPageNumber() {
+        throw new UnsupportedOperationException("page number");
     }
 
     /** Opens the search panel. */

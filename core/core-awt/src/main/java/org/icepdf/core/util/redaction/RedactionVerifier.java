@@ -79,11 +79,13 @@ public class RedactionVerifier {
      */
     public static void verify(Path writtenFile, Document original, RedactionRequest request,
                               RedactionReport report) {
-        List<String> searchFor = whatToLookFor(request, report);
+        List<String> terms = namedTerms(request);
+        List<String> searchFor = whatToLookFor(terms, report);
         Map<String, Integer> before = new LinkedHashMap<>();
         Map<String, Integer> after = new LinkedHashMap<>();
         List<UnverifiableRegion> regions = new ArrayList<>();
         int rawMatches = 0;
+        int leaks = 0;
 
         String salt = request.getOptions().isHashTermsInReport() ? newSalt() : null;
 
@@ -97,13 +99,30 @@ public class RedactionVerifier {
             byte[] writtenBytes = Files.readAllBytes(writtenFile);
             String writtenText = allText(writtenBytes, regions);
             String writtenStreams = allStreams(writtenBytes, regions);
+            String originalText = textOf(original, regions);
+            String originalStreams = null;
 
             for (String term : searchFor) {
                 String key = salt != null ? hash(term, salt) : term;
-                before.put(key, countIn(textOf(original, regions), term));
+                int had = countIn(originalText, term);
                 int hits = countIn(writtenText, term);
+                before.put(key, had);
                 after.put(key, hits);
-                rawMatches += countIn(writtenStreams, term) + countRawBytes(writtenBytes, term);
+                if (terms.contains(term)) {
+                    // named: it should be gone from the whole document.
+                    int raw = countInSyntax(writtenStreams, term) + countRawBytes(writtenBytes, term);
+                    rawMatches += raw;
+                    leaks += hits + raw;
+                } else {
+                    // only what a redaction took out somewhere: the same text elsewhere stays, so it
+                    // leaked if there is as much left as there was. (The removed text is a set: one
+                    // removal is assumed, which can only find a leak, never miss one.)
+                    if (originalStreams == null) originalStreams = streamsOf(original, regions);
+                    int streamLeak = Math.max(0, countInSyntax(writtenStreams, term)
+                            - Math.max(0, countInSyntax(originalStreams, term) - 1));
+                    rawMatches += streamLeak;
+                    leaks += Math.max(0, hits - Math.max(0, had - 1)) + streamLeak;
+                }
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Redaction verification could not read the written document", e);
@@ -118,7 +137,6 @@ public class RedactionVerifier {
                             "changed but not that the right pixels changed"));
         }
 
-        int leaks = after.values().stream().mapToInt(Integer::intValue).sum() + rawMatches;
         RedactionConfidence confidence = judge(leaks, report.getWarnings().size(), regions.size());
         report.recordVerification(confidence, scoreFor(confidence, report.getWarnings().size(),
                 regions.size()), before, after, rawMatches, regions);
@@ -128,17 +146,24 @@ public class RedactionVerifier {
      * What the result should be searched for: the terms if there were any, otherwise whatever the
      * burn recorded taking out.
      */
-    private static List<String> whatToLookFor(RedactionRequest request, RedactionReport report) {
-        List<String> searchFor = new ArrayList<>();
-        for (SearchTerm term : request.getTerms()) {
-            if (term.getTerm() != null && !term.getTerm().isEmpty()) {
-                searchFor.add(term.getTerm());
-            }
-        }
+    private static List<String> whatToLookFor(List<String> terms, RedactionReport report) {
+        List<String> searchFor = new ArrayList<>(terms);
         // A redaction driven by annotations never named anything, so the only account of what should
         // be gone is what the burn took out.
-        searchFor.addAll(report.getRemovedText());
+        for (String removed : report.getRemovedText()) {
+            if (!searchFor.contains(removed)) searchFor.add(removed);
+        }
         return searchFor;
+    }
+
+    private static List<String> namedTerms(RedactionRequest request) {
+        List<String> terms = new ArrayList<>();
+        for (SearchTerm term : request.getTerms()) {
+            if (term.getTerm() != null && !term.getTerm().isEmpty() && !terms.contains(term.getTerm())) {
+                terms.add(term.getTerm());
+            }
+        }
+        return terms;
     }
 
     private static RedactionConfidence judge(int leaks, int warnings, int unverifiable) {
@@ -190,25 +215,29 @@ public class RedactionVerifier {
     private static String allStreams(byte[] pdf, List<UnverifiableRegion> regions) throws Exception {
         Document document = new Document();
         document.setByteArray(pdf, 0, pdf.length, "verification");
-        StringBuilder streams = new StringBuilder();
         try {
-            for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
-                try {
-                    Page page = document.getPageTree().getPage(i);
-                    page.init();
-                    for (Stream stream : page.getContentStreams()) {
-                        streams.append(new String(stream.getDecodedStreamBytes(),
-                                StandardCharsets.ISO_8859_1));
-                    }
-                } catch (Exception e) {
-                    regions.add(new UnverifiableRegion(UnverifiableRegion.Reason.STREAM_NOT_PARSED,
-                            "Content stream of page " + i + " could not be decoded: " + e));
-                }
-            }
-            return streams.toString();
+            return streamsOf(document, regions);
         } finally {
             document.dispose();
         }
+    }
+
+    private static String streamsOf(Document document, List<UnverifiableRegion> regions) {
+        StringBuilder streams = new StringBuilder();
+        for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
+            try {
+                Page page = document.getPageTree().getPage(i);
+                page.init();
+                for (Stream stream : page.getContentStreams()) {
+                    streams.append(new String(stream.getDecodedStreamBytes(),
+                            StandardCharsets.ISO_8859_1));
+                }
+            } catch (Exception e) {
+                regions.add(new UnverifiableRegion(UnverifiableRegion.Reason.STREAM_NOT_PARSED,
+                        "Content stream of page " + i + " could not be decoded: " + e));
+            }
+        }
+        return streams.toString();
     }
 
     /**
@@ -216,8 +245,52 @@ public class RedactionVerifier {
      * uncompressed and outside any page: metadata, names, an annotation's own strings.
      */
     private static int countRawBytes(byte[] pdf, String term) {
-        return countIn(new String(pdf, StandardCharsets.ISO_8859_1), term)
-                + countIn(new String(pdf, StandardCharsets.UTF_16BE), term);
+        return countInSyntax(new String(pdf, StandardCharsets.ISO_8859_1), term)
+                + countInSyntax(new String(pdf, StandardCharsets.UTF_16BE), term);
+    }
+
+    /**
+     * {@link #countIn}, for PDF syntax rather than text: a match that is only part of a longer
+     * number token isn't the term. A year or an amount is otherwise found inside the coordinates of
+     * any drawing ("1949" in {@code 787.05 444.19495 l}) and in the cross-reference table, and every
+     * redaction of a number fails. Only a bare token is passed over - delimited by white space or
+     * syntax - so a number inside a string, {@code (19495)}, still counts.
+     */
+    static int countInSyntax(String haystack, String needle) {
+        if (haystack == null || needle == null || needle.isEmpty()) {
+            return 0;
+        }
+        boolean numeric = needle.chars().allMatch(RedactionVerifier::isNumberChar);
+        int count = 0;
+        for (int i = haystack.indexOf(needle); i >= 0; i = haystack.indexOf(needle, i + needle.length())) {
+            if (!numeric || !insideNumberToken(haystack, i, i + needle.length())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /** True when [start, end) is part of a longer number token, delimited by white space or syntax. */
+    private static boolean insideNumberToken(String s, int start, int end) {
+        int from = start;
+        while (from > 0 && isNumberChar(s.charAt(from - 1))) from--;
+        if (from > 0 && (s.charAt(from - 1) == '-' || s.charAt(from - 1) == '+')) from--;
+        int to = end;
+        while (to < s.length() && isNumberChar(s.charAt(to))) to++;
+        if (from == start && to == end) {
+            return false; // the whole token: the term itself
+        }
+        return (from == 0 || isTokenEdge(s.charAt(from - 1))) && (to == s.length() || isTokenEdge(s.charAt(to)));
+    }
+
+    private static boolean isNumberChar(int c) {
+        return c >= '0' && c <= '9' || c == '.';
+    }
+
+    // white space and the delimiters that end a number token; not ( and ), which would put it in a string.
+    private static boolean isTokenEdge(char c) {
+        return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == 0
+                || c == '[' || c == ']' || c == '/' || c == '<' || c == '>' || c == '{' || c == '}' || c == '%';
     }
 
     private static int countIn(String haystack, String needle) {

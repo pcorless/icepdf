@@ -24,6 +24,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
+import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
@@ -84,6 +85,7 @@ public class PdfViewer extends StackPane {
     private final IconProvider icons;
     private final ViewerShell shell = new ViewerShell();
     private final Toast toast;
+    private final javafx.scene.control.Label dropHint = new javafx.scene.control.Label();
     private final Theme theme;
     private final HeaderBar header;
     private final ToolRail rail;
@@ -168,11 +170,14 @@ public class PdfViewer extends StackPane {
             actionKeys = java.util.List.of();
             if (scene != null) {
                 // the header button and the drop-down menu are not a menu bar: their shortcuts (Ctrl+O...) go on the
-                // scene.
+                // scene, with those of the header's and the rail's buttons.  Copy, select all and undo are the
+                // view's own keys; zoom and fit are too, but go here as well for when the view hasn't the focus.
                 java.util.List<String> ids = new java.util.ArrayList<>(java.util.Arrays.asList(MENU));
-                ids.addAll(java.util.List.of("document.open", "document.save"));
+                ids.addAll(java.util.List.of("document.open", "document.save", "search.find", "search.next",
+                        "search.previous", "search.panel", "view.side-panel", "navigation.go-to", "view.comments",
+                        "view.fit-page", "view.fit-width", "view.actual-size", "view.zoom-in", "view.zoom-out"));
                 actionKeys = actions.installAccelerators(scene, ids.toArray(new String[0]));
-                // Shortcut+1..9 open the nth recent file, read when pressed (the menu is built only when shown).
+                // Shortcut+Shift+1..9 open the nth recent file, read when pressed (the menu is built only when shown).
                 for (int i = 1; i <= 9; i++) {
                     int index = i - 1;
                     scene.getAccelerators().put(recentKey(i), () -> openRecentAt(index));
@@ -198,7 +203,7 @@ public class PdfViewer extends StackPane {
                 java.util.List<Path> pdfs = droppedPdfs(board.getFiles());
                 if (pdfs.isEmpty()) return;
                 javafx.application.Platform.runLater(() -> {
-                    open(pdfs.get(0), pane);
+                    replaceOrAdd(pdfs.get(0), pane);
                     pdfs.stream().skip(1).forEach(this::openInNewTab);
                 });
             });
@@ -218,6 +223,11 @@ public class PdfViewer extends StackPane {
             if (features.allows(panel)) utility.addPanel(panel, panelLabel(panel), panelNode(first, panel), panelAvailable(first, panel));
         }
         SidePanel.of(layout.getLastPanel()).ifPresent(utility::select);
+        utility.setOnActivated(panel -> {
+            if (panel == SidePanel.SEARCH) pane().getSearchPanel().focusQuery();
+        });
+        utility.setOnClosedWithFocus(() -> view().requestFocus());
+        if (features.shows(Chrome.HEADER) && actions.isAvailable("search.find")) followSearchVisibility();
 
         if (features.shows(Chrome.HEADER)) shell.setHeader(header);
         shell.setCenter(first.getNode());
@@ -314,27 +324,114 @@ public class PdfViewer extends StackPane {
     }
 
     /**
-     * PDFs dropped on the viewer open in new tabs (or replace the document, without tabs); dropped
-     * on a tab they replace that tab's document.
+     * Where dropped PDFs go.  On the document: the first replaces it, or opens in a new tab when the
+     * document has unsaved changes.  On a tab: the same for that tab's document (see the tab strip).
+     * Anywhere else on the header (the bar, the + button): new tabs.  Without tabs every drop
+     * replaces the document, asking about unsaved changes.  While a drag is over the viewer a hint
+     * says which it will be.
      */
     private void acceptDroppedFiles() {
+        dropHint.getStyleClass().add("drop-hint");
+        dropHint.setMouseTransparent(true);
+        dropHint.setVisible(false);
+        getChildren().add(dropHint);
         // any file is taken: one that isn't a PDF is then turned away with a message, not silently.
         setOnDragOver(e -> {
             if (hasFiles(e.getDragboard())) e.acceptTransferModes(javafx.scene.input.TransferMode.COPY);
             e.consume();
         });
+        // a filter, so the hint follows the drag over the tabs too (they take the drag event).
+        addEventFilter(javafx.scene.input.DragEvent.DRAG_OVER, e -> showDropHint(hasFiles(e.getDragboard())
+                ? dropHintText(e.getPickResult().getIntersectedNode()) : null));
+        addEventFilter(javafx.scene.input.DragEvent.DRAG_DROPPED, e -> showDropHint(null));
+        setOnDragExited(e -> showDropHint(null));
         setOnDragDropped(e -> {
-            boolean any = filesDropped(hasFiles(e.getDragboard()) ? e.getDragboard().getFiles() : java.util.List.of());
+            java.util.List<File> files = hasFiles(e.getDragboard()) ? e.getDragboard().getFiles() : java.util.List.of();
+            boolean any = inHeader(e.getPickResult().getIntersectedNode()) ? filesDroppedOnTabBar(files) : filesDropped(files);
             e.setDropCompleted(any);
             e.consume();
         });
     }
 
-    /** Files dropped on the viewer: the PDFs open in new tabs (after the drop ends), the rest are named.  @return true if any is a PDF */
+    /**
+     * Search hits are highlighted while the results are on screen - the header's search bar or the
+     * search side panel - and hidden while neither is, as a way to put the highlighting away
+     * without losing the results.  Moving to another hit (F3) while they're hidden brings the bar
+     * back, so the move isn't to a hit nobody can see.
+     */
+    private void followSearchVisibility() {
+        javafx.beans.binding.BooleanBinding shown = javafx.beans.binding.Bindings.createBooleanBinding(
+                () -> header.searchBarShown().get() || utility.getDrawer().isOpen() && utility.getShown() == SidePanel.SEARCH,
+                header.searchBarShown(), utility.getDrawer().stateProperty(), utility.shownProperty());
+        Runnable apply = () -> {
+            PdfView v = currentView.get();
+            if (v != null) v.setShowSearchHits(shown.get());
+        };
+        shown.addListener((o, was, now) -> apply.run());
+        javafx.beans.value.ChangeListener<Number> revealOnMove = (o, was, now) -> {
+            if (now.intValue() >= 0 && !shown.get()) header.showSearch();
+        };
+        currentView.addListener((o, was, now) -> {
+            if (was != null) was.currentSearchHitIndexProperty().removeListener(revealOnMove);
+            if (now != null) now.currentSearchHitIndexProperty().addListener(revealOnMove);
+            apply.run();
+        });
+        if (currentView.get() != null) currentView.get().currentSearchHitIndexProperty().addListener(revealOnMove);
+        apply.run();
+    }
+
+    /** Files dropped on the document: the first PDF replaces it unless it has unsaved changes (after the drop ends), the rest open in new tabs and the non-PDFs are named.  @return true if any is a PDF */
     boolean filesDropped(java.util.List<File> files) {
+        java.util.List<Path> pdfs = droppedPdfs(files);
+        if (pdfs.isEmpty()) return false;
+        javafx.application.Platform.runLater(() -> {
+            replaceOrAdd(pdfs.get(0), pane());
+            pdfs.stream().skip(1).forEach(this::openInNewTab);
+        });
+        return true;
+    }
+
+    /** Files dropped on the header, off the tabs: the PDFs open in new tabs.  @return true if any is a PDF */
+    boolean filesDroppedOnTabBar(java.util.List<File> files) {
         java.util.List<Path> pdfs = droppedPdfs(files);
         javafx.application.Platform.runLater(() -> pdfs.forEach(this::openInNewTab));
         return !pdfs.isEmpty();
+    }
+
+    /** Opens a file in {@code target}, or in a new tab when that has unsaved changes (or is busy). */
+    private void replaceOrAdd(Path file, DocumentPane target) {
+        if (!features.isMultipleDocuments()) {
+            session().open(file);
+            return;
+        }
+        DocumentSession session = target.getSession();
+        if (session.isModified() || session.isBusy()) openInNewTab(file);
+        else open(file, target);
+    }
+
+    /** What a drop on {@code node} would do, or null where the drop shows its own target (a tab). */
+    private String dropHintText(Node node) {
+        if (!features.isMultipleDocuments()) return Messages.get("viewer.drop.replace");
+        for (Node n = node; n != null && n != this; n = n.getParent()) {
+            if (n.getStyleClass().contains("doc-tab")) return null;
+        }
+        if (inHeader(node)) return Messages.get("viewer.drop.newTab");
+        DocumentSession session = session();
+        return session.isModified() || session.isBusy() ? Messages.get("viewer.drop.newTab")
+                : Messages.get("viewer.drop.replace");
+    }
+
+    private boolean inHeader(Node node) {
+        if (!features.isMultipleDocuments()) return false;
+        for (Node n = node; n != null && n != this; n = n.getParent()) {
+            if (n == header) return true;
+        }
+        return false;
+    }
+
+    private void showDropHint(String text) {
+        dropHint.setVisible(text != null);
+        if (text != null) dropHint.setText(text);
     }
 
     private static Path real(Path file) {
@@ -642,17 +739,48 @@ public class PdfViewer extends StackPane {
             case VERIFIED_WITH_WARNINGS -> "viewer.report.warnings";
             default -> "viewer.report.verified";
         })));
-        for (org.icepdf.core.util.redaction.RedactionWarning warning : report.getWarnings()) {
-            text.append("\n\u2022 ").append(warning.getDetail());
-        }
+        // what could not be checked (why "unverified"), then the warnings.
+        java.util.List<String> details = new java.util.ArrayList<>();
+        report.getUnverifiableRegions().forEach(region -> details.add(region.getDetail()));
+        report.getWarnings().forEach(warning -> details.add(warning.getDetail()));
+        text.append(detailsSummary(details));
         boolean clean = confidence == org.icepdf.core.util.redaction.RedactionConfidence.VERIFIED
                 && report.getWarnings().isEmpty();
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(clean
                 ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING,
                 text.toString(), javafx.scene.control.ButtonType.OK);
         alert.setHeaderText(Messages.format("viewer.redactedSavedAs", name));
+        if (details.size() > REPORT_DETAILS) {
+            // the whole list, scrolling, under Show Details: a dialog sized to hundreds of lines
+            // outgrows the largest window the graphics card can draw.
+            StringBuilder all = new StringBuilder();
+            for (String detail : details) {
+                all.append("\u2022 ").append(detail).append('\n');
+            }
+            javafx.scene.control.TextArea list = new javafx.scene.control.TextArea(all.toString());
+            list.setEditable(false);
+            list.setWrapText(true);
+            list.setPrefRowCount(12);
+            list.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+            alert.getDialogPane().setExpandableContent(list);
+        }
         alert.initOwner(context.window());
         dialogs.show(alert);
+    }
+
+    /** The redaction report lists this many reasons and warnings; the rest are under Show Details. */
+    static final int REPORT_DETAILS = 5;
+
+    /** The first few reasons and warnings as bullets, and how many more there are. */
+    static String detailsSummary(java.util.List<String> details) {
+        StringBuilder text = new StringBuilder();
+        for (int i = 0; i < Math.min(REPORT_DETAILS, details.size()); i++) {
+            text.append("\n\u2022 ").append(details.get(i));
+        }
+        if (details.size() > REPORT_DETAILS) {
+            text.append('\n').append(Messages.format("viewer.report.moreWarnings", details.size() - REPORT_DETAILS));
+        }
+        return text.toString();
     }
 
     private DocumentPane pane() {
@@ -901,7 +1029,7 @@ public class PdfViewer extends StackPane {
 
     private static javafx.scene.input.KeyCombination recentKey(int number) {
         return new javafx.scene.input.KeyCodeCombination(javafx.scene.input.KeyCode.valueOf("DIGIT" + number),
-                javafx.scene.input.KeyCombination.SHORTCUT_DOWN);
+                javafx.scene.input.KeyCombination.SHORTCUT_DOWN, javafx.scene.input.KeyCombination.SHIFT_DOWN);
     }
 
     private void openRecentAt(int index) {
@@ -1064,7 +1192,7 @@ public class PdfViewer extends StackPane {
             if (utility.getShown() != null) layout.setLastPanel(utility.getShown().id());
         });
         sidePanelVisible.addListener((o, a, b) -> {
-            if (b && !panel.isOpen()) panel.open(true);
+            if (b && !panel.isOpen()) utility.openShown();
             else if (!b && panel.isOpen()) {
                 panel.pinnedProperty().set(false);
                 panel.close();
@@ -1184,6 +1312,7 @@ public class PdfViewer extends StackPane {
                 case EXIT -> onExit != null;
                 case PREFERENCES -> onPreferences != null;
                 case FIND -> features.shows(Chrome.HEADER);
+                case PAGE_NUMBER -> features.shows(Chrome.HEADER) && header != null && header.hasPageField();
                 case SIDE_PANEL -> features.shows(Chrome.SIDE_PANELS);
                 default -> true;
             };
@@ -1285,14 +1414,18 @@ public class PdfViewer extends StackPane {
         }
 
         @Override
+        public void focusPageNumber() {
+            header.focusPageNumber();
+        }
+
+        @Override
         public void focusFind() {
             header.showSearch();
         }
 
         @Override
         public void showSearch() {
-            utility.open(SidePanel.SEARCH);
-            pane().getSearchPanel().focusQuery();
+            utility.open(SidePanel.SEARCH); // focuses the query once it shows
         }
 
         @Override

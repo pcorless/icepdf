@@ -17,6 +17,7 @@ package org.icepdf.fx.ri.ui;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.beans.value.ObservableBooleanValue;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -47,6 +48,7 @@ public final class HeaderBar extends VBox {
     private final ToggleButton searchToggle;
 
     private final MenuButton menu;
+    private PageField pageField;
 
     /**
      * @param search runs a search for the typed text (the viewer's search panel, so results list there)
@@ -73,7 +75,8 @@ public final class HeaderBar extends VBox {
         bar.getChildren().add(title);
         bar.getChildren().add(right);
         if (actions.isAvailable("navigation.previous")) {
-            bar.getChildren().addAll(actions.button("navigation.previous"), new PageField(view), actions.button("navigation.next"));
+            pageField = new PageField(view);
+            bar.getChildren().addAll(actions.button("navigation.previous"), pageField, actions.button("navigation.next"));
         }
         if (actions.isAvailable("view.zoom-in")) {
             bar.getChildren().addAll(actions.button("view.zoom-out"), new ZoomField(view), actions.button("view.zoom-in"));
@@ -182,6 +185,21 @@ public final class HeaderBar extends VBox {
     }
 
     /** Shows the search bar with the caret in it. */
+    /** Whether the header has the page number field. */
+    public boolean hasPageField() {
+        return pageField != null;
+    }
+
+    /** Puts the caret in the page number field with its text selected (Go to page). */
+    public void focusPageNumber() {
+        if (pageField != null) pageField.focusField();
+    }
+
+    /** Whether the search bar is showing. */
+    public ObservableBooleanValue searchBarShown() {
+        return searchToggle.selectedProperty();
+    }
+
     public void showSearch() {
         searchToggle.setSelected(true);
         searchField.requestFocus();

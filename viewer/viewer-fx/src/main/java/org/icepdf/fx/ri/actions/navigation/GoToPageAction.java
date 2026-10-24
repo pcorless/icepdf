@@ -15,16 +15,13 @@
  */
 package org.icepdf.fx.ri.actions.navigation;
 
-import org.icepdf.fx.i18n.Messages;
 
 import javafx.beans.value.ObservableBooleanValue;
-import javafx.scene.control.TextInputDialog;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.Conditions;
 import org.icepdf.fx.ri.actions.ViewerContext;
-import org.icepdf.fx.view.PdfView;
 
-/** Asks for a page number and goes there. */
+/** Go to page: puts the caret in the page number field, its number selected to type over. */
 public final class GoToPageAction extends AbstractViewerAction {
 
     public static final String ID = "navigation.go-to";
@@ -34,24 +31,17 @@ public final class GoToPageAction extends AbstractViewerAction {
     }
 
     @Override
+    public boolean isAvailable(ViewerContext context) {
+        return context.has(ViewerContext.Capability.PAGE_NUMBER);
+    }
+
+    @Override
     public ObservableBooleanValue enabled(ViewerContext context) {
         return Conditions.documentOpen(context);
     }
 
     @Override
     public void execute(ViewerContext context) {
-        PdfView view = context.view();
-        TextInputDialog dialog = new TextInputDialog(String.valueOf(view.getCurrentPageIndex() + 1));
-        if (context.window() != null) dialog.initOwner(context.window());
-        dialog.setTitle(label());
-        dialog.setHeaderText(null);
-        dialog.setContentText(Messages.format("goToPage.prompt", view.getPageCount()));
-        dialog.showAndWait().ifPresent(text -> {
-            try {
-                view.setCurrentPageIndex(Integer.parseInt(text.trim()) - 1);
-            } catch (NumberFormatException ignored) {
-                // not a page number
-            }
-        });
+        context.focusPageNumber();
     }
 }

@@ -55,6 +55,12 @@ public final class InputRouter {
         /** Scrolls to a document-space position, clamped to the document. */
         void scrollTo(double x, double y);
 
+        /** Page Up/Down in a continuous mode: to the next page edge or about a screen on. */
+        void scrollByPage(boolean down);
+
+        /** The largest {@link #scrollY()}: the bottom of the document is at the viewport's bottom. */
+        double maxScrollY();
+
         /** Zooms by {@code factor} holding the document point under a viewport point still. */
         void zoomAround(double vx, double vy, double factor);
 
@@ -63,6 +69,12 @@ public final class InputRouter {
     }
 
     public static final double SCROLL_UNIT = 40;
+    private static final long PAGE_TURN_PAUSE = 250_000_000L;
+
+    // wheeling past the page's edge in a non-continuous mode, toward turning the page.
+    private double overscroll;
+    private boolean overscrollDown;
+    private long lastPageTurn;
 
     private final Host host;
     private final PanHandler panHandler;
@@ -92,6 +104,7 @@ public final class InputRouter {
             case HIGHLIGHT -> TextMarkupAnnotation.SUBTYPE_HIGHLIGHT;
             case UNDERLINE -> TextMarkupAnnotation.SUBTYPE_UNDERLINE;
             case STRIKE_OUT -> TextMarkupAnnotation.SUBTYPE_STRIKE_OUT;
+            case SQUIGGLY -> TextMarkupAnnotation.SUBTYPE_SQUIGGLY;
             case REDACT -> Annotation.SUBTYPE_REDACT;
             default -> null;
         });
@@ -129,9 +142,46 @@ public final class InputRouter {
                 dx = dy;
                 dy = 0;
             }
+            if (wheelTurnsPage(e, dy)) {
+                e.consume();
+                return;
+            }
             host.scrollTo(host.scrollX() - dx, host.scrollY() - dy);
         }
         e.consume();
+    }
+
+    /**
+     * In a non-continuous mode, wheeling on past the bottom of the page turns to the next one (shown
+     * from its top), and past the top back to the previous one (shown from its bottom), as the Swing
+     * viewer does.  The turn waits for about a notch of wheeling at the edge, ignores a touchpad's
+     * coasting, and pauses briefly after a turn, so one swipe turns one page.
+     *
+     * @return true if the event was used (a page turned, or wheeling held at the edge)
+     */
+    private boolean wheelTurnsPage(ScrollEvent e, double dy) {
+        PdfView view = host.view();
+        if (view.getViewMode().isContinuous() || dy == 0 || e.isInertia()) return false;
+        boolean down = dy < 0;
+        double y = host.scrollY();
+        boolean atEdge = down ? y >= host.maxScrollY() - 0.5 : y <= 0.5;
+        if (!atEdge || down != overscrollDown) {
+            overscroll = 0;
+            overscrollDown = down;
+            if (!atEdge) return false;
+        }
+        long now = System.nanoTime();
+        if (now - lastPageTurn < PAGE_TURN_PAUSE) return true;
+        overscroll += Math.abs(dy);
+        if (overscroll < SCROLL_UNIT) return true;
+        overscroll = 0;
+        int before = view.getCurrentPageIndex();
+        if (down) view.nextPage();
+        else view.previousPage();
+        if (view.getCurrentPageIndex() == before) return true;
+        lastPageTurn = now;
+        if (!down) host.scrollTo(host.scrollX(), Double.MAX_VALUE);
+        return true;
     }
 
     public void onPinch(ZoomEvent e) {
@@ -259,7 +309,7 @@ public final class InputRouter {
             case LEFT -> host.scrollTo(x - SCROLL_UNIT, y);
             case RIGHT -> host.scrollTo(x + SCROLL_UNIT, y);
             case PAGE_UP -> {
-                if (continuous) host.scrollTo(x, y - host.getViewportHeight() * 0.9);
+                if (continuous) host.scrollByPage(false);
                 else control.previousPage();
             }
             case PAGE_DOWN -> pageDown();
@@ -279,10 +329,19 @@ public final class InputRouter {
                 if (!e.isShortcutDown()) return;
                 control.zoomOut();
             }
+            // as Acrobat: Ctrl+0 fit page, Ctrl+1 actual size, Ctrl+2 fit width (Shift is left to the application).
             case DIGIT0, NUMPAD0 -> {
-                if (!e.isShortcutDown()) return;
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
+                control.setFitMode(FitMode.PAGE);
+            }
+            case DIGIT1, NUMPAD1 -> {
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
                 control.setFitMode(FitMode.NONE);
                 control.setZoom(1);
+            }
+            case DIGIT2, NUMPAD2 -> {
+                if (!e.isShortcutDown() || e.isShiftDown()) return;
+                control.setFitMode(FitMode.WIDTH);
             }
             default -> {
                 return;
@@ -301,7 +360,7 @@ public final class InputRouter {
 
     private void pageDown() {
         if (host.view().getViewMode().isContinuous()) {
-            host.scrollTo(host.scrollX(), host.scrollY() + host.getViewportHeight() * 0.9);
+            host.scrollByPage(true);
         } else {
             host.view().nextPage();
         }

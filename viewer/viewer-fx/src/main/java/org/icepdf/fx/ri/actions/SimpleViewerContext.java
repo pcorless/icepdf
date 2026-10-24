@@ -60,6 +60,11 @@ public final class SimpleViewerContext implements ViewerContext {
         return set(Capability.FIND, focusFind);
     }
 
+    /** Go to page (Ctrl+G): typically puts the caret in the application's own page number field. */
+    public SimpleViewerContext onPageNumber(Runnable focusPageNumber) {
+        return set(Capability.PAGE_NUMBER, focusPageNumber);
+    }
+
     /** Open: asks for a file and opens it. */
     public SimpleViewerContext onOpen(Runnable open) {
         return set(Capability.OPEN, open);
@@ -102,6 +107,11 @@ public final class SimpleViewerContext implements ViewerContext {
     @Override
     public void focusFind() {
         run(Capability.FIND);
+    }
+
+    @Override
+    public void focusPageNumber() {
+        run(Capability.PAGE_NUMBER);
     }
 
     @Override

@@ -252,8 +252,11 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 shapes.add(new DrawDrawCmd());
             }
         } else if (SUBTYPE_SQUIGGLY.equals(subtype)) {
-            // not implemented,  need to create a custom stroke or
-            // build out a custom line move.
+            for (Shape shape : markupBounds) {
+                shapes.add(new ShapeDrawCmd(squigglyPath(shape.getBounds2D())));
+                shapes.add(new ColorDrawCmd(color));
+                shapes.add(new DrawDrawCmd());
+            }
         }
         shapes.add(new AlphaDrawCmd(
                 AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f)));
@@ -268,6 +271,26 @@ public class TextMarkupAnnotation extends MarkupAnnotation {
                 PostScriptEncoder.generatePostScript(shapes.getShapes()));
         generateExternalGraphicsState(form, opacity,
                 highlight ? org.icepdf.core.pobjects.graphics.BlendComposite.MULTIPLY_VALUE : null);
+    }
+
+    /**
+     * A zigzag along the bottom of {@code bound} (page space, y up), kept inside the bound so the
+     * appearance bbox doesn't clip it.  Left open: closing it would draw a line back to the start.
+     */
+    static GeneralPath squigglyPath(Rectangle2D bound) {
+        float amplitude = (float) Math.max(1, Math.min(bound.getHeight() / 8, 4));
+        float step = amplitude;
+        float minX = (float) bound.getMinX();
+        float maxX = (float) bound.getMaxX();
+        float bottom = (float) bound.getMinY();
+        GeneralPath path = new GeneralPath();
+        path.moveTo(minX, bottom);
+        boolean up = true;
+        for (float x = minX + step; x < maxX; x += step, up = !up) {
+            path.lineTo(x, up ? bottom + amplitude : bottom);
+        }
+        path.lineTo(maxX, up ? bottom + amplitude : bottom);
+        return path;
     }
 
     @Override

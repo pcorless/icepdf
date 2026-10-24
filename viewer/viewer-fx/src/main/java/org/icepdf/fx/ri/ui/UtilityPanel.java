@@ -50,7 +50,8 @@ public final class UtilityPanel {
     private final StackPane body = new StackPane();
     private final ToggleButton pin = new ToggleButton();
     private final EdgeDrawer drawer;
-    private SidePanel shown;
+    private final javafx.beans.property.ReadOnlyObjectWrapper<SidePanel> shownPanel =
+            new javafx.beans.property.ReadOnlyObjectWrapper<>(this, "shown");
     private SidePanel hovered;
 
     public UtilityPanel(UserLayout.Side side, IconProvider icons) {
@@ -83,8 +84,10 @@ public final class UtilityPanel {
             drawer.close();
         });
         drawer.stateProperty().addListener((o, was, now) -> {
-            if (now == EdgeDrawer.State.OVERLAY && hovered != null && shown != hovered && !isClickOpened()) show(hovered);
-            if (now != EdgeDrawer.State.COLLAPSED && shown == null) showFirstAvailable();
+            if (now == EdgeDrawer.State.OVERLAY && hovered != null && shownPanel.get() != hovered && !isClickOpened()) show(hovered);
+            if (now != EdgeDrawer.State.COLLAPSED && shownPanel.get() == null) showFirstAvailable();
+            // closing with the caret in a panel: hand it back, or keys go to a field nobody sees.
+            if (now == EdgeDrawer.State.COLLAPSED && focusInside()) onClosedWithFocus.run();
             syncButtons();
         });
     }
@@ -124,7 +127,7 @@ public final class UtilityPanel {
         javafx.beans.InvalidationListener listener = o -> refreshStrip();
         entries.put(panel, new Entry(panel, node, available, old.button(), listener));
         available.addListener(listener);
-        if (shown == panel) show(panel);
+        if (shownPanel.get() == panel) show(panel);
         refreshStrip();
     }
 
@@ -134,7 +137,12 @@ public final class UtilityPanel {
 
     /** The panel showing (or shown last), or null. */
     public SidePanel getShown() {
-        return shown;
+        return shownPanel.get();
+    }
+
+    /** {@link #getShown()}, to follow. */
+    public javafx.beans.property.ReadOnlyObjectProperty<SidePanel> shownProperty() {
+        return shownPanel.getReadOnlyProperty();
     }
 
     /** Opens at a panel and keeps it open (as a click would). */
@@ -144,6 +152,59 @@ public final class UtilityPanel {
         show(panel);
         clickOpened = true;
         drawer.open(true);
+        activated(panel);
+    }
+
+    /** Opens at the panel shown last (or the first there is), as {@link #open(SidePanel)}. */
+    public void openShown() {
+        if (shownPanel.get() == null) showFirstAvailable();
+        if (shownPanel.get() != null) open(shownPanel.get());
+        else drawer.open(true);
+    }
+
+    /**
+     * Called with a panel opened on purpose - its icon clicked, or {@link #open} - once it shows, to
+     * put the caret in it (the search panel's query).  Not for a hover peek: passing the pointer over
+     * the strip mustn't take the keys from the page.
+     */
+    public void setOnActivated(java.util.function.Consumer<SidePanel> onActivated) {
+        this.onActivated = onActivated;
+    }
+
+    /** Called when the panel closes with the caret inside it, to put the caret back (on the page). */
+    public void setOnClosedWithFocus(Runnable onClosedWithFocus) {
+        this.onClosedWithFocus = onClosedWithFocus;
+    }
+
+    private java.util.function.Consumer<SidePanel> onActivated = panel -> { };
+    private Runnable onClosedWithFocus = () -> { };
+
+    private void activated(SidePanel panel) {
+        // the shell shows the content at its next layout; a hidden field can't take the caret.
+        Runnable activate = () -> {
+            if (drawer.isOpen() && shownPanel.get() == panel) onActivated.accept(panel);
+        };
+        Region content = drawer.getContent();
+        if (content.isVisible()) {
+            javafx.application.Platform.runLater(activate);
+            return;
+        }
+        content.visibleProperty().addListener(new javafx.beans.value.ChangeListener<>() {
+            @Override
+            public void changed(javafx.beans.value.ObservableValue<? extends Boolean> o, Boolean was, Boolean now) {
+                if (!now) return;
+                o.removeListener(this);
+                javafx.application.Platform.runLater(activate);
+            }
+        });
+    }
+
+    private boolean focusInside() {
+        javafx.scene.Scene scene = body.getScene();
+        for (Node n = scene != null ? scene.getFocusOwner() : null; n != null; n = n.getParent()) {
+            if (n == body) return true;
+        }
+        return false;
     }
 
     /** Whether a panel is in this viewer and has content now. */
@@ -160,7 +221,7 @@ public final class UtilityPanel {
 
     private void clicked(SidePanel panel) {
         boolean open = drawer.isOpen();
-        if (open && shown == panel && drawer.getState() == EdgeDrawer.State.OVERLAY && clickOpened) {
+        if (open && shownPanel.get() == panel && drawer.getState() == EdgeDrawer.State.OVERLAY && clickOpened) {
             clickOpened = false;
             drawer.close();
             return;
@@ -168,12 +229,13 @@ public final class UtilityPanel {
         show(panel);
         clickOpened = true;
         drawer.open(true);
+        activated(panel);
     }
 
     private void show(SidePanel panel) {
         Entry entry = entries.get(panel);
         if (entry == null) return;
-        shown = panel;
+        shownPanel.set(panel);
         title.setText((String) entry.button().getUserData());
         body.getChildren().setAll(entry.node());
         syncButtons();
@@ -193,8 +255,8 @@ public final class UtilityPanel {
         for (Entry entry : entries.values()) {
             if (entry.available().get()) buttons.getChildren().add(entry.button());
         }
-        if (shown != null && !entries.get(shown).available().get()) {
-            shown = null;
+        if (shownPanel.get() != null && !entries.get(shownPanel.get()).available().get()) {
+            shownPanel.set(null);
             showFirstAvailable();
         }
     }
@@ -203,8 +265,8 @@ public final class UtilityPanel {
         if (!drawer.isOpen()) {
             clickOpened = false;
             group.selectToggle(null);
-        } else if (shown != null) {
-            group.selectToggle(entries.get(shown).button());
+        } else if (shownPanel.get() != null) {
+            group.selectToggle(entries.get(shownPanel.get()).button());
         }
     }
 

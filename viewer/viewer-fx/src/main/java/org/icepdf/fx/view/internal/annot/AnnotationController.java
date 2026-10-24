@@ -337,7 +337,7 @@ public final class AnnotationController {
     }
 
     /**
-     * Turns the current text selection into highlight/underline/strike-out annotations, one per page
+     * Turns the current text selection into highlight/underline/strike-out/squiggly annotations, one per page
      * it spans (pages whose text isn't loaded are skipped), and clears the selection.
      *
      * @return the number created
@@ -348,7 +348,8 @@ public final class AnnotationController {
         if (selection == null || selection.isCollapsed() || host.document() == null
                 || !view.isAnnotationEditingAllowed()) return 0;
         ToolMode mode = TextMarkupAnnotation.SUBTYPE_HIGHLIGHT.equals(subtype) ? ToolMode.HIGHLIGHT
-                : TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) ? ToolMode.UNDERLINE : ToolMode.STRIKE_OUT;
+                : TextMarkupAnnotation.SUBTYPE_UNDERLINE.equals(subtype) ? ToolMode.UNDERLINE
+                : TextMarkupAnnotation.SUBTYPE_SQUIGGLY.equals(subtype) ? ToolMode.SQUIGGLY : ToolMode.STRIKE_OUT;
         int created = 0;
         Annotation last = null;
         for (int pageIndex = selection.startPage(); pageIndex <= selection.endPage(); pageIndex++) {
