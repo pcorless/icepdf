@@ -16,6 +16,7 @@
 package org.icepdf.core.pobjects.graphics.images;
 
 import org.icepdf.core.pobjects.graphics.*;
+import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
  * inflated bytes nor the full raster are ever held: memory is the reduced image plus a row.
  * <p>
  * Each source pixel is first turned into colour exactly as the full decode would turn it (the
- * {@link ImageUtility} raster paths, else {@link RawDecoder}'s per-pixel conversion), and the
+ * {@link ImageUtility} raster paths, else {@link RawDecoder}'s {@link PixelConverter}), and the
  * colours are averaged, so a reduced image is the full image box filtered, the same filter the
  * GH-608 downsampler applies to a full decode when it is drawn small.
  */
@@ -71,7 +72,11 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
             return null;
         }
         PixelColour colour = colourFor(colourSpace, bpc, params.getDecode());
-        int samplesPerPixel = colour instanceof Generic ? ((Generic) colour).samplesPerPixel : components;
+        // no raster path: convert as RawDecoder does, reading the row's packed samples directly
+        PixelConverter converter = colour == null
+                ? PixelConverter.forImage(colourSpace, bpc, new SampleDecode(params.getDecodeRange(), bpc),
+                false, 0, width * height, null)
+                : null;
 
         BoxFilter filter = new BoxFilter(width, height, factor);
         int rowBytes = (int) (((long) width * components * bpc + 7) / 8);
@@ -86,11 +91,18 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
                 if (!readRow(in, row)) {
                     break;
                 }
-                for (int x = 0; x < width; x++) {
-                    for (int c = 0; c < samplesPerPixel; c++) {
-                        samples[c] = sample(row, x * components + c, bpc);
+                if (converter != null) {
+                    SampleReader samplesIn = new SampleReader(row);
+                    for (int x = 0; x < width; x++) {
+                        argb[x] = converter.next(samplesIn);
                     }
-                    argb[x] = colour.argb(samples);
+                } else {
+                    for (int x = 0; x < width; x++) {
+                        for (int c = 0; c < components; c++) {
+                            samples[c] = sample(row, x * components + c, bpc);
+                        }
+                        argb[x] = colour.argb(samples);
+                    }
                 }
                 filter.addRow(argb);
             }
@@ -237,7 +249,7 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
 
     /**
      * How the full decode colours a pixel of this image: the {@link ImageUtility} raster path it
-     * takes for an unmasked image, else {@link RawDecoder}, which it falls back to.
+     * takes for an unmasked image, or null when it falls back to {@link RawDecoder}.
      */
     private static PixelColour colourFor(PColorSpace colourSpace, int bpc, float[] decode) {
         PColorSpace raster = colourSpace;
@@ -275,7 +287,7 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
                 return s -> table[s[0]];
             }
         }
-        return new Generic(colourSpace, bpc, decode);
+        return null;
     }
 
     private static int[] grayTable(int bpc) {
@@ -295,21 +307,5 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
             table[i] = colors[i].getRGB();
         }
         return table;
-    }
-
-    /** {@link RawDecoder}'s conversion, for every colour space the raster paths leave to it. */
-    private static final class Generic implements PixelColour {
-        private final RawDecoder.SampleConverter converter;
-        private final int samplesPerPixel;
-
-        Generic(PColorSpace colourSpace, int bpc, float[] decode) {
-            converter = new RawDecoder.SampleConverter(colourSpace, bpc, decode);
-            samplesPerPixel = converter.samplesPerPixel();
-        }
-
-        @Override
-        public int argb(int[] samples) {
-            return converter.toArgb(samples);
-        }
     }
 }
