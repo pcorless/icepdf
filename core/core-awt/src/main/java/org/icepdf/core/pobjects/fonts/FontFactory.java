@@ -29,6 +29,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.lang.ref.SoftReference;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -73,6 +75,21 @@ public class FontFactory {
     // be keyed by the throwaway url.toString() String, which nothing holds strongly,
     // so every entry would be collected on the next GC -- caching nothing across a GC.
     private static final Map<String, SoftReference<FontFile>> systemFontCache = new ConcurrentHashMap<>(75);
+
+    // Soft references alone don't bound the cache: FontManager's system font scan loads every
+    // installed font to read its names, and they all stay - 434 fonts, ~550MB, on a desktop with
+    // a full font set - until the heap is all but full, which leaves too little room for a big
+    // allocation such as a large document's bytes.  So the cache also keeps a byte budget, least
+    // recently used first out; past it a font is dropped from the cache (and re-read from disk if
+    // asked for again).  A font is charged twice its file size, for the parsed tables and glyph
+    // maps.  {@value #CACHE_BUDGET_PROPERTY} sets the budget in MB, a sixteenth of the max heap
+    // by default.
+    public static final String CACHE_BUDGET_PROPERTY = "org.icepdf.core.fonts.systemFontCacheBudget";
+    // access order, eldest first; guarded by itself.
+    private static final LinkedHashMap<String, Long> systemFontSizes = new LinkedHashMap<>(64, 0.75f, true);
+    private static long systemFontBytes;
+    private static long systemFontBudget =
+            Long.getLong(CACHE_BUDGET_PROPERTY, Runtime.getRuntime().maxMemory() / 16 >> 20) << 20;
 
     public static final Name FONT_SUBTYPE_TYPE_0 = new Name("Type0");
     public static final Name FONT_SUBTYPE_TYPE_1 = new Name("Type1");
@@ -207,7 +224,17 @@ public class FontFactory {
         FontFile fontFile = cached != null ? cached.get() : null;
         if (cached != null && fontFile == null) {
             // soft reference cleared under memory pressure; drop the dead entry.
-            systemFontCache.remove(key, cached);
+            if (systemFontCache.remove(key, cached)) {
+                synchronized (systemFontSizes) {
+                    Long size = systemFontSizes.remove(key);
+                    if (size != null) systemFontBytes -= size;
+                }
+            }
+        } else if (fontFile != null) {
+            synchronized (systemFontSizes) {
+                // a hit makes it the most recently used.
+                systemFontSizes.get(key);
+            }
         }
         if (fontFile == null) {
             try (InputStream inputStream = url.openStream()) {
@@ -218,13 +245,49 @@ public class FontFactory {
                     fontFile = new ZFontType1(fontBytes, url);
                 }
                 if (fontFile != null) {
-                    systemFontCache.put(key, new SoftReference<>(fontFile));
+                    cacheSystemFont(key, fontFile, 2L * fontBytes.length);
                 }
             } catch (Exception e) {
                 logger.log(Level.FINE, e, () -> "Could not create instance of font file " + fontType);
             }
         }
         return fontFile;
+    }
+
+    private static void cacheSystemFont(String key, FontFile fontFile, long bytes) {
+        systemFontCache.put(key, new SoftReference<>(fontFile));
+        synchronized (systemFontSizes) {
+            Long old = systemFontSizes.put(key, bytes);
+            systemFontBytes += bytes - (old != null ? old : 0);
+            trimSystemFonts(key);
+        }
+    }
+
+    /** Drops least recently used fonts past the budget, never {@code keep} (the one being returned). */
+    private static void trimSystemFonts(String keep) {
+        Iterator<Map.Entry<String, Long>> it = systemFontSizes.entrySet().iterator();
+        while (systemFontBytes > systemFontBudget && it.hasNext()) {
+            Map.Entry<String, Long> eldest = it.next();
+            if (eldest.getKey().equals(keep)) continue;
+            systemFontBytes -= eldest.getValue();
+            systemFontCache.remove(eldest.getKey());
+            it.remove();
+        }
+    }
+
+    /** Bytes charged for the system fonts the cache is keeping. */
+    static long getSystemFontCacheBytes() {
+        synchronized (systemFontSizes) {
+            return systemFontBytes;
+        }
+    }
+
+    /** Sets the system font cache budget, trimming to it; for tests. */
+    static void setSystemFontCacheBudget(long bytes) {
+        synchronized (systemFontSizes) {
+            systemFontBudget = bytes;
+            trimSystemFonts(null);
+        }
     }
 
     private String fontTypeToString(int fontType) {

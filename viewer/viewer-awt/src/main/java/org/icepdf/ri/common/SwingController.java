@@ -81,6 +81,7 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -5215,18 +5216,41 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
             // dispose the document and other resources.
             dispose();
             if (saveFilePath != null && !saveFilePath.isEmpty() && origFilePath != null) {
+                File tmpFile = new File(saveFilePath);
                 try {
-                    File tmpFile = new File(saveFilePath);
                     if (tmpFile.exists()) {
-                        Files.move(tmpFile.toPath(), new File(origFilePath).toPath(),
-                                StandardCopyOption.REPLACE_EXISTING);
+                        replaceFile(tmpFile.toPath(), new File(origFilePath).toPath());
                     }
                 } catch (IOException ex) {
-                    logger.log(Level.FINE, "IO Exception ", e);
+                    logger.log(Level.WARNING, ex, () -> "Could not replace " + origFilePath
+                            + "; the saved changes are in " + tmpFile);
                 }
             }
             if (wc != null) {
                 wc.disposeWindow(this, v, viewerPreferences);
+            }
+        }
+    }
+
+    /**
+     * Moves the saved copy over the original.  When the original was mapped into memory
+     * ({@link Document#MAP_FILE_PROPERTY}) Windows refuses to replace it until the disposed
+     * document's mapping is garbage collected, so a refused move is retried after a collection.
+     */
+    private static void replaceFile(Path source, Path target) throws IOException {
+        for (int attempt = 0; ; attempt++) {
+            try {
+                Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+                return;
+            } catch (FileSystemException e) {
+                if (attempt >= 4 || !Files.exists(source)) throw e;
+                System.gc();
+                try {
+                    Thread.sleep(50L << attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
             }
         }
     }

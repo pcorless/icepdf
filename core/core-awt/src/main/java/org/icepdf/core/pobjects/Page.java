@@ -737,6 +737,8 @@ public class Page extends Dictionary {
             // the caller's clip, for code sizing offscreen buffers (paint() widened the clip above).
             Object previousViewport = viewportClip != null ? PaintViewport.set(g2, viewportClip) : null;
             try {
+                // the page's big images start decoding now, side by side, at the size they're drawn
+                shapes.prefetchImages(g2);
                 if (isPageGroupBufferCandidate()) {
                     paintPageGroupBuffered(g2, viewportClip);
                 } else {
@@ -1206,8 +1208,18 @@ public class Page extends Dictionary {
             // update parent page reference.
             annotation.getEntries().put(Annotation.PARENT_PAGE_KEY, this.getPObjectReference());
 
-            // add the annotations to the parsed annotations list
-            this.annotations.add(annotation);
+            // add the annotation to the parsed annotations list, unless it is already there: an
+            // annotation read from the file is, and adding it again listed (and painted) it twice.
+            boolean listed = false;
+            for (Annotation a : this.annotations) {
+                if (a == annotation) {
+                    listed = true;
+                    break;
+                }
+            }
+            if (!listed) {
+                this.annotations.add(annotation);
+            }
 
             // add the new annotations to the library
             library.addObject(annotation, annotation.getPObjectReference());

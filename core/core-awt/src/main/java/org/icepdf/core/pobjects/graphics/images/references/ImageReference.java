@@ -26,6 +26,7 @@ import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.pobjects.graphics.images.MaskedImage;
+import org.icepdf.core.pobjects.graphics.images.ReducedDecode;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 
@@ -107,6 +108,13 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * may recover and a later repaint should retry the decode.
      */
     protected volatile boolean transientFailure;
+
+    /**
+     * GH-625: true when this image may be decoded at a reduced size where it is drawn small (see
+     * {@link ReducedDecode#isCandidate}); such a reference decodes when first drawn, at the size
+     * drawn, not eagerly in full.
+     */
+    protected boolean reducible;
 
     /**
      * Wall-clock time of the last transient (out-of-memory) decode failure.  Repaints
@@ -218,7 +226,10 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (isOutsideClip(aG, aX, aY, aW, aH)) {
             return;
         }
-        BufferedImage image = getImage();
+        BufferedImage image = getReducedImage(aG, aX, aY, aW, aH);
+        if (image == null) {
+            image = getImage();
+        }
         if (image instanceof MaskedImage) {
             MaskedImage masked = (MaskedImage) image;
             if (MaskedImagePainter.canPaint(aG) && !ImageUtility.isCmykInkCapturing()) {
@@ -302,6 +313,134 @@ public abstract class ImageReference implements Callable<BufferedImage> {
                     aG.setRenderingHint(RenderingHints.KEY_INTERPOLATION, interpolation);
                 }
             }
+        }
+    }
+
+    /**
+     * GH-625: for an image drawn far smaller than its size, the image decoded at a reduced size
+     * (see {@link ReducedDecode}): the largest one kept when it is detailed enough, else a new
+     * decode, shared by the tiles the image spans.  Only for a {@link #reducible} reference, drawn on
+     * a raster target, and only while the full image isn't already decoded.
+     *
+     * @return the reduced image to draw, or null to draw the full image
+     */
+    private BufferedImage getReducedImage(Graphics2D aG, int aX, int aY, int aW, int aH)
+            throws InterruptedException {
+        if (!reducible || reference == null || ImageUtility.isCmykInkCapturing()
+                || !ImageDownsampler.isRasterTarget(aG)) {
+            return null;
+        }
+        int width = imageStream.getWidth();
+        int height = imageStream.getHeight();
+        int factor = ReducedDecode.factorFor(aG, width, height, aX, aY, aW, aH);
+        ImagePool pool = imageStream.getLibrary().getImagePool();
+        if (pool.get(reference) != null) {
+            return null;
+        }
+        if (factor < 2) {
+            // drawn near full size: the full decode, through the pool's in-flight decode so the tiles
+            // the image spans share one.
+            if (futureTask == null && !isInTransientBackoff()) {
+                submitDecode();
+            }
+            return null;
+        }
+        int needed = ReducedDecode.reduced(width, factor);
+        BufferedImage kept = pool.getReduced(reference);
+        if (kept != null && kept.getWidth() >= needed) {
+            return kept;
+        }
+        if (isInTransientBackoff()) {
+            return null;
+        }
+        FutureTask<BufferedImage> mine = reducedDecode(pool, factor);
+        FutureTask<BufferedImage> running = pool.registerReducedInProgress(reference, mine);
+        try {
+            if (running != null) {
+                // a prefetch or another tile is decoding it: use that when it is detailed enough.
+                BufferedImage reduced = running.get(decodeGetTimeoutMs, TimeUnit.MILLISECONDS);
+                if (reduced != null && reduced.getWidth() >= needed) {
+                    return reduced;
+                }
+            }
+            mine.run();
+            return mine.get();
+        } catch (ExecutionException e) {
+            if (isTransientDecodeFailure(e.getCause())) {
+                // skip the image for now rather than try the full decode, which is bigger still
+                markTransientFailure(e.getCause());
+            } else {
+                logger.log(Level.WARNING, e, () -> "Reduced image decode failed, decoding in full: " +
+                        imageStream.getPObjectReference());
+            }
+            return null;
+        } catch (TimeoutException e) {
+            return null;
+        }
+    }
+
+    /** A reduced decode of the image by {@code factor} that pools its result and clears its in-flight entry. */
+    private FutureTask<BufferedImage> reducedDecode(ImagePool pool, int factor) {
+        return new FutureTask<BufferedImage>(() -> {
+            BufferedImage reduced = imageStream.getReducedImage(graphicsState, resources, factor);
+            pool.putReduced(reference, reduced);
+            return reduced;
+        }) {
+            @Override
+            protected void done() {
+                pool.removeReducedInProgress(reference, this);
+            }
+        };
+    }
+
+    /**
+     * GH-625: starts decoding a {@link #reducible} image on the image pool at the size this paint will
+     * draw it, so a page's big images decode at once, side by side, as they did when they were
+     * decoded while the page was parsed; {@link #drawImage} then waits for it.  Does nothing for an
+     * image outside the clip, already decoded, already being decoded, or drawn to a printer or
+     * vector target.
+     *
+     * @param g the graphics the page is about to be painted to, in the page's user space: the space
+     *          the {@link #getPlacement placement} is in
+     */
+    public void prefetch(Graphics2D g) {
+        if (!reducible || reference == null || placement == null || ImageUtility.isCmykInkCapturing()
+                || !ImageDownsampler.isRasterTarget(g) || isInTransientBackoff()) {
+            return;
+        }
+        AffineTransform device = new AffineTransform(g.getTransform());
+        device.concatenate(placement);
+        Shape clip = g.getClip();
+        if (clip != null) {
+            Rectangle2D deviceClip = g.getTransform().createTransformedShape(clip).getBounds2D();
+            Rectangle2D deviceImage = device.createTransformedShape(UNIT_SQUARE).getBounds2D();
+            deviceImage.setRect(deviceImage.getX() - 1, deviceImage.getY() - 1,
+                    deviceImage.getWidth() + 2, deviceImage.getHeight() + 2);
+            if (!deviceClip.intersects(deviceImage)) {
+                return;
+            }
+        }
+        ImagePool pool = imageStream.getLibrary().getImagePool();
+        if (pool.get(reference) != null) {
+            return;
+        }
+        int width = imageStream.getWidth();
+        int height = imageStream.getHeight();
+        int factor = ReducedDecode.factorFor(width, height, Math.hypot(device.getScaleX(), device.getShearY()),
+                Math.hypot(device.getShearX(), device.getScaleY()));
+        if (factor < 2) {
+            if (futureTask == null) {
+                submitDecode();
+            }
+            return;
+        }
+        BufferedImage kept = pool.getReduced(reference);
+        if (kept != null && kept.getWidth() >= ReducedDecode.reduced(width, factor)) {
+            return;
+        }
+        FutureTask<BufferedImage> mine = reducedDecode(pool, factor);
+        if (pool.registerReducedInProgress(reference, mine) == null) {
+            Library.executeImage(mine);
         }
     }
 

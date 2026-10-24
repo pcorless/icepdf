@@ -17,6 +17,7 @@ package org.icepdf.core.pobjects.graphics;
 
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.graphics.commands.*;
+import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.graphics.text.PageText;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.RenderExceptionMonitor;
@@ -190,6 +191,25 @@ public class Shapes {
      * @param nullShapeFill shape substituted for a null-shape sentinel, or null.
      * @throws InterruptedException thread interrupted.
      */
+    /**
+     * GH-625: starts the decodes of this list's big images, side by side on the image pool, at the size
+     * a paint to {@code g} draws them (see {@link ImageReference#prefetch}).  Images inside forms
+     * decode when they are drawn.
+     *
+     * @param g graphics about to be painted to, in the page's user space
+     */
+    public void prefetchImages(Graphics2D g) {
+        for (int i = 0, max = shapes.size(); i < max; i++) {
+            DrawCmd cmd = shapes.get(i);
+            if (cmd instanceof ImageDrawCmd) {
+                ImageReference image = ((ImageDrawCmd) cmd).getImageReference();
+                if (image != null) {
+                    image.prefetch(g);
+                }
+            }
+        }
+    }
+
     public void paint(Graphics2D g, Page parentPage, Shape nullShapeFill) throws InterruptedException {
         try {
             AffineTransform base = new AffineTransform(g.getTransform());

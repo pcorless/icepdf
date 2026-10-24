@@ -18,7 +18,10 @@ package org.icepdf.core.pobjects.graphics.images.references;
 import org.icepdf.core.pobjects.Reference;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
 import java.lang.ref.SoftReference;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.FutureTask;
@@ -27,8 +30,8 @@ import java.util.concurrent.FutureTask;
  * Caches decoded images keyed by their PDF object {@link Reference}.  Values are
  * held via {@link SoftReference} so an image survives normal garbage collection
  * (letting a page repaint, or a shared XObject on another page, reuse it without
- * re-decoding) but is reclaimed automatically when the heap is under pressure --
- * so the pool self-limits its memory footprint without an explicit size cap.
+ * re-decoding) but is reclaimed automatically when the heap is under pressure; a byte
+ * budget, least recently used first out, also caps it (see {@link #BUDGET_PROPERTY}).
  * <br>
  * The pool also tracks decodes currently in flight ({@link #registerInProgress})
  * so that two references to the same image de-duplicate onto a single decode
@@ -51,23 +54,115 @@ public class ImagePool {
     // of zooming, entries were purged as fast as they were inserted and get()
     // returned null, forcing constant re-decodes (and masking as a timing bug that
     // "went away" when a breakpoint changed GC timing).
-    private final Map<Reference, SoftReference<BufferedImage>> fCache;
+    // keyed by the image's Reference, or by a Reduced key for a GH-625 reduced decode of it.
+    private final Map<Object, SoftReference<BufferedImage>> fCache;
 
     // Decodes currently in flight, keyed by image object reference, so that two references to the same image
     // (e.g. the same XObject drawn on multiple pages, or an eager pre-decode racing the content parser) share a
     // single decode instead of each starting their own.
     private final Map<Reference, FutureTask<BufferedImage>> inProgress = new ConcurrentHashMap<>();
+    // GH-625: reduced decodes in flight, so the tiles an image spans share one decode of it.
+    private final Map<Reference, FutureTask<BufferedImage>> inProgressReduced = new ConcurrentHashMap<>();
+
+    // Soft references alone don't bound the pool: G1 clears them only when the heap is all but full,
+    // so scrolling a document of scans fills the whole heap with decoded images, every collection
+    // then runs against a full heap, and an allocation that fails while a native decoder holds the
+    // GC locker throws OutOfMemoryError without the soft references ever being cleared.  So the
+    // pool also keeps a byte budget, least recently used first out; past it an image is dropped
+    // from the pool (and re-decoded if drawn again).  {@value #BUDGET_PROPERTY} sets the budget in
+    // MB, an eighth of the max heap by default: GH-608 mip levels ride on top (about a third more),
+    // beside the viewer's own raster cache, the document bytes and the decodes in flight.
+    public static final String BUDGET_PROPERTY = "org.icepdf.core.images.poolBudget";
+
+    private final long budgetBytes;
+    // access order, eldest first; guarded by itself.
+    private final LinkedHashMap<Object, Long> sizes = new LinkedHashMap<>(64, 0.75f, true);
+    private long usedBytes;
 
     public ImagePool() {
+        this(Long.getLong(BUDGET_PROPERTY, Runtime.getRuntime().maxMemory() / 8 >> 20) << 20);
+    }
+
+    /**
+     * @param budgetBytes the most decoded image bytes the pool keeps
+     */
+    public ImagePool(long budgetBytes) {
+        this.budgetBytes = budgetBytes;
         fCache = new ConcurrentHashMap<>(50);
+    }
+
+    /** Decoded bytes of an image: its raster's data buffer. */
+    static long byteSize(BufferedImage image) {
+        DataBuffer buffer = image.getRaster().getDataBuffer();
+        return (long) buffer.getSize() * buffer.getNumBanks() * DataBuffer.getDataTypeSize(buffer.getDataType()) / 8;
+    }
+
+    /** Decoded image bytes the pool is keeping. */
+    public long getUsedBytes() {
+        synchronized (sizes) {
+            return usedBytes;
+        }
     }
 
     public void put(Reference ref, BufferedImage image) {
         if (ref != null && image != null) {
             // copy the reference for the key so the map never holds the caller's
             // Reference instance (keeps parity with the previous behaviour).
-            fCache.put(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()),
-                    new SoftReference<>(image));
+            Reference key = new Reference(ref.getObjectNumber(), ref.getGenerationNumber());
+            // the full image serves every size, so a reduced decode of it is no longer needed.
+            remove(new Reduced(key));
+            store(key, image);
+        }
+    }
+
+    /**
+     * GH-625: keeps a reduced decode of an image, apart from the full one, which {@link #get} alone
+     * returns.  Only the largest reduced decode is kept: it serves any smaller drawing too.
+     *
+     * @param ref   image object reference
+     * @param image the image decoded at a reduced size
+     */
+    public void putReduced(Reference ref, BufferedImage image) {
+        if (ref != null && image != null) {
+            Reduced key = new Reduced(new Reference(ref.getObjectNumber(), ref.getGenerationNumber()));
+            BufferedImage kept = get(key);
+            if (kept == null || kept.getWidth() < image.getWidth()) {
+                store(key, image);
+            }
+        }
+    }
+
+    /**
+     * @param ref image object reference
+     * @return the reduced decode of the image kept by {@link #putReduced}, or null
+     */
+    public BufferedImage getReduced(Reference ref) {
+        return ref == null ? null : get(new Reduced(ref));
+    }
+
+    private void remove(Object key) {
+        if (fCache.remove(key) != null) {
+            synchronized (sizes) {
+                Long size = sizes.remove(key);
+                if (size != null) usedBytes -= size;
+            }
+        }
+    }
+
+    private void store(Object key, BufferedImage image) {
+        fCache.put(key, new SoftReference<>(image));
+        synchronized (sizes) {
+            Long old = sizes.put(key, byteSize(image));
+            usedBytes += sizes.get(key) - (old != null ? old : 0);
+            // the newest entry stays even if it alone is over the budget: it is being drawn.
+            Iterator<Map.Entry<Object, Long>> it = sizes.entrySet().iterator();
+            while (usedBytes > budgetBytes && sizes.size() > 1 && it.hasNext()) {
+                Map.Entry<Object, Long> eldest = it.next();
+                if (eldest.getKey().equals(key)) continue;
+                usedBytes -= eldest.getValue();
+                fCache.remove(eldest.getKey());
+                it.remove();
+            }
         }
     }
 
@@ -75,6 +170,10 @@ public class ImagePool {
         if (ref == null) {
             return null;
         }
+        return get((Object) ref);
+    }
+
+    private BufferedImage get(Object ref) {
         SoftReference<BufferedImage> softReference = fCache.get(ref);
         if (softReference == null) {
             return null;
@@ -83,13 +182,57 @@ public class ImagePool {
         if (image == null) {
             // the soft reference was cleared under memory pressure; drop the dead
             // entry so the map doesn't accumulate empty holders.
-            fCache.remove(ref, softReference);
+            if (fCache.remove(ref, softReference)) {
+                synchronized (sizes) {
+                    Long size = sizes.remove(ref);
+                    if (size != null) usedBytes -= size;
+                }
+            }
+        } else {
+            synchronized (sizes) {
+                // a hit makes it the most recently used.
+                sizes.get(ref);
+            }
         }
         return image;
     }
 
+    /** The key of a reduced decode: its own entry, never mistaken for the full image's. */
+    private static final class Reduced {
+        private final Reference ref;
+
+        Reduced(Reference ref) {
+            this.ref = ref;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Reduced && ((Reduced) o).ref.equals(ref);
+        }
+
+        @Override
+        public int hashCode() {
+            return ~ref.hashCode();
+        }
+    }
+
     public boolean containsKey(Reference ref) {
         return get(ref) != null;
+    }
+
+    /**
+     * Like {@link #registerInProgress}, for a reduced decode ({@link #putReduced}).
+     *
+     * @return an existing in-flight reduced decode of this image to wait on, or null if the caller
+     * should run its own {@code task} (now registered)
+     */
+    public FutureTask<BufferedImage> registerReducedInProgress(Reference ref, FutureTask<BufferedImage> task) {
+        return inProgressReduced.putIfAbsent(ref, task);
+    }
+
+    /** Removes {@code task} as the in-flight reduced decode of an image. */
+    public void removeReducedInProgress(Reference ref, FutureTask<BufferedImage> task) {
+        inProgressReduced.remove(ref, task);
     }
 
     /**

@@ -261,7 +261,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         registerChangeListener(control.focusedProperty(), o -> {
             if (control.isFocused()) accessibility.focusGained();
             text.updateCaretBlink(false);
-            layers.values().forEach(text::update);
+            layers.values().forEach(layer -> text.update(layer, false));
         });
 
         control.addEventHandler(ScrollEvent.SCROLL, scrollHandler);
@@ -655,7 +655,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             keep.add(index);
             PageLayer layer = layers.get(index);
             if (layer == null) {
-                layer = new PageLayer(index, document.getPageTree().getPage(index));
+                layer = new PageLayer(index, document.getPageTree());
                 layers.put(index, layer);
                 shadowGroup.getChildren().add(layer.getShadow());
                 pagesGroup.getChildren().add(layer);
@@ -701,7 +701,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
                 ui.clearProxy();
                 ui.refresh();
             }
-            text.update(layer);
+            text.update(layer, slot.y() < scrollY + viewportH && slot.y() + slot.height() > scrollY);
         }
         layers.entrySet().removeIf(e -> {
             if (keep.contains(e.getKey())) return false;

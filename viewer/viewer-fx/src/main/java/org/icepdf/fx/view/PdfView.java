@@ -95,6 +95,15 @@ public class PdfView extends Control {
     private static final Logger logger = Logger.getLogger(PdfView.class.getName());
 
     public static final double MIN_ZOOM = 0.05;
+
+    /**
+     * The most pages {@link #copySelection} copies, 250 by default as in the Swing viewer: every
+     * page's text is extracted for a copy, and a select all of a 50,000 page document is minutes of
+     * work and a clipboard string of hundreds of MB.  A copy spanning more pages is refused with a
+     * {@link PdfViewErrorEvent} saying so.  {@link #selectedTextAsync} itself is not limited.
+     */
+    public static final String MAX_COPY_PAGES_PROPERTY = "org.icepdf.fx.copy.maxPages";
+    public static final int DEFAULT_MAX_COPY_PAGES = 250;
     public static final double MAX_ZOOM = 64;
     private static final double[] ZOOM_STEPS = {0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 6, 8, 12, 16,
             24, 32, 40, 48, 64};
@@ -1261,10 +1270,18 @@ public class PdfView extends Control {
 
     /**
      * Copies the selected text to the system clipboard once extracted; no-op with nothing selected,
-     * or when the document doesn't permit copying ({@link #copyAllowedProperty()}).
+     * or when the document doesn't permit copying ({@link #copyAllowedProperty()}).  A selection
+     * over more than {@value #DEFAULT_MAX_COPY_PAGES} pages ({@link #MAX_COPY_PAGES_PROPERTY}) isn't
+     * copied; a {@link PdfViewErrorEvent} says why.
      */
     public void copySelection() {
         if (!isCopyAllowed()) return;
+        DocumentSelection selection = getTextSelection();
+        int maxPages = Integer.getInteger(MAX_COPY_PAGES_PROPERTY, DEFAULT_MAX_COPY_PAGES);
+        if (selection != null && !selection.isCollapsed() && selection.endPage() - selection.startPage() + 1 > maxPages) {
+            fireEvent(new PdfViewErrorEvent(this, this, Messages.format("pdfView.copyTooManyPages", maxPages), null));
+            return;
+        }
         selectedTextAsync().thenAccept(text -> {
             if (text.isEmpty()) return;
             Platform.runLater(() -> {

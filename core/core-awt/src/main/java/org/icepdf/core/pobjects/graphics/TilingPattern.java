@@ -294,7 +294,12 @@ public class TilingPattern extends Stream implements Pattern {
         // (GH-495, A.pdf p2/p3).  Copying + detaching keeps all that side-effect
         // graphics-state churn off the page and off the shared caller state, so
         // every fill is treated identically regardless of init order.
-        GraphicsState patternGraphicState = new GraphicsState(parentGraphicState);
+        // From the state handed in, not the parentGraphicState field: the pattern is shared by every
+        // page that uses it, and another page parsing at the same time may have set the field to its
+        // own state, from a different point of its content (2011-ski-yoho_en.pdf pages 2 and 3, a
+        // pattern-filled icon that came out differently about one render in forty).
+        GraphicsState patternGraphicState = new GraphicsState(
+                graphicsState != null ? graphicsState : parentGraphicState);
         patternGraphicState.setShapes(new Shapes());
         if (paintType == PAINTING_TYPE_UNCOLORED_TILING_PATTERN) {
             patternGraphicState.setFillColor(unColored);

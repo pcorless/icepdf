@@ -56,6 +56,8 @@ public final class TextLayers {
     }
 
     private static final Duration CARET_BLINK = Duration.millis(500);
+    /** The zoom from which every on-screen page's text loads up front (see {@link #update}). */
+    public static final double EAGER_TEXT_ZOOM = 0.5;
 
     private final PdfView view;
     private final PageTextLoader loader;
@@ -109,8 +111,14 @@ public final class TextLayers {
         loader.retain(needsText() ? visible : page -> false);
     }
 
-    /** Draws a page's selection, search hits and caret, loading its text if needed. */
-    public void update(Overlay layer) {
+    /**
+     * Draws a page's selection, search hits and caret, loading its text if needed.  From
+     * {@value #EAGER_TEXT_ZOOM}x up every on-screen page's text loads, so a press selects at once;
+     * below it a page's text loads only when something on the page needs it - the selection, search
+     * hits, or the pointer coming over it - since a screenful of small pages is dozens of pages of
+     * glyph geometry.  Pages in the prefetch band ({@code onScreen} false) load text only for that reason.
+     */
+    public void update(Overlay layer, boolean onScreen) {
         if (!needsText()) {
             layer.setSelection(null, null);
             layer.setSearchHits(null, List.of());
@@ -118,11 +126,15 @@ public final class TextLayers {
             return;
         }
         int index = layer.getPageIndex();
-        loader.request(index);
-        TextSequence sequence = loader.get(index);
         DocumentSelection selection = view.getTextSelection();
+        List<SearchHit> hits = searchHits.apply(index);
+        boolean touched = !hits.isEmpty() || (selection != null && !selection.isCollapsed()
+                && index >= selection.startPage() && index <= selection.endPage())
+                || (selection != null && selection.getFocusPage() == index);
+        if (touched || (onScreen && view.getZoom() >= EAGER_TEXT_ZOOM)) loader.request(index);
+        TextSequence sequence = loader.get(index);
         layer.setSelection(sequence, selection != null ? selection.rangeForPage(index, sequence) : null);
-        layer.setSearchHits(sequence, searchHits.apply(index));
+        layer.setSearchHits(sequence, hits);
         // the caret sits at the focus end, as in the Swing viewer.
         boolean caretHere = isCaretActive() && sequence != null && selection.getFocusPage() == index;
         layer.setCaret(caretHere ? caretRect(sequence, selection) : null);
@@ -155,8 +167,9 @@ public final class TextLayers {
         }
     }
 
-    /** The page's loaded text, or null if it isn't loaded (or has none). */
+    /** The page's loaded text, or null if it isn't loaded (it is then requested) or has none. */
     public TextSequence sequence(int pageIndex) {
+        if (!loader.isLoaded(pageIndex)) loader.request(pageIndex);
         return loader.get(pageIndex);
     }
 
@@ -170,10 +183,13 @@ public final class TextLayers {
         loader.requestKept(pageIndex);
     }
 
-    /** True if a page point is over a glyph of a page whose text is loaded. */
+    /**
+     * True if a page point is over a glyph of a page whose text is loaded.  The pointer coming over
+     * a page whose text isn't loaded requests it, so it is there by the time the button goes down.
+     */
     public boolean isOverText(PagePoint point) {
         if (point == null) return false;
-        TextSequence sequence = loader.get(point.pageIndex());
+        TextSequence sequence = sequence(point.pageIndex());
         return sequence != null && sequence.hitsText(point.toAwt());
     }
 
