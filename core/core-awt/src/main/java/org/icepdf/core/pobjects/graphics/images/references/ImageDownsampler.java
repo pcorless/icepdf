@@ -95,7 +95,7 @@ public final class ImageDownsampler {
      * graphics.  Printer and vector (SVG, PDF) graphics report a transform in their own units, not
      * device pixels, and should get the full-resolution image anyway.
      */
-    static boolean isRasterTarget(Graphics2D g) {
+    public static boolean isRasterTarget(Graphics2D g) {
         return "sun.java2d.SunGraphics2D".equals(g.getClass().getName());
     }
 

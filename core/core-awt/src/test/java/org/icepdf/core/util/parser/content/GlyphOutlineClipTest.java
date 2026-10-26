@@ -18,6 +18,8 @@ package org.icepdf.core.util.parser.content;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.GraphicsRenderingHints;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,6 +47,17 @@ public class GlyphOutlineClipTest {
 
     @TempDir
     Path temp;
+
+    // this is about where the clip lands, so count pixels against the hard clip, not antialiased edges.
+    @BeforeEach
+    void hardClip() {
+        System.setProperty(GlyphClipFill.ENABLED_PROPERTY, "false");
+    }
+
+    @AfterEach
+    void clearProperty() {
+        System.clearProperty(GlyphClipFill.ENABLED_PROPERTY);
+    }
 
     private Path page(String name, String content) throws Exception {
         List<String> objects = new ArrayList<>();
