@@ -116,11 +116,17 @@ public class Shapes {
     }
 
     public void add(DrawCmd drawCmd){
-
-        if (!(drawCmd instanceof FormDrawCmd)){
-            shapes.add(drawCmd);
-        }else{
-            shapes.add(drawCmd);
+        shapes.add(drawCmd);
+        // keep the prefetch list in step while it still matches the list; any other change forces a rescan.
+        ReducibleImages tracked = reducibleImages;
+        if (tracked.shapesSize == shapes.size() - 1) {
+            if (drawCmd instanceof ImageDrawCmd) {
+                ImageReference image = ((ImageDrawCmd) drawCmd).getImageReference();
+                if (image != null && image.isReducible()) {
+                    tracked.images.add(image);
+                }
+            }
+            tracked.shapesSize++;
         }
     }
 
@@ -199,14 +205,46 @@ public class Shapes {
      * @param g graphics about to be painted to, in the page's user space
      */
     public void prefetchImages(Graphics2D g) {
-        for (int i = 0, max = shapes.size(); i < max; i++) {
-            DrawCmd cmd = shapes.get(i);
-            if (cmd instanceof ImageDrawCmd) {
-                ImageReference image = ((ImageDrawCmd) cmd).getImageReference();
-                if (image != null) {
-                    image.prefetch(g);
+        for (ImageReference image : reducibleImages()) {
+            image.prefetch(g);
+        }
+    }
+
+    /**
+     * The images {@link ImageReference#prefetch} acts on, collected as commands are added rather than by
+     * scanning every command on every paint (a page of 122K stencil masks has none).  Rescanned when the list
+     * was changed other than through {@link #add(DrawCmd)}.
+     */
+    private ArrayList<ImageReference> reducibleImages() {
+        ReducibleImages cached = reducibleImages;
+        int size = shapes.size();
+        if (cached.shapesSize != size) {
+            ArrayList<ImageReference> images = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                DrawCmd cmd = shapes.get(i);
+                if (cmd instanceof ImageDrawCmd) {
+                    ImageReference image = ((ImageDrawCmd) cmd).getImageReference();
+                    if (image != null && image.isReducible()) {
+                        images.add(image);
+                    }
                 }
             }
+            cached = new ReducibleImages(size, images);
+            reducibleImages = cached;
+        }
+        return cached.images;
+    }
+
+    // appended to while the page is parsed; a rescan by concurrent paints is a benign race, same result.
+    private volatile ReducibleImages reducibleImages = new ReducibleImages(0, new ArrayList<>());
+
+    private static final class ReducibleImages {
+        int shapesSize;
+        final ArrayList<ImageReference> images;
+
+        ReducibleImages(int shapesSize, ArrayList<ImageReference> images) {
+            this.shapesSize = shapesSize;
+            this.images = images;
         }
     }
 

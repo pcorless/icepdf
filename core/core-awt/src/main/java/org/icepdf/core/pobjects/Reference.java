@@ -70,7 +70,9 @@ public class Reference implements Serializable {
      * @return hashcode.
      */
     public int hashCode() {
-        return objf * 1000 + genf;
+        // not objf * 1000: 1000 = 8 * 125 leaves the low three bits zero, so hash tables keyed by references
+        // (the library's object store, the image pool) used one bucket in eight and treeified.
+        return 31 * objf + genf;
     }
 
     /**
