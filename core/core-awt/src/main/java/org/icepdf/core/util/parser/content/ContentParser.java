@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.graphics.GlyphOutlineClip;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
-import org.icepdf.core.pobjects.graphics.commands.GlyphOutlineDrawCmd;
 import org.icepdf.core.pobjects.graphics.commands.ImageDrawCmd;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
@@ -31,7 +30,9 @@ import org.icepdf.core.util.Library;
 import org.icepdf.core.util.RenderExceptionMonitor;
 import org.icepdf.core.util.updater.callbacks.ContentStreamCallback;
 
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
@@ -1002,17 +1003,23 @@ public class ContentParser extends AbstractContentParser {
         if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
             markTokenPosition(lexer.getPos(), (Integer) nextToken);
         }
+        graphicState.set(textBlockBase);
         // during a BT -> ET text parse there is a change that we might be
         // in MODE_ADD or MODE_Fill_Add which require that we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
         if (!glyphOutlineClip.isEmpty()) {
-            // set the clips so further clips can use the clip outline
-            graphicState.setClip(glyphOutlineClip.getGlyphOutlineClip());
-            // add the glyphOutline so the clip can be calculated.
-            shapes.add(new GlyphOutlineDrawCmd(glyphOutlineClip));
+            // the outlines carry the full CTM, but the clip lives in user space (cm rebases it), so map
+            // them back through the text block's CTM before intersecting; otherwise a later re W against
+            // a translated or scaled CTM intersects to nothing (GH-176).
+            Shape glyphClip = glyphOutlineClip.getGlyphOutlineClip();
+            try {
+                glyphClip = textBlockBase.createInverse().createTransformedShape(glyphClip);
+            } catch (NoninvertibleTransformException e) {
+                logger.log(Level.FINE, "Text block CTM is not invertible, glyph clip left as is.", e);
+            }
+            graphicState.setClip(glyphClip);
         }
-        graphicState.set(textBlockBase);
         if (nextToken instanceof Integer) {
             inTextBlock = false;
         }
