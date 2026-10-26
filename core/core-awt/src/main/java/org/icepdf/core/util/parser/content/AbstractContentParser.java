@@ -126,7 +126,7 @@ public abstract class AbstractContentParser {
     protected final AtomicInteger imageIndex = new AtomicInteger(1);
 
     // stack to help with the parse
-    protected final Stack<Object> stack = new Stack<>();
+    protected final Stack<Object> stack = new OperandStack();
 
     /**
      * @param l PDF library master object.

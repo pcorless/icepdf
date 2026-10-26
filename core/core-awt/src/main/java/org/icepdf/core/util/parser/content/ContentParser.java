@@ -653,7 +653,7 @@ public class ContentParser extends AbstractContentParser {
 
             // loop through each token returned form the parser
             Object tok = parser.next();
-            Stack<Object> stack = new Stack<>();
+            Stack<Object> stack = new OperandStack();
             double yBTStart = 0;
             int operand;
             while (tok != null) {
