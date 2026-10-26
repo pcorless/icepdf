@@ -380,6 +380,9 @@ public class Shapes {
         for (Object object : shapes) {
             if (object instanceof ImageDrawCmd) {
                 images.add(((ImageDrawCmd) object).getImage());
+            } else if (object instanceof StencilMaskFillDrawCmd) {
+                // a tiny stencil mask painted as a fill is still one of the page's images (GH-632).
+                images.add(((StencilMaskFillDrawCmd) object).getImage());
             } else if (object instanceof ShapesDrawCmd) {
                 images.addAll(((ShapesDrawCmd) object).getShapes().getImages());
             }
