@@ -61,8 +61,20 @@ public class ContentParser extends AbstractContentParser {
         super(l, r, null);
     }
 
+    // the open glyph clip (text render modes 4-7), rewritten for antialiased edges when its Q comes.
+    private GlyphClipFill.Scope glyphClipScope;
+
     public ContentParser(Library l, Resources r, ContentStreamCallback contentStreamCallback) {
         super(l, r, contentStreamCallback);
+    }
+
+    @Override
+    protected GraphicsState consume_Q(GraphicsState graphicState, Shapes shapes) {
+        if (glyphClipScope != null && glyphClipScope.state == graphicState) {
+            GlyphClipFill.apply(shapes.getShapes(), glyphClipScope);
+            glyphClipScope = null;
+        }
+        return super.consume_Q(graphicState, shapes);
     }
 
     public ContentParser parse(Stream[] streams, Page page)
@@ -1003,12 +1015,20 @@ public class ContentParser extends AbstractContentParser {
         if (nextToken instanceof Integer && (Integer) nextToken == Operands.ET) {
             markTokenPosition(lexer.getPos(), (Integer) nextToken);
         }
+        int scopeStart = shapes.getShapesCount();
         graphicState.set(textBlockBase);
         // during a BT -> ET text parse there is a change that we might be
         // in MODE_ADD or MODE_Fill_Add which require that we push the
         // shapes that make up the clipping path to the shapes stack.  When
         // encountered the path will be used as the current clip.
         if (!glyphOutlineClip.isEmpty()) {
+            if (glyphClipScope != null) {
+                // a second glyph clip inside the first: leave both as hard clips.
+                glyphClipScope.valid = false;
+            } else {
+                glyphClipScope = new GlyphClipFill.Scope(graphicState, scopeStart, graphicState.getClip(),
+                        textBlockBase);
+            }
             // the outlines carry the full CTM, but the clip lives in user space (cm rebases it), so map
             // them back through the text block's CTM before intersecting; otherwise a later re W against
             // a translated or scaled CTM intersects to nothing (GH-176).
