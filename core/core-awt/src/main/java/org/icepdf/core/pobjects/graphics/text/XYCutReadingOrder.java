@@ -31,8 +31,8 @@ import java.util.List;
  * "top first" means descending {@code y}.
  * <p>
  * Design and rationale: {@code READING-ORDER-XYCUT-PLAN.md} and {@code TEXT-SELECTION-PLAN.md}
- * Appendix E/F.  This is opt-in ({@code org.icepdf.core.views.page.text.readingOrder=xycut}); it does
- * not change the default.
+ * Appendix E/F.  This is the default reading order; {@code org.icepdf.core.views.page.text.readingOrder}
+ * selects {@code ysort} or {@code plot} instead.
  *
  * @since 7.5
  */
