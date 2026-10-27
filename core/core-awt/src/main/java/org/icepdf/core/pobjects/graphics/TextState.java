@@ -158,9 +158,8 @@ public class TextState {
         hScalling = ts.hScalling;
         leading = ts.leading;
         font = ts.font;
-        // create a new clone based on current font, cheap clone
-        currentfont = ts.currentfont != null ?
-                ts.currentfont.deriveFont(new AffineTransform()) : null;
+        // a FontFile is never modified once derived, so it is shared rather than derived again on every q (GH-632)
+        currentfont = ts.currentfont;
         tsize = ts.tsize;
         tmatrix = new AffineTransform(ts.tmatrix);
         tlmatrix = new AffineTransform(ts.tlmatrix);

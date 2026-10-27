@@ -25,6 +25,7 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -362,9 +363,9 @@ public class GraphicsState {
         lineJoin = parentGraphicsState.lineJoin;
 
 
-        fillColor = new Color(parentGraphicsState.fillColor.getRGB(), true);
-
-        strokeColor = new Color(parentGraphicsState.strokeColor.getRGB(), true);
+        // Color is immutable, so the parent's are shared.
+        fillColor = parentGraphicsState.fillColor;
+        strokeColor = parentGraphicsState.strokeColor;
 
         shapes = parentGraphicsState.shapes;
         if (parentGraphicsState.clip != null) {
@@ -394,11 +395,8 @@ public class GraphicsState {
         // non-group forms; a nested transparency group resets it to its own /K.
         knockOut = parentGraphicsState.knockOut;
 
-        // extra graphics
-        if (parentGraphicsState.getExtGState() != null) {
-            extGState = new ExtGState(parentGraphicsState.getExtGState().getLibrary(),
-                    parentGraphicsState.getExtGState().getEntries());
-        }
+        // extra graphics: an ExtGState is never modified once made (gs builds a new one), so it is shared.
+        extGState = parentGraphicsState.extGState;
 
         // copy the parent too.
         this.parentGraphicState = parentGraphicsState.parentGraphicState;
@@ -563,8 +561,13 @@ public class GraphicsState {
     public GraphicsState restore() {
         // make sure we have a parent to restore to
         if (parentGraphicState != null) {
+            Shapes parentShapes = parentGraphicState.shapes;
+            // GH-632: the parent's transform, stroke and colour are re-emitted unless the parent's command list
+            // already leaves them in effect (see Shapes#getPaintTransform).
             // Add the parents CTM to the stack,
-            parentGraphicState.set(parentGraphicState.CTM);
+            if (!parentGraphicState.CTM.equals(parentShapes.getPaintTransform())) {
+                parentGraphicState.set(parentGraphicState.CTM);
+            }
             // Add the parents clip to the stack
             if (clipChange) {
                 Shape parentClip = parentGraphicState.resolveClip();
@@ -578,22 +581,40 @@ public class GraphicsState {
                 }
             }
             // Update the stack with the parentGraphicsState stack.
-            parentGraphicState.shapes.add(new StrokeDrawCmd(
-                    new BasicStroke(parentGraphicState.lineWidth,
-                            parentGraphicState.lineCap,
-                            parentGraphicState.lineJoin,
-                            parentGraphicState.miterLimit,
-                            parentGraphicState.dashArray,
-                            parentGraphicState.dashPhase)));
+            if (!parentGraphicState.isStroke(parentShapes.getPaintStroke())) {
+                parentShapes.add(new StrokeDrawCmd(
+                        new BasicStroke(parentGraphicState.lineWidth,
+                                parentGraphicState.lineCap,
+                                parentGraphicState.lineJoin,
+                                parentGraphicState.miterLimit,
+                                parentGraphicState.dashArray,
+                                parentGraphicState.dashPhase)));
+            }
 
             // Note the following aren't officially part of the graphic state parameters
             // but they need to be restored in order to show some PDF content correctly
 
             // restore the fill color of the last paint
-            parentGraphicState.shapes.add(new ColorDrawCmd(parentGraphicState.getFillColor()));
+            Color fill = parentGraphicState.getFillColor();
+            if (fill == null || !fill.equals(parentShapes.getPaintColor())) {
+                parentShapes.add(new ColorDrawCmd(fill));
+            }
         }
 
         return parentGraphicState;
+    }
+
+    /**
+     * @return true when {@code stroke} is the stroke this state's line parameters build
+     */
+    private boolean isStroke(Stroke stroke) {
+        if (!(stroke instanceof BasicStroke)) {
+            return false;
+        }
+        BasicStroke basic = (BasicStroke) stroke;
+        return basic.getLineWidth() == lineWidth && basic.getEndCap() == lineCap
+                && basic.getLineJoin() == lineJoin && basic.getMiterLimit() == miterLimit
+                && basic.getDashPhase() == dashPhase && Arrays.equals(basic.getDashArray(), dashArray);
     }
 
     /**
