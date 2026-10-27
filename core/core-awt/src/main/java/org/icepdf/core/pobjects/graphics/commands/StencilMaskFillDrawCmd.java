@@ -119,13 +119,17 @@ public class StencilMaskFillDrawCmd extends FillDrawCmd {
         g.setTransform(IDENTITY);
         try {
             Rectangle2D.Double run = new Rectangle2D.Double();
+            double[] corners = new double[4];
             for (int i = 0; i < runCount; i++) {
-                run.setRect(runs[3 * i + 1] / (double) width, runs[3 * i] / (double) height,
-                        (runs[3 * i + 2] - runs[3 * i + 1]) / (double) width, 1.0 / height);
-                Rectangle2D bounds = device.createTransformedShape(run).getBounds2D();
-                double w = Math.max(1, bounds.getWidth());
-                double h = Math.max(1, bounds.getHeight());
-                run.setRect(bounds.getCenterX() - w / 2, bounds.getCenterY() - h / 2, w, h);
+                corners[0] = runs[3 * i + 1] / (double) width;
+                corners[1] = runs[3 * i] / (double) height;
+                corners[2] = runs[3 * i + 2] / (double) width;
+                corners[3] = (runs[3 * i] + 1) / (double) height;
+                // axis-aligned, so two opposite corners give the device bounds
+                device.transform(corners, 0, corners, 0, 2);
+                double w = Math.max(1, Math.abs(corners[2] - corners[0]));
+                double h = Math.max(1, Math.abs(corners[3] - corners[1]));
+                run.setRect((corners[0] + corners[2] - w) / 2, (corners[1] + corners[3] - h) / 2, w, h);
                 g.fill(run);
             }
         } finally {

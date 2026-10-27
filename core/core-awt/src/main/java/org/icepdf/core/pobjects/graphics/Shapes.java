@@ -128,6 +128,11 @@ public class Shapes {
         if (drawCmd instanceof TransformDrawCmd && replaceTransform((TransformDrawCmd) drawCmd)) {
             return;
         }
+        if (drawCmd instanceof AlphaDrawCmd
+                && ((AlphaDrawCmd) drawCmd).getAlphaComposite().equals(paintComposite)) {
+            // already in effect: every masked or filled image re-states its alpha
+            return;
+        }
         shapes.add(drawCmd);
         trackPaintState(drawCmd);
         // keep the prefetch list in step while it still matches the list; any other change forces a rescan.
@@ -197,15 +202,16 @@ public class Shapes {
     }
 
     /**
-     * GH-632: the transform, stroke and colour the commands added so far leave the graphics in, or null when
-     * unknown.  A graphics-state restore (Q) re-emits all three for the parent state; on line art most of them
-     * are already in effect.  Only commands known to leave all three alone (or to restore them) keep the
-     * tracked values; any other command, a size change other than through {@link #add(DrawCmd)}, or handing the
-     * list out through {@link #getShapes()} clears them.
+     * GH-632: the transform, stroke, colour and alpha composite the commands added so far leave the graphics in,
+     * or null when unknown.  A graphics-state restore (Q) re-emits the first three for the parent state, and every
+     * image re-states its alpha; on line art most of them are already in effect.  Only commands known to leave
+     * them alone (or to restore them) keep the tracked values; any other command, a size change other than
+     * through {@link #add(DrawCmd)}, or handing the list out through {@link #getShapes()} clears them.
      */
     private AffineTransform paintTransform;
     private Stroke paintStroke;
     private Color paintColor;
+    private Composite paintComposite;
     private int paintStateSize;
     // index of the last TransformDrawCmd while nothing after it uses the transform, otherwise -1
     private int unusedTransformIndex = -1;
@@ -241,6 +247,7 @@ public class Shapes {
         paintTransform = null;
         paintStroke = null;
         paintColor = null;
+        paintComposite = null;
         unusedTransformIndex = -1;
         paintStateSize = shapes.size();
     }
@@ -257,6 +264,7 @@ public class Shapes {
             paintColor = ((ColorDrawCmd) drawCmd).getColor();
         } else if (drawCmd instanceof AlphaDrawCmd) {
             // leaves the transform, stroke and colour alone
+            paintComposite = ((AlphaDrawCmd) drawCmd).getAlphaComposite();
         } else if (drawCmd instanceof ShapeDrawCmd || drawCmd instanceof FillDrawCmd
                 || drawCmd instanceof DrawDrawCmd || drawCmd instanceof ClipDrawCmd
                 || drawCmd instanceof NoClipDrawCmd) {

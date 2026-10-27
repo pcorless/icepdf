@@ -113,6 +113,26 @@ public class ShapesPaintStateTest {
         assertEquals(held + 3, other.getShapes().size(), "a list changed directly is not trusted");
     }
 
+    @DisplayName("an alpha already in effect is dropped; a blend or other unknown command forgets it")
+    @Test
+    void sameAlphaDropped() {
+        Shapes shapes = new Shapes();
+        shapes.add(new AlphaDrawCmd(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f)));
+        shapes.add(new ColorDrawCmd(Color.RED));
+        shapes.add(new ShapeDrawCmd(new Rectangle2D.Float(0, 0, 1, 1)));
+        shapes.add(new FillDrawCmd());
+        shapes.add(new AlphaDrawCmd(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f)));
+        assertEquals(4, shapes.getShapesCount(), "same alpha dropped");
+        shapes.add(new AlphaDrawCmd(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f)));
+        assertEquals(5, shapes.getShapesCount(), "a different alpha is kept");
+
+        Shapes blended = new Shapes();
+        blended.add(new AlphaDrawCmd(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f)));
+        blended.add(new PaintDrawCmd(Color.BLUE));
+        blended.add(new AlphaDrawCmd(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f)));
+        assertEquals(3, blended.getShapesCount(), "an unknown command may change the composite");
+    }
+
     @DisplayName("q/Q with nothing changed in between re-emits nothing; a changed line width re-emits the stroke")
     @Test
     void restoreSkipsStateInEffect() {
