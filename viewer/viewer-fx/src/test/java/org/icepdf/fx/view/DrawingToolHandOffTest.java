@@ -134,14 +134,25 @@ class DrawingToolHandOffTest {
         assertEquals(2, annotations().size(), "off the annotation the tool draws");
     }
 
-    @DisplayName("the ink tool draws over an ink annotation: a stroke starts inside the last one's bounds")
+    @DisplayName("the ink tool moves ink grabbed by a stroke, and draws in the space inside its bounds")
     @Test
-    void inkToolDrawsOverInk() {
+    void inkToolTakesInkByItsStrokes() {
         Fx.run(() -> view.setToolMode(ToolMode.INK));
         drag(40, 40, 140, 140);
         assertEquals(1, annotations().size());
-        drag(90, 60, 60, 120);
-        assertEquals(2, annotations().size(), "the second stroke is an annotation of its own");
+        Annotation first = annotations().get(0);
+        Rectangle2D before = bounds(first);
+
+        drag(130, 50, 100, 70);
+        assertEquals(2, annotations().size(), "off the stroke, inside its bounds: a second stroke");
+
+        Fx.run(view::clearAnnotationSelection);
+        drag(90, 90, 110, 90);
+        assertEquals(2, annotations().size(), "on the stroke: no new ink");
+        assertEquals(before.getX() + 20, bounds(first).getX(), 1, "the first stroke moved");
+
+        drag(105, 85, 105, 115);
+        assertEquals(before.getY() - 30, bounds(first).getY(), 1, "and is still taken by its stroke where it is now");
     }
 
     @DisplayName("a tool's colour comes first, then the general colour, then the tool's default")
@@ -157,5 +168,141 @@ class DrawingToolHandOffTest {
 
         drag(40, 40, 120, 120);
         assertEquals(new java.awt.Color(0, 255, 0), Fx.call(() -> annotations().get(0).getColor()));
+    }
+
+    private javafx.scene.control.TextArea textEditor() {
+        return Fx.call(() -> (javafx.scene.control.TextArea) view.lookup(".pdf-free-text-editor"));
+    }
+
+    private void key(javafx.scene.Node target, javafx.scene.input.KeyCode code, boolean shift) {
+        Fx.run(() -> Event.fireEvent(target, new javafx.scene.input.KeyEvent(javafx.scene.input.KeyEvent.KEY_PRESSED,
+                "", "", code, shift, false, false, false)));
+        Fx.settle();
+    }
+
+    @DisplayName("a text box: Shift+Enter is a new line, Enter saves; Esc on a new box takes it away")
+    @Test
+    void freeTextKeys() {
+        Fx.run(() -> view.setToolMode(ToolMode.FREE_TEXT));
+        drag(20, 20, 20, 20);
+        assertEquals(1, annotations().size());
+        javafx.scene.control.TextArea editor = textEditor();
+        assertNotNull(editor, "the editor opens on the new box");
+        assertNotNull(Fx.call(() -> view.lookup(".pdf-free-text-actions")), "with its save and cancel buttons");
+        Fx.run(() -> editor.replaceSelection("Hello"));
+        key(editor, javafx.scene.input.KeyCode.ENTER, true);
+        assertEquals("Hello\n", Fx.call(editor::getText), "Shift+Enter: a new line");
+        assertNotNull(textEditor(), "still editing");
+        Fx.run(() -> editor.replaceSelection("world"));
+        key(editor, javafx.scene.input.KeyCode.ENTER, false);
+        assertNull(textEditor(), "Enter: saved and closed");
+        Annotation box = annotations().get(0);
+        assertEquals("Hello\nworld", Fx.call(box::getContents));
+
+        drag(20, 140, 20, 140);
+        assertEquals(2, annotations().size());
+        key(textEditor(), javafx.scene.input.KeyCode.ESCAPE, false);
+        assertNull(textEditor());
+        assertEquals(1, annotations().size(), "Esc: the new box is gone");
+
+        drag(20, 140, 20, 140);
+        assertEquals(2, annotations().size());
+        drag(120, 160, 120, 160);
+        assertEquals(2, annotations().size(), "a click away from an open box doesn't start another");
+    }
+
+    @DisplayName("a text box's save button saves; saving a new box empty takes it away")
+    @Test
+    void freeTextButtons() {
+        Fx.run(() -> view.setToolMode(ToolMode.FREE_TEXT));
+        drag(20, 20, 20, 20);
+        javafx.scene.control.TextArea editor = textEditor();
+        Fx.run(() -> editor.replaceSelection("Saved"));
+        javafx.scene.Parent actions = Fx.call(() -> (javafx.scene.Parent) view.lookup(".pdf-free-text-actions"));
+        Fx.run(() -> ((javafx.scene.control.Button) actions.getChildrenUnmodifiable().get(0)).fire());
+        Fx.settle();
+        assertNull(textEditor());
+        assertEquals("Saved", Fx.call(() -> annotations().get(0).getContents()));
+
+        drag(20, 140, 20, 140);
+        assertEquals(2, annotations().size());
+        key(textEditor(), javafx.scene.input.KeyCode.ENTER, false);
+        assertEquals(1, annotations().size(), "an empty new box isn't kept");
+    }
+
+    /** A point of an annotation's /Rect in page-1 view pixels (zoom 1, unrotated, 200pt page). */
+    private double[] corner(Annotation a, boolean max) {
+        Rectangle2D r = bounds(a);
+        return max ? new double[]{r.getMaxX(), 200 - r.getMinY()} : new double[]{r.getMinX(), 200 - r.getMaxY()};
+    }
+
+    @DisplayName("resizing ink stretches its strokes with the box, and undo puts them back")
+    @Test
+    void inkResizesLinearly() {
+        Fx.run(() -> view.setToolMode(ToolMode.INK));
+        drag(40, 40, 140, 140);
+        org.icepdf.core.pobjects.annotations.InkAnnotation ink =
+                (org.icepdf.core.pobjects.annotations.InkAnnotation) annotations().get(0);
+        Rectangle2D rect = bounds(ink);
+        Rectangle2D strokes = Fx.call(() -> ink.getInkPath().getBounds2D());
+        double[] br = corner(ink, true);
+        drag(br[0], br[1], br[0] + 40, br[1] + 20);
+        Rectangle2D rectAfter = bounds(ink);
+        Rectangle2D strokesAfter = Fx.call(() -> ink.getInkPath().getBounds2D());
+        assertEquals(rect.getWidth() + 40, rectAfter.getWidth(), 1, "the box grew");
+        double sx = rectAfter.getWidth() / rect.getWidth();
+        double sy = rectAfter.getHeight() / rect.getHeight();
+        assertEquals(strokes.getWidth() * sx, strokesAfter.getWidth(), 0.5, "the strokes stretched across");
+        assertEquals(strokes.getHeight() * sy, strokesAfter.getHeight(), 0.5, "and down");
+        assertTrue(rectAfter.contains(strokesAfter), "inside the new box");
+        Fx.run(view::undo);
+        Rectangle2D undone = Fx.call(() -> ink.getInkPath().getBounds2D());
+        assertEquals(strokes.getX(), undone.getX(), 0.01, "undo: the strokes as they were");
+        assertEquals(strokes.getWidth(), undone.getWidth(), 0.01);
+        assertEquals(strokes.getHeight(), undone.getHeight(), 0.01);
+        assertEquals(rect.getWidth(), bounds(ink).getWidth(), 0.01);
+    }
+
+    @DisplayName("resizing a line moves its ends with the box")
+    @Test
+    void lineResizesLinearly() {
+        Fx.run(() -> view.setToolMode(ToolMode.LINE));
+        drag(40, 40, 140, 100);
+        org.icepdf.core.pobjects.annotations.LineAnnotation line =
+                (org.icepdf.core.pobjects.annotations.LineAnnotation) annotations().get(0);
+        Rectangle2D rect = bounds(line);
+        double length = Fx.call(() -> line.getStartOfLine().distance(line.getEndOfLine()));
+        double[] br = corner(line, true);
+        drag(br[0], br[1], br[0] + 30, br[1]);
+        Rectangle2D rectAfter = bounds(line);
+        double sx = rectAfter.getWidth() / rect.getWidth();
+        assertTrue(sx > 1.2, "the box grew");
+        java.awt.geom.Point2D start = Fx.call(() -> (java.awt.geom.Point2D) line.getStartOfLine().clone());
+        java.awt.geom.Point2D end = Fx.call(() -> (java.awt.geom.Point2D) line.getEndOfLine().clone());
+        assertTrue(rectAfter.contains(start) && rectAfter.contains(end), "both ends inside the new box");
+        assertTrue(start.distance(end) > length * 1.1, "the line got longer");
+    }
+
+    @DisplayName("text boxes and notes only move: a drag from the corner of a selected one moves it, same size")
+    @Test
+    void textBoxesAndNotesOnlyMove() {
+        Fx.run(() -> view.setToolMode(ToolMode.FREE_TEXT));
+        drag(20, 20, 20, 20);
+        Fx.run(() -> textEditor().replaceSelection("Fixed"));
+        key(textEditor(), javafx.scene.input.KeyCode.ENTER, false);
+        Fx.run(() -> view.setToolMode(ToolMode.NOTE));
+        drag(150, 150, 150, 150);
+        assertEquals(2, annotations().size());
+        Fx.run(() -> view.setToolMode(ToolMode.TEXT_SELECT));
+        for (Annotation a : annotations()) {
+            Fx.run(() -> view.selectAnnotation(a));
+            Rectangle2D before = bounds(a);
+            double[] br = corner(a, true);
+            drag(br[0] - 1, br[1] - 1, br[0] - 11, br[1] - 1);
+            Rectangle2D after = bounds(a);
+            assertEquals(before.getWidth(), after.getWidth(), 0.01, a.getClass().getSimpleName() + " kept its size");
+            assertEquals(before.getHeight(), after.getHeight(), 0.01);
+            assertEquals(before.getX() - 10, after.getX(), 1, a.getClass().getSimpleName() + " moved");
+        }
     }
 }

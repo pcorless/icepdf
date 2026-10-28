@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.view.internal.tool;
 
+import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.fx.view.PagePoint;
 import org.icepdf.fx.view.ToolMode;
 
@@ -39,10 +40,13 @@ import java.awt.geom.Rectangle2D;
  * <p>
  * A press on an annotation that can be moved, or on a resize handle of the selected one, is the
  * selection tool's instead (select, move, resize, double-click to edit), so what was just drawn can
- * be adjusted without changing tools.  The ink tool only gives way to the handles: a stroke usually
- * starts inside the bounds of the one before it.
+ * be adjusted without changing tools.  Ink is taken by its strokes, not its bounds: a new stroke
+ * usually starts inside the bounds of the one before it.
  */
 public final class AnnotationCreateHandler implements ToolHandler {
+
+    // how near an ink stroke, in view pixels, a press takes the ink rather than drawing.
+    private static final double STROKE_REACH = 5;
 
     private final ToolContext context;
     private final TextSelectHandler select;
@@ -76,9 +80,19 @@ public final class AnnotationCreateHandler implements ToolHandler {
     /** The press (or hover) at a viewport point belongs to the selection tool. */
     private boolean selects(double vx, double vy) {
         if (context.handleAtViewport(vx, vy) >= 0) return true;
-        if (mode == ToolMode.INK) return false;
         AnnotationHit hit = context.annotations().annotationAtViewport(vx, vy);
-        return hit != null && !hit.isActionable() && context.annotations().canMove(hit.annotation());
+        if (hit == null || hit.isActionable() || !context.annotations().canMove(hit.annotation())) return false;
+        return !(hit.annotation() instanceof InkAnnotation ink) || onStroke(ink, vx, vy);
+    }
+
+    /** Within a few pixels of one of the ink's strokes. */
+    private boolean onStroke(InkAnnotation ink, double vx, double vy) {
+        java.awt.Shape path = ink.getInkPath();
+        PagePoint point = context.pageAtViewport(vx, vy);
+        if (path == null || point == null) return false;
+        float reach = (float) (2 * STROKE_REACH / Math.max(0.01, context.zoom()));
+        return new java.awt.BasicStroke(reach, java.awt.BasicStroke.CAP_ROUND, java.awt.BasicStroke.JOIN_ROUND)
+                .createStrokedShape(path).contains(point.x(), point.y());
     }
 
     @Override
@@ -101,6 +115,12 @@ public final class AnnotationCreateHandler implements ToolHandler {
 
     @Override
     public void pressed(MouseEvent e) {
+        // a click away from an open text box saves it (it loses the caret); it doesn't start another.
+        if (context.uiLayers().stream().anyMatch(AnnotationUiLayer::isEditingText)) {
+            selecting = false;
+            pageIndex = -1;
+            return;
+        }
         selecting = selects(e.getX(), e.getY());
         if (selecting) {
             pageIndex = -1;
