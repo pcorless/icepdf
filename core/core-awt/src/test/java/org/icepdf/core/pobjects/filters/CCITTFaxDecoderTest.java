@@ -38,10 +38,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests ICEpdf's own CCITT fax decoder against faxes encoded by libtiff.
  * <p>
- * {@link org.icepdf.core.pobjects.graphics.images.FaxDecoder} decodes a fax with TwelveMonkeys and
- * only reaches this decoder when that one throws, so a corpus of faxes that render correctly says
- * nothing about it: the fallback is never asked.  That is an unfortunate thing to leave untested,
- * because it runs exactly when a file is already unusual.
+ * Since GH-240 this is the decoder {@link org.icepdf.core.pobjects.graphics.images.FaxDecoder} uses;
+ * TwelveMonkeys', which it used before, is now only a test dependency, kept as a second opinion.
  * <p>
  * The fixtures are encoded by libtiff through Pillow and carry their expected picture beside them as
  * a PBM, so what is compared is one implementation against another.  A fixture this decoder had
@@ -49,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>
  * <b>On polarity:</b> a PBM sets a bit for black.  A CCITT filter's output does the opposite - PDF
  * 32000 7.4.6 has BlackIs1 false by default, meaning 0 bits are black - so the expected raster is
- * the PBM's inverted.  {@link #fallbackAgreesWithTwelveMonkeys()} pins that down against the other
+ * the PBM's inverted.  {@link #matchesTwelveMonkeys(String)} pins that down against the other
  * decoder rather than leaving it as this test's opinion.
  */
 public class CCITTFaxDecoderTest {
@@ -270,12 +268,12 @@ public class CCITTFaxDecoderTest {
     }
 
     // ------------------------------------------------------------------
-    // the fallback against the decoder it stands in for
+    // the decoder against TwelveMonkeys, the one FaxDecoder used before GH-240
     // ------------------------------------------------------------------
 
     /**
-     * Decodes with TwelveMonkeys, which is what FaxDecoder reaches for first.  Loaded reflectively
-     * for the same reason FaxDecoder loads it that way: the class is not part of the published API.
+     * Decodes with TwelveMonkeys, which FaxDecoder used before GH-240 and which matched this decoder on
+     * every corpus fax.  Loaded reflectively: the class is not part of TwelveMonkeys' published API.
      */
     private static byte[] twelveMonkeys(byte[] data, int width, int size, int compression,
                                         long options, boolean align) throws Exception {
@@ -291,12 +289,12 @@ public class CCITTFaxDecoderTest {
         return out;
     }
 
-    @DisplayName("the fallback decoder produces exactly what TwelveMonkeys produces")
-    @ParameterizedTest(name = "fallback matches TwelveMonkeys: {0}")
+    @DisplayName("the decoder produces exactly what TwelveMonkeys produces")
+    @ParameterizedTest(name = "matches TwelveMonkeys: {0}")
     @ValueSource(strings = {"checker", "stripes", "vertical", "blank", "solid", "dot", "narrow", "fax1728"})
-    public void fallbackMatchesTwelveMonkeys(String picture) throws Exception {
-        // FaxDecoder swaps one decoder for the other without telling anything downstream, so the two
-        // have to agree byte for byte - padding bits included.  This is also what fixes the polarity
+    public void matchesTwelveMonkeys(String picture) throws Exception {
+        // FaxDecoder swapped one decoder for the other in GH-240 without telling anything downstream, so
+        // the two have to agree byte for byte - padding bits included.  This is also what fixes the polarity
         // the rest of the class asserts: whichever way round these two put black, they put it the
         // same way, and a change to either shows up here rather than as a page of inverted scan.
         Picture expected = readPbm(picture);
@@ -306,7 +304,7 @@ public class CCITTFaxDecoderTest {
         byte[] theirs = twelveMonkeys(data, expected.width(), size, 4, 0L, false);
         byte[] ours = decode(picture, "g4", -1, false);
         assertArrayEquals(theirs, ours,
-                picture + ": the fallback decoder disagrees with the one it stands in for");
+                picture + ": the decoder disagrees with TwelveMonkeys'");
     }
 
     // ------------------------------------------------------------------

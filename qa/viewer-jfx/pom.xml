@@ -62,11 +62,7 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
-        <!-- tiff, jpeg2000 and jbig decoding -->
-        <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-tiff</artifactId>
-        </dependency>
+        <!-- jpeg2000 and jbig decoding -->
         <dependency>
             <groupId>com.github.pcorless</groupId>
             <artifactId>jpx-imageio</artifactId>

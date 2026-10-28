@@ -46,7 +46,7 @@ tasks.register('launcherLibs', Sync) {
     into layout.buildDirectory.dir('launcher/lib')
 }
 
-// Several runtime jars register ImageIO plug-ins in META-INF/services (TIFF, JBIG2, JPEG 2000);
+// Several runtime jars register ImageIO plug-ins in META-INF/services (JBIG2, JPEG 2000);
 // unpacked into one jar only the first copy of each file would survive, so they're merged here.
 def mergedServices = layout.buildDirectory.dir('merged-services')
 tasks.register('mergeServices') {

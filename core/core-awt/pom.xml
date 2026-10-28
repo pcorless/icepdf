@@ -110,9 +110,11 @@
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
+        <!-- test only: CCITTFaxDecoderTest checks ICEpdf's fax decoder against TwelveMonkeys' (GH-240) -->
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-tiff</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Embedded font library -->

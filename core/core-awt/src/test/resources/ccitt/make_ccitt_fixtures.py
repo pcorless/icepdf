@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Generate the CCITT fax fixtures the decoder tests run against.
 
-ICEpdf carries its own CCITT decoder, reached only when the TwelveMonkeys one throws, so nothing in
-the corpus exercises it - a fax renders through TwelveMonkeys and the fallback is never asked.  That
-left the whole of CCITTFaxDecoder untested, which is a poor state for the code that runs precisely
-when a file is already unusual.
+ICEpdf carries its own CCITT decoder.  It was once reached only when the TwelveMonkeys one threw, so
+nothing in the corpus exercised it; since GH-240 it is the only decoder, and these fixtures are its
+tests.
 
 Each fixture is a pair: the raw CCITT bits as they appear in a PDF stream, and the picture they
 decode to.  The bits come from libtiff by way of Pillow, and the picture is written separately as a
