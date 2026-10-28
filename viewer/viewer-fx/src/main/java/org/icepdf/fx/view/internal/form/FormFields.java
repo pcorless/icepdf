@@ -218,7 +218,8 @@ public final class FormFields {
      */
     public boolean actuateFocused(KeyCode code) {
         AbstractWidgetAnnotation focused = host.view().getFocusedField();
-        if (focused == null || fieldEditor != null) return false;
+        // a field can keep focus after filling is taken away (a write in progress): it no longer acts.
+        if (focused == null || fieldEditor != null || !editable()) return false;
         FormController.FieldKind kind = FormController.kindOf(focused);
         if (code != KeyCode.SPACE && !(code == KeyCode.ENTER && kind == FormController.FieldKind.PUSH)) return false;
         if (kind != FormController.FieldKind.CHECK && kind != FormController.FieldKind.RADIO

@@ -23,6 +23,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.util.Library;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -61,6 +62,8 @@ class SharedContentStreams {
     /** Content stream reference to the pages drawing it, in page order. */
     private final Map<Reference, List<Integer>> pagesByStream = new LinkedHashMap<>();
     private final Map<Integer, List<Reference>> streamsByPage = new LinkedHashMap<>();
+    /** Streams already warned about: one warning per stream, however many of its pages are burned. */
+    private final Set<Reference> reported = new HashSet<>();
 
     SharedContentStreams(Document document) {
         PageTree pageTree = document.getPageTree();
@@ -95,7 +98,7 @@ class SharedContentStreams {
         }
         for (Reference stream : streams) {
             List<Integer> pages = pagesByStream.get(stream);
-            if (pages == null || pages.size() < 2) {
+            if (pages == null || pages.size() < 2 || reported.contains(stream)) {
                 continue;
             }
             Set<String> reasons = new LinkedHashSet<>();
@@ -105,6 +108,7 @@ class SharedContentStreams {
                 }
             }
             if (!reasons.isEmpty()) {
+                reported.add(stream);
                 report.warn(RedactionWarning.Kind.SHARED_OBJECT_BURNED_IN_PLACE,
                         "Content stream " + stream + " is shared by pages " + describe(pages)
                                 + ", which do not draw it alike (" + String.join(", ", reasons)
@@ -172,14 +176,41 @@ class SharedContentStreams {
         return references;
     }
 
-    private static String describe(List<Integer> pages) {
+    /** Runs of pages named before the rest are summarised as a count. */
+    private static final int MAX_RUNS = 10;
+
+    /**
+     * The pages as a reader would write them: one-based, consecutive runs of three or more as a
+     * range, and only the first few runs. A stream behind every page of a long document (a footer,
+     * a watermark) would otherwise name a thousand pages in one warning.
+     */
+    static String describe(List<Integer> pages) {
         StringBuilder out = new StringBuilder();
-        for (int page : pages) {
+        int runs = 0;
+        int index = 0;
+        while (index < pages.size()) {
+            int end = index;
+            while (end + 1 < pages.size() && pages.get(end + 1) == pages.get(end) + 1) {
+                end++;
+            }
+            if (runs == MAX_RUNS) {
+                out.append(" and ").append(pages.size() - index).append(" more");
+                break;
+            }
             if (out.length() > 0) {
                 out.append(", ");
             }
             // one-based, which is how a reader refers to a page
-            out.append(page + 1);
+            int first = pages.get(index) + 1;
+            int last = pages.get(end) + 1;
+            if (end - index >= 2) {
+                out.append(first).append('-').append(last);
+                index = end + 1;
+            } else {
+                out.append(first);
+                index++;
+            }
+            runs++;
         }
         return out.toString();
     }
