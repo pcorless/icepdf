@@ -289,9 +289,6 @@
                     <configuration>
                         <showDeprecation>false</showDeprecation>
                         <debuglevel>source,lines</debuglevel>
-                        <compilerArguments>
-                            <encoding>iso-8859-1</encoding>
-                        </compilerArguments>
                     </configuration>
                 </plugin>
                 <plugin>
