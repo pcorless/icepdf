@@ -16,6 +16,7 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.*;
+import org.icepdf.core.util.PdfBytes;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
@@ -273,7 +274,7 @@ public class TermDrivenRedactionTest {
             document.dispose();
         }
         // The file itself carried the word, and no masking could have reached inside it.
-        assertFalse(new String(saved, StandardCharsets.ISO_8859_1).contains("bravo appears here too"),
+        assertFalse(PdfBytes.text(saved).contains("bravo appears here too"),
                 "and its contents should not still be in the file");
     }
 

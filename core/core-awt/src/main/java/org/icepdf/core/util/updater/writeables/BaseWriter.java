@@ -79,6 +79,11 @@ public class BaseWriter {
     private ArrayList<Entry> entries;
     private HashMap<Reference, Entry> entriesMap;
     private long xrefPosition;
+    // non-null when objects are packed into object streams
+    private ObjectStreamWriter objectStreamWriter;
+    // strings written as plain text even in an encrypted document: the contents of an object
+    // stream, which is encrypted as a whole (PDF 32000-1 7.5.7, 7.6.1)
+    protected boolean plainStrings;
 
     public BaseWriter() {
 
@@ -105,8 +110,8 @@ public class BaseWriter {
         nameWriter = new NameWriter();
         dictionaryWriter = new DictionaryWriter();
         referenceWriter = new ReferenceWriter();
-        hexStringObjectWriter = new HexStringObjectWriter(securityManager);
-        literalObjectWriter = new LiteralStringWriter(securityManager);
+        hexStringObjectWriter = new HexStringObjectWriter(securityManager, plainStrings);
+        literalObjectWriter = new LiteralStringWriter(securityManager, plainStrings);
         arrayWriter = new ArrayWriter();
         affineTransformWriter = new AffineTransformWriter();
         pObjectWriter = new PObjectWriter();
@@ -150,6 +155,15 @@ public class BaseWriter {
         return writers.dictionaryWriter;
     }
 
+    /**
+     * Packs the objects that may be into object streams, written just before a compressed
+     * cross-reference stream ({@link #writeFullCompressedXrefTable()}); the classic table can't refer
+     * to them, so only for a full write that ends with one.
+     */
+    public void setUseObjectStreams(boolean useObjectStreams) {
+        objectStreamWriter = useObjectStreams ? new ObjectStreamWriter(securityManager) : null;
+    }
+
     public boolean hasNotWrittenReference(Reference reference) {
         return !entriesMap.containsKey(reference);
     }
@@ -159,6 +173,12 @@ public class BaseWriter {
     }
 
     public void writePObject(PObject pobject) throws IOException {
+        if (objectStreamWriter != null && ObjectStreamWriter.canPack(pobject)) {
+            Entry entry = objectStreamWriter.add(pobject);
+            entries.add(entry);
+            entriesMap.put(pobject.getReference(), entry);
+            return;
+        }
         Entry entry = new Entry(pobject.getReference(), startingPosition + output.getCount());
         entries.add(entry);
         entriesMap.put(pobject.getReference(), entry);
@@ -199,6 +219,12 @@ public class BaseWriter {
     }
 
     public void writeFullCompressedXrefTable() throws IOException {
+        if (objectStreamWriter != null) {
+            // numbered above every object written: the highest is only known now.
+            int next = entries.stream().mapToInt(entry -> entry.getReference().getObjectNumber()).max().orElse(0) + 1;
+            entries.addAll(objectStreamWriter.writeAll(next, startingPosition, output));
+            objectStreamWriter = null;
+        }
         sortEntries();
         compressedXrefTableWriter.writeFullCompressedXrefTable(crossReferenceRoot, securityManager, entries,
                 startingPosition, output);
@@ -209,7 +235,15 @@ public class BaseWriter {
     }
 
     public void writeHeader(Header header) throws IOException {
-        headerWriter.write(header, output);
+        writeHeader(header, 0);
+    }
+
+    /**
+     * @param minimumVersion the lowest version the file can claim, for what is written in it (a
+     *                       cross-reference stream is 1.5); 0 for the document's own
+     */
+    public void writeHeader(Header header, double minimumVersion) throws IOException {
+        headerWriter.write(header, minimumVersion, output);
     }
 
     public void writeValue(PObject pObject, CountingOutputStream output) throws IOException {

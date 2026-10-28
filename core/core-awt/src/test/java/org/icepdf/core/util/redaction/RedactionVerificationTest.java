@@ -195,6 +195,41 @@ public class RedactionVerificationTest {
 
     // -- helpers ---------------------------------------------------------------------------------
 
+    /**
+     * GH-636: a full save packs dictionaries into object streams, compressed, where a scan of the
+     * file's bytes can't see the strings in them. The comment left in by an out-of-scope target is
+     * such a string, so the verifier has to look inside the object streams to find it.
+     */
+    @DisplayName("a word left in an object stream is a failure")
+    @Test
+    public void wordInObjectStreamFails() throws Exception {
+        Document document = open("positionless_text.pdf");
+        RedactionReport report;
+        byte[] written;
+        try {
+            annotate(document, "bravo");
+            Redactor.configure(document, RedactionRequest.ofAnnotationsAndTerms(terms("bravo"))
+                    .with(RedactionOptions.defaults().targets(EnumSet.of(RedactionTarget.PAGE_CONTENT,
+                            RedactionTarget.OUTLINE, RedactionTarget.METADATA))));
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
+            written = out.toByteArray();
+            report = document.getRedactionReport();
+        } finally {
+            document.dispose();
+        }
+
+        // the premise: the comment is all that is left, and its string is packed, so the word is
+        // nowhere in the file's own bytes.
+        String bytes = new String(written, java.nio.charset.StandardCharsets.ISO_8859_1);
+        assertTrue(bytes.contains("/ObjStm"), "the save should pack objects into object streams");
+        assertEquals(0, RedactionVerifier.countInSyntax(bytes, "bravo"), "the word should be out of sight");
+
+        assertEquals(RedactionConfidence.FAILED, report.getConfidence(),
+                "the comment still carries the word: " + report);
+        assertTrue(report.getRawByteMatchesAfter() > 0, report.toJson());
+    }
+
     private Document open(String fixture) throws Exception {
         Document document = new Document();
         document.setFile(Paths.get("src/test/resources/redaction/" + fixture).toString());

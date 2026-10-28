@@ -23,15 +23,27 @@ public class Entry {
     private final Reference reference;
     private final long position;
     private int nextDeletedObjectNumber;
+    // set for an object written inside an object stream
+    private final ObjectStreamWriter.Group objectStream;
+    private final int indexInObjectStream;
 
     protected Entry(Reference ref, long pos) {
         reference = ref;
         position = pos;
+        objectStream = null;
+        indexInObjectStream = -1;
     }
 
     protected Entry(Reference ref) {
+        this(ref, POSITION_DELETED);
+    }
+
+    /** An object stored in an object stream, at the given index. */
+    Entry(Reference ref, ObjectStreamWriter.Group objectStream, int index) {
         reference = ref;
         position = POSITION_DELETED;
+        this.objectStream = objectStream;
+        indexInObjectStream = index;
     }
 
     protected Reference getReference() {
@@ -39,7 +51,19 @@ public class Entry {
     }
 
     protected boolean isDeleted() {
-        return position == POSITION_DELETED;
+        return position == POSITION_DELETED && objectStream == null;
+    }
+
+    boolean isCompressed() {
+        return objectStream != null;
+    }
+
+    int getObjectStreamNumber() {
+        return objectStream.getObjectNumber();
+    }
+
+    int getIndexInObjectStream() {
+        return indexInObjectStream;
     }
 
     protected long getPosition() {

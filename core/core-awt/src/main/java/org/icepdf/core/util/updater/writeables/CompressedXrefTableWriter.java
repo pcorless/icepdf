@@ -22,7 +22,6 @@ import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.CrossReferenceStream;
-import org.icepdf.core.util.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,8 +32,6 @@ import java.util.stream.Collectors;
 
 public class CompressedXrefTableWriter extends BaseTableWriter {
 
-    private static final List<Integer> WIDTHS = Arrays.asList(4, 8, 4);
-
     public void writeIncrementalCompressedXrefTable(CrossReferenceRoot crossReferenceRoot,
                                                     SecurityManager securityManager, List<Entry> entries,
                                                     long startingPosition, CountingOutputStream output) throws IOException {
@@ -42,6 +39,8 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         DictionaryEntries newTrailer = (DictionaryEntries) prevTrailer.getDictionary().clone();
         this.setPreviousTrailer(newTrailer, crossReferenceRoot);
         int newTrailerSize = this.setTrailerSize(newTrailer, prevTrailer, entries);
+        // the xref stream takes that number, so /Size is one more
+        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize + 1);
         long xrefPos = startingPosition + output.getCount();
         newTrailer.remove(Stream.DECODEPARAM_KEY);
         newTrailer.put(Stream.FILTER_KEY, Stream.FILTER_FLATE_DECODE);
@@ -67,9 +66,9 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         int newTrailerSize = entries.stream().sorted(
                 (r1, r2) -> r2.getReference().getObjectNumber() - r1.getReference().getObjectNumber()
         ).collect(Collectors.toList()).get(0).getReference().getObjectNumber();
-        // one more for the xref object to be written below
+        // the xref stream is the next object, and /Size is one more than the highest number
         newTrailerSize += 1;
-        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize);
+        newTrailer.put(PTrailer.SIZE_KEY, newTrailerSize + 1);
 
         writeCompressedXrefTable(securityManager, newTrailer, entries, newTrailerSize, xrefPos, output);
     }
@@ -79,7 +78,10 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
                                           CountingOutputStream output) throws IOException {
         this.closeTableEntries(entries);
 
-        newTrailer.put(PTrailer.W_KEY, WIDTHS);
+        // As narrow as the values allow, as other writers do.  Ghostscript refuses an encrypted
+        // document whose cross-reference stream has the fixed [4 8 4] this used to write.
+        List<Integer> widths = widths(entries);
+        newTrailer.put(PTrailer.W_KEY, widths);
 
         ArrayList<Integer> index = new ArrayList<>();
         for (int i = 0; i < entries.size(); ) {
@@ -91,7 +93,7 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
 
         Stream crossReferenceStream = new Stream(newTrailer, new byte[0]);
         crossReferenceStream.setPObjectReference(new Reference(newTrailerSize, 0));
-        byte[] outputData = createXrefDataStream(entries);
+        byte[] outputData = createXrefDataStream(entries, widths);
 
         crossReferenceStream.setRawBytes(outputData);
         // never encrypted, even in an encrypted document: see writeCrossReferenceStream.
@@ -102,14 +104,53 @@ public class CompressedXrefTableWriter extends BaseTableWriter {
         output.write(COMMENT_EOF);
     }
 
-    private byte[] createXrefDataStream(List<Entry> entries) throws IOException {
+    static byte[] createXrefDataStream(List<Entry> entries, List<Integer> widths) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         for (Entry entry : entries) {
-            Utils.writeInteger(output, CrossReferenceEntry.TYPE_USED);
-            Utils.writeLong(output, entry.getPosition());
-            Utils.writeInteger(output, 0);
+            if (entry.isCompressed()) {
+                writeField(output, CrossReferenceEntry.TYPE_COMPRESSED, widths.get(0));
+                writeField(output, entry.getObjectStreamNumber(), widths.get(1));
+                writeField(output, entry.getIndexInObjectStream(), widths.get(2));
+            } else {
+                writeField(output, CrossReferenceEntry.TYPE_USED, widths.get(0));
+                writeField(output, entry.getPosition(), widths.get(1));
+                // the generation: always 0 here once, which lost every object with another one
+                writeField(output, entry.getReference().getGenerationNumber(), widths.get(2));
+            }
         }
         return output.toByteArray();
+    }
+
+    /** The /W field widths: one byte for the type, and as few as hold the largest of the other two. */
+    static List<Integer> widths(List<Entry> entries) {
+        long second = 0;
+        long third = 0;
+        for (Entry entry : entries) {
+            if (entry.isCompressed()) {
+                second = Math.max(second, entry.getObjectStreamNumber());
+                third = Math.max(third, entry.getIndexInObjectStream());
+            } else {
+                second = Math.max(second, entry.getPosition());
+                third = Math.max(third, entry.getReference().getGenerationNumber());
+            }
+        }
+        return Arrays.asList(1, bytesFor(second), bytesFor(third));
+    }
+
+    private static int bytesFor(long value) {
+        int bytes = 1;
+        while (bytes < 8 && (value >>> (8 * bytes)) != 0) {
+            bytes++;
+        }
+        return bytes;
+    }
+
+    /** A big-endian field of the given width; a negative value (a deleted entry's -1) is written as 0. */
+    private static void writeField(ByteArrayOutputStream output, long value, int width) {
+        long field = Math.max(0, value);
+        for (int shift = 8 * (width - 1); shift >= 0; shift -= 8) {
+            output.write((int) (field >>> shift) & 0xFF);
+        }
     }
 
     private int createIndexArray(List<Entry> entries, int beginIndex, ArrayList<Integer> index) {

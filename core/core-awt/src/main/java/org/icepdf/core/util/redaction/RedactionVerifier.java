@@ -17,7 +17,11 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.structure.CrossReference;
+import org.icepdf.core.pobjects.structure.CrossReferenceCompressedEntry;
+import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.search.SearchTerm;
 
 import java.nio.charset.StandardCharsets;
@@ -99,6 +103,7 @@ public class RedactionVerifier {
             byte[] writtenBytes = Files.readAllBytes(writtenFile);
             String writtenText = allText(writtenBytes, regions);
             String writtenStreams = allStreams(writtenBytes, regions);
+            String writtenObjectStreams = allObjectStreams(writtenBytes, regions);
             String originalText = textOf(original, regions);
             String originalStreams = null;
 
@@ -110,7 +115,8 @@ public class RedactionVerifier {
                 after.put(key, hits);
                 if (terms.contains(term)) {
                     // named: it should be gone from the whole document.
-                    int raw = countInSyntax(writtenStreams, term) + countRawBytes(writtenBytes, term);
+                    int raw = countInSyntax(writtenStreams, term) + countRawBytes(writtenBytes, term)
+                            + countRawBytes(writtenObjectStreams.getBytes(StandardCharsets.ISO_8859_1), term);
                     rawMatches += raw;
                     leaks += hits + raw;
                 } else {
@@ -217,6 +223,42 @@ public class RedactionVerifier {
         document.setByteArray(pdf, 0, pdf.length, "verification");
         try {
             return streamsOf(document, regions);
+        } finally {
+            document.dispose();
+        }
+    }
+
+    /**
+     * Every object stream of the written document, decompressed. The objects a scan of the raw file
+     * is there for - metadata, an annotation's strings, names - are compressed when the writer packs
+     * them into object streams, and the raw scan can't see them there.
+     */
+    private static String allObjectStreams(byte[] pdf, List<UnverifiableRegion> regions) throws Exception {
+        Document document = new Document();
+        document.setByteArray(pdf, 0, pdf.length, "verification");
+        try {
+            Set<Reference> objectStreams = new LinkedHashSet<>();
+            for (CrossReference crossReference :
+                    document.getCatalog().getLibrary().getCrossReferenceRoot().getCrossReferences()) {
+                for (CrossReferenceEntry entry : crossReference.getEntries().values()) {
+                    if (entry instanceof CrossReferenceCompressedEntry) {
+                        objectStreams.add(((CrossReferenceCompressedEntry) entry)
+                                .getObjectNumberOfContainingObjectStream());
+                    }
+                }
+            }
+            StringBuilder objects = new StringBuilder();
+            for (Reference reference : objectStreams) {
+                Object stream = document.getCatalog().getLibrary().getObject(reference);
+                if (stream instanceof Stream) {
+                    objects.append(new String(((Stream) stream).getDecodedStreamBytes(),
+                            StandardCharsets.ISO_8859_1));
+                } else {
+                    regions.add(new UnverifiableRegion(UnverifiableRegion.Reason.STREAM_NOT_PARSED,
+                            "Object stream " + reference + " could not be read"));
+                }
+            }
+            return objects.toString();
         } finally {
             document.dispose();
         }

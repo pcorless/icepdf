@@ -16,6 +16,7 @@
 package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.util.PdfBytes;
 import org.icepdf.core.pobjects.Form;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
@@ -83,7 +84,7 @@ public class RedactionTargetScopeTest {
     @DisplayName("structure tree text is masked when tagged text is in scope")
     @Test
     public void taggedTextIsMasked() throws Exception {
-        String pdf = new String(redactTerm(RedactionOptions.defaults()), StandardCharsets.ISO_8859_1);
+        String pdf = PdfBytes.text(redactTerm(RedactionOptions.defaults()));
 
         assertFalse(pdf.contains("a paragraph about bravo"), "/Alt should have been masked:\n" + pdf);
         assertFalse(pdf.contains("bravo section"), "/T should have been masked");
@@ -97,8 +98,8 @@ public class RedactionTargetScopeTest {
     @DisplayName("structure tree text is left alone when tagged text is out of scope")
     @Test
     public void taggedTextCanBeExcluded() throws Exception {
-        String pdf = new String(redactTerm(RedactionOptions.defaults()
-                .targets(EnumSet.of(RedactionTarget.PAGE_CONTENT))), StandardCharsets.ISO_8859_1);
+        String pdf = PdfBytes.text(redactTerm(RedactionOptions.defaults()
+                .targets(EnumSet.of(RedactionTarget.PAGE_CONTENT))));
 
         assertTrue(pdf.contains("a paragraph about bravo"),
                 "tagged text was out of scope, so /Alt should remain:\n" + pdf);

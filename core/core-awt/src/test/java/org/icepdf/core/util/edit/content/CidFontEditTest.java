@@ -16,6 +16,7 @@
 package org.icepdf.core.util.edit.content;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.util.PdfBytes;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.util.redaction.RedactionFixtures;
@@ -140,7 +141,7 @@ public class CidFontEditTest {
         assertTrue(text.contains("brave"), "the correction should be readable, got: " + text);
         assertTrue(text.contains("alpha"), "and the untouched word left alone, got: " + text);
 
-        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        String raw = PdfBytes.text(edited);
         assertTrue(raw.contains("FontFile2"),
                 "the substitute should be embedded, not merely referenced");
         String streams = RedactionFixtures.contentStreams(edited, false);
@@ -158,7 +159,7 @@ public class CidFontEditTest {
     public void doesNotSubstituteWhenTheFontSuffices() throws Exception {
         byte[] edited = edit("bravo", "loop");
 
-        assertFalse(new String(edited, StandardCharsets.ISO_8859_1).contains("FontFile2"),
+        assertFalse(PdfBytes.text(edited).contains("FontFile2"),
                 "the subset can write loop, so nothing should have been embedded");
     }
 
@@ -174,7 +175,7 @@ public class CidFontEditTest {
         // Greek alpha: outside WinAnsiEncoding, so the substitute cannot be a simple font
         byte[] edited = edit("bravo", "\u03B1\u03B2");
 
-        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        String raw = PdfBytes.text(edited);
         assumeTrue(raw.contains("FontFile2"),
                 "no host font could be embedded for the substitute; nothing to check");
         assertTrue(raw.contains("/Type0"),
@@ -199,7 +200,7 @@ public class CidFontEditTest {
         // rewrite walks the whole document and would carry the addition however it was recorded.
         byte[] edited = edit(INDIRECT_RESOURCES_FIXTURE, "bravo", "brave", WriteMode.INCREMENT_UPDATE);
 
-        String raw = new String(edited, StandardCharsets.ISO_8859_1);
+        String raw = PdfBytes.text(edited);
         assumeTrue(raw.contains("FontFile2"),
                 "no host font could be embedded for the substitute; nothing to check");
 

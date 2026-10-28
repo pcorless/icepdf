@@ -16,6 +16,7 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
+import org.icepdf.core.pobjects.AbstractStringObject;
 import org.icepdf.core.pobjects.HexStringObject;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.security.SecurityManager;
@@ -32,12 +33,27 @@ public class HexStringObjectWriter extends BaseWriter {
     // "0123456789ABCDEF" contains none of the characters that would need escaping
 
     public HexStringObjectWriter(SecurityManager securityManager) {
+        this(securityManager, false);
+    }
+
+    /**
+     * @param plainStrings write every string as plain text, deciphering any read encrypted from the
+     *                     file: for the contents of an object stream, which is encrypted as a whole
+     */
+    public HexStringObjectWriter(SecurityManager securityManager, boolean plainStrings) {
         this.securityManager = securityManager;
+        this.plainStrings = plainStrings;
     }
 
     public void write(PObject pObject, CountingOutputStream output) throws IOException {
         HexStringObject writeable = (HexStringObject) pObject.getObject();
-        if (!pObject.isDoNotEncrypt() && securityManager != null
+        if (plainStrings) {
+            StringBuilder digits = new StringBuilder();
+            for (byte b : writeable.getDecryptedRawBytes(securityManager)) {
+                AbstractStringObject.appendHexByte(digits, b & 0xFF);
+            }
+            writeRaw(digits.toString(), output);
+        } else if (!pObject.isDoNotEncrypt() && securityManager != null
                 && !writeable.isEncryptedFor(pObject.getReference())) {
             // Plain text - authored since the document was opened, or read from an object stream -
             // or enciphered for another object: encrypt it for this one.  The bytes the digits
