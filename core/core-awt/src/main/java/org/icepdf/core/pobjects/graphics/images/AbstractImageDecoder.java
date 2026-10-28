@@ -15,7 +15,6 @@
  */
 package org.icepdf.core.pobjects.graphics.images;
 
-import com.twelvemonkeys.image.AffineTransformOp;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.util.Defs;
 
@@ -23,6 +22,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Transparency;
 import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;

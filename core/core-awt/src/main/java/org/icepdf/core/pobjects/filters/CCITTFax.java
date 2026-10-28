@@ -40,8 +40,8 @@ import static org.icepdf.core.pobjects.graphics.images.FaxDecoder.K_KEY;
 
 /**
  * Decodes a CCITT fax by handing it to an image reader, which is the last thing
- * {@link org.icepdf.core.pobjects.graphics.images.FaxDecoder} tries: TwelveMonkeys first, then
- * {@link CCITTFaxDecoder}, and only when both have thrown does it come here.  The bits are wrapped
+ * {@link org.icepdf.core.pobjects.graphics.images.FaxDecoder} tries: {@link CCITTFaxDecoder} first, and only
+ * when that has thrown does it come here.  The bits are wrapped
  * in a TIFF header so that a reader will take them, JAI's if it is on the class path and ImageIO's
  * otherwise.
  * <p>

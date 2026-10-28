@@ -32,12 +32,6 @@ module org.icepdf.core {
     requires org.apache.pdfbox.jbig2;
     requires io.github.pcorless.jpx;
     requires org.apache.commons.logging;
-    requires com.twelvemonkeys.common.image;
-    requires com.twelvemonkeys.common.io;
-    requires com.twelvemonkeys.common.lang;
-    requires com.twelvemonkeys.imageio.core;
-    requires com.twelvemonkeys.imageio.metadata;
-    requires com.twelvemonkeys.imageio.tiff;
 
     // core api
     exports org.icepdf.core;

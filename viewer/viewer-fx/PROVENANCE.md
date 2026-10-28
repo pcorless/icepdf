@@ -36,7 +36,9 @@ adapted code.
 
 The release distribution carries each shipped licence in the root `licenses/` directory
 (`BouncyCastleLICENSE.txt`, `TwelveMonkeysLICENSE.txt`, the Apache 2.0 and FontBox texts); add one
-there with any new non-Apache runtime dependency.
+there with any new non-Apache runtime dependency.  `TwelveMonkeysLICENSE.txt` stays although the
+TwelveMonkeys jars no longer ship (GH-240): core's CCITT encoder/decoder streams and `TiffExtension`
+are adapted from TwelveMonkeys code under BSD-3-Clause.
 
 Transitive through core-awt. Already shipped by the Swing viewer, so not new to the project:
 
@@ -44,7 +46,6 @@ Transitive through core-awt. Already shipped by the Swing viewer, so not new to 
 |---|---|---|
 | `org.apache.pdfbox:fontbox`, `pdfbox-io`, `jbig2-imageio` | 3.0.8 / 3.0.8 / 3.0.4 | Apache 2.0 |
 | `commons-logging:commons-logging` | 1.4.0 | Apache 2.0 |
-| `com.twelvemonkeys.imageio:imageio-tiff` (+ `imageio-core`, `imageio-metadata`, `common-*`) | 3.15.2 | BSD-3-Clause |
 
 ### New in 7.5.0, transitive through core-awt
 

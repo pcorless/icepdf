@@ -100,7 +100,7 @@ interface TIFFExtension {
 
     /**
      * For use with Photometric: 5 (Separated), when image data is in a color space other than CMYK.
-     * See {@link com.twelvemonkeys.imageio.metadata.exif.TIFF#TAG_INK_NAMES InkNames} field for a
+     * See the InkNames field (TIFF tag 333) for a
      * description of the inks to be used.
      */
     int INKSET_NOT_CMYK = 2;
