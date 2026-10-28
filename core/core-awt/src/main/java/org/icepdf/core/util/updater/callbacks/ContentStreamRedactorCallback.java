@@ -64,7 +64,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
     private final List<RedactionAnnotation> redactionAnnotations;
     private final RedactionOptions options;
     private final RedactionReport report;
-    private static final DictionaryWriter dictionaryWriter = new DictionaryWriter();
+    private static final DictionaryWriter dictionaryWriter = BaseWriter.contentStreamDictionaryWriter();
     private static final byte[] BDC_OPERATOR = "BDC".getBytes(StandardCharsets.ISO_8859_1);
     /** Marked-content entries that carry text a redaction has to reach. */
     private static final Name[] MARKED_CONTENT_TEXT_KEYS = {

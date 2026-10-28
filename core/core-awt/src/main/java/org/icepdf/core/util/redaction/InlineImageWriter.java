@@ -32,7 +32,7 @@ import java.io.IOException;
  */
 public class InlineImageWriter {
 
-    public static final DictionaryWriter dictionaryWriter = new DictionaryWriter();
+    public static final DictionaryWriter dictionaryWriter = BaseWriter.contentStreamDictionaryWriter();
 
     public static void write(CountingOutputStream contentOutputStream, ImageStream imageStream) throws IOException {
         ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);

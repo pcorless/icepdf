@@ -51,21 +51,26 @@ public class BaseWriter {
     protected static final byte[] BEGIN_OBJECT = "obj\n".getBytes();
     protected static final byte[] END_OBJECT = "endobj\n".getBytes();
 
-    private static HeaderWriter headerWriter;
-    private static NameWriter nameWriter;
-    private static DictionaryWriter dictionaryWriter;
-    private static ReferenceWriter referenceWriter;
-    private static HexStringObjectWriter hexStringObjectWriter;
-    private static LiteralStringWriter literalObjectWriter;
-    private static ArrayWriter arrayWriter;
-    private static AffineTransformWriter affineTransformWriter;
-    private static PObjectWriter pObjectWriter;
-    protected static StreamWriter streamWriter;
-    protected static ImageStreamWriter imageStreamWriter;
+    // The writers of one save, shared by every writer taking part in it.  Per save, never static
+    // (GH-637): the string and stream writers carry the save's security manager, and when these were
+    // shared by the whole JVM a save wrote with whichever save had started last - an unencrypted
+    // document saved alongside an encrypted one came out with its strings enciphered under the other
+    // document's key.
+    private HeaderWriter headerWriter;
+    private NameWriter nameWriter;
+    private DictionaryWriter dictionaryWriter;
+    private ReferenceWriter referenceWriter;
+    private HexStringObjectWriter hexStringObjectWriter;
+    private LiteralStringWriter literalObjectWriter;
+    private ArrayWriter arrayWriter;
+    private AffineTransformWriter affineTransformWriter;
+    private PObjectWriter pObjectWriter;
+    protected StreamWriter streamWriter;
+    protected ImageStreamWriter imageStreamWriter;
 
-    private static XRefTableWriter xRefTableWriter;
-    private static TrailerWriter trailerWriter;
-    private static CompressedXrefTableWriter compressedXrefTableWriter;
+    private XRefTableWriter xRefTableWriter;
+    private TrailerWriter trailerWriter;
+    private CompressedXrefTableWriter compressedXrefTableWriter;
 
     private CountingOutputStream output;
     protected SecurityManager securityManager;
@@ -89,8 +94,11 @@ public class BaseWriter {
         entriesMap = new HashMap<>(512);
     }
 
+    /**
+     * Builds this save's writers, for its security manager.  Every writer in the set is handed the
+     * same set, so whatever one writes through another stays in this save.
+     */
     public void initializeWriters() {
-        // reuse instances of primitive pdf types.
         streamWriter = new StreamWriter(securityManager);
         imageStreamWriter = new ImageStreamWriter(securityManager);
         headerWriter = new HeaderWriter();
@@ -105,6 +113,41 @@ public class BaseWriter {
         xRefTableWriter = new XRefTableWriter();
         trailerWriter = new TrailerWriter();
         compressedXrefTableWriter = new CompressedXrefTableWriter();
+        for (BaseWriter writer : new BaseWriter[]{streamWriter, imageStreamWriter, headerWriter, nameWriter,
+                dictionaryWriter, referenceWriter, hexStringObjectWriter, literalObjectWriter, arrayWriter,
+                affineTransformWriter, pObjectWriter, xRefTableWriter, trailerWriter, compressedXrefTableWriter}) {
+            writer.shareWriters(this);
+        }
+    }
+
+    private void shareWriters(BaseWriter from) {
+        streamWriter = from.streamWriter;
+        imageStreamWriter = from.imageStreamWriter;
+        headerWriter = from.headerWriter;
+        nameWriter = from.nameWriter;
+        dictionaryWriter = from.dictionaryWriter;
+        referenceWriter = from.referenceWriter;
+        hexStringObjectWriter = from.hexStringObjectWriter;
+        literalObjectWriter = from.literalObjectWriter;
+        arrayWriter = from.arrayWriter;
+        affineTransformWriter = from.affineTransformWriter;
+        pObjectWriter = from.pObjectWriter;
+        xRefTableWriter = from.xRefTableWriter;
+        trailerWriter = from.trailerWriter;
+        compressedXrefTableWriter = from.compressedXrefTableWriter;
+    }
+
+    /**
+     * A dictionary writer for content streams (an inline image's dictionary, a marked-content
+     * property list), with writers of its own: nothing in a content stream is encrypted on its own,
+     * so it is written the same whatever document is being saved.
+     *
+     * @return a new dictionary writer with an unencrypted set of writers
+     */
+    public static DictionaryWriter contentStreamDictionaryWriter() {
+        BaseWriter writers = new BaseWriter();
+        writers.initializeWriters();
+        return writers.dictionaryWriter;
     }
 
     public boolean hasNotWrittenReference(Reference reference) {
