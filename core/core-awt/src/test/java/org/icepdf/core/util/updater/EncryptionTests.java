@@ -16,6 +16,7 @@ package org.icepdf.core.util.updater;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,12 @@ import java.io.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EncryptionTests {
+
+    // the tests below switch the compressed xref off; put it back for the rest of the suite.
+    @AfterEach
+    void restoreCompressedXref() {
+        FullUpdater.compressXrefTable = true;
+    }
     @DisplayName("encryption - document rewrite should still be encrypted")
     @Test
     public void testXrefTableFullUpdate() {

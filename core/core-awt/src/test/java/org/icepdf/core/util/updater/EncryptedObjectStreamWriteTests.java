@@ -152,6 +152,9 @@ public class EncryptedObjectStreamWriteTests {
         byte[] inflated = new byte[4096];
         int n = inflater.inflate(inflated);
         assertTrue(n > 0, "the cross-reference stream inflates as plain Flate data");
-        assertEquals(0, n % 16, "whole 4 + 8 + 4 byte entries");
+        Matcher widths = Pattern.compile("/W \\[(\\d+) (\\d+) (\\d+)\\]").matcher(xref);
+        assertTrue(widths.find(), "no /W");
+        int entry = Integer.parseInt(widths.group(1)) + Integer.parseInt(widths.group(2)) + Integer.parseInt(widths.group(3));
+        assertEquals(0, n % entry, "whole " + widths.group() + " entries");
     }
 }

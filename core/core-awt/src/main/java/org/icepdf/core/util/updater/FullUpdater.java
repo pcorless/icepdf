@@ -65,6 +65,13 @@ public class FullUpdater {
     public static boolean compressXrefTable = Defs.booleanProperty(
             "org.icepdf.core.utils.fullUpdater.compressXref", true);
 
+    /**
+     * Pack objects into object streams (PDF 1.5) when the cross-reference is written compressed.
+     * Can be disabled to aid in debugging, or for readers that predate PDF 1.5.
+     */
+    public static boolean useObjectStreams = Defs.booleanProperty(
+            "org.icepdf.core.utils.fullUpdater.objectStreams", true);
+
     private Library library;
     private StateManager stateManager;
 
@@ -74,6 +81,14 @@ public class FullUpdater {
 
     public static void setCompressXrefTable(boolean compressXrefTable) {
         FullUpdater.compressXrefTable = compressXrefTable;
+    }
+
+    public static boolean isUseObjectStreams() {
+        return useObjectStreams;
+    }
+
+    public static void setUseObjectStreams(boolean useObjectStreams) {
+        FullUpdater.useObjectStreams = useObjectStreams;
     }
 
     /**
@@ -193,20 +208,23 @@ public class FullUpdater {
             redactionReport = Redactor.redact(document, redactionRequest);
         }
 
+        // A cross-reference stream is never encrypted, nor are the strings of its dictionary, so an
+        // encrypted document can have one as well as any other (PDF 32000-1 7.5.8, 7.6.1); the
+        // incremental updater already writes one for them.
+        boolean compressedXref = compressXrefTable;
+        // Object streams are reachable only through a compressed xref.  In an encrypted document the
+        // stream is encrypted as a whole and the strings in it left plain, which needs the key.
+        writer.setUseObjectStreams(useObjectStreams && compressedXref
+                && (securityManager == null || securityManager.getEncryptionKey() != null));
+
         synchronized (mappedFileByteBufferLock) {
-            // write header
-            writer.writeHeader(library.getFileHeader());
+            // write header, at least 1.5 when the cross-reference is a stream (and so may the objects be)
+            writer.writeHeader(library.getFileHeader(), compressedXref ? 1.5 : 0);
 
             // use the document root to iterate over the object tree writing out each object.
             writeDictionary(writer, pTrailer);
 
-            // this can be optimized later, but we can't use a compressed xref table for /encrypt dictionary as there
-            // is no way to decompress the stream as the key is encrypted.  Basically we can't encrypt /encrypt in
-            // a compressed stream,  it needs to go in a xref table and the other objects all go in the compressed
-            // xref stream.
-            if (compressXrefTable && securityManager == null ||
-                    (securityManager != null &&
-                            securityManager.getEncryptionKey() == null)) {
+            if (compressedXref) {
                 writer.writeFullCompressedXrefTable();
             } else {
                 writer.writeXRefTable();

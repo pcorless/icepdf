@@ -43,8 +43,14 @@ public class HeaderWriter extends BaseWriter {
     private static final byte[] FOUR_BYTES = {(byte) 0xE2, (byte) 0xE3, (byte) 0xCF, (byte) 0xD3};
 
     public void write(Header header, CountingOutputStream output) throws IOException {
+        write(header, 0, output);
+    }
+
+    public void write(Header header, double minimumVersion, CountingOutputStream output) throws IOException {
+        String version = header.getVersion() < minimumVersion
+                ? "PDF-" + minimumVersion : header.getWriterVersion();
         output.write(commentMarker);
-        output.write(header.getWriterVersion().getBytes(StandardCharsets.ISO_8859_1));
+        output.write(version.getBytes(StandardCharsets.ISO_8859_1));
         output.write(NEWLINE);
         output.write(commentMarker);
         output.write(FOUR_BYTES);
