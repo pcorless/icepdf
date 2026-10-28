@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -90,7 +91,38 @@ public class SharedContentStreamTest {
                 "and which pages share it: " + warning.getDetail());
     }
 
+    @DisplayName("a shared stream is reported once, however many of its pages are redacted")
+    @Test
+    public void sharingIsReportedOncePerStream() throws Exception {
+        RedactionReport report = redact("shared_content_rotated.pdf", 0, 1).report;
+
+        assertEquals(1, report.getWarnings().size(),
+                "both pages were redacted, but it is one stream: " + report.getWarnings());
+    }
+
+    /**
+     * A footer or watermark stream drawn by every page of a long document named all thousand of
+     * them in the warning, which then ran off the side of any dialog showing it.
+     */
+    @DisplayName("the pages sharing a stream are listed as ranges, and only the first few")
+    @Test
+    public void sharingPagesAreSummarised() {
+        assertEquals("1, 2", SharedContentStreams.describe(List.of(0, 1)));
+        assertEquals("1-1001", SharedContentStreams.describe(range(0, 1001)));
+        assertEquals("1, 3-5, 9", SharedContentStreams.describe(List.of(0, 2, 3, 4, 8)));
+        List<Integer> scattered = new ArrayList<>();
+        for (int i = 0; i < 100; i++) scattered.add(i * 2);
+        assertEquals("1, 3, 5, 7, 9, 11, 13, 15, 17, 19 and 90 more",
+                SharedContentStreams.describe(scattered));
+    }
+
     // -- helpers ---------------------------------------------------------------------------------
+
+    private static List<Integer> range(int from, int to) {
+        List<Integer> pages = new ArrayList<>();
+        for (int i = from; i < to; i++) pages.add(i);
+        return pages;
+    }
 
     private RedactionReport redactFirstPage(String fixture) throws Exception {
         return redact(fixture).report;
@@ -106,12 +138,18 @@ public class SharedContentStreamTest {
     }
 
     private Result redact(String fixture) throws Exception {
+        return redact(fixture, 0);
+    }
+
+    private Result redact(String fixture, int... pageIndexes) throws Exception {
         Document document = new Document();
         document.setFile(Paths.get("src/test/resources/redaction/" + fixture).toString());
         try {
-            Page page = document.getPageTree().getPage(0);
-            page.init();
-            page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)));
+            for (int pageIndex : pageIndexes) {
+                Page page = document.getPageTree().getPage(pageIndex);
+                page.init();
+                page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 45, 20)));
+            }
             Redactor.configure(document, RedactionRequest.ofAnnotations());
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();

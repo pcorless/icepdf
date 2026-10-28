@@ -418,6 +418,9 @@ class ViewerWindowTest {
         assertTrue(summary.contains("warning 4") && !summary.contains("warning 5\n"), summary);
         assertTrue(summary.endsWith(Messages.format("viewer.report.moreWarnings", 395)), summary);
         assertEquals(2, PdfViewer.detailsSummary(details.subList(0, 2)).strip().lines().count(), "a few: all listed");
+        String longOne = PdfViewer.detailsSummary(List.of("x".repeat(5000)));
+        assertTrue(longOne.length() < PdfViewer.REPORT_DETAIL_LENGTH + 10 && longOne.endsWith("\u2026"),
+                "a very long one is cut short: " + longOne.length());
     }
 
     @DisplayName("search hits are highlighted while the search bar shows, hidden with it, and F3 brings it back")

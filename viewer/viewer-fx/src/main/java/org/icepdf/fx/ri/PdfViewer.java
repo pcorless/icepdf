@@ -750,9 +750,10 @@ public class PdfViewer extends StackPane {
                 ? javafx.scene.control.Alert.AlertType.INFORMATION : javafx.scene.control.Alert.AlertType.WARNING,
                 text.toString(), javafx.scene.control.ButtonType.OK);
         alert.setHeaderText(Messages.format("viewer.redactedSavedAs", name));
-        if (details.size() > REPORT_DETAILS) {
+        if (details.size() > REPORT_DETAILS
+                || details.stream().anyMatch(detail -> detail.length() > REPORT_DETAIL_LENGTH)) {
             // the whole list, scrolling, under Show Details: a dialog sized to hundreds of lines
-            // outgrows the largest window the graphics card can draw.
+            // (or to one very long one) outgrows the largest window the graphics card can draw.
             StringBuilder all = new StringBuilder();
             for (String detail : details) {
                 all.append("\u2022 ").append(detail).append('\n');
@@ -771,11 +772,18 @@ public class PdfViewer extends StackPane {
     /** The redaction report lists this many reasons and warnings; the rest are under Show Details. */
     static final int REPORT_DETAILS = 5;
 
-    /** The first few reasons and warnings as bullets, and how many more there are. */
+    /** Longer reasons and warnings are cut short in the report; the whole text is under Show Details. */
+    static final int REPORT_DETAIL_LENGTH = 200;
+
+    /** The first few reasons and warnings as bullets, each cut to a readable length, and how many more there are. */
     static String detailsSummary(java.util.List<String> details) {
         StringBuilder text = new StringBuilder();
         for (int i = 0; i < Math.min(REPORT_DETAILS, details.size()); i++) {
-            text.append("\n\u2022 ").append(details.get(i));
+            String detail = details.get(i);
+            if (detail.length() > REPORT_DETAIL_LENGTH) {
+                detail = detail.substring(0, REPORT_DETAIL_LENGTH).stripTrailing() + "\u2026";
+            }
+            text.append("\n\u2022 ").append(detail);
         }
         if (details.size() > REPORT_DETAILS) {
             text.append('\n').append(Messages.format("viewer.report.moreWarnings", details.size() - REPORT_DETAILS));

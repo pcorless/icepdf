@@ -423,11 +423,12 @@ public class PdfView extends Control {
 
     /**
      * Opens or closes a markup annotation's popup note; the state is saved in the document (/Open).
-     * No-op for an annotation without a popup.
+     * No-op for an annotation without a popup, and while {@link #isReadOnly() read only}: it is a
+     * change to the document like any other.
      */
     public void setPopupOpen(MarkupAnnotation markup, boolean open) {
         PopupAnnotation popup = markup != null ? markup.getPopupAnnotation() : null;
-        if (popup == null || !(getSkin() instanceof PdfViewSkin skin)) return;
+        if (popup == null || isReadOnly() || !(getSkin() instanceof PdfViewSkin skin)) return;
         AnnotationHit hit = skin.annotations().hitOf(markup);
         if (hit == null) return;
         Page page = getDocument().getPageTree().getPage(hit.pageIndex());
