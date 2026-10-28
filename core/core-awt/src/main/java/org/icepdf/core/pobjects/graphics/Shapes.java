@@ -88,10 +88,15 @@ public class Shapes {
      * @return number of shapes on the stack
      */
     public int getShapesCount() {
+        // the caller may keep this as an index into the list, so no earlier command is replaced after it
+        replaceBarrier = shapes.size();
         return shapes.size();
     }
 
     public ArrayList<DrawCmd> getShapes() {
+        // the caller may change the list or keep an index into it
+        replaceBarrier = shapes.size();
+        forgetPaintState();
         return shapes;
     }
 
@@ -116,11 +121,30 @@ public class Shapes {
     }
 
     public void add(DrawCmd drawCmd){
-
-        if (!(drawCmd instanceof FormDrawCmd)){
-            shapes.add(drawCmd);
-        }else{
-            shapes.add(drawCmd);
+        if (paintStateSize != shapes.size()) {
+            // changed other than through add
+            forgetPaintState();
+        }
+        if (drawCmd instanceof TransformDrawCmd && replaceTransform((TransformDrawCmd) drawCmd)) {
+            return;
+        }
+        if (drawCmd instanceof AlphaDrawCmd
+                && ((AlphaDrawCmd) drawCmd).getAlphaComposite().equals(paintComposite)) {
+            // already in effect: every masked or filled image re-states its alpha
+            return;
+        }
+        shapes.add(drawCmd);
+        trackPaintState(drawCmd);
+        // keep the prefetch list in step while it still matches the list; any other change forces a rescan.
+        ReducibleImages tracked = reducibleImages;
+        if (tracked.shapesSize == shapes.size() - 1) {
+            if (drawCmd instanceof ImageDrawCmd) {
+                ImageReference image = ((ImageDrawCmd) drawCmd).getImageReference();
+                if (image != null && image.isReducible()) {
+                    tracked.images.add(image);
+                }
+            }
+            tracked.shapesSize++;
         }
     }
 
@@ -178,6 +202,105 @@ public class Shapes {
     }
 
     /**
+     * GH-632: the transform, stroke, colour and alpha composite the commands added so far leave the graphics in,
+     * or null when unknown.  A graphics-state restore (Q) re-emits the first three for the parent state, and every
+     * image re-states its alpha; on line art most of them are already in effect.  Only commands known to leave
+     * them alone (or to restore them) keep the tracked values; any other command, a size change other than
+     * through {@link #add(DrawCmd)}, or handing the list out through {@link #getShapes()} clears them.
+     */
+    private AffineTransform paintTransform;
+    private Stroke paintStroke;
+    private Color paintColor;
+    private Composite paintComposite;
+    private int paintStateSize;
+    // index of the last TransformDrawCmd while nothing after it uses the transform, otherwise -1
+    private int unusedTransformIndex = -1;
+    // commands before this index are never replaced: a caller may hold an index into the list
+    private int replaceBarrier;
+    // the list's first TransformDrawCmd is never replaced: a soft mask group's first transform is read as the
+    // group's own cm (ShadingSoftMaskDrawCmd.firstTransform)
+    private boolean hasTransform;
+
+    /**
+     * GH-632: a transform that is already in effect is dropped, and one that replaces a transform nothing has
+     * used yet (only colour, stroke and alpha commands since, which don't depend on it) takes that command's
+     * place.  On line art most transforms are a Q restoring the page transform, replaced by the next cm before
+     * anything is drawn.  The list never shrinks or shifts, so indexes into it stay valid, and its first transform
+     * is never replaced.
+     *
+     * @return true when the command was dropped or took an earlier command's place, and must not be appended
+     */
+    private boolean replaceTransform(TransformDrawCmd drawCmd) {
+        AffineTransform transform = drawCmd.getAffineTransform();
+        if (transform.equals(paintTransform)) {
+            return true;
+        }
+        if (unusedTransformIndex >= replaceBarrier && unusedTransformIndex >= 0) {
+            shapes.set(unusedTransformIndex, drawCmd);
+            paintTransform = transform;
+            return true;
+        }
+        return false;
+    }
+
+    private void forgetPaintState() {
+        paintTransform = null;
+        paintStroke = null;
+        paintColor = null;
+        paintComposite = null;
+        unusedTransformIndex = -1;
+        paintStateSize = shapes.size();
+    }
+
+    private void trackPaintState(DrawCmd drawCmd) {
+        if (drawCmd instanceof TransformDrawCmd) {
+            paintTransform = ((TransformDrawCmd) drawCmd).getAffineTransform();
+            // the first transform stays where it is
+            unusedTransformIndex = hasTransform ? shapes.size() - 1 : -1;
+            hasTransform = true;
+        } else if (drawCmd instanceof StrokeDrawCmd) {
+            paintStroke = ((StrokeDrawCmd) drawCmd).getStroke();
+        } else if (drawCmd instanceof ColorDrawCmd) {
+            paintColor = ((ColorDrawCmd) drawCmd).getColor();
+        } else if (drawCmd instanceof AlphaDrawCmd) {
+            // leaves the transform, stroke and colour alone
+            paintComposite = ((AlphaDrawCmd) drawCmd).getAlphaComposite();
+        } else if (drawCmd instanceof ShapeDrawCmd || drawCmd instanceof FillDrawCmd
+                || drawCmd instanceof DrawDrawCmd || drawCmd instanceof ClipDrawCmd
+                || drawCmd instanceof NoClipDrawCmd) {
+            // leave the transform, stroke and colour alone, but use the transform
+            unusedTransformIndex = -1;
+        } else {
+            forgetPaintState();
+        }
+        paintStateSize = shapes.size();
+    }
+
+    /**
+     * @return the transform the last {@link TransformDrawCmd} set, if it is still in effect at the end of the
+     * list, otherwise null
+     */
+    public AffineTransform getPaintTransform() {
+        return paintStateSize == shapes.size() ? paintTransform : null;
+    }
+
+    /**
+     * @return the stroke the last {@link StrokeDrawCmd} set, if it is still in effect at the end of the list,
+     * otherwise null
+     */
+    public Stroke getPaintStroke() {
+        return paintStateSize == shapes.size() ? paintStroke : null;
+    }
+
+    /**
+     * @return the colour the last {@link ColorDrawCmd} set, if it is still in effect at the end of the list,
+     * otherwise null
+     */
+    public Color getPaintColor() {
+        return paintStateSize == shapes.size() ? paintColor : null;
+    }
+
+    /**
      * As {@link #paint(Graphics2D, Page)}, but resolves any shading-fill sentinel
      * {@link org.icepdf.core.pobjects.graphics.commands.ShapeDrawCmd} (one whose
      * shape is {@code null}, meaning "fill the whole group region") to
@@ -199,14 +322,46 @@ public class Shapes {
      * @param g graphics about to be painted to, in the page's user space
      */
     public void prefetchImages(Graphics2D g) {
-        for (int i = 0, max = shapes.size(); i < max; i++) {
-            DrawCmd cmd = shapes.get(i);
-            if (cmd instanceof ImageDrawCmd) {
-                ImageReference image = ((ImageDrawCmd) cmd).getImageReference();
-                if (image != null) {
-                    image.prefetch(g);
+        for (ImageReference image : reducibleImages()) {
+            image.prefetch(g);
+        }
+    }
+
+    /**
+     * The images {@link ImageReference#prefetch} acts on, collected as commands are added rather than by
+     * scanning every command on every paint (a page of 122K stencil masks has none).  Rescanned when the list
+     * was changed other than through {@link #add(DrawCmd)}.
+     */
+    private ArrayList<ImageReference> reducibleImages() {
+        ReducibleImages cached = reducibleImages;
+        int size = shapes.size();
+        if (cached.shapesSize != size) {
+            ArrayList<ImageReference> images = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                DrawCmd cmd = shapes.get(i);
+                if (cmd instanceof ImageDrawCmd) {
+                    ImageReference image = ((ImageDrawCmd) cmd).getImageReference();
+                    if (image != null && image.isReducible()) {
+                        images.add(image);
+                    }
                 }
             }
+            cached = new ReducibleImages(size, images);
+            reducibleImages = cached;
+        }
+        return cached.images;
+    }
+
+    // appended to while the page is parsed; a rescan by concurrent paints is a benign race, same result.
+    private volatile ReducibleImages reducibleImages = new ReducibleImages(0, new ArrayList<>());
+
+    private static final class ReducibleImages {
+        int shapesSize;
+        final ArrayList<ImageReference> images;
+
+        ReducibleImages(int shapesSize, ArrayList<ImageReference> images) {
+            this.shapesSize = shapesSize;
+            this.images = images;
         }
     }
 
@@ -342,6 +497,9 @@ public class Shapes {
         for (Object object : shapes) {
             if (object instanceof ImageDrawCmd) {
                 images.add(((ImageDrawCmd) object).getImage());
+            } else if (object instanceof StencilMaskFillDrawCmd) {
+                // a tiny stencil mask painted as a fill is still one of the page's images (GH-632).
+                images.add(((StencilMaskFillDrawCmd) object).getImage());
             } else if (object instanceof ShapesDrawCmd) {
                 images.addAll(((ShapesDrawCmd) object).getShapes().getImages());
             }

@@ -85,7 +85,7 @@ public class ImageRetentionTest {
         }
     }
 
-    @DisplayName("an image wholly outside the clip is culled; one overlapping it is not")
+    @DisplayName("an image wholly outside the clip, or off the surface, is culled; one overlapping it is not")
     @Test
     public void culling() {
         BufferedImage canvas = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB);
@@ -104,10 +104,17 @@ public class ImageRetentionTest {
         assertFalse(ImageReference.isOutsideClip(g, 0, 0, 1, 1), "image at 80..120 overlaps the clip");
         g.dispose();
 
+        // with no clip set, the drawing surface bounds the paint: only an image off the surface is culled.
+        g = canvas.createGraphics();
+        g.translate(50, 0);
+        g.scale(40, 40);
+        assertFalse(ImageReference.isOutsideClip(g, 0, 0, 1, 1), "no clip, image on the surface");
+        g.dispose();
+
         g = canvas.createGraphics();
         g.translate(150, 0);
         g.scale(40, 40);
-        assertFalse(ImageReference.isOutsideClip(g, 0, 0, 1, 1), "no clip: nothing is culled");
+        assertTrue(ImageReference.isOutsideClip(g, 0, 0, 1, 1), "no clip, image off the 100px surface");
         g.dispose();
     }
 }

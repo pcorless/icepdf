@@ -194,7 +194,9 @@ public class Stream extends Dictionary {
                 // Size the output buffer to at least the raw (still-compressed) length: the decoded result is
                 // almost always larger, so this floor skips the early grow-and-copy reallocations that otherwise
                 // dominate decode allocation/GC (the default presize of 8192 would start tiny for large streams).
-                int outLength = Math.max(Math.max(presize, 8192), (int) rawStreamLength);
+                // An exact presize (an image knows its sample bytes) is used as given: the 8 KB default floor made
+                // every tiny stencil mask allocate two 8 KB+ buffers for a few bytes of data.
+                int outLength = Math.max(presize > 0 ? presize : 8192, (int) rawStreamLength);
                 ConservativeSizingByteArrayOutputStream out = new ConservativeSizingByteArrayOutputStream(outLength);
                 byte[] buffer = new byte[Math.min(outLength, 32 * 1024)];
                 while (true) {

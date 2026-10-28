@@ -72,6 +72,8 @@ public abstract class ImageReference implements Callable<BufferedImage> {
 
     /** An image occupies the unit square in user space; the CTM puts it where it is drawn. */
     private static final Rectangle2D UNIT_SQUARE = new Rectangle2D.Float(0, 0, 1, 1);
+    // below this many device pixels an image is drawn whole: trimming it to the clip saves less than it costs.
+    private static final double MIN_CLIPPED_BLIT_DEVICE_PIXELS = 1 << 20;
 
     private static final Logger logger =
             Logger.getLogger(ImageReference.class.getName());
@@ -403,6 +405,14 @@ public abstract class ImageReference implements Callable<BufferedImage> {
      * @param g the graphics the page is about to be painted to, in the page's user space: the space
      *          the {@link #getPlacement placement} is in
      */
+    /**
+     * @return true when this image may be decoded at a reduced size (GH-625), the only case
+     * {@link #prefetch(Graphics2D)} does anything for
+     */
+    public boolean isReducible() {
+        return reducible;
+    }
+
     public void prefetch(Graphics2D g) {
         if (!reducible || reference == null || placement == null || ImageUtility.isCmykInkCapturing()
                 || !ImageDownsampler.isRasterTarget(g) || isInTransientBackoff()) {
@@ -475,23 +485,25 @@ public abstract class ImageReference implements Callable<BufferedImage> {
         if (ImageUtility.isCmykInkCapturing()) {
             return false;
         }
-        Shape clip = aG.getClip();
-        if (clip == null) {
+        if (aW <= 0 || aH <= 0) {
             return false;
         }
-        AffineTransform transform = aG.getTransform();
-        Rectangle2D deviceClip = transform.createTransformedShape(clip).getBounds2D();
-        Rectangle2D deviceImage = transform.createTransformedShape(
-                new Rectangle2D.Double(aX, aY, aW, aH)).getBounds2D();
-        deviceImage.setRect(deviceImage.getX() - 1, deviceImage.getY() - 1,
-                deviceImage.getWidth() + 2, deviceImage.getHeight() + 2);
-        return !deviceClip.intersects(deviceImage);
+        // hitClip tests the image's device bounds against the device clip directly; getClip() would build a
+        // new user-space clip shape for every image (122K tiny stencil masks on 9216.pdf).  Like the bounds
+        // test it replaces, it is conservative: it never reports an image that could paint as outside.
+        return !aG.hitClip(aX, aY, aW, aH);
     }
 
     private boolean drawClippedToViewport(Graphics2D aG, BufferedImage image,
                                           int aX, int aY, int aW, int aH) {
         // captureCmykInk assumes the whole image was drawn -> don't trim under it.
         if (ImageUtility.isCmykInkCapturing()) {
+            return false;
+        }
+        // the raster Java2D allocates follows the image's device size; a small one costs less than working
+        // out the visible sub-region (a clip shape per image, 122K stencil masks on 9216.pdf).
+        AffineTransform transform = aG.getTransform();
+        if (Math.abs(transform.getDeterminant()) * aW * aH < MIN_CLIPPED_BLIT_DEVICE_PIXELS) {
             return false;
         }
         Shape clip = aG.getClip();

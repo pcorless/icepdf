@@ -126,7 +126,7 @@ public abstract class AbstractContentParser {
     protected final AtomicInteger imageIndex = new AtomicInteger(1);
 
     // stack to help with the parse
-    protected final Stack<Object> stack = new Stack<>();
+    protected final Stack<Object> stack = new OperandStack();
 
     /**
      * @param l PDF library master object.
@@ -721,6 +721,21 @@ public abstract class AbstractContentParser {
                 // set CTM so we can convert image location to user space at a later time.
                 AffineTransform af = new AffineTransform(graphicState.getCTM());
                 imageStream.setGraphicsTransformMatrix(af);
+
+                // GH-632: a tiny stencil mask is filled as rectangles rather than decoded and drawn as an image.
+                StencilMaskFill.Mask mask = contentStreamCallback == null
+                        ? StencilMaskFill.of(imageStream, graphicState, inTextBlock) : null;
+                if (mask != null) {
+                    imageIndex.incrementAndGet();
+                    // the shape (for vector output) is already in the current user space, so no transform
+                    // commands are needed, 3 per mask otherwise; how it rasterises is up to the command.
+                    setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
+                    shapes.add(new ColorDrawCmd(graphicState.getFillColor()));
+                    shapes.add(new ShapeDrawCmd(mask.shape));
+                    shapes.add(new StencilMaskFillDrawCmd(imageStream, mask.paints, mask.width, mask.height,
+                            graphicState.getFillColor(), mask.runs, mask.runCount, mask.imageToUser));
+                    return graphicState;
+                }
 
                 // create an ImageReference for future decoding
                 ImageReference imageReference = ImageReferenceFactory.getImageReference(

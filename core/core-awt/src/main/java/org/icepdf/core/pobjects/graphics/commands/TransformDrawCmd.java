@@ -41,9 +41,9 @@ public class TransformDrawCmd extends AbstractDrawCmd {
                               Shape clip, AffineTransform base,
                               OptionalContentState optionalContentState,
                               boolean paintAlpha, PaintTimer paintTimer) {
-        AffineTransform af = new AffineTransform(base);
-        af.concatenate(affineTransform);
-        g.setTransform(af);
+        // base x affineTransform, concatenated in place by the graphics rather than in a new transform per command.
+        g.setTransform(base);
+        g.transform(affineTransform);
         return currentShape;
     }
 
