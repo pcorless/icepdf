@@ -15,16 +15,15 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
-import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationStatus;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationStatus;
 import org.icepdf.ri.images.IconPack;
 import org.icepdf.ri.images.Images;
 
@@ -34,6 +33,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 /**
@@ -49,9 +49,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private final ResourceBundle messageBundle;
     private final SignatureWidgetAnnotation signatureWidgetAnnotation;
     private SignatureValidator signatureValidator;
-    // flag that validation process is taking place.
-    private boolean verifyingSignature;
-
 
     private String location = null;
     private String reason = null;
@@ -65,30 +62,30 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * @param messageBundle             i18n message bundle
      */
     public SignatureTreeNode(SignatureWidgetAnnotation signatureWidgetAnnotation, ResourceBundle messageBundle) {
-        super();
         this.signatureWidgetAnnotation = signatureWidgetAnnotation;
         this.messageBundle = messageBundle;
 
-        try {
-            validateSignatureNode();
-        } catch (SignatureIntegrityException e) {
-            logger.warning("There was an issue creating a node for the signature: " +
-                    signatureWidgetAnnotation.toString());
-            // build a user node object to report the error.
-            MessageFormat formatter = new MessageFormat(messageBundle.getString(
-                    "viewer.utilityPane.signatures.tab.certTree.error.label"));
-            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
-                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
-        }
+        validateSignatureNodeAsync().handleAsync((v, t) -> {
+            if (t != null) {
+                logger.warning("There was an issue creating a node for the signature: " +
+                        signatureWidgetAnnotation.toString());
+                // build a user node object to report the error.
+                MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                        "viewer.utilityPane.signatures.tab.certTree.error.label"));
+                setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                        (emailAddress != null ? "<" + emailAddress + ">" : "")}));
+            }
+            return null;
+        }, SwingUtilities::invokeLater);
     }
 
     /**
-     * Validates the signatures represented by this tree node.  This method is called by a worker thread
+     * Validates the signatures represented by this tree node.  This method is called on the AWT thread
      * and once validation is complete the notes states is updated with a call to {@link #refreshSignerNode()}
      *
-     * @throws SignatureIntegrityException security exception if validation failed.
+     * @return A future that completes when validation is complete
      */
-    public void validateSignatureNode() throws SignatureIntegrityException {
+    public CompletableFuture<Void> validateSignatureNodeAsync() {
 
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
@@ -112,11 +109,15 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
                 emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             }
             // Start validation process.
-            setVerifyingSignature(true);
-            signatureValidator.validate();
-            setVerifyingSignature(true);
+            if (signatureValidator.hasValidated()) {
+                return CompletableFuture.completedFuture(null);
+            } else {
+                return signatureValidator.validateAsync()
+                        .thenAcceptAsync(v -> refreshSignerNode(), SwingUtilities::invokeLater);
+            }
+        } else {
+            return CompletableFuture.completedFuture(null);
         }
-
     }
 
     /**
@@ -145,8 +146,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Last Checked: &lt;verification last run time&gt;
      * - Field Name: &lt;field name&gt; on page X (clickable, takes to page and applies focus).
      */
-    public synchronized void refreshSignerNode() {
-        if (isVerifyingSignature()) {
+    private void refreshSignerNode() {
+        if (signatureValidator == null || signatureValidator.isValidating()) {
             // should have enough data to build a out a full signature node.
             MessageFormat formatter = new MessageFormat(messageBundle.getString(
                     "viewer.utilityPane.signatures.tab.certTree.rootSigned.label"));
@@ -233,20 +234,6 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             lastChecked.setAllowsChildren(false);
             root.add(lastChecked);
         }
-    }
-
-    public synchronized boolean isVerifyingSignature() {
-        return verifyingSignature;
-    }
-
-    /**
-     * Flat to indicated that the validation process has completed and the state variables are in a completed
-     * state.  This doesn't mean that the signature is valid just the validation process is complete.
-     *
-     * @param verifyingSignature true to indicate the validation process is complete, otherwise falls.
-     */
-    public void setVerifyingSignature(boolean verifyingSignature) {
-        this.verifyingSignature = verifyingSignature;
     }
 
     public SignatureWidgetAnnotation getOutlineItem() {

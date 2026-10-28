@@ -15,7 +15,11 @@
  */
 package org.icepdf.core.pobjects.acroform.signature.certificates;
 
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.ocsp.OCSPException;
@@ -23,6 +27,7 @@ import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
+import org.icepdf.core.util.Defs;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,8 +36,25 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.security.cert.X509Extension;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +75,10 @@ public class CertificateVerifier {
 
     private static final Logger logger =
             Logger.getLogger(CertificateVerifier.class.getName());
+
+    private static final int DEFAULT_CONNECT_TIMEOUT = 120 * 1000; //2 minutes
+
+    private static final int CONNECT_TIMEOUT = Defs.intProperty("org.icepdf.core.signatures.certificate.verifier.connect.timeout", DEFAULT_CONNECT_TIMEOUT);
 
     /**
      * Attempts to build a certification chain for given certificate and to verify
@@ -254,6 +280,7 @@ public class CertificateVerifier {
             return url.openStream();
         }
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setConnectTimeout(CONNECT_TIMEOUT);
         int responseCode = con.getResponseCode();
         logger.log(Level.FINER, "URL response: " + responseCode + " " + con.getResponseMessage());
         if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||

@@ -16,8 +16,6 @@
 package org.icepdf.ri.common.views.annotations.signatures;
 
 import org.icepdf.core.pobjects.PDate;
-import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,8 +30,6 @@ public class SignerSummaryPanel extends JPanel {
     private final GridBagConstraints constraints;
 
     public SignerSummaryPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                              SignatureWidgetAnnotation signatureWidgetAnnotation,
-                              SignatureValidator signatureValidator,
                               boolean showIcon) {
 
         String validity = signatureValidationStatus.getValidity();

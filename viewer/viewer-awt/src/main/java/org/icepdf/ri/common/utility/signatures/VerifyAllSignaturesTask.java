@@ -18,6 +18,7 @@ package org.icepdf.ri.common.utility.signatures;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractTask;
@@ -68,8 +69,11 @@ public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
                     SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
                     if (signatureDictionary.getEntries().size() > 0) {
                         try {
-                            signatureWidgetAnnotation.getSignatureValidator().validate();
-                            signatureWidgetAnnotation.getSignatureValidator().isSignaturesCoverDocumentLength();
+                            final SignatureValidator validator = signatureWidgetAnnotation.getSignatureValidator();
+                            if (!validator.hasValidated()) {
+                                validator.validate();
+                            }
+                            validator.isSignaturesCoverDocumentLength();
                             // add a new node to the tree.
                         } catch (SignatureIntegrityException e) {
                             logger.log(Level.WARNING, "Error verifying signature.", e);

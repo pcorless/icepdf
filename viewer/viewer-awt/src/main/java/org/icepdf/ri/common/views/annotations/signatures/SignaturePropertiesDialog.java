@@ -57,35 +57,48 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
         buildUI();
     }
 
-    private void buildUI() {
-
+    private void createSignaturePanels(final JPanel annotationPanel) {
         SignatureValidationStatus signatureValidationStatus =
                 new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, signatureValidator);
 
+        // basic signer information
+        SignerSummaryPanel signerSummaryPanel =
+                new SignerSummaryPanel(signatureValidationStatus, messageBundle, true);
+        addGB(annotationPanel, signerSummaryPanel, 0, 0, 2, 1);
+
+        // Validity summary
+        SignatureValidationPanel validityPanel =
+                new SignatureValidationPanel(signatureValidationStatus, messageBundle, false, true);
+        addGB(annotationPanel, validityPanel, 0, 1, 2, 1);
+
+
+        // SignatureSigner info
+        SignerInfoPanel signerInfoPanel = new SignerInfoPanel(messageBundle, signatureValidator);
+        addGB(annotationPanel, signerInfoPanel, 0, 2, 2, 1);
+    }
+
+    private void buildUI() {
         JPanel annotationPanel = new JPanel(new GridBagLayout());
         add(annotationPanel, BorderLayout.NORTH);
-
         constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 10, 10, 10);
 
-        // basic signer information
-        SignerSummaryPanel signerSummaryPanel =
-                new SignerSummaryPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, signatureValidator, true);
-        addGB(annotationPanel, signerSummaryPanel, 0, 0, 2, 1);
-
-        // Validity summary
-        SignatureValidationPanel validityPanel =
-                new SignatureValidationPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation,
-                        signatureValidator, false, true);
-        addGB(annotationPanel, validityPanel, 0, 1, 2, 1);
-
-
-        // SignatureSigner info
-        SignerInfoPanel signerInfoPanel = new SignerInfoPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation, signatureValidator);
-        addGB(annotationPanel, signerInfoPanel, 0, 2, 2, 1);
+        if (signatureValidator.hasValidated()) {
+            createSignaturePanels(annotationPanel);
+        } else {
+            final var placeholderSummaryPanel = new JLabel("...");
+            final var placeholderValidityPanel = new JLabel("...");
+            final var placeholderInfoPanel = new JLabel("...");
+            signatureValidator.validateAsync().thenAcceptAsync(v -> {
+                annotationPanel.remove(placeholderSummaryPanel);
+                annotationPanel.remove(placeholderValidityPanel);
+                annotationPanel.remove(placeholderInfoPanel);
+                createSignaturePanels(annotationPanel);
+            }, SwingUtilities::invokeLater);
+        }
 
         // close buttons.
         // simple close
@@ -100,7 +113,7 @@ public class SignaturePropertiesDialog extends EscapeJDialog {
                 "viewer.annotation.signature.properties.dialog.showCertificates.label"));
         final JDialog parent = this;
         certPropertiesButton.addActionListener(e -> new CertificatePropertiesDialog(parent, messageBundle,
-                signatureValidator.getCertificateChain())
+                signatureValidator)
                 .setVisible(true));
 
         constraints.anchor = GridBagConstraints.WEST;
