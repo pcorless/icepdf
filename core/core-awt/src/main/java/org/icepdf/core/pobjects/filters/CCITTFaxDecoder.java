@@ -65,6 +65,8 @@
 
 package org.icepdf.core.pobjects.filters;
 
+import java.util.Arrays;
+
 
 public class CCITTFaxDecoder {
     static final int[] table1 = {0x00, // 0 bits are left in first byte - SHOULD
@@ -535,9 +537,10 @@ public class CCITTFaxDecoder {
             41, 41, 41, 41, 41, 41, 41, 41, // 120 - 127
             41, 41, 41, 41, 41, 41, 41, 41,};
 
-    private int bitPointer;
-
-    private int bytePointer;
+    // GH-240: the read position as one absolute bit index into data.  Most code words are read by peeking at a
+    // fixed width and handing back the bits the code did not use, so a plain index makes the hand-back a
+    // subtraction.
+    private int bitPos;
 
     private byte[] data;
 
@@ -564,24 +567,40 @@ public class CCITTFaxDecoder {
         this.fillOrder = fillOrder;
         this.w = w;
 
-        this.bitPointer = 0;
-        this.bytePointer = 0;
+        this.bitPos = 0;
         this.prevChangingElems = new int[w + 1];
         this.currChangingElems = new int[w + 1];
     }
 
     private boolean align() {
-        if (align && bitPointer != 0) {
-            bytePointer++;
-            bitPointer = 0;
+        if (align && (bitPos & 7) != 0) {
+            bitPos = (bitPos + 8) & ~7;
             return true;
         }
         return false;
     }
 
+    /**
+     * Starts reading {@code compData}.  Fill order 2 (least significant bit first) is applied once, to a copy, so
+     * the readers need not.
+     */
+    private void setData(byte[] compData) {
+        if (fillOrder == 1) {
+            data = compData;
+        } else if (fillOrder == 2) {
+            byte[] flipped = new byte[compData.length];
+            for (int i = 0; i < compData.length; i++) {
+                flipped[i] = flipTable[compData[i] & 0xff];
+            }
+            data = flipped;
+        } else {
+            throw new RuntimeException("tag must be either 1 or 2."); //$NON-NLS-1$
+        }
+        bitPos = 0;
+    }
+
     protected boolean consumeEOL() {
-        int startBytePointer = bytePointer;
-        int startBitPointer = bitPointer;
+        int startBitPos = bitPos;
 
         // Get the next 12 bits.
         int next12Bits = nextNBits(12);
@@ -599,7 +618,7 @@ public class CCITTFaxDecoder {
             // the fill along with the EOL that ends it.  The two dimensional path already does this,
             // by way of seekEOL.
             int bitIndexMax = data.length * 8 - 1;
-            int bitIndex = startBytePointer * 8 + startBitPointer + 12;
+            int bitIndex = startBitPos + 12;
             while (next12Bits != 1 && bitIndex < bitIndexMax) {
                 next12Bits = ((next12Bits & 0x000007ff) << 1)
                         | (nextLesserThan8Bits(1) & 0x00000001);
@@ -611,8 +630,7 @@ public class CCITTFaxDecoder {
             }
         }
         // no EOL - unread and return
-        bytePointer = startBytePointer;
-        bitPointer = startBitPointer;
+        bitPos = startBitPos;
         return false;
     }
 
@@ -831,10 +849,8 @@ public class CCITTFaxDecoder {
     // One-dimensional decoding methods
     public void decodeT41D(byte[] buffer, byte[] compData, int startX,
                            int height) {
-        this.data = compData;
+        setData(compData);
         int scanlineStride = (w + 7) / 8;
-        bitPointer = 0;
-        bytePointer = 0;
 
         int lineOffset = 0;
         for (int i = 0; i < height; i++) {
@@ -847,10 +863,8 @@ public class CCITTFaxDecoder {
     // Two-dimensional decoding methods
     public void decodeT42D(byte[] buffer, byte[] compData, int startX,
                            int height) {
-        this.data = compData;
+        setData(compData);
         int scanlineStride = (w + 7) / 8;
-        bitPointer = 0;
-        bytePointer = 0;
 
         int a0;
         int a1;
@@ -984,10 +998,8 @@ public class CCITTFaxDecoder {
     }
 
     public void decodeT6(byte[] buffer, byte[] compData, int startX, int height) {
-        this.data = compData;
+        setData(compData);
         int scanlineStride = (w + 7) / 8;
-        bitPointer = 0;
-        bytePointer = 0;
 
         int a0;
         int a1;
@@ -1301,122 +1313,34 @@ public class CCITTFaxDecoder {
         return fillBits;
     }
 
+    /**
+     * The next {@code bitsToGet} bits (at most 16), most significant first, without consuming them.  As the
+     * readers always have: the byte under the read position must exist (an index past the end throws, which is how
+     * a decode of truncated or misread data stops), and the bytes after it read as zero past the end.
+     */
+    private int peekBits(int bitsToGet) {
+        byte[] d = data;
+        int byteIndex = bitPos >> 3;
+        int value = (d[byteIndex] & 0xff) << 16;
+        if (byteIndex + 1 < d.length) {
+            value |= (d[byteIndex + 1] & 0xff) << 8;
+            if (byteIndex + 2 < d.length) {
+                value |= d[byteIndex + 2] & 0xff;
+            }
+        }
+        return (value >>> (24 - (bitPos & 7) - bitsToGet)) & ((1 << bitsToGet) - 1);
+    }
+
     private int nextLesserThan8Bits(int bitsToGet) {
-        byte b;
-        byte next;
-        int l = data.length - 1;
-        int bp = this.bytePointer;
-
-        if (fillOrder == 1) {
-            b = data[bp];
-            if (bp == l) {
-                next = 0x00;
-            } else {
-                next = data[bp + 1];
-            }
-        } else if (fillOrder == 2) {
-            b = flipTable[data[bp] & 0xff];
-            if (bp == l) {
-                next = 0x00;
-            } else {
-                next = flipTable[data[bp + 1] & 0xff];
-            }
-        } else {
-            throw new RuntimeException("tag must be either 1 or 2."); //$NON-NLS-1$
-        }
-
-        int bitsLeft = 8 - bitPointer;
-        int bitsFromNextByte = bitsToGet - bitsLeft;
-
-        int shift = bitsLeft - bitsToGet;
-        int i1;
-        int i2;
-        if (shift >= 0) {
-            i1 = (b & table1[bitsLeft]) >>> shift;
-            bitPointer += bitsToGet;
-            if (bitPointer == 8) {
-                bitPointer = 0;
-                bytePointer++;
-            }
-        } else {
-            i1 = (b & table1[bitsLeft]) << (-shift);
-            i2 = (next & table2[bitsFromNextByte]) >>> (8 - bitsFromNextByte);
-
-            i1 |= i2;
-            bytePointer++;
-            bitPointer = bitsFromNextByte;
-        }
-
-        return i1;
+        int bits = peekBits(bitsToGet);
+        bitPos += bitsToGet;
+        return bits;
     }
 
     private int nextNBits(int bitsToGet) {
-        byte b;
-        byte next;
-        byte next2next;
-        int l = data.length - 1;
-        int bp = this.bytePointer;
-
-        if (fillOrder == 1) {
-            b = data[bp];
-
-            if (bp == l) {
-                next = 0x00;
-                next2next = 0x00;
-            } else if ((bp + 1) == l) {
-                next = data[bp + 1];
-                next2next = 0x00;
-            } else {
-                next = data[bp + 1];
-                next2next = data[bp + 2];
-            }
-        } else if (fillOrder == 2) {
-            b = flipTable[data[bp] & 0xff];
-
-            if (bp == l) {
-                next = 0x00;
-                next2next = 0x00;
-            } else if ((bp + 1) == l) {
-                next = flipTable[data[bp + 1] & 0xff];
-                next2next = 0x00;
-            } else {
-                next = flipTable[data[bp + 1] & 0xff];
-                next2next = flipTable[data[bp + 2] & 0xff];
-            }
-        } else {
-            throw new RuntimeException("tag must be either 1 or 2."); //$NON-NLS-1$
-        }
-
-        int bitsLeft = 8 - bitPointer;
-        int bitsFromNextByte = bitsToGet - bitsLeft;
-        int bitsFromNext2NextByte = 0;
-        if (bitsFromNextByte > 8) {
-            bitsFromNext2NextByte = bitsFromNextByte - 8;
-            bitsFromNextByte = 8;
-        }
-
-        bytePointer++;
-
-        int i1 = (b & table1[bitsLeft]) << (bitsToGet - bitsLeft);
-        int i2 = (next & table2[bitsFromNextByte]) >>> (8 - bitsFromNextByte);
-
-        int i3 = 0;
-        if (bitsFromNext2NextByte != 0) {
-            i2 <<= bitsFromNext2NextByte;
-            i3 = (next2next & table2[bitsFromNext2NextByte]) >>> (8 - bitsFromNext2NextByte);
-            i2 |= i3;
-            bytePointer++;
-            bitPointer = bitsFromNext2NextByte;
-        } else {
-            if (bitsFromNextByte == 8) {
-                bitPointer = 0;
-                bytePointer++;
-            } else {
-                bitPointer = bitsFromNextByte;
-            }
-        }
-
-        return i1 | i2;
+        int bits = peekBits(bitsToGet);
+        bitPos += bitsToGet;
+        return bits;
     }
 
     private int readEOL(boolean isFirstEOL) {
@@ -1446,7 +1370,7 @@ public class CCITTFaxDecoder {
             // First EOL code word xxxx 0000 0000 0001 will occur
             // As many fill bits will be present as required to make
             // the EOL code of 12 bits end on a byte boundary.
-            int bitsLeft = 8 - bitPointer;
+            int bitsLeft = 8 - (bitPos & 7);
 
             if (nextNBits(bitsLeft) != 0) {
                 throw new RuntimeException(
@@ -1505,7 +1429,7 @@ public class CCITTFaxDecoder {
     private boolean seekEOL() {
         // Set maximum and current bit index into the compressed data.
         int bitIndexMax = data.length * 8 - 1;
-        int bitIndex = bytePointer * 8 + bitPointer;
+        int bitIndex = bitPos;
 
         // Loop while at least 12 bits are available.
         while (bitIndex <= bitIndexMax - 12) {
@@ -1543,52 +1467,34 @@ public class CCITTFaxDecoder {
     private void setToBlack(byte[] buffer, int lineOffset, int bitOffset,
                             int numBits) {
         int bitNum = (8 * lineOffset) + bitOffset;
-        int lastBit = bitNum + numBits;
-
-        int byteNum = bitNum >> 3;
-
-        // Handle bits in first byte
-        int shift = bitNum & 0x7;
-        if (shift > 0) {
-            int maskVal = 1 << (7 - shift);
-            byte val = buffer[byteNum];
-            while ((maskVal > 0) && (bitNum < lastBit)) {
-                val |= maskVal;
-                maskVal >>= 1;
-                ++bitNum;
+        if (numBits <= 0) {
+            if ((bitNum & 7) != 0) {
+                // the bit-by-bit version read this byte even for an empty run; keep its out-of-range failure
+                byte unused = buffer[bitNum >> 3];
             }
-            buffer[byteNum] = val;
+            return;
         }
-
-        // Fill in 8 bits at a time
-        byteNum = bitNum >> 3;
-        while (bitNum < (lastBit - 7)) {
-            buffer[byteNum++] = (byte) 255;
-            bitNum += 8;
+        int lastBit = bitNum + numBits - 1;
+        int first = bitNum >> 3;
+        int last = lastBit >> 3;
+        int headMask = 0xff >>> (bitNum & 7);
+        int tailMask = (0xff << (7 - (lastBit & 7))) & 0xff;
+        if (first == last) {
+            buffer[first] |= (byte) (headMask & tailMask);
+            return;
         }
-
-        // Fill in remaining bits
-        while (bitNum < lastBit) {
-            byteNum = bitNum >> 3;
-            buffer[byteNum] |= (1 << (7 - (bitNum & 0x7)));
-            ++bitNum;
+        buffer[first] |= (byte) headMask;
+        // A run past the end of the buffer (misread data) fills to the end and then fails on the last byte, as the
+        // bit-by-bit version did; Arrays.fill alone would fail before writing anything.
+        int end = Math.min(last, buffer.length);
+        if (end > first + 1) {
+            Arrays.fill(buffer, first + 1, end, (byte) 0xff);
         }
+        buffer[last] |= (byte) tailMask;
     }
 
     // Move pointer backwards by given amount of bits
     private void updatePointer(int bitsToMoveBack) {
-        if (bitsToMoveBack > 8) {
-            bytePointer -= bitsToMoveBack / 8;
-            bitsToMoveBack %= 8;
-        }
-
-        int i = bitPointer - bitsToMoveBack;
-
-        if (i < 0) {
-            bytePointer--;
-            bitPointer = 8 + i;
-        } else {
-            bitPointer = i;
-        }
+        bitPos -= bitsToMoveBack;
     }
 }

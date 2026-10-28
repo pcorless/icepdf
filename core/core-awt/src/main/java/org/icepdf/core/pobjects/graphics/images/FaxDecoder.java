@@ -111,8 +111,9 @@ public class FaxDecoder extends AbstractImageDecoder {
         return decodedImage;
     }
 
-    private byte[] ccittFaxDecodeCCITTFaxDecoder(byte[] streamData, int k, Boolean encodedByteAlign,
-                                                 int columns, int rows, int size) {
+    // package-private for FaxDecoderTest
+    static byte[] ccittFaxDecodeCCITTFaxDecoder(byte[] streamData, int k, Boolean encodedByteAlign,
+                                                int columns, int rows, int size) {
 
         CCITTFaxDecoder decoder = new CCITTFaxDecoder(1, columns, rows);
         decoder.setAlign(encodedByteAlign);
@@ -129,7 +130,9 @@ public class FaxDecoder extends AbstractImageDecoder {
         } catch (Exception e2) {
             logger.warning("Error decoding CCITTFax image k: " + k);
             // IText 5.03 doesn't correctly assign a k value for the deocde,
-            // as  result we can try one more time using the T6.
+            // as  result we can try one more time using the T6.  The failed attempt has already set black runs
+            // in the buffer and T6 only ever sets bits, so start it from a clean (all white) buffer.
+            java.util.Arrays.fill(decodedStreamData, (byte) 0);
             decoder.decodeT6(decodedStreamData, streamData, 0, rows);
         }
         return decodedStreamData;
