@@ -237,6 +237,19 @@ public class InkAnnotation extends MarkupAnnotation {
 
     }
 
+    /**
+     * Maps the strokes from the old /Rect onto {@code rect}, so a resize stretches them; the stroke
+     * width is kept.  {@code dx} and {@code dy} aren't needed: the mapping moves the strokes too.
+     */
+    @Override
+    public void reshape(Rectangle2D rect, double dx, double dy, AffineTransform pageSpace) {
+        if (inkPath != null && userSpaceRectangle != null) {
+            inkPath = rectangleMapping(userSpaceRectangle, rect).createTransformedShape(inkPath);
+        }
+        setUserSpaceRectangle(toFloat(rect));
+        resetAppearanceStream(0, 0, pageSpace);
+    }
+
     public Shape getInkPath() {
         return inkPath;
     }

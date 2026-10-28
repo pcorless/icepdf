@@ -36,6 +36,25 @@
     -fx-text-fill: #1a1a1a;
 }
 
+/* The save / cancel buttons under a text box being typed in: small, quiet, light whatever the theme. */
+.pdf-free-text-actions .button {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-background-radius: 3;
+    -fx-border-color: rgba(0, 0, 0, 0.25);
+    -fx-border-radius: 3;
+    -fx-padding: 1 3 1 3;
+    -fx-cursor: hand;
+}
+
+.pdf-free-text-actions .button:hover {
+    -fx-background-color: #ffffff;
+    -fx-border-color: rgba(0, 0, 0, 0.45);
+}
+
+.pdf-free-text-glyph {
+    -fx-stroke: #3a3a3a;
+}
+
 .pdf-annotation-popup .label {
     -fx-text-fill: #1a1a1a;
 }

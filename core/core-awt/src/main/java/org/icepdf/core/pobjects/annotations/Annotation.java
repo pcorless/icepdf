@@ -2129,6 +2129,45 @@ public abstract class Annotation extends Dictionary {
     public abstract void resetAppearanceStream(double dx, double dy, AffineTransform pageSpace);
 
     /**
+     * Moves and/or resizes the annotation to {@code rect} and resets its appearance: the /Rect is set
+     * and {@link #resetAppearanceStream(double, double, AffineTransform)} is given the gesture's
+     * delta.  An annotation that keeps geometry of its own in user space (ink strokes, a line's end
+     * points) maps it linearly from the old /Rect onto the new one instead, so a resize stretches it
+     * with its box rather than leaving it clipped.
+     *
+     * @param rect      the new /Rect, in user space
+     * @param dx        x delta of the gesture, as {@link #resetAppearanceStream(double, double, AffineTransform)} takes it
+     * @param dy        y delta of the gesture, likewise
+     * @param pageSpace page space transform
+     * @since 8.0
+     */
+    public void reshape(Rectangle2D rect, double dx, double dy, AffineTransform pageSpace) {
+        setUserSpaceRectangle(toFloat(rect));
+        resetAppearanceStream(dx, dy, pageSpace);
+    }
+
+    /**
+     * The linear map taking rectangle {@code from} onto {@code to}: a translation when they are the
+     * same size.  An empty side of {@code from} isn't scaled.
+     *
+     * @since 8.0
+     */
+    protected static AffineTransform rectangleMapping(Rectangle2D from, Rectangle2D to) {
+        double sx = from.getWidth() > 0 ? to.getWidth() / from.getWidth() : 1;
+        double sy = from.getHeight() > 0 ? to.getHeight() / from.getHeight() : 1;
+        AffineTransform map = AffineTransform.getTranslateInstance(to.getX(), to.getY());
+        map.scale(sx, sy);
+        map.translate(-from.getX(), -from.getY());
+        return map;
+    }
+
+    /** {@code rect} as the float rectangle {@link #setUserSpaceRectangle} takes. */
+    protected static Rectangle2D.Float toFloat(Rectangle2D rect) {
+        return new Rectangle2D.Float((float) rect.getX(), (float) rect.getY(), (float) rect.getWidth(),
+                (float) rect.getHeight());
+    }
+
+    /**
      * Reset the appearance stream at the annotation's current location.
      * <br>
      * This records a user edit.  When the library is regenerating an appearance the file was missing rather than

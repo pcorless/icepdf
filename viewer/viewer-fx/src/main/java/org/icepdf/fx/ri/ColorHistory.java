@@ -22,6 +22,15 @@ import java.util.List;
 /** Where the application remembers the annotation colours the user picked; the viewer reports and shows them. */
 public interface ColorHistory {
 
+    /** System property: how many recent colours are kept and offered, {@value #DEFAULT_MAX_RECENT} by default. */
+    String MAX_RECENT_PROPERTY = "org.icepdf.fx.annotation.recentColors";
+    int DEFAULT_MAX_RECENT = 5;
+
+    /** The number of recent colours to keep: {@link #MAX_RECENT_PROPERTY}, at least one. */
+    static int maxRecent() {
+        return Math.max(1, Integer.getInteger(MAX_RECENT_PROPERTY, DEFAULT_MAX_RECENT));
+    }
+
     /** Recently chosen colours, most recent first. */
     List<Color> recent();
 
@@ -42,7 +51,7 @@ public interface ColorHistory {
                 Color opaque = new Color(color.getRGB() & 0xFFFFFF);
                 colors.remove(opaque);
                 colors.add(0, opaque);
-                while (colors.size() > 10) colors.remove(colors.size() - 1);
+                while (colors.size() > maxRecent()) colors.remove(colors.size() - 1);
             }
         };
     }

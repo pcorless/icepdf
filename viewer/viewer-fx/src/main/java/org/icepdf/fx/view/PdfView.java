@@ -26,6 +26,7 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.AccessibleRole;
@@ -203,6 +204,7 @@ public class PdfView extends Control {
             new SimpleStringProperty(this, "annotationAuthor", System.getProperty("user.name", ""));
     private final ObjectProperty<Color> annotationColor =
             new SimpleObjectProperty<>(this, "annotationColor");
+    private final ObservableMap<ToolMode, Color> toolColors = FXCollections.observableHashMap();
     private final ReadOnlyBooleanWrapper canUndo = new ReadOnlyBooleanWrapper(this, "canUndo", false);
     private final ReadOnlyBooleanWrapper canRedo = new ReadOnlyBooleanWrapper(this, "canRedo", false);
     private final ObjectProperty<Function<Annotation, ContextMenu>>
@@ -464,6 +466,32 @@ public class PdfView extends Control {
 
     public final void setAnnotationColor(Color color) {
         annotationColor.set(color);
+    }
+
+    /**
+     * Colours for new annotations by tool, ahead of {@link #annotationColorProperty()}: a highlight
+     * tool set to green makes green highlights whatever the general colour is.  Tools without an
+     * entry use the general colour, or their {@linkplain #defaultToolColor default}.
+     */
+    public final ObservableMap<ToolMode, Color> getToolColors() {
+        return toolColors;
+    }
+
+    /** The colour {@code mode} gives a new annotation now: its tool colour, the general colour, or its default. */
+    public final Color toolColor(ToolMode mode) {
+        Color color = toolColors.get(mode);
+        if (color == null) color = getAnnotationColor();
+        return color != null ? color : defaultToolColor(mode);
+    }
+
+    /** A tool's colour when nothing is set: yellow highlights and notes, blue underlines, black text, red otherwise. */
+    public static Color defaultToolColor(ToolMode mode) {
+        return switch (mode) {
+            case HIGHLIGHT, NOTE -> Color.rgb(255, 255, 0);
+            case UNDERLINE -> Color.rgb(0, 102, 255);
+            case FREE_TEXT -> Color.BLACK;
+            default -> Color.rgb(230, 0, 0);
+        };
     }
 
     /** Highlights the selected text (one annotation per page), clearing the selection; undoable. */

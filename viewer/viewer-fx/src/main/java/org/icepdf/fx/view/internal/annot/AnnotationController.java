@@ -89,6 +89,15 @@ public final class AnnotationController {
         return canEdit(annotation) && !isTextBound(annotation);
     }
 
+    /**
+     * {@link #canMove}, and its size means something: a text box keeps its text as it is whatever
+     * its size, and a note is an icon, so those two only move.
+     */
+    public boolean canResize(Annotation annotation) {
+        return canMove(annotation) && !(annotation instanceof FreeTextAnnotation)
+                && !(annotation instanceof org.icepdf.core.pobjects.annotations.TextAnnotation);
+    }
+
     // ---- hit testing and chrome
 
     /**
@@ -165,7 +174,7 @@ public final class AnnotationController {
         ui.setHovered(hovered != null && hovered.pageIndex() == index ? hovered.annotation() : null);
         Annotation selected = view.getSelectedAnnotation();
         Annotation onPage = selected != null && isOnPage(selected, index) ? selected : null;
-        ui.setSelected(onPage, canMove(onPage));
+        ui.setSelected(onPage, canResize(onPage));
     }
 
     // ---- popups
@@ -240,15 +249,8 @@ public final class AnnotationController {
 
     private AnnotationCreator.Style style(ToolMode mode) {
         PdfView control = host.view();
-        javafx.scene.paint.Color fx = control.getAnnotationColor();
-        Color color = fx != null
-                ? new Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue())
-                : switch (mode) {
-            case HIGHLIGHT, NOTE -> new Color(255, 255, 0);
-            case UNDERLINE -> new Color(0, 102, 255);
-            case FREE_TEXT -> Color.BLACK;
-            default -> new Color(230, 0, 0);
-        };
+        javafx.scene.paint.Color fx = control.toolColor(mode);
+        Color color = new Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue());
         int opacity = mode == ToolMode.HIGHLIGHT ? TextMarkupAnnotation.HIGHLIGHT_ALPHA : 255;
         return new AnnotationCreator.Style(control.getAnnotationAuthor(), color, opacity, 2f);
     }
@@ -319,21 +321,34 @@ public final class AnnotationController {
         FreeTextAnnotation freeText = AnnotationCreator.freeText(page.getLibrary(), viewX, viewY, host.zoom(),
                 host.toPageSpace(page), style(ToolMode.FREE_TEXT));
         addCreated(pageIndex, page, freeText, false);
-        editFreeText(new AnnotationHit(pageIndex, freeText));
+        editFreeText(new AnnotationHit(pageIndex, freeText), true);
     }
 
     /** Opens the inline editor over a free text annotation; the text commits as an undoable edit. */
     public void editFreeText(AnnotationHit hit) {
+        editFreeText(hit, false);
+    }
+
+    /** @param created the box was just made: cancelling it, or saving it empty, takes it away again */
+    private void editFreeText(AnnotationHit hit, boolean created) {
         if (!(hit.annotation() instanceof FreeTextAnnotation freeText) || !canEdit(freeText)) return;
         AnnotationUiLayer ui = host.uiLayer(hit.pageIndex());
         if (ui == null) return;
         Page page = page(hit.pageIndex());
+        // the box's creation is the last edit while its editor is open: undo it, leaving no trace.
+        Runnable uncreate = () -> {
+            if (created && host.view().isCanUndo()) host.view().undo();
+        };
         ui.openTextEditor(ui.viewBounds(freeText), freeText.getContents(), host.zoom(), text -> {
+            if (created && text.isBlank()) {
+                uncreate.run();
+                return;
+            }
             String current = freeText.getContents() == null ? "" : freeText.getContents();
             if (text.equals(current)) return;
             host.recordEdit(AnnotationEdits.freeTextContents(host.annotationLocker(), page,
                     hit.pageIndex(), freeText, text, host.toPageSpace(page)));
-        });
+        }, uncreate);
     }
 
     /**

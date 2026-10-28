@@ -640,6 +640,21 @@ public class LineAnnotation extends MarkupAnnotation {
         stateManager.addChange(new PObject(this, this.getPObjectReference()));
     }
 
+    /**
+     * Maps the line's end points from the old /Rect onto {@code rect}, so a resize stretches the line
+     * with its box.  {@code dx} and {@code dy} aren't needed: the mapping moves the line too.
+     */
+    @Override
+    public void reshape(Rectangle2D rect, double dx, double dy, AffineTransform pageSpace) {
+        if (startOfLine != null && endOfLine != null && userSpaceRectangle != null) {
+            AffineTransform map = rectangleMapping(userSpaceRectangle, rect);
+            setStartOfLine(map.transform(startOfLine, null));
+            setEndOfLine(map.transform(endOfLine, null));
+        }
+        setUserSpaceRectangle(toFloat(rect));
+        resetAppearanceStream(0, 0, pageSpace);
+    }
+
     public Point2D getStartOfLine() {
         return startOfLine;
     }

@@ -85,7 +85,7 @@ class ViewerPreferencesTest {
         assertTrue(preferences.getBoolean(ViewerPreferences.SEARCH_REGEX, false));
     }
 
-    @DisplayName("recent colours: most recent first, no duplicates, at most ten, survive a save")
+    @DisplayName("recent colours: most recent first, no duplicates, at most five, survive a save")
     @Test
     void recentColours(@TempDir Path dir) {
         Path file = dir.resolve("viewer.properties");
@@ -94,7 +94,7 @@ class ViewerPreferencesTest {
         for (int i = 0; i < 12; i++) preferences.addRecentColor(new java.awt.Color(i, 0, 0));
         preferences.addRecentColor(new java.awt.Color(5, 0, 0));
         List<java.awt.Color> colors = preferences.getRecentColors();
-        assertEquals(10, colors.size());
+        assertEquals(5, colors.size());
         assertEquals(new java.awt.Color(5, 0, 0), colors.get(0));
         assertEquals(new java.awt.Color(11, 0, 0), colors.get(1));
         assertEquals(1, colors.stream().filter(new java.awt.Color(5, 0, 0)::equals).count());
@@ -102,5 +102,23 @@ class ViewerPreferencesTest {
         assertEquals(colors, ViewerPreferences.load(file).getRecentColors());
         preferences.put(ViewerPreferences.RECENT_COLORS, "bad 255 255");
         assertEquals(List.of(new java.awt.Color(255)), preferences.getRecentColors());
+    }
+
+    @DisplayName("tool colours: stored per tool, null goes back to the default, a bad entry reads as the default")
+    @Test
+    void toolColours(@TempDir Path dir) {
+        Path file = dir.resolve("viewer.properties");
+        ViewerPreferences preferences = ViewerPreferences.load(file);
+        assertNull(preferences.getToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT));
+        preferences.setToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT, javafx.scene.paint.Color.rgb(0, 112, 192));
+        preferences.save();
+        ViewerPreferences reloaded = ViewerPreferences.load(file);
+        assertEquals("#0070c0", reloaded.get(ViewerPreferences.TOOL_COLOR_PREFIX + "free-text", null));
+        assertEquals(javafx.scene.paint.Color.rgb(0, 112, 192), reloaded.getToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT));
+        assertNull(reloaded.getToolColor(org.icepdf.fx.view.ToolMode.INK));
+        reloaded.setToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT, null);
+        assertNull(reloaded.getToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT));
+        reloaded.put(ViewerPreferences.TOOL_COLOR_PREFIX + "ink", "not a colour");
+        assertNull(reloaded.getToolColor(org.icepdf.fx.view.ToolMode.INK));
     }
 }

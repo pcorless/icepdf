@@ -96,16 +96,15 @@ public final class AnnotationEdits {
 
             public void undo() {
                 locker.withAnnotationLock(pageIndex, () -> {
-                    annotation.setUserSpaceRectangle(before);
-                    annotation.resetAppearanceStream(-dx, dy, toPage);
+                    // core maps ink strokes and line ends onto the box, so they stretch with a resize.
+                    annotation.reshape(before, -dx, dy, toPage);
                     page.updateAnnotation(annotation);
                 });
             }
 
             public void redo() {
                 locker.withAnnotationLock(pageIndex, () -> {
-                    annotation.setUserSpaceRectangle(after);
-                    annotation.resetAppearanceStream(dx, -dy, toPage);
+                    annotation.reshape(after, dx, -dy, toPage);
                     page.updateAnnotation(annotation);
                 });
             }

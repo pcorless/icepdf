@@ -66,4 +66,9 @@ public enum ToolMode {
     public boolean createsAnnotations() {
         return this != TEXT_SELECT && this != PAN;
     }
+
+    /** The tool's annotations take a colour ({@link PdfView#getToolColors()}); not signature fields or redactions. */
+    public boolean hasColor() {
+        return createsAnnotations() && this != SIGNATURE && this != REDACT;
+    }
 }

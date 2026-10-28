@@ -94,7 +94,7 @@ public final class InputRouter {
         this.host = host;
         panHandler = new PanHandler(host);
         textSelectHandler = new TextSelectHandler(host);
-        createHandler = new AnnotationCreateHandler(host);
+        createHandler = new AnnotationCreateHandler(host, textSelectHandler);
         redactHandler = new RedactHandler(host, textSelectHandler, createHandler);
     }
 

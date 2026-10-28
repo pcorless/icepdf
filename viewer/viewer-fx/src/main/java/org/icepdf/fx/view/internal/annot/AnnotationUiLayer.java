@@ -438,6 +438,7 @@ public final class AnnotationUiLayer extends Group {
 
     private Node creationPreview;
     private javafx.scene.control.TextArea textEditor;
+    private javafx.scene.layout.HBox textActions;
 
     /** A drawing tool's live outline (view space); null removes it. */
     public void setCreationPreview(Node node) {
@@ -447,10 +448,15 @@ public final class AnnotationUiLayer extends Group {
     }
 
     /**
-     * An inline editor over a free text annotation (view space), committing on focus loss or
-     * Ctrl+Enter and cancelling on Esc.
+     * An inline editor over a free text annotation (view space), with save and cancel buttons under
+     * its corner.  Enter (or Ctrl+Enter) saves, Shift+Enter starts a new line, Esc cancels; leaving
+     * it (a click elsewhere) saves too.
+     *
+     * @param commit told the text when it is saved
+     * @param cancel run when it is cancelled
      */
-    public void openTextEditor(Rectangle2D viewBounds, String text, double zoom, java.util.function.Consumer<String> commit) {
+    public void openTextEditor(Rectangle2D viewBounds, String text, double zoom, java.util.function.Consumer<String> commit,
+                               Runnable cancel) {
         closeTextEditor();
         javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(text == null ? "" : text);
         area.getStyleClass().add("pdf-free-text-editor");
@@ -471,23 +477,65 @@ public final class AnnotationUiLayer extends Group {
                 commit.accept(value);
             });
         };
+        Runnable abandon = () -> {
+            if (done[0]) return;
+            done[0] = true;
+            closeTextEditor();
+            cancel.run();
+        };
         area.focusedProperty().addListener((obs, was, now) -> {
             if (!now) finish.run();
         });
         area.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
-            if (e.getCode() == javafx.scene.input.KeyCode.ENTER && e.isShortcutDown()) {
+            if (e.getCode() == javafx.scene.input.KeyCode.ENTER && e.isShiftDown()) {
+                area.replaceSelection("\n");
+                e.consume();
+            } else if (e.getCode() == javafx.scene.input.KeyCode.ENTER) {
                 finish.run();
                 e.consume();
             } else if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
-                done[0] = true;
-                closeTextEditor();
+                abandon.run();
                 e.consume();
             }
         });
         area.addEventHandler(javafx.scene.input.MouseEvent.ANY, javafx.scene.input.MouseEvent::consume);
+
+        javafx.scene.control.Button save = editorButton("M2.5 7.5 L5.5 10.5 L11.5 3.5", "freeTextEditor.save", finish);
+        javafx.scene.control.Button discard = editorButton("M3.5 3.5 L10.5 10.5 M10.5 3.5 L3.5 10.5", "freeTextEditor.cancel", abandon);
+        javafx.scene.layout.HBox actions = new javafx.scene.layout.HBox(2, save, discard);
+        actions.getStyleClass().add("pdf-free-text-actions");
+        // under the editor's bottom-right corner; the page's own clicks don't reach through.
+        actions.addEventHandler(javafx.scene.input.MouseEvent.ANY, javafx.scene.input.MouseEvent::consume);
         textEditor = area;
-        getChildren().add(area);
+        textActions = actions;
+        getChildren().addAll(area, actions);
+        actions.applyCss();
+        actions.autosize();
+        actions.setLayoutX(viewBounds.getX() + area.getPrefWidth() - actions.getWidth());
+        actions.setLayoutY(viewBounds.getY() + area.getPrefHeight() + 2);
         area.requestFocus();
+    }
+
+    /** A small save or cancel button that leaves the caret in the editor. */
+    private static javafx.scene.control.Button editorButton(String glyph, String tooltipKey, Runnable action) {
+        javafx.scene.shape.SVGPath path = new javafx.scene.shape.SVGPath();
+        path.setContent(glyph);
+        path.setFill(null);
+        path.setStrokeWidth(1.5);
+        path.getStyleClass().add("pdf-free-text-glyph");
+        javafx.scene.control.Button button = new javafx.scene.control.Button();
+        button.setGraphic(path);
+        button.setTooltip(new javafx.scene.control.Tooltip(Messages.get(tooltipKey)));
+        button.setAccessibleText(Messages.get(tooltipKey));
+        // not focusable: a press would take the caret from the editor, which saves it.
+        button.setFocusTraversable(false);
+        button.setOnAction(e -> action.run());
+        return button;
+    }
+
+    /** An inline text editor is open on this page. */
+    public boolean isEditingText() {
+        return textEditor != null;
     }
 
     /** Adds a form field editor (view space) above everything else on this page. */
@@ -501,9 +549,15 @@ public final class AnnotationUiLayer extends Group {
 
     void closeTextEditor() {
         if (textEditor != null) {
-            getChildren().remove(textEditor);
+            getChildren().removeAll(textEditor, textActions);
             textEditor = null;
+            textActions = null;
         }
+    }
+
+    /** For tests: the editor's save and cancel buttons, or null. */
+    javafx.scene.layout.HBox textActions() {
+        return textActions;
     }
 
     /** For tests: the selection outline node. */

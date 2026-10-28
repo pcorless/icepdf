@@ -49,6 +49,7 @@ import org.icepdf.fx.ri.icons.SvgIcons;
 import org.icepdf.fx.ri.ui.*;
 import org.icepdf.fx.view.FitMode;
 import org.icepdf.fx.view.PdfView;
+import org.icepdf.fx.view.ToolMode;
 import org.icepdf.fx.view.ViewMode;
 
 import java.io.File;
@@ -109,6 +110,9 @@ public class PdfViewer extends StackPane {
             colorHistory.used(color);
         }
     };
+    // the drawing tools' colours, which every document in this viewer follows.
+    private final javafx.collections.ObservableMap<ToolMode, javafx.scene.paint.Color> toolColors =
+            FXCollections.observableHashMap();
     private SigningStore signingStore = SigningStore.inMemory();
     private PrintStore printStore = PrintStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
@@ -216,6 +220,26 @@ public class PdfViewer extends StackPane {
         refreshMenu();
         rail = new ToolRail(actions, features, layout);
         rail.setOnCustomise(this::customiseTools);
+        rail.setToolColors(new ToolRail.ToolColors() {
+            @Override
+            public javafx.beans.value.ObservableValue<javafx.scene.paint.Color> colour(String id) {
+                ToolMode mode = colourTool(id);
+                return mode == null ? null
+                        : javafx.beans.binding.Bindings.createObjectBinding(() -> toolColour(mode), toolColors);
+            }
+
+            @Override
+            public javafx.scene.control.ContextMenu menu(String id) {
+                ToolMode mode = colourTool(id);
+                if (mode == null) return null;
+                Window window = rail.getScene() != null ? rail.getScene().getWindow() : owner;
+                return AnnotationContextMenu.toolColourMenu(toolColour(mode), toolColors.containsKey(mode), colors,
+                        window, colour -> {
+                            if (colour == null) toolColors.remove(mode);
+                            else toolColors.put(mode, colour);
+                        });
+            }
+        });
         // the layout is shared by every viewer in the application: follow its changes, wherever made.
         layout.addListener(layoutListener);
         utility = new UtilityPanel(layout.getPanelSide(), icons);
@@ -592,6 +616,7 @@ public class PdfViewer extends StackPane {
         pane.setOnExportRedacted(null);
         pane.getSession().setOnError(null);
         pane.getSession().setOnLoaded(null);
+        javafx.beans.binding.Bindings.unbindContent(pane.getView().getToolColors(), toolColors);
         if (last && onEmptied != null) onEmptied.run();
         return true;
     }
@@ -837,7 +862,10 @@ public class PdfViewer extends StackPane {
         });
         // a new flow per click: it picks up the signing store as it is then.
         pane.getView().setOnSignatureClicked(event -> signatureFlow(pane).handle(event));
-        AnnotationContextMenu.install(pane.getView(), colors);
+        AnnotationContextMenu.install(pane.getView(), colors, toolColors);
+        // wired again when it changes tabs or windows: one binding, to this viewer's colours.
+        javafx.beans.binding.Bindings.unbindContent(pane.getView().getToolColors(), toolColors);
+        javafx.beans.binding.Bindings.bindContent(pane.getView().getToolColors(), toolColors);
         pane.titleProperty().addListener((o, a, b) -> {
             if (pane == current.get()) updateTitle();
         });
@@ -990,6 +1018,28 @@ public class PdfViewer extends StackPane {
     public void setOnPreferences(Runnable onPreferences) {
         this.onPreferences = onPreferences;
         refreshMenu();
+    }
+
+    /**
+     * The colour each drawing tool gives new annotations, which every document in this viewer
+     * follows; a tool not in it uses its {@linkplain PdfView#defaultToolColor default}.  The tool rail
+     * shows them and changes them (right-click a tool); the application can fill and store them.
+     */
+    public javafx.collections.ObservableMap<ToolMode, javafx.scene.paint.Color> getToolColors() {
+        return toolColors;
+    }
+
+    private javafx.scene.paint.Color toolColour(ToolMode mode) {
+        javafx.scene.paint.Color colour = toolColors.get(mode);
+        return colour != null ? colour : PdfView.defaultToolColor(mode);
+    }
+
+    /** The drawing tool with action {@code id}, if it is one that has a colour. */
+    private ToolMode colourTool(String id) {
+        return actions.registry().find(id)
+                .filter(a -> a instanceof org.icepdf.fx.ri.actions.tools.ToolModeAction t && t.mode().hasColor())
+                .map(a -> ((org.icepdf.fx.ri.actions.tools.ToolModeAction) a).mode())
+                .orElse(null);
     }
 
     /** Remembers the colours the user picks for annotations (shown in the annotation context menu). */

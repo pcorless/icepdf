@@ -31,7 +31,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Window;
 import org.icepdf.fx.ri.Theme;
@@ -95,16 +94,14 @@ public class PreferencesDialog extends Dialog<ButtonType> {
 
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
-        ColorPicker colour = new ColorPicker(colour(preferences.get(ViewerPreferences.ANNOTATION_COLOR, "#ffff00")));
         CheckBox showAnnotations = new CheckBox(Messages.get("preferences.showAnnotations"));
         showAnnotations.setSelected(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
         CheckBox highlightFields = new CheckBox(Messages.get("preferences.highlightFields"));
         highlightFields.setSelected(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         GridPane annotations = grid();
         annotations.addRow(0, label("preferences.author", author), author);
-        annotations.addRow(1, label("preferences.defaultColour", colour), colour);
-        annotations.add(showAnnotations, 0, 2, 2, 1);
-        annotations.add(highlightFields, 0, 3, 2, 1);
+        annotations.add(showAnnotations, 0, 1, 2, 1);
+        annotations.add(highlightFields, 0, 2, 2, 1);
 
         // Search
         CheckBox matchCase = check(Messages.get("preferences.matchCase"), ViewerPreferences.SEARCH_CASE, false);
@@ -176,7 +173,6 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.putBoolean(ViewerPreferences.VERIFY_SIGNATURES, verify.isSelected());
                 preferences.putBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, rememberFolder.isSelected());
                 preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
-                preferences.put(ViewerPreferences.ANNOTATION_COLOR, web(colour.getValue()));
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
                 preferences.putBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, highlightFields.isSelected());
                 for (CheckBox box : List.of(matchCase, wholeWord, accents, regex, cumulative, comments, forms, outlines, destinations)) {
@@ -193,7 +189,6 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 // apply to the next document.
                 view.setVerifySignaturesOnOpen(verify.isSelected());
                 view.setAnnotationAuthor(author.getText().trim());
-                view.setAnnotationColor(colour.getValue());
                 view.setPaintAnnotations(showAnnotations.isSelected());
                 view.setHighlightFormFields(highlightFields.isSelected());
             }
@@ -278,19 +273,6 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         grid.setVgap(10);
         grid.setPadding(new Insets(12));
         return grid;
-    }
-
-    private static Color colour(String web) {
-        try {
-            return Color.web(web);
-        } catch (IllegalArgumentException e) {
-            return Color.YELLOW;
-        }
-    }
-
-    static String web(Color colour) {
-        return String.format(Locale.ROOT, "#%02x%02x%02x", Math.round(colour.getRed() * 255),
-                Math.round(colour.getGreen() * 255), Math.round(colour.getBlue() * 255));
     }
 
     /** The fonts core substitutes with: a filterable list, the extra directories, rescan and clear. */
