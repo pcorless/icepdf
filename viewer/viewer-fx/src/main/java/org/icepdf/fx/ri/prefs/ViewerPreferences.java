@@ -64,7 +64,8 @@ public final class ViewerPreferences {
     public static final String ZOOM = "view.zoom";
     public static final String VERIFY_SIGNATURES = "signatures.verifyOnOpen";
     public static final String ANNOTATION_AUTHOR = "annotation.author";
-    public static final String ANNOTATION_COLOR = "annotation.color";
+    /** Prefix of a tool's colour for new annotations: {@code annotation.color.<tool>}, as {@code #rrggbb}. */
+    public static final String TOOL_COLOR_PREFIX = "annotation.color.";
     public static final String HIGHLIGHT_FIELDS = "forms.highlightFields";
     public static final String PAINT_ANNOTATIONS = "view.paintAnnotations";
     /** The look: a {@code org.icepdf.fx.ri.Theme.Mode} name. */
@@ -221,7 +222,7 @@ public final class ViewerPreferences {
         for (String entry : value.trim().split("\\s+")) {
             try {
                 java.awt.Color color = new java.awt.Color(Integer.parseInt(entry) & 0xFFFFFF);
-                if (!colors.contains(color)) colors.add(color);
+                if (!colors.contains(color) && colors.size() < org.icepdf.fx.ri.ColorHistory.maxRecent()) colors.add(color);
             } catch (NumberFormatException ignored) {
                 // a hand-edited bad entry is skipped.
             }
@@ -229,16 +230,37 @@ public final class ViewerPreferences {
         return colors;
     }
 
-    /** Moves {@code color} to the front of the recent colours, keeping the last ten. */
+    /** Moves {@code color} to the front of the recent colours, keeping {@link org.icepdf.fx.ri.ColorHistory#maxRecent()}. */
     public void addRecentColor(java.awt.Color color) {
         List<java.awt.Color> colors = new ArrayList<>(getRecentColors());
         java.awt.Color opaque = new java.awt.Color(color.getRGB() & 0xFFFFFF);
         colors.remove(opaque);
         colors.add(0, opaque);
-        while (colors.size() > MAX_RECENT) colors.remove(colors.size() - 1);
+        while (colors.size() > org.icepdf.fx.ri.ColorHistory.maxRecent()) colors.remove(colors.size() - 1);
         StringBuilder joined = new StringBuilder();
         for (java.awt.Color c : colors) joined.append(c.getRGB() & 0xFFFFFF).append(' ');
         put(RECENT_COLORS, joined.toString().trim());
+    }
+
+    /** The colour stored for a tool's new annotations, or null when it uses its default. */
+    public javafx.scene.paint.Color getToolColor(org.icepdf.fx.view.ToolMode mode) {
+        String value = properties.getProperty(toolColorKey(mode));
+        if (value == null || value.isBlank()) return null;
+        try {
+            return javafx.scene.paint.Color.web(value.trim());
+        } catch (IllegalArgumentException e) {
+            return null; // a hand-edited bad entry: the default.
+        }
+    }
+
+    /** Stores a tool's colour; null goes back to the tool's default.  Call {@link #save()} to write it. */
+    public void setToolColor(org.icepdf.fx.view.ToolMode mode, javafx.scene.paint.Color color) {
+        put(toolColorKey(mode), color == null ? null : String.format(java.util.Locale.ROOT, "#%02x%02x%02x",
+                Math.round(color.getRed() * 255), Math.round(color.getGreen() * 255), Math.round(color.getBlue() * 255)));
+    }
+
+    private static String toolColorKey(org.icepdf.fx.view.ToolMode mode) {
+        return TOOL_COLOR_PREFIX + mode.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-');
     }
 
     /** The choices of the last print (the {@code print.*} keys), or null if none are stored. */

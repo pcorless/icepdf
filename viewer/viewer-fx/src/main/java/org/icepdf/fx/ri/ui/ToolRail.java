@@ -23,6 +23,9 @@ import javafx.scene.control.*;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.beans.value.ObservableValue;
 import org.icepdf.fx.ri.RailArrangement;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
@@ -42,6 +45,7 @@ public final class ToolRail extends VBox {
     private final ViewerFeatures features;
     private final UserLayout layout;
     private Runnable onCustomise = () -> { };
+    private ToolColors toolColors;
     private final Runnable layoutListener = this::refresh;
 
     public ToolRail(ActionControls actions, ViewerFeatures features, UserLayout layout) {
@@ -56,6 +60,25 @@ public final class ToolRail extends VBox {
     /** What the settings menu's "Customise Tools" runs. */
     public void setOnCustomise(Runnable onCustomise) {
         this.onCustomise = onCustomise;
+    }
+
+    /** The colours of the drawing tools, as the rail shows and changes them. */
+    public interface ToolColors {
+
+        /** The colour of the tool with action {@code id}, or null if it has none. */
+        ObservableValue<Color> colour(String id);
+
+        /** The tool's right-click menu: choosing its colour. */
+        ContextMenu menu(String id);
+    }
+
+    /**
+     * Shows the drawing tools' colours: a bar under each one's icon, and a right-click menu to
+     * change it.  Null shows none.
+     */
+    public void setToolColors(ToolColors toolColors) {
+        this.toolColors = toolColors;
+        refresh();
     }
 
     /** Stops following the layout (call when the viewer is thrown away). */
@@ -81,7 +104,7 @@ public final class ToolRail extends VBox {
             String group = id.substring(0, id.indexOf('.'));
             if (lastGroup != null && !group.equals(lastGroup)) getChildren().add(divider());
             lastGroup = group;
-            getChildren().add(actions.button(id));
+            getChildren().add(withColour(actions.button(id), id));
         }
         if (!arrangement.overflow().isEmpty()) {
             MenuButton more = menuButton("ui.more", Messages.get("toolRail.more"));
@@ -92,6 +115,29 @@ public final class ToolRail extends VBox {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         getChildren().add(spacer);
         if (features.isUserCustomisable()) getChildren().add(settings(arrangement));
+    }
+
+    /** Adds the colour bar and menu to a drawing tool's button. */
+    private ButtonBase withColour(ButtonBase button, String id) {
+        ObservableValue<Color> colour = toolColors != null ? toolColors.colour(id) : null;
+        if (colour == null) return button;
+        // a hairline: enough to tell the colour, quiet enough for the rail.
+        Rectangle bar = new Rectangle(14, 1);
+        bar.getStyleClass().add("tool-colour");
+        bar.fillProperty().bind(colour);
+        javafx.scene.Node icon = button.getGraphic();
+        if (icon != null) {
+            VBox graphic = new VBox(2, icon, bar);
+            graphic.setAlignment(javafx.geometry.Pos.CENTER);
+            button.setGraphic(graphic);
+        }
+        button.setOnContextMenuRequested(e -> {
+            ContextMenu menu = toolColors.menu(id);
+            if (menu == null) return;
+            menu.show(button, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
+        return button;
     }
 
     private MenuButton settings(RailArrangement arrangement) {

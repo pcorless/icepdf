@@ -18,11 +18,13 @@ package org.icepdf.fx.view.internal.tool;
 import org.icepdf.fx.view.PagePoint;
 import org.icepdf.fx.view.ToolMode;
 
+import org.icepdf.fx.view.internal.annot.AnnotationHit;
 import org.icepdf.fx.view.internal.annot.AnnotationUiLayer;
 
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.*;
@@ -34,10 +36,18 @@ import java.awt.geom.Rectangle2D;
  * The drawing tools: NOTE and FREE_TEXT are clicks; RECTANGLE, ELLIPSE, LINE and INK are drags with
  * a live preview shape in the page's UI layer, turned into an annotation on release (see
  * {@link org.icepdf.fx.view.internal.annot.AnnotationCreator}).  The gesture stays on the page it started on.
+ * <p>
+ * A press on an annotation that can be moved, or on a resize handle of the selected one, is the
+ * selection tool's instead (select, move, resize, double-click to edit), so what was just drawn can
+ * be adjusted without changing tools.  The ink tool only gives way to the handles: a stroke usually
+ * starts inside the bounds of the one before it.
  */
 public final class AnnotationCreateHandler implements ToolHandler {
 
     private final ToolContext context;
+    private final TextSelectHandler select;
+    // the selection tool has this gesture.
+    private boolean selecting;
     private ToolMode mode = ToolMode.RECTANGLE;
     private int pageIndex = -1;
     private Point2D start;
@@ -46,8 +56,9 @@ public final class AnnotationCreateHandler implements ToolHandler {
     private Path inkPreview;
     private Node preview;
 
-    public AnnotationCreateHandler(ToolContext context) {
+    public AnnotationCreateHandler(ToolContext context, TextSelectHandler select) {
         this.context = context;
+        this.select = select;
     }
 
     public void setMode(ToolMode mode) {
@@ -58,10 +69,44 @@ public final class AnnotationCreateHandler implements ToolHandler {
     public void uninstall() {
         clearPreview();
         pageIndex = -1;
+        if (selecting) select.uninstall();
+        selecting = false;
+    }
+
+    /** The press (or hover) at a viewport point belongs to the selection tool. */
+    private boolean selects(double vx, double vy) {
+        if (context.handleAtViewport(vx, vy) >= 0) return true;
+        if (mode == ToolMode.INK) return false;
+        AnnotationHit hit = context.annotations().annotationAtViewport(vx, vy);
+        return hit != null && !hit.isActionable() && context.annotations().canMove(hit.annotation());
+    }
+
+    @Override
+    public void moved(MouseEvent e) {
+        if (selects(e.getX(), e.getY())) {
+            select.moved(e);
+            // a press here moves the annotation, selected yet or not.
+            if (context.handleAtViewport(e.getX(), e.getY()) < 0) context.setViewportCursor(Cursor.MOVE);
+        } else {
+            context.annotations().setHovered(null);
+            context.setViewportCursor(Cursor.CROSSHAIR);
+        }
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent e) {
+        // Delete, Esc (cancel a move, deselect) and the rest of the selection keys.
+        return select.keyPressed(e);
     }
 
     @Override
     public void pressed(MouseEvent e) {
+        selecting = selects(e.getX(), e.getY());
+        if (selecting) {
+            pageIndex = -1;
+            select.pressed(e);
+            return;
+        }
         PagePoint point = context.pageAtViewport(e.getX(), e.getY());
         if (point == null) {
             pageIndex = -1;
@@ -82,6 +127,10 @@ public final class AnnotationCreateHandler implements ToolHandler {
 
     @Override
     public void dragged(MouseEvent e) {
+        if (selecting) {
+            select.dragged(e);
+            return;
+        }
         if (pageIndex < 0) return;
         Point2D p = context.toPageView(pageIndex, e.getX(), e.getY());
         if (p == null) return;
@@ -123,6 +172,11 @@ public final class AnnotationCreateHandler implements ToolHandler {
 
     @Override
     public void released(MouseEvent e) {
+        if (selecting) {
+            selecting = false;
+            select.released(e);
+            return;
+        }
         if (pageIndex < 0) return;
         int page = pageIndex;
         pageIndex = -1;

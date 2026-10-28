@@ -93,6 +93,10 @@ public class ViewerApp extends Application {
         }
     };
 
+    // the drawing tools' colours, one set for every window, kept in the preferences.
+    private final javafx.collections.ObservableMap<org.icepdf.fx.view.ToolMode, javafx.scene.paint.Color> toolColors =
+            javafx.collections.FXCollections.observableHashMap();
+
     private final org.icepdf.fx.ri.PrintStore printStore = new org.icepdf.fx.ri.PrintStore() {
         @Override
         public org.icepdf.fx.print.PrintDefaults load() {
@@ -121,6 +125,7 @@ public class ViewerApp extends Application {
         layout = UserLayout.load(ViewerPreferences.home().resolve("layout.properties"));
         FontSettings.apply(FontSettings.defaultCacheFile(), FontDirectories.of(preferences));
         ImagingSettings.apply(preferences);
+        loadToolColors();
         List<String> args = getParameters().getUnnamed();
         AppWindow first = createWindow(stage);
         if (Boolean.getBoolean(DevToolsWindow.OPEN_PROPERTY)) DevToolsWindow.show(first.viewer().getTheme());
@@ -304,6 +309,17 @@ public class ViewerApp extends Application {
         return appIcons;
     }
 
+    private void loadToolColors() {
+        for (org.icepdf.fx.view.ToolMode mode : org.icepdf.fx.view.ToolMode.values()) {
+            javafx.scene.paint.Color colour = mode.hasColor() ? preferences.getToolColor(mode) : null;
+            if (colour != null) toolColors.put(mode, colour);
+        }
+        toolColors.addListener((javafx.collections.MapChangeListener<org.icepdf.fx.view.ToolMode, javafx.scene.paint.Color>) change -> {
+            preferences.setToolColor(change.getKey(), change.wasAdded() ? change.getValueAdded() : null);
+            preferences.save();
+        });
+    }
+
     private static javafx.scene.image.Image appIcon(String name) {
         return new javafx.scene.image.Image(ViewerApp.class.getResource("/org/icepdf/fx/images/" + name).toExternalForm());
     }
@@ -318,6 +334,7 @@ public class ViewerApp extends Application {
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
         viewer.setColorHistory(colorHistory);
+        javafx.beans.binding.Bindings.bindContentBidirectional(viewer.getToolColors(), toolColors);
         viewer.setSigningStore(signing);
         viewer.setPrintStore(printStore);
         viewer.setOnNewWindow(() -> newWindow(null));
@@ -413,12 +430,6 @@ public class ViewerApp extends Application {
         if (fit == FitMode.NONE) view.setZoom(preferences.getDouble(ViewerPreferences.ZOOM, 1));
         view.setVerifySignaturesOnOpen(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
         view.setAnnotationAuthor(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
-        try {
-            view.setAnnotationColor(javafx.scene.paint.Color.web(
-                    preferences.get(ViewerPreferences.ANNOTATION_COLOR, "#ffff00")));
-        } catch (IllegalArgumentException ignored) {
-            // keep the view's default
-        }
         view.setHighlightFormFields(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         view.setPaintAnnotations(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
         // a document's /PageLayout changes the mode for that document only, not the user's preference.

@@ -240,15 +240,8 @@ public final class AnnotationController {
 
     private AnnotationCreator.Style style(ToolMode mode) {
         PdfView control = host.view();
-        javafx.scene.paint.Color fx = control.getAnnotationColor();
-        Color color = fx != null
-                ? new Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue())
-                : switch (mode) {
-            case HIGHLIGHT, NOTE -> new Color(255, 255, 0);
-            case UNDERLINE -> new Color(0, 102, 255);
-            case FREE_TEXT -> Color.BLACK;
-            default -> new Color(230, 0, 0);
-        };
+        javafx.scene.paint.Color fx = control.toolColor(mode);
+        Color color = new Color((float) fx.getRed(), (float) fx.getGreen(), (float) fx.getBlue());
         int opacity = mode == ToolMode.HIGHLIGHT ? TextMarkupAnnotation.HIGHLIGHT_ALPHA : 255;
         return new AnnotationCreator.Style(control.getAnnotationAuthor(), color, opacity, 2f);
     }
