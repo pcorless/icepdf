@@ -45,7 +45,26 @@ public final class BoardModel {
         /** Comments without a colour. */
         NONE,
         /** Every comment: there are no labels to sort by. */
-        ALL
+        ALL,
+        /** One author, page or type (see {@link GroupBy}); read only, cards aren't dropped on it. */
+        GROUP
+    }
+
+    /** What the columns are. */
+    public enum GroupBy {
+        LABEL("annotationBoard.groupBy.label"), AUTHOR("annotationBoard.groupBy.author"),
+        PAGE("annotationBoard.groupBy.page"), TYPE("annotationBoard.groupBy.type");
+
+        private final String key;
+
+        GroupBy(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public String toString() {
+            return org.icepdf.fx.i18n.Messages.get(key);
+        }
     }
 
     /**
@@ -64,8 +83,11 @@ public final class BoardModel {
         }
     }
 
-    /** A column: its kind, its label (for {@link Kind#LABEL}), and its cards in order. */
-    public record Column(Kind kind, ColorLabels.Label label, List<Card> cards) {
+    /**
+     * A column: its kind, its label (for {@link Kind#LABEL}), its title (for {@link Kind#GROUP}),
+     * and its cards in order.
+     */
+    public record Column(Kind kind, ColorLabels.Label label, String title, List<Card> cards) {
     }
 
     private BoardModel() {
@@ -111,12 +133,42 @@ public final class BoardModel {
             List<Card> all = new ArrayList<>(other);
             all.addAll(none);
             all.sort(Comparator.comparing(Card::entry, order));
-            columns.add(new Column(Kind.ALL, null, all));
+            columns.add(new Column(Kind.ALL, null, null, all));
             return columns;
         }
-        byLabel.forEach((label, cards) -> columns.add(new Column(Kind.LABEL, label, cards)));
-        if (!other.isEmpty()) columns.add(new Column(Kind.OTHER, null, other));
-        if (!none.isEmpty()) columns.add(new Column(Kind.NONE, null, none));
+        byLabel.forEach((label, cards) -> columns.add(new Column(Kind.LABEL, label, null, cards)));
+        if (!other.isEmpty()) columns.add(new Column(Kind.OTHER, null, null, other));
+        if (!none.isEmpty()) columns.add(new Column(Kind.NONE, null, null, none));
+        return columns;
+    }
+
+    /**
+     * As {@link #columns(List, Map, List, Comparator, Predicate)} for {@link GroupBy#LABEL}; otherwise
+     * one {@link Kind#GROUP} column per author (by name), page (in order) or type (by name).
+     */
+    public static List<Column> columns(GroupBy by, List<AnnotationSummary.Entry> entries,
+                                       Map<MarkupAnnotation, String> quotes, List<ColorLabels.Label> labels,
+                                       Comparator<AnnotationSummary.Entry> order, Predicate<Card> shown) {
+        if (by == null || by == GroupBy.LABEL) return columns(entries, quotes, labels, order, shown);
+        // the cards as the label grouping would show them, then regrouped.
+        List<Card> cards = new ArrayList<>();
+        for (Column column : columns(entries, quotes, List.of(), order, shown)) cards.addAll(column.cards());
+        java.util.SortedMap<Object, List<Card>> groups = new java.util.TreeMap<>((a, b) -> a instanceof Integer x
+                ? Integer.compare(x, (Integer) b) : String.CASE_INSENSITIVE_ORDER.compare((String) a, (String) b));
+        for (Card card : cards) {
+            AnnotationSummary.Entry entry = card.entry();
+            Object key = switch (by) {
+                case AUTHOR -> entry.author().isEmpty()
+                        ? org.icepdf.fx.i18n.Messages.get("annotationBoard.noAuthor") : entry.author();
+                case PAGE -> entry.pageIndex();
+                default -> entry.type();
+            };
+            groups.computeIfAbsent(key, k -> new ArrayList<>()).add(card);
+        }
+        List<Column> columns = new ArrayList<>();
+        groups.forEach((key, group) -> columns.add(new Column(Kind.GROUP, null, key instanceof Integer page
+                ? org.icepdf.fx.i18n.Messages.format("annotationBoard.pageColumn", page + 1)
+                : (String) key, group)));
         return columns;
     }
 

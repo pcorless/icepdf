@@ -155,6 +155,55 @@ class BoardModelTest {
         assertEquals(expected.replaceAll("\\s+", " "), MarkedText.of(page, highlight).replaceAll("\\s+", " "));
     }
 
+    @DisplayName("grouped by page or author: a read-only column each, pages in order, authors by name")
+    @Test
+    void groupBy() {
+        MarkupAnnotation a = note(TODO.color()), b = note(DONE.color()), c = note(null);
+        List<AnnotationSummary.Entry> entries = List.of(
+                new AnnotationSummary.Entry(4, a, "Note", "zoe", null, "a", a.getColor(), null),
+                new AnnotationSummary.Entry(1, b, "Highlight", "Adam", null, "b", b.getColor(), null),
+                new AnnotationSummary.Entry(4, c, "Note", "", null, "c", null, null));
+        List<BoardModel.Column> pages = BoardModel.columns(BoardModel.GroupBy.PAGE, entries, Map.of(), List.of(TODO),
+                AnnotationSummary.Order.PAGE.comparator(), card -> true);
+        assertEquals(List.of("Page 2", "Page 5"), pages.stream().map(BoardModel.Column::title).toList());
+        assertEquals(List.of(b), annotations(pages.get(0)));
+        assertEquals(2, pages.get(1).cards().size());
+        assertTrue(pages.stream().allMatch(col -> col.kind() == BoardModel.Kind.GROUP));
+
+        List<BoardModel.Column> authors = BoardModel.columns(BoardModel.GroupBy.AUTHOR, entries, Map.of(), List.of(),
+                AnnotationSummary.Order.PAGE.comparator(), card -> true);
+        assertEquals(List.of("Adam", "No author", "zoe"), authors.stream().map(BoardModel.Column::title).toList());
+    }
+
+    @DisplayName("Markdown has a heading per column, the quote once, and escapes markup; CSV quotes per RFC 4180")
+    @Test
+    void export() {
+        MarkupAnnotation a = note(TODO.color()), b = note(TODO.color());
+        List<AnnotationSummary.Entry> entries = List.of(
+                new AnnotationSummary.Entry(0, a, "Highlight", "Ann", LocalDateTime.of(2026, 10, 28, 9, 30),
+                        "Same *text*", a.getColor(), null),
+                new AnnotationSummary.Entry(2, b, "Note", "Bob", null, "Line one\nsays \"hi\", ok", b.getColor(), null));
+        List<BoardModel.Column> columns = BoardModel.columns(entries, Map.of(a, "Same *text*"), List.of(TODO, DONE),
+                AnnotationSummary.Order.PAGE.comparator(), card -> true);
+
+        String md = BoardExport.markdown("report.pdf", columns);
+        assertTrue(md.startsWith("# "), md);
+        assertTrue(md.contains("## To do (2)"), md);
+        assertTrue(md.contains("## Done (0)"), md);
+        assertTrue(md.contains("- **Highlight**, p. 1 \u2014 Ann, 2026-10-28T09:30"), md);
+        assertTrue(md.contains("  > Same \\*text\\*"), "quote, escaped: " + md);
+        assertEquals(1, md.split("Same", -1).length - 1, "contents equal to the quote are written once");
+        assertTrue(md.contains("  Line one\n  says \"hi\", ok\n"), md);
+
+        String csv = BoardExport.csv(columns);
+        assertTrue(csv.startsWith("\uFEFF"), "byte order mark");
+        String[] rows = csv.substring(1).split("\r\n");
+        assertEquals(3, rows.length, csv);
+        assertEquals("Column,Page,Type,Author,Date,Private,Marked text,Comment,Replies", rows[0]);
+        assertEquals("To do,1,Highlight,Ann,2026-10-28T09:30:00,false,Same *text*,Same *text*,0", rows[1]);
+        assertEquals("To do,3,Note,Bob,,false,,\"Line one\nsays \"\"hi\"\", ok\",0", rows[2]);
+    }
+
     private static List<MarkupAnnotation> annotations(BoardModel.Column column) {
         return column.cards().stream().map(c -> c.entry().annotation()).toList();
     }

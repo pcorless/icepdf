@@ -108,6 +108,7 @@ public class AnnotationBoard extends BorderPane {
     private final TextField filter = new TextField();
     private final ComboBox<AnnotationSummary.Order> order = new ComboBox<>();
     private final ComboBox<Visibility> visibility = new ComboBox<>();
+    private final ComboBox<BoardModel.GroupBy> groupBy = new ComboBox<>();
     private final Label status = new Label();
     private final HBox columns = new HBox(10);
     private final ScrollPane scroller = new ScrollPane(columns);
@@ -146,15 +147,22 @@ public class AnnotationBoard extends BorderPane {
         order.getItems().setAll(AnnotationSummary.Order.values());
         order.setValue(AnnotationSummary.Order.PAGE);
         order.valueProperty().addListener((o, a, b) -> rebuild());
+        groupBy.getItems().setAll(BoardModel.GroupBy.values());
+        groupBy.setValue(BoardModel.GroupBy.LABEL);
+        groupBy.valueProperty().addListener((o, a, b) -> rebuild());
+        javafx.scene.control.Button export = new javafx.scene.control.Button(Messages.get("annotationBoard.export"));
+        export.setOnAction(e -> export());
+        export.disableProperty().bind(view.documentProperty().isNull());
         visibility.getItems().setAll(Visibility.values());
         visibility.setValue(Visibility.ALL);
         visibility.valueProperty().addListener((o, a, b) -> rebuild());
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         status.getStyleClass().add("dim-label");
-        HBox bar = new HBox(8, filter, new Label(Messages.get("commentsPanel.sort")), order);
+        HBox bar = new HBox(8, filter, new Label(Messages.get("annotationBoard.columns")), groupBy,
+                new Label(Messages.get("commentsPanel.sort")), order);
         if (AnnotationSummary.privacyEnabled()) bar.getChildren().add(visibility);
-        bar.getChildren().addAll(spacer, status);
+        bar.getChildren().addAll(spacer, status, export);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(8));
         setTop(bar);
@@ -319,7 +327,8 @@ public class AnnotationBoard extends BorderPane {
         AnnotationSummary.Order sort = order.getValue() != null ? order.getValue() : AnnotationSummary.Order.PAGE;
         List<ColorLabels.Label> named = labels.labels();
         builtWith = named;
-        model = BoardModel.columns(entries, quotes, named, sort.comparator(),
+        BoardModel.GroupBy by = groupBy.getValue() != null ? groupBy.getValue() : BoardModel.GroupBy.LABEL;
+        model = BoardModel.columns(by, entries, quotes, named, sort.comparator(),
                 card -> card.matches(needle) && privacy.shows(card.entry().annotation()));
         Object selected = view.getSelectedAnnotation();
         List<String> keys = model.stream().map(AnnotationBoard::key).toList();
@@ -355,7 +364,7 @@ public class AnnotationBoard extends BorderPane {
             setCenter(empty);
         } else {
             setCenter(scroller);
-            setBottom(named.isEmpty() ? hint() : null);
+            setBottom(named.isEmpty() && by == BoardModel.GroupBy.LABEL ? hint() : null);
         }
         if (selected != null) follow(selected);
     }
@@ -363,7 +372,33 @@ public class AnnotationBoard extends BorderPane {
     /** A column's identity, for telling whether a rebuild has the same columns. */
     private static String key(BoardModel.Column column) {
         return column.kind() + (column.label() != null
-                ? ":" + (column.label().color().getRGB() & 0xFFFFFF) + ":" + column.label().name() : "");
+                ? ":" + (column.label().color().getRGB() & 0xFFFFFF) + ":" + column.label().name()
+                : column.title() != null ? ":" + column.title() : "");
+    }
+
+    /** The board as shown, as Markdown or CSV (by the file's extension). */
+    private void export() {
+        javafx.stage.FileChooser chooser = new javafx.stage.FileChooser();
+        chooser.setTitle(Messages.get("annotationBoard.exportTitle"));
+        javafx.stage.FileChooser.ExtensionFilter md = new javafx.stage.FileChooser.ExtensionFilter(
+                Messages.get("annotationBoard.markdownFiles"), "*.md");
+        javafx.stage.FileChooser.ExtensionFilter csv = new javafx.stage.FileChooser.ExtensionFilter(
+                Messages.get("annotationBoard.csvFiles"), "*.csv");
+        chooser.getExtensionFilters().setAll(md, csv);
+        String base = title(view).replaceAll("(?i)\\.pdf$", "");
+        chooser.setInitialFileName((base.isBlank() ? "comments" : base) + " comments.md");
+        java.io.File file = chooser.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
+        if (file == null) return;
+        boolean asCsv = file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".csv")
+                || chooser.getSelectedExtensionFilter() == csv && !file.getName().contains(".");
+        try {
+            java.nio.file.Files.writeString(file.toPath(), asCsv ? BoardExport.csv(model) : BoardExport.markdown(title(view), model),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            status.setText(Messages.format("annotationBoard.exported", file.getName()));
+        } catch (java.io.IOException | RuntimeException e) {
+            logger.log(Level.WARNING, "Exporting the annotation board failed", e);
+            status.setText(Messages.format("annotationBoard.exportFailed", Messages.reason(e)));
+        }
     }
 
     private Label hint() {
@@ -377,13 +412,7 @@ public class AnnotationBoard extends BorderPane {
     private VBox column(BoardModel.Column column) {
         Rectangle swatch = new Rectangle(12, 12, column.label() != null ? fx(column.label().color()) : Color.TRANSPARENT);
         swatch.setStroke(Color.gray(0.4));
-        Label name = new Label(switch (column.kind()) {
-            case LABEL -> column.label().name().isEmpty()
-                    ? String.format("#%06X", column.label().color().getRGB() & 0xFFFFFF) : column.label().name();
-            case OTHER -> Messages.get("annotationBoard.other");
-            case NONE -> Messages.get("annotationBoard.noColour");
-            case ALL -> Messages.get("annotationBoard.all");
-        });
+        Label name = new Label(BoardExport.columnName(column));
         name.setStyle("-fx-font-weight: bold;");
         Label count = new Label(Integer.toString(column.cards().size()));
         count.getStyleClass().add("dim-label");
