@@ -64,6 +64,8 @@ public final class ViewerPreferences {
     public static final String ZOOM = "view.zoom";
     public static final String VERIFY_SIGNATURES = "signatures.verifyOnOpen";
     public static final String ANNOTATION_AUTHOR = "annotation.author";
+    /** New annotations are private; only offered with the private annotation flag enabled. */
+    public static final String ANNOTATION_NEW_PRIVATE = "annotation.newPrivate";
     /** Prefix of a tool's colour for new annotations: {@code annotation.color.<tool>}, as {@code #rrggbb}. */
     public static final String TOOL_COLOR_PREFIX = "annotation.color.";
     public static final String HIGHLIGHT_FIELDS = "forms.highlightFields";

@@ -18,18 +18,23 @@ package org.icepdf.fx.view.internal.annot;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.SVGPath;
 import javafx.scene.transform.Scale;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
+import org.icepdf.core.util.SystemProperties;
 import org.icepdf.fx.i18n.Messages;
 
 import java.time.format.DateTimeFormatter;
@@ -59,6 +64,10 @@ public final class PopupNode extends BorderPane {
         void contentsEdited(PopupNode node, String contents);
 
         void minimised(PopupNode node);
+
+        /** The lock in the title bar was toggled: make the note private or public. */
+        default void privacyChanged(PopupNode node, boolean priv) {
+        }
     }
 
     static final Color BACKGROUND = Color.rgb(255, 255, 204);
@@ -81,6 +90,10 @@ public final class PopupNode extends BorderPane {
     private final Label date;
     private final Button minimise = new Button();
     private final Line minimiseGlyph = new Line(0, 0, 6, 0);
+    /** Private/public lock, only with the private annotation flag enabled; null otherwise. */
+    private final ToggleButton privacy;
+    private final SVGPath shackle = new SVGPath();
+    private final Rectangle lockBody = new Rectangle(1, 6, 8, 6);
     private Color colour;
 
     PopupNode(PopupAnnotation popup, MarkupAnnotation markup, Listener listener) {
@@ -106,7 +119,24 @@ public final class PopupNode extends BorderPane {
         minimise.setOnAction(e -> listener.minimised(this));
         minimise.hoverProperty().addListener((obs, was, now) -> styleMinimise());
         minimise.armedProperty().addListener((obs, was, now) -> styleMinimise());
-        header = new HBox(4, title, spacer, date, minimise);
+        header = new HBox(4, title, spacer, date);
+        if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
+            privacy = new ToggleButton();
+            shackle.setFill(null);
+            shackle.setStrokeWidth(1.2);
+            privacy.setGraphic(new Group(shackle, lockBody));
+            privacy.setFocusTraversable(false);
+            privacy.setOnAction(e -> {
+                listener.privacyChanged(this, privacy.isSelected());
+                // the edit may be refused (locked, read only); show what the annotation says.
+                refreshPrivacy();
+            });
+            privacy.hoverProperty().addListener((obs, was, now) -> styleMinimise());
+            header.getChildren().add(privacy);
+        } else {
+            privacy = null;
+        }
+        header.getChildren().add(minimise);
         header.getStyleClass().add("pdf-annotation-popup-header");
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(2, 0, 3, 0));
@@ -127,6 +157,7 @@ public final class PopupNode extends BorderPane {
         BorderPane.setAlignment(grip, Pos.BOTTOM_RIGHT);
         setBottom(grip);
         refreshColour();
+        refreshPrivacy();
 
         // drags: the header moves, the grip resizes; both report in view px (this node's local
         // coordinates times the scale).
@@ -175,6 +206,7 @@ public final class PopupNode extends BorderPane {
         this.editable = editable;
         text.setEditable(editable);
         grip.setVisible(editable);
+        if (privacy != null) privacy.setDisable(!editable);
         header.setCursor(editable ? Cursor.MOVE : Cursor.DEFAULT);
     }
 
@@ -194,6 +226,16 @@ public final class PopupNode extends BorderPane {
         styleMinimise();
     }
 
+    /** Re-reads whether the annotation is private (it can change from a menu while the popup is open). */
+    void refreshPrivacy() {
+        if (privacy == null) return;
+        boolean priv = markup.getFlagPrivateContents();
+        privacy.setSelected(priv);
+        // closed shackle when private, open (right leg lifted) when public.
+        shackle.setContent(priv ? "M2.5,6 V3.5 A2.5,2.5 0 0 1 7.5,3.5 V6" : "M2.5,6 V3.5 A2.5,2.5 0 0 1 7.5,3.5 V4.5");
+        privacy.setTooltip(new Tooltip(Messages.get(priv ? "popupNote.private" : "popupNote.public")));
+    }
+
     /** The note's colour: the markup annotation's, or the default note yellow. */
     public Color colour() {
         return colour;
@@ -209,6 +251,13 @@ public final class PopupNode extends BorderPane {
         minimise.setStyle("-fx-background-color: " + web(fill) + "; -fx-background-radius: 0; "
                 + "-fx-background-insets: 0; -fx-border-color: " + web(border) + "; -fx-border-width: 1; "
                 + "-fx-border-radius: 0; -fx-padding: 3 3 3 3; -fx-min-width: 14; -fx-min-height: 10;");
+        if (privacy != null) {
+            shackle.setStroke(ink);
+            lockBody.setFill(ink);
+            privacy.setStyle("-fx-background-color: " + web(colour) + "; -fx-background-radius: 0; "
+                    + "-fx-background-insets: 0; -fx-border-color: " + web(privacy.isHover() ? ink : colour)
+                    + "; -fx-border-width: 1; -fx-border-radius: 0; -fx-padding: 1 2 1 2;");
+        }
     }
 
     /** Black or white, whichever reads better on the colour (relative luminance). */

@@ -429,7 +429,13 @@ public class ViewerApp extends Application {
         view.setFitMode(fit);
         if (fit == FitMode.NONE) view.setZoom(preferences.getDouble(ViewerPreferences.ZOOM, 1));
         view.setVerifySignaturesOnOpen(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
-        view.setAnnotationAuthor(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
+        // with private annotations the author must be user.name: core hides private annotations by
+        // any other author, so a chosen name would hide the user's own on reopen.
+        view.setAnnotationAuthor(org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED
+                ? org.icepdf.core.util.SystemProperties.USER_NAME
+                : preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
+        view.setNewAnnotationsPrivate(org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED
+                && preferences.getBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, false));
         view.setHighlightFormFields(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         view.setPaintAnnotations(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
         // a document's /PageLayout changes the mode for that document only, not the user's preference.

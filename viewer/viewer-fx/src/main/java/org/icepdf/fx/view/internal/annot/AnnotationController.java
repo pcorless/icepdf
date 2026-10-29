@@ -147,6 +147,45 @@ public final class AnnotationController {
         return null;
     }
 
+    /**
+     * The pages the annotations are on, -1 for one that is on none: a visible page, else the page
+     * the annotation names (/P) when that page holds it, else whichever loaded page holds it (/P is
+     * optional, many files leave it out).  Only the pages' annotation lists are read, not their
+     * content streams.
+     */
+    public int[] pageIndexesOf(List<? extends Annotation> annotations) {
+        int count = host.document().getPageTree().getNumberOfPages();
+        int[] pages = new int[annotations.size()];
+        java.util.Map<Annotation, Integer> loaded = null;
+        for (int i = 0; i < pages.length; i++) {
+            Annotation annotation = annotations.get(i);
+            AnnotationHit hit = hitOf(annotation);
+            int pageIndex = hit != null ? hit.pageIndex() : annotation.getPageIndex();
+            if (hit == null && !(pageIndex >= 0 && pageIndex < count && holds(pageIndex, annotation))) {
+                if (loaded == null) {
+                    // one pass over the pages, for every annotation that needs it.
+                    loaded = new java.util.IdentityHashMap<>();
+                    for (int p = 0; p < count; p++) {
+                        Page page = host.document().getPageTree().getPage(p);
+                        List<Annotation> onPage = page != null ? page.getAnnotations() : null;
+                        if (onPage != null) for (Annotation a : onPage) loaded.putIfAbsent(a, p);
+                    }
+                }
+                Integer found = annotation.isDeleted() ? null : loaded.get(annotation);
+                pageIndex = found != null ? found : -1;
+            }
+            pages[i] = pageIndex;
+        }
+        return pages;
+    }
+
+    /** True if the page's annotation list holds the annotation (the list is read, not the page's content). */
+    private boolean holds(int pageIndex, Annotation annotation) {
+        Page page = host.document().getPageTree().getPage(pageIndex);
+        List<Annotation> annotations = page != null ? page.getAnnotations() : null;
+        return annotations != null && !annotation.isDeleted() && annotations.contains(annotation);
+    }
+
     /** The selected annotation and the (visible) page it is on, or null. */
     public AnnotationHit selectedHit() {
         Annotation selected = host.view().getSelectedAnnotation();
@@ -219,6 +258,11 @@ public final class AnnotationController {
         public void minimised(PopupNode node) {
             host.view().setPopupOpen(node.getMarkup(), false);
         }
+
+        @Override
+        public void privacyChanged(PopupNode node, boolean priv) {
+            host.view().setAnnotationsPrivate(List.of(node.getMarkup()), priv);
+        }
     };
 
     private AnnotationUiLayer uiLayerOf(PopupNode node) {
@@ -261,6 +305,12 @@ public final class AnnotationController {
                 && !(annotation instanceof FreeTextAnnotation)
                 && !(annotation instanceof RedactionAnnotation)
                 ? AnnotationCreator.popup(page.getLibrary(), markup, popupOpen, host.toPageSpace(page)) : null;
+        // redaction marks stay public: hiding one from other reviewers would hide what is to be removed.
+        if (host.view().isNewAnnotationsPrivate() && annotation instanceof MarkupAnnotation markup
+                && !(annotation instanceof RedactionAnnotation)) {
+            markup.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, true);
+            if (popup != null) popup.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, true);
+        }
         host.recordEdit(AnnotationEdits.add(host.annotationLocker(), page, pageIndex, annotation, popup));
         host.view().selectAnnotation(annotation);
     }

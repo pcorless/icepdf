@@ -94,6 +94,13 @@ public class PreferencesDialog extends Dialog<ButtonType> {
 
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
+        // private annotations are matched to user.name, so the author can't be chosen then (see ViewerApp).
+        boolean authorFixed = org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+        if (authorFixed) {
+            author.setText(org.icepdf.core.util.SystemProperties.USER_NAME);
+            author.setDisable(true);
+            author.setTooltip(new javafx.scene.control.Tooltip(Messages.get("preferences.authorFixed")));
+        }
         CheckBox showAnnotations = new CheckBox(Messages.get("preferences.showAnnotations"));
         showAnnotations.setSelected(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));
         CheckBox highlightFields = new CheckBox(Messages.get("preferences.highlightFields"));
@@ -102,6 +109,9 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         annotations.addRow(0, label("preferences.author", author), author);
         annotations.add(showAnnotations, 0, 1, 2, 1);
         annotations.add(highlightFields, 0, 2, 2, 1);
+        CheckBox newPrivate = new CheckBox(Messages.get("preferences.newAnnotationsPrivate"));
+        newPrivate.setSelected(preferences.getBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, false));
+        if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) annotations.add(newPrivate, 0, 3, 2, 1);
 
         // Search
         CheckBox matchCase = check(Messages.get("preferences.matchCase"), ViewerPreferences.SEARCH_CASE, false);
@@ -172,9 +182,13 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.putBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, sidePanel.isSelected());
                 preferences.putBoolean(ViewerPreferences.VERIFY_SIGNATURES, verify.isSelected());
                 preferences.putBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, rememberFolder.isSelected());
-                preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
+                if (!authorFixed) preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
                 preferences.putBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, highlightFields.isSelected());
+                if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) {
+                    preferences.putBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, newPrivate.isSelected());
+                    view.setNewAnnotationsPrivate(newPrivate.isSelected());
+                }
                 for (CheckBox box : List.of(matchCase, wholeWord, accents, regex, cumulative, comments, forms, outlines, destinations)) {
                     preferences.putBoolean((String) box.getUserData(), box.isSelected());
                 }
@@ -188,7 +202,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 // what applies to the open view now; page display, zoom and the image reference type
                 // apply to the next document.
                 view.setVerifySignaturesOnOpen(verify.isSelected());
-                view.setAnnotationAuthor(author.getText().trim());
+                if (!authorFixed) view.setAnnotationAuthor(author.getText().trim());
                 view.setPaintAnnotations(showAnnotations.isSelected());
                 view.setHighlightFormFields(highlightFields.isSelected());
             }

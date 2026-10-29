@@ -17,6 +17,7 @@ package org.icepdf.fx.ri;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
@@ -32,9 +33,11 @@ import org.icepdf.core.pobjects.annotations.CircleAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
+import org.icepdf.fx.panels.AnnotationSummary;
 import org.icepdf.fx.view.AnnotationProperties;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
@@ -114,6 +117,9 @@ public final class AnnotationContextMenu {
             item.setOnAction(e -> properties.accept(annotation));
             menu.getItems().add(item);
         }
+        if (AnnotationSummary.privacyEnabled() && AnnotationSummary.canBePrivate(annotation)) {
+            menu.getItems().add(privateItem(view, (MarkupAnnotation) annotation));
+        }
         MenuItem delete = new MenuItem(Messages.get("annotationMenu.delete"));
         delete.setOnAction(e -> {
             view.selectAnnotation(annotation);
@@ -122,6 +128,15 @@ public final class AnnotationContextMenu {
         if (!menu.getItems().isEmpty()) menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(delete);
         return menu;
+    }
+
+    /** "Private", ticked when it is: marks the comment and its replies private or public. */
+    static CheckMenuItem privateItem(PdfView view, MarkupAnnotation markup) {
+        CheckMenuItem item = new CheckMenuItem(Messages.get("annotationMenu.private"));
+        item.setSelected(markup.getFlagPrivateContents());
+        item.setDisable(!view.isAnnotationEditingAllowed());
+        item.setOnAction(e -> view.setAnnotationsPrivate(AnnotationSummary.withReplies(markup), item.isSelected()));
+        return item;
     }
 
     static Menu colourMenu(PdfView view, Annotation annotation, ColorHistory colors) {
