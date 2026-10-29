@@ -110,6 +110,19 @@ public class PdfViewer extends StackPane {
             colorHistory.used(color);
         }
     };
+    private ColorLabels colorLabelStore = ColorLabels.inMemory();
+    // what the annotation menus are given: the labels store set now, whenever it's set.
+    private final ColorLabels colorLabels = new ColorLabels() {
+        @Override
+        public java.util.List<Label> labels() {
+            return colorLabelStore.labels();
+        }
+
+        @Override
+        public void setLabels(java.util.List<Label> labels) {
+            colorLabelStore.setLabels(labels);
+        }
+    };
     // the drawing tools' colours, which every document in this viewer follows.
     private final javafx.collections.ObservableMap<ToolMode, javafx.scene.paint.Color> toolColors =
             FXCollections.observableHashMap();
@@ -234,7 +247,7 @@ public class PdfViewer extends StackPane {
                 if (mode == null) return null;
                 Window window = rail.getScene() != null ? rail.getScene().getWindow() : owner;
                 return AnnotationContextMenu.toolColourMenu(toolColour(mode), toolColors.containsKey(mode), colors,
-                        window, colour -> {
+                        colorLabels, window, colour -> {
                             if (colour == null) toolColors.remove(mode);
                             else toolColors.put(mode, colour);
                         });
@@ -862,7 +875,7 @@ public class PdfViewer extends StackPane {
         });
         // a new flow per click: it picks up the signing store as it is then.
         pane.getView().setOnSignatureClicked(event -> signatureFlow(pane).handle(event));
-        AnnotationContextMenu.install(pane.getView(), colors, toolColors);
+        AnnotationContextMenu.install(pane.getView(), colors, toolColors, colorLabels);
         // wired again when it changes tabs or windows: one binding, to this viewer's colours.
         javafx.beans.binding.Bindings.unbindContent(pane.getView().getToolColors(), toolColors);
         javafx.beans.binding.Bindings.bindContent(pane.getView().getToolColors(), toolColors);
@@ -1045,6 +1058,19 @@ public class PdfViewer extends StackPane {
     /** Remembers the colours the user picks for annotations (shown in the annotation context menu). */
     public void setColorHistory(ColorHistory colorHistory) {
         this.colorHistory = colorHistory != null ? colorHistory : ColorHistory.inMemory();
+    }
+
+    /**
+     * The user's colour labels (named annotation colours), offered first in the colour menus; kept
+     * only while the viewer is open unless the application supplies a store.
+     */
+    public void setColorLabels(ColorLabels colorLabels) {
+        this.colorLabelStore = colorLabels != null ? colorLabels : ColorLabels.inMemory();
+    }
+
+    /** The colour labels in use (a view of the store set with {@link #setColorLabels}). */
+    public ColorLabels getColorLabels() {
+        return colorLabels;
     }
 
     /** Remembers the keystore, certificate, appearance and drawn signature from one signing to the next. */

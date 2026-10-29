@@ -93,6 +93,20 @@ public class ViewerApp extends Application {
         }
     };
 
+    // the colour labels, one set for every window, kept in the preferences.
+    private final org.icepdf.fx.ri.ColorLabels colorLabels = new org.icepdf.fx.ri.ColorLabels() {
+        @Override
+        public List<Label> labels() {
+            return preferences.getColorLabels();
+        }
+
+        @Override
+        public void setLabels(List<Label> labels) {
+            preferences.setColorLabels(labels);
+            preferences.save();
+        }
+    };
+
     // the drawing tools' colours, one set for every window, kept in the preferences.
     private final javafx.collections.ObservableMap<org.icepdf.fx.view.ToolMode, javafx.scene.paint.Color> toolColors =
             javafx.collections.FXCollections.observableHashMap();
@@ -118,6 +132,11 @@ public class ViewerApp extends Application {
     public void start(Stage stage) {
         installErrorHandler();
         preferences = ViewerPreferences.load();
+        if (!preferences.hasColorLabels()) {
+            // first run: carry over the Swing viewer's colour labels, once (even none, so it isn't asked again).
+            preferences.setColorLabels(org.icepdf.fx.ri.ColorLabels.parseSwing(org.icepdf.fx.ri.ColorLabels.swingPreference()));
+            preferences.save();
+        }
         // before anything loads core's Library or renders: the pools size themselves once.
         PerformanceSettings.apply(preferences);
         signing = org.icepdf.fx.ri.prefs.SigningPreferences.of(preferences);
@@ -334,6 +353,7 @@ public class ViewerApp extends Application {
         AppWindow window = new AppWindow(stage, viewer);
         viewer.setFileHistory(history);
         viewer.setColorHistory(colorHistory);
+        viewer.setColorLabels(colorLabels);
         javafx.beans.binding.Bindings.bindContentBidirectional(viewer.getToolColors(), toolColors);
         viewer.setSigningStore(signing);
         viewer.setPrintStore(printStore);

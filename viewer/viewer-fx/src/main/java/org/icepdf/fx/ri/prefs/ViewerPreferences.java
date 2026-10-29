@@ -51,6 +51,8 @@ public final class ViewerPreferences {
     public static final String LAST_DIRECTORY = "file.lastDirectory";
     /** Colours recently chosen for annotations, most recent first, as space separated RGB integers. */
     public static final String RECENT_COLORS = "annotation.recentColors";
+    /** The colour labels: one per line, {@code #rrggbb name}. */
+    public static final String COLOR_LABELS = "annotation.colorLabels";
     /** Whether file dialogs start in the folder last used (default true). */
     public static final String REMEMBER_LAST_DIRECTORY = "file.rememberLastDirectory";
     public static final String WINDOW_X = "window.x";
@@ -242,6 +244,39 @@ public final class ViewerPreferences {
         StringBuilder joined = new StringBuilder();
         for (java.awt.Color c : colors) joined.append(c.getRGB() & 0xFFFFFF).append(' ');
         put(RECENT_COLORS, joined.toString().trim());
+    }
+
+    /** True once colour labels have been stored (even none), so a one-time import knows it has run. */
+    public boolean hasColorLabels() {
+        return properties.getProperty(COLOR_LABELS) != null;
+    }
+
+    /** The colour labels, in order; bad lines are skipped. */
+    public List<org.icepdf.fx.ri.ColorLabels.Label> getColorLabels() {
+        List<org.icepdf.fx.ri.ColorLabels.Label> labels = new ArrayList<>();
+        String value = properties.getProperty(COLOR_LABELS);
+        if (value == null || value.isBlank()) return labels;
+        for (String line : value.split("\\R")) {
+            line = line.strip();
+            if (line.length() < 7 || line.charAt(0) != '#') continue;
+            try {
+                java.awt.Color color = new java.awt.Color(Integer.parseInt(line.substring(1, 7), 16));
+                labels.add(new org.icepdf.fx.ri.ColorLabels.Label(color, line.substring(7)));
+            } catch (NumberFormatException ignored) {
+                // a hand-edited bad line
+            }
+        }
+        return labels;
+    }
+
+    /** Stores the colour labels; call {@link #save()} to write them. */
+    public void setColorLabels(List<org.icepdf.fx.ri.ColorLabels.Label> labels) {
+        StringBuilder joined = new StringBuilder();
+        for (org.icepdf.fx.ri.ColorLabels.Label label : labels) {
+            joined.append(String.format(java.util.Locale.ROOT, "#%06x %s", label.color().getRGB() & 0xFFFFFF,
+                    label.name().replaceAll("\\R", " "))).append('\n');
+        }
+        put(COLOR_LABELS, joined.toString());
     }
 
     /** The colour stored for a tool's new annotations, or null when it uses its default. */

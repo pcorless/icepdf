@@ -112,6 +112,12 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         CheckBox newPrivate = new CheckBox(Messages.get("preferences.newAnnotationsPrivate"));
         newPrivate.setSelected(preferences.getBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, false));
         if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) annotations.add(newPrivate, 0, 3, 2, 1);
+        ColorLabelsEditor labels = new ColorLabelsEditor(preferences.getColorLabels());
+        Label labelsTitle = new Label(Messages.get("preferences.labels"));
+        labelsTitle.setStyle("-fx-font-weight: bold;");
+        annotations.add(labelsTitle, 0, 4, 2, 1);
+        annotations.add(labels, 0, 5, 2, 1);
+        GridPane.setHgrow(labels, javafx.scene.layout.Priority.ALWAYS);
 
         // Search
         CheckBox matchCase = check(Messages.get("preferences.matchCase"), ViewerPreferences.SEARCH_CASE, false);
@@ -185,6 +191,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 if (!authorFixed) preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
                 preferences.putBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, highlightFields.isSelected());
+                preferences.setColorLabels(labels.labels());
                 if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) {
                     preferences.putBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, newPrivate.isSelected());
                     view.setNewAnnotationsPrivate(newPrivate.isSelected());
