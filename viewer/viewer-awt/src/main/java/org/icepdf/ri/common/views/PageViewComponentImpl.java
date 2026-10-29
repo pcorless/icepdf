@@ -303,14 +303,17 @@ public class PageViewComponentImpl extends AbstractPageViewComponent implements 
      * them all (an O(n) construction of Swing components) so the lookup can succeed; subsequent
      * calls are a plain map lookup. Because that build creates Swing components it only runs on the
      * EDT &mdash; if this is called off the EDT before the components exist it performs a pure lookup
-     * and may return null rather than building Swing components on a worker thread.
+     * and may return null rather than building Swing components on a worker thread. The build is
+     * also skipped while this page is not attached to the document view (the single and facing
+     * page views only attach the visible pages), as popups are positioned relative to the
+     * attached page and the page builds its own components once it is shown.
      *
      * @param annot The annotation
      * @return The annotation component, or null if there is no match
      */
     public AnnotationComponent getComponentFor(Annotation annot) {
         synchronized (annotationComponentsLock) {
-            if (annotationToComponent == null && SwingUtilities.isEventDispatchThread()) {
+            if (annotationToComponent == null && getParent() != null && SwingUtilities.isEventDispatchThread()) {
                 // initializeAnnotationsComponent re-acquires annotationComponentsLock (reentrant).
                 initializeAnnotationsComponent(getPage());
             }

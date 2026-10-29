@@ -52,6 +52,8 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
                     messageBundle.getString("viewer.window.annotationSummary.title.open.default"));
             setTitle(formatter.format(messageArguments));
 
+            // a document re-open replaces the panel, release the previous one first.
+            disposeDocument();
             annotationSummaryPanel = new AnnotationSummaryPanel(this, controller);
             getContentPane().add(annotationSummaryPanel);
             annotationSummaryPanel.refreshDocumentInstance();
@@ -64,6 +66,10 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
 
     @Override
     public void disposeDocument() {
+        if (annotationSummaryPanel != null) {
+            annotationSummaryPanel.disposeDocument();
+            annotationSummaryPanel = null;
+        }
         getContentPane().removeAll();
         invalidate();
         revalidate();

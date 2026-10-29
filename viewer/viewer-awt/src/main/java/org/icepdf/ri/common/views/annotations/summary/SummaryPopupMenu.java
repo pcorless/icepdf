@@ -65,10 +65,11 @@ public class SummaryPopupMenu extends AnnotationPopup<MarkupAnnotationComponent>
         addSeparator();
         add(deleteMenuItem);
         deleteMenuItem.addActionListener(this);
-        deleteMenuItem.setEnabled(controller.havePermissionToModifyDocument());
+        deleteMenuItem.setEnabled(annotationComponent != null && controller.havePermissionToModifyDocument());
         addSeparator();
         add(propertiesMenuItem);
         propertiesMenuItem.addActionListener(this);
+        propertiesMenuItem.setEnabled(annotationComponent != null);
     }
 
     @Override
