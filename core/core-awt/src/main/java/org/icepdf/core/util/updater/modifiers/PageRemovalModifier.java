@@ -19,6 +19,7 @@ package org.icepdf.core.util.updater.modifiers;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.util.Library;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.icepdf.core.pobjects.Page.CONTENTS_KEY;
@@ -56,8 +57,10 @@ public class PageRemovalModifier implements Modifier<Page> {
             // contents
             removeDictionaryEntries(page.getEntries(), CONTENTS_KEY, stateManager);
             // xObjects
-            DictionaryEntries entries = (DictionaryEntries) page.getEntries().get(RESOURCES_KEY);
-            removeDictionaryEntries(entries, XOBJECT_KEY, stateManager);
+            Object resources = library.getObject(page.getEntries(), RESOURCES_KEY);
+            if (resources instanceof DictionaryEntries) {
+                removeDictionaryEntries((DictionaryEntries) resources, XOBJECT_KEY, stateManager);
+            }
             // properties
         }
     }
@@ -92,43 +95,46 @@ public class PageRemovalModifier implements Modifier<Page> {
         }
     }
 
+    /**
+     * Removes the page from the node that lists it and takes one off /Count there and at every ancestor, so the
+     * saved tree is consistent.  /Kids is replaced rather than edited: the node's last init() captured the list,
+     * and render threads walk it without a lock.  Each changed node is reset so the open document's tree is
+     * re-read on its next lookup.
+     *
+     * @return true if the page was found under this node, and removed.
+     */
     private boolean findAndRemovePageTreeReference(PageTree pageTree, Reference pageReference) {
-        // work with raw dictionary entries as we don't want to initialize if we don't have to.
-        List<?> kidsReferences = (List<?>) pageTree.getObject(KIDS_KEY);
-        boolean found = false;
-        for (Object kid : kidsReferences) {
-            // quick check for an easy find
-            if (pageReference.equals(kid)) {
-                removePageTreeReference(pageTree, kidsReferences, kid);
-                found = true;
-                break;
-            }
+        DictionaryEntries entries = pageTree.getEntries();
+        Object kidsObject = library.getObject(entries, KIDS_KEY);
+        if (!(kidsObject instanceof List)) {
+            return false;
         }
-        if (!found) {
-            // need to resolve each reference and dive into each page tree.
-            for (Object ref : kidsReferences) {
+        List<?> kidsReferences = (List<?>) kidsObject;
+        int index = kidsReferences.indexOf(pageReference);
+        if (index >= 0) {
+            List<Object> remaining = new ArrayList<>(kidsReferences);
+            remaining.remove(index);
+            entries.put(KIDS_KEY, remaining);
+            stateManager.addDeletion(pageReference);
+        } else if (!removeFromKid(kidsReferences, pageReference)) {
+            return false;
+        }
+        Number count = library.getNumber(entries, COUNT_KEY);
+        entries.put(COUNT_KEY, Math.max(0, (count != null ? count.intValue() : 0) - 1));
+        stateManager.addChange(new PObject(pageTree, pageTree.getPObjectReference()));
+        pageTree.resetInitializedState();
+        return true;
+    }
+
+    private boolean removeFromKid(List<?> kidsReferences, Reference pageReference) {
+        for (Object ref : kidsReferences) {
+            if (ref instanceof Reference) {
                 Object kid = library.getObject((Reference) ref);
-                if (kid instanceof PageTree) {
-                    found = findAndRemovePageTreeReference((PageTree) kid, pageReference);
-                    if (found) {
-                        removePageTreeReference(pageTree, kidsReferences, kid);
-                        return true;
-                    }
+                if (kid instanceof PageTree && findAndRemovePageTreeReference((PageTree) kid, pageReference)) {
+                    return true;
                 }
             }
         }
-        return found;
-    }
-
-    // remove and push the dictionary to the StateManager.
-    private void removePageTreeReference(PageTree pageTree, List<?> kidsReferences, Object kid) {
-        DictionaryEntries dictionaryEntries = pageTree.getEntries();
-        kidsReferences.remove(kid);
-        dictionaryEntries.put(KIDS_KEY, kidsReferences);
-        dictionaryEntries.put(COUNT_KEY, kidsReferences.size());
-        stateManager.addChange(new PObject(pageTree, pageTree.getPObjectReference()));
-        if (kid instanceof Reference) {
-            stateManager.addDeletion((Reference) kid);
-        }
+        return false;
     }
 }
