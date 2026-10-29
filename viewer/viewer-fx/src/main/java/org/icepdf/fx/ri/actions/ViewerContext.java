@@ -33,7 +33,8 @@ public interface ViewerContext {
 
     /** Application-level operations a host may offer. */
     enum Capability {
-        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER
+        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER,
+        ANNOTATION_BOARD
     }
 
     /**
@@ -136,6 +137,11 @@ public interface ViewerContext {
     /** Puts the caret in the page number field, its text selected to type over. */
     default void focusPageNumber() {
         throw new UnsupportedOperationException("page number");
+    }
+
+    /** Opens the annotation board for the document ({@link org.icepdf.fx.ri.AnnotationBoard}). */
+    default void showAnnotationBoard() {
+        throw new UnsupportedOperationException("annotation board");
     }
 
     /** Opens the search panel. */

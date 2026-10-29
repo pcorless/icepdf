@@ -70,7 +70,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.print", null, "document.properties", null,
+            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.print", null, "document.properties", "view.annotation-board", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -1409,6 +1409,11 @@ public class PdfViewer extends StackPane {
                 rememberFolder(chosen);
                 open(chosen.toPath());
             }
+        }
+
+        @Override
+        public void showAnnotationBoard() {
+            if (view() != null) AnnotationBoard.show(window(), view(), colorLabels);
         }
 
         @Override
