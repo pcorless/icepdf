@@ -72,8 +72,8 @@ public class SeparationCacheTest {
 
     @Test
     public void namedColourTintsMatchAcrossThreads() throws Exception {
-        Separation red = new Separation(new Library(), new DictionaryEntries(), new Name("Red"),
-                new Name("DeviceRGB"), null);
+        Separation black = new Separation(new Library(), new DictionaryEntries(), new Name("Black"),
+                new Name("DeviceGray"), null);
         int tints = 3000;
         ExecutorService pool = Executors.newFixedThreadPool(8);
         try {
@@ -85,8 +85,8 @@ public class SeparationCacheTest {
                     for (int i = 0; i < 50_000; i++) {
                         float tint = random.nextInt(tints) / (float) (tints - 1);
                         int light = Math.round((1 - tint) * 255);
-                        assertEquals(0xff000000 | 0xff0000 | light << 8 | light,
-                                red.getColor(new float[]{tint}, true).getRGB(), "tint " + tint);
+                        assertEquals(0xff000000 | light << 16 | light << 8 | light,
+                                black.getColor(new float[]{tint}, true).getRGB(), "tint " + tint);
                     }
                     return null;
                 }));

@@ -110,13 +110,11 @@ public class Separation extends PColorSpace {
         // see if name can be converted to a known colour.
         if (name instanceof Name) {
             String colorName = ((Name) name).getName().toLowerCase();
-            // check for additive colours we can work with. Not cyan: it is a process ink, whose alternate
-            // (tint transform into DeviceCMYK) is exact, while the screen colour cyan (#00FFFF) is far more
-            // saturated than the ink (Chevron_2010.pdf cover).
-            if (!(colorName.equals("red")
-                    || colorName.equals("blue") || colorName.equals("black")
-                    || colorName.equals("brown")
-                    || colorName.equals("auto"))) {
+            // only Black still paints as a screen colour. Every other colorant takes its tint transform and
+            // alternate: a CMYK alternate is the ink, while the screen colour is far off it (Blue painted
+            // (0,0,255) where the ink is (46,48,146)), and an RGB or Gray alternate gives the screen colour
+            // anyway (GH-648). Black waits on the K-only policy of GH-647.
+            if (!colorName.equals("black")) {
                 // sniff out All or Null
                 if (colorName.equals(COLORANT_ALL)) {
                     // The special colorant name All shall refer collectively to all colorants
@@ -135,10 +133,6 @@ public class Separation extends PColorSpace {
             int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
             if (colorVaue != -1) {
                 namedColor = new Color(colorVaue);
-            }
-            // quick check for auto color which we'll paint as black
-            if (colorName.equalsIgnoreCase("auto")) {
-                namedColor = Color.BLACK;
             }
         }
     }
