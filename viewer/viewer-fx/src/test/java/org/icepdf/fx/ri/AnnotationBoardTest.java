@@ -106,4 +106,28 @@ class AnnotationBoardTest {
         assertEquals(0, (int) Fx.call(() -> columns.get(0).getSelectionModel().getSelectedIndex()));
         assertTrue(Fx.call(() -> columns.get(1).getSelectionModel().isEmpty()), "one card picked at a time");
     }
+
+    @DisplayName("filing a card under another label recolours its comment, Shortcut+digit too, and undo puts it back")
+    @Test
+    void refile() throws Exception {
+        columnsAndSelection();
+        MarkupAnnotation red = Fx.call(() -> columns().get(0).getItems().get(0).entry().annotation());
+        BoardModel.Card card = Fx.call(() -> columns().get(0).getItems().get(0));
+
+        Fx.run(() -> board.refile(card, GREEN));
+        assertEquals(GREEN.color().getRGB(), red.getColor().getRGB());
+        Fx.waitFor("the card to move to Approved", () -> Fx.call(() -> columns().get(0).getItems().isEmpty()
+                && columns().get(1).getItems().size() == 2));
+
+        Fx.run(view::undo);
+        assertEquals(RED.color().getRGB(), red.getColor().getRGB());
+        Fx.waitFor("the card to move back", () -> Fx.call(() -> columns().get(0).getItems().size() == 1));
+
+        // keyboard: pick the red card, Shortcut+2 files it under the second label.
+        Fx.run(() -> {
+            columns().get(0).getSelectionModel().select(0);
+            Fx.press(columns().get(0), javafx.scene.input.KeyCode.DIGIT2, true);
+        });
+        assertEquals(GREEN.color().getRGB(), red.getColor().getRGB());
+    }
 }

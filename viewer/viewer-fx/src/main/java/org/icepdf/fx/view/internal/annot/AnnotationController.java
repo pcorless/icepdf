@@ -179,6 +179,11 @@ public final class AnnotationController {
         return pages;
     }
 
+    /** The page an annotation is on, shown or not ({@link #pageIndexesOf}), or -1. */
+    public int pageIndexOf(Annotation annotation) {
+        return pageIndexesOf(List.of(annotation))[0];
+    }
+
     /** True if the page's annotation list holds the annotation (the list is read, not the page's content). */
     private boolean holds(int pageIndex, Annotation annotation) {
         Page page = host.document().getPageTree().getPage(pageIndex);

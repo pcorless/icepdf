@@ -20,7 +20,12 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
@@ -44,6 +49,7 @@ import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
 import org.icepdf.fx.i18n.Messages;
 import org.icepdf.fx.panels.AnnotationSummary;
 import org.icepdf.fx.panels.MarkedText;
+import org.icepdf.fx.view.AnnotationProperties;
 import org.icepdf.fx.view.PagePoint;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.PdfViewEvent;
@@ -108,6 +114,11 @@ public class AnnotationBoard extends BorderPane {
     private final Label empty = new Label();
     private final PauseTransition rescanLater = new PauseTransition(Duration.millis(250));
     private final List<ListView<BoardModel.Card>> lists = new ArrayList<>();
+    private final List<Label> counts = new ArrayList<>();
+    private List<BoardModel.Column> model = List.of();
+    private List<String> columnKeys = List.of();
+    /** The card being dragged to another column, or null. */
+    private BoardModel.Card dragged;
 
     private List<AnnotationSummary.Entry> entries = Collections.emptyList();
     private Map<MarkupAnnotation, String> quotes = Collections.emptyMap();
@@ -308,16 +319,33 @@ public class AnnotationBoard extends BorderPane {
         AnnotationSummary.Order sort = order.getValue() != null ? order.getValue() : AnnotationSummary.Order.PAGE;
         List<ColorLabels.Label> named = labels.labels();
         builtWith = named;
-        List<BoardModel.Column> model = BoardModel.columns(entries, quotes, named, sort.comparator(),
+        model = BoardModel.columns(entries, quotes, named, sort.comparator(),
                 card -> card.matches(needle) && privacy.shows(card.entry().annotation()));
         Object selected = view.getSelectedAnnotation();
+        List<String> keys = model.stream().map(AnnotationBoard::key).toList();
 
-        lists.clear();
-        columns.getChildren().clear();
         int shown = 0;
-        for (BoardModel.Column column : model) {
-            columns.getChildren().add(column(column));
-            shown += column.cards().size();
+        if (keys.equals(columnKeys) && lists.size() == model.size()) {
+            // same columns: new cards in the lists there are, so they keep their scroll positions.
+            syncing = true;
+            try {
+                for (int i = 0; i < model.size(); i++) {
+                    lists.get(i).getItems().setAll(model.get(i).cards());
+                    counts.get(i).setText(Integer.toString(model.get(i).cards().size()));
+                    shown += model.get(i).cards().size();
+                }
+            } finally {
+                syncing = false;
+            }
+        } else {
+            lists.clear();
+            counts.clear();
+            columns.getChildren().clear();
+            for (BoardModel.Column column : model) {
+                columns.getChildren().add(column(column));
+                shown += column.cards().size();
+            }
+            columnKeys = keys;
         }
         int total = (int) entries.stream().filter(e -> e.replyTo() == null).count();
         status.setText(entries.isEmpty() ? "" : shown == total ? Messages.format("commentsPanel.count", total)
@@ -330,6 +358,12 @@ public class AnnotationBoard extends BorderPane {
             setBottom(named.isEmpty() ? hint() : null);
         }
         if (selected != null) follow(selected);
+    }
+
+    /** A column's identity, for telling whether a rebuild has the same columns. */
+    private static String key(BoardModel.Column column) {
+        return column.kind() + (column.label() != null
+                ? ":" + (column.label().color().getRGB() & 0xFFFFFF) + ":" + column.label().name() : "");
     }
 
     private Label hint() {
@@ -353,6 +387,7 @@ public class AnnotationBoard extends BorderPane {
         name.setStyle("-fx-font-weight: bold;");
         Label count = new Label(Integer.toString(column.cards().size()));
         count.getStyleClass().add("dim-label");
+        counts.add(count);
         HBox header = new HBox(6, swatch, name, count);
         if (column.kind() != BoardModel.Kind.LABEL) header.getChildren().remove(swatch);
         header.setAlignment(Pos.CENTER_LEFT);
@@ -372,10 +407,27 @@ public class AnnotationBoard extends BorderPane {
             BoardModel.Card card = list.getSelectionModel().getSelectedItem();
             if (e.getClickCount() == 2 && card != null) openNote(card.entry());
         });
-        list.setOnKeyPressed(e -> {
+        // a filter: the list's own keys (F2, Enter) would otherwise take these first.
+        list.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
             BoardModel.Card card = list.getSelectionModel().getSelectedItem();
-            if (card != null && e.getCode() == KeyCode.ENTER) openNote(card.entry());
+            int index = lists.indexOf(list);
+            if (e.getCode() == KeyCode.LEFT || e.getCode() == KeyCode.RIGHT) {
+                focusColumn(index + (e.getCode() == KeyCode.LEFT ? -1 : 1));
+                e.consume();
+            }
+            if (card == null || list.getEditingIndex() >= 0) return;
+            if (e.getCode() == KeyCode.ENTER) openNote(card.entry());
+            else if (e.getCode() == KeyCode.F2 && canEdit(card)) edit(list, list.getSelectionModel().getSelectedIndex());
+            else if (e.getCode() == KeyCode.DELETE && canEdit(card)) delete(card);
+            else if (e.isShortcutDown() && e.getCode().isDigitKey()) {
+                // Shortcut+1..9 files the card under the nth label.
+                int n = e.getCode().getCode() - KeyCode.DIGIT1.getCode();
+                List<ColorLabels.Label> named = labels.labels();
+                if (n >= 0 && n < named.size()) refile(card, named.get(n));
+            } else return;
+            e.consume();
         });
+        if (column.kind() == BoardModel.Kind.LABEL) acceptDrops(list, column.label());
         lists.add(list);
         VBox.setVgrow(list, Priority.ALWAYS);
 
@@ -387,14 +439,173 @@ public class AnnotationBoard extends BorderPane {
 
     /** Clears the selection of every other column. */
     private void selectOnly(ListView<BoardModel.Card> keep) {
+        boolean was = syncing;
         syncing = true;
         try {
             for (ListView<BoardModel.Card> list : lists) {
                 if (list != keep) list.getSelectionModel().clearSelection();
             }
         } finally {
-            syncing = false;
+            syncing = was;
         }
+    }
+
+    /** Moves the focus to column {@code index}, picking its first card if none is. */
+    private void focusColumn(int index) {
+        if (index < 0 || index >= lists.size()) return;
+        ListView<BoardModel.Card> list = lists.get(index);
+        if (list.getItems().isEmpty()) return;
+        if (list.getSelectionModel().isEmpty()) list.getSelectionModel().select(0);
+        list.requestFocus();
+    }
+
+    // ---- editing ----------------------------------------------------------------------------
+
+    private boolean canEdit(BoardModel.Card card) {
+        return view.isAnnotationEditingAllowed() && card.entry().annotation().allowAlterProperties()
+                && !card.entry().annotation().getFlagReadOnly();
+    }
+
+    /** Files a card under a label: its colour becomes the label's, one undoable edit. */
+    void refile(BoardModel.Card card, ColorLabels.Label label) {
+        MarkupAnnotation annotation = card.entry().annotation();
+        if (!canEdit(card) || !AnnotationProperties.hasColor(annotation)) return;
+        java.awt.Color now = annotation.getColor();
+        if (now != null && (now.getRGB() & 0xFFFFFF) == (label.color().getRGB() & 0xFFFFFF)) return;
+        view.applyAnnotationProperties(annotation, AnnotationProperties.ofColor(label.color()));
+    }
+
+    /**
+     * Edits a card's text in place.  The list is editable only for this: an editable list would
+     * start editing on any click on a picked card.
+     */
+    private void edit(ListView<BoardModel.Card> list, int index) {
+        list.setEditable(true);
+        list.edit(index);
+    }
+
+    private void delete(BoardModel.Card card) {
+        view.deleteAnnotation(card.entry().annotation());
+    }
+
+    private void togglePrivate(BoardModel.Card card) {
+        MarkupAnnotation annotation = card.entry().annotation();
+        if (!canEdit(card) || !AnnotationSummary.canBePrivate(annotation)) return;
+        view.setAnnotationsPrivate(AnnotationSummary.withReplies(annotation), !annotation.getFlagPrivateContents());
+    }
+
+    /** Makes a label of a card's colour, asking its name. */
+    private void newLabel(BoardModel.Card card) {
+        java.awt.Color colour = card.entry().color();
+        if (colour == null) return;
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        dialog.setTitle(Messages.get("annotationBoard.newLabelTitle"));
+        dialog.setHeaderText(null);
+        dialog.setContentText(Messages.get("preferences.labels.name"));
+        if (getScene() != null) dialog.initOwner(getScene().getWindow());
+        dialog.showAndWait().map(String::strip).filter(n -> !n.isEmpty()).ifPresent(name -> {
+            List<ColorLabels.Label> next = new ArrayList<>(labels.labels());
+            next.add(new ColorLabels.Label(colour, name));
+            labels.setLabels(next);
+            rebuild();
+        });
+    }
+
+    /** Lets cards be dropped on a label's column, which files them under it. */
+    private void acceptDrops(ListView<BoardModel.Card> list, ColorLabels.Label label) {
+        list.setOnDragOver(e -> {
+            if (dragged != null && canEdit(dragged) && ColorLabels.match(List.of(label), dragged.entry().color()) == null) {
+                e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
+            }
+            e.consume();
+        });
+        list.setOnDragEntered(e -> {
+            if (dragged != null && ColorLabels.match(List.of(label), dragged.entry().color()) == null) {
+                list.setStyle("-fx-border-color: " + web(label.color()) + "; -fx-border-width: 2;");
+            }
+        });
+        list.setOnDragExited(e -> list.setStyle(null));
+        list.setOnDragDropped(e -> {
+            boolean done = dragged != null;
+            if (done) refile(dragged, label);
+            e.setDropCompleted(done);
+            e.consume();
+        });
+    }
+
+    private ContextMenu menu(BoardModel.Card card) {
+        MarkupAnnotation annotation = card.entry().annotation();
+        boolean editable = canEdit(card);
+        ContextMenu menu = new ContextMenu();
+        MenuItem goTo = new MenuItem(Messages.get("commentsPanel.goTo"));
+        goTo.setOnAction(e -> go(card.entry()));
+        MenuItem open = new MenuItem(Messages.get("commentsPanel.openNote"));
+        open.setDisable(annotation.getPopupAnnotation() == null);
+        open.setOnAction(e -> openNote(card.entry()));
+        MenuItem editText = new MenuItem(Messages.get("annotationBoard.editText"));
+        editText.setDisable(!editable);
+        editText.setOnAction(e -> {
+            for (ListView<BoardModel.Card> list : lists) {
+                int i = list.getItems().indexOf(card);
+                if (i >= 0) edit(list, i);
+            }
+        });
+        menu.getItems().addAll(goTo, open, editText, new SeparatorMenuItem());
+
+        Menu file = new Menu(Messages.get("annotationBoard.label"));
+        List<ColorLabels.Label> named = labels.labels();
+        ColorLabels.Label current = ColorLabels.match(named, card.entry().color());
+        for (int i = 0; i < named.size(); i++) {
+            ColorLabels.Label label = named.get(i);
+            MenuItem item = new MenuItem(label.name().isEmpty() ? web(label.color()) : label.name());
+            Rectangle box = new Rectangle(12, 12, fx(label.color()));
+            box.setStroke(Color.gray(0, 0.35));
+            item.setGraphic(box);
+            if (i < 9) item.setAccelerator(new javafx.scene.input.KeyCodeCombination(KeyCode.getKeyCode(Integer.toString(i + 1)),
+                    javafx.scene.input.KeyCombination.SHORTCUT_DOWN));
+            item.setDisable(!editable || !AnnotationProperties.hasColor(annotation) || label.equals(current)
+                    && (label.color().getRGB() & 0xFFFFFF) == (card.entry().color().getRGB() & 0xFFFFFF));
+            item.setOnAction(e -> refile(card, label));
+            file.getItems().add(item);
+        }
+        if (current == null && card.entry().color() != null) {
+            if (!file.getItems().isEmpty()) file.getItems().add(new SeparatorMenuItem());
+            MenuItem make = new MenuItem(Messages.get("annotationBoard.newLabel"));
+            make.setOnAction(e -> newLabel(card));
+            file.getItems().add(make);
+        }
+        if (!file.getItems().isEmpty()) menu.getItems().add(file);
+        if (AnnotationSummary.privacyEnabled() && AnnotationSummary.canBePrivate(annotation)) {
+            CheckMenuItem priv = new CheckMenuItem(Messages.get("annotationMenu.private"));
+            priv.setSelected(annotation.getFlagPrivateContents());
+            priv.setDisable(!editable);
+            priv.setOnAction(e -> togglePrivate(card));
+            menu.getItems().add(priv);
+        }
+        if (AnnotationProperties.supports(annotation)) {
+            MenuItem properties = new MenuItem(Messages.get("annotationMenu.properties"));
+            properties.setDisable(!editable);
+            properties.setOnAction(e -> AnnotationPropertiesDialog.show(getScene() != null ? getScene().getWindow() : null,
+                    annotation).ifPresent(change -> view.applyAnnotationProperties(annotation, change)));
+            menu.getItems().add(properties);
+        }
+        MenuItem copy = new MenuItem(Messages.get("commentsPanel.copyText"));
+        String text = !card.entry().contents().isEmpty() ? card.entry().contents() : card.quote();
+        copy.setDisable(text.isEmpty());
+        copy.setOnAction(e -> {
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(text);
+            javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+        });
+        MenuItem delete = new MenuItem(Messages.get("commentsPanel.delete"));
+        delete.setDisable(!editable);
+        delete.setOnAction(e -> delete(card));
+        menu.getItems().addAll(copy, new SeparatorMenuItem(), delete);
+        return menu;
+    }
+
+    private static String web(java.awt.Color c) {
+        return String.format("#%06x", c.getRGB() & 0xFFFFFF);
     }
 
     /** Picks the card of the view's selected comment, if it's on the board. */
@@ -446,16 +657,81 @@ public class AnnotationBoard extends BorderPane {
 
     // ---- cards ------------------------------------------------------------------------------
 
-    private static final class CardCell extends ListCell<BoardModel.Card> {
+    private final class CardCell extends ListCell<BoardModel.Card> {
+        /** The text editor while editing, else null. */
+        private javafx.scene.control.TextArea editor;
+
         CardCell() {
             // fit the column; text wraps rather than widening it.
             setPrefWidth(0);
+            setOnDragDetected(e -> {
+                BoardModel.Card card = getItem();
+                if (card == null || isEditing() || !canEdit(card)) return;
+                dragged = card;
+                javafx.scene.input.Dragboard board = startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.putString(card.entry().contents());
+                board.setContent(content);
+                board.setDragView(snapshot(null, null), e.getX(), e.getY());
+                e.consume();
+            });
+            setOnDragDone(e -> dragged = null);
+            setOnContextMenuRequested(e -> {
+                if (getItem() == null) return;
+                getListView().getSelectionModel().select(getIndex());
+                menu(getItem()).show(this, e.getScreenX(), e.getScreenY());
+                e.consume();
+            });
+        }
+
+        @Override
+        public void startEdit() {
+            BoardModel.Card card = getItem();
+            if (card == null || !canEdit(card)) return;
+            super.startEdit();
+            javafx.scene.control.TextArea area = new javafx.scene.control.TextArea(card.entry().contents());
+            editor = area;
+            area.setWrapText(true);
+            area.setPrefRowCount(4);
+            area.setPromptText(Messages.get("annotationBoard.editPrompt"));
+            area.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ESCAPE) {
+                    cancelEdit();
+                    e.consume();
+                } else if (e.getCode() == KeyCode.ENTER && e.isShortcutDown()) {
+                    commit(card, area.getText());
+                    e.consume();
+                }
+            });
+            area.focusedProperty().addListener((o, was, now) -> {
+                if (!now && isEditing()) commit(card, area.getText());
+            });
+            setGraphic(area);
+            area.requestFocus();
+        }
+
+        private void commit(BoardModel.Card card, String text) {
+            cancelEdit();
+            view.setAnnotationContents(card.entry().annotation(), text);
+        }
+
+        @Override
+        public void cancelEdit() {
+            editor = null;
+            super.cancelEdit();
+            if (getListView() != null) getListView().setEditable(false);
+            updateItem(getItem(), getItem() == null);
         }
 
         @Override
         protected void updateItem(BoardModel.Card card, boolean empty) {
             super.updateItem(card, empty);
             setText(null);
+            if (isEditing() && editor != null && !empty) {
+                // a layout pass while editing: keep the editor.
+                setGraphic(editor);
+                return;
+            }
             setGraphic(null);
             if (empty || card == null) return;
             AnnotationSummary.Entry entry = card.entry();
@@ -474,6 +750,14 @@ public class AnnotationBoard extends BorderPane {
                 lock.getStyleClass().addAll("dim-label", "comment-private");
                 lock.setMinWidth(Region.USE_PREF_SIZE);
                 heading.getChildren().add(lock);
+                if (canEdit(card)) {
+                    lock.setTooltip(new javafx.scene.control.Tooltip(Messages.get("annotationBoard.makePublic")));
+                    lock.setCursor(javafx.scene.Cursor.HAND);
+                    lock.setOnMouseClicked(e -> {
+                        togglePrivate(card);
+                        e.consume();
+                    });
+                }
             }
             String date = entry.date() != null ? DATES.format(entry.date()) : "";
             Label when = new Label(date);

@@ -773,18 +773,48 @@ public class PdfView extends Control {
     }
 
     /**
-     * Changes properties of an annotation as one undoable edit.  No-op if the annotation isn't on a
-     * page of this document, it's locked, the document doesn't permit annotating, or its type has no
-     * editable properties ({@link AnnotationProperties#supports}).
+     * Deletes an annotation (and its popup), on any page, shown or not; undoable.  No-op if it isn't
+     * on a page of this document, it's locked, or the document doesn't permit annotating.
+     */
+    public void deleteAnnotation(Annotation annotation) {
+        if (annotation == null || !(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, pageIndex, annotation));
+        if (getSelectedAnnotation() == annotation) clearAnnotationSelection();
+    }
+
+    /**
+     * Changes properties of an annotation as one undoable edit; it may be on any page, shown or not.
+     * No-op if the annotation isn't on a page of this document, it's locked, the document doesn't
+     * permit annotating, or its type has no editable properties ({@link AnnotationProperties#supports}).
      */
     public void applyAnnotationProperties(Annotation annotation, AnnotationProperties change) {
         if (change == null || !AnnotationProperties.supports(annotation)) return;
         if (!(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
-        AnnotationHit hit = skin.annotations().hitOf(annotation);
-        if (hit == null) return;
-        Page page = getDocument().getPageTree().getPage(hit.pageIndex());
-        recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, hit.pageIndex(), annotation, change,
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, pageIndex, annotation, change,
                 skin.toPageSpace(page)));
+    }
+
+    /**
+     * Replaces a comment's text (/Contents; a text box's text, redrawn) as one undoable edit, on any
+     * page, shown or not.  No-op when unchanged, or as {@link #applyAnnotationProperties}.
+     */
+    public void setAnnotationContents(MarkupAnnotation annotation, String contents) {
+        if (annotation == null || contents == null) return;
+        if (!(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
+        if (contents.equals(annotation.getContents() != null ? annotation.getContents() : "")) return;
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(annotation instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation freeText
+                ? AnnotationEdits.freeTextContents(skin.annotationLocker(), page, pageIndex, freeText, contents,
+                skin.toPageSpace(page))
+                : AnnotationEdits.contents(skin.annotationLocker(), page, pageIndex, annotation, contents));
     }
 
     /**
