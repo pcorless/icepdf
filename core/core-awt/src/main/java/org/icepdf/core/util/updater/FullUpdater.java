@@ -198,7 +198,7 @@ public class FullUpdater {
 
         BaseWriter writer = new BaseWriter(crossReferenceRoot, securityManager, output, 0);
         writer.initializeWriters();
-        Object mappedFileByteBufferLock = library.getMappedFileByteBufferLock();
+        Object documentSourceLock = library.getDocumentSource().getLock();
 
         // burn any redaction annotation into the content and image streams
         // all changes are made to the state manager and will be written out to the new document
@@ -217,7 +217,7 @@ public class FullUpdater {
         writer.setUseObjectStreams(useObjectStreams && compressedXref
                 && (securityManager == null || securityManager.getEncryptionKey() != null));
 
-        synchronized (mappedFileByteBufferLock) {
+        synchronized (documentSourceLock) {
             // write header, at least 1.5 when the cross-reference is a stream (and so may the objects be)
             writer.writeHeader(library.getFileHeader(), compressedXref ? 1.5 : 0);
 

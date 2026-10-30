@@ -171,7 +171,7 @@ public class Catalog extends Dictionary {
      */
     private PageTree recoverPageTree() {
         CrossReferenceRoot crossReferenceRoot = library.getCrossReferenceRoot();
-        ByteBuffer byteBuffer = library.getMappedFileByteBuffer();
+        ByteBuffer byteBuffer = library.getDocumentSource().getBuffer();
         if (crossReferenceRoot == null || byteBuffer == null) {
             return null;
         }
