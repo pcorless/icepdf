@@ -15,7 +15,16 @@
  */
 package org.icepdf.core.pobjects.acroform.signature;
 
-import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -41,10 +50,26 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.security.*;
-import java.security.cert.*;
+import java.security.InvalidKeyException;
+import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.util.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -108,19 +133,42 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
     protected boolean initialized;
 
+    private final ReentrantLock validationLock;
+
     public AbstractPkcsValidator(SignatureFieldDictionary signatureFieldDictionary) throws SignatureIntegrityException {
+        this.validationLock = new ReentrantLock();
         this.signatureFieldDictionary = signatureFieldDictionary;
         if (signatureFieldDictionary != null) {
             init();
         }
     }
 
+    @Override
+    public void validate() throws SignatureIntegrityException {
+        //Some logic to run one validation at a time, and threads calling validate during a validation exit when the validation is finished.
+        if (validationLock.tryLock()) { //No validation running
+            try {
+                doValidate();
+            } finally {
+                validationLock.unlock();
+            }
+        } else {
+            validationLock.lock(); //Wait
+            validationLock.unlock(); //Exit when the running validation is finished
+        }
+    }
+
     /**
-     * Runs a series of tests to try and determine the validity o
+     * Runs a series of tests to try and determine the validity of the signature
      *
      * @throws SignatureIntegrityException signature could not be validated or invalidated.
      */
-    public abstract void validate() throws SignatureIntegrityException;
+    protected abstract void doValidate() throws SignatureIntegrityException;
+
+    @Override
+    public boolean isValidating() {
+        return validationLock.isLocked();
+    }
 
     protected void announceSignatureType(SignatureDictionary signatureDictionary) {
         if (logger.isLoggable(Level.FINER)) {

@@ -122,14 +122,22 @@ public class SignatureValidationStatus {
      * the signatures panel so the icon and the words always agree.
      */
     public enum Validity {
-        /** The signed content is intact and the signer's identity is trusted. */
+        /**
+         * The signed content is intact and the signer's identity is trusted.
+         */
         VALID("valid", "signature_valid"),
-        /** The signed content is intact but the signer's identity can't be verified. */
+        /**
+         * The signed content is intact but the signer's identity can't be verified.
+         */
         UNKNOWN("unknown", "signature_caution"),
-        /** The signed content was altered, or the signer's certificate was revoked. */
+        /**
+         * The signed content was altered, or the signer's certificate was revoked.
+         */
         INVALID("invalid", "signature_invalid");
 
-        /** Message key part and icon name. */
+        /**
+         * Message key part and icon name.
+         */
         public final String key;
         public final String icon;
 
@@ -139,12 +147,18 @@ public class SignatureValidationStatus {
         }
     }
 
-    /** What happened to the document after this signature. */
+    /**
+     * What happened to the document after this signature.
+     */
     public enum DocumentState {
         UNMODIFIED("unmodified"),
-        /** Later revisions (form fill-in, comments, more signatures); the signed version is intact. */
+        /**
+         * Later revisions (form fill-in, comments, more signatures); the signed version is intact.
+         */
         SUBSEQUENT_CHANGES("modified"),
-        /** The bytes this signature covers changed: the signature is broken. */
+        /**
+         * The bytes this signature covers changed: the signature is broken.
+         */
         ALTERED("major");
 
         public final String key;
@@ -154,7 +168,9 @@ public class SignatureValidationStatus {
         }
     }
 
-    /** What is known of the signer's identity. */
+    /**
+     * What is known of the signer's identity.
+     */
     public enum Identity {
         VALID("valid"),
         UNKNOWN("unknown"),

@@ -16,7 +16,6 @@
 package org.icepdf.ri.common.views.annotations.signatures;
 
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -32,8 +31,7 @@ public class SignerInfoPanel extends JPanel {
     private final GridBagConstraints constraints;
 
 
-    public SignerInfoPanel(SignatureValidationStatus signatureValidationStatus, ResourceBundle messageBundle,
-                           SignatureWidgetAnnotation signatureWidgetAnnotation, SignatureValidator signatureValidator) {
+    public SignerInfoPanel(ResourceBundle messageBundle, SignatureValidator signatureValidator) {
 
         setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
                 messageBundle.getString("viewer.annotation.signature.properties.dialog.signerInfo.title"),

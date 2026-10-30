@@ -24,7 +24,6 @@ import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
-import org.icepdf.core.util.Utils;
 
 import javax.crypto.Cipher;
 import java.io.ByteArrayInputStream;
@@ -100,7 +99,7 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
     }
 
     @Override
-    public void validate() throws SignatureIntegrityException {
+    protected void doValidate() throws SignatureIntegrityException {
         validateDocument();
     }
 

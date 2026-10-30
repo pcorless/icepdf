@@ -18,6 +18,7 @@ package org.icepdf.ri.common.views.annotations.signatures;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.utils.SignatureUtilities;
 import org.icepdf.core.util.HexDumper;
 import org.icepdf.ri.common.EscapeJDialog;
@@ -49,36 +50,47 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
             Logger.getLogger(CertificatePropertiesDialog.class.getName());
 
     protected static ResourceBundle messageBundle;
-    private final Collection<? extends Certificate> certs;
+    private SignatureValidator signatureValidator;
+
+    public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle,
+                                       SignatureValidator signatureValidator) {
+        super(parent, true);
+        CertificatePropertiesDialog.messageBundle = messageBundle;
+        this.signatureValidator = signatureValidator;
+        buildUI(null);
+    }
 
     public CertificatePropertiesDialog(Frame parent, ResourceBundle messageBundle,
                                        Collection<? extends Certificate> certs) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
-        this.certs = certs;
-        buildUI();
+        buildUI(certs);
     }
 
     public CertificatePropertiesDialog(JDialog parent, ResourceBundle messageBundle,
-                                       Collection<? extends Certificate> certs) {
+                                       SignatureValidator signatureValidator) {
         super(parent, true);
         CertificatePropertiesDialog.messageBundle = messageBundle;
-        this.certs = certs;
-        buildUI();
+        this.signatureValidator = signatureValidator;
+        buildUI(null);
     }
 
-    private void buildUI() {
+    private void buildUI(final Collection<? extends Certificate> certs) {
         setTitle(messageBundle.getString("viewer.utilityPane.signatures.cert.dialog.title"));
 
         getContentPane().setLayout(new BorderLayout());
-        Certificate[] certArray = new Certificate[certs.size()];
-        int i = 0;
-        for (Certificate certificate : certs) {
-            certArray[i] = certificate;
-            i++;
+
+        if (certs != null) {
+            createContentPane(certs);
+        } else if (signatureValidator != null) {
+            if (signatureValidator.hasValidated()) {
+                createContentPane(signatureValidator.getCertificateChain());
+            } else {
+                signatureValidator.validateAsync()
+                        .thenAcceptAsync(v -> createContentPane(signatureValidator.getCertificateChain()),
+                                SwingUtilities::invokeLater);
+            }
         }
-        getContentPane().add(getComponents(certArray),
-                BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new FlowLayout(FlowLayout.TRAILING));
@@ -91,6 +103,17 @@ public class CertificatePropertiesDialog extends EscapeJDialog {
         setSize(new Dimension(760, 450));
         setLocationRelativeTo(getParent());
         setResizable(true);
+    }
+
+    private void createContentPane(final Collection<? extends Certificate> certs) {
+        Certificate[] certArray = new Certificate[certs.size()];
+        int i = 0;
+        for (Certificate certificate : certs) {
+            certArray[i] = certificate;
+            i++;
+        }
+        getContentPane().add(getComponents(certArray),
+                BorderLayout.CENTER);
     }
 
     /**

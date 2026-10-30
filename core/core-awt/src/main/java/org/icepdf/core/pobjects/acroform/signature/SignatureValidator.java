@@ -21,6 +21,8 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * Interface for Digital Signature validation.  Singer certificate validity can be determined from this class.
@@ -35,6 +37,28 @@ public interface SignatureValidator {
      * @throws SignatureIntegrityException occurs if there is an issue validating the public key against the cert.
      */
     void validate() throws SignatureIntegrityException;
+
+    /**
+     * Validates the signature asynchronously
+     *
+     * @return An empty future
+     */
+    default CompletableFuture<Void> validateAsync() {
+        return CompletableFuture.runAsync(() -> {
+            try {
+                validate();
+            } catch (final SignatureIntegrityException e) {
+                throw new CompletionException(e);
+            }
+        });
+    }
+
+    /**
+     * Returns whether the validator is currently validating
+     *
+     * @return True if the validator is currently validating
+     */
+    boolean isValidating();
 
     /**
      * Indicates if the singed data section specified by a signature has been modified.  This indicates the document
@@ -134,6 +158,15 @@ public interface SignatureValidator {
      * @return date that validation last completed.
      */
     Date getLastValidated();
+
+    /**
+     * Returns whether a validation cycle has been completed
+     *
+     * @return True if at least one cycle has been completed
+     */
+    default boolean hasValidated() {
+        return getLastValidated() != null;
+    }
 
     /**
      * The signing time the signer claims in the signature's CMS signingTime attribute (the signer's

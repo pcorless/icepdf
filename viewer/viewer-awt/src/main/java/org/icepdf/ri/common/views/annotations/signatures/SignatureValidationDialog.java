@@ -80,8 +80,7 @@ public class SignatureValidationDialog extends EscapeJDialog {
 
         // put it all together.
         SignatureValidationPanel validityPanel =
-                new SignatureValidationPanel(signatureValidationStatus, messageBundle, signatureWidgetAnnotation,
-                        signatureValidator, true, false);
+                new SignatureValidationPanel(signatureValidationStatus, messageBundle, true, false);
         GridBagConstraints constraints = validityPanel.getConstraints();
 
         constraints.insets = new Insets(15, 5, 5, 5);

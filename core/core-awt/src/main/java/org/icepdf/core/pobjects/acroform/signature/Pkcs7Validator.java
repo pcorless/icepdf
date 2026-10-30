@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.HexStringObject;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
-import org.icepdf.core.util.Utils;
 
 import java.util.logging.Logger;
 
@@ -73,7 +72,8 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
      *
      * @throws SignatureIntegrityException thrown if the signature fails either validation.
      */
-    public void validate() throws SignatureIntegrityException {
+    @Override
+    protected void doValidate() throws SignatureIntegrityException {
         validateDocument();
         validateTimestamp();
     }

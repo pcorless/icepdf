@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.views.Controller;
@@ -76,7 +75,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
             // filter any unsigned signer fields.
             if (signatureDictionary.getEntries().size() > 0) {
                 SignatureTreeNode tmp = new SignatureTreeNode(signatureWidgetAnnotation, messageBundle);
-                tmp.refreshSignerNode();
                 tmp.setAllowsChildren(true);
                 // insert and expand the root node.
                 treeModel.insertNodeInto(tmp, rootTreeNode, rootTreeNode.getChildCount());
@@ -121,18 +119,14 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     void updateSignature(SignatureWidgetAnnotation signatureWidgetAnnotation,
                          SignatureTreeNode signatureTreeNode) {
         if (signatureWidgetAnnotation != null) {
-            try {
-                TreePath treePath = new TreePath(signatureTreeNode.getPath());
-                boolean isExpanded = tree.isExpanded(treePath);
-                signatureTreeNode.validateSignatureNode();
-                signatureTreeNode.refreshSignerNode();
+            TreePath treePath = new TreePath(signatureTreeNode.getPath());
+            boolean isExpanded = tree.isExpanded(treePath);
+            signatureTreeNode.validateSignatureNodeAsync().thenAcceptAsync(v -> {
                 treeModel.reload();
                 if (isExpanded) {
                     tree.expandPath(new TreePath(signatureTreeNode.getPath()));
                 }
-            } catch (SignatureIntegrityException e) {
-                logger.log(Level.WARNING, "Could not build signature node.", e);
-            }
+            }, SwingUtilities::invokeLater);
         }
     }
 

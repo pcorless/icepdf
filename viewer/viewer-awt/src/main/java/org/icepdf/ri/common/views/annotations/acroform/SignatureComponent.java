@@ -19,7 +19,6 @@ package org.icepdf.ri.common.views.annotations.acroform;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
@@ -135,13 +134,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         if (fieldDictionary != null) {
             SignatureValidator signatureValidator = annotation.getSignatureValidator();
             if (signatureValidator != null) {
-                try {
-                    signatureValidator.validate();
-                    new SignaturePropertiesDialog(controller.getViewerFrame(),
-                            messageBundle, annotation).setVisible(true);
-                } catch (SignatureIntegrityException e1) {
-                    logger.fine("Error validating annotation " + annotation.toString());
-                }
+                new SignaturePropertiesDialog(controller.getViewerFrame(),
+                        messageBundle, annotation).setVisible(true);
             }
         }
     }
@@ -158,13 +152,8 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
                 SignatureHandler signatureHandler = library.getSignatureHandler();
                 SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
                 if (signatureValidator != null) {
-                    try {
-                        signatureValidator.validate();
-                        new CertificatePropertiesDialog(controller.getViewerFrame(),
-                                messageBundle, signatureValidator.getCertificateChain()).setVisible(true);
-                    } catch (SignatureIntegrityException e1) {
-                        logger.fine("Error validating annotation " + annotation.toString());
-                    }
+                    new CertificatePropertiesDialog(controller.getViewerFrame(),
+                            messageBundle, signatureValidator).setVisible(true);
                 }
             }
         }
