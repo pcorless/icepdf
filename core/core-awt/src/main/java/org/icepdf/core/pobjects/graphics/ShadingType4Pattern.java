@@ -60,7 +60,7 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
             while (vertexBitStream.available() > 0) {
                 int flag = readFlag() & 0x03;
                 Point2D.Float p = readCoord();
-                int c = colorArgb(readColor());
+                int c = readVertexColor();
                 if (flag == 0) {
                     // Start a new triangle: this vertex plus the next two (which
                     // shall also be flag 0) form it.
@@ -71,13 +71,13 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
                     }
                     readFlag();
                     vb = readCoord();
-                    cb = colorArgb(readColor());
+                    cb = readVertexColor();
                     if (vertexBitStream.available() <= 0) {
                         break;
                     }
                     readFlag();
                     vc = readCoord();
-                    cc = colorArgb(readColor());
+                    cc = readVertexColor();
                 } else if (flag == 1) {
                     // Share edge vb-vc of the previous triangle.
                     va = vb;

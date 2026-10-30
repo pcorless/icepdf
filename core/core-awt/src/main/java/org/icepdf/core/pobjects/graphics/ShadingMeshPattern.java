@@ -73,6 +73,11 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     // tessellated mesh, in shading space; independent of where the pattern is used
     private volatile List<MeshShadingPaint.Triangle> meshTriangles;
 
+    /** Entries in the parametric colour table of a Function-based mesh. */
+    protected static final int COLOR_LUT_SIZE = 1024;
+    // t -> ARGB for a Function-based mesh, whose vertices carry an index into it; null otherwise.
+    private int[] colorLut;
+
     public ShadingMeshPattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h);
         this.meshDataStream = meshDataStream;
@@ -204,6 +209,73 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         return null;
     }
 
+    /**
+     * Reads one vertex's colour for the mesh: its ARGB colour, or, for a Function-based mesh, the
+     * index of its parametric value t in {@link #colorLut()}.  A Function mesh interpolates t across
+     * a triangle or patch and only then applies the function (PDF 32000-1 §8.7.4.5.5); converting
+     * each vertex to a colour first and interpolating the colours skips whatever the function does
+     * in between, so red-to-blue through green came out red-to-blue through purple.
+     *
+     * @return ARGB colour, or a table index when {@link #isParametric()}
+     * @throws IOException bit stream issue.
+     */
+    protected int readVertexColor() throws IOException {
+        if (function == null) {
+            return colorArgb(readColor());
+        }
+        float raw = vertexBitStream.getBits(bitsPerComponent);
+        return lutIndex(decode[4] + raw * decode[5]);
+    }
+
+    /**
+     * @return true when vertex colours are parametric values, indices into {@link #colorLut()}
+     */
+    protected boolean isParametric() {
+        return function != null;
+    }
+
+    // the t range the Decode array maps the samples to: [t0, t1], t1 possibly below t0.
+    private float tMin() {
+        return decode[4];
+    }
+
+    private float tMax() {
+        return decode[4] + decode[5] * (float) ((1L << bitsPerComponent) - 1);
+    }
+
+    private int lutIndex(float t) {
+        float range = tMax() - tMin();
+        if (range == 0) {
+            return 0;
+        }
+        int index = Math.round((t - tMin()) / range * (COLOR_LUT_SIZE - 1));
+        return index < 0 ? 0 : Math.min(index, COLOR_LUT_SIZE - 1);
+    }
+
+    /**
+     * The colour of each parametric value over the Decode range, the function applied and the result
+     * converted once per entry.
+     *
+     * @return the table, or null for a mesh whose vertices carry colours
+     */
+    protected synchronized int[] colorLut() {
+        if (function == null) {
+            return null;
+        }
+        if (colorLut == null) {
+            int[] lut = new int[COLOR_LUT_SIZE];
+            float t0 = tMin();
+            float range = tMax() - t0;
+            for (int i = 0; i < COLOR_LUT_SIZE; i++) {
+                float t = t0 + range * i / (COLOR_LUT_SIZE - 1);
+                float[] output = calculateValues(new float[]{t});
+                lut[i] = output != null ? colorArgb(colorSpace.getColor(output, true)) : 0;
+            }
+            colorLut = lut;
+        }
+        return colorLut;
+    }
+
     // ---- shared mesh rendering helpers (types 4-7) ----------------------------
 
     /** Number of subdivisions per patch edge when tessellating a Bézier patch. */
@@ -230,7 +302,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     protected MeshShadingPaint buildMeshPaint(List<MeshShadingPaint.Triangle> triangles,
                                               GraphicsState graphicsState) {
         meshTriangles = triangles;
-        return new MeshShadingPaint(triangles, shadingToUser(graphicsState));
+        return new MeshShadingPaint(triangles, shadingToUser(graphicsState), true, colorLut());
     }
 
     /**
@@ -245,7 +317,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         if (triangles == null) {
             return getPaint();
         }
-        return new MeshShadingPaint(triangles, shadingToUser(graphicsState));
+        return new MeshShadingPaint(triangles, shadingToUser(graphicsState), true, colorLut());
     }
 
     private AffineTransform shadingToUser(GraphicsState graphicsState) {
@@ -272,6 +344,15 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
      */
     protected static void tessellatePatch(Point2D.Float[][] p, int[] corners,
                                           List<MeshShadingPaint.Triangle> out) {
+        tessellatePatch(p, corners, out, false);
+    }
+
+    /**
+     * As {@link #tessellatePatch(Point2D.Float[][], int[], List)}; with {@code parametric} the corner
+     * values are colour-table indices (see {@link #readVertexColor()}) and are blended as numbers.
+     */
+    protected static void tessellatePatch(Point2D.Float[][] p, int[] corners,
+                                          List<MeshShadingPaint.Triangle> out, boolean parametric) {
         int n = PATCH_SUBDIVISIONS;
         int stride = n + 1;
         float[] gx = new float[stride * stride];
@@ -294,7 +375,7 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
                 int idx = iu * stride + iv;
                 gx[idx] = (float) sx;
                 gy[idx] = (float) sy;
-                gc[idx] = bilerpColor(corners, u, v);
+                gc[idx] = parametric ? bilerpValue(corners, u, v) : bilerpColor(corners, u, v);
             }
         }
         for (int iu = 0; iu < n; iu++) {
@@ -332,6 +413,11 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
         int g = blendChannel(c, 8, w0, w1, w2, w3);
         int b = blendChannel(c, 0, w0, w1, w2, w3);
         return (a << 24) | (r << 16) | (g << 8) | b;
+    }
+
+    /** Bilinear blend of four corner values, corners as in {@link #bilerpColor}. */
+    protected static int bilerpValue(int[] c, double u, double v) {
+        return (int) Math.round(c[0] * (1 - u) * (1 - v) + c[1] * (1 - u) * v + c[2] * u * v + c[3] * u * (1 - v));
     }
 
     private static int blendChannel(int[] c, int shift, double w0, double w1, double w2, double w3) {
