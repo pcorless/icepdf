@@ -145,7 +145,7 @@ public class MultiplyHighlightTest {
             page.init();
             TextMarkupAnnotation highlight = highlight(page);
             assertTrue(highlight.appearanceHasBlendMode(), "written with a blend mode");
-            page.addAnnotation(highlight, true);
+            page.addAnnotation(highlight);
             BufferedImage image = paint(page);
             assertYellow(image.getRGB(120, 50), "paper under the highlight");
             assertBlack(image.getRGB(50, 50), "the black square under the highlight");
@@ -178,7 +178,7 @@ public class MultiplyHighlightTest {
         Path saved = temp.resolve("saved.pdf");
         Page page = document.getPageTree().getPage(0);
         page.init();
-        page.addAnnotation(highlight(page), true);
+        page.addAnnotation(highlight(page));
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(saved))) {
             document.saveToOutputStream(out, WriteMode.INCREMENT_UPDATE);
         }
@@ -238,7 +238,7 @@ public class MultiplyHighlightTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(highlight(page), true);
+            page.addAnnotation(highlight(page));
             BufferedImage rgb = paint(page, BufferedImage.TYPE_INT_RGB);
             BufferedImage argb = paint(page, BufferedImage.TYPE_INT_ARGB);
             assertYellow(rgb.getRGB(120, 50), "paper under the highlight");

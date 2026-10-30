@@ -278,9 +278,7 @@ public class RedactionVerificationTest {
     }
 
     private List<SearchTerm> terms(String word) {
-        ArrayList<String> words = new ArrayList<>();
-        words.add(word);
-        return Collections.singletonList(new SearchTerm(word, words, false, false, false));
+        return Collections.singletonList(new SearchTerm(word, false, false, false));
     }
 
     /**

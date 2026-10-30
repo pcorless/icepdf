@@ -32,7 +32,7 @@ class DocumentFieldSearchTest {
     }
 
     private static SearchTerm term(String text, boolean caseSensitive, boolean wholeWord, boolean regex) {
-        return new SearchTerm(text, null, caseSensitive, wholeWord, regex);
+        return new SearchTerm(text, caseSensitive, wholeWord, regex);
     }
 
     @DisplayName("case-insensitive by default; the match is placed in the whitespace-collapsed text")

@@ -23,7 +23,6 @@ import org.icepdf.core.pobjects.graphics.Indexed;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.util.Library;
 
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -45,7 +44,6 @@ public class ImageStream extends Stream {
 
     private ImageParams imageParams;
 
-    private AffineTransform graphicsTransformMatrix;
     private BufferedImage decodedImage;
 
 
@@ -369,18 +367,6 @@ public class ImageStream extends Stream {
 
     public BufferedImage getDecodedImage() {
         return decodedImage;
-    }
-
-    /**
-     * @param af CTM in force at the {@code Do} being parsed
-     * @deprecated an image XObject is shared by every placement of it in the document, so a
-     * transform kept here only ever describes the last one parsed. Where a placement is drawn now
-     * lives on {@link org.icepdf.core.pobjects.graphics.images.references.ImageReference}, which is
-     * created per {@code Do}. Retained because the parser still records it for painting.
-     */
-    @Deprecated
-    public void setGraphicsTransformMatrix(AffineTransform af) {
-        graphicsTransformMatrix = af;
     }
 
     public int getWidth() {

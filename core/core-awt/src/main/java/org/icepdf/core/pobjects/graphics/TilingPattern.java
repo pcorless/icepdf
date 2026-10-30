@@ -910,7 +910,12 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
 
-    public Paint getPaint() {
+    /**
+     * A tiling pattern is painted cell by cell by a {@code TilingPatternDrawCmd}, not by a {@link Paint}.
+     *
+     * @return null
+     */
+    public Paint getPaint(GraphicsState graphicsState) {
         return null;
     }
 
