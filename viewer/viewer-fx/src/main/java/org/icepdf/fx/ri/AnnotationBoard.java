@@ -84,6 +84,19 @@ public class AnnotationBoard extends BorderPane {
     static final double MIN_TEXT_SIZE = 9, MAX_TEXT_SIZE = 24;
     private static final Map<PdfView, Stage> windows = new WeakHashMap<>();
 
+    /**
+     * A sort for the columns: one of the comment orders, or {@link #CUSTOM}, the order the user put
+     * the cards in (colour label columns only; see {@link BoardOrder}).
+     */
+    record Sort(AnnotationSummary.Order order) {
+        static final Sort CUSTOM = new Sort(null);
+
+        @Override
+        public String toString() {
+            return order == null ? Messages.get("annotationBoard.sort.custom") : order.toString();
+        }
+    }
+
     /** Which comments to show by privacy; offered only with private annotations enabled. */
     enum Visibility {
         ALL("commentsPanel.visibility.all"), PUBLIC("commentsPanel.visibility.public"),
@@ -110,7 +123,7 @@ public class AnnotationBoard extends BorderPane {
     private final BoardStore store;
     private final javafx.scene.control.ToggleButton compact = new javafx.scene.control.ToggleButton();
     private final TextField filter = new TextField();
-    private final ComboBox<AnnotationSummary.Order> order = new ComboBox<>();
+    private final ComboBox<Sort> order = new ComboBox<>();
     private final ComboBox<Visibility> visibility = new ComboBox<>();
     private final ComboBox<BoardModel.GroupBy> groupBy = new ComboBox<>();
     private final Label status = new Label();
@@ -129,6 +142,11 @@ public class AnnotationBoard extends BorderPane {
 
     private List<AnnotationSummary.Entry> entries = Collections.emptyList();
     private Map<MarkupAnnotation, String> quotes = Collections.emptyMap();
+    /** Each comment's key for the custom order ({@link BoardOrder#keys}). */
+    private Map<MarkupAnnotation, String> cardKeys = Collections.emptyMap();
+    /** The document's key for the custom order, or null; the document it was read from. */
+    private String documentKey;
+    private Document keyedDocument;
     private Thread scan;
     private int generation;
     private boolean syncing;
@@ -159,8 +177,9 @@ public class AnnotationBoard extends BorderPane {
         filter.textProperty().addListener((o, a, b) -> rebuild());
         HBox.setHgrow(filter, Priority.ALWAYS);
         filter.setMaxWidth(320);
-        order.getItems().setAll(AnnotationSummary.Order.values());
-        order.setValue(AnnotationSummary.Order.PAGE);
+        order.getItems().add(Sort.CUSTOM);
+        for (AnnotationSummary.Order o : AnnotationSummary.Order.values()) order.getItems().add(new Sort(o));
+        order.setValue(new Sort(AnnotationSummary.Order.PAGE));
         order.valueProperty().addListener((o, a, b) -> rebuild());
         groupBy.getItems().setAll(BoardModel.GroupBy.values());
         groupBy.setValue(BoardModel.GroupBy.LABEL);
@@ -281,6 +300,11 @@ public class AnnotationBoard extends BorderPane {
         return path != null ? java.nio.file.Paths.get(path).getFileName().toString() : "";
     }
 
+    /** The columns as last built, left to right (for tests). */
+    List<BoardModel.Column> columnModel() {
+        return model;
+    }
+
     /** The columns' card lists, left to right (for tests). */
     List<ListView<BoardModel.Card>> columnLists() {
         return List.copyOf(lists);
@@ -391,6 +415,17 @@ public class AnnotationBoard extends BorderPane {
     private void show(List<AnnotationSummary.Entry> found, Map<MarkupAnnotation, String> marked) {
         entries = found;
         quotes = marked;
+        cardKeys = BoardOrder.keys(found);
+        Document document = view.getDocument();
+        if (document != keyedDocument) {
+            keyedDocument = document;
+            documentKey = BoardOrder.documentKey(document);
+            // a document the user has put in order opens in that order.
+            if (documentKey != null && store.hasCardOrder(documentKey) && !Sort.CUSTOM.equals(order.getValue())) {
+                order.setValue(Sort.CUSTOM); // rebuilds
+                return;
+            }
+        }
         rebuild();
     }
 
@@ -399,12 +434,12 @@ public class AnnotationBoard extends BorderPane {
     void rebuild() {
         String needle = filter.getText();
         Visibility privacy = visibility.getValue() != null ? visibility.getValue() : Visibility.ALL;
-        AnnotationSummary.Order sort = order.getValue() != null ? order.getValue() : AnnotationSummary.Order.PAGE;
         List<ColorLabels.Label> named = labels.labels();
         builtWith = named;
         BoardModel.GroupBy by = groupBy.getValue() != null ? groupBy.getValue() : BoardModel.GroupBy.LABEL;
-        model = BoardModel.columns(by, entries, quotes, named, sort.comparator(),
+        model = BoardModel.columns(by, entries, quotes, named, comparator(),
                 card -> card.matches(needle) && privacy.shows(card.entry().annotation()));
+        if (isCustom()) model = model.stream().map(this::inCustomOrder).toList();
         Object selected = view.getSelectedAnnotation();
         List<String> keys = model.stream().map(AnnotationBoard::key).toList();
 
@@ -442,6 +477,125 @@ public class AnnotationBoard extends BorderPane {
             setBottom(named.isEmpty() && by == BoardModel.GroupBy.LABEL ? hint() : null);
         }
         if (selected != null) follow(selected);
+    }
+
+    // ---- custom order -------------------------------------------------------------------------
+
+    /** Whether the columns show the user's own order: the Custom sort, by colour label, with a document key. */
+    boolean isCustom() {
+        return Sort.CUSTOM.equals(order.getValue()) && documentKey != null
+                && (groupBy.getValue() == null || groupBy.getValue() == BoardModel.GroupBy.LABEL);
+    }
+
+    /** The cards' order before any custom order: the chosen sort, or page order under Custom. */
+    private java.util.Comparator<AnnotationSummary.Entry> comparator() {
+        Sort sort = order.getValue();
+        return (sort == null || sort.order() == null ? AnnotationSummary.Order.PAGE : sort.order()).comparator();
+    }
+
+    private String cardKey(BoardModel.Card card) {
+        String key = cardKeys.get(card.entry().annotation());
+        return key != null ? key : BoardOrder.cardKey(card.entry());
+    }
+
+    /** The key a column's custom order is kept under, or null for a column that has none. */
+    static String orderKey(BoardModel.Column column) {
+        return switch (column.kind()) {
+            case LABEL -> "label:" + String.format("%06x", column.label().color().getRGB() & 0xFFFFFF);
+            case OTHER -> "other";
+            case NONE -> "none";
+            case ALL -> "all";
+            default -> null;
+        };
+    }
+
+    private BoardModel.Column inCustomOrder(BoardModel.Column column) {
+        String key = orderKey(column);
+        if (key == null) return column;
+        return new BoardModel.Column(column.kind(), column.label(), column.title(),
+                BoardOrder.apply(column.cards(), store.getCardOrder(documentKey, key), this::cardKey));
+    }
+
+    /**
+     * A column's whole order as keys, first to last, filters ignored: a card hidden by the filter keeps
+     * its place when others move.
+     */
+    private List<String> wholeOrder(String columnKey) {
+        for (BoardModel.Column column : BoardModel.columns(BoardModel.GroupBy.LABEL, entries, quotes, labels.labels(),
+                AnnotationSummary.Order.PAGE.comparator(), card -> true)) {
+            if (columnKey.equals(orderKey(column))) {
+                return inCustomOrder(column).cards().stream().map(this::cardKey).toList();
+            }
+        }
+        return List.of();
+    }
+
+    /**
+     * Moves cards to a place in a column of the custom order, switching the board to it.
+     *
+     * @param column the column (its {@link #orderKey})
+     * @param cards  the cards to move, in their shown order
+     * @param before the card to put them in front of; null puts them last
+     */
+    void moveCards(BoardModel.Column column, List<BoardModel.Card> cards, BoardModel.Card before) {
+        if (moveCardKeys(column, cards, before != null ? cardKey(before) : null)) showCustom(cards);
+    }
+
+    /** As {@link #moveCards}, before a card key, without showing the result; false if nothing was kept. */
+    private boolean moveCardKeys(BoardModel.Column column, List<BoardModel.Card> cards, String before) {
+        String key = orderKey(column);
+        if (key == null || documentKey == null || cards.isEmpty()) return false;
+        java.util.Set<String> moving = new java.util.LinkedHashSet<>();
+        for (BoardModel.Card card : cards) moving.add(cardKey(card));
+        store.setCardOrder(documentKey, key, BoardOrder.move(wholeOrder(key), moving, before));
+        return true;
+    }
+
+    /** One step up (-1) or down (+1) for the selected cards of a column. */
+    void nudgeCards(BoardModel.Column column, List<BoardModel.Card> cards, int direction) {
+        String key = orderKey(column);
+        if (key == null || documentKey == null || cards.isEmpty()) return;
+        java.util.Set<String> moving = new java.util.LinkedHashSet<>();
+        for (BoardModel.Card card : cards) moving.add(cardKey(card));
+        List<String> whole = wholeOrder(key);
+        // a step among the cards shown: hidden ones between are stepped over.
+        List<String> shown = lists.get(model.indexOf(column)).getItems().stream().map(this::cardKey).toList();
+        store.setCardOrder(documentKey, key, BoardOrder.refill(whole, BoardOrder.nudge(shown, moving, direction)));
+        showCustom(cards);
+    }
+
+    /** Forgets a column's custom order: its cards go back to page order. */
+    void resetOrder(BoardModel.Column column) {
+        String key = orderKey(column);
+        if (key == null || documentKey == null) return;
+        store.setCardOrder(documentKey, key, List.of());
+        rebuild();
+    }
+
+    /** Shows the custom order and selects {@code cards} again. */
+    private void showCustom(List<BoardModel.Card> cards) {
+        java.util.Set<MarkupAnnotation> keep = java.util.Collections.newSetFromMap(new IdentityHashMap<>());
+        for (BoardModel.Card card : cards) keep.add(card.entry().annotation());
+        if (!Sort.CUSTOM.equals(order.getValue())) order.setValue(Sort.CUSTOM);
+        else rebuild();
+        boolean was = syncing;
+        syncing = true;
+        try {
+            for (ListView<BoardModel.Card> list : lists) {
+                list.getSelectionModel().clearSelection();
+                for (int i = 0; i < list.getItems().size(); i++) {
+                    if (keep.contains(list.getItems().get(i).entry().annotation())) list.getSelectionModel().select(i);
+                }
+            }
+        } finally {
+            syncing = was;
+        }
+    }
+
+    /** The column a list shows. */
+    private BoardModel.Column columnOf(ListView<BoardModel.Card> list) {
+        int i = lists.indexOf(list);
+        return i >= 0 && i < model.size() ? model.get(i) : null;
     }
 
     /** A column's identity, for telling whether a rebuild has the same columns. */
@@ -530,6 +684,12 @@ public class AnnotationBoard extends BorderPane {
             if (e.getCode() == KeyCode.ENTER) openNote(card.entry());
             else if (e.getCode() == KeyCode.F2 && canEdit(card)) edit(list, list.getSelectionModel().getSelectedIndex());
             else if (e.getCode() == KeyCode.DELETE) delete(chosen);
+            else if (e.isAltDown() && (e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN)) {
+                // Alt+Up / Alt+Down move the column's selected cards a step in the custom order.
+                BoardModel.Column at = columnOf(list);
+                if (at != null && canOrder(at)) nudgeCards(at, List.copyOf(list.getSelectionModel().getSelectedItems()),
+                        e.getCode() == KeyCode.UP ? -1 : 1);
+            }
             else if (e.isShortcutDown() && e.getCode() == KeyCode.A) selectAll();
             else if (e.isShortcutDown() && e.getCode().isDigitKey()) {
                 // Shortcut+1..9 files the selected cards under the nth label.
@@ -539,7 +699,16 @@ public class AnnotationBoard extends BorderPane {
             } else return;
             e.consume();
         });
-        if (column.kind() == BoardModel.Kind.LABEL) acceptDrops(list, column.label());
+        acceptDrops(list);
+        header.setOnContextMenuRequested(e -> {
+            BoardModel.Column at = columnOf(list);
+            if (at == null || !canOrder(at)) return;
+            MenuItem reset = new MenuItem(Messages.get("annotationBoard.resetOrder"));
+            reset.setDisable(store.getCardOrder(documentKey, orderKey(at)).isEmpty());
+            reset.setOnAction(a -> resetOrder(at));
+            new ContextMenu(reset).show(header, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
         lists.add(list);
         VBox.setVgrow(list, Priority.ALWAYS);
 
@@ -674,24 +843,97 @@ public class AnnotationBoard extends BorderPane {
         });
     }
 
-    /** Lets cards be dropped on a label's column, which files them under it. */
-    private void acceptDrops(ListView<BoardModel.Card> list, ColorLabels.Label label) {
+    /**
+     * Lets cards be dropped on a column: on a label's column it files them under the label; in the
+     * custom order a drop below the cards puts them last (a drop on a card is the cell's, see
+     * {@link CardCell}).
+     */
+    private void acceptDrops(ListView<BoardModel.Card> list) {
         list.setOnDragOver(e -> {
-            if (movesTo(label)) e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
+            if (canDropOn(columnOf(list), false)) e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
             e.consume();
         });
         list.setOnDragEntered(e -> {
-            if (movesTo(label)) {
-                list.setStyle("-fx-border-color: " + web(label.color()) + "; -fx-border-width: 2;");
+            BoardModel.Column at = columnOf(list);
+            if (at != null && at.kind() == BoardModel.Kind.LABEL && movesTo(at.label())) {
+                list.setStyle("-fx-border-color: " + web(at.label().color()) + "; -fx-border-width: 2;");
             }
         });
         list.setOnDragExited(e -> list.setStyle(null));
         list.setOnDragDropped(e -> {
-            boolean done = dragged != null;
-            if (done) refile(dragged, label);
+            BoardModel.Column at = columnOf(list);
+            boolean done = canDropOn(at, false);
+            if (done) dropAt(at, null, false);
             e.setDropCompleted(done);
             e.consume();
         });
+    }
+
+    /** Whether a column can be put in a custom order: it has an order key, by colour label, document keyed. */
+    private boolean canOrder(BoardModel.Column column) {
+        return column != null && orderKey(column) != null && documentKey != null
+                && (groupBy.getValue() == null || groupBy.getValue() == BoardModel.GroupBy.LABEL);
+    }
+
+    /**
+     * Whether the dragged cards can be dropped on a column.
+     *
+     * @param positioned dropped on a card, so at a place in the column (else below the cards)
+     */
+    private boolean canDropOn(BoardModel.Column column, boolean positioned) {
+        if (dragged == null || column == null) return false;
+        boolean refiles = column.kind() == BoardModel.Kind.LABEL && movesTo(column.label());
+        boolean places = canOrder(column) && (positioned || isCustom())
+                && (refiles || column.cards().containsAll(dragged));
+        return refiles || places;
+    }
+
+    /**
+     * Drops the dragged cards on a column: files them under its label if it's a label's column, and
+     * places them in front of {@code before} (null: last) in the custom order.
+     */
+    private void dropAt(BoardModel.Column column, BoardModel.Card before, boolean positioned) {
+        List<BoardModel.Card> cards = dragged;
+        if (cards == null || column == null) return;
+        boolean refiles = column.kind() == BoardModel.Kind.LABEL && movesTo(column.label());
+        if (refiles) refile(cards, column.label());
+        if (canOrder(column) && (positioned || isCustom())) {
+            // the cards that are, or now go, in this column.
+            List<BoardModel.Card> placing = cards.stream().filter(c -> column.cards().contains(c) || refiles
+                    && canEdit(c) && AnnotationProperties.hasColor(c.entry().annotation())).toList();
+            moveCards(column, placing, before);
+        }
+    }
+
+    /** Moves the selected cards to the top or bottom of their columns, in the custom order. */
+    void moveSelection(boolean top) {
+        List<BoardModel.Card> all = selected();
+        for (int i = 0; i < lists.size() && i < model.size(); i++) {
+            BoardModel.Column column = model.get(i);
+            List<BoardModel.Card> cards = List.copyOf(lists.get(i).getSelectionModel().getSelectedItems());
+            if (cards.isEmpty() || !canOrder(column)) continue;
+            List<String> whole = wholeOrder(orderKey(column));
+            moveCardKeys(column, cards, top && !whole.isEmpty() ? whole.get(0) : null);
+        }
+        showCustom(all);
+    }
+
+    /** The menu items that order cards, for a card's column; empty when it can't be ordered. */
+    private List<MenuItem> orderItems(BoardModel.Card card) {
+        BoardModel.Column column = null;
+        for (int i = 0; i < model.size(); i++) {
+            if (lists.size() > i && lists.get(i).getItems().contains(card)) column = model.get(i);
+        }
+        if (!canOrder(column)) return List.of();
+        BoardModel.Column at = column;
+        MenuItem top = new MenuItem(Messages.get("annotationBoard.moveTop"));
+        top.setOnAction(e -> moveSelection(true));
+        MenuItem bottom = new MenuItem(Messages.get("annotationBoard.moveBottom"));
+        bottom.setOnAction(e -> moveSelection(false));
+        MenuItem reset = new MenuItem(Messages.get("annotationBoard.resetOrder"));
+        reset.setDisable(store.getCardOrder(documentKey, orderKey(at)).isEmpty());
+        reset.setOnAction(e -> resetOrder(at));
+        return List.of(top, bottom, reset);
     }
 
     /** Whether dropping the dragged cards on a label's column would re-file any of them. */
@@ -749,7 +991,12 @@ public class AnnotationBoard extends BorderPane {
         MenuItem delete = new MenuItem(Messages.format("annotationBoard.deleteSelected", editable.size()));
         delete.setDisable(editable.isEmpty());
         delete.setOnAction(e -> delete(cards));
-        menu.getItems().addAll(copy, new SeparatorMenuItem(), delete);
+        List<MenuItem> ordering = orderItems(cards.get(0));
+        if (!ordering.isEmpty()) {
+            menu.getItems().add(new SeparatorMenuItem());
+            menu.getItems().addAll(ordering);
+        }
+        menu.getItems().addAll(new SeparatorMenuItem(), copy, new SeparatorMenuItem(), delete);
         return menu;
     }
 
@@ -820,6 +1067,12 @@ public class AnnotationBoard extends BorderPane {
         MenuItem delete = new MenuItem(Messages.get("commentsPanel.delete"));
         delete.setDisable(!editable);
         delete.setOnAction(e -> delete(card));
+        List<MenuItem> ordering = orderItems(card);
+        if (!ordering.isEmpty()) {
+            menu.getItems().add(new SeparatorMenuItem());
+            menu.getItems().addAll(ordering);
+            menu.getItems().add(new SeparatorMenuItem());
+        }
         menu.getItems().addAll(copy, new SeparatorMenuItem(), delete);
         return menu;
     }
@@ -886,7 +1139,8 @@ public class AnnotationBoard extends BorderPane {
             setPrefWidth(0);
             setOnDragDetected(e -> {
                 BoardModel.Card card = getItem();
-                if (card == null || isEditing() || !canEdit(card)) return;
+                // any card: re-filing checks editing rights, the custom order needs none.
+                if (card == null || isEditing()) return;
                 // a picked card brings the rest of the selection with it.
                 List<BoardModel.Card> chosen = selected();
                 dragged = chosen.size() > 1 && chosen.contains(card) ? chosen : List.of(card);
@@ -898,6 +1152,30 @@ public class AnnotationBoard extends BorderPane {
                 e.consume();
             });
             setOnDragDone(e -> dragged = null);
+            // a drop on a card puts the dragged cards above it, or below it from its lower half.
+            setOnDragOver(e -> {
+                BoardModel.Column at = columnOf(getListView());
+                if (getItem() != null && canDropOn(at, true)) {
+                    e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
+                    boolean below = e.getY() > getHeight() / 2;
+                    setStyle("-fx-border-color: " + (below ? "transparent transparent -fx-accent transparent"
+                            : "-fx-accent transparent transparent transparent") + "; -fx-border-width: 2 0 2 0;");
+                    e.consume();
+                }
+            });
+            setOnDragExited(e -> setStyle(null));
+            setOnDragDropped(e -> {
+                BoardModel.Column at = columnOf(getListView());
+                if (getItem() == null || !canDropOn(at, true)) return;
+                int index = getIndex();
+                List<BoardModel.Card> items = getListView().getItems();
+                BoardModel.Card before = e.getY() > getHeight() / 2
+                        ? (index + 1 < items.size() ? items.get(index + 1) : null) : getItem();
+                dropAt(at, before, true);
+                setStyle(null);
+                e.setDropCompleted(true);
+                e.consume();
+            });
             setOnContextMenuRequested(e -> {
                 if (getItem() == null) return;
                 // on a card outside the selection, the menu is that card's alone.

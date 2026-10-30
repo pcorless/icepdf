@@ -16,9 +16,9 @@
 package org.icepdf.fx.ri;
 
 /**
- * Where the annotation board keeps the user's choices for how it looks.  None of it is written to
- * the document.  {@link #inMemory()} keeps them while the viewer is open; the viewer application keeps
- * them in its settings.
+ * Where the annotation board keeps the user's choices: how it looks, and the order the user put cards
+ * in (see {@link BoardOrder}).  None of it is written to the document.  {@link #inMemory()} keeps them
+ * while the viewer is open; the viewer application keeps them in its settings folder.
  */
 public interface BoardStore {
 
@@ -35,11 +35,42 @@ public interface BoardStore {
 
     void setTextSize(double size);
 
+    /**
+     * The user's order of a column's cards, as card keys first to last; empty when the column has none.
+     *
+     * @param document the document's key ({@link BoardOrder#documentKey})
+     * @param column   the column's key (a label's colour, or "other", "none", "all")
+     */
+    java.util.List<String> getCardOrder(String document, String column);
+
+    /** Keeps a column's card order; an empty list forgets it. */
+    void setCardOrder(String document, String column, java.util.List<String> cards);
+
+    /** Whether the user has put any column of the document in an order of their own. */
+    boolean hasCardOrder(String document);
+
     /** A store that lives only as long as the viewer, for when the application doesn't supply one. */
     static BoardStore inMemory() {
         return new BoardStore() {
             private boolean compact;
             private double textSize = DEFAULT_TEXT_SIZE;
+            private final java.util.Map<String, java.util.List<String>> orders = new java.util.HashMap<>();
+
+            @Override
+            public java.util.List<String> getCardOrder(String document, String column) {
+                return orders.getOrDefault(document + "\n" + column, java.util.List.of());
+            }
+
+            @Override
+            public void setCardOrder(String document, String column, java.util.List<String> cards) {
+                if (cards == null || cards.isEmpty()) orders.remove(document + "\n" + column);
+                else orders.put(document + "\n" + column, java.util.List.copyOf(cards));
+            }
+
+            @Override
+            public boolean hasCardOrder(String document) {
+                return orders.keySet().stream().anyMatch(k -> k.startsWith(document + "\n"));
+            }
 
             @Override
             public boolean isCompact() {

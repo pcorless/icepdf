@@ -124,8 +124,29 @@ public class ViewerApp extends Application {
         }
     };
 
-    // the annotation board's look, one for every window, kept in the preferences.
+    // the annotation board's look, one for every window, kept in the preferences; card orders in their own file.
+    private org.icepdf.fx.ri.prefs.BoardOrderFile boardOrders;
     private final org.icepdf.fx.ri.BoardStore boardStore = new org.icepdf.fx.ri.BoardStore() {
+        private org.icepdf.fx.ri.prefs.BoardOrderFile orders() {
+            if (boardOrders == null) boardOrders = org.icepdf.fx.ri.prefs.BoardOrderFile.load();
+            return boardOrders;
+        }
+
+        @Override
+        public List<String> getCardOrder(String document, String column) {
+            return orders().get(document, column);
+        }
+
+        @Override
+        public void setCardOrder(String document, String column, List<String> cards) {
+            orders().set(document, column, cards);
+        }
+
+        @Override
+        public boolean hasCardOrder(String document) {
+            return orders().has(document);
+        }
+
         @Override
         public boolean isCompact() {
             return preferences.getBoolean(ViewerPreferences.BOARD_COMPACT, false);
