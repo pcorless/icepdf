@@ -62,7 +62,7 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
                 List<Integer> colors = new ArrayList<>();
                 while (vertexBitStream.available() > 0) {
                     coords.add(readCoord());
-                    colors.add(colorArgb(readColor()));
+                    colors.add(readVertexColor());
                 }
                 int rows = coords.size() / perRow;
                 // Two triangles per lattice cell between adjacent rows/columns.

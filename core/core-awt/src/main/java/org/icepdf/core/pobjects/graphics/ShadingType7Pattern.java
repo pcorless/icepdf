@@ -83,7 +83,7 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
                         points[i] = readCoord();
                     }
                     for (int i = 0; i < 4; i++) {
-                        colors[i] = colorArgb(readColor());
+                        colors[i] = readVertexColor();
                     }
                 } else {
                     if (prevPoints == null) {
@@ -102,14 +102,14 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
                     for (int i = 4; i < 16; i++) {
                         points[i] = readCoord();
                     }
-                    colors[2] = colorArgb(readColor());
-                    colors[3] = colorArgb(readColor());
+                    colors[2] = readVertexColor();
+                    colors[3] = readVertexColor();
                 }
                 Point2D.Float[][] grid = new Point2D.Float[4][4];
                 for (int i = 0; i < 16; i++) {
                     grid[TENSOR_ORDER[i][0]][TENSOR_ORDER[i][1]] = points[i];
                 }
-                tessellatePatch(grid, colors, triangles);
+                tessellatePatch(grid, colors, triangles, isParametric());
                 prevPoints = points;
                 prevColors = colors;
             }
