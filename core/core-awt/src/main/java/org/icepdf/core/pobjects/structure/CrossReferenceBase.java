@@ -77,7 +77,7 @@ public abstract class CrossReferenceBase<T extends Dictionary> implements CrossR
                     if (prevCrossReference == null) {
                         Parser parser = new Parser(library);
                         CrossReference parsed = parser.getCrossReference(
-                                library.getMappedFileByteBuffer().duplicate(),
+                                library.getDocumentSource().getBuffer().duplicate(),
                                 this.crossReference.getInt(PTrailer.PREV_KEY));
                         if (parsed != null) {
                             prevCrossReference = parsed;
