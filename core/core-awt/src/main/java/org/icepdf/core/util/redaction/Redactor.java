@@ -90,16 +90,6 @@ public class Redactor {
         return report;
     }
 
-    /**
-     * @deprecated since 7.5.0, use {@link #redact(Document, RedactionRequest)}, or simply save a
-     * document that has redaction annotations on it. Retained because it is the entry point every
-     * release before 7.5.0 exposed.
-     */
-    @Deprecated
-    public static void burnRedactions(Document document) throws InterruptedException, IOException {
-        redact(document, RedactionRequest.ofAnnotations());
-    }
-
     private static void burnAnnotations(Document document, RedactionRequest request,
                                         RedactionReport report, StateManager stateManager)
             throws InterruptedException, IOException {

@@ -49,7 +49,7 @@ public class RedactionRequest {
 
     /**
      * Redact what the document's redaction annotations cover, and nothing else. This is what
-     * {@link Redactor#burnRedactions(org.icepdf.core.pobjects.Document)} has always done.
+     * {@code Redactor.burnRedactions(Document)} did before 8.0.
      *
      * @return a new request
      */

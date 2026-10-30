@@ -1014,7 +1014,7 @@ public class PdfView extends Control {
 
     /** Case-insensitive search for a phrase; see {@link #search(SearchTerm...)}. */
     public void search(String text) {
-        search(new SearchTerm(text, null, false, false, false));
+        search(new SearchTerm(text, false, false, false));
     }
 
     /**

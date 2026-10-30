@@ -72,7 +72,7 @@ class DocumentSearchTest {
     }
 
     private static SearchTerm term(String text, boolean caseSensitive, boolean wholeWord, boolean regex) {
-        return new SearchTerm(text, null, caseSensitive, wholeWord, regex);
+        return new SearchTerm(text, caseSensitive, wholeWord, regex);
     }
 
     private static int count(Document document, int page, SearchTerm term) {

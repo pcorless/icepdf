@@ -123,7 +123,7 @@ class AnnotationSummaryTest {
     @Test
     void fieldSearch() throws Exception {
         List<DocumentFieldSearch.Hit> hits = new ArrayList<>();
-        new DocumentFieldSearch(List.of(new SearchTerm("badger", null, false, false, false)))
+        new DocumentFieldSearch(List.of(new SearchTerm("badger", false, false, false)))
                 .run(document, true, true, false, false, () -> false, hits::add);
         assertEquals(2, hits.size(), hits.toString());
         assertTrue(hits.stream().anyMatch(h -> h.kind() == DocumentFieldSearch.Kind.COMMENT
@@ -132,7 +132,7 @@ class AnnotationSummaryTest {
                 && h.text().equals("badger total 42") && h.label().equals("invoice")));
         // comments only
         hits.clear();
-        new DocumentFieldSearch(List.of(new SearchTerm("badger", null, false, false, false)))
+        new DocumentFieldSearch(List.of(new SearchTerm("badger", false, false, false)))
                 .run(document, true, false, false, false, () -> false, hits::add);
         assertEquals(1, hits.size());
     }

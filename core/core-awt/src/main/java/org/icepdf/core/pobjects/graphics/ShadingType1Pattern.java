@@ -156,14 +156,6 @@ public class ShadingType1Pattern extends ShadingPattern {
         return 0xFF000000 | colorSpace.getColor(values, true).getRGB();
     }
 
-    /**
-     * Without a graphics state the shading is returned unanchored: domain space through the shading's /Matrix
-     * (and the pattern matrix, for a pattern).
-     */
-    public Paint getPaint() {
-        return getPaint(null);
-    }
-
     @Override
     public Paint getPaint(GraphicsState graphicsState) {
         init(graphicsState);

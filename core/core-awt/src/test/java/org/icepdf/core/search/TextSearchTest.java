@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TextSearchTest {
 
     private static SearchTerm literal(String term, boolean caseSensitive, boolean wholeWord) {
-        return new SearchTerm(term, null, caseSensitive, wholeWord, false);
+        return new SearchTerm(term, caseSensitive, wholeWord, false);
     }
 
     private static List<String> hitTexts(TextSequence seq, SearchTerm term) {
@@ -83,8 +83,8 @@ public class TextSearchTest {
     @Test
     public void regex() {
         TextSequence seq = pageOf("item 12 and item 345").getTextSequence();
-        assertEquals(List.of("12", "345"), hitTexts(seq, new SearchTerm("\\d+", null, false, false, true)));
-        assertTrue(TextSearch.find(seq, new SearchTerm("\\b", null, false, false, true)).isEmpty());
+        assertEquals(List.of("12", "345"), hitTexts(seq, new SearchTerm("\\d+", false, false, true)));
+        assertTrue(TextSearch.find(seq, new SearchTerm("\\b", false, false, true)).isEmpty());
     }
 
     @DisplayName("no hits for empty terms, null or empty sequences")

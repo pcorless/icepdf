@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.awt.Paint;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,8 +55,6 @@ public class ShadingType6Pattern extends ShadingMeshPattern {
             {3, 2}, {3, 1}, {3, 0},
             {2, 0}, {1, 0}
     };
-
-    private MeshShadingPaint meshPaint;
 
     public ShadingType6Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h, meshDataStream);
@@ -111,7 +108,7 @@ public class ShadingType6Pattern extends ShadingMeshPattern {
         } catch (IOException e) {
             logger.warning("Error parsing Shading type 6 pattern vertices.");
         }
-        meshPaint = buildMeshPaint(triangles, graphicsState);
+        setMesh(triangles);
         inited = true;
     }
 
@@ -155,9 +152,5 @@ public class ShadingType6Pattern extends ShadingMeshPattern {
             default: // 3
                 return new int[]{9, 10, 11, 0, 3, 0};
         }
-    }
-
-    public Paint getPaint() {
-        return meshPaint;
     }
 }

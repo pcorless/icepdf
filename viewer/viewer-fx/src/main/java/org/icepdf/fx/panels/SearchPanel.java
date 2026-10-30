@@ -392,7 +392,7 @@ public class SearchPanel extends BorderPane {
                 return false;
             }
         }
-        SearchTerm term = new SearchTerm(text, null, caseSensitive.get(), wholeWord.get(), regex.get());
+        SearchTerm term = new SearchTerm(text, caseSensitive.get(), wholeWord.get(), regex.get());
         term.setFoldDiacritics(foldAccents.get() && !regex.get());
         if (!cumulative.get()) terms.clear();
         terms.removeIf(t -> t.getTerm().equals(text));

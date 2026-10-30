@@ -684,7 +684,6 @@ public abstract class AbstractContentParser {
                         // af is already CTM x the form's Matrix, which is where the form's images
                         // land on the page.
                         ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                        imageDrawCmd.getImageStream().setGraphicsTransformMatrix(af);
                         if (imageDrawCmd.getImageReference() != null) {
                             imageDrawCmd.getImageReference().setPlacement(af);
                         }
@@ -720,7 +719,6 @@ public abstract class AbstractContentParser {
 
                 // set CTM so we can convert image location to user space at a later time.
                 AffineTransform af = new AffineTransform(graphicState.getCTM());
-                imageStream.setGraphicsTransformMatrix(af);
 
                 // GH-632: a tiny stencil mask is filled as rectangles rather than decoded and drawn as an image.
                 StencilMaskFill.Mask mask = contentStreamCallback == null

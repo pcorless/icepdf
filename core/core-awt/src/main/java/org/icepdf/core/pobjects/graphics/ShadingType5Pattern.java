@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.awt.Paint;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,8 +42,6 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
             Logger.getLogger(ShadingType5Pattern.class.getName());
 
     public static final Name VERTICES_PER_ROW_KEY = new Name("VerticesPerRow");
-
-    private MeshShadingPaint meshPaint;
 
     public ShadingType5Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h, meshDataStream);
@@ -88,11 +85,7 @@ public class ShadingType5Pattern extends ShadingMeshPattern {
         } catch (IOException e) {
             logger.warning("Error parsing Shading type 5 pattern vertices.");
         }
-        meshPaint = buildMeshPaint(triangles, graphicsState);
+        setMesh(triangles);
         inited = true;
-    }
-
-    public Paint getPaint() {
-        return meshPaint;
     }
 }

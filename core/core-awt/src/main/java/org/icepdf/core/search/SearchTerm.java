@@ -18,7 +18,6 @@ package org.icepdf.core.search;
 import org.icepdf.core.pobjects.Page;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 /**
@@ -30,12 +29,8 @@ import java.util.regex.Pattern;
  */
 public class SearchTerm {
 
-    //original term before it was cut up into terms.
+    // the word, phrase or regular expression searched for.
     private final String term;
-
-    // number of string in search term, one or more strings that make
-    // up a phrase. words, white space and punctuation
-    private final ArrayList<String> terms;
     private final Color highlightColor;
 
     // case sensitive search
@@ -51,41 +46,24 @@ public class SearchTerm {
     /**
      * Creates a new search term.
      *
-     * @param term          full string represented by terms.
-     * @param terms         terms that make ups serach
+     * @param term          word, phrase or regular expression to search for.
      * @param caseSensitive true to specify a case sensitive search
      * @param wholeWord     true to specify a whole word only search.
      */
-    public SearchTerm(String term, ArrayList<String> terms,
-                      boolean caseSensitive, boolean wholeWord) {
-        this(term, terms, caseSensitive, wholeWord, false);
+    public SearchTerm(String term, boolean caseSensitive, boolean wholeWord) {
+        this(term, caseSensitive, wholeWord, false);
     }
 
-    public SearchTerm(String term, ArrayList<String> terms, boolean caseSensitive, boolean wholeWord, boolean regex) {
-        this(term, terms, caseSensitive, wholeWord, regex, Page.highlightColor);
+    public SearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex) {
+        this(term, caseSensitive, wholeWord, regex, Page.highlightColor);
     }
 
-    public SearchTerm(String term, ArrayList<String> terms,
-                      boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
+    public SearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
         this.term = term;
-        this.terms = terms;
         this.caseSensitive = caseSensitive;
         this.wholeWord = wholeWord;
         this.regex = regex;
         this.highlightColor = highlightColor;
-    }
-
-    /**
-     * Gets the individual word/space/punctuation tokens that make up the search term.
-     *
-     * @return list of tokens that make up the search term.
-     * @deprecated Since 7.5 the search matcher operates on the whole term ({@link #getTerm()})
-     * against a reading-order text corpus and no longer uses these tokens.  Retained for API
-     * compatibility; scheduled for removal in a future major release.
-     */
-    @Deprecated
-    public ArrayList<String> getTerms() {
-        return terms;
     }
 
     /**

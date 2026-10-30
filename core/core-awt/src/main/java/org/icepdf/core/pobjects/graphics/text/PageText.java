@@ -98,10 +98,6 @@ public class PageText implements TextSelect {
      * Resolves the page reading order.  {@code org.icepdf.core.views.page.text.readingOrder} is the
      * canonical setting ({@code plot} | {@code ysort} | {@code xycut}); an unset or unrecognised
      * value falls back to {@link #DEFAULT_READING_ORDER}.
-     * <p>
-     * The older boolean {@code org.icepdf.core.views.page.text.preserveColumns} is <b>deprecated</b>
-     * and honoured only as an alias when {@code readingOrder} is not set: {@code true} keeps the
-     * default order, {@code false} selects {@code ysort}.  Prefer {@code readingOrder} alone.
      */
     private static ReadingOrder resolveReadingOrder() {
         String mode = Defs.sysProperty("org.icepdf.core.views.page.text.readingOrder");
@@ -121,14 +117,6 @@ public class PageText implements TextSelect {
                             + "plot, ysort, xycut.  Falling back to the default.");
                     return DEFAULT_READING_ORDER;
             }
-        }
-        // deprecated preserveColumns alias, consulted only when readingOrder is unset.
-        if (Defs.sysProperty("org.icepdf.core.views.page.text.preserveColumns") != null) {
-            logger.warning("org.icepdf.core.views.page.text.preserveColumns is deprecated; "
-                    + "use org.icepdf.core.views.page.text.readingOrder=plot|ysort|xycut instead.");
-            boolean preserveColumns = Defs.booleanProperty(
-                    "org.icepdf.core.views.page.text.preserveColumns", true);
-            return preserveColumns ? DEFAULT_READING_ORDER : ReadingOrder.YSORT;
         }
         return DEFAULT_READING_ORDER;
     }
