@@ -41,6 +41,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.actions.NamedAction;
@@ -269,7 +270,16 @@ public class PdfView extends Control {
             return "onSignatureClicked";
         }
     };
-    private int signatureGeneration;
+    // bumped on the FX thread, read by the checking thread to notice it has been superseded.
+    private volatile int signatureGeneration;
+    private final ObjectProperty<SignatureValidationOptions> signatureValidationOptions =
+            new SimpleObjectProperty<>(this, "signatureValidationOptions", SignatureValidationOptions.defaults()) {
+                @Override
+                protected void invalidated() {
+                    // checked already: check again with the new settings.
+                    if (getDocument() != null && !signatures.isEmpty()) verifySignatures();
+                }
+            };
     private final ReadOnlyBooleanWrapper highQualityPrintAllowed =
             new ReadOnlyBooleanWrapper(this, "highQualityPrintAllowed", false);
 
@@ -1711,8 +1721,28 @@ public class PdfView extends Control {
     }
 
     /**
-     * Checks the document's signatures on a background thread; the results replace
-     * {@link #getSignatures()} on the FX thread.  A newer check or document supersedes this one.
+     * How signature checks may use the network: online or not, and the connection timeouts.  The
+     * default comes from the core system properties ({@link SignatureValidationOptions#defaults()}).
+     * Changing it checks the document's signatures again.
+     */
+    public final ObjectProperty<SignatureValidationOptions> signatureValidationOptionsProperty() {
+        return signatureValidationOptions;
+    }
+
+    public final SignatureValidationOptions getSignatureValidationOptions() {
+        SignatureValidationOptions options = signatureValidationOptions.get();
+        return options != null ? options : SignatureValidationOptions.defaults();
+    }
+
+    public final void setSignatureValidationOptions(SignatureValidationOptions options) {
+        signatureValidationOptions.set(options);
+    }
+
+    /**
+     * Checks the document's signatures on a background thread.  {@link #getSignatures()} lists every
+     * field at once, the signed ones {@link SignatureStatus.Verdict#PENDING}, and each is replaced on
+     * the FX thread as its check finishes, so one slow revocation server holds up only its own
+     * signature.  A newer check or document supersedes this one.
      *
      * @return completes with the results (on the FX thread)
      */
@@ -1721,26 +1751,41 @@ public class PdfView extends Control {
         int generation = ++signatureGeneration;
         if (document == null) {
             signatures.clear();
+            verifyingSignatures.set(false);
             return CompletableFuture.completedFuture(List.of());
         }
         verifyingSignatures.set(true);
+        SignatureValidationOptions options = getSignatureValidationOptions();
         CompletableFuture<List<SignatureStatus>> result = new CompletableFuture<>();
+        // a superseded check stops between signatures; it isn't interrupted, as an interrupt during
+        // a read of the document's file channel would close it for everyone.
         startWorker("icepdf-fx-signature-check", () -> {
-            List<SignatureStatus> found;
+            List<SignatureStatus> found = new ArrayList<>();
             RuntimeException failure = null;
             try {
-                found = SignatureVerifier.verifyAll(document);
+                List<SignatureStatus> pending = SignatureVerifier.pendingAll(document);
+                found.addAll(pending);
+                Platform.runLater(() -> {
+                    if (generation == signatureGeneration && document == getDocument()) signatures.setAll(pending);
+                });
+                for (int i = 0; i < pending.size(); i++) {
+                    if (generation != signatureGeneration) break;
+                    if (!pending.get(i).isPending()) continue;
+                    SignatureStatus checked = SignatureVerifier.verify(pending.get(i).widget(), options);
+                    found.set(i, checked);
+                    Platform.runLater(() -> {
+                        if (generation == signatureGeneration && document == getDocument()) replaceSignatureStatus(checked);
+                    });
+                }
             } catch (RuntimeException e) {
                 // each signature's own problem is reported in its status; this is the whole check failing.
                 logger.log(Level.WARNING, "Could not check the document's signatures", e);
-                found = List.of();
                 failure = e;
             }
-            List<SignatureStatus> done = found;
+            List<SignatureStatus> done = List.copyOf(found);
             RuntimeException failed = failure;
             Platform.runLater(() -> {
                 if (generation == signatureGeneration && document == getDocument()) {
-                    signatures.setAll(done);
                     verifyingSignatures.set(false);
                     // "no signatures" would be wrong: say the check failed.
                     if (failed != null) {
@@ -1752,6 +1797,51 @@ public class PdfView extends Control {
             });
         });
         return result;
+    }
+
+    /**
+     * Checks one signature again on a background thread, for instance online after an offline check
+     * left its revocation unchecked.  Its entry in {@link #getSignatures()} is PENDING until the
+     * result replaces it.
+     *
+     * @param status  the signature, as listed in {@link #getSignatures()}
+     * @param options network settings, or null for {@link #getSignatureValidationOptions()}
+     * @return completes with the result (on the FX thread)
+     */
+    public CompletableFuture<SignatureStatus> verifySignature(SignatureStatus status, SignatureValidationOptions options) {
+        Document document = getDocument();
+        if (document == null || status == null || !status.isSigned()) {
+            return CompletableFuture.completedFuture(status);
+        }
+        int generation = signatureGeneration;
+        SignatureValidationOptions effective = options != null ? options : getSignatureValidationOptions();
+        replaceSignatureStatus(status.asPending());
+        CompletableFuture<SignatureStatus> result = new CompletableFuture<>();
+        startWorker("icepdf-fx-signature-check", () -> {
+            SignatureStatus checked;
+            try {
+                checked = SignatureVerifier.verify(status.widget(), effective);
+            } catch (RuntimeException e) {
+                logger.log(Level.WARNING, "Could not check the signature", e);
+                checked = status;
+            }
+            SignatureStatus done = checked;
+            Platform.runLater(() -> {
+                if (generation == signatureGeneration && document == getDocument()) replaceSignatureStatus(done);
+                result.complete(done);
+            });
+        });
+        return result;
+    }
+
+    // puts a status in place of the listed one for the same field.
+    private void replaceSignatureStatus(SignatureStatus status) {
+        for (int i = 0; i < signatures.size(); i++) {
+            if (signatures.get(i).widget() == status.widget()) {
+                signatures.set(i, status);
+                return;
+            }
+        }
     }
 
     /** Scrolls a signature field into view (its page becomes current in the single-page modes). */

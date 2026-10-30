@@ -17,6 +17,7 @@ package org.icepdf.fx.signature;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -27,6 +28,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Window;
+import org.icepdf.fx.view.PdfView;
 
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
@@ -48,23 +50,84 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
             "data encipherment", "key agreement", "certificate signing", "CRL signing", "encipher only",
             "decipher only"};
 
+    private final PdfView view;
+    private SignatureStatus status;
+    private final ListChangeListener<SignatureStatus> follow = change -> follow();
+
     /**
      * Shows the details of a signature, modal to the window of {@code owner} (may be null); does
-     * nothing for a status that isn't signed.
+     * nothing for a status that isn't signed.  When the owner is the {@link PdfView} the status came
+     * from, the dialog follows it: a signature still being checked shows progress until its result
+     * arrives, and one whose revocation went unchecked can be checked online.
      */
     public static void show(javafx.scene.Node owner, SignatureStatus status) {
         if (status == null || !status.isSigned()) return;
         Window window = owner != null && owner.getScene() != null ? owner.getScene().getWindow() : null;
-        new SignaturePropertiesDialog(window, status).showAndWait();
+        new SignaturePropertiesDialog(window, owner instanceof PdfView view ? view : null, status).showAndWait();
     }
 
     public SignaturePropertiesDialog(Window owner, SignatureStatus status) {
+        this(owner, null, status);
+    }
+
+    /**
+     * @param owner  window to be modal to, or null
+     * @param view   the view the status came from, to follow its updates; or null for a fixed status
+     * @param status the signature
+     */
+    public SignaturePropertiesDialog(Window owner, PdfView view, SignatureStatus status) {
+        this.view = view;
         if (owner != null) initOwner(owner);
         setTitle(Messages.get("signatureProperties.title"));
         setResizable(true);
         getDialogPane().getStyleClass().add("pdf-signature-dialog");
         getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        getDialogPane().setPrefWidth(660);
+        getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        setStatus(status);
+        if (view != null) {
+            view.getSignatures().addListener(follow);
+            setOnHidden(e -> view.getSignatures().removeListener(follow));
+        }
+    }
 
+    // the view's entry for this signature changed: a check finished or started.
+    private void follow() {
+        for (SignatureStatus listed : view.getSignatures()) {
+            if (listed.widget() == status.widget()) {
+                if (listed != status) setStatus(listed);
+                return;
+            }
+        }
+    }
+
+    private void setStatus(SignatureStatus status) {
+        this.status = status;
+        getDialogPane().setContent(status.isPending() ? pending(status) : content(status));
+        if (getDialogPane().getScene() != null && getDialogPane().getScene().getWindow() != null) {
+            getDialogPane().getScene().getWindow().sizeToScene();
+        }
+    }
+
+    /** While the signature is checked: a busy indicator and who signed it. */
+    private static Node pending(SignatureStatus status) {
+        ProgressIndicator progress = new ProgressIndicator();
+        progress.setPrefSize(40, 40);
+        Label summary = new Label(status.summary());
+        summary.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
+        VBox text = new VBox(4, summary);
+        if (status.signerName() != null) {
+            text.getChildren().add(new Label(Messages.get("signatureProperties.signedBy") + " " + status.signerName()));
+        }
+        HBox box = new HBox(12, progress, text);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setPadding(new Insets(12));
+        box.setMinWidth(600);
+        box.setPrefWidth(620);
+        return box;
+    }
+
+    private Node content(SignatureStatus status) {
         Label summary = new Label(status.summary());
         summary.setWrapText(true);
         summary.setStyle("-fx-font-weight: bold; -fx-font-size: 1.1em;");
@@ -77,12 +140,18 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
         content.setMinWidth(600);
         content.setPrefWidth(620);
         if (status.isSigned()) {
-            content.getChildren().addAll(details(status), section(Messages.get("signatureProperties.checks"), checks(status)));
+            VBox checks = new VBox(8, checks(status));
+            // revocation went unchecked (offline, or a server didn't answer): offer a one-off online check.
+            if (view != null && status.isRevocationUnchecked()) {
+                Button checkOnline = new Button(Messages.get("signatureProperties.checkOnline"));
+                checkOnline.setOnAction(e -> view.verifySignature(status,
+                        view.getSignatureValidationOptions().withOnline(true)));
+                checks.getChildren().add(checkOnline);
+            }
+            content.getChildren().addAll(details(status), section(Messages.get("signatureProperties.checks"), checks));
             if (!status.chain().isEmpty()) content.getChildren().add(section(Messages.get("signatureProperties.chain"), chain(status)));
         }
-        getDialogPane().setContent(content);
-        getDialogPane().setPrefWidth(660);
-        getDialogPane().setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        return content;
     }
 
     private static Node details(SignatureStatus status) {
@@ -148,6 +217,10 @@ public class SignaturePropertiesDialog extends Dialog<Void> {
             out.add(new Check(SignatureStatus.Verdict.INVALID, Messages.get("signatureProperties.check.revoked")));
         } else if (s.identityTrusted()) {
             out.add(new Check(SignatureStatus.Verdict.VALID, Messages.get("signatureProperties.check.trusted")));
+            if (!s.revocationChecked()) {
+                out.add(new Check(SignatureStatus.Verdict.UNKNOWN,
+                        Messages.get("signatureProperties.check.revocationUnchecked")));
+            }
         } else if (s.selfSigned()) {
             out.add(new Check(SignatureStatus.Verdict.UNKNOWN,
                     Messages.get("signatureProperties.check.selfSigned")));
