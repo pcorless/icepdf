@@ -70,7 +70,7 @@ public final class StandardActions {
         registry.register(new FindAction()).register(new SearchPanelAction()).register(new FindNextAction())
                 .register(new FindPreviousAction());
         // view
-        registry.register(new SidePanelAction()).register(new ShowCommentsAction()).register(new FullScreenAction())
+        registry.register(new SidePanelAction()).register(new ShowCommentsAction()).register(new org.icepdf.fx.ri.actions.view.AnnotationBoardAction()).register(new FullScreenAction())
                 .register(new ZoomInAction()).register(new ZoomOutAction()).register(new ActualSizeAction())
                 .register(new FitPageAction()).register(new FitWidthAction())
                 .register(new RotateClockwiseAction()).register(new RotateCounterclockwiseAction());

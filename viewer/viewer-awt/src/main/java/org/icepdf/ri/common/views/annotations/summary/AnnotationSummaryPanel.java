@@ -88,7 +88,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
             Document document = controller.getDocument();
             ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
             int numberOfPanels = colorLabels != null ? colorLabels.size() : 1;
-            if (annotationNamedColorPanels != null) annotationNamedColorPanels.clear();
+            disposeColorLabelPanels();
             annotationNamedColorPanels = new ArrayList<>(numberOfPanels);
 
             if (colorLabels != null && colorLabels.size() > 0) {
@@ -258,7 +258,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                     MarkupAnnotation markupAnnotation = (MarkupAnnotation) comp.getAnnotation();
                     if (annotationNamedColorPanels != null) {
                         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-                        if (colorLabels != null) {
+                        if (colorLabels != null && !colorLabels.isEmpty()) {
                             for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                                 if (annotationColumnPanel.getColorLabel() != null &&
                                         annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
@@ -285,7 +285,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                         MarkupAnnotation markupAnnotation = comp.getAnnotation().getParent();
                         if (markupAnnotation != null) {
                             ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-                            if (colorLabels != null) {
+                            if (colorLabels != null && !colorLabels.isEmpty()) {
                                 for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                                     if (annotationColumnPanel.getColorLabel() != null &&
                                             annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
@@ -312,7 +312,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                         MarkupAnnotation markupAnnotation = comp.getAnnotation().getParent();
                         if (markupAnnotation != null) {
                             ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-                            if (colorLabels != null) {
+                            if (colorLabels != null && !colorLabels.isEmpty()) {
                                 for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                                     if (annotationColumnPanel.getColorLabel() != null &&
                                             annotationColumnPanel.getColorLabel().getColor().equals(markupAnnotation.getColor())) {
@@ -340,7 +340,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
                         }
                         // and then add back in.
                         ArrayList<DragDropColorList.ColorLabel> colorLabels = DragDropColorList.retrieveColorLabels();
-                        if (colorLabels != null) {
+                        if (colorLabels != null && !colorLabels.isEmpty()) {
                             for (ColorLabelPanel annotationColumnPanel : annotationNamedColorPanels) {
                                 if (annotationColumnPanel.getColorLabel().getColor().equals(lastSelectedMarkupAnnotation.getColor())) {
                                     annotationColumnPanel.addAnnotation(lastSelectedMarkupAnnotation);
@@ -386,7 +386,16 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
 
     @Override
     public void disposeDocument() {
-        annotationNamedColorPanels.clear();
+        ((DocumentViewControllerImpl) controller.getDocumentViewController()).removePropertyChangeListener(this);
+        disposeColorLabelPanels();
+    }
+
+    private void disposeColorLabelPanels() {
+        if (annotationNamedColorPanels != null) {
+            // summary boxes listen on the document view controller, release them with the panel.
+            annotationNamedColorPanels.forEach(ColorLabelPanel::dispose);
+            annotationNamedColorPanels.clear();
+        }
     }
 
     private void addGB(JPanel layout, Component component,
@@ -403,7 +412,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
             Component comp = (Component) e.getSource();
-            if (annotationNamedColorPanels != null) {
+            if (annotationNamedColorPanels != null && annotationsPanel != null) {
                 double weightX = 1.0 / (float) annotationNamedColorPanels.size();
                 GridBagLayout gridBagLayout = (GridBagLayout) annotationsPanel.getLayout();
                 for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {
@@ -428,7 +437,7 @@ public class AnnotationSummaryPanel extends JPanel implements MutableDocument, P
     @Override
     public void componentResized(ComponentEvent e) {
         // reset the constraint back to an even division of
-        if (annotationNamedColorPanels != null) {
+        if (annotationNamedColorPanels != null && annotationsPanel != null) {
             double weightX = 1.0 / (float) annotationNamedColorPanels.size();
             GridBagLayout gridBagLayout = (GridBagLayout) annotationsPanel.getLayout();
             for (ColorLabelPanel colorLabelPanel : annotationNamedColorPanels) {

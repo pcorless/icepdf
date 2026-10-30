@@ -202,6 +202,8 @@ public class PdfView extends Control {
             new ReadOnlyObjectWrapper<>(this, "focusedField");
     private final StringProperty annotationAuthor =
             new SimpleStringProperty(this, "annotationAuthor", System.getProperty("user.name", ""));
+    private final BooleanProperty newAnnotationsPrivate =
+            new SimpleBooleanProperty(this, "newAnnotationsPrivate", false);
     private final ObjectProperty<Color> annotationColor =
             new SimpleObjectProperty<>(this, "annotationColor");
     private final ObservableMap<ToolMode, Color> toolColors = FXCollections.observableHashMap();
@@ -453,6 +455,30 @@ public class PdfView extends Control {
 
     public final void setAnnotationAuthor(String author) {
         annotationAuthor.set(author);
+    }
+
+    /**
+     * Whether markup annotations the user creates are marked private (the viewer's own
+     * {@link Annotation#FLAG_PRIVATE_CONTENTS} /F bit, set on the annotation and its popup); false by
+     * default.  Redaction marks are never made private.
+     * <p>
+     * Private annotations are a viewer convention, not protection: with
+     * {@code org.icepdf.core.page.annotation.privateProperty.enabled} set, ICEpdf leaves out other
+     * authors' private annotations when it loads a page, but their text is still in the file and
+     * other viewers show them.  Core compares the author with {@code user.name}, so keep
+     * {@link #annotationAuthorProperty()} at its default while using private annotations, or the
+     * user's own private annotations are hidden on reopen.
+     */
+    public final BooleanProperty newAnnotationsPrivateProperty() {
+        return newAnnotationsPrivate;
+    }
+
+    public final boolean isNewAnnotationsPrivate() {
+        return newAnnotationsPrivate.get();
+    }
+
+    public final void setNewAnnotationsPrivate(boolean value) {
+        newAnnotationsPrivate.set(value);
     }
 
     /** Colour for new annotations; null uses each tool's default (yellow highlights, red shapes, ...). */
@@ -747,18 +773,76 @@ public class PdfView extends Control {
     }
 
     /**
-     * Changes properties of an annotation as one undoable edit.  No-op if the annotation isn't on a
-     * page of this document, it's locked, the document doesn't permit annotating, or its type has no
-     * editable properties ({@link AnnotationProperties#supports}).
+     * Deletes an annotation (and its popup), on any page, shown or not; undoable.  No-op if it isn't
+     * on a page of this document, it's locked, or the document doesn't permit annotating.
+     */
+    public void deleteAnnotation(Annotation annotation) {
+        if (annotation == null || !(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(AnnotationEdits.delete(skin.annotationLocker(), page, pageIndex, annotation));
+        if (getSelectedAnnotation() == annotation) clearAnnotationSelection();
+    }
+
+    /**
+     * Changes properties of an annotation as one undoable edit; it may be on any page, shown or not.
+     * No-op if the annotation isn't on a page of this document, it's locked, the document doesn't
+     * permit annotating, or its type has no editable properties ({@link AnnotationProperties#supports}).
      */
     public void applyAnnotationProperties(Annotation annotation, AnnotationProperties change) {
         if (change == null || !AnnotationProperties.supports(annotation)) return;
         if (!(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
-        AnnotationHit hit = skin.annotations().hitOf(annotation);
-        if (hit == null) return;
-        Page page = getDocument().getPageTree().getPage(hit.pageIndex());
-        recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, hit.pageIndex(), annotation, change,
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(AnnotationEdits.properties(skin.annotationLocker(), page, pageIndex, annotation, change,
                 skin.toPageSpace(page)));
+    }
+
+    /**
+     * Replaces a comment's text (/Contents; a text box's text, redrawn) as one undoable edit, on any
+     * page, shown or not.  No-op when unchanged, or as {@link #applyAnnotationProperties}.
+     */
+    public void setAnnotationContents(MarkupAnnotation annotation, String contents) {
+        if (annotation == null || contents == null) return;
+        if (!(getSkin() instanceof PdfViewSkin skin) || !skin.annotations().canEdit(annotation)) return;
+        if (contents.equals(annotation.getContents() != null ? annotation.getContents() : "")) return;
+        int pageIndex = skin.annotations().pageIndexOf(annotation);
+        if (pageIndex < 0) return;
+        Page page = getDocument().getPageTree().getPage(pageIndex);
+        recordEdit(annotation instanceof org.icepdf.core.pobjects.annotations.FreeTextAnnotation freeText
+                ? AnnotationEdits.freeTextContents(skin.annotationLocker(), page, pageIndex, freeText, contents,
+                skin.toPageSpace(page))
+                : AnnotationEdits.contents(skin.annotationLocker(), page, pageIndex, annotation, contents));
+    }
+
+    /**
+     * Marks markup annotations private or public (see {@link #newAnnotationsPrivateProperty()}), as
+     * one undoable edit.  Annotations already so, locked, or not on a page of this document are
+     * skipped; they may be on any page, shown or not.  No-op when the document doesn't permit
+     * annotating.
+     *
+     * @return how many annotations changed
+     */
+    public int setAnnotationsPrivate(Collection<? extends MarkupAnnotation> annotations, boolean priv) {
+        if (annotations == null || !(getSkin() instanceof PdfViewSkin skin)) return 0;
+        List<MarkupAnnotation> changing = new ArrayList<>();
+        for (MarkupAnnotation markup : new LinkedHashSet<>(annotations)) {
+            if (markup != null && markup.getFlagPrivateContents() != priv && skin.annotations().canEdit(markup)) {
+                changing.add(markup);
+            }
+        }
+        int[] pages = skin.annotations().pageIndexesOf(changing);
+        List<AnnotationEdits.Edit> edits = new ArrayList<>();
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] < 0) continue;
+            Page page = getDocument().getPageTree().getPage(pages[i]);
+            edits.add(AnnotationEdits.privacy(skin.annotationLocker(), page, pages[i], changing.get(i), priv));
+        }
+        if (edits.isEmpty()) return 0;
+        recordEdit(edits.size() == 1 ? edits.get(0) : AnnotationEdits.group(edits, null, null));
+        return edits.size();
     }
 
     /**

@@ -69,11 +69,33 @@ public class AnnotationListPanel extends BorderPane {
     private static final String ALL_TYPES = Messages.get("commentsPanel.allTypes");
     private static final String ALL_AUTHORS = Messages.get("commentsPanel.allAuthors");
 
+    /** Which comments to show by privacy; offered only with private annotations enabled. */
+    enum Visibility {
+        ALL("commentsPanel.visibility.all"), PUBLIC("commentsPanel.visibility.public"),
+        PRIVATE("commentsPanel.visibility.private");
+
+        private final String key;
+
+        Visibility(String key) {
+            this.key = key;
+        }
+
+        boolean shows(AnnotationSummary.Entry entry) {
+            return this == ALL || (this == PRIVATE) == entry.annotation().getFlagPrivateContents();
+        }
+
+        @Override
+        public String toString() {
+            return Messages.get(key);
+        }
+    }
+
     private final PdfView view;
     private final TextField filter = new TextField();
     private final ComboBox<String> types = new ComboBox<>();
     private final ComboBox<String> authors = new ComboBox<>();
     private final ComboBox<AnnotationSummary.Order> order = new ComboBox<>();
+    private final ComboBox<Visibility> visibility = new ComboBox<>();
     private final Label status = new Label();
     private final TreeView<Object> tree = new TreeView<>();
     private final TreeItem<Object> root = new TreeItem<>();
@@ -102,8 +124,11 @@ public class AnnotationListPanel extends BorderPane {
         order.getItems().setAll(AnnotationSummary.Order.values());
         order.setValue(AnnotationSummary.Order.PAGE);
         order.valueProperty().addListener((o, a, b) -> rebuild());
+        visibility.getItems().setAll(Visibility.values());
+        visibility.setValue(Visibility.ALL);
+        visibility.valueProperty().addListener((o, a, b) -> rebuild());
         // the panel takes the width the side bar gives it, never asks for more.
-        for (ComboBox<?> box : List.of(types, authors, order)) {
+        for (ComboBox<?> box : List.of(types, authors, order, visibility)) {
             box.setMaxWidth(Double.MAX_VALUE);
             box.setPrefWidth(60);
             box.setMinWidth(0);
@@ -111,6 +136,10 @@ public class AnnotationListPanel extends BorderPane {
         HBox pickers = new HBox(4, types, authors);
         HBox.setHgrow(types, Priority.ALWAYS);
         HBox.setHgrow(authors, Priority.ALWAYS);
+        if (AnnotationSummary.privacyEnabled()) {
+            pickers.getChildren().add(visibility);
+            HBox.setHgrow(visibility, Priority.ALWAYS);
+        }
         Label sortLabel = new Label(Messages.get("commentsPanel.sort"));
         HBox sortRow = new HBox(4, sortLabel, order);
         sortRow.setAlignment(Pos.CENTER_LEFT);
@@ -240,6 +269,7 @@ public class AnnotationListPanel extends BorderPane {
             if (type != null && !ALL_TYPES.equals(type) && !type.equals(entry.type())) continue;
             if (author != null && !ALL_AUTHORS.equals(author) && !author.equalsIgnoreCase(entry.author())) continue;
             if (!entry.matches(filter.getText())) continue;
+            if (visibility.getValue() != null && !visibility.getValue().shows(entry)) continue;
             shown.add(entry);
         }
         AnnotationSummary.Order sort = order.getValue() != null ? order.getValue() : AnnotationSummary.Order.PAGE;
@@ -359,14 +389,33 @@ public class AnnotationListPanel extends BorderPane {
         MenuItem copy = new MenuItem(Messages.get("commentsPanel.copyText"));
         MenuItem delete = new MenuItem(Messages.get("commentsPanel.delete"));
         ContextMenu menu = new ContextMenu(goTo, open, copy, new SeparatorMenuItem(), delete);
+        CheckMenuItem makePrivate = new CheckMenuItem(Messages.get("commentsPanel.private"));
+        MenuItem allPrivate = new MenuItem(Messages.get("commentsPanel.allMinePrivate"));
+        MenuItem allPublic = new MenuItem(Messages.get("commentsPanel.allMinePublic"));
+        if (AnnotationSummary.privacyEnabled()) {
+            menu.getItems().addAll(3, List.of(new SeparatorMenuItem(), makePrivate, allPrivate, allPublic));
+        }
         menu.setOnShowing(e -> {
             AnnotationSummary.Entry entry = selectedEntry();
             boolean has = entry != null;
+            boolean editing = view.isAnnotationEditingAllowed();
             goTo.setDisable(!has);
             open.setDisable(!has || entry.annotation().getPopupAnnotation() == null);
             copy.setDisable(!has || entry.contents().isEmpty());
-            delete.setDisable(!has || !view.isAnnotationEditingAllowed());
+            delete.setDisable(!has || !editing);
+            makePrivate.setSelected(has && entry.annotation().getFlagPrivateContents());
+            makePrivate.setDisable(!has || !editing || !AnnotationSummary.canBePrivate(entry.annotation()));
+            allPrivate.setDisable(!editing || mine(false).isEmpty());
+            allPublic.setDisable(!editing || mine(true).isEmpty());
         });
+        makePrivate.setOnAction(e -> {
+            AnnotationSummary.Entry entry = selectedEntry();
+            if (entry != null) {
+                view.setAnnotationsPrivate(AnnotationSummary.withReplies(entry.annotation()), makePrivate.isSelected());
+            }
+        });
+        allPrivate.setOnAction(e -> view.setAnnotationsPrivate(mine(false), true));
+        allPublic.setOnAction(e -> view.setAnnotationsPrivate(mine(true), false));
         goTo.setOnAction(e -> go(selectedEntry()));
         open.setOnAction(e -> {
             if (selectedEntry() != null) openNote(selectedEntry());
@@ -382,6 +431,23 @@ public class AnnotationListPanel extends BorderPane {
             if (selectedEntry() != null) delete(selectedEntry());
         });
         return menu;
+    }
+
+    /**
+     * The user's own comments (author is {@link AnnotationSummary#currentUser()}, as core decides) that
+     * are private, or public: what "make all my comments private/public" changes.
+     */
+    private List<MarkupAnnotation> mine(boolean priv) {
+        String me = AnnotationSummary.currentUser();
+        List<MarkupAnnotation> found = new ArrayList<>();
+        for (AnnotationSummary.Entry entry : entries) {
+            MarkupAnnotation markup = entry.annotation();
+            if (me != null && me.equals(entry.author()) && AnnotationSummary.canBePrivate(markup)
+                    && markup.getFlagPrivateContents() == priv) {
+                found.add(markup);
+            }
+        }
+        return found;
     }
 
     private AnnotationSummary.Entry selectedEntry() {
@@ -422,6 +488,12 @@ public class AnnotationListPanel extends BorderPane {
             author.setMinWidth(0);
             // first line: kind and author; second: date and the start of the text.
             HBox heading = new HBox(6, swatch, type, author);
+            if (AnnotationSummary.privacyEnabled() && entry.annotation().getFlagPrivateContents()) {
+                Label lock = new Label(Messages.get("commentsPanel.privateBadge"));
+                lock.getStyleClass().addAll("dim-label", "comment-private");
+                lock.setMinWidth(Region.USE_PREF_SIZE);
+                heading.getChildren().add(2, lock);
+            }
             heading.setAlignment(Pos.CENTER_LEFT);
             String date = entry.date() != null ? DATES.format(entry.date()) : "";
             String text = entry.contents().replaceAll("\\s+", " ");
