@@ -20,7 +20,6 @@ import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.views.Controller;
@@ -28,6 +27,7 @@ import org.icepdf.ri.common.views.PageComponentSelector;
 import org.icepdf.ri.common.views.annotations.signatures.CertificatePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignaturePropertiesDialog;
 import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationDialog;
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -36,6 +36,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,6 +51,9 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
 
     private static final Logger logger =
             Logger.getLogger(SignaturesHandlerPanel.class.getName());
+
+    // the tree node of each signed field, to update when its validation finishes.
+    private final Map<SignatureWidgetAnnotation, SignatureTreeNode> signatureNodes = new IdentityHashMap<>();
 
     public SignaturesHandlerPanel(Controller controller) {
         super(controller);
@@ -76,8 +82,8 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
             // filter any unsigned signer fields.
             if (signatureDictionary.getEntries().size() > 0) {
                 SignatureTreeNode tmp = new SignatureTreeNode(signatureWidgetAnnotation, messageBundle);
-                tmp.refreshSignerNode();
                 tmp.setAllowsChildren(true);
+                signatureNodes.put(signatureWidgetAnnotation, tmp);
                 // insert and expand the root node.
                 treeModel.insertNodeInto(tmp, rootTreeNode, rootTreeNode.getChildCount());
                 tree.expandPath(new TreePath(rootTreeNode));
@@ -112,27 +118,75 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     }
 
     /**
-     * Updates the data fields on a signature tree node after verification has taken place.  It is assumed
-     * this method is always called from the AWT thread.
+     * Called from the worker task, on the AWT thread, when a signature's validation has finished:
+     * the node swaps "validating" for the result.
+     *
+     * @param signatureWidgetAnnotation annotation that was validated
+     * @param failed                    true if validation failed outright
+     */
+    void signatureValidated(SignatureWidgetAnnotation signatureWidgetAnnotation, boolean failed) {
+        SignatureTreeNode signatureTreeNode = signatureNodes.get(signatureWidgetAnnotation);
+        if (signatureTreeNode != null) {
+            signatureTreeNode.setValidationFailed(failed);
+            refreshNode(signatureTreeNode);
+        }
+    }
+
+    /**
+     * Runs a fresh validation of a signature off the AWT thread; the node shows "validating" until
+     * it finishes.  It is assumed this method is always called from the AWT thread.
      *
      * @param signatureWidgetAnnotation annotation to update
      * @param signatureTreeNode         node that will be updated.
+     * @return the validation, completing on the AWT thread after the node is updated
      */
-    void updateSignature(SignatureWidgetAnnotation signatureWidgetAnnotation,
-                         SignatureTreeNode signatureTreeNode) {
-        if (signatureWidgetAnnotation != null) {
-            try {
-                TreePath treePath = new TreePath(signatureTreeNode.getPath());
-                boolean isExpanded = tree.isExpanded(treePath);
-                signatureTreeNode.validateSignatureNode();
-                signatureTreeNode.refreshSignerNode();
-                treeModel.reload();
-                if (isExpanded) {
-                    tree.expandPath(new TreePath(signatureTreeNode.getPath()));
-                }
-            } catch (SignatureIntegrityException e) {
-                logger.log(Level.WARNING, "Could not build signature node.", e);
+    CompletableFuture<SignatureValidator> updateSignature(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                                          SignatureTreeNode signatureTreeNode) {
+        SignatureValidator validator = signatureTreeNode.getSignatureValidator();
+        if (signatureWidgetAnnotation == null || validator == null) {
+            return CompletableFuture.completedFuture(validator);
+        }
+        signatureTreeNode.setVerifyingSignature(true);
+        signatureTreeNode.setValidationFailed(false);
+        refreshNode(signatureTreeNode);
+        return SignatureValidationService.validate(validator, null).whenComplete((v, failure) -> {
+            if (failure != null) {
+                logger.log(Level.WARNING, "Could not validate signature.", SignatureValidationService.cause(failure));
             }
+            signatureTreeNode.setVerifyingSignature(false);
+            signatureTreeNode.setValidationFailed(failure != null);
+            refreshNode(signatureTreeNode);
+        });
+    }
+
+    /**
+     * The tree node of a signed field.
+     *
+     * @return node, or null if the field isn't listed
+     */
+    SignatureTreeNode getSignatureTreeNode(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+        return signatureNodes.get(signatureWidgetAnnotation);
+    }
+
+    /**
+     * @return the running or last validation task, or null
+     */
+    java.util.concurrent.Future<?> getWorkerTask() {
+        return workerTask;
+    }
+
+    // rebuilds a node from its validator's state and tells the tree, keeping it open if it was.
+    private void refreshNode(SignatureTreeNode signatureTreeNode) {
+        if (signatureTreeNode.getParent() == null) {
+            // a new document replaced the tree.
+            return;
+        }
+        TreePath treePath = new TreePath(signatureTreeNode.getPath());
+        boolean isExpanded = tree.isExpanded(treePath);
+        signatureTreeNode.refreshSignerNode();
+        treeModel.nodeStructureChanged(signatureTreeNode);
+        if (isExpanded) {
+            tree.expandPath(treePath);
         }
     }
 
@@ -143,14 +197,29 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
      * @param signatureWidgetAnnotation annotation to show the properties of.
      */
     void showSignatureValidationDialog(SignatureWidgetAnnotation signatureWidgetAnnotation) {
+        showSignatureValidationDialog(signatureWidgetAnnotation, null);
+    }
+
+    /**
+     * Shows the signatureValidationDialog, with progress until the given validation completes.
+     *
+     * @param signatureWidgetAnnotation annotation to show the properties of.
+     * @param validation                a running validation of it, or null
+     */
+    void showSignatureValidationDialog(SignatureWidgetAnnotation signatureWidgetAnnotation,
+                                       CompletableFuture<SignatureValidator> validation) {
         if (signatureWidgetAnnotation != null) {
             // show the dialog
             SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
             if (fieldDictionary != null) {
                 SignatureValidator signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
                 if (signatureValidator != null) {
-                    new SignatureValidationDialog(controller.getViewerFrame(),
-                            messageBundle, signatureWidgetAnnotation, signatureValidator).setVisible(true);
+                    SignatureValidationDialog dialog = new SignatureValidationDialog(controller.getViewerFrame(),
+                            messageBundle, signatureWidgetAnnotation, signatureValidator);
+                    if (validation != null && !validation.isDone()) {
+                        dialog.showWhenValidated(validation);
+                    }
+                    dialog.setVisible(true);
                 }
             }
         }
@@ -165,6 +234,8 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     protected void buildWorkerTaskUI() {
         // First have to stop any existing validation processes.
         stopWorkerTask();
+        signatureNodes.clear();
+        endProgressControls();
 
         Document document = controller.getDocument();
         if (document != null &&
@@ -173,9 +244,6 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
             final ArrayList<SignatureWidgetAnnotation> signatures = interactiveForm.getSignatureFields();
             // build out the tree
             if (signatures.size() > 0) {
-                // show the progress components.
-                progressLabel.setVisible(true);
-                progressBar.setVisible(true);
                 // start a new verification task
                 workerTask = new VerifyAllSignaturesTask(controller, this, messageBundle);
                 workerTask.execute();
@@ -189,46 +257,45 @@ public class SignaturesHandlerPanel extends AbstractWorkerPanel {
     private class validationActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
 
-            // validate the signature and show the summary dialog.
+            // validate the signature, off the AWT thread, and show the summary dialog; the dialog
+            // and the node both show progress until the validation finishes.
             final SignatureTreeNode signatureTreeNode = ((NodeSelectionListener) nodeSelectionListener).getSignatureTreeNode();
             SignatureWidgetAnnotation signatureWidgetAnnotation = signatureTreeNode.getOutlineItem();
-            try {
-                updateSignature(signatureWidgetAnnotation, signatureTreeNode);
-                showSignatureValidationDialog(signatureWidgetAnnotation);
-                // try repainting the container
-                repaint();
-                // update the dialog and end the task
-            } catch (Exception e) {
-                logger.log(Level.FINER, "Error verifying signature.", e);
-            }
-            // repaint the view container
-            validate();
+            CompletableFuture<SignatureValidator> validation =
+                    updateSignature(signatureWidgetAnnotation, signatureTreeNode);
+            showSignatureValidationDialog(signatureWidgetAnnotation, validation);
         }
     }
 
     @Override
     public void startProgressControls(int lengthOfTask) {
-
+        progressBar.setMaximum(Math.max(1, lengthOfTask));
+        progressLabel.setVisible(true);
+        progressBar.setVisible(true);
     }
 
     @Override
     public void updateProgressControls(int progress) {
-
+        progressBar.setValue(progress);
     }
 
     @Override
     public void updateProgressControls(int progress, String label) {
-
+        progressBar.setValue(progress);
+        progressLabel.setText(label);
     }
 
     @Override
     public void updateProgressControls(String label) {
-
+        progressLabel.setText(label);
     }
 
     @Override
     public void endProgressControls() {
-
+        progressLabel.setVisible(false);
+        progressBar.setVisible(false);
+        progressBar.setValue(0);
+        progressLabel.setText("");
     }
 
     /**

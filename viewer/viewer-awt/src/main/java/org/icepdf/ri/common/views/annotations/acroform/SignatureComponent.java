@@ -17,11 +17,8 @@ package org.icepdf.ri.common.views.annotations.acroform;
 
 
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
-import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
-import org.icepdf.core.util.Library;
 import org.icepdf.ri.common.views.AbstractPageViewComponent;
 import org.icepdf.ri.common.views.Controller;
 import org.icepdf.ri.common.views.DocumentViewController;
@@ -135,13 +132,9 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
         if (fieldDictionary != null) {
             SignatureValidator signatureValidator = annotation.getSignatureValidator();
             if (signatureValidator != null) {
-                try {
-                    signatureValidator.validate();
-                    new SignaturePropertiesDialog(controller.getViewerFrame(),
-                            messageBundle, annotation).setVisible(true);
-                } catch (SignatureIntegrityException e1) {
-                    logger.fine("Error validating annotation " + annotation.toString());
-                }
+                // the dialog validates off the event thread if the signature hasn't been checked yet.
+                new SignaturePropertiesDialog(controller.getViewerFrame(),
+                        messageBundle, annotation).setVisible(true);
             }
         }
     }
@@ -151,20 +144,13 @@ public class SignatureComponent extends AbstractAnnotationComponent<SignatureWid
      */
     class CertificatePropertiesActionListener implements ActionListener {
         public void actionPerformed(ActionEvent actionEvent) {
-            // validate the signature and show the summary dialog.
+            // the certificates come from the signature itself, so there is nothing to validate first.
             SignatureFieldDictionary fieldDictionary = annotation.getFieldDictionary();
             if (fieldDictionary != null) {
-                Library library = annotation.getLibrary();
-                SignatureHandler signatureHandler = library.getSignatureHandler();
-                SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
-                if (signatureValidator != null) {
-                    try {
-                        signatureValidator.validate();
-                        new CertificatePropertiesDialog(controller.getViewerFrame(),
-                                messageBundle, signatureValidator.getCertificateChain()).setVisible(true);
-                    } catch (SignatureIntegrityException e1) {
-                        logger.fine("Error validating annotation " + annotation.toString());
-                    }
+                SignatureValidator signatureValidator = annotation.getSignatureValidator();
+                if (signatureValidator != null && signatureValidator.getCertificateChain() != null) {
+                    new CertificatePropertiesDialog(controller.getViewerFrame(),
+                            messageBundle, signatureValidator.getCertificateChain()).setVisible(true);
                 }
             }
         }
