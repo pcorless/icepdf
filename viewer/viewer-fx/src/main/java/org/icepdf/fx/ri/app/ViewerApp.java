@@ -451,10 +451,10 @@ public class ViewerApp extends Application {
         view.setVerifySignaturesOnOpen(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
         // with private annotations the author must be user.name: core hides private annotations by
         // any other author, so a chosen name would hide the user's own on reopen.
-        view.setAnnotationAuthor(org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED
-                ? org.icepdf.core.util.SystemProperties.USER_NAME
+        view.setAnnotationAuthor(org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled()
+                ? org.icepdf.core.pobjects.annotations.PrivateAnnotations.currentUser()
                 : preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
-        view.setNewAnnotationsPrivate(org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED
+        view.setNewAnnotationsPrivate(org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled()
                 && preferences.getBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, false));
         view.setHighlightFormFields(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         view.setPaintAnnotations(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));

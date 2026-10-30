@@ -95,9 +95,9 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
         // private annotations are matched to user.name, so the author can't be chosen then (see ViewerApp).
-        boolean authorFixed = org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED;
+        boolean authorFixed = org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled();
         if (authorFixed) {
-            author.setText(org.icepdf.core.util.SystemProperties.USER_NAME);
+            author.setText(org.icepdf.core.pobjects.annotations.PrivateAnnotations.currentUser());
             author.setDisable(true);
             author.setTooltip(new javafx.scene.control.Tooltip(Messages.get("preferences.authorFixed")));
         }
@@ -111,7 +111,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         annotations.add(highlightFields, 0, 2, 2, 1);
         CheckBox newPrivate = new CheckBox(Messages.get("preferences.newAnnotationsPrivate"));
         newPrivate.setSelected(preferences.getBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, false));
-        if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) annotations.add(newPrivate, 0, 3, 2, 1);
+        if (org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled()) annotations.add(newPrivate, 0, 3, 2, 1);
         ColorLabelsEditor labels = new ColorLabelsEditor(preferences.getColorLabels());
         Label labelsTitle = new Label(Messages.get("preferences.labels"));
         labelsTitle.setStyle("-fx-font-weight: bold;");
@@ -192,7 +192,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
                 preferences.putBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, highlightFields.isSelected());
                 preferences.setColorLabels(labels.labels());
-                if (org.icepdf.core.util.SystemProperties.PRIVATE_PROPERTY_ENABLED) {
+                if (org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled()) {
                     preferences.putBoolean(ViewerPreferences.ANNOTATION_NEW_PRIVATE, newPrivate.isSelected());
                     view.setNewAnnotationsPrivate(newPrivate.isSelected());
                 }

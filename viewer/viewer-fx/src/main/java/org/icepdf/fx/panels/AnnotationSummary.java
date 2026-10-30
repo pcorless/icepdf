@@ -24,7 +24,7 @@ import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
-import org.icepdf.core.util.SystemProperties;
+import org.icepdf.core.pobjects.annotations.PrivateAnnotations;
 import org.icepdf.core.util.Library;
 
 import java.awt.Color;
@@ -182,7 +182,7 @@ public final class AnnotationSummary {
      * the viewer then offers to mark comments private and shows which are.
      */
     public static boolean privacyEnabled() {
-        return SystemProperties.PRIVATE_PROPERTY_ENABLED;
+        return PrivateAnnotations.isEnabled();
     }
 
     /**
@@ -190,7 +190,7 @@ public final class AnnotationSummary {
      * annotation's author (/T) with when it decides whether to hide it.
      */
     public static String currentUser() {
-        return SystemProperties.USER_NAME;
+        return PrivateAnnotations.currentUser();
     }
 
     /** True for an annotation that can be marked private: a markup annotation, but not a redaction mark. */

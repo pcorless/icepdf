@@ -34,7 +34,7 @@ import javafx.scene.transform.Scale;
 import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.PopupAnnotation;
-import org.icepdf.core.util.SystemProperties;
+import org.icepdf.core.pobjects.annotations.PrivateAnnotations;
 import org.icepdf.fx.i18n.Messages;
 
 import java.time.format.DateTimeFormatter;
@@ -120,7 +120,7 @@ public final class PopupNode extends BorderPane {
         minimise.hoverProperty().addListener((obs, was, now) -> styleMinimise());
         minimise.armedProperty().addListener((obs, was, now) -> styleMinimise());
         header = new HBox(4, title, spacer, date);
-        if (SystemProperties.PRIVATE_PROPERTY_ENABLED) {
+        if (PrivateAnnotations.isEnabled()) {
             privacy = new ToggleButton();
             shackle.setFill(null);
             shackle.setStrokeWidth(1.2);
