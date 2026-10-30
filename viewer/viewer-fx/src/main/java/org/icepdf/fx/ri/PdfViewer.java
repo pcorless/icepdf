@@ -128,6 +128,7 @@ public class PdfViewer extends StackPane {
             FXCollections.observableHashMap();
     private SigningStore signingStore = SigningStore.inMemory();
     private PrintStore printStore = PrintStore.inMemory();
+    private BoardStore boardStore = BoardStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu(Messages.get("viewer.openRecent"));
     private Consumer<String> onLink;
@@ -1068,6 +1069,11 @@ public class PdfViewer extends StackPane {
         this.colorLabelStore = colorLabels != null ? colorLabels : ColorLabels.inMemory();
     }
 
+    /** Where the annotation board keeps compact mode and its text size; kept only while the viewer is open by default. */
+    public void setBoardStore(BoardStore boardStore) {
+        this.boardStore = boardStore != null ? boardStore : BoardStore.inMemory();
+    }
+
     /** The colour labels in use (a view of the store set with {@link #setColorLabels}). */
     public ColorLabels getColorLabels() {
         return colorLabels;
@@ -1413,7 +1419,7 @@ public class PdfViewer extends StackPane {
 
         @Override
         public void showAnnotationBoard() {
-            if (view() != null) AnnotationBoard.show(window(), view(), colorLabels);
+            if (view() != null) AnnotationBoard.show(window(), view(), colorLabels, boardStore);
         }
 
         @Override

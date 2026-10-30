@@ -53,6 +53,10 @@ public final class ViewerPreferences {
     public static final String RECENT_COLORS = "annotation.recentColors";
     /** The colour labels: one per line, {@code #rrggbb name}. */
     public static final String COLOR_LABELS = "annotation.colorLabels";
+    /** Whether the annotation board shows one line per card. */
+    public static final String BOARD_COMPACT = "annotationBoard.compact";
+    /** The annotation board's text size in pixels; missing or 0 follows the window. */
+    public static final String BOARD_TEXT_SIZE = "annotationBoard.textSize";
     /** Whether file dialogs start in the folder last used (default true). */
     public static final String REMEMBER_LAST_DIRECTORY = "file.rememberLastDirectory";
     public static final String WINDOW_X = "window.x";

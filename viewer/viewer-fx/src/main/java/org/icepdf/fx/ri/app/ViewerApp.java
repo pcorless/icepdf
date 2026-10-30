@@ -124,6 +124,31 @@ public class ViewerApp extends Application {
         }
     };
 
+    // the annotation board's look, one for every window, kept in the preferences.
+    private final org.icepdf.fx.ri.BoardStore boardStore = new org.icepdf.fx.ri.BoardStore() {
+        @Override
+        public boolean isCompact() {
+            return preferences.getBoolean(ViewerPreferences.BOARD_COMPACT, false);
+        }
+
+        @Override
+        public void setCompact(boolean compact) {
+            preferences.putBoolean(ViewerPreferences.BOARD_COMPACT, compact);
+            preferences.save();
+        }
+
+        @Override
+        public double getTextSize() {
+            return preferences.getDouble(ViewerPreferences.BOARD_TEXT_SIZE, DEFAULT_TEXT_SIZE);
+        }
+
+        @Override
+        public void setTextSize(double size) {
+            preferences.putDouble(ViewerPreferences.BOARD_TEXT_SIZE, size);
+            preferences.save();
+        }
+    };
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -357,6 +382,7 @@ public class ViewerApp extends Application {
         javafx.beans.binding.Bindings.bindContentBidirectional(viewer.getToolColors(), toolColors);
         viewer.setSigningStore(signing);
         viewer.setPrintStore(printStore);
+        viewer.setBoardStore(boardStore);
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));

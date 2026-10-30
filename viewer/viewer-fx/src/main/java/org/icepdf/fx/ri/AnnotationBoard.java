@@ -80,6 +80,8 @@ public class AnnotationBoard extends BorderPane {
     private static final DateTimeFormatter DATES = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
     private static final double COLUMN_WIDTH = 280;
     private static final int QUOTE_MAX = 280, CONTENTS_MAX = 400;
+    /** Text sizes the board's smaller / larger buttons step between, in pixels. */
+    static final double MIN_TEXT_SIZE = 9, MAX_TEXT_SIZE = 24;
     private static final Map<PdfView, Stage> windows = new WeakHashMap<>();
 
     /** Which comments to show by privacy; offered only with private annotations enabled. */
@@ -105,6 +107,8 @@ public class AnnotationBoard extends BorderPane {
 
     private final PdfView view;
     private final ColorLabels labels;
+    private final BoardStore store;
+    private final javafx.scene.control.ToggleButton compact = new javafx.scene.control.ToggleButton();
     private final TextField filter = new TextField();
     private final ComboBox<AnnotationSummary.Order> order = new ComboBox<>();
     private final ComboBox<Visibility> visibility = new ComboBox<>();
@@ -118,8 +122,10 @@ public class AnnotationBoard extends BorderPane {
     private final List<Label> counts = new ArrayList<>();
     private List<BoardModel.Column> model = List.of();
     private List<String> columnKeys = List.of();
-    /** The card being dragged to another column, or null. */
-    private BoardModel.Card dragged;
+    /** The cards being dragged to another column, or null. */
+    private List<BoardModel.Card> dragged;
+    /** A click with Shortcut or Shift: it adds to the selection rather than replacing it. */
+    private boolean extending;
 
     private List<AnnotationSummary.Entry> entries = Collections.emptyList();
     private Map<MarkupAnnotation, String> quotes = Collections.emptyMap();
@@ -136,8 +142,17 @@ public class AnnotationBoard extends BorderPane {
      * @param labels the colour labels to make columns of; read again on {@link #refresh()}
      */
     public AnnotationBoard(PdfView view, ColorLabels labels) {
+        this(view, labels, null);
+    }
+
+    /**
+     * @param labels the colour labels to make columns of; read again on {@link #refresh()}
+     * @param store  where compact mode and the text size are kept; null keeps them only for this board
+     */
+    public AnnotationBoard(PdfView view, ColorLabels labels, BoardStore store) {
         this.view = view;
         this.labels = labels != null ? labels : ColorLabels.inMemory();
+        this.store = store != null ? store : BoardStore.inMemory();
         getStyleClass().add("annotation-board");
 
         filter.setPromptText(Messages.get("commentsPanel.filter"));
@@ -159,10 +174,23 @@ public class AnnotationBoard extends BorderPane {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         status.getStyleClass().add("dim-label");
+        compact.setText(Messages.get("annotationBoard.compact"));
+        compact.setTooltip(new javafx.scene.control.Tooltip(Messages.get("annotationBoard.compact.tooltip")));
+        compact.setSelected(this.store.isCompact());
+        compact.selectedProperty().addListener((o, a, b) -> {
+            this.store.setCompact(b);
+            lists.forEach(ListView::refresh);
+        });
+        javafx.scene.control.Button smaller = new javafx.scene.control.Button("A\u2212");
+        smaller.setTooltip(new javafx.scene.control.Tooltip(Messages.get("annotationBoard.textSmaller")));
+        smaller.setOnAction(e -> stepTextSize(-1));
+        javafx.scene.control.Button larger = new javafx.scene.control.Button("A+");
+        larger.setTooltip(new javafx.scene.control.Tooltip(Messages.get("annotationBoard.textLarger")));
+        larger.setOnAction(e -> stepTextSize(1));
         HBox bar = new HBox(8, filter, new Label(Messages.get("annotationBoard.columns")), groupBy,
                 new Label(Messages.get("commentsPanel.sort")), order);
         if (AnnotationSummary.privacyEnabled()) bar.getChildren().add(visibility);
-        bar.getChildren().addAll(spacer, status, export);
+        bar.getChildren().addAll(spacer, status, compact, smaller, larger, export);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(8));
         setTop(bar);
@@ -175,6 +203,20 @@ public class AnnotationBoard extends BorderPane {
         empty.setWrapText(true);
         empty.setPadding(new Insets(16));
         setCenter(empty);
+        applyTextSize();
+        // ahead of the lists, which take Shortcut+digits for labels.
+        addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+            if (!e.isShortcutDown()) return;
+            switch (e.getCode()) {
+                case EQUALS, PLUS, ADD -> stepTextSize(1);
+                case MINUS, SUBTRACT -> stepTextSize(-1);
+                case DIGIT0, NUMPAD0 -> setTextSize(BoardStore.DEFAULT_TEXT_SIZE);
+                default -> {
+                    return;
+                }
+            }
+            e.consume();
+        });
 
         rescanLater.setOnFinished(e -> rescan());
         view.documentProperty().addListener(documentListener);
@@ -189,6 +231,14 @@ public class AnnotationBoard extends BorderPane {
      * @param owner the viewer's window; the board closes with it
      */
     public static Stage show(Window owner, PdfView view, ColorLabels labels) {
+        return show(owner, view, labels, null);
+    }
+
+    /**
+     * As {@link #show(Window, PdfView, ColorLabels)}, keeping compact mode and the text size in
+     * {@code store}.
+     */
+    public static Stage show(Window owner, PdfView view, ColorLabels labels, BoardStore store) {
         Stage stage = windows.get(view);
         if (stage != null) {
             ((AnnotationBoard) stage.getScene().getRoot()).refresh();
@@ -196,7 +246,7 @@ public class AnnotationBoard extends BorderPane {
             stage.toFront();
             return stage;
         }
-        AnnotationBoard board = new AnnotationBoard(view, labels);
+        AnnotationBoard board = new AnnotationBoard(view, labels, store);
         Stage created = new Stage();
         if (owner != null) {
             created.initOwner(owner);
@@ -249,6 +299,31 @@ public class AnnotationBoard extends BorderPane {
         view.documentProperty().removeListener(documentListener);
         view.removeEventHandler(PdfViewEvent.ANNOTATIONS_CHANGED, changeListener);
         view.selectedAnnotationProperty().removeListener(selectionListener);
+    }
+
+    // ---- look -------------------------------------------------------------------------------
+
+    /** The text size in use: the stored one, or the window's font size. */
+    double textSize() {
+        double size = store.getTextSize();
+        return size > 0 ? size : javafx.scene.text.Font.getDefault().getSize();
+    }
+
+    /** Sets the cards' text size, kept in the store; {@link BoardStore#DEFAULT_TEXT_SIZE} follows the window. */
+    void setTextSize(double size) {
+        store.setTextSize(size <= 0 ? BoardStore.DEFAULT_TEXT_SIZE
+                : Math.max(MIN_TEXT_SIZE, Math.min(MAX_TEXT_SIZE, size)));
+        applyTextSize();
+    }
+
+    private void stepTextSize(int direction) {
+        setTextSize(Math.round(textSize()) + direction);
+    }
+
+    private void applyTextSize() {
+        double size = store.getTextSize();
+        columns.setStyle(size > 0 ? String.format(java.util.Locale.ROOT, "-fx-font-size: %.1fpx;", size) : null);
+        lists.forEach(ListView::refresh);
     }
 
     /** Rebuilds the columns if the labels changed since they were built (edited in Preferences). */
@@ -427,10 +502,16 @@ public class AnnotationBoard extends BorderPane {
         list.setCellFactory(l -> new CardCell());
         list.setPlaceholder(new Label(Messages.get("annotationBoard.emptyColumn")));
         list.getStyleClass().add("annotation-board-column");
+        list.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        // Shortcut+click and Shift+click add to the selection, across columns too.
+        list.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_PRESSED,
+                e -> extending = e.isShortcutDown() || e.isShiftDown());
+        list.addEventFilter(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> extending = false);
         list.getSelectionModel().selectedItemProperty().addListener((o, was, now) -> {
             if (syncing || now == null) return;
-            selectOnly(list);
-            go(now.entry());
+            if (!extending) selectOnly(list);
+            // the view follows one picked comment, not each one added to a selection.
+            if (selected().size() == 1) go(now.entry());
         });
         list.setOnMouseClicked(e -> {
             BoardModel.Card card = list.getSelectionModel().getSelectedItem();
@@ -445,14 +526,16 @@ public class AnnotationBoard extends BorderPane {
                 e.consume();
             }
             if (card == null || list.getEditingIndex() >= 0) return;
+            List<BoardModel.Card> chosen = selected();
             if (e.getCode() == KeyCode.ENTER) openNote(card.entry());
             else if (e.getCode() == KeyCode.F2 && canEdit(card)) edit(list, list.getSelectionModel().getSelectedIndex());
-            else if (e.getCode() == KeyCode.DELETE && canEdit(card)) delete(card);
+            else if (e.getCode() == KeyCode.DELETE) delete(chosen);
+            else if (e.isShortcutDown() && e.getCode() == KeyCode.A) selectAll();
             else if (e.isShortcutDown() && e.getCode().isDigitKey()) {
-                // Shortcut+1..9 files the card under the nth label.
+                // Shortcut+1..9 files the selected cards under the nth label.
                 int n = e.getCode().getCode() - KeyCode.DIGIT1.getCode();
                 List<ColorLabels.Label> named = labels.labels();
-                if (n >= 0 && n < named.size()) refile(card, named.get(n));
+                if (n >= 0 && n < named.size()) refile(chosen, named.get(n));
             } else return;
             e.consume();
         });
@@ -464,6 +547,24 @@ public class AnnotationBoard extends BorderPane {
         box.setPrefWidth(COLUMN_WIDTH);
         box.setMinWidth(COLUMN_WIDTH);
         return box;
+    }
+
+    /** The selected cards, column by column (a selection may span columns). */
+    List<BoardModel.Card> selected() {
+        List<BoardModel.Card> cards = new ArrayList<>();
+        for (ListView<BoardModel.Card> list : lists) cards.addAll(list.getSelectionModel().getSelectedItems());
+        return cards;
+    }
+
+    /** Selects every card on the board. */
+    void selectAll() {
+        boolean was = syncing;
+        syncing = true;
+        try {
+            lists.forEach(list -> list.getSelectionModel().selectAll());
+        } finally {
+            syncing = was;
+        }
     }
 
     /** Clears the selection of every other column. */
@@ -497,11 +598,26 @@ public class AnnotationBoard extends BorderPane {
 
     /** Files a card under a label: its colour becomes the label's, one undoable edit. */
     void refile(BoardModel.Card card, ColorLabels.Label label) {
-        MarkupAnnotation annotation = card.entry().annotation();
-        if (!canEdit(card) || !AnnotationProperties.hasColor(annotation)) return;
-        java.awt.Color now = annotation.getColor();
-        if (now != null && (now.getRGB() & 0xFFFFFF) == (label.color().getRGB() & 0xFFFFFF)) return;
-        view.applyAnnotationProperties(annotation, AnnotationProperties.ofColor(label.color()));
+        refile(List.of(card), label);
+    }
+
+    /**
+     * Files cards under a label, one undoable edit for them all.  Cards that can't be edited, have no
+     * colour, or already have the label's colour are left as they are.
+     *
+     * @return how many changed
+     */
+    int refile(List<BoardModel.Card> cards, ColorLabels.Label label) {
+        List<MarkupAnnotation> changing = new ArrayList<>();
+        for (BoardModel.Card card : cards) {
+            MarkupAnnotation annotation = card.entry().annotation();
+            if (!canEdit(card) || !AnnotationProperties.hasColor(annotation)) continue;
+            java.awt.Color now = annotation.getColor();
+            if (now != null && (now.getRGB() & 0xFFFFFF) == (label.color().getRGB() & 0xFFFFFF)) continue;
+            changing.add(annotation);
+        }
+        if (changing.isEmpty()) return 0;
+        return view.applyAnnotationProperties(changing, AnnotationProperties.ofColor(label.color()));
     }
 
     /**
@@ -517,10 +633,28 @@ public class AnnotationBoard extends BorderPane {
         view.deleteAnnotation(card.entry().annotation());
     }
 
+    /** Deletes the cards' comments, one undoable edit; ones that can't be edited are kept. */
+    int delete(List<BoardModel.Card> cards) {
+        List<MarkupAnnotation> deleting = cards.stream().filter(this::canEdit).map(c -> c.entry().annotation()).toList();
+        return deleting.isEmpty() ? 0 : view.deleteAnnotations(deleting);
+    }
+
     private void togglePrivate(BoardModel.Card card) {
         MarkupAnnotation annotation = card.entry().annotation();
         if (!canEdit(card) || !AnnotationSummary.canBePrivate(annotation)) return;
         view.setAnnotationsPrivate(AnnotationSummary.withReplies(annotation), !annotation.getFlagPrivateContents());
+    }
+
+    /** Makes the cards' comments, with their replies, private or public: one undoable edit. */
+    int setPrivate(List<BoardModel.Card> cards, boolean priv) {
+        List<MarkupAnnotation> changing = new ArrayList<>();
+        for (BoardModel.Card card : cards) {
+            MarkupAnnotation annotation = card.entry().annotation();
+            if (canEdit(card) && AnnotationSummary.canBePrivate(annotation)) {
+                changing.addAll(AnnotationSummary.withReplies(annotation));
+            }
+        }
+        return changing.isEmpty() ? 0 : view.setAnnotationsPrivate(changing, priv);
     }
 
     /** Makes a label of a card's colour, asking its name. */
@@ -543,13 +677,11 @@ public class AnnotationBoard extends BorderPane {
     /** Lets cards be dropped on a label's column, which files them under it. */
     private void acceptDrops(ListView<BoardModel.Card> list, ColorLabels.Label label) {
         list.setOnDragOver(e -> {
-            if (dragged != null && canEdit(dragged) && ColorLabels.match(List.of(label), dragged.entry().color()) == null) {
-                e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
-            }
+            if (movesTo(label)) e.acceptTransferModes(javafx.scene.input.TransferMode.MOVE);
             e.consume();
         });
         list.setOnDragEntered(e -> {
-            if (dragged != null && ColorLabels.match(List.of(label), dragged.entry().color()) == null) {
+            if (movesTo(label)) {
                 list.setStyle("-fx-border-color: " + web(label.color()) + "; -fx-border-width: 2;");
             }
         });
@@ -560,6 +692,65 @@ public class AnnotationBoard extends BorderPane {
             e.setDropCompleted(done);
             e.consume();
         });
+    }
+
+    /** Whether dropping the dragged cards on a label's column would re-file any of them. */
+    private boolean movesTo(ColorLabels.Label label) {
+        if (dragged == null) return false;
+        for (BoardModel.Card card : dragged) {
+            if (canEdit(card) && ColorLabels.match(List.of(label), card.entry().color()) == null) return true;
+        }
+        return false;
+    }
+
+    /** The menu for several selected cards: what applies to them all. */
+    private ContextMenu bulkMenu(List<BoardModel.Card> cards) {
+        List<BoardModel.Card> editable = cards.stream().filter(this::canEdit).toList();
+        ContextMenu menu = new ContextMenu();
+        MenuItem heading = new MenuItem(Messages.format("annotationBoard.selected", cards.size()));
+        heading.setDisable(true);
+        menu.getItems().addAll(heading, new SeparatorMenuItem());
+
+        Menu file = new Menu(Messages.get("annotationBoard.label"));
+        List<ColorLabels.Label> named = labels.labels();
+        for (int i = 0; i < named.size(); i++) {
+            ColorLabels.Label label = named.get(i);
+            MenuItem item = new MenuItem(label.name().isEmpty() ? web(label.color()) : label.name());
+            Rectangle box = new Rectangle(12, 12, fx(label.color()));
+            box.setStroke(Color.gray(0, 0.35));
+            item.setGraphic(box);
+            if (i < 9) item.setAccelerator(new javafx.scene.input.KeyCodeCombination(KeyCode.getKeyCode(Integer.toString(i + 1)),
+                    javafx.scene.input.KeyCombination.SHORTCUT_DOWN));
+            item.setDisable(editable.stream().noneMatch(c -> AnnotationProperties.hasColor(c.entry().annotation())));
+            item.setOnAction(e -> refile(cards, label));
+            file.getItems().add(item);
+        }
+        if (!file.getItems().isEmpty()) menu.getItems().add(file);
+        if (AnnotationSummary.privacyEnabled()) {
+            List<BoardModel.Card> canBe = editable.stream()
+                    .filter(c -> AnnotationSummary.canBePrivate(c.entry().annotation())).toList();
+            MenuItem makePrivate = new MenuItem(Messages.get("annotationBoard.makeAllPrivate"));
+            makePrivate.setDisable(canBe.stream().allMatch(c -> c.entry().annotation().getFlagPrivateContents()));
+            makePrivate.setOnAction(e -> setPrivate(cards, true));
+            MenuItem makePublic = new MenuItem(Messages.get("annotationBoard.makeAllPublic"));
+            makePublic.setDisable(canBe.stream().noneMatch(c -> c.entry().annotation().getFlagPrivateContents()));
+            makePublic.setOnAction(e -> setPrivate(cards, false));
+            menu.getItems().addAll(makePrivate, makePublic);
+        }
+        MenuItem copy = new MenuItem(Messages.get("commentsPanel.copyText"));
+        String text = cards.stream().map(c -> !c.entry().contents().isEmpty() ? c.entry().contents() : c.quote())
+                .filter(s -> !s.isEmpty()).collect(java.util.stream.Collectors.joining("\n\n"));
+        copy.setDisable(text.isEmpty());
+        copy.setOnAction(e -> {
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(text);
+            javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+        });
+        MenuItem delete = new MenuItem(Messages.format("annotationBoard.deleteSelected", editable.size()));
+        delete.setDisable(editable.isEmpty());
+        delete.setOnAction(e -> delete(cards));
+        menu.getItems().addAll(copy, new SeparatorMenuItem(), delete);
+        return menu;
     }
 
     private ContextMenu menu(BoardModel.Card card) {
@@ -647,7 +838,7 @@ public class AnnotationBoard extends BorderPane {
                     syncing = true;
                     try {
                         selectOnly(list);
-                        list.getSelectionModel().select(row);
+                        list.getSelectionModel().clearAndSelect(row);
                     } finally {
                         syncing = false;
                     }
@@ -696,7 +887,9 @@ public class AnnotationBoard extends BorderPane {
             setOnDragDetected(e -> {
                 BoardModel.Card card = getItem();
                 if (card == null || isEditing() || !canEdit(card)) return;
-                dragged = card;
+                // a picked card brings the rest of the selection with it.
+                List<BoardModel.Card> chosen = selected();
+                dragged = chosen.size() > 1 && chosen.contains(card) ? chosen : List.of(card);
                 javafx.scene.input.Dragboard board = startDragAndDrop(javafx.scene.input.TransferMode.MOVE);
                 javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
                 content.putString(card.entry().contents());
@@ -707,8 +900,13 @@ public class AnnotationBoard extends BorderPane {
             setOnDragDone(e -> dragged = null);
             setOnContextMenuRequested(e -> {
                 if (getItem() == null) return;
-                getListView().getSelectionModel().select(getIndex());
-                menu(getItem()).show(this, e.getScreenX(), e.getScreenY());
+                // on a card outside the selection, the menu is that card's alone.
+                if (!getListView().getSelectionModel().getSelectedItems().contains(getItem())) {
+                    selectOnly(getListView());
+                    getListView().getSelectionModel().clearAndSelect(getIndex());
+                }
+                List<BoardModel.Card> chosen = selected();
+                (chosen.size() > 1 ? bulkMenu(chosen) : menu(getItem())).show(this, e.getScreenX(), e.getScreenY());
                 e.consume();
             });
         }
@@ -762,7 +960,10 @@ public class AnnotationBoard extends BorderPane {
                 return;
             }
             setGraphic(null);
-            if (empty || card == null) return;
+            if (empty || card == null) {
+                setTooltip(null);
+                return;
+            }
             AnnotationSummary.Entry entry = card.entry();
 
             Label type = new Label(entry.type());
@@ -796,6 +997,33 @@ public class AnnotationBoard extends BorderPane {
             heading.setAlignment(Pos.CENTER_LEFT);
 
             VBox body = new VBox(3, heading);
+            if (store.isCompact()) {
+                // one line: the comment, or the text it marks; the rest is a hover away.
+                String quote = cut(card.quote(), QUOTE_MAX);
+                String contents = cut(entry.contents(), CONTENTS_MAX);
+                String line = !contents.isEmpty() ? contents : quote.isEmpty() ? "" : "“" + quote + "”";
+                if (card.replies() > 0) {
+                    Label replies = new Label(Messages.format("annotationBoard.replies", card.replies()));
+                    replies.getStyleClass().add("dim-label");
+                    replies.setMinWidth(Region.USE_PREF_SIZE);
+                    heading.getChildren().add(heading.getChildren().indexOf(spacer), replies);
+                }
+                if (!line.isEmpty()) {
+                    Label text = new Label(line);
+                    text.setWrapText(false);
+                    text.setTextOverrun(javafx.scene.control.OverrunStyle.ELLIPSIS);
+                    text.setMinWidth(0);
+                    body.getChildren().add(text);
+                }
+                StringBuilder full = new StringBuilder();
+                if (!entry.author().isEmpty()) full.append(entry.author()).append('\n');
+                if (!quote.isEmpty()) full.append('“').append(quote).append("”\n");
+                if (!contents.isEmpty() && !contents.equals(quote)) full.append(contents);
+                setTooltip(full.length() == 0 ? null : new javafx.scene.control.Tooltip(full.toString().strip()));
+                finish(body, entry);
+                return;
+            }
+            setTooltip(null);
             if (!entry.author().isEmpty()) {
                 Label author = new Label(entry.author());
                 author.getStyleClass().add("dim-label");
@@ -821,10 +1049,15 @@ public class AnnotationBoard extends BorderPane {
                 replies.getStyleClass().add("dim-label");
                 body.getChildren().add(replies);
             }
+            finish(body, entry);
+        }
+
+        /** The colour edge and width every card has, compact or not. */
+        private void finish(VBox body, AnnotationSummary.Entry entry) {
             java.awt.Color c = entry.color();
             String edge = c != null ? String.format("#%06x", c.getRGB() & 0xFFFFFF) : "transparent";
             body.setStyle("-fx-border-color: transparent transparent transparent " + edge
-                    + "; -fx-border-width: 0 0 0 4; -fx-padding: 2 0 4 8;");
+                    + "; -fx-border-width: 0 0 0 4; -fx-padding: " + (store.isCompact() ? "1 0 1 8" : "2 0 4 8") + ";");
             body.setMinWidth(0);
             body.prefWidthProperty().bind(widthProperty().subtract(20));
             body.maxWidthProperty().bind(widthProperty().subtract(20));

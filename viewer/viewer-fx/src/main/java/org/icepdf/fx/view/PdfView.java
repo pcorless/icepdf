@@ -846,6 +846,58 @@ public class PdfView extends Control {
     }
 
     /**
+     * Deletes annotations (and their popups) as one undoable edit; they may be on any page, shown or
+     * not.  Locked ones, and ones not on a page of this document, are skipped.
+     *
+     * @return how many were deleted
+     */
+    public int deleteAnnotations(Collection<? extends Annotation> annotations) {
+        if (annotations == null || !(getSkin() instanceof PdfViewSkin skin)) return 0;
+        List<Annotation> deleting = new ArrayList<>();
+        for (Annotation annotation : new LinkedHashSet<>(annotations)) {
+            if (annotation != null && skin.annotations().canEdit(annotation)) deleting.add(annotation);
+        }
+        int[] pages = skin.annotations().pageIndexesOf(deleting);
+        List<AnnotationEdits.Edit> edits = new ArrayList<>();
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] < 0) continue;
+            Page page = getDocument().getPageTree().getPage(pages[i]);
+            edits.add(AnnotationEdits.delete(skin.annotationLocker(), page, pages[i], deleting.get(i)));
+        }
+        if (edits.isEmpty()) return 0;
+        recordEdit(edits.size() == 1 ? edits.get(0) : AnnotationEdits.group(edits, null, null));
+        if (deleting.contains(getSelectedAnnotation())) clearAnnotationSelection();
+        return edits.size();
+    }
+
+    /**
+     * Changes the same properties of several annotations as one undoable edit (a colour, say); they
+     * may be on any page, shown or not.  Annotations skipped as by {@link #applyAnnotationProperties}.
+     *
+     * @return how many were changed
+     */
+    public int applyAnnotationProperties(Collection<? extends Annotation> annotations, AnnotationProperties change) {
+        if (annotations == null || change == null || !(getSkin() instanceof PdfViewSkin skin)) return 0;
+        List<Annotation> changing = new ArrayList<>();
+        for (Annotation annotation : new LinkedHashSet<>(annotations)) {
+            if (AnnotationProperties.supports(annotation) && skin.annotations().canEdit(annotation)) {
+                changing.add(annotation);
+            }
+        }
+        int[] pages = skin.annotations().pageIndexesOf(changing);
+        List<AnnotationEdits.Edit> edits = new ArrayList<>();
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] < 0) continue;
+            Page page = getDocument().getPageTree().getPage(pages[i]);
+            edits.add(AnnotationEdits.properties(skin.annotationLocker(), page, pages[i], changing.get(i), change,
+                    skin.toPageSpace(page)));
+        }
+        if (edits.isEmpty()) return 0;
+        recordEdit(edits.size() == 1 ? edits.get(0) : AnnotationEdits.group(edits, null, null));
+        return edits.size();
+    }
+
+    /**
      * Builds the context menu shown when the user right-clicks an editable annotation (it is selected
      * first).  Return null for no menu.  With no factory set right-click does nothing.
      */
