@@ -24,6 +24,8 @@ import java.util.ResourceBundle;
 
 import static org.icepdf.ri.common.views.annotations.signatures.SignatureValidationStatus.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,6 +46,8 @@ public class SignatureValidationStatusTest {
         when(v.isCertificateChainTrusted()).thenReturn(trusted);
         when(v.isRevocation()).thenReturn(revoked);
         when(v.isSignaturesCoverDocumentLength()).thenReturn(coversFile);
+        when(v.isRevocationChecked()).thenReturn(true);
+        when(v.isValidated()).thenReturn(true);
         return v;
     }
 
@@ -65,6 +69,28 @@ public class SignatureValidationStatusTest {
         assertEquals(DocumentState.SUBSEQUENT_CHANGES, documentStateOf(trusted));
         SignatureValidator untrusted = validator(false, true, false, false, false);
         assertEquals(Validity.UNKNOWN, validityOf(untrusted), "was a red cross");
+    }
+
+    @DisplayName("GH-643: a trusted signer whose revocation went unchecked is valid, identity 'unchecked'")
+    @Test
+    void revocationUnchecked() {
+        SignatureValidator v = validator(false, false, true, false, true);
+        when(v.isRevocationChecked()).thenReturn(false);
+        assertEquals(Validity.VALID, validityOf(v));
+        assertEquals(Identity.UNCHECKED, identityOf(v));
+        assertTrue(canCheckOnline(v), "offer to check online");
+        when(v.isRevocationChecked()).thenReturn(true);
+        assertFalse(canCheckOnline(v));
+    }
+
+    @DisplayName("the identity line for every identity state has a message")
+    @Test
+    void identityMessages() {
+        ResourceBundle bundle = ResourceBundle.getBundle("org.icepdf.ri.resources.MessageBundle", Locale.ROOT);
+        for (Identity identity : Identity.values()) {
+            bundle.getString("viewer.annotation.signature.validation.common.identity." + identity.key + ".label");
+            bundle.getString("viewer.utilityPane.signatures.tab.certTree.signature.identity." + identity.key + ".label");
+        }
     }
 
     @DisplayName("an intact signature by an untrusted signer is unknown")

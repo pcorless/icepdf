@@ -63,6 +63,8 @@ public final class ViewerPreferences {
     public static final String FIT_MODE = "view.fit";
     public static final String ZOOM = "view.zoom";
     public static final String VERIFY_SIGNATURES = "signatures.verifyOnOpen";
+    /** Check certificate revocation online; defaults to the core's org.icepdf.core.signatures.online. */
+    public static final String SIGNATURES_ONLINE = "signatures.checkOnline";
     public static final String ANNOTATION_AUTHOR = "annotation.author";
     /** Prefix of a tool's colour for new annotations: {@code annotation.color.<tool>}, as {@code #rrggbb}. */
     public static final String TOOL_COLOR_PREFIX = "annotation.color.";

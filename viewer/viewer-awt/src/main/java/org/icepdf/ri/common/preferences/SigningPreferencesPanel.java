@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.preferences;
 
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.ri.common.SwingController;
 import org.icepdf.ri.util.ViewerPropertiesManager;
 
@@ -144,14 +145,35 @@ public class SigningPreferencesPanel extends JPanel {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         addGB(tsaPreferencesPanel, tsaUrlTextField, 1, 0, 1, 1);
 
+        // validation: whether checking a signature may go to the network for revocation status
+        JPanel validationPreferencesPanel = new JPanel(new GridBagLayout());
+        validationPreferencesPanel.setAlignmentY(JPanel.TOP_ALIGNMENT);
+        validationPreferencesPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED),
+                messageBundle.getString("viewer.dialog.viewerPreferences.section.signatures.validation.border.label"),
+                TitledBorder.LEFT,
+                TitledBorder.DEFAULT_POSITION));
+        JCheckBox onlineCheckBox = new JCheckBox(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.signatures.validation.online.label"),
+                preferences.getBoolean(ViewerPropertiesManager.PROPERTY_SIGNATURE_VALIDATION_ONLINE,
+                        SignatureValidationOptions.defaults().isOnline()));
+        onlineCheckBox.setToolTipText(messageBundle.getString(
+                "viewer.dialog.viewerPreferences.section.signatures.validation.online.tooltip"));
+        onlineCheckBox.addActionListener(e -> preferences.putBoolean(
+                ViewerPropertiesManager.PROPERTY_SIGNATURE_VALIDATION_ONLINE, onlineCheckBox.isSelected()));
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.weightx = 1.0;
+        constraints.fill = GridBagConstraints.NONE;
+        addGB(validationPreferencesPanel, onlineCheckBox, 0, 0, 1, 1);
+
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.fill = GridBagConstraints.BOTH;
         addGB(this, signaturePreferencesPanel, 0, 0, 1, 1);
         addGB(this, tsaPreferencesPanel, 0, 1, 1, 1);
+        addGB(this, validationPreferencesPanel, 0, 2, 1, 1);
 
         // little spacer
         constraints.weighty = 1.0;
-        addGB(this, new Label(" "), 0, 2, 1, 1);
+        addGB(this, new Label(" "), 0, 3, 1, 1);
     }
 
     private void updatePkcsPaths() {

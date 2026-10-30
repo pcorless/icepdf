@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x509.Extension;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 
@@ -38,6 +39,8 @@ import java.security.cert.*;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class that verifies CRLs for given X509 certificate. Extracts the CRL
@@ -49,49 +52,100 @@ import java.util.List;
  */
 public class CRLVerifier {
 
+    private static final Logger logger = Logger.getLogger(CRLVerifier.class.getName());
+
     /**
      * Extracts the CRL distribution points from the certificate (if available)
      * and checks the certificate revocation status against the CRLs coming from
      * the distribution points. Supports HTTP, HTTPS, FTP and LDAP based URLs.
+     * Uses the default {@link SignatureValidationOptions}; a list that can't be fetched throws.
      *
      * @param cert the certificate to be checked for revocation
-     * @throws CertificateVerificationException if the certificate is revoked
+     * @throws CertificateVerificationException if no list could be fetched
+     * @throws RevokedCertificateException      if the certificate is revoked
      */
     public static void verifyCRL(X509Certificate cert)
             throws CertificateVerificationException, RevokedCertificateException {
+        List<String> crlDistPoints;
         try {
-            List<String> crlDistPoints = getCrlDistributionPoints(cert);
-            for (String crlDP : crlDistPoints) {
-                X509CRL crl = downloadCRL(crlDP);
-                if (crl.isRevoked(cert)) {
-                    throw new RevokedCertificateException(
-                            "The certificate is revoked by CRL: " + crlDP,
-                            crl.getRevokedCertificate(cert).getRevocationDate());
-                }
+            crlDistPoints = getCrlDistributionPoints(cert);
+        } catch (IOException e) {
+            throw new CertificateVerificationException(
+                    "Can not verify CRL for certificate: " + cert.getSubjectX500Principal(), e);
+        }
+        if (crlDistPoints.isEmpty()) {
+            return;
+        }
+        RevocationStatus status = new RevocationStatus();
+        verifyCRL(cert, SignatureValidationOptions.defaults(), status);
+        if (!status.isComplete()) {
+            throw new CertificateVerificationException(
+                    "Can not verify CRL for certificate: " + status.getUnchecked());
+        }
+    }
+
+    /**
+     * Checks the certificate against the revocation lists its CRL distribution points name.  One
+     * list that downloads and doesn't name the certificate is enough; when none can be fetched, or
+     * the certificate names none, or the options are offline, the certificate is marked unchecked
+     * on the status.
+     *
+     * @param cert    the certificate to be checked for revocation
+     * @param options network settings
+     * @param status  records a certificate whose status couldn't be determined
+     * @throws RevokedCertificateException if a list revokes the certificate
+     */
+    public static void verifyCRL(X509Certificate cert, SignatureValidationOptions options, RevocationStatus status)
+            throws RevokedCertificateException {
+        if (!options.isOnline()) {
+            status.markUnchecked(cert, "offline");
+            return;
+        }
+        List<String> crlDistPoints;
+        try {
+            crlDistPoints = getCrlDistributionPoints(cert);
+        } catch (IOException e) {
+            logger.log(Level.FINE, "Could not read the CRL distribution points", e);
+            status.markUnchecked(cert, "unreadable CRL distribution points");
+            return;
+        }
+        if (crlDistPoints.isEmpty()) {
+            status.markUnchecked(cert, "no CRL distribution point");
+            return;
+        }
+        boolean checked = false;
+        String failure = null;
+        for (String crlDP : crlDistPoints) {
+            X509CRL crl;
+            try {
+                crl = downloadCRL(crlDP, options);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Could not fetch CRL " + crlDP + ": " + e.getMessage());
+                failure = crlDP + ": " + e.getMessage();
+                continue;
             }
-        } catch (RevokedCertificateException revoked) {
-            throw revoked;
-        } catch (Exception ex) {
-            if (ex instanceof CertificateVerificationException) {
-                throw (CertificateVerificationException) ex;
-            } else {
-                throw new CertificateVerificationException(
-                        "Can not verify CRL for certificate: " +
-                                cert.getSubjectX500Principal(), ex);
+            if (crl.isRevoked(cert)) {
+                throw new RevokedCertificateException(
+                        "The certificate is revoked by CRL: " + crlDP,
+                        crl.getRevokedCertificate(cert).getRevocationDate());
             }
+            checked = true;
+        }
+        if (!checked) {
+            status.markUnchecked(cert, "CRL not available (" + failure + ")");
         }
     }
 
     /**
      * Downloads CRL from given URL. Supports https and ldap based URLs.
      */
-    private static X509CRL downloadCRL(String crlURL) throws IOException,
+    private static X509CRL downloadCRL(String crlURL, SignatureValidationOptions options) throws IOException,
             CertificateException, CRLException,
             CertificateVerificationException, NamingException {
         if (crlURL.startsWith("http://") || crlURL.startsWith("https://")) {
-            return downloadCRLFromWeb(crlURL);
+            return downloadCRLFromWeb(crlURL, options);
         } else if (crlURL.startsWith("ldap://")) {
-            return downloadCRLFromLDAP(crlURL);
+            return downloadCRLFromLDAP(crlURL, options);
         } else {
             throw new CertificateVerificationException(
                     "Can not download CRL from certificate " +
@@ -103,18 +157,24 @@ public class CRLVerifier {
      * Downloads a CRL from given LDAP url, e.g.
      * ldap://ldap.infonotary.com/dc=identity-ca,dc=infonotary,dc=com
      */
-    private static X509CRL downloadCRLFromLDAP(String ldapURL)
+    private static X509CRL downloadCRLFromLDAP(String ldapURL, SignatureValidationOptions options)
             throws CertificateException, NamingException, CRLException,
             CertificateVerificationException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY,
                 "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, ldapURL);
+        NetworkSupport.ldapTimeouts(env, options);
 
         DirContext ctx = new InitialDirContext(env);
-        Attributes avals = ctx.getAttributes("");
-        Attribute aval = avals.get("certificateRevocationList;binary");
-        byte[] val = (byte[]) aval.get();
+        byte[] val;
+        try {
+            Attributes avals = ctx.getAttributes("");
+            Attribute aval = avals.get("certificateRevocationList;binary");
+            val = aval != null ? (byte[]) aval.get() : null;
+        } finally {
+            ctx.close();
+        }
         if ((val == null) || (val.length == 0)) {
             throw new CertificateVerificationException(
                     "Can not download CRL from: " + ldapURL);
@@ -129,11 +189,11 @@ public class CRLVerifier {
      * Downloads a CRL from given HTTP/HTTPS/FTP URL, e.g.
      * <a href="http://crl.infonotary.com/crl/identity-ca.crl">...</a>
      */
-    private static X509CRL downloadCRLFromWeb(String crlURL)
+    private static X509CRL downloadCRLFromWeb(String crlURL, SignatureValidationOptions options)
             throws IOException, CertificateException,
             CRLException {
         URL url = new URL(crlURL);
-        try (InputStream crlStream = url.openStream()) {
+        try (InputStream crlStream = NetworkSupport.open(url, options).getInputStream()) {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
             return (X509CRL) cf.generateCRL(crlStream);
         }

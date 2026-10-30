@@ -45,6 +45,8 @@ import java.util.List;
  * @param identityTrusted     the signer's certificate chains to a trusted root (the JRE's cacerts)
  * @param selfSigned          the signer's certificate is self-signed
  * @param revoked             the certificate is revoked
+ * @param revocationChecked   whether the certificate's revocation status was found out; false when
+ *                            checked offline or a revocation server couldn't be reached
  * @param certificateDateValid the certificate was valid at the signing time
  * @param chain               the certificate chain, signer first; empty if unsigned
  * @param problem             why the signature couldn't be checked ({@link Verdict#ERROR}), else null
@@ -55,7 +57,7 @@ public record SignatureStatus(SignatureWidgetAnnotation widget, int pageIndex, S
                               boolean timestamped, boolean certification,
                               boolean signedDataModified, boolean modifiedAfterSigning,
                               boolean identityTrusted, boolean selfSigned, boolean revoked,
-                              boolean certificateDateValid, List<X509Certificate> chain, String problem) {
+                              boolean revocationChecked, boolean certificateDateValid, List<X509Certificate> chain, String problem) {
 
     /** Overall result, as Acrobat's signature panel summarises it. */
     public enum Verdict {
@@ -68,7 +70,9 @@ public record SignatureStatus(SignatureWidgetAnnotation widget, int pageIndex, S
         /** An empty signature field, waiting to be signed. */
         UNSIGNED,
         /** The signature couldn't be checked (malformed, unsupported). */
-        ERROR
+        ERROR,
+        /** Signed, and the check is still running. */
+        PENDING
     }
 
     public SignatureStatus {
@@ -77,6 +81,26 @@ public record SignatureStatus(SignatureWidgetAnnotation widget, int pageIndex, S
 
     public boolean isSigned() {
         return verdict != Verdict.UNSIGNED;
+    }
+
+    /** This status while its signature is checked again. */
+    public SignatureStatus asPending() {
+        return new SignatureStatus(widget, pageIndex, fieldName, Verdict.PENDING, signerName, signerEmail,
+                signerOrganization, reason, location, contact, signingTime, timestamped, certification,
+                false, false, false, false, false, false, false, chain, null);
+    }
+
+    /** True while the signature is being checked. */
+    public boolean isPending() {
+        return verdict == Verdict.PENDING;
+    }
+
+    /**
+     * The signer's identity is trusted but whether the certificate was revoked couldn't be found out:
+     * checking online may tell more.
+     */
+    public boolean isRevocationUnchecked() {
+        return (verdict == Verdict.VALID || verdict == Verdict.UNKNOWN) && !revocationChecked && !selfSigned;
     }
 
     /** One sentence for the verdict, e.g. for a tooltip or a list cell. */
@@ -89,6 +113,7 @@ public record SignatureStatus(SignatureWidgetAnnotation widget, int pageIndex, S
                     : Messages.get("signatureStatus.invalid.altered");
             case UNSIGNED -> Messages.get("signatureStatus.unsigned");
             case ERROR -> problem != null ? Messages.format("signatureStatus.error.problem", problem) : Messages.get("signatureStatus.error");
+            case PENDING -> Messages.get("signatureStatus.pending");
         };
     }
 }

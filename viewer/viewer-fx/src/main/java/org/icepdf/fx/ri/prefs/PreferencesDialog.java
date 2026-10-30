@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.ri.prefs;
 
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.fx.i18n.Messages;
 
 import org.icepdf.fx.fonts.FontSettings;
@@ -89,8 +90,17 @@ public class PreferencesDialog extends Dialog<ButtonType> {
         general.addRow(2, label("preferences.zoom", fitMode), fitMode);
         general.addRow(3, label("preferences.zoomPercent", zoom), zoom);
         general.add(sidePanel, 0, 4, 2, 1);
-        general.add(verify, 0, 5, 2, 1);
-        general.add(rememberFolder, 0, 6, 2, 1);
+        general.add(rememberFolder, 0, 5, 2, 1);
+
+        // Signatures: when they are checked, and whether checking may use the network.
+        CheckBox online = new CheckBox(Messages.get("preferences.signatures.online"));
+        online.setSelected(preferences.getBoolean(ViewerPreferences.SIGNATURES_ONLINE,
+                SignatureValidationOptions.defaults().isOnline()));
+        Label onlineHelp = help("preferences.signatures.onlineHelp");
+        GridPane signatures = grid();
+        signatures.add(verify, 0, 0, 2, 1);
+        signatures.add(online, 0, 1, 2, 1);
+        signatures.add(onlineHelp, 0, 2, 2, 1);
 
         // Annotations
         TextField author = new TextField(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
@@ -156,6 +166,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
 
         TabPane tabs = new TabPane(new Tab(Messages.get("preferences.tab.general"), general), new Tab(Messages.get("preferences.tab.annotations"), annotations),
                 new Tab(Messages.get("preferences.tab.search"), search), new Tab(Messages.get("preferences.tab.imaging"), imaging),
+                new Tab(Messages.get("preferences.tab.signatures"), signatures),
                 new Tab(Messages.get("preferences.tab.performance"), performance),
                 new Tab(Messages.get("preferences.tab.fonts"), fontsTab()));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -171,6 +182,7 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 preferences.putDouble(ViewerPreferences.ZOOM, zoom.getValue() / 100.0);
                 preferences.putBoolean(ViewerPreferences.SIDE_PANEL_VISIBLE, sidePanel.isSelected());
                 preferences.putBoolean(ViewerPreferences.VERIFY_SIGNATURES, verify.isSelected());
+                preferences.putBoolean(ViewerPreferences.SIGNATURES_ONLINE, online.isSelected());
                 preferences.putBoolean(ViewerPreferences.REMEMBER_LAST_DIRECTORY, rememberFolder.isSelected());
                 preferences.put(ViewerPreferences.ANNOTATION_AUTHOR, author.getText().trim());
                 preferences.putBoolean(ViewerPreferences.PAINT_ANNOTATIONS, showAnnotations.isSelected());
@@ -188,6 +200,8 @@ public class PreferencesDialog extends Dialog<ButtonType> {
                 // what applies to the open view now; page display, zoom and the image reference type
                 // apply to the next document.
                 view.setVerifySignaturesOnOpen(verify.isSelected());
+                // checks the open document's signatures again if the setting changed.
+                view.setSignatureValidationOptions(view.getSignatureValidationOptions().withOnline(online.isSelected()));
                 view.setAnnotationAuthor(author.getText().trim());
                 view.setPaintAnnotations(showAnnotations.isSelected());
                 view.setHighlightFormFields(highlightFields.isSelected());

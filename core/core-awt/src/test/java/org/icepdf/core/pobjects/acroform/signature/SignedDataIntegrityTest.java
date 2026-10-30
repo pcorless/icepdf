@@ -39,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -106,6 +108,71 @@ public class SignedDataIntegrityTest {
         assertTrue(signedDataModified(DETACHED, false, Damage.SIGNATURE_FORGED));
         assertTrue(signedDataModified(SHA1, true, Damage.SIGNATURE_FORGED));
         assertTrue(signedDataModified(SHA1, false, Damage.SIGNATURE_FORGED));
+    }
+
+    @DisplayName("GH-643: ensureValidated runs one validation however many threads ask; validate runs another")
+    @Test
+    void ensureValidatedRunsOnce() throws Exception {
+        withValidator(DETACHED, true, validator -> {
+            int threads = 8;
+            java.util.concurrent.CountDownLatch start = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads);
+            try {
+                List<java.util.concurrent.Future<java.util.Date>> runs = new ArrayList<>();
+                for (int i = 0; i < threads; i++) {
+                    runs.add(pool.submit(() -> {
+                        start.await();
+                        validator.ensureValidated(SignatureValidationOptions.defaults().withOnline(false));
+                        return validator.getLastValidated();
+                    }));
+                }
+                start.countDown();
+                java.util.Date first = runs.get(0).get();
+                for (java.util.concurrent.Future<java.util.Date> run : runs) {
+                    // the same Date instance: one validation, whose result every caller saw
+                    assertSame(first, run.get());
+                }
+                assertTrue(validator.isValidated());
+                assertFalse(validator.isSignedDataModified());
+
+                validator.validate(SignatureValidationOptions.defaults().withOnline(false));
+                assertNotSame(first, validator.getLastValidated(), "validate always runs");
+            } finally {
+                pool.shutdownNow();
+            }
+        });
+    }
+
+    @DisplayName("GH-643: a self-signed signer's revocation is not reported as checked")
+    @Test
+    void selfSignedRevocationUnchecked() throws Exception {
+        withValidator(DETACHED, true, validator -> {
+            assertFalse(validator.isValidated());
+            validator.validate(SignatureValidationOptions.defaults().withOnline(false));
+            assertTrue(validator.isSelfSigned());
+            assertFalse(validator.isRevocationChecked());
+        });
+    }
+
+    private interface ValidatorWork {
+        void run(SignatureValidator validator) throws Exception;
+    }
+
+    private void withValidator(String subFilter, boolean signedAttributes, ValidatorWork work) throws Exception {
+        Path file = Files.createTempFile("signed-" + subFilter, ".pdf");
+        try {
+            Files.write(file, signedPdf(subFilter, signedAttributes, Damage.NONE));
+            Document document = new Document();
+            document.setFile(file.toString());
+            try {
+                work.run(document.getCatalog().getInteractiveForm().getSignatureFields().get(0)
+                        .getSignatureValidator());
+            } finally {
+                document.dispose();
+            }
+        } finally {
+            Files.deleteIfExists(file);
+        }
     }
 
     private boolean signedDataModified(String subFilter, boolean signedAttributes, Damage damage) throws Exception {

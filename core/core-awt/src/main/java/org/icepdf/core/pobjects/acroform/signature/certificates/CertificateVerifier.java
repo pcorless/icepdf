@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.ocsp.OCSPException;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
@@ -82,6 +83,27 @@ public class CertificateVerifier {
                                                               Date signatureDate)
             throws CertificateVerificationException, GeneralSecurityException, SelfSignedVerificationException,
             RevokedCertificateException, OCSPException, IOException, URISyntaxException {
+        return verifyCertificate(signerCert, additionalCerts, verifySelfSignedCert, signatureDate,
+                SignatureValidationOptions.defaults(), new RevocationStatus());
+    }
+
+    /**
+     * As {@link #verifyCertificate(X509Certificate, Collection, boolean, Date)}, using the network as
+     * the options allow - offline, no issuer certificates are downloaded and no revocation status is
+     * fetched - and recording on the status every certificate whose revocation status couldn't be
+     * determined.  Not knowing a certificate's revocation status doesn't fail the chain.
+     *
+     * @param options network settings
+     * @param status  records certificates whose revocation status couldn't be determined
+     */
+    public static PKIXCertPathBuilderResult verifyCertificate(X509Certificate signerCert,
+                                                              Collection<X509Certificate> additionalCerts,
+                                                              boolean verifySelfSignedCert,
+                                                              Date signatureDate,
+                                                              SignatureValidationOptions options,
+                                                              RevocationStatus status)
+            throws CertificateVerificationException, GeneralSecurityException, SelfSignedVerificationException,
+            RevokedCertificateException, OCSPException, IOException, URISyntaxException {
         try {
             // Check for self-signed root certificate
             if (verifySelfSignedCert && CertificateUtils.isSelfSigned(signerCert)) {
@@ -94,11 +116,11 @@ public class CertificateVerifier {
             Set<X509Certificate> certsToTrySet = new HashSet<>();
             certsToTrySet.add(signerCert);
             certsToTrySet.addAll(additionalCerts);
-            while (!certsToTrySet.isEmpty()) {
+            while (options.isOnline() && !certsToTrySet.isEmpty()) {
                 Set<X509Certificate> nextCertsToTrySet = new HashSet<>();
                 for (X509Certificate tryCert : certsToTrySet) {
                     Set<X509Certificate> downloadedExtraCertificatesSet =
-                            CertificateVerifier.downloadExtraCertificates(tryCert);
+                            CertificateVerifier.downloadExtraCertificates(tryCert, options);
                     for (X509Certificate downloadedCertificate : downloadedExtraCertificatesSet) {
                         if (!certSet.contains(downloadedCertificate)) {
                             nextCertsToTrySet.add(downloadedCertificate);
@@ -129,7 +151,7 @@ public class CertificateVerifier {
                     verifyCertificate(signerCert, trustedRootCerts, intermediateCerts);
 
             // Check whether the certificate is revoked by the CRL given in its CRL distribution point extension
-            RevocationsVerifier.verifyRevocations(signerCert, certSet, signatureDate);
+            RevocationsVerifier.verifyRevocations(signerCert, certSet, signatureDate, options, status);
 
             // The chain is built and verified. Return it as a result
             return verifiedCertChain;
@@ -197,7 +219,23 @@ public class CertificateVerifier {
      * @return a certificate set, never null.
      */
     public static Set<X509Certificate> downloadExtraCertificates(X509Extension x509Extension) {
+        return downloadExtraCertificates(x509Extension, SignatureValidationOptions.defaults());
+    }
+
+    /**
+     * As {@link #downloadExtraCertificates(X509Extension)}, with the options' network timeouts;
+     * offline, nothing is downloaded.
+     *
+     * @param x509Extension an X509 object that can have extensions.
+     * @param options       network settings
+     * @return a certificate set, never null.
+     */
+    public static Set<X509Certificate> downloadExtraCertificates(X509Extension x509Extension,
+                                                                 SignatureValidationOptions options) {
         Set<X509Certificate> resultSet = new HashSet<>();
+        if (!options.isOnline()) {
+            return resultSet;
+        }
         byte[] authorityExtensionValue =
                 x509Extension.getExtensionValue(org.bouncycastle.asn1.x509.Extension.authorityInfoAccess.getId());
         if (authorityExtensionValue == null) {
@@ -227,7 +265,7 @@ public class CertificateVerifier {
             ASN1OctetString uri = (ASN1OctetString) location.getBaseObject();
             String urlString = new String(uri.getOctets());
             logger.log(Level.FINE, () -> "CA issuers URL: " + urlString);
-            try (InputStream in = openURL(urlString)) {
+            try (InputStream in = openURL(urlString, options)) {
                 CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
                 Collection<? extends Certificate> altCerts = certFactory.generateCertificates(in);
                 altCerts.forEach(altCert -> resultSet.add((X509Certificate) altCert));
@@ -247,13 +285,14 @@ public class CertificateVerifier {
      * @param urlString url string
      * @author Tilman Hausherr from PDFBox SigUtils
      */
-    private static InputStream openURL(String urlString) throws IOException, URISyntaxException {
+    private static InputStream openURL(String urlString, SignatureValidationOptions options)
+            throws IOException, URISyntaxException {
         URL url = new URI(urlString).toURL();
         if (!urlString.startsWith("http")) {
             // so that ftp is still supported
-            return url.openStream();
+            return NetworkSupport.open(url, options).getInputStream();
         }
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        HttpURLConnection con = (HttpURLConnection) NetworkSupport.open(url, options);
         int responseCode = con.getResponseCode();
         logger.log(Level.FINER, "URL response: " + responseCode + " " + con.getResponseMessage());
         if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP ||
@@ -267,7 +306,7 @@ public class CertificateVerifier {
                 // change this code if you want to be more flexible (but think about security!)
                 logger.log(Level.FINER, () -> "redirection to " + location + " followed");
                 con.disconnect();
-                con = (HttpURLConnection) new URI(location).toURL().openConnection();
+                con = (HttpURLConnection) NetworkSupport.open(new URI(location).toURL(), options);
             } else {
                 logger.log(Level.FINER, () -> "redirection to " + location + " ignored");
             }

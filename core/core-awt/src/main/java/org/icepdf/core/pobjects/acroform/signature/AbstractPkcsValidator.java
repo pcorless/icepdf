@@ -28,6 +28,7 @@ import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
 import org.icepdf.core.pobjects.acroform.signature.certificates.CertificateVerifier;
+import org.icepdf.core.pobjects.acroform.signature.certificates.RevocationStatus;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
@@ -91,20 +92,27 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     protected TimeStampToken timeStampToken;
     protected Date signingTime;
 
-    // validity checks.
-    private boolean isSignedDataModified = true;
-    private boolean isDocumentDataModified;
+    // validity checks.  Written under validate()'s lock, read from any thread: volatile so a reader
+    // on another thread sees a finished validation's results.
+    private volatile boolean isSignedDataModified = true;
+    private volatile boolean isDocumentDataModified;
     // null until something answers the question: either InteractiveForm priming it across every
     // signature, or this validator working it out from its own byte range.  See the getter.
-    private Boolean isSignaturesCoverDocumentLength;
-    private boolean isCertificateChainTrusted;
-    private boolean isCertificateDateValid = true;
-    private boolean isRevocation;
-    private boolean isSelfSigned;
-    private boolean isSignerTimeValid;
-    private boolean isEmbeddedTimeStamp;
+    private volatile Boolean isSignaturesCoverDocumentLength;
+    private volatile boolean isCertificateChainTrusted;
+    private volatile boolean isCertificateDateValid = true;
+    private volatile boolean isRevocation;
+    private volatile boolean isRevocationChecked;
+    private volatile boolean isSelfSigned;
+    private volatile boolean isSignerTimeValid;
+    private volatile boolean isEmbeddedTimeStamp;
     // last time validate call was made.
-    private Date lastVerified;
+    private volatile Date lastVerified;
+    // a validation has run to its end, and how it failed if it did.
+    private volatile boolean validated;
+    private volatile SignatureIntegrityException validationFailure;
+    // network settings of the validation in progress.
+    private SignatureValidationOptions validationOptions = SignatureValidationOptions.defaults();
 
     protected boolean initialized;
 
@@ -116,11 +124,80 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
     }
 
     /**
-     * Runs a series of tests to try and determine the validity o
+     * Runs a series of tests to try and determine the validity of the signature, with the default
+     * {@link SignatureValidationOptions}.
      *
      * @throws SignatureIntegrityException signature could not be validated or invalidated.
      */
-    public abstract void validate() throws SignatureIntegrityException;
+    @Override
+    public void validate() throws SignatureIntegrityException {
+        validate(SignatureValidationOptions.defaults());
+    }
+
+    /**
+     * Runs a series of tests to try and determine the validity of the signature.  One validation
+     * runs at a time; a second caller waits for the first and then runs its own.
+     *
+     * @param options network settings for revocation and issuer-certificate fetching
+     * @throws SignatureIntegrityException signature could not be validated or invalidated.
+     */
+    @Override
+    public synchronized void validate(SignatureValidationOptions options) throws SignatureIntegrityException {
+        validationOptions = options != null ? options : SignatureValidationOptions.defaults();
+        // a re-run starts from nothing: an earlier offline run's "unchecked" or an earlier revoked
+        // answer must not survive into this one.
+        isCertificateChainTrusted = false;
+        isCertificateDateValid = true;
+        isRevocation = false;
+        isRevocationChecked = false;
+        isSelfSigned = false;
+        isSignerTimeValid = false;
+        SignatureIntegrityException failure = null;
+        try {
+            doValidate();
+        } catch (SignatureIntegrityException e) {
+            failure = e;
+            throw e;
+        } finally {
+            validationFailure = failure;
+            validated = true;
+        }
+    }
+
+    /**
+     * Validates unless a validation has already run; a caller arriving while one runs waits for it
+     * and takes its result.  An earlier validation's failure is thrown again.
+     */
+    @Override
+    public synchronized void ensureValidated(SignatureValidationOptions options) throws SignatureIntegrityException {
+        if (!validated) {
+            validate(options);
+        } else if (validationFailure != null) {
+            throw validationFailure;
+        }
+    }
+
+    @Override
+    public boolean isValidated() {
+        return validated;
+    }
+
+    /**
+     * The checks themselves, run under {@link #validate(SignatureValidationOptions)}'s lock with
+     * {@link #getValidationOptions()} set.  Checks the document against the signature by default.
+     *
+     * @throws SignatureIntegrityException signature could not be validated or invalidated.
+     */
+    protected void doValidate() throws SignatureIntegrityException {
+        validateDocument();
+    }
+
+    /**
+     * @return the network settings of the validation in progress, or the last one
+     */
+    protected SignatureValidationOptions getValidationOptions() {
+        return validationOptions;
+    }
 
     protected void announceSignatureType(SignatureDictionary signatureDictionary) {
         if (logger.isLoggable(Level.FINER)) {
@@ -633,6 +710,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             throw new SignatureIntegrityException(e);
         }
 
+        RevocationStatus revocationStatus = new RevocationStatus();
         try {
             KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
             try (java.io.FileInputStream fis = new java.io.FileInputStream(caCertLocation)) {
@@ -653,9 +731,14 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
             Date signatureDate = signatureDictionary.getPDate() != null ?
                     signatureDictionary.getPDate().asDateWithTimeZone() : null;
             // CertificateVerifier.verifyCertificateChain
-            CertificateVerifier.verifyCertificate(signerCertificate, certSet, true, signatureDate);
+            CertificateVerifier.verifyCertificate(signerCertificate, certSet, true, signatureDate,
+                    validationOptions, revocationStatus);
             isCertificateChainTrusted = true;
             isCertificateDateValid = true;
+            isRevocationChecked = revocationStatus.isComplete();
+            if (!isRevocationChecked && logger.isLoggable(Level.FINE)) {
+                logger.fine("Revocation not checked: " + revocationStatus.getUnchecked());
+            }
             lastVerified = new Date();
         } catch (CertificateExpiredException e) {
             logger.log(Level.FINEST, "Certificate chain could not be validated, certificate is expired", e);
@@ -675,6 +758,7 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         } catch (RevokedCertificateException e) {
             logger.log(Level.FINEST, "Certificate has been revoked.", e);
             isRevocation = true;
+            isRevocationChecked = true;
         } catch (Exception e) {
             logger.log(Level.FINEST, "Error validation certificate chain.", e);
             isCertificateChainTrusted = false;
@@ -825,6 +909,11 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
      */
     public boolean isRevocation() {
         return isRevocation;
+    }
+
+    @Override
+    public boolean isRevocationChecked() {
+        return isRevocationChecked;
     }
 
     /**
