@@ -33,6 +33,7 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 
 import java.io.ByteArrayOutputStream;
@@ -68,6 +69,7 @@ public class OcspHelper {
     private final X509Certificate certificateToCheck;
     private final Set<X509Certificate> additionalCerts;
     private final String ocspUrl;
+    private final SignatureValidationOptions options;
     private DEROctetString encodedNonce;
     private X509Certificate ocspResponderCertificate;
     private final JcaX509CertificateConverter certificateConverter = new JcaX509CertificateConverter();
@@ -88,6 +90,19 @@ public class OcspHelper {
      */
     public OcspHelper(X509Certificate checkCertificate, Date signDate, X509Certificate issuerCertificate,
                       Set<X509Certificate> additionalCerts, String ocspUrl) {
+        this(checkCertificate, signDate, issuerCertificate, additionalCerts, ocspUrl,
+                SignatureValidationOptions.defaults());
+    }
+
+    /**
+     * As {@link #OcspHelper(X509Certificate, Date, X509Certificate, Set, String)}, with the network
+     * timeouts of the given options.
+     *
+     * @param options network settings for the request
+     */
+    public OcspHelper(X509Certificate checkCertificate, Date signDate, X509Certificate issuerCertificate,
+                      Set<X509Certificate> additionalCerts, String ocspUrl, SignatureValidationOptions options) {
+        this.options = options;
         this.certificateToCheck = checkCertificate;
         this.signDate = signDate;
         this.issuerCertificate = issuerCertificate;
@@ -388,7 +403,7 @@ public class OcspHelper {
             throws IOException, OCSPException, URISyntaxException {
         OCSPReq request = generateOCSPRequest();
         URL url = new URI(urlString).toURL();
-        HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
+        HttpURLConnection httpConnection = (HttpURLConnection) NetworkSupport.open(url, options);
         try {
             httpConnection.setRequestProperty("Content-Type", "application/ocsp-request");
             httpConnection.setRequestProperty("Accept", "application/ocsp-response");
