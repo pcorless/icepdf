@@ -13,7 +13,8 @@ java {
 }
 
 application {
-    mainClass = "org.icepdf.examples.javafx.PdfViewerExample"
+    // -PmainClass=org.icepdf.examples.javafx.ToolBarExample runs the tool bar example instead.
+    mainClass = project.findProperty('mainClass') ?: "org.icepdf.examples.javafx.PdfViewerExample"
     applicationDefaultJvmArgs = ["-Xms64m", "-Xmx1024m"]
 }
 

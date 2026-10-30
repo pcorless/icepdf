@@ -26,7 +26,12 @@ The reference viewer built from them:
 - `org.icepdf.fx.ri.prefs`: the stand-alone viewer's settings and preferences dialog;
 - `org.icepdf.fx.ri.icons`: the replaceable icon set.
 
-The runnable example is `examples/javafx`.
+The runnable examples are in `examples/javafx`:
+
+- `PdfViewerExample`: the whole viewer in a window (`./gradlew :examples:javafx:run --args="file.pdf"`).
+- `ToolBarExample`: the viewer without its chrome, driven by your own tool bar (page navigation and
+  zoom) built from action ids, plus one command of the application's own registered with the
+  actions (`./gradlew :examples:javafx:run -PmainClass=org.icepdf.examples.javafx.ToolBarExample --args="file.pdf"`).
 
 ## Run the viewer
 
