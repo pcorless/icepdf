@@ -201,7 +201,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         registerChangeListener(control.viewModeProperty(), o -> onArrangement());
         registerChangeListener(control.coverPageProperty(), o -> onArrangement());
         registerChangeListener(control.pageGapProperty(), o -> onArrangement());
-        registerChangeListener(control.fitModeProperty(), o -> applyFit());
+        registerChangeListener(control.fitModeProperty(), o -> onFitMode());
         registerChangeListener(control.currentPageIndexProperty(), o -> onCurrentPage());
         // after the page settles, so a caret placed for a screen reader doesn't fight the scroll.
         registerChangeListener(control.currentPageIndexProperty(),
@@ -348,12 +348,15 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         hbar.resizeRelocate(x, y + vh, vw, hbarH);
         if (vw != viewportW || vh != viewportH) {
             boolean first = viewportW == 0 && viewportH == 0;
+            int page = getSkinnable().getCurrentPageIndex();
             viewportW = vw;
             viewportH = vh;
             if (getSkinnable().getFitMode() != FitMode.NONE) {
                 applyFit();
             }
             relayout(first ? null : captureAnchor(viewportW / 2, viewportH / 2));
+            // a resize (a scroll bar coming or going included) re-fits; fit page keeps showing its page.
+            if (!first && fitsCurrentPage()) showPage(page);
         }
     }
 
@@ -412,6 +415,11 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
             relayout(null);
             return;
         }
+        showPage(page);
+    }
+
+    /** Scrolls a continuous layout so the page's top edge (and left, when wider than the viewport) shows. */
+    private void showPage(int page) {
         PageSlot slot = layout.getSlot(page);
         if (slot != null) {
             double gap = getSkinnable().getPageGap();
@@ -477,6 +485,24 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
     }
 
     // ---- fit ------------------------------------------------------------------------------
+
+    /**
+     * Fit page means the whole current page in view.  The zoom change keeps the viewport centre still,
+     * which in a continuous layout leaves the page partly scrolled off, so it is brought into view
+     * after the fit (also when the zoom was already the fit zoom).  Fit width keeps the centre still.
+     */
+    private void onFitMode() {
+        PdfView control = getSkinnable();
+        int page = control.getCurrentPageIndex();
+        applyFit();
+        if (fitsCurrentPage()) showPage(page);
+    }
+
+    /** Fit page in a continuous layout, where the current page has to be scrolled into view. */
+    private boolean fitsCurrentPage() {
+        PdfView control = getSkinnable();
+        return control.getFitMode() == FitMode.PAGE && control.getViewMode().isContinuous() && layout != null;
+    }
 
     private void applyFit() {
         PdfView control = getSkinnable();
