@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ICEpdf</title>
+  <meta name="description" content="ICEpdf is a pure-Java PDF library: render, view, annotate, fill, redact and sign PDF documents. Apache 2.0.">
+  <meta property="og:title" content="ICEpdf: pure-Java PDF rendering and viewing">
+  <meta property="og:description" content="Render, view, annotate, fill, redact and sign PDF documents from Java. Apache 2.0.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/site.css">
+  <script src="assets/site.js" defer></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#top" aria-label="ICEpdf home">
+      <img src="assets/favicon.svg" alt="" width="24" height="24">
+      <span>ICEpdf</span>
+    </a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#viewers">Viewers</a>
+      <a href="#demos">Demos</a>
+      <a href="#start">Get started</a>
+      <a href="#support">Support</a>
+    </nav>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+      </button>
+      <a class="btn btn-small" href="https://github.com/pcorless/icepdf">GitHub</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <p class="eyebrow">Apache 2.0 &middot; Java 11+</p>
+        <h1>Pure-Java PDF rendering, viewing, redaction and signing.</h1>
+        <p class="lede">
+          ICEpdf parses and renders PDF documents with nothing but Java. Embed it in a server to rasterize pages,
+          or ship one of the two ready-made viewers, Swing or JavaFX, with annotations, forms, search, redaction
+          and digital signatures built in.
+        </p>
+        <div class="dep" aria-label="Maven dependency">
+          <pre><code id="dep-snippet">&lt;dependency&gt;
+  &lt;groupId&gt;com.github.pcorless.icepdf&lt;/groupId&gt;
+  &lt;artifactId&gt;icepdf-core&lt;/artifactId&gt;
+  &lt;version&gt;8.0.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+          <button class="copy" type="button" data-copy="#dep-snippet">Copy</button>
+        </div>
+        <div class="hero-cta">
+          <a class="btn" href="#start">Get started</a>
+          <a class="btn btn-ghost" href="https://github.com/pcorless/icepdf/releases">Release notes</a>
+        </div>
+      </div>
+      <!-- TODO(content): JavaFX viewer screenshot, ~1200x800, light theme, a real document with annotations visible -->
+      <figure class="shot shot-hero placeholder" data-todo="hero screenshot">
+        <span>Screenshot: JavaFX reference viewer</span>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 8.0 numbers -->
+  <section class="stats" aria-label="ICEpdf 8.0 highlights">
+    <div class="wrap stats-grid">
+      <div class="stat"><strong>2.5&times;</strong><span>faster to open and render the first 20 pages, vs 7.4.1</span></div>
+      <div class="stat"><strong>9&times;</strong><span>faster on image-heavy documents</span></div>
+      <div class="stat"><strong>&lt;1&nbsp;min</strong><span>to page through 54,000 pages (was over 20)</span></div>
+      <div class="stat"><strong>8</strong><span>third-party runtime jars for core, down from 13</span></div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="section">
+    <div class="wrap">
+      <h2>What it does</h2>
+      <p class="section-lede">One library, from headless rasterizing to a full desktop viewer.</p>
+      <div class="cards">
+        <article class="card">
+          <h3>Accurate rendering</h3>
+          <p>Transparency groups blend against the real page backdrop, CMYK stays CMYK while blending, and knockout groups, all seven shading types, tiling patterns and soft masks are supported.</p>
+        </article>
+        <article class="card">
+          <h3>Fast and parallel</h3>
+          <p>Pages render in parallel on a pool that scales to many-core machines. Glyph outlines are cached per font, colour conversion is memoized, and CAD drawings with 100k+ tiny images render quickly.</p>
+        </article>
+        <article class="card">
+          <h3>Large documents, small heap</h3>
+          <p>Big files are memory-mapped, image decodes and caches work within memory budgets, and huge images are decoded at the resolution they are drawn at. A 322&nbsp;MB manual renders in a 1&nbsp;GB heap.</p>
+        </article>
+        <article class="card">
+          <h3>True redaction</h3>
+          <p>Redaction removes the text and image content underneath, not just a black box drawn on top. Search-and-redact also cleans bookmarks, annotations, form fields and metadata, then reports what it removed.</p>
+        </article>
+        <article class="card">
+          <h3>Digital signatures</h3>
+          <p>Sign documents, including PDF/A, with visible appearances and recorded signing times. Validate existing signatures for integrity, certificate trust and the modifications made after signing.</p>
+        </article>
+        <article class="card">
+          <h3>Annotations and forms</h3>
+          <p>Create and edit markup, free text, ink, links and stamps. Fill AcroForm fields with appearances laid out the way Acrobat lays them out, then reset, submit or save.</p>
+        </article>
+        <article class="card">
+          <h3>Text, search and extraction</h3>
+          <p>Column-aware reading order, keyboard text selection with a caret, accent-insensitive search, and text and image extraction for indexing and analysis.</p>
+        </article>
+        <article class="card">
+          <h3>Pure Java, light dependencies</h3>
+          <p>No native code. JPEG 2000 through the bundled pure-Java jpx-imageio, CCITT fax through ICEpdf's own decoder, and fonts through Apache FontBox. Export pages to PNG, JPEG, TIFF or SVG.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Viewers -->
+  <section id="viewers" class="section section-alt">
+    <div class="wrap">
+      <h2>Two viewers, ready to embed</h2>
+      <div class="split">
+        <div>
+          <h3>JavaFX <span class="tag">new in 8.0</span></h3>
+          <p><code>PdfView</code> is a control you drop into your own scene. <code>PdfViewer</code> is the full reference viewer built from it, with tabs, annotations, forms, signing, redaction, printing, high-contrast themes and 13 languages.</p>
+          <!-- TODO(content): JavaFX viewer with the annotation board open -->
+          <figure class="shot placeholder" data-todo="javafx screenshot"><span>Screenshot: JavaFX viewer, annotation board</span></figure>
+        </div>
+        <div>
+          <h3>Swing</h3>
+          <p>The long-standing Swing viewer, built from <code>SwingController</code> and <code>SwingViewBuilder</code>. Use the whole window or just the viewer panel, with the same core features: search, redaction, signatures and forms.</p>
+          <!-- TODO(content): Swing viewer with search results panel -->
+          <figure class="shot placeholder" data-todo="swing screenshot"><span>Screenshot: Swing viewer, search</span></figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demos: set data-youtube to a video id once uploaded -->
+  <section id="demos" class="section">
+    <div class="wrap">
+      <h2>See it in action</h2>
+      <p class="section-lede">Short clips of the JavaFX reference viewer.</p>
+      <div class="videos">
+        <figure class="video" data-youtube="" data-title="Search and redact">
+          <div class="video-frame"><span class="video-pending">Video coming soon</span></div>
+          <figcaption><strong>Search and redact</strong> Find every match, redact it, save, and check that the text is really gone.</figcaption>
+        </figure>
+        <figure class="video" data-youtube="" data-title="Sign a document">
+          <div class="video-frame"><span class="video-pending">Video coming soon</span></div>
+          <figcaption><strong>Sign a document</strong> Add a visible signature, save, and validate it.</figcaption>
+        </figure>
+        <figure class="video" data-youtube="" data-title="Annotation board">
+          <div class="video-frame"><span class="video-pending">Video coming soon</span></div>
+          <figcaption><strong>Annotation board</strong> Review comments as cards, group them by colour or author, and edit in bulk.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Getting started -->
+  <section id="start" class="section section-alt">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <p class="section-lede">Core runs on Java 11. The JavaFX viewer needs Java 17.</p>
+
+      <div class="tabs" data-tabs>
+        <div class="tablist" role="tablist" aria-label="Build tool">
+          <button role="tab" aria-selected="true" aria-controls="dep-maven" id="tab-maven">Maven</button>
+          <button role="tab" aria-selected="false" aria-controls="dep-gradle" id="tab-gradle" tabindex="-1">Gradle</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="dep-maven" aria-labelledby="tab-maven">
+          <pre><code id="code-maven">&lt;dependency&gt;
+  &lt;groupId&gt;com.github.pcorless.icepdf&lt;/groupId&gt;
+  &lt;artifactId&gt;icepdf-core&lt;/artifactId&gt;
+  &lt;version&gt;8.0.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;!-- Swing viewer: icepdf-viewer, JavaFX viewer: icepdf-viewer-fx --&gt;
+&lt;!-- optional bundled fonts: icepdf-fonts --&gt;</code></pre>
+          <button class="copy" type="button" data-copy="#code-maven">Copy</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="dep-gradle" aria-labelledby="tab-gradle" hidden>
+          <pre><code id="code-gradle">dependencies {
+    implementation 'com.github.pcorless.icepdf:icepdf-core:8.0.0'
+    // Swing viewer: icepdf-viewer, JavaFX viewer: icepdf-viewer-fx
+    // optional bundled fonts: icepdf-fonts
+}</code></pre>
+          <button class="copy" type="button" data-copy="#code-gradle">Copy</button>
+        </div>
+      </div>
+
+      <div class="tabs" data-tabs>
+        <div class="tablist" role="tablist" aria-label="Example">
+          <button role="tab" aria-selected="true" aria-controls="ex-render" id="tab-render">Render a page to PNG</button>
+          <button role="tab" aria-selected="false" aria-controls="ex-fx" id="tab-fx" tabindex="-1">JavaFX viewer</button>
+          <button role="tab" aria-selected="false" aria-controls="ex-swing" id="tab-swing" tabindex="-1">Swing viewer</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="ex-render" aria-labelledby="tab-render">
+          <pre><code id="code-render">Document document = new Document();
+document.setFile("input.pdf");
+
+float scale = 2f, rotation = 0f;
+Page page = document.getPageTree().getPage(0);
+page.init();
+PDimension size = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+
+BufferedImage image = new BufferedImage((int) size.getWidth(), (int) size.getHeight(),
+        BufferedImage.TYPE_INT_RGB);
+Graphics2D g = image.createGraphics();
+page.paint(g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX, rotation, scale);
+g.dispose();
+
+ImageIO.write(image, "png", new File("page-1.png"));
+document.dispose();</code></pre>
+          <button class="copy" type="button" data-copy="#code-render">Copy</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="ex-fx" aria-labelledby="tab-fx" hidden>
+          <pre><code id="code-fx">public class Viewer extends Application {
+    @Override
+    public void start(Stage stage) {
+        FontSettings.apply();                  // cached system font scan
+        PdfViewer viewer = PdfViewer.create(); // every tool and panel
+        viewer.setOnLink(getHostServices()::showDocument);
+
+        stage.setScene(new Scene(viewer, 1200, 900));
+        stage.show();
+        viewer.open(Path.of("input.pdf"));
+    }
+}</code></pre>
+          <button class="copy" type="button" data-copy="#code-fx">Copy</button>
+        </div>
+        <div class="tabpanel" role="tabpanel" id="ex-swing" aria-labelledby="tab-swing" hidden>
+          <pre><code id="code-swing">SwingUtilities.invokeLater(() -&gt; {
+    SwingController controller = new SwingController();
+    SwingViewBuilder factory = new SwingViewBuilder(controller);
+
+    JFrame frame = new JFrame("ICEpdf");
+    frame.getContentPane().add(factory.buildViewerPanel());
+    frame.pack();
+    frame.setVisible(true);
+
+    controller.openDocument("input.pdf");
+});</code></pre>
+          <button class="copy" type="button" data-copy="#code-swing">Copy</button>
+        </div>
+      </div>
+
+      <p class="more">
+        More in the <a href="https://github.com/pcorless/icepdf/tree/main/examples">examples</a>
+        (capture, extraction, annotation, redaction, signatures, search, printing) and on the
+        <a href="https://github.com/pcorless/icepdf/wiki">wiki</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Support -->
+  <section id="support" class="section">
+    <div class="wrap">
+      <h2>Support</h2>
+      <div class="cards cards-3">
+        <article class="card">
+          <h3>Questions</h3>
+          <p>Ask and share in <a href="https://github.com/pcorless/icepdf/discussions">GitHub Discussions</a>. Check the <a href="https://github.com/pcorless/icepdf/wiki">wiki</a> first; it covers configuration and the system properties.</p>
+        </article>
+        <article class="card">
+          <h3>Bugs and features</h3>
+          <p>Open an <a href="https://github.com/pcorless/icepdf/issues">issue</a>. A sample PDF that shows the problem gets it fixed fastest. Pull requests are welcome; see <a href="https://github.com/pcorless/icepdf/blob/main/CONTRIBUTING.md">CONTRIBUTING</a>.</p>
+        </article>
+        <article class="card card-accent">
+          <h3>Sponsor</h3>
+          <p>ICEpdf is maintained in the open. If your product depends on it, <a href="https://github.com/sponsors/pcorless">sponsoring</a> pays for the triage, fixes and releases that keep it working.</p>
+          <a class="btn btn-small" href="https://github.com/sponsors/pcorless">Sponsor on GitHub</a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <p>ICEpdf is licensed under the <a href="https://github.com/pcorless/icepdf/blob/main/LICENSE">Apache License 2.0</a>. Third-party notices are listed in <a href="https://github.com/pcorless/icepdf/blob/main/NOTICE">NOTICE</a>.</p>
+    <p><a href="https://github.com/pcorless/icepdf/blob/main/SECURITY.md">Security policy</a> &middot; <a href="https://github.com/pcorless/icepdf">Source</a> &middot; <a href="https://central.sonatype.com/namespace/com.github.pcorless.icepdf">Maven Central</a></p>
+  </div>
+</footer>
+
+</body>
+</html>
