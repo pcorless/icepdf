@@ -141,7 +141,8 @@ pre {
 
 /* Stats */
 .stats { border-block: 1px solid var(--border); background: var(--bg-alt); }
-.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding-block: 28px; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; padding-top: 28px; }
+.stats-note { margin: 16px 0 0; padding-bottom: 24px; color: var(--muted); font-size: .8rem; }
 .stat strong { display: block; font-size: 1.9rem; line-height: 1.1; letter-spacing: -.02em; }
 .stat span { color: var(--muted); font-size: .92rem; }
 

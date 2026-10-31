@@ -43,11 +43,11 @@
     <div class="wrap hero-grid">
       <div>
         <p class="eyebrow">Apache 2.0 &middot; Java 11+</p>
-        <h1>Pure-Java PDF rendering, viewing, redaction and signing.</h1>
+        <h1>Fast, pure-Java PDF rendering. Headless or in a desktop viewer.</h1>
         <p class="lede">
-          ICEpdf parses and renders PDF documents with nothing but Java. Embed it in a server to rasterize pages,
-          or ship one of the two ready-made viewers, Swing or JavaFX, with annotations, forms, search, redaction
-          and digital signatures built in.
+          ICEpdf parses and renders PDF documents with nothing but Java, at speeds that keep pace with native
+          renderers. Embed it in a server to rasterize pages, or ship one of the two ready-made viewers, Swing or
+          JavaFX, with annotations, forms, search, redaction and digital signatures built in.
         </p>
         <div class="dep" aria-label="Maven dependency">
           <pre><code id="dep-snippet">&lt;dependency&gt;
@@ -70,12 +70,15 @@
   </section>
 
   <!-- 8.0 numbers -->
-  <section class="stats" aria-label="ICEpdf 8.0 highlights">
-    <div class="wrap stats-grid">
-      <div class="stat"><strong>2.5&times;</strong><span>faster to open and render the first 20 pages, vs 7.4.1</span></div>
-      <div class="stat"><strong>9&times;</strong><span>faster on image-heavy documents</span></div>
-      <div class="stat"><strong>&lt;1&nbsp;min</strong><span>to page through 54,000 pages (was over 20)</span></div>
-      <div class="stat"><strong>8</strong><span>third-party runtime jars for core, down from 13</span></div>
+  <section class="stats" aria-label="Rendering speed">
+    <div class="wrap">
+      <div class="stats-grid">
+        <div class="stat"><strong>0.1&nbsp;s</strong><span>to open a 195&nbsp;MB manual and render its first 20 pages</span></div>
+        <div class="stat"><strong>10&ndash;14&nbsp;ms</strong><span>per page for a typical technical datasheet</span></div>
+        <div class="stat"><strong>&lt;1&nbsp;s</strong><span>for a six-sheet CAD set drawn with 122,000 images</span></div>
+        <div class="stat"><strong>&lt;1&nbsp;min</strong><span>to page through a 54,000-page document</span></div>
+      </div>
+      <p class="stats-note">First three: open and render, one page at a time at 72&nbsp;dpi, median of three runs on a desktop Ryzen&nbsp;9 with JDK&nbsp;26.</p>
     </div>
   </section>
 
@@ -91,7 +94,7 @@
         </article>
         <article class="card">
           <h3>Fast and parallel</h3>
-          <p>Pages render in parallel on a pool that scales to many-core machines. Glyph outlines are cached per font, colour conversion is memoized, and CAD drawings with 100k+ tiny images render quickly.</p>
+          <p>Images decode in parallel and pages render on a pool that scales to many-core machines. Glyph outlines are cached per font and colour conversion is memoized, so catalogues, maps and CAD sheets with 100k+ tiny images all render quickly.</p>
         </article>
         <article class="card">
           <h3>Large documents, small heap</h3>
