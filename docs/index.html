@@ -3,12 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ICEpdf</title>
-  <meta name="description" content="ICEpdf is a pure-Java PDF library: render, view, annotate, fill, redact and sign PDF documents. Apache 2.0.">
-  <meta property="og:title" content="ICEpdf: pure-Java PDF rendering and viewing">
+  <title>icepdf</title>
+  <meta name="description" content="icepdf is a pure-Java PDF library: render, view, annotate, fill, redact and sign PDF documents. Apache 2.0.">
+  <meta property="og:title" content="icepdf: pure-Java PDF rendering and viewing">
   <meta property="og:description" content="Render, view, annotate, fill, redact and sign PDF documents from Java. Apache 2.0.">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="https://pcorless.github.io/icepdf/assets/brand/icepdf-social-card.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
   <link rel="stylesheet" href="assets/site.css">
   <script src="assets/site.js" defer></script>
 </head>
@@ -16,9 +21,9 @@
 
 <header class="topbar">
   <div class="wrap topbar-inner">
-    <a class="brand" href="#top" aria-label="ICEpdf home">
-      <img src="assets/favicon.svg" alt="" width="24" height="24">
-      <span>ICEpdf</span>
+    <a class="brand" href="#top" aria-label="icepdf home">
+      <img src="assets/brand/icepdf-app-icon.svg" alt="" width="24" height="24">
+      <span class="wordmark"><span class="wm-ice">ice</span><span class="wm-pdf">pdf</span></span>
     </a>
     <nav class="topnav" aria-label="Sections">
       <a href="#features">Features</a>
@@ -45,7 +50,7 @@
         <p class="eyebrow">Apache 2.0 &middot; Java 11+</p>
         <h1>Fast, pure-Java PDF rendering. Headless or in a desktop viewer.</h1>
         <p class="lede">
-          ICEpdf parses and renders PDF documents with nothing but Java, at speeds that keep pace with native
+          icepdf parses and renders PDF documents with nothing but Java, at speeds that keep pace with native
           renderers. Embed it in a server to rasterize pages, or ship one of the two ready-made viewers, Swing or
           JavaFX, with annotations, forms, search, redaction and digital signatures built in.
         </p>
@@ -62,10 +67,13 @@
           <a class="btn btn-ghost" href="https://github.com/pcorless/icepdf/releases">Release notes</a>
         </div>
       </div>
-      <!-- TODO(content): JavaFX viewer screenshot, ~1200x800, light theme, a real document with annotations visible -->
-      <figure class="shot shot-hero placeholder" data-todo="hero screenshot">
-        <span>Screenshot: JavaFX reference viewer</span>
-      </figure>
+      <div class="hero-visual">
+        <img class="hero-cube" src="assets/brand/icepdf-cube.svg" alt="" width="132" height="132">
+        <!-- TODO(content): JavaFX viewer screenshot, ~1200x800, light theme, a real document with annotations visible -->
+        <figure class="shot shot-hero placeholder" data-todo="hero screenshot">
+          <span>Screenshot: JavaFX reference viewer</span>
+        </figure>
+      </div>
     </div>
   </section>
 
@@ -118,7 +126,7 @@
         </article>
         <article class="card">
           <h3>Pure Java, light dependencies</h3>
-          <p>No native code. JPEG 2000 through the bundled pure-Java jpx-imageio, CCITT fax through ICEpdf's own decoder, and fonts through Apache FontBox. Export pages to PNG, JPEG, TIFF or SVG.</p>
+          <p>No native code. JPEG 2000 through the bundled pure-Java jpx-imageio, CCITT fax through icepdf's own decoder, and fonts through Apache FontBox. Export pages to PNG, JPEG, TIFF or SVG.</p>
         </article>
       </div>
     </div>
@@ -243,7 +251,7 @@ document.dispose();</code></pre>
     SwingController controller = new SwingController();
     SwingViewBuilder factory = new SwingViewBuilder(controller);
 
-    JFrame frame = new JFrame("ICEpdf");
+    JFrame frame = new JFrame("icepdf");
     frame.getContentPane().add(factory.buildViewerPanel());
     frame.pack();
     frame.setVisible(true);
@@ -277,7 +285,7 @@ document.dispose();</code></pre>
         </article>
         <article class="card card-accent">
           <h3>Sponsor</h3>
-          <p>ICEpdf is maintained in the open. If your product depends on it, <a href="https://github.com/sponsors/pcorless">sponsoring</a> pays for the triage, fixes and releases that keep it working.</p>
+          <p>icepdf is maintained in the open. If your product depends on it, <a href="https://github.com/sponsors/pcorless">sponsoring</a> pays for the triage, fixes and releases that keep it working.</p>
           <a class="btn btn-small" href="https://github.com/sponsors/pcorless">Sponsor on GitHub</a>
         </article>
       </div>
@@ -288,7 +296,8 @@ document.dispose();</code></pre>
 
 <footer class="footer">
   <div class="wrap footer-inner">
-    <p>ICEpdf is licensed under the <a href="https://github.com/pcorless/icepdf/blob/main/LICENSE">Apache License 2.0</a>. Third-party notices are listed in <a href="https://github.com/pcorless/icepdf/blob/main/NOTICE">NOTICE</a>.</p>
+    <p class="footer-mark"><span class="wordmark"><span class="wm-ice">ice</span><span class="wm-pdf">pdf</span></span></p>
+    <p>icepdf is licensed under the <a href="https://github.com/pcorless/icepdf/blob/main/LICENSE">Apache License 2.0</a>. Third-party notices are listed in <a href="https://github.com/pcorless/icepdf/blob/main/NOTICE">NOTICE</a>.</p>
     <p><a href="https://github.com/pcorless/icepdf/blob/main/SECURITY.md">Security policy</a> &middot; <a href="https://github.com/pcorless/icepdf">Source</a> &middot; <a href="https://central.sonatype.com/namespace/com.github.pcorless.icepdf">Maven Central</a></p>
   </div>
 </footer>

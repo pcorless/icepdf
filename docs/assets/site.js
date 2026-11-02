@@ -1,4 +1,4 @@
-// ICEpdf site: theme toggle, copy buttons, tabs, click-to-load YouTube.
+// icepdf site: theme toggle, copy buttons, tabs, click-to-load YouTube.
 (function () {
   'use strict';
 
@@ -67,7 +67,7 @@
       var id = fig.getAttribute('data-youtube');
       if (!/^[\w-]{11}$/.test(id)) return; // not uploaded yet: keep the placeholder
       var frame = fig.querySelector('.video-frame');
-      var title = fig.getAttribute('data-title') || 'ICEpdf demo';
+      var title = fig.getAttribute('data-title') || 'icepdf demo';
       frame.innerHTML = '';
       var thumb = document.createElement('img');
       thumb.src = 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg';

@@ -1,4 +1,4 @@
-/* ICEpdf site. Colours are tokens; dark mode follows the system unless the toggle pins a theme. */
+/* icepdf site. Colours are tokens; dark mode follows the system unless the toggle pins a theme. */
 :root {
   --bg: #ffffff;
   --bg-alt: #f5f7fa;
@@ -11,6 +11,8 @@
   --accent-soft: #e8f0fe;
   --code-bg: #0f1722;
   --code-text: #e6edf3;
+  --ice: #3a6fc9;
+  --ice-hi: #9cc4f0;
   --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 12px rgba(16, 24, 40, .06);
   --radius: 10px;
   --wrap: 1120px;
@@ -30,6 +32,8 @@
     --accent-soft: #16243a;
     --code-bg: #0a0f16;
     --code-text: #e6edf3;
+    --ice: #7fa8ec;
+    --ice-hi: #c4eaff;
     --shadow: none;
     color-scheme: dark;
   }
@@ -47,6 +51,8 @@
   --accent-soft: #16243a;
   --code-bg: #0a0f16;
   --code-text: #e6edf3;
+  --ice: #7fa8ec;
+  --ice-hi: #c4eaff;
   --shadow: none;
   color-scheme: dark;
 }
@@ -81,6 +87,17 @@ p code, h3 code { background: var(--accent-soft); padding: .1em .35em; border-ra
 .topbar-inner { display: flex; align-items: center; gap: 24px; height: 60px; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--text); }
 .brand:hover { text-decoration: none; }
+
+/* Wordmark: "ice" light and frosted, "pdf" bold. Always lowercase, even at the start of a sentence. */
+.wordmark { font-size: 1.45rem; line-height: 1; letter-spacing: -.01em; white-space: nowrap; }
+.wm-ice {
+  font-weight: 300; color: var(--ice);
+  background: linear-gradient(180deg, var(--ice-hi) 0%, var(--ice) 70%);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.wm-pdf { font-weight: 800; color: var(--text); }
+.footer-mark { margin-bottom: 12px !important; }
+.footer-mark .wordmark { font-size: 1.6rem; }
 .topnav { display: flex; gap: 20px; flex: 1; }
 .topnav a { color: var(--muted); font-size: .95rem; }
 .topnav a:hover { color: var(--text); text-decoration: none; }
@@ -110,6 +127,12 @@ p code, h3 code { background: var(--accent-soft); padding: .1em .35em; border-ra
 h1 { font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1.12; margin: 0 0 16px; letter-spacing: -.02em; }
 .lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 24px; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+/* The ice cube is the brand graphic; it sits on the screenshot's corner. The app icon stays the flat tile. */
+.hero-visual { position: relative; }
+.hero-cube {
+  position: absolute; left: -44px; top: -52px; z-index: 1; width: 132px; height: auto;
+  filter: drop-shadow(0 10px 18px rgba(20, 18, 90, .35));
+}
 
 /* Code blocks with a copy button */
 .dep, .tabpanel { position: relative; }
@@ -209,6 +232,8 @@ h3 { font-size: 1.1rem; margin: 0 0 8px; }
   .cards { grid-template-columns: repeat(2, 1fr); }
   .cards-3, .videos { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-visual { margin-top: 40px; }
+  .hero-cube { left: -6px; top: -40px; width: 96px; }
 }
 
 @media (max-width: 640px) {
