@@ -220,6 +220,25 @@ h3 { font-size: 1.1rem; margin: 0 0 8px; }
 }
 .video-play:hover { background: #e00; }
 .video figcaption { margin-top: 10px; color: var(--muted); font-size: .93rem; }
+
+/* Click a demo or a screenshot to see it large. */
+.zoomable { cursor: zoom-in; }
+.video-expand {
+  position: absolute; right: 10px; bottom: 10px; z-index: 1; padding: 6px 10px; border: 0; border-radius: 8px;
+  background: rgba(13, 17, 23, .72); color: #fff; font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+}
+.video-expand:hover, .video-expand:focus-visible { background: var(--accent); color: var(--accent-text); }
+.lightbox {
+  width: min(1280px, 94vw); max-height: 94vh; padding: 0; border: 0; border-radius: var(--radius);
+  background: #0d1117; overflow: hidden;
+}
+.lightbox::backdrop { background: rgba(5, 8, 20, .78); }
+.lightbox-body video, .lightbox-body img { display: block; width: 100%; height: auto; max-height: 94vh; object-fit: contain; }
+.lightbox-close {
+  position: absolute; top: 8px; right: 10px; z-index: 1; width: 36px; height: 36px; border: 0; border-radius: 50%;
+  background: rgba(13, 17, 23, .72); color: #fff; font-size: 1.5rem; line-height: 1; cursor: pointer;
+}
+.lightbox-close:hover, .lightbox-close:focus-visible { background: var(--accent); color: var(--accent-text); }
 .video figcaption strong { display: block; color: var(--text); }
 
 /* Tabs */

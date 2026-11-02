@@ -166,15 +166,23 @@
       <p class="section-lede">Short clips of the JavaFX reference viewer. They use a fictional
         <a href="showcase/expedition-report.pdf">field report</a> (PDF, 1&nbsp;MB) that you can open in the viewer yourself.</p>
       <div class="videos">
-        <figure class="video" data-youtube="" data-title="Search and redact">
-          <div class="video-frame"><span class="video-pending">Video coming soon</span></div>
-          <figcaption><strong>Search and redact</strong> Find every match, redact it, save, and check that the text is really gone.</figcaption>
+        <figure class="video" data-title="Search and redact" data-full="assets/video/search-and-redact.mp4">
+          <div class="video-frame">
+            <video class="video-loop" autoplay muted loop playsinline preload="metadata"
+                   poster="assets/video/search-and-redact-poster.jpg"
+                   aria-label="Search and redact: a regular expression finds every phone and permit number, they are redacted, and the exported copy is checked">
+              <source src="assets/video/search-and-redact-loop.webm" type="video/webm">
+              <source src="assets/video/search-and-redact-loop.mp4" type="video/mp4">
+            </video>
+          </div>
+          <figcaption><strong>Search and redact</strong> Find every phone and permit number with one search, redact them all,
+            and export a copy where the text is gone, not covered. <a href="assets/video/search-and-redact.mp4">Full clip (22&nbsp;s)</a></figcaption>
         </figure>
         <figure class="video" data-youtube="" data-title="Sign a document">
           <div class="video-frame"><span class="video-pending">Video coming soon</span></div>
           <figcaption><strong>Sign a document</strong> Add a visible signature, save, and validate it.</figcaption>
         </figure>
-        <figure class="video" data-title="Annotation board">
+        <figure class="video" data-title="Annotation board" data-full="assets/video/annotation-board.mp4">
           <div class="video-frame">
             <video class="video-loop" autoplay muted loop playsinline preload="metadata"
                    poster="assets/video/annotation-board-poster.jpg"
@@ -308,6 +316,12 @@ document.dispose();</code></pre>
   </section>
 
 </main>
+
+<!-- Lightbox: a demo's full clip, or a screenshot at full size (site.js) -->
+<dialog class="lightbox" id="lightbox" aria-label="Preview">
+  <button class="lightbox-close" type="button" aria-label="Close">&times;</button>
+  <div class="lightbox-body"></div>
+</dialog>
 
 <footer class="footer">
   <div class="wrap footer-inner">

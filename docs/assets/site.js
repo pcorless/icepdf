@@ -99,5 +99,53 @@
       frame.appendChild(thumb);
       frame.appendChild(play);
     });
+
+    // Lightbox: a demo loop opens its full clip, a screenshot opens at full size.  Closes with the button,
+    // Esc (native to <dialog>) or a click on the backdrop.
+    var box = document.getElementById('lightbox');
+    if (box && typeof box.showModal === 'function') {
+      var body = box.querySelector('.lightbox-body');
+      var open = function (node, label) {
+        body.innerHTML = '';
+        body.appendChild(node);
+        box.setAttribute('aria-label', label);
+        box.showModal();
+      };
+      box.addEventListener('close', function () { body.innerHTML = ''; });
+      box.querySelector('.lightbox-close').addEventListener('click', function () { box.close(); });
+      box.addEventListener('click', function (e) { if (e.target === box) box.close(); });
+
+      document.querySelectorAll('.video[data-full]').forEach(function (fig) {
+        var frame = fig.querySelector('.video-frame');
+        var title = fig.getAttribute('data-title') || 'Demo';
+        var play = function () {
+          var v = document.createElement('video');
+          v.src = fig.getAttribute('data-full');
+          v.controls = true;
+          v.autoplay = true;
+          v.playsInline = true;
+          open(v, title + ', full clip');
+        };
+        var button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'video-expand';
+        button.textContent = '\u25B6 Full clip';
+        button.setAttribute('aria-label', 'Play the full clip: ' + title);
+        button.addEventListener('click', function (e) { e.stopPropagation(); play(); });
+        frame.appendChild(button);
+        frame.classList.add('zoomable');
+        frame.addEventListener('click', play);
+      });
+
+      document.querySelectorAll('.shot img').forEach(function (img) {
+        img.classList.add('zoomable');
+        img.addEventListener('click', function () {
+          var big = document.createElement('img');
+          big.src = img.currentSrc || img.src;
+          big.alt = img.alt;
+          open(big, img.alt || 'Screenshot');
+        });
+      });
+    }
   });
 })();
