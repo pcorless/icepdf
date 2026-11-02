@@ -127,10 +127,11 @@ p code, h3 code { background: var(--accent-soft); padding: .1em .35em; border-ra
 h1 { font-size: clamp(2rem, 4.2vw, 3rem); line-height: 1.12; margin: 0 0 16px; letter-spacing: -.02em; }
 .lede { font-size: 1.12rem; color: var(--muted); margin: 0 0 24px; }
 .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-/* The ice cube is the brand graphic; it sits on the screenshot's corner. The app icon stays the flat tile. */
+/* The ice cube is the brand graphic; it sits on the screenshot's bottom-right corner, over the empty end of the
+   comments panel. The app icon stays the flat tile. */
 .hero-visual { position: relative; }
 .hero-cube {
-  position: absolute; left: -44px; top: -52px; z-index: 1; width: 132px; height: auto;
+  position: absolute; right: -40px; bottom: -48px; z-index: 1; width: 132px; height: auto;
   filter: drop-shadow(0 10px 18px rgba(20, 18, 90, .35));
 }
 
@@ -156,6 +157,14 @@ pre {
 }
 .shot img { display: block; width: 100%; height: auto; }
 .shot-hero { aspect-ratio: 3 / 2; }
+/* Screenshots taken in both themes: show the one matching the page (system setting or the toggle). */
+.shot .for-dark { display: none; }
+:root[data-theme="dark"] .shot .for-light { display: none; }
+:root[data-theme="dark"] .shot .for-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot .for-light { display: none; }
+  :root:not([data-theme="light"]) .shot .for-dark { display: block; }
+}
 .placeholder {
   display: grid; place-items: center; aspect-ratio: 3 / 2;
   border-style: dashed; color: var(--muted); font-size: .95rem; text-align: center; padding: 16px;
@@ -233,7 +242,7 @@ h3 { font-size: 1.1rem; margin: 0 0 8px; }
   .cards-3, .videos { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .hero-visual { margin-top: 40px; }
-  .hero-cube { left: -6px; top: -40px; width: 96px; }
+  .hero-cube { right: -6px; bottom: -36px; width: 96px; }
 }
 
 @media (max-width: 640px) {
