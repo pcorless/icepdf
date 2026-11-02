@@ -417,7 +417,7 @@ public class Document {
             Header header = new Header();
             input = header.parseHeader(input);
 
-            library.setDocumentByteBuffer(input);
+            library.getDocumentSource().setBuffer(input);
             library.setFileHeader(header);
 
             // create instance of CrossReferenceRoot as we may need it the trailer can't be correctly decoded.
@@ -618,8 +618,8 @@ public class Document {
         if (fileMapped) {
             // the mapping goes only when its buffer is collected, and until then Windows won't let
             // the file be replaced: let go of it, leaving an empty buffer for any late reader.
-            synchronized (library.getMappedFileByteBufferLock()) {
-                library.setDocumentByteBuffer(ByteBuffer.allocate(0));
+            synchronized (library.getDocumentSource().getLock()) {
+                library.getDocumentSource().setBuffer(ByteBuffer.allocate(0));
             }
         }
 
@@ -664,26 +664,26 @@ public class Document {
     public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         warnIfRedactionsPending(writeMode);
         if (documentFileChannel != null) {
-            synchronized (library.getMappedFileByteBufferLock()) {
-                ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+            synchronized (library.getDocumentSource().getLock()) {
+                ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
                 long newDocumentLength = new DocumentBuilder().createDocument(
                         writeMode,
                         this,
-                        library.getMappedFileByteBuffer(),
+                        library.getDocumentSource().getBuffer(),
                         out,
                         documentLength);
                 return newDocumentLength;
             }
         } else if (documentByteBuffer != null) {
-            synchronized (library.getMappedFileByteBufferLock()) {
+            synchronized (library.getDocumentSource().getLock()) {
                 documentByteBuffer.position(0);
                 int documentLength = documentByteBuffer.remaining();
                 long newDocumentLength = new DocumentBuilder().createDocument(
                         writeMode,
                         this,
-                        library.getMappedFileByteBuffer(),
+                        library.getDocumentSource().getBuffer(),
                         out,
                         documentLength);
                 return newDocumentLength;

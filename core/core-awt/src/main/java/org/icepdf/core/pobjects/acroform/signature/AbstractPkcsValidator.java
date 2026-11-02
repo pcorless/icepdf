@@ -554,8 +554,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
         byte[] firstSection;
         byte[] secondSection;
-        synchronized (library.getMappedFileByteBufferLock()) {
-            ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+        synchronized (library.getDocumentSource().getLock()) {
+            ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();
             documentByteBuffer.position(0);
             int totalLength = documentByteBuffer.remaining();
             long digestedLength = byteRange.get(2) + byteRange.get(3);
@@ -714,8 +714,8 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
         Library library = signatureFieldDictionary.getLibrary();
 
-        synchronized (library.getMappedFileByteBufferLock()) {
-            ByteBuffer documentByteBuffer = library.getMappedFileByteBuffer();
+        synchronized (library.getDocumentSource().getLock()) {
+            ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();
             documentByteBuffer.position(0);
 
             int totalLength = documentByteBuffer.remaining();
