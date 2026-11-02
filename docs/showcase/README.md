@@ -7,7 +7,8 @@ expedition field report built to show what icepdf renders and edits.
 - Field log: made-up personal details, there to be redacted.
 - Sign-off page: form fields and an empty signature field.
 
-All people, places, phone numbers (555-01xx) and permit numbers are made up. The cover photo is by Patrick Corless.
+All people, places, phone numbers (555-01xx) and permit numbers are made up. The cover photo (`cover.jpg`, also embedded in the PDF) is © Patrick Corless, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); the rest of this folder is Apache 2.0 like the project.
 
 To rebuild it, edit `report.html` (layout) or `build.py` (form fields and annotations), then run `python3 build.py`.
 This needs `pypdf` and `google-chrome`. Chrome prints the HTML, and pypdf adds what HTML can't express:
