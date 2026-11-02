@@ -308,7 +308,7 @@ public class ExtGState extends Dictionary {
      * @return the miter limit Number value.  If the miter limit was not
      *         specified in the dictionary null is returned.
      */
-    Number getMiterLimit() {
+    public Number getMiterLimit() {
         return getNumber(ML_KEY);
     }
 
