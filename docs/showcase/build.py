@@ -16,7 +16,7 @@ from pypdf.generic import (ArrayObject, BooleanObject, DecodedStreamObject, Dict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CHROME = 'google-chrome'
-PAGE_H_PT = 841.89                      # A4
+PAGE_W_PT, PAGE_H_PT = 595.28, 841.89    # A4
 MM = 72 / 25.4                          # mm -> pt
 PX = 0.75                               # CSS px -> pt
 PAGE_H_PX = 297 / 25.4 * 96             # one page in CSS px
@@ -146,8 +146,10 @@ def add_annot(writer, page, annot):
 
 def add_popup(writer, page, parent_ref, rect):
     x0, y0, x1, y1 = rect
+    # beside the annotation, on whichever side has room on the page
+    px0 = x1 + 6 if x1 + 186 <= PAGE_W_PT else x0 - 186
     popup = DictionaryObject({NameObject('/Type'): NameObject('/Annot'), NameObject('/Subtype'): NameObject('/Popup'),
-                              NameObject('/Rect'): ArrayObject([FloatObject(v) for v in (x1 + 6, y1 - 90, x1 + 186, y1)]),
+                              NameObject('/Rect'): ArrayObject([FloatObject(v) for v in (px0, y1 - 90, px0 + 180, y1)]),
                               NameObject('/Parent'): parent_ref, NameObject('/Open'): BooleanObject(False)})
     pref = add_annot(writer, page, popup)
     parent_ref.get_object()[NameObject('/Popup')] = pref

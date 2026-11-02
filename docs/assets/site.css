@@ -212,7 +212,7 @@ h3 { font-size: 1.1rem; margin: 0 0 8px; }
   display: grid; place-items: center;
 }
 .video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.video-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.video-frame img, .video-frame video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .video-pending { color: #9aa6b6; font-size: .9rem; }
 .video-play {
   position: relative; z-index: 1; width: 68px; height: 48px; border: 0; border-radius: 12px;

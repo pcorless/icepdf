@@ -62,6 +62,15 @@
       });
     });
 
+    // Silent demo loops: no autoplay for people who ask for reduced motion; they get the poster and controls.
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.querySelectorAll('video.video-loop').forEach(function (v) {
+        v.removeAttribute('autoplay');
+        v.pause();
+        v.controls = true;
+      });
+    }
+
     // Videos: show the thumbnail, load the (no-cookie) player only on click.
     document.querySelectorAll('.video[data-youtube]').forEach(function (fig) {
       var id = fig.getAttribute('data-youtube');
