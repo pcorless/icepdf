@@ -119,8 +119,11 @@
         var frame = fig.querySelector('.video-frame');
         var title = fig.getAttribute('data-title') || 'Demo';
         var play = function () {
+          // WebM where it plays (Firefox on Linux often has no H.264 decoder), else the MP4 (Safari).  Chosen
+          // here and set as src: Firefox drops <source> children added before the element is in the page.
           var v = document.createElement('video');
-          v.src = fig.getAttribute('data-full');
+          var mp4 = fig.getAttribute('data-full');
+          v.src = v.canPlayType('video/webm; codecs="vp9"') ? mp4.replace(/\.mp4$/, '.webm') : mp4;
           v.controls = true;
           v.autoplay = true;
           v.playsInline = true;
