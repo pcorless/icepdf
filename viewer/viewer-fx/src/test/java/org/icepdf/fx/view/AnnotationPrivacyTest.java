@@ -100,7 +100,7 @@ class AnnotationPrivacyTest {
         Page first = document.getPageTree().getPage(0);
         first.getAnnotations().remove(note);
         if (note.getPopupAnnotation() != null) first.getAnnotations().remove(note.getPopupAnnotation());
-        second.addAnnotation(note, true);
+        second.addAnnotation(note);
         note.getEntries().remove(Annotation.PARENT_PAGE_KEY);
         note.setPageIndex(-1);
         assertTrue(second.getAnnotations().contains(note));

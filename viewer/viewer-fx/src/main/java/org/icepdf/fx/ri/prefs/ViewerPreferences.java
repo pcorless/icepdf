@@ -65,6 +65,8 @@ public final class ViewerPreferences {
     public static final String FIT_MODE = "view.fit";
     public static final String ZOOM = "view.zoom";
     public static final String VERIFY_SIGNATURES = "signatures.verifyOnOpen";
+    /** Check certificate revocation online; defaults to the core's org.icepdf.core.signatures.online. */
+    public static final String SIGNATURES_ONLINE = "signatures.checkOnline";
     public static final String ANNOTATION_AUTHOR = "annotation.author";
     /** New annotations are private; only offered with the private annotation flag enabled. */
     public static final String ANNOTATION_NEW_PRIVATE = "annotation.newPrivate";

@@ -270,7 +270,7 @@ public class PdfViewDemo extends Application {
                 return;
             }
             lastQuery[0] = query;
-            SearchTerm term = new SearchTerm(text, null, matchCase.isSelected(), wholeWord.isSelected(), false);
+            SearchTerm term = new SearchTerm(text, matchCase.isSelected(), wholeWord.isSelected(), false);
             term.setFoldDiacritics(accents.isSelected());
             view.search(term);
         };

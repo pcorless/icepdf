@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.awt.Paint;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -58,8 +57,6 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
             {1, 1}, {1, 2}, {2, 2}, {2, 1}
     };
 
-    private MeshShadingPaint meshPaint;
-
     public ShadingType7Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h, meshDataStream);
     }
@@ -83,7 +80,7 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
                         points[i] = readCoord();
                     }
                     for (int i = 0; i < 4; i++) {
-                        colors[i] = colorArgb(readColor());
+                        colors[i] = readVertexColor();
                     }
                 } else {
                     if (prevPoints == null) {
@@ -102,21 +99,21 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
                     for (int i = 4; i < 16; i++) {
                         points[i] = readCoord();
                     }
-                    colors[2] = colorArgb(readColor());
-                    colors[3] = colorArgb(readColor());
+                    colors[2] = readVertexColor();
+                    colors[3] = readVertexColor();
                 }
                 Point2D.Float[][] grid = new Point2D.Float[4][4];
                 for (int i = 0; i < 16; i++) {
                     grid[TENSOR_ORDER[i][0]][TENSOR_ORDER[i][1]] = points[i];
                 }
-                tessellatePatch(grid, colors, triangles);
+                tessellatePatch(grid, colors, triangles, isParametric());
                 prevPoints = points;
                 prevColors = colors;
             }
         } catch (IOException e) {
             logger.warning("Error parsing Shading type 7 pattern vertices.");
         }
-        meshPaint = buildMeshPaint(triangles, graphicsState);
+        setMesh(triangles);
         inited = true;
     }
 
@@ -140,9 +137,5 @@ public class ShadingType7Pattern extends ShadingMeshPattern {
             default: // 3
                 return new int[]{9, 10, 11, 0, 3, 0};
         }
-    }
-
-    public Paint getPaint() {
-        return meshPaint;
     }
 }

@@ -2821,7 +2821,7 @@ public final class PdfViewSmoke {
      */
     private void checkSearch(Document document) throws Exception {
         String query = System.getProperty("smoke.search", "Functions");
-        org.icepdf.core.search.SearchTerm term = new org.icepdf.core.search.SearchTerm(query, null, false, false, false);
+        org.icepdf.core.search.SearchTerm term = new org.icepdf.core.search.SearchTerm(query, false, false, false);
         act("search setup: continuous fit width, page 1", v -> {
             v.clearSelection();
             v.setToolMode(org.icepdf.fx.view.ToolMode.TEXT_SELECT);

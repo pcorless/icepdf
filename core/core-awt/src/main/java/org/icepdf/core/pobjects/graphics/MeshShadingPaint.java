@@ -47,7 +47,8 @@ public class MeshShadingPaint implements Paint {
 
     /**
      * A single mesh triangle: three vertices in shading space, each with an
-     * sRGB colour (packed ARGB).  Colours are interpolated across the triangle.
+     * sRGB colour (packed ARGB), or, for a paint with a colour table, an index
+     * into it.  Colours, or indices, are interpolated across the triangle.
      */
     public static final class Triangle {
         final float x0, y0, x1, y1, x2, y2;
@@ -71,6 +72,7 @@ public class MeshShadingPaint implements Paint {
     private final List<Triangle> triangles;
     private final AffineTransform shadingToUser;
     private final boolean extendBeyondMesh;
+    private final int[] colorLut;
 
     /**
      * @param triangles    mesh triangles in shading space (may be empty).
@@ -90,9 +92,23 @@ public class MeshShadingPaint implements Paint {
      *                          function-based (type 1) shading paints nothing outside its domain.
      */
     public MeshShadingPaint(List<Triangle> triangles, AffineTransform shadingToUser, boolean extendBeyondMesh) {
+        this(triangles, shadingToUser, extendBeyondMesh, null);
+    }
+
+    /**
+     * @param triangles         triangles in shading space (may be empty).
+     * @param shadingToUser     maps shading space to user space; may be {@code null}.
+     * @param extendBeyondMesh  see {@link #MeshShadingPaint(List, AffineTransform, boolean)}.
+     * @param colorLut          for a Function-based mesh, the colour of each parametric step: the
+     *                          triangles' vertex values are indices into it, interpolated before the
+     *                          lookup.  Null when the vertices carry ARGB colours.
+     */
+    public MeshShadingPaint(List<Triangle> triangles, AffineTransform shadingToUser, boolean extendBeyondMesh,
+                            int[] colorLut) {
         this.triangles = triangles;
         this.shadingToUser = shadingToUser;
         this.extendBeyondMesh = extendBeyondMesh;
+        this.colorLut = colorLut;
     }
 
     @Override
@@ -108,7 +124,7 @@ public class MeshShadingPaint implements Paint {
         if (shadingToUser != null) {
             full.concatenate(shadingToUser);
         }
-        return new MeshPaintContext(triangles, full, deviceBounds, extendBeyondMesh);
+        return new MeshPaintContext(triangles, full, deviceBounds, extendBeyondMesh, colorLut);
     }
 
     /**
@@ -141,10 +157,12 @@ public class MeshShadingPaint implements Paint {
         private final int[][] grid;
 
         private final boolean extendBeyondMesh;
+        private final int[] colorLut;
 
         MeshPaintContext(List<Triangle> triangles, AffineTransform full, Rectangle deviceBounds,
-                         boolean extendBeyondMesh) {
+                         boolean extendBeyondMesh, int[] colorLut) {
             this.extendBeyondMesh = extendBeyondMesh;
+            this.colorLut = colorLut;
             originX = deviceBounds.x;
             originY = deviceBounds.y;
             imgW = Math.max(1, deviceBounds.width);
@@ -175,7 +193,7 @@ public class MeshShadingPaint implements Paint {
                     float px = (float) pts[k * 2], py = (float) pts[k * 2 + 1];
                     vx[vi] = px;
                     vy[vi] = py;
-                    vc[vi] = cs[k];
+                    vc[vi] = colorLut != null ? lookup(cs[k]) : cs[k];
                     vi++;
                     if (px < vMinX) vMinX = px;
                     if (px > vMaxX) vMaxX = px;
@@ -283,6 +301,11 @@ public class MeshShadingPaint implements Paint {
          * interpolation.  Shared triangle edges carry identical colours, so
          * overwriting on the seam is harmless.
          */
+        private int lookup(double index) {
+            int i = (int) (index + 0.5);
+            return colorLut[i < 0 ? 0 : Math.min(i, colorLut.length - 1)];
+        }
+
         private void rasterize(double[] p, int c0, int c1, int c2) {
             double x0 = p[0] - originX, y0 = p[1] - originY;
             double x1 = p[2] - originX, y1 = p[3] - originY;
@@ -316,6 +339,12 @@ public class MeshShadingPaint implements Paint {
                     double l2 = 1.0 - l0 - l1;
                     // small negative tolerance so shared edges don't leave gaps
                     if (l0 < -0.001 || l1 < -0.001 || l2 < -0.001) {
+                        continue;
+                    }
+                    if (colorLut != null) {
+                        // the vertices carry parametric values: interpolate, then look the colour up.
+                        buffer[row + x] = lookup(l0 * c0 + l1 * c1 + l2 * c2);
+                        covered[row + x] = true;
                         continue;
                     }
                     int a = (int) (l0 * a0 + l1 * a1 + l2 * a2 + 0.5);

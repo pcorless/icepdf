@@ -143,7 +143,7 @@ public final class DocumentSigning {
         field.getEntries().put(org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY,
                 new org.icepdf.core.pobjects.LiteralStringObject("Signature" + n));
         Page page = document.getPageTree().getPage(pageIndex);
-        page.addAnnotation(field, true);
+        page.addAnnotation(field);
         form.addField(field);
         return field;
     }

@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.PDate;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
 import org.icepdf.core.pobjects.acroform.SignatureReferenceDictionary;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
@@ -49,6 +50,14 @@ public final class SignatureVerifier {
 
     /** Every signature field of the document, signed or not, in the form's order. */
     public static List<SignatureStatus> verifyAll(Document document) {
+        return verifyAll(document, SignatureValidationOptions.defaults());
+    }
+
+    /**
+     * Every signature field of the document, signed or not, in the form's order, checked with the
+     * given network settings.
+     */
+    public static List<SignatureStatus> verifyAll(Document document, SignatureValidationOptions options) {
         List<SignatureStatus> out = new ArrayList<>();
         InteractiveForm form = document != null ? document.getCatalog().getInteractiveForm() : null;
         if (form == null) return out;
@@ -61,26 +70,80 @@ public final class SignatureVerifier {
             // a malformed byte range shows up per signature below
         }
         for (SignatureWidgetAnnotation field : fields) {
-            out.add(verify(field));
+            out.add(verify(field, options));
         }
         return out;
     }
 
+    /**
+     * The document's signature fields before any is checked: signed ones {@link SignatureStatus.Verdict#PENDING}
+     * with what the signature itself says (signer, time, reason), empty ones UNSIGNED.  Also marks each
+     * validator with whether the document's signatures reach the end of the file.  No network.
+     */
+    public static List<SignatureStatus> pendingAll(Document document) {
+        List<SignatureStatus> out = new ArrayList<>();
+        InteractiveForm form = document != null ? document.getCatalog().getInteractiveForm() : null;
+        if (form == null) return out;
+        List<SignatureWidgetAnnotation> fields = form.getSignatureFields();
+        if (fields.isEmpty()) return out;
+        try {
+            form.isSignaturesCoverDocumentLength();
+        } catch (RuntimeException e) {
+            // a malformed byte range shows up per signature when it is checked
+        }
+        for (SignatureWidgetAnnotation field : fields) {
+            out.add(pending(field));
+        }
+        return out;
+    }
+
+    /**
+     * One field before it's checked: PENDING with what the signature itself says, or UNSIGNED for
+     * an empty field.  No network.
+     */
+    public static SignatureStatus pending(SignatureWidgetAnnotation field) {
+        int pageIndex = pageIndexOf(field);
+        String name = fieldName(field);
+        SignatureDictionary dictionary = field.getFieldDictionary().getSignatureDictionary();
+        if (!isSigned(dictionary)) {
+            return new SignatureStatus(field, pageIndex, name, SignatureStatus.Verdict.UNSIGNED, null, null, null,
+                    null, null, null, null, false, false, false, false, false, false, false, false, false, List.of(), null);
+        }
+        X509Certificate signer = null;
+        try {
+            SignatureValidator validator = field.getSignatureValidator();
+            signer = validator != null ? validator.getSignerCertificate() : null;
+        } catch (RuntimeException e) {
+            // reported when the signature is checked
+        }
+        String commonName = signer != null ? part(signer, "CN") : null;
+        return new SignatureStatus(field, pageIndex, name, SignatureStatus.Verdict.PENDING,
+                commonName != null ? commonName : dictionary.getName(),
+                signer != null ? part(signer, "EMAILADDRESS", "E", "1.2.840.113549.1.9.1") : null,
+                signer != null ? part(signer, "O") : null,
+                dictionary.getReason(), dictionary.getLocation(), dictionary.getContactInfo(),
+                date(dictionary.getPDate()), false, isCertification(dictionary), false, false, false, false, false,
+                false, false, signer != null ? List.of(signer) : List.of(), null);
+    }
+
     /** One signature field. */
     public static SignatureStatus verify(SignatureWidgetAnnotation field) {
+        return verify(field, SignatureValidationOptions.defaults());
+    }
+
+    /**
+     * One signature field, checked afresh with the given network settings.  Can wait on the network
+     * for as long as the options' timeouts allow; call it off the FX thread.
+     */
+    public static SignatureStatus verify(SignatureWidgetAnnotation field, SignatureValidationOptions options) {
         int pageIndex = pageIndexOf(field);
-        String name = field.getFieldDictionary().getFullyQualifiedFieldName();
-        if (name == null && field.getEntries().get(org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY) != null) {
-            // a field added this session: its dictionary read /T before it was set.
-            name = field.getLibrary().getString(field.getEntries(), org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY);
-        }
+        String name = fieldName(field);
         // the field's own /V, as the validator reads it: the widget's copy is only set once its page
         // has been initialised.
         SignatureDictionary dictionary = field.getFieldDictionary().getSignatureDictionary();
-        if (dictionary == null || dictionary.getEntries() == null || dictionary.getEntries().isEmpty()
-                || dictionary.getContents() == null) {
+        if (!isSigned(dictionary)) {
             return new SignatureStatus(field, pageIndex, name, SignatureStatus.Verdict.UNSIGNED, null, null, null,
-                    null, null, null, null, false, false, false, false, false, false, false, false, List.of(), null);
+                    null, null, null, null, false, false, false, false, false, false, false, false, false, List.of(), null);
         }
         String reason = dictionary.getReason();
         String location = dictionary.getLocation();
@@ -91,11 +154,11 @@ public final class SignatureVerifier {
         try {
             validator = field.getSignatureValidator();
             if (validator == null) throw new SignatureIntegrityException("unsupported or malformed signature");
-            validator.validate();
+            validator.validate(options);
         } catch (SignatureIntegrityException | RuntimeException e) {
             return new SignatureStatus(field, pageIndex, name, SignatureStatus.Verdict.ERROR, dictionary.getName(),
                     null, null, reason, location, contact, signingTime, false, certification, false, false, false,
-                    false, false, false, List.of(), org.icepdf.fx.i18n.Messages.reason(e));
+                    false, false, false, false, List.of(), org.icepdf.fx.i18n.Messages.reason(e));
         }
 
         // the best time available: a timestamp authority's, then the signature's own CMS signingTime,
@@ -126,7 +189,21 @@ public final class SignatureVerifier {
                 signer != null ? part(signer, "O") : null,
                 reason, location, contact, signingTime, timeStamp != null || validator.isEmbeddedTimeStamp(), certification,
                 validator.isSignedDataModified(), validator.isDocumentDataModified(), trusted,
-                validator.isSelfSigned(), revoked, dateValid, chain, null);
+                validator.isSelfSigned(), revoked, revoked || validator.isRevocationChecked(), dateValid, chain, null);
+    }
+
+    private static String fieldName(SignatureWidgetAnnotation field) {
+        String name = field.getFieldDictionary().getFullyQualifiedFieldName();
+        if (name == null && field.getEntries().get(org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY) != null) {
+            // a field added this session: its dictionary read /T before it was set.
+            name = field.getLibrary().getString(field.getEntries(), org.icepdf.core.pobjects.acroform.FieldDictionary.T_KEY);
+        }
+        return name;
+    }
+
+    private static boolean isSigned(SignatureDictionary dictionary) {
+        return dictionary != null && dictionary.getEntries() != null && !dictionary.getEntries().isEmpty()
+                && dictionary.getContents() != null;
     }
 
     private static boolean validAt(X509Certificate certificate, Date when) {

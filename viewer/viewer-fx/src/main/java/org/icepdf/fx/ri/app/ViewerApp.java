@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.ri.app;
 
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.application.Application;
@@ -449,6 +450,9 @@ public class ViewerApp extends Application {
         view.setFitMode(fit);
         if (fit == FitMode.NONE) view.setZoom(preferences.getDouble(ViewerPreferences.ZOOM, 1));
         view.setVerifySignaturesOnOpen(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
+        SignatureValidationOptions validation = SignatureValidationOptions.defaults();
+        view.setSignatureValidationOptions(validation.withOnline(
+                preferences.getBoolean(ViewerPreferences.SIGNATURES_ONLINE, validation.isOnline())));
         // with private annotations the author must be user.name: core hides private annotations by
         // any other author, so a chosen name would hide the user's own on reopen.
         view.setAnnotationAuthor(org.icepdf.core.pobjects.annotations.PrivateAnnotations.isEnabled()

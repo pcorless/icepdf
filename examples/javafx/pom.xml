@@ -14,6 +14,8 @@
         <javafx.version>22.0.2</javafx.version>
         <!-- the JavaFX viewer needs JavaFX 22, which runs on Java 17 -->
         <maven.compiler.release>17</maven.compiler.release>
+        <!-- mvn javafx:run -Dexample.mainClass=org.icepdf.examples.javafx.ToolBarExample -->
+        <example.mainClass>org.icepdf.examples.javafx.PdfViewerExample</example.mainClass>
     </properties>
 
     <dependencies>
@@ -41,7 +43,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>org.icepdf.examples.javafx.PdfViewerExample</mainClass>
+                    <mainClass>${example.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>

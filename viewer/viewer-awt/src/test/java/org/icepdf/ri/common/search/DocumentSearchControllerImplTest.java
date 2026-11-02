@@ -17,8 +17,6 @@ import org.icepdf.core.search.SearchTerm;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,10 +46,11 @@ class DocumentSearchControllerImplTest {
     }
 
     @Test
-    void addSearchTerm_caseInsensitive_storesLowercaseTerms() {
+    void addSearchTerm_caseInsensitive_keepsOriginalTerm() {
         SearchTerm term = controller.addSearchTerm("Hello", false, false);
 
-        assertEquals("hello", term.getTerms().get(0));
+        assertEquals("Hello", term.getTerm());
+        assertFalse(term.isCaseSensitive());
     }
 
     @Test
@@ -80,46 +79,6 @@ class DocumentSearchControllerImplTest {
         // after removing both, adding a new one should still work cleanly
         SearchTerm term3 = controller.addSearchTerm("icepdf", false, false);
         assertNotNull(term3);
-    }
-
-    @Test
-    void searchPhraseParser_singleWord_returnsSingleTerm() {
-        ArrayList<String> terms = controller.searchPhraseParser("hello");
-
-        assertEquals(1, terms.size());
-        assertEquals("hello", terms.get(0));
-    }
-
-    @Test
-    void searchPhraseParser_multipleWords_returnsAllWords() {
-        ArrayList<String> terms = controller.searchPhraseParser("hello world");
-
-        assertEquals(2, terms.size());
-        assertEquals("hello", terms.get(0));
-        assertEquals("world", terms.get(1));
-    }
-
-    @Test
-    void searchPhraseParser_leadingAndTrailingWhitespace_isTrimmed() {
-        ArrayList<String> terms = controller.searchPhraseParser("  hello  ");
-
-        assertEquals(1, terms.size());
-        assertEquals("hello", terms.get(0));
-    }
-
-    @Test
-    void searchPhraseParser_emptyString_returnsEmptyList() {
-        ArrayList<String> terms = controller.searchPhraseParser("");
-
-        assertTrue(terms.isEmpty());
-    }
-
-    @Test
-    void searchPhraseParser_phraseWithPunctuation_splitOnPunctuation() {
-        ArrayList<String> terms = controller.searchPhraseParser("hello,world");
-
-        assertTrue(terms.size() > 1);
-        assertEquals("hello", terms.get(0));
     }
 
     @Test

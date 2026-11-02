@@ -264,14 +264,6 @@ public abstract class ShadingPattern extends Dictionary implements Pattern {
     }
 
     /**
-     * Gets the Paint object need to fill a shape etc.  Each individual
-     * implementation will return a particular paint type.
-     *
-     * @return Paint type for fill.
-     */
-    public abstract Paint getPaint() throws InterruptedException;
-
-    /**
      * Initialized shading dictionary attributes. Discrepancies between sh and
      * scn tokens cause us to handle initialization at a later time.
      */

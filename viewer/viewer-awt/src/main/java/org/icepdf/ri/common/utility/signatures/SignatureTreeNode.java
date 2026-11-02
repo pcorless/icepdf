@@ -15,6 +15,7 @@
  */
 package org.icepdf.ri.common.utility.signatures;
 
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationService;
 import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationStatus;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -49,9 +50,10 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private final ResourceBundle messageBundle;
     private final SignatureWidgetAnnotation signatureWidgetAnnotation;
     private SignatureValidator signatureValidator;
-    // flag that validation process is taking place.
+    // a validation of this node's signature is running; the node shows "validating".
     private boolean verifyingSignature;
-
+    // the last validation failed outright; the node shows the error label.
+    private boolean validationFailed;
 
     private String location = null;
     private String reason = null;
@@ -59,7 +61,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
     private String emailAddress = null;
 
     /**
-     * Creates a new instance of an OutlineItemTreeNode
+     * Creates a new instance of an OutlineItemTreeNode.  Validation is not run here: the node shows
+     * "validating" until its validator has a result, see {@link #refreshSignerNode()}.
      *
      * @param signatureWidgetAnnotation Contains PDF Outline signatureWidgetAnnotation data
      * @param messageBundle             i18n message bundle
@@ -70,53 +73,57 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         this.messageBundle = messageBundle;
 
         try {
-            validateSignatureNode();
-        } catch (SignatureIntegrityException e) {
+            readSigner();
+        } catch (RuntimeException e) {
             logger.warning("There was an issue creating a node for the signature: " +
                     signatureWidgetAnnotation.toString());
-            // build a user node object to report the error.
-            MessageFormat formatter = new MessageFormat(messageBundle.getString(
-                    "viewer.utilityPane.signatures.tab.certTree.error.label"));
-            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
-                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
+            validationFailed = true;
         }
+        refreshSignerNode();
     }
 
-    /**
-     * Validates the signatures represented by this tree node.  This method is called by a worker thread
-     * and once validation is complete the notes states is updated with a call to {@link #refreshSignerNode()}
-     *
-     * @throws SignatureIntegrityException security exception if validation failed.
-     */
-    public void validateSignatureNode() throws SignatureIntegrityException {
-
+    // signer details known before validation: the dictionary entries and the signer certificate.
+    private void readSigner() {
         SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
         SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
         if (fieldDictionary != null) {
-            // grab some signer properties right from the annotations dictionary.
-            String name = signatureDictionary.getName();
             location = signatureDictionary.getLocation();
             reason = signatureDictionary.getReason();
-            String contact = signatureDictionary.getContactInfo();
-            String date = signatureDictionary.getDate();
-
             // getting a signatureValidator should give us a pointer the to the signer cert if all goes well.
             signatureValidator = signatureWidgetAnnotation.getSignatureValidator();
-            // try and parse out the signer info.
+            if (signatureValidator == null) {
+                validationFailed = true;
+                return;
+            }
             X509Certificate certificate = signatureValidator.getSignerCertificate();
             X500Principal principal = certificate.getSubjectX500Principal();
             X500Name x500name = new X500Name(principal.getName());
             if (x500name.getRDNs() != null) {
                 commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
-                String organization = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.O);
                 emailAddress = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
             }
-            // Start validation process.
-            setVerifyingSignature(true);
-            signatureValidator.validate();
-            setVerifyingSignature(true);
         }
+    }
 
+    /**
+     * Runs a fresh validation of the signature this node represents.  It can block on the network,
+     * so call it from a worker thread, then {@link #refreshSignerNode()} on the AWT thread.
+     *
+     * @throws SignatureIntegrityException security exception if validation failed.
+     */
+    public void validateSignatureNode() throws SignatureIntegrityException {
+        if (signatureValidator != null) {
+            signatureValidator.validate(SignatureValidationService.options());
+        }
+    }
+
+    /**
+     * The validator of this node's signature.
+     *
+     * @return validator, or null if the signature couldn't be read
+     */
+    public SignatureValidator getSignatureValidator() {
+        return signatureValidator;
     }
 
     /**
@@ -146,7 +153,13 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
      * - Field Name: &lt;field name&gt; on page X (clickable, takes to page and applies focus).
      */
     public synchronized void refreshSignerNode() {
-        if (isVerifyingSignature()) {
+        if (validationFailed || signatureValidator == null) {
+            MessageFormat formatter = new MessageFormat(messageBundle.getString(
+                    "viewer.utilityPane.signatures.tab.certTree.error.label"));
+            setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
+                    (emailAddress != null ? "<" + emailAddress + ">" : "")}));
+            removeAllChildren();
+        } else if (isValidated()) {
             // should have enough data to build a out a full signature node.
             MessageFormat formatter = new MessageFormat(messageBundle.getString(
                     "viewer.utilityPane.signatures.tab.certTree.rootSigned.label"));
@@ -161,6 +174,7 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
             buildVerifiedDateAndFieldLink(this);
         } else {
             // build out a simple validating message
+            removeAllChildren();
             MessageFormat formatter = new MessageFormat(messageBundle.getString(
                     "viewer.utilityPane.signatures.tab.certTree.rootValidating.label"));
             setUserObject(formatter.format(new Object[]{(commonName != null ? commonName + " " : " "),
@@ -170,6 +184,8 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
 
     // set one of the three icon's to represent the validity status of the signature node.
     protected Icon getRootNodeValidityIcon() {
+        // no verdict until there is one: a validator that hasn't run reads as modified.
+        if (!isValidated()) return null;
         return Images.getSingleIcon(SignatureValidationStatus.validityOf(signatureValidator).icon,
                 IconPack.Variant.NONE, Images.IconSize.MINI);
     }
@@ -235,18 +251,37 @@ public class SignatureTreeNode extends DefaultMutableTreeNode {
         }
     }
 
+    /**
+     * Whether the node has a validation result to show: one has run and none is running.
+     *
+     * @return true if the full node can be built
+     */
+    public synchronized boolean isValidated() {
+        return !verifyingSignature && !validationFailed && signatureValidator != null
+                && signatureValidator.isValidated();
+    }
+
     public synchronized boolean isVerifyingSignature() {
         return verifyingSignature;
     }
 
     /**
-     * Flat to indicated that the validation process has completed and the state variables are in a completed
-     * state.  This doesn't mean that the signature is valid just the validation process is complete.
+     * Marks a validation of this node's signature as running (the node shows "validating") or
+     * finished.  Call {@link #refreshSignerNode()} after.
      *
-     * @param verifyingSignature true to indicate the validation process is complete, otherwise falls.
+     * @param verifyingSignature true while a validation runs
      */
-    public void setVerifyingSignature(boolean verifyingSignature) {
+    public synchronized void setVerifyingSignature(boolean verifyingSignature) {
         this.verifyingSignature = verifyingSignature;
+    }
+
+    /**
+     * Records how the last validation ended.  Call {@link #refreshSignerNode()} after.
+     *
+     * @param failed true if it failed outright
+     */
+    public synchronized void setValidationFailed(boolean failed) {
+        this.validationFailed = failed;
     }
 
     public SignatureWidgetAnnotation getOutlineItem() {

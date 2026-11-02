@@ -27,7 +27,8 @@ import javafx.scene.shape.StrokeLineJoin;
 
 /**
  * Validity icons drawn with shapes (no image resources): a green tick for valid, an amber warning
- * for an unknown identity, a red cross for invalid, a grey question mark when unchecked.
+ * for an unknown identity, a red cross for invalid, a grey question mark when it couldn't be
+ * checked, grey dots while it is being checked.
  */
 public final class SignatureIcons {
 
@@ -79,6 +80,8 @@ public final class SignatureIcons {
             // a pen over a signing line: "sign here".
             case UNSIGNED -> icon.getChildren().addAll(stroke(new Line(s * 0.34, s * 0.62, s * 0.66, s * 0.30), s),
                     stroke(new Line(s * 0.27, s * 0.72, s * 0.73, s * 0.72), s));
+            // three dots: still being checked.
+            case PENDING -> icon.getChildren().addAll(dot(s * 0.3, c, s), dot(c, c, s), dot(s * 0.7, c, s));
             default -> icon.getChildren().addAll(stroke(new Polyline(s * 0.36, s * 0.38, s * 0.42, s * 0.27,
                     s * 0.58, s * 0.27, s * 0.64, s * 0.38, s * 0.5, s * 0.5, s * 0.5, s * 0.6), s), dot(c, s * 0.76, s));
         }

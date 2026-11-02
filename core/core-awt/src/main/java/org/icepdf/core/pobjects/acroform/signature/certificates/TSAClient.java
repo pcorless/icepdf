@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.tsp.*;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -124,7 +125,7 @@ public class TSAClient {
         logger.log(Level.FINER, "Opening connection to TSA server");
 
         // todo: support proxy servers
-        URLConnection connection = url.openConnection();
+        URLConnection connection = NetworkSupport.open(url, SignatureValidationOptions.defaults());
         connection.setDoOutput(true);
         connection.setDoInput(true);
         connection.setRequestProperty("Content-Type", "application/timestamp-query");

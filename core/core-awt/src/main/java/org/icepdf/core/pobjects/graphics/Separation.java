@@ -22,7 +22,6 @@ import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
-import java.util.HashMap;
 
 /**
  * <p>Separation Color Space background:</p>
@@ -67,16 +66,6 @@ public class Separation extends PColorSpace {
 
     // named colour reference if valid conversion took place
     protected Color namedColor;
-    /**
-     * @deprecated unused: colours are cached lock free (GH-617); kept for subclasses
-     */
-    @Deprecated
-    protected final HashMap<Float, Color> namedColorCache = new HashMap<>();
-    /**
-     * @deprecated unused: colours are cached lock free (GH-617); kept for subclasses
-     */
-    @Deprecated
-    protected final Object cacheLock = new Object();
     // alternative colour space, named colour can not be resolved.
     protected final PColorSpace alternate;
     // transform for colour tint, named function type

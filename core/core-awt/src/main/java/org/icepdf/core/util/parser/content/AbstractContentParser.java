@@ -684,7 +684,6 @@ public abstract class AbstractContentParser {
                         // af is already CTM x the form's Matrix, which is where the form's images
                         // land on the page.
                         ImageDrawCmd imageDrawCmd = (ImageDrawCmd) object;
-                        imageDrawCmd.getImageStream().setGraphicsTransformMatrix(af);
                         if (imageDrawCmd.getImageReference() != null) {
                             imageDrawCmd.getImageReference().setPlacement(af);
                         }
@@ -720,7 +719,6 @@ public abstract class AbstractContentParser {
 
                 // set CTM so we can convert image location to user space at a later time.
                 AffineTransform af = new AffineTransform(graphicState.getCTM());
-                imageStream.setGraphicsTransformMatrix(af);
 
                 // GH-632: a tiny stencil mask is filled as rectangles rather than decoded and drawn as an image.
                 StencilMaskFill.Mask mask = contentStreamCallback == null
@@ -872,18 +870,25 @@ public abstract class AbstractContentParser {
                                     Shapes shapes, float glyph2UserSpaceScale) {
         // apply any type3 font scalling which is set via the glyph2User space affine transform.
         if (!stack.isEmpty()) {
-            float scale = ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale;
-            if (strokeAdjustmentEnabled && scale < strokeAdjustmentThreshold) {
-                scale = strokeAdjustmentValue;
-            }
-            // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
-            // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
-            if (scale == 0f) {
-                scale = (float) (0.15f / graphicState.getCTM().getScaleX());
-            }
-            graphicState.setLineWidth(scale);
+            setLineWidth(graphicState, ((Number) stack.pop()).floatValue() * glyph2UserSpaceScale);
             setStroke(shapes, graphicState);
         }
+    }
+
+    /**
+     * Applies a line width from either {@code w} or an ExtGState {@code /LW}, with the same stroke adjustment
+     * and zero-width rule for both.
+     */
+    private static void setLineWidth(GraphicsState graphicState, float width) {
+        if (strokeAdjustmentEnabled && width < strokeAdjustmentThreshold) {
+            width = strokeAdjustmentValue;
+        }
+        // A line width of 0 shall denote the thinnest line that can be rendered at device resolution: 1 device
+        // pixel wide.  0.15f is about the thinnest line we can draw reliably at low zoom levels
+        if (width == 0f) {
+            width = (float) (0.15f / graphicState.getCTM().getScaleX());
+        }
+        graphicState.setLineWidth(width);
     }
 
     protected static void consume_M(GraphicsState graphicState, Stack<Object> stack, Shapes shapes) {
@@ -900,6 +905,16 @@ public abstract class AbstractContentParser {
                     resources.getExtGState((Name) gs);
             if (extGState != null) {
                 graphicState.concatenate(extGState);
+                // Chrome/Skia set the stroke only through gs (/LW, /LC, /LJ, /ML, /D), never with w, J, j, M or d,
+                // so the stroke has to be rebuilt here as those operators do, or later strokes keep the old one.
+                if (extGState.getLineWidth() != null || extGState.getLineCapStyle() != null
+                        || extGState.getLineJoinStyle() != null || extGState.getMiterLimit() != null
+                        || extGState.getLineDashPattern() != null) {
+                    if (extGState.getLineWidth() != null) {
+                        setLineWidth(graphicState, extGState.getLineWidth().floatValue());
+                    }
+                    setStroke(shapes, graphicState);
+                }
             }
 
             setAlpha(shapes, graphicState, AlphaPaintType.ALPHA_FILL);
@@ -2055,10 +2070,21 @@ public abstract class AbstractContentParser {
         if (graphicState.getExtGState() != null &&
                 graphicState.getExtGState().getSMask() != null) {
             SoftMask sMask = graphicState.getExtGState().getSMask();
+            // The masked fill is a colour, or a shading pattern: Chrome/Skia write every CSS/SVG gradient
+            // that fades to transparent as an axial shading pattern filled through a luminosity mask (GH-665).
+            Paint maskedPaint = null;
+            if (graphicState.getFillColorSpace() instanceof PatternColor) {
+                Pattern pattern = ((PatternColor) graphicState.getFillColorSpace()).getPattern();
+                if (pattern != null && pattern.getPatternType() == Pattern.PATTERN_TYPE_SHADING) {
+                    pattern.init(graphicState);
+                    maskedPaint = pattern.getPaint(graphicState);
+                }
+            } else {
+                maskedPaint = graphicState.getFillColor();
+            }
             if (sMask.getS() != null
                     && sMask.getS().equals(SoftMask.SOFT_MASK_TYPE_LUMINOSITY)
-                    && graphicState.getFillColor() != null
-                    && !(graphicState.getFillColorSpace() instanceof PatternColor)) {
+                    && maskedPaint != null) {
                 // If a cm was applied between the `gs` that set the mask and this
                 // fill, the fill CTM no longer matches the mask group's own
                 // coordinate system (§11.6.5.2).  Pass the correction fillCTM^-1 .
@@ -2077,7 +2103,7 @@ public abstract class AbstractContentParser {
                         maskCtmFix = null;
                     }
                 }
-                shapes.add(new ShadingSoftMaskDrawCmd(graphicState.getFillColor(),
+                shapes.add(new ShadingSoftMaskDrawCmd(maskedPaint,
                         (GeneralPath) geometricPath.clone(), sMask, maskCtmFix));
             }
             return;

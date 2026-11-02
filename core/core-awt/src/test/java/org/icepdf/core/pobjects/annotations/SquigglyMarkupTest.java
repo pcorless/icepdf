@@ -144,7 +144,7 @@ public class SquigglyMarkupTest {
         try {
             Page page = document.getPageTree().getPage(0);
             page.init();
-            page.addAnnotation(squiggly(page), true);
+            page.addAnnotation(squiggly(page));
             assertWave(paint(page), "new");
         } finally {
             document.dispose();
@@ -159,7 +159,7 @@ public class SquigglyMarkupTest {
         Path saved = temp.resolve("saved.pdf");
         Page page = document.getPageTree().getPage(0);
         page.init();
-        page.addAnnotation(squiggly(page), true);
+        page.addAnnotation(squiggly(page));
         try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(saved))) {
             document.saveToOutputStream(out, WriteMode.INCREMENT_UPDATE);
         }

@@ -53,7 +53,7 @@ public class ObjectLoader {
             if (offset > 0) {
                 // Parse on a duplicate of the shared file buffer; the backing bytes are read-only so any number
                 // of threads can read concurrently without a lock, each with its own position/limit (GH-495).
-                return parser.getPObject(library.getMappedFileByteBuffer().duplicate(), offset);
+                return parser.getPObject(library.getDocumentSource().getBuffer().duplicate(), offset);
             }
         } else if (entry instanceof CrossReferenceCompressedEntry) {
             CrossReferenceCompressedEntry compressedEntry = (CrossReferenceCompressedEntry) entry;

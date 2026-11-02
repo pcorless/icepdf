@@ -151,23 +151,6 @@ public class StateManager {
     }
 
     /**
-     * 7.4.x form of {@link #addChange(PObject)}, kept so code built against it still compiles and links.
-     *
-     * @param pObject object to add to cache.
-     * @param isNew   true for a user edit; false for a library repair.
-     * @deprecated since 7.5.0, use {@link #addChange(PObject)}, inside {@link #repairing(Runnable)} where isNew
-     * was false.
-     */
-    @Deprecated
-    public void addChange(PObject pObject, boolean isNew) {
-        if (isNew) {
-            addChange(pObject);
-        } else {
-            repairing(() -> addChange(pObject));
-        }
-    }
-
-    /**
      * Add a new PObject containing temporary changed data to the cache.
      *
      * @param pObject object to add to cache.
@@ -313,25 +296,6 @@ public class StateManager {
         return userChanges;
     }
 
-    /**
-     * @return If there are any changes from objects that were manipulated by user interaction
-     * @deprecated use {@link #hasUnsavedUserChanges()}, which also accounts for what has already been saved.
-     */
-    @Deprecated
-    public boolean isChange() {
-        return changes.values().stream().anyMatch(c -> c.type != Type.REPAIR);
-    }
-
-    /**
-     * @return If there are any changes that end up in the state manager form user interactions or annotations
-     * needing to create missing content streams or popups.
-     * @deprecated use {@link #hasWritableChanges()}, which reads the same way round as it is used.
-     */
-    @Deprecated
-    public boolean isNoChange() {
-        return !hasWritableChanges();
-    }
-
 
     /**
      * Sets a snapshot of the current changes.  Call this once the document has been opened, and again after every
@@ -339,23 +303,6 @@ public class StateManager {
      */
     public void setChangesSnapshot() {
         savedChangesSnapshot = Map.copyOf(changes);
-    }
-
-    /**
-     * Checks that the last changesSnapshot and the current list of changes are the same or not
-     *
-     * @return true if the changes are different, false otherwise
-     * @deprecated use {@link #hasUnsavedUserChanges()}.  This method counts repairs as changes, so a document that
-     * merely needed an appearance stream generated to be rendered looks modified.
-     */
-    @Deprecated
-    public boolean hasChangedSinceLastSnapshot() {
-        if (savedChangesSnapshot.size() == changes.size()) {
-            return savedChangesSnapshot.entrySet().stream()
-                    .anyMatch(entry -> !Objects.equals(changes.get(entry.getKey()), entry.getValue()));
-        } else {
-            return true;
-        }
     }
 
     /**

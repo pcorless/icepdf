@@ -99,9 +99,4 @@ public class Pkcs1Validator extends AbstractPkcsValidator {
         initialized = true;
     }
 
-    @Override
-    public void validate() throws SignatureIntegrityException {
-        validateDocument();
-    }
-
 }

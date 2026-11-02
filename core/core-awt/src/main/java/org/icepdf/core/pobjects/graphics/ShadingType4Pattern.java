@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.awt.Paint;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,8 +42,6 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
     private static final Logger logger =
             Logger.getLogger(ShadingType4Pattern.class.getName());
 
-    private MeshShadingPaint meshPaint;
-
     public ShadingType4Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h, meshDataStream);
     }
@@ -60,7 +57,7 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
             while (vertexBitStream.available() > 0) {
                 int flag = readFlag() & 0x03;
                 Point2D.Float p = readCoord();
-                int c = colorArgb(readColor());
+                int c = readVertexColor();
                 if (flag == 0) {
                     // Start a new triangle: this vertex plus the next two (which
                     // shall also be flag 0) form it.
@@ -71,13 +68,13 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
                     }
                     readFlag();
                     vb = readCoord();
-                    cb = colorArgb(readColor());
+                    cb = readVertexColor();
                     if (vertexBitStream.available() <= 0) {
                         break;
                     }
                     readFlag();
                     vc = readCoord();
-                    cc = colorArgb(readColor());
+                    cc = readVertexColor();
                 } else if (flag == 1) {
                     // Share edge vb-vc of the previous triangle.
                     va = vb;
@@ -100,11 +97,7 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
         } catch (IOException e) {
             logger.warning("Error parsing Shading type 4 pattern vertices.");
         }
-        meshPaint = buildMeshPaint(triangles, graphicsState);
+        setMesh(triangles);
         inited = true;
-    }
-
-    public Paint getPaint() {
-        return meshPaint;
     }
 }

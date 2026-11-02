@@ -463,8 +463,19 @@ public class TilingPattern extends Stream implements Pattern {
                 && (Math.round(xStep) != Math.round(bBox.getWidth())
                     || Math.round(yStep) != Math.round(bBox.getHeight()));
         if (singleStamp) {
-            paintSingleStamp(g, originalPageSpace, xOffset, yOffset,
-                    width * bBox.getWidth() / xStep, height * bBox.getHeight() / yStep);
+            // The offsets above assume the page space and the fill's user space are oriented alike.  Under a
+            // y-flipped CTM (Chrome/Skia start every page with one) the pattern origin maps to the stamp's
+            // bottom edge, the stamp lands outside the fill and nothing is drawn (GH-665).  Place a flipped
+            // stamp from the full pattern-to-user mapping instead.
+            AffineTransform patternToUser = new AffineTransform(context);
+            patternToUser.concatenate(base);
+            patternToUser.concatenate(matrix);
+            if (patternToUser.getDeterminant() < 0) {
+                paintSingleStamp(g, patternToUser, paintBounds);
+            } else {
+                paintSingleStamp(g, originalPageSpace, xOffset, yOffset,
+                        width * bBox.getWidth() / xStep, height * bBox.getHeight() / yStep, paintBounds);
+            }
             return;
         }
 
@@ -777,12 +788,54 @@ public class TilingPattern extends Stream implements Pattern {
      *                      scaled by BBox/step).
      */
     private void paintSingleStamp(Graphics2D g, AffineTransform originalPageSpace,
-                                  double xOffset, double yOffset, double stampW, double stampH) {
+                                  double xOffset, double yOffset, double stampW, double stampH,
+                                  Rectangle2D paintBounds) {
         int sw = Math.max(1, (int) Math.round(Math.abs(stampW)));
         int sh = Math.max(1, (int) Math.round(Math.abs(stampH)));
         double x0 = Math.round(xOffset);
         double y0 = Math.round(yOffset);
-        Rectangle2D visible = new Rectangle2D.Double(x0, y0, sw, sh);
+        paintSingleStamp(g, new Rectangle2D.Double(x0, y0, sw, sh), paintBounds, (canvas, visible, kx, ky) -> {
+            // Render the BBox content into the buffer, shifted so the visible part lands
+            // at its origin.  singleTile skips the neighbour ring: the step is many times
+            // the BBox, so neighbours land far outside this buffer.
+            AffineTransform shift = AffineTransform.getTranslateInstance(
+                    -(visible.getX() - x0) * kx, -(visible.getY() - y0) * ky);
+            paintPattern(canvas, getShapes(), matrix, originalPageSpace, kx, ky, true, shift);
+        });
+    }
+
+    /**
+     * Single stamp placed by the full pattern-to-user mapping, for a mapping that flips (see the caller).
+     */
+    private void paintSingleStamp(Graphics2D g, AffineTransform patternToUser, Rectangle2D paintBounds) {
+        Rectangle2D stamp = patternToUser.createTransformedShape(bBox).getBounds2D();
+        paintSingleStamp(g, stamp, paintBounds, (canvas, visible, kx, ky) -> {
+            AffineTransform cellToBuffer = AffineTransform.getScaleInstance(kx, ky);
+            cellToBuffer.translate(-visible.getX(), -visible.getY());
+            cellToBuffer.concatenate(patternToUser);
+            canvas.setTransform(cellToBuffer);
+            getShapes().paint(canvas);
+        });
+    }
+
+    /** Draws the BBox content into a buffer of the given size; kx, ky are buffer pixels per user-space unit. */
+    private interface StampPainter {
+        void paint(Graphics2D canvas, Rectangle2D visible, double kx, double ky) throws InterruptedException;
+    }
+
+    /**
+     * @param paintBounds user-space bounds of the fill or stroke that follows, or null if unknown
+     */
+    private void paintSingleStamp(Graphics2D g, Rectangle2D stamp, Rectangle2D paintBounds, StampPainter painter) {
+        // The buffer becomes the paint for the fill or stroke that follows, so that path, not the stamp's
+        // rectangle, decides what is painted (a Chrome area-chart fade is a polygon filled with a one-cell
+        // pattern, GH-665).  It covers the whole paint as well as the stamp, so the texture never repeats
+        // inside the path: outside the stamp the buffer is transparent.
+        Rectangle2D visible = stamp;
+        if (paintBounds != null) {
+            visible = visible.createUnion(new Rectangle2D.Double(paintBounds.getX() - 1, paintBounds.getY() - 1,
+                    paintBounds.getWidth() + 2, paintBounds.getHeight() + 2));
+        }
         // the page's viewport, when painting straight into the page's graphics: its clip was widened
         // to the whole page, which would size this buffer to the whole page at the current zoom.
         Rectangle2D viewport = PaintViewport.inUserSpace(g);
@@ -805,14 +858,32 @@ public class TilingPattern extends Stream implements Pattern {
                 return;
             }
         }
-        // buffer pixels per user-space unit: the device's, along each axis.
+        if (!visible.intersects(stamp)) {
+            // the stamp is off screen or clipped away: nothing to paint
+            g.setPaint(TRANSPARENT);
+            return;
+        }
         AffineTransform device = g.getTransform();
+        if (device.getShearX() == 0 && device.getShearY() == 0) {
+            // Snap the buffer to whole device pixels: the texture then maps one buffer pixel onto one device
+            // pixel, so it paints the stamp without resampling it.
+            Rectangle2D pixels = device.createTransformedShape(visible).getBounds2D();
+            Rectangle2D snapped = new Rectangle2D.Double(Math.floor(pixels.getX()), Math.floor(pixels.getY()),
+                    Math.ceil(pixels.getMaxX()) - Math.floor(pixels.getX()),
+                    Math.ceil(pixels.getMaxY()) - Math.floor(pixels.getY()));
+            try {
+                visible = device.createInverse().createTransformedShape(snapped).getBounds2D();
+            } catch (NoninvertibleTransformException e) {
+                // keep the unsnapped area
+            }
+        }
+        // buffer pixels per user-space unit: the device's, along each axis.
         double kx = Math.hypot(device.getScaleX(), device.getShearY());
         double ky = Math.hypot(device.getShearX(), device.getScaleY());
         if (!(kx > 0) || Double.isInfinite(kx)) kx = 1;
         if (!(ky > 0) || Double.isInfinite(ky)) ky = 1;
-        int bufW = Math.max(1, (int) Math.ceil(visible.getWidth() * kx));
-        int bufH = Math.max(1, (int) Math.ceil(visible.getHeight() * ky));
+        int bufW = Math.max(1, (int) Math.round(visible.getWidth() * kx));
+        int bufH = Math.max(1, (int) Math.round(visible.getHeight() * ky));
         if (bufW > MAX_BUFFER_SIZE) {
             kx *= (double) MAX_BUFFER_SIZE / bufW;
             bufW = MAX_BUFFER_SIZE;
@@ -825,29 +896,14 @@ public class TilingPattern extends Stream implements Pattern {
         Graphics2D canvas = bi.createGraphics();
         canvas.setRenderingHints(renderingHints);
         canvas.setClip(0, 0, bufW, bufH);
-        // Render the BBox content into the buffer, shifted so the visible part lands
-        // at its origin.  singleTile skips the neighbour ring: the step is many times
-        // the BBox, so neighbours land far outside this buffer.
-        AffineTransform shift = AffineTransform.getTranslateInstance(
-                -(visible.getX() - x0) * kx, -(visible.getY() - y0) * ky);
         try {
-            paintPattern(canvas, getShapes(), matrix, originalPageSpace, kx, ky, true, shift);
+            painter.paint(canvas, visible, kx, ky);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.log(Level.FINER, "Interrupted painting single-stamp tiling pattern.");
         }
-        // Blit the visible part over the rect it covers and neutralise the follow-on fill.
-        Object prevInterp = g.getRenderingHint(RenderingHints.KEY_INTERPOLATION);
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        AffineTransform place = AffineTransform.getTranslateInstance(visible.getX(), visible.getY());
-        place.scale(visible.getWidth() / bufW, visible.getHeight() / bufH);
-        g.drawImage(bi, place, null);
-        if (prevInterp != null) {
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, prevInterp);
-        }
-        g.setPaint(TRANSPARENT);
         canvas.dispose();
-        bi.flush();
+        g.setPaint(new TexturePaint(bi, visible));
     }
 
     private void paintPattern(Graphics2D g2d, Shapes tilingShapes, AffineTransform matrix, AffineTransform base,
@@ -910,7 +966,12 @@ public class TilingPattern extends Stream implements Pattern {
     }
 
 
-    public Paint getPaint() {
+    /**
+     * A tiling pattern is painted cell by cell by a {@code TilingPatternDrawCmd}, not by a {@link Paint}.
+     *
+     * @return null
+     */
+    public Paint getPaint(GraphicsState graphicsState) {
         return null;
     }
 

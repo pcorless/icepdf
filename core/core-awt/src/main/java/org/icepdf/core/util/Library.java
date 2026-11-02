@@ -17,6 +17,7 @@ package org.icepdf.core.util;
 
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.internal.DocumentSource;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
@@ -40,7 +41,6 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -110,8 +110,7 @@ public class Library {
     private Header fileHeader;
     private String fileOrigin;
 
-    private ByteBuffer mappedFileByteBuffer;
-    private final Object mappedFileByteBufferLock = new Object();
+    private final DocumentSource documentSource = new DocumentSource();
     // Set while this thread is rebuilding the cross-reference table.  The indexer parses objects as it goes
     // (an indirect stream /Length, the catalog search) and those lookups still go through the old, broken
     // table; a failure there must not start another rebuild, or the rebuild recurses until the stack overflows.
@@ -307,8 +306,8 @@ public class Library {
         boolean outermost = !rebuildingCrossReference.get();
         rebuildingCrossReference.set(Boolean.TRUE);
         try {
-            synchronized (mappedFileByteBufferLock) {
-                crossReferenceRoot = indexer.indexObjects(mappedFileByteBuffer);
+            synchronized (documentSource.getLock()) {
+                crossReferenceRoot = indexer.indexObjects(documentSource.getBuffer());
                 setCrossReferenceRoot(crossReferenceRoot);
             }
         } finally {
@@ -328,8 +327,8 @@ public class Library {
         if (root == null || root.getDeferredObjectStreams() == null) {
             return;
         }
-        synchronized (mappedFileByteBufferLock) {
-            new Indexer(this).indexDeferredObjectStreams(root, mappedFileByteBuffer);
+        synchronized (documentSource.getLock()) {
+            new Indexer(this).indexDeferredObjectStreams(root, documentSource.getBuffer());
         }
     }
 
@@ -451,37 +450,17 @@ public class Library {
     }
 
     /**
-     * The whole document loaded into a single {@link ByteBuffer}.
-     * <p>
-     * <b>Concurrency invariant:</b> object parsing reads this buffer lock-free from many threads at once, which is
-     * only safe because the backing bytes are read-only and <em>no reader mutates the shared buffer's
-     * position/limit</em>.  Any code that reads from it on a worker thread MUST work on its own
-     * {@code getMappedFileByteBuffer().duplicate()} (a duplicate shares the read-only bytes but has an independent
-     * position/limit) - never reposition/slice the shared instance directly.  Code that actually replaces or
-     * mutates the buffer (incremental save, signing, cross-reference rebuild) must hold
-     * {@link #getMappedFileByteBufferLock()} and must not run concurrently with rendering.
+     * The bytes of the document being read.  Internal: the returned type lives in a package core does not
+     * export and will change when documents can be read lazily; see {@link DocumentSource}.
      *
-     * @return the shared, read-only document buffer; duplicate it before reading off-thread.
+     * @return this document's byte source.
      */
-    public ByteBuffer getMappedFileByteBuffer() {
-        return mappedFileByteBuffer;
-    }
-
-    public void setDocumentByteBuffer(ByteBuffer mappedFileByteBuffer) {
-        this.mappedFileByteBuffer = mappedFileByteBuffer;
+    public DocumentSource getDocumentSource() {
+        return documentSource;
     }
 
     public void setFileOrigin(String fileOrigin) {
         this.fileOrigin = fileOrigin;
-    }
-
-    /**
-     * Lock guarding <em>writes</em> to the document buffer (replacing it, or repositioning/slicing the shared
-     * instance) - e.g. incremental save, signing, cross-reference rebuild.  Lock-free readers rely on no such
-     * mutation happening concurrently; see {@link #getMappedFileByteBuffer()}.
-     */
-    public Object getMappedFileByteBufferLock() {
-        return mappedFileByteBufferLock;
     }
 
     public Header getFileHeader() {

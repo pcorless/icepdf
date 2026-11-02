@@ -37,6 +37,54 @@ public interface SignatureValidator {
     void validate() throws SignatureIntegrityException;
 
     /**
+     * Validates the signature, using the network only as the options allow.  Validation can block
+     * on the network for as long as the options' timeouts, so call it off any UI thread.
+     * <p>
+     * The default ignores the options and calls {@link #validate()}.
+     *
+     * @param options network settings for revocation and issuer-certificate fetching
+     * @throws SignatureIntegrityException signature could not be validated or invalidated.
+     */
+    default void validate(SignatureValidationOptions options) throws SignatureIntegrityException {
+        validate();
+    }
+
+    /**
+     * Validates the signature unless a validation has already run, so the many places that need a
+     * result don't each pay for one.  Use {@link #validate(SignatureValidationOptions)} to force a
+     * fresh check.
+     *
+     * @param options network settings, used only if a validation runs
+     * @throws SignatureIntegrityException signature could not be validated or invalidated.
+     */
+    default void ensureValidated(SignatureValidationOptions options) throws SignatureIntegrityException {
+        if (!isValidated()) {
+            validate(options);
+        }
+    }
+
+    /**
+     * Whether a validation has run to completion, successfully or not.
+     *
+     * @return true once validated
+     */
+    default boolean isValidated() {
+        return getLastValidated() != null;
+    }
+
+    /**
+     * Whether the revocation status of every certificate in the signer's chain was determined.  False
+     * when validation ran offline, a responder or revocation list couldn't be reached, or a
+     * certificate names no place to ask: the signature isn't known to be revoked, but isn't known not
+     * to be either.
+     *
+     * @return true if revocation was fully checked
+     */
+    default boolean isRevocationChecked() {
+        return true;
+    }
+
+    /**
      * Indicates if the singed data section specified by a signature has been modified.  This indicates the document
      * has been tampered with.
      *
