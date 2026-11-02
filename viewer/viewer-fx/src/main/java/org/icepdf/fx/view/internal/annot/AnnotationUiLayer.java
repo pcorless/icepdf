@@ -331,6 +331,7 @@ public final class AnnotationUiLayer extends Group {
                 }
                 node.setEditable(editable);
                 node.refreshColour();
+                node.refreshPrivacy();
                 placePopup(node, zoom);
             }
         }

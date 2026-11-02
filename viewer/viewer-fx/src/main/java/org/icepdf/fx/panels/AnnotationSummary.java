@@ -23,6 +23,8 @@ import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.annotations.PrivateAnnotations;
 import org.icepdf.core.util.Library;
 
 import java.awt.Color;
@@ -30,9 +32,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 
 /**
@@ -171,6 +175,42 @@ public final class AnnotationSummary {
             }
         }
         return replies;
+    }
+
+    /**
+     * True when private annotations are in use ({@code org.icepdf.core.page.annotation.privateProperty.enabled}):
+     * the viewer then offers to mark comments private and shows which are.
+     */
+    public static boolean privacyEnabled() {
+        return PrivateAnnotations.isEnabled();
+    }
+
+    /**
+     * The user private annotations belong to: {@code user.name}, the name core compares a private
+     * annotation's author (/T) with when it decides whether to hide it.
+     */
+    public static String currentUser() {
+        return PrivateAnnotations.currentUser();
+    }
+
+    /** True for an annotation that can be marked private: a markup annotation, but not a redaction mark. */
+    public static boolean canBePrivate(Annotation annotation) {
+        return annotation instanceof MarkupAnnotation && !(annotation instanceof RedactionAnnotation);
+    }
+
+    /**
+     * A comment and the replies under it, at any depth: what marking a comment private or public
+     * applies to, as in the Swing viewer.
+     */
+    public static Set<MarkupAnnotation> withReplies(MarkupAnnotation markup) {
+        Set<MarkupAnnotation> thread = new LinkedHashSet<>();
+        thread.add(markup);
+        try {
+            thread.addAll(markup.getReplyingAnnotations(true));
+        } catch (RuntimeException e) {
+            // no page to look on (a comment not yet placed): just the comment.
+        }
+        return thread;
     }
 
     /** A reader's name for a markup subtype. */

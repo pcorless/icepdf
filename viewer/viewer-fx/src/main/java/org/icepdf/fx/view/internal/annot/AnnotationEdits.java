@@ -335,6 +335,48 @@ public final class AnnotationEdits {
         });
     }
 
+    /**
+     * Marks a markup annotation, and its popup, private or public (the viewer's own
+     * {@link Annotation#FLAG_PRIVATE_CONTENTS} /F bit), applied now.  Nothing is drawn differently,
+     * so the appearance stream is left alone.
+     */
+    public static Edit privacy(Locker locker, Page page, int pageIndex, MarkupAnnotation markup, boolean priv) {
+        PopupAnnotation popup = markup.getPopupAnnotation();
+        boolean before = markup.getFlagPrivateContents();
+        boolean popupBefore = popup != null && popup.getFlagPrivateContents();
+        return applied(new Edit() {
+            public int pageIndex() {
+                return pageIndex;
+            }
+
+            public Annotation annotation() {
+                return markup;
+            }
+
+            public void undo() {
+                set(before, popupBefore);
+            }
+
+            public void redo() {
+                set(priv, priv);
+            }
+
+            private void set(boolean markupPrivate, boolean popupPrivate) {
+                locker.withAnnotationLock(pageIndex, () -> {
+                    String now = org.icepdf.core.pobjects.PDate.formatDateTime(new java.util.Date());
+                    markup.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, markupPrivate);
+                    markup.setModifiedDate(now);
+                    page.updateAnnotation(markup);
+                    if (popup != null) {
+                        popup.setFlag(Annotation.FLAG_PRIVATE_CONTENTS, popupPrivate);
+                        popup.setModifiedDate(now);
+                        page.updateAnnotation(popup);
+                    }
+                });
+            }
+        });
+    }
+
     /** Deletes an annotation (and a markup annotation's popup), applied now. */
     public static Edit delete(Locker locker, Page page, int pageIndex, Annotation annotation) {
         PopupAnnotation popup = annotation instanceof MarkupAnnotation markup ? markup.getPopupAnnotation() : null;

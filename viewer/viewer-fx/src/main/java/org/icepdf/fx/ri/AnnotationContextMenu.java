@@ -17,6 +17,7 @@ package org.icepdf.fx.ri;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
@@ -32,9 +33,11 @@ import org.icepdf.core.pobjects.annotations.CircleAnnotation;
 import org.icepdf.core.pobjects.annotations.FreeTextAnnotation;
 import org.icepdf.core.pobjects.annotations.InkAnnotation;
 import org.icepdf.core.pobjects.annotations.LineAnnotation;
+import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
 import org.icepdf.core.pobjects.annotations.SquareAnnotation;
 import org.icepdf.core.pobjects.annotations.TextAnnotation;
 import org.icepdf.core.pobjects.annotations.TextMarkupAnnotation;
+import org.icepdf.fx.panels.AnnotationSummary;
 import org.icepdf.fx.view.AnnotationProperties;
 import org.icepdf.fx.view.PdfView;
 import org.icepdf.fx.view.ToolMode;
@@ -79,8 +82,19 @@ public final class AnnotationContextMenu {
      */
     public static void install(PdfView view, ColorHistory colors,
                                javafx.collections.ObservableMap<ToolMode, Color> toolColors) {
+        install(view, colors, toolColors, null);
+    }
+
+    /**
+     * As {@link #install(PdfView, ColorHistory, javafx.collections.ObservableMap)}, with the user's
+     * colour labels offered first in Change Colour.
+     *
+     * @param labels the colour labels; null for none
+     */
+    public static void install(PdfView view, ColorHistory colors,
+                               javafx.collections.ObservableMap<ToolMode, Color> toolColors, ColorLabels labels) {
         ColorHistory history = colors != null ? colors : ColorHistory.inMemory();
-        view.setAnnotationMenuFactory(annotation -> create(view, annotation, history, toolColors, target -> {
+        view.setAnnotationMenuFactory(annotation -> create(view, annotation, history, labels, toolColors, target -> {
             Window owner = view.getScene() != null ? view.getScene().getWindow() : null;
             AnnotationPropertiesDialog.show(owner, target).ifPresent(change -> view.applyAnnotationProperties(target, change));
         }));
@@ -105,14 +119,30 @@ public final class AnnotationContextMenu {
     public static ContextMenu create(PdfView view, Annotation annotation, ColorHistory colors,
                                      javafx.collections.ObservableMap<ToolMode, Color> toolColors,
                                      java.util.function.Consumer<Annotation> properties) {
+        return create(view, annotation, colors, null, toolColors, properties);
+    }
+
+    /**
+     * Builds the menu for {@code annotation}, or null when nothing in it applies.
+     *
+     * @param labels     the colour labels, offered first in Change Colour; null for none
+     * @param toolColors the drawing tools' colours, for "Use as Default"; null leaves the item out
+     * @param properties shows the properties dialog for the annotation; null leaves the item out
+     */
+    public static ContextMenu create(PdfView view, Annotation annotation, ColorHistory colors, ColorLabels labels,
+                                     javafx.collections.ObservableMap<ToolMode, Color> toolColors,
+                                     java.util.function.Consumer<Annotation> properties) {
         ContextMenu menu = new ContextMenu();
-        if (AnnotationProperties.hasColor(annotation)) menu.getItems().add(colourMenu(view, annotation, colors));
+        if (AnnotationProperties.hasColor(annotation)) menu.getItems().add(colourMenu(view, annotation, colors, labels));
         MenuItem useAsDefault = toolColors != null ? useAsDefault(annotation, toolColors) : null;
         if (useAsDefault != null) menu.getItems().add(useAsDefault);
         if (AnnotationProperties.supports(annotation) && properties != null) {
             MenuItem item = new MenuItem(Messages.get("annotationMenu.properties"));
             item.setOnAction(e -> properties.accept(annotation));
             menu.getItems().add(item);
+        }
+        if (AnnotationSummary.privacyEnabled() && AnnotationSummary.canBePrivate(annotation)) {
+            menu.getItems().add(privateItem(view, (MarkupAnnotation) annotation));
         }
         MenuItem delete = new MenuItem(Messages.get("annotationMenu.delete"));
         delete.setOnAction(e -> {
@@ -124,9 +154,18 @@ public final class AnnotationContextMenu {
         return menu;
     }
 
-    static Menu colourMenu(PdfView view, Annotation annotation, ColorHistory colors) {
+    /** "Private", ticked when it is: marks the comment and its replies private or public. */
+    static CheckMenuItem privateItem(PdfView view, MarkupAnnotation markup) {
+        CheckMenuItem item = new CheckMenuItem(Messages.get("annotationMenu.private"));
+        item.setSelected(markup.getFlagPrivateContents());
+        item.setDisable(!view.isAnnotationEditingAllowed());
+        item.setOnAction(e -> view.setAnnotationsPrivate(AnnotationSummary.withReplies(markup), item.isSelected()));
+        return item;
+    }
+
+    static Menu colourMenu(PdfView view, Annotation annotation, ColorHistory colors, ColorLabels labels) {
         Menu menu = new Menu(Messages.get("annotationMenu.changeColour"));
-        menu.getItems().setAll(colourItems(annotation.getColor(), colors, owner(view), color -> {
+        menu.getItems().setAll(colourItems(annotation.getColor(), colors, labels, owner(view), color -> {
             if (AnnotationProperties.hasColor(annotation)) {
                 view.applyAnnotationProperties(annotation, AnnotationProperties.ofColor(color));
             }
@@ -184,8 +223,14 @@ public final class AnnotationContextMenu {
      */
     public static ContextMenu toolColourMenu(Color current, boolean custom, ColorHistory colors, Window owner,
                                              java.util.function.Consumer<Color> choose) {
+        return toolColourMenu(current, custom, colors, null, owner, choose);
+    }
+
+    /** As {@link #toolColourMenu(Color, boolean, ColorHistory, Window, java.util.function.Consumer)}, labels first. */
+    public static ContextMenu toolColourMenu(Color current, boolean custom, ColorHistory colors, ColorLabels labels,
+                                             Window owner, java.util.function.Consumer<Color> choose) {
         ContextMenu menu = new ContextMenu();
-        menu.getItems().setAll(colourItems(awt(current), colors, owner, c -> choose.accept(fx(c))));
+        menu.getItems().setAll(colourItems(awt(current), colors, labels, owner, c -> choose.accept(fx(c))));
         MenuItem reset = new MenuItem(Messages.get("annotationMenu.defaultColour"));
         reset.setDisable(!custom);
         reset.setOnAction(e -> choose.accept(null));
@@ -194,10 +239,10 @@ public final class AnnotationContextMenu {
     }
 
     /**
-     * The standard colours, the recent ones and More Colours…; picking one tells {@code choose} and
-     * puts it in the history.  {@code current} is shown disabled.
+     * The colour labels (by name), the standard colours, the recent ones and More Colours…; picking
+     * one tells {@code choose} and puts it in the history.  {@code current} is shown disabled.
      */
-    static List<MenuItem> colourItems(java.awt.Color current, ColorHistory colors, Window owner,
+    static List<MenuItem> colourItems(java.awt.Color current, ColorHistory colors, ColorLabels labels, Window owner,
                                       java.util.function.Consumer<java.awt.Color> choose) {
         java.util.function.Consumer<java.awt.Color> pick = color -> {
             choose.accept(color);
@@ -205,6 +250,12 @@ public final class AnnotationContextMenu {
         };
         List<MenuItem> items = new java.util.ArrayList<>();
         int currentRgb = current != null ? current.getRGB() & 0xFFFFFF : -1;
+        List<ColorLabels.Label> named = labels != null ? labels.labels() : List.of();
+        for (ColorLabels.Label label : named) {
+            String name = label.name().isEmpty() ? String.format("#%06X", label.color().getRGB() & 0xFFFFFF) : label.name();
+            items.add(swatch(name, label.color(), currentRgb, pick));
+        }
+        if (!named.isEmpty()) items.add(new SeparatorMenuItem());
         for (int i = 0; i < STANDARD.length; i++) {
             items.add(swatch(Messages.get("annotationMenu.colour." + STANDARD_NAMES[i]), STANDARD[i], currentRgb, pick));
         }

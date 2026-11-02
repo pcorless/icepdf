@@ -3088,6 +3088,7 @@ public class SwingController extends ComponentAdapter implements org.icepdf.ri.c
         if (annotationSummaryFrame != null) {
             annotationSummaryFrame.disposeDocument();
             annotationSummaryFrame.dispose();
+            annotationSummaryFrame = null;
         }
 
         // set the default cursor.

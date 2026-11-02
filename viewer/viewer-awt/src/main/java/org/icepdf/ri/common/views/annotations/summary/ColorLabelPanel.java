@@ -118,6 +118,15 @@ public class ColorLabelPanel extends JPanel implements PropertyChangeListener {
         }
     }
 
+    public void dispose() {
+        for (Component component : draggableAnnotationPanel.getComponents()) {
+            if (component instanceof AnnotationSummaryBox) {
+                ((AnnotationSummaryBox) component).dispose();
+            }
+        }
+        draggableAnnotationPanel.removeAll();
+    }
+
     public DragDropColorList.ColorLabel getColorLabel() {
         return colorLabel;
     }

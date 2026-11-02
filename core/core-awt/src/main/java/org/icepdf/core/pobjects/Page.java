@@ -360,19 +360,11 @@ public class Page extends Dictionary {
                     if (ref != null && a != null) {
                         a.setPObjectReference(ref);
                         a.init();
-                        if (SystemProperties.PRIVATE_PROPERTY_ENABLED && a instanceof MarkupAnnotation && a.getFlagPrivateContents()) {
-                            // check to make sure we don't show an annotation if the username doesn't match the creator
-                            MarkupAnnotation markupAnnotation = (MarkupAnnotation) a;
-                            String creator = markupAnnotation.getTitleText();
-                            if (creator.equals(SystemProperties.USER_NAME)) {
-                                annotations.add(a);
-                            } else {
-                                // otherwise we skip it all together but make sure the popup is hidden.
-                                if (markupAnnotation.getPopupAnnotation() != null) {
-                                    markupAnnotation.getPopupAnnotation().setOpen(false);
-                                }
+                        if (PrivateAnnotations.hides(a)) {
+                            // another author's private annotation (or its popup): left out, popup closed.
+                            if (a instanceof MarkupAnnotation && ((MarkupAnnotation) a).getPopupAnnotation() != null) {
+                                ((MarkupAnnotation) a).getPopupAnnotation().setOpen(false);
                             }
-
                         } else {
                             // add any found annotations to the vector.
                             annotations.add(a);
