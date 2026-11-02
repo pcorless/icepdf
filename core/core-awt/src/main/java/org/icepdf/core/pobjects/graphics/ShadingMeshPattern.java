@@ -107,14 +107,6 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     }
 
     /**
-     * @return the paint as positioned for the first use of this pattern only.
-     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
-     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint built for whichever use came first.
-     */
-    @Deprecated
-    public abstract Paint getPaint();
-
-    /**
      * An array of numbers specifying how to map vertex coordinates and colour components into the
      * appropriate ranges of values. The decoding method is similar to that used in image dictionaries
      * (see 8.9.5.2, "Decode Arrays"). The ranges shall be specified as follows:
@@ -282,7 +274,16 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
     protected static final int PATCH_SUBDIVISIONS = 10;
 
     /**
-     * Wraps a tessellated triangle list in a {@link MeshShadingPaint}, anchoring
+     * Keeps the tessellated mesh, in shading space; {@link #getPaint(GraphicsState)} wraps it per use.
+     *
+     * @param triangles tessellated mesh triangles in shading space.
+     */
+    protected void setMesh(List<MeshShadingPaint.Triangle> triangles) {
+        meshTriangles = triangles;
+    }
+
+    /**
+     * Wraps the tessellated mesh in a {@link MeshShadingPaint}, anchoring
      * a shading <b>pattern</b> to its default coordinate system.  A shading
      * pattern's {@code Matrix} maps shading space to the page's default user
      * space and is independent of the fill-time CTM (PDF 32000-1 §8.7.3.1); the
@@ -294,28 +295,20 @@ public abstract class ShadingMeshPattern extends ShadingPattern implements Patte
      * apply in full -- and carries no {@code /PatternType}.  Anchoring it would
      * cancel that CTM and push the mesh off the fill region, so the raw matrix
      * (identity for {@code sh}) is used unchanged.
-     *
-     * @param triangles     tessellated mesh triangles in shading space.
-     * @param graphicsState graphics state at the fill (for the fill-time CTM).
-     * @return a paint that Gouraud-rasterises the mesh.
-     */
-    protected MeshShadingPaint buildMeshPaint(List<MeshShadingPaint.Triangle> triangles,
-                                              GraphicsState graphicsState) {
-        meshTriangles = triangles;
-        return new MeshShadingPaint(triangles, shadingToUser(graphicsState), true, colorLut());
-    }
-
-    /**
+     * <p>
      * The pattern is shared by every use, on every page, but its anchoring depends on each use's CTM, so each use
      * gets its own paint over the shared triangles; returning the paint built for the first use gave later uses
      * that use's CTM, and which use came first varied under concurrent page rendering.
+     *
+     * @param graphicsState graphics state at the fill (for the fill-time CTM).
+     * @return a paint that Gouraud-rasterises the mesh, or null when there is no mesh.
      */
     @Override
     public Paint getPaint(GraphicsState graphicsState) throws InterruptedException {
         init(graphicsState);
         List<MeshShadingPaint.Triangle> triangles = meshTriangles;
         if (triangles == null) {
-            return getPaint();
+            return null;
         }
         return new MeshShadingPaint(triangles, shadingToUser(graphicsState), true, colorLut());
     }

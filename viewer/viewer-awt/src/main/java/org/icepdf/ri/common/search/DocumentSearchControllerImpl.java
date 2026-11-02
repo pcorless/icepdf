@@ -791,21 +791,8 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
     }
 
     @Override
-    @SuppressWarnings("deprecation")   // still populates SearchTerm.getTerms() for API compatibility
     public SearchTerm addSearchTerm(String term, boolean caseSensitive, boolean wholeWord, boolean regex, Color highlightColor) {
-        // keep original copy
-        String originalTerm = String.valueOf(term);
-
-        // check criteria for case sensitivity.
-        if (!caseSensitive) {
-            term = term.toLowerCase();
-        }
-        // legacy: populate the (deprecated) per-word token list; the matcher itself uses the whole
-        // term against the reading-order corpus and ignores these tokens.
-        ArrayList<String> searchPhrase = searchMode == SearchMode.PAGE ? new ArrayList<>(Collections.singletonList(term)) : searchPhraseParser(term);
-        // finally add the search term to the list and return it for management
-        SearchTerm searchTerm =
-                new SearchTerm(originalTerm, searchPhrase, caseSensitive, wholeWord, regex, highlightColor);
+        SearchTerm searchTerm = new SearchTerm(String.valueOf(term), caseSensitive, wholeWord, regex, highlightColor);
         searchModel.addSearchTerm(searchTerm);
         return searchTerm;
     }
@@ -922,46 +909,6 @@ public class DocumentSearchControllerImpl implements DocumentSearchController {
             logger.fine("PageText extraction thread was interrupted.");
         }
         return pageText;
-    }
-
-    /**
-     * Utility for breaking a phrase into word/space/punctuation tokens.
-     *
-     * @param phrase pattern to break into words.
-     * @return list of tokens that make up the phrase.
-     * @deprecated Since 7.5 the search matcher no longer tokenizes terms (it matches the whole term
-     * against a reading-order corpus).  Retained only to populate the deprecated
-     * {@link org.icepdf.core.search.SearchTerm#getTerms()}; scheduled for removal.
-     */
-    @Deprecated
-    protected ArrayList<String> searchPhraseParser(String phrase) {
-        // trim white space, not really useful.
-        phrase = phrase.trim();
-        // found words.
-        ArrayList<String> words = new ArrayList<>();
-        char c;
-        char cPrev = 0;
-        boolean isPunctuation;
-        for (int start = 0, curs = 0, max = phrase.length(); curs < max; curs++) {
-            c = phrase.charAt(curs);
-            isPunctuation = WordText.isPunctuation(c);
-            if (WordText.isWhiteSpace(c) || (isPunctuation && !WordText.isDigit(cPrev))) {
-                // add word segment
-                if (start != curs) {
-                    words.add(phrase.substring(start, curs));
-                }
-                // skip white space.
-                if (isPunctuation) {
-                    words.add(phrase.substring(curs, curs + 1));
-                }
-                // start
-                start = curs + 1 < max ? curs + 1 : start;
-            } else if (curs + 1 == max) {
-                words.add(phrase.substring(start, curs + 1));
-            }
-            cPrev = c;
-        }
-        return words;
     }
 
     /**

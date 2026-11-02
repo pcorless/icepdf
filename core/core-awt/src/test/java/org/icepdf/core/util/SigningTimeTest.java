@@ -82,7 +82,7 @@ public class SigningTimeTest {
         Library library = document.getCatalog().getLibrary();
         SignatureWidgetAnnotation field = (SignatureWidgetAnnotation) AnnotationFactory.buildWidgetAnnotation(
                 library, FieldDictionaryFactory.TYPE_SIGNATURE, new Rectangle(300, 40, 200, 60));
-        document.getPageTree().getPage(0).addAnnotation(field, true);
+        document.getPageTree().getPage(0).addAnnotation(field);
         document.getCatalog().getOrCreateInteractiveForm().addField(field);
         SignatureDictionary dictionary = SignatureDictionary.getInstance(field, SignatureType.SIGNER,
                 DocMDPTransferParam.PERMISSION_VALUE_FORMS_SIGNING);

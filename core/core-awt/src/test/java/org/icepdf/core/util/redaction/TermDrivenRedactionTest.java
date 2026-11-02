@@ -137,8 +137,7 @@ public class TermDrivenRedactionTest {
     public void matchingHonoursSearchFlags() throws Exception {
         // Case-sensitive "Bravo" must not match the lower case text in the fixture.
         byte[] saved = redact(RedactionRequest.ofTerms(
-                Collections.singletonList(new SearchTerm("Bravo", terms("Bravo").get(0).getTerms(),
-                        true, false, false))));
+                Collections.singletonList(new SearchTerm("Bravo", true, false, false))));
         assertEquals("bravo section", outlineTitle(saved),
                 "a case-sensitive term should not match different case");
     }
@@ -301,9 +300,7 @@ public class TermDrivenRedactionTest {
     // -- helpers ---------------------------------------------------------------------------------
 
     private List<SearchTerm> terms(String word) {
-        ArrayList<String> words = new ArrayList<>();
-        words.add(word);
-        return Collections.singletonList(new SearchTerm(word, words, false, false, false));
+        return Collections.singletonList(new SearchTerm(word, false, false, false));
     }
 
     private Document open() throws Exception {

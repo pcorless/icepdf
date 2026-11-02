@@ -300,22 +300,6 @@ public class ShadingType2Pattern extends ShadingPattern {
     }
 
     /**
-     * @return the gradient in pattern space, not anchored to any use.
-     * @deprecated a pattern is shared by every use, and its paint is anchored to each use's CTM; use
-     * {@link #getPaint(GraphicsState)}.  Without the graphics state this returns the paint in pattern space, not anchored to any use.
-     */
-    @Deprecated
-    public Paint getPaint() {
-        try {
-            init();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            logger.fine("ShadingType2Pattern initialization interrupted");
-        }
-        return linearGradientPaint;
-    }
-
-    /**
      * The cached gradient carries the raw pattern matrix; each use gets a copy anchored to its own CTM.  Caching
      * the anchored paint gave every later use the first use's CTM, so a pattern reused under a different
      * {@code cm} slid off its shape and clamped to one end colour - and under concurrent page rendering, which

@@ -82,7 +82,7 @@ public class TightLeadingRedactionTest {
     }
 
     private static List<SearchTerm> term(String word) {
-        return List.of(new SearchTerm(word, new ArrayList<>(List.of(word)), false, false, false));
+        return List.of(new SearchTerm(word, false, false, false));
     }
 
     private static RedactionReport redact1949(Document document, RedactionOptions options, ByteArrayOutputStream out)

@@ -19,7 +19,6 @@ import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.util.Library;
 
-import java.awt.Paint;
 import java.awt.geom.Point2D;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,8 +41,6 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
 
     private static final Logger logger =
             Logger.getLogger(ShadingType4Pattern.class.getName());
-
-    private MeshShadingPaint meshPaint;
 
     public ShadingType4Pattern(Library l, DictionaryEntries h, Stream meshDataStream) {
         super(l, h, meshDataStream);
@@ -100,11 +97,7 @@ public class ShadingType4Pattern extends ShadingMeshPattern {
         } catch (IOException e) {
             logger.warning("Error parsing Shading type 4 pattern vertices.");
         }
-        meshPaint = buildMeshPaint(triangles, graphicsState);
+        setMesh(triangles);
         inited = true;
-    }
-
-    public Paint getPaint() {
-        return meshPaint;
     }
 }

@@ -113,9 +113,8 @@ public class RedactionTargetScopeTest {
         document.setFile(Paths.get("src/test/resources/redaction/tagged_text.pdf").toString());
         try {
             document.getPageTree().getPage(0).init();
-            ArrayList<String> words = new ArrayList<>(List.of("bravo"));
             Redactor.configure(document, RedactionRequest.ofTerms(
-                    List.of(new SearchTerm("bravo", words, false, false, false))).with(options));
+                    List.of(new SearchTerm("bravo", false, false, false))).with(options));
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             document.saveToOutputStream(out, WriteMode.FULL_UPDATE);
@@ -143,9 +142,8 @@ public class RedactionTargetScopeTest {
             Page page = document.getPageTree().getPage(0);
             page.init();
             page.addAnnotation(RedactionFixtures.redactionOver(document, new Rectangle(20, 145, 200, 20)));
-            ArrayList<String> words = new ArrayList<>(List.of("bravo"));
             Redactor.configure(document, RedactionRequest.ofAnnotationsAndTerms(
-                    List.of(new SearchTerm("bravo", words, false, false, false))));
+                    List.of(new SearchTerm("bravo", false, false, false))));
 
             document.saveToOutputStream(new ByteArrayOutputStream(), WriteMode.FULL_UPDATE);
 
