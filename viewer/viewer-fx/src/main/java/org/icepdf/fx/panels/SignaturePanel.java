@@ -20,12 +20,17 @@ import org.icepdf.fx.i18n.Messages;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyBooleanWrapper;
+import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import org.icepdf.fx.signature.SignatureIcons;
 import org.icepdf.fx.signature.SignaturePropertiesDialog;
 import org.icepdf.fx.signature.SignatureStatus;
@@ -53,6 +58,7 @@ public class SignaturePanel extends BorderPane {
                     setText(null);
                     setGraphic(null);
                     setTooltip(null);
+                    setContextMenu(null);
                     return;
                 }
                 String who = item.isSigned() ? (item.signerName() != null ? item.signerName() : Messages.get("signaturePanel.unknownSigner"))
@@ -60,9 +66,19 @@ public class SignaturePanel extends BorderPane {
                 String when = item.signingTime() != null ? DateFormat.getDateTimeInstance(
                         DateFormat.SHORT, DateFormat.SHORT).format(item.signingTime()) : "";
                 setText(who + (when.isEmpty() ? "" : "\n" + when)
-                        + (item.pageIndex() >= 0 ? "  " + Messages.format("signaturePanel.page", item.pageIndex() + 1) : ""));
+                        + (item.pageIndex() >= 0 ? "  " + Messages.format("signaturePanel.page", item.pageIndex() + 1) : "")
+                        + (item.isRevocationUnchecked() ? "\n" + Messages.get("signaturePanel.revocationUnchecked") : ""));
                 setGraphic(item.isSigned() ? SignatureIcons.icon(item.verdict(), 16) : null);
                 setTooltip(new Tooltip(item.summary()));
+                // revocation went unchecked (offline, or a server didn't answer): offer a one-off online check.
+                if (item.isRevocationUnchecked()) {
+                    MenuItem checkOnline = new MenuItem(Messages.get("signatureProperties.checkOnline"));
+                    checkOnline.setOnAction(e -> view.verifySignature(item,
+                            view.getSignatureValidationOptions().withOnline(true)));
+                    setContextMenu(new ContextMenu(checkOnline));
+                } else {
+                    setContextMenu(null);
+                }
             }
         });
         list.getSelectionModel().selectedItemProperty().addListener((obs, was, now) -> {
@@ -78,6 +94,31 @@ public class SignaturePanel extends BorderPane {
         list.setPlaceholder(empty);
         setCenter(list);
         hasSignatures.bind(Bindings.isNotEmpty(view.getSignatures()));
+
+        // while signatures are checked: how many of the signed ones are done.
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setMaxWidth(Double.MAX_VALUE);
+        Label progressLabel = new Label();
+        VBox progress = new VBox(4, progressLabel, progressBar);
+        progress.setPadding(new Insets(6, 8, 6, 8));
+        progress.getStyleClass().add("signature-panel-progress");
+        progress.visibleProperty().bind(view.verifyingSignaturesProperty());
+        progress.managedProperty().bind(progress.visibleProperty());
+        Runnable updateProgress = () -> {
+            int signed = 0;
+            int done = 0;
+            for (SignatureStatus status : view.getSignatures()) {
+                if (!status.isSigned()) continue;
+                signed++;
+                if (!status.isPending()) done++;
+            }
+            progressBar.setProgress(signed == 0 ? ProgressBar.INDETERMINATE_PROGRESS : (double) done / signed);
+            progressLabel.setText(signed == 0 ? Messages.get("signaturePanel.checking")
+                    : Messages.format("signaturePanel.checkingCount", Math.min(done + 1, signed), signed));
+        };
+        view.getSignatures().addListener((ListChangeListener<SignatureStatus>) c -> updateProgress.run());
+        updateProgress.run();
+        setTop(progress);
     }
 
     /** True when the document has signature fields. */

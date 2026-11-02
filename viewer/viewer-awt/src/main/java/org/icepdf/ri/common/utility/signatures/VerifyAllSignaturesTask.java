@@ -18,11 +18,14 @@ package org.icepdf.ri.common.utility.signatures;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureDictionary;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SignatureIntegrityException;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.AbstractTask;
 import org.icepdf.ri.common.AbstractWorkerPanel;
 import org.icepdf.ri.common.views.Controller;
+import org.icepdf.ri.common.views.annotations.signatures.SignatureValidationService;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -42,6 +45,35 @@ public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
         super(controller, workerPanel, messageBundle);
     }
 
+    // a signature whose validation has finished, and whether it failed outright.
+    static final class Validated {
+        final SignatureWidgetAnnotation annotation;
+        final boolean failed;
+
+        Validated(SignatureWidgetAnnotation annotation, boolean failed) {
+            this.annotation = annotation;
+            this.failed = failed;
+        }
+    }
+
+    // progress through the signed fields.
+    static final class Progress {
+        final int done;
+        final int total;
+        final String message;
+
+        Progress(int done, int total, String message) {
+            this.done = done;
+            this.total = total;
+            this.message = message;
+        }
+    }
+
+    /**
+     * Lists every signed field in the tree at once, marked as validating, then validates them one
+     * by one and updates each node as its result comes in.  Validation can wait on the network, so
+     * it all happens here, off the AWT thread; the nodes themselves never validate.
+     */
     @Override
     protected Void doInBackground() {
         MessageFormat messageFormat = new MessageFormat(
@@ -52,43 +84,48 @@ public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
             // checks and flags each annotation to indicate if the signatures cover the whole document
             interactiveForm.isSignaturesCoverDocumentLength();
             final ArrayList<SignatureWidgetAnnotation> signatures = interactiveForm.getSignatureFields();
+            List<SignatureWidgetAnnotation> signed = new ArrayList<>();
             boolean unsignedFields = false;
-            // build out the tree
-            if (signatures.size() > 0) {
-                // iterate over the signature in the document.
-                for (int i = 0, max = signatures.size(); i < max; i++) {
-                    // break if needed
-                    if (isCancelled()) {
-                        break;
-                    }
-                    taskStatusMessage = messageFormat.format(new Object[]{i + 1, signatures.size()});
+            for (SignatureWidgetAnnotation signatureWidgetAnnotation : signatures) {
+                signatureWidgetAnnotation.init();
+                SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
+                if (signatureDictionary.getEntries().size() > 0) {
+                    signed.add(signatureWidgetAnnotation);
+                    // add a node, showing "validating", to the tree on the awt thread.
+                    publish(signatureWidgetAnnotation);
+                } else {
+                    unsignedFields = true;
+                }
+            }
+            // build out unsigned fields
+            if (unsignedFields) {
+                publish(signatures);
+            }
 
-                    SignatureWidgetAnnotation signatureWidgetAnnotation = signatures.get(i);
-                    signatureWidgetAnnotation.init();
-                    SignatureDictionary signatureDictionary = signatureWidgetAnnotation.getSignatureDictionary();
-                    if (signatureDictionary.getEntries().size() > 0) {
-                        try {
-                            signatureWidgetAnnotation.getSignatureValidator().validate();
-                            signatureWidgetAnnotation.getSignatureValidator().isSignaturesCoverDocumentLength();
-                            // add a new node to the tree.
-                        } catch (SignatureIntegrityException e) {
-                            logger.log(Level.WARNING, "Error verifying signature.", e);
-                        }
-                        // add the node to the signature panel tree but on the awt thread.
-                        publish(signatureWidgetAnnotation);
-                    } else {
-                        // found some unsigned fields.
-                        unsignedFields = true;
+            SignatureValidationOptions options = SignatureValidationService.options();
+            for (int i = 0, max = signed.size(); i < max; i++) {
+                if (isCancelled()) {
+                    break;
+                }
+                taskStatusMessage = messageFormat.format(new Object[]{i + 1, max});
+                publish(new Progress(i, max, taskStatusMessage));
+                SignatureWidgetAnnotation signatureWidgetAnnotation = signed.get(i);
+                boolean failed = false;
+                try {
+                    SignatureValidator validator = signatureWidgetAnnotation.getSignatureValidator();
+                    if (validator != null) {
+                        validator.ensureValidated(options);
+                        validator.isSignaturesCoverDocumentLength();
                     }
-                    Thread.yield();
+                } catch (SignatureIntegrityException | RuntimeException e) {
+                    logger.log(Level.WARNING, "Error verifying signature.", e);
+                    failed = true;
                 }
-                // build out unsigned fields
-                if (unsignedFields) {
-                    publish(signatures);
-                }
+                publish(new Validated(signatureWidgetAnnotation, failed));
             }
             // update the dialog and end the task
             taskStatusMessage = messageBundle.getString("viewer.utilityPane.signatures.verify.completeMessage.label");
+            publish(new Progress(signed.size(), signed.size(), taskStatusMessage));
         } catch (Exception e) {
             logger.log(Level.FINER, "Error verifying signatures.", e);
         }
@@ -97,17 +134,26 @@ public class VerifyAllSignaturesTask extends AbstractTask<Void, Object> {
 
     @Override
     protected void process(List<Object> chunks) {
+        SignaturesHandlerPanel panel = (SignaturesHandlerPanel) workerPanel;
         for (Object chunk : chunks) {
             if (chunk instanceof SignatureWidgetAnnotation) {
-                ((SignaturesHandlerPanel) workerPanel).addSignature((SignatureWidgetAnnotation) chunk);
+                panel.addSignature((SignatureWidgetAnnotation) chunk);
+            } else if (chunk instanceof Validated) {
+                Validated validated = (Validated) chunk;
+                panel.signatureValidated(validated.annotation, validated.failed);
+            } else if (chunk instanceof Progress) {
+                Progress progress = (Progress) chunk;
+                panel.startProgressControls(progress.total);
+                panel.updateProgressControls(progress.done, progress.message);
             } else if (chunk instanceof ArrayList) {
-                ((SignaturesHandlerPanel) workerPanel).addUnsignedSignatures((ArrayList) chunk);
+                panel.addUnsignedSignatures((ArrayList) chunk);
             }
         }
     }
 
     @Override
     protected void done() {
+        ((SignaturesHandlerPanel) workerPanel).endProgressControls();
         workerPanel.validate();
     }
 

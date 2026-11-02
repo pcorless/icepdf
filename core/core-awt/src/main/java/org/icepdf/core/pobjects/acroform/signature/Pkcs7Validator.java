@@ -73,7 +73,8 @@ public class Pkcs7Validator extends AbstractPkcsValidator {
      *
      * @throws SignatureIntegrityException thrown if the signature fails either validation.
      */
-    public void validate() throws SignatureIntegrityException {
+    @Override
+    protected void doValidate() throws SignatureIntegrityException {
         validateDocument();
         validateTimestamp();
     }

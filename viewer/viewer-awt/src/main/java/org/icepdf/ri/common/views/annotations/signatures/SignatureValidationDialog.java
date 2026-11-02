@@ -15,8 +15,6 @@
  */
 package org.icepdf.ri.common.views.annotations.signatures;
 
-import org.icepdf.core.pobjects.acroform.SignatureFieldDictionary;
-import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidator;
 import org.icepdf.core.pobjects.annotations.SignatureWidgetAnnotation;
 import org.icepdf.ri.common.EscapeJDialog;
@@ -24,6 +22,7 @@ import org.icepdf.ri.common.EscapeJDialog;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 /**
@@ -49,34 +48,58 @@ public class SignatureValidationDialog extends EscapeJDialog {
     }
 
     protected void buildUI() {
+        setTitle(messageBundle.getString("viewer.annotation.signature.validation.dialog.title"));
+        setResizable(false);
+        if (signatureValidator.isValidated()) {
+            showContent(buildContent());
+        } else {
+            showWhenValidated(SignatureValidationService.ensureValidated(signatureValidator));
+        }
+    }
+
+    /**
+     * Shows progress until the validation completes, then its result.
+     *
+     * @param validation a running validation of this dialog's signature
+     */
+    public void showWhenValidated(CompletableFuture<SignatureValidator> validation) {
+        showContent(new SignatureValidationProgressPanel(messageBundle, signatureValidator, null, this::close));
+        validation.whenComplete((validator, failure) -> {
+            if (!isDisplayable()) return;
+            showContent(failure == null ? buildContent()
+                    : new SignatureValidationProgressPanel(messageBundle, signatureValidator,
+                    SignatureValidationService.cause(failure), this::close));
+        });
+    }
+
+    private void showContent(JComponent content) {
+        getContentPane().removeAll();
+        getContentPane().add(content);
+        pack();
+        setLocationRelativeTo(getOwner());
+    }
+
+    private void close() {
+        setVisible(false);
+        dispose();
+    }
+
+    protected JPanel buildContent() {
         SignatureValidationStatus signatureValidationStatus =
                 new SignatureValidationStatus(messageBundle, signatureWidgetAnnotation, signatureValidator);
 
-        setTitle(messageBundle.getString("viewer.annotation.signature.validation.dialog.title"));
         // simple close
         final JButton closeButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.validation.dialog.close.button.label"));
         closeButton.setMnemonic(messageBundle.getString("viewer.button.cancel.mnemonic").charAt(0));
-        closeButton.addActionListener(e -> {
-            setVisible(false);
-            dispose();
-        });
+        closeButton.addActionListener(e -> close());
 
         // launch properties dialog showing all signature info.
         final JButton propertiesButton = new JButton(messageBundle.getString(
                 "viewer.annotation.signature.validation.dialog.signerProperties.button.label"));
         final Dialog parent = this;
-        propertiesButton.addActionListener(e -> {
-            SignatureFieldDictionary fieldDictionary = signatureWidgetAnnotation.getFieldDictionary();
-            if (fieldDictionary != null) {
-                SignatureHandler signatureHandler = fieldDictionary.getLibrary().getSignatureHandler();
-                SignatureValidator signatureValidator = signatureHandler.validateSignature(fieldDictionary);
-                if (signatureValidator != null) {
-                    new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation)
-                            .setVisible(true);
-                }
-            }
-        });
+        propertiesButton.addActionListener(e ->
+                new SignaturePropertiesDialog(parent, messageBundle, signatureWidgetAnnotation).setVisible(true));
 
         // put it all together.
         SignatureValidationPanel validityPanel =
@@ -88,14 +111,20 @@ public class SignatureValidationDialog extends EscapeJDialog {
         constraints.anchor = GridBagConstraints.WEST;
         validityPanel.addGB(propertiesButton, 0, 5, 1, 1);
 
-        constraints.anchor = GridBagConstraints.EAST;
-        validityPanel.addGB(closeButton, 1, 5, 1, 1);
-
-        getContentPane().add(validityPanel);
-        pack();
-        setLocationRelativeTo(getOwner());
-        setResizable(false);
+        // revocation went unchecked (offline, or a server didn't answer): offer a one-off online check.
+        if (SignatureValidationStatus.canCheckOnline(signatureValidator)) {
+            JButton checkOnlineButton = new JButton(messageBundle.getString(
+                    "viewer.annotation.signature.validation.dialog.checkOnline.button.label"));
+            checkOnlineButton.addActionListener(e -> showWhenValidated(SignatureValidationService.validate(
+                    signatureValidator, SignatureValidationService.options().withOnline(true))));
+            constraints.anchor = GridBagConstraints.CENTER;
+            validityPanel.addGB(checkOnlineButton, 1, 5, 1, 1);
+            constraints.anchor = GridBagConstraints.EAST;
+            validityPanel.addGB(closeButton, 2, 5, 1, 1);
+        } else {
+            constraints.anchor = GridBagConstraints.EAST;
+            validityPanel.addGB(closeButton, 1, 5, 1, 1);
+        }
+        return validityPanel;
     }
-
-
 }

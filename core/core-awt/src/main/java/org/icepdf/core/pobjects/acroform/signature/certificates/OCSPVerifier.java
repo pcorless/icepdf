@@ -37,6 +37,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.OCSPException;
 import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.CertificateVerificationException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.RevokedCertificateException;
 import org.icepdf.core.pobjects.acroform.signature.exceptions.SelfSignedVerificationException;
@@ -70,6 +71,23 @@ public class OCSPVerifier {
      * @param additionalCerts additional certificates for building the chain.
      */
     public static void verifyOCSP(OcspHelper ocspHelper, Set<X509Certificate> additionalCerts)
+            throws RevokedCertificateException, IOException, OCSPException,
+            CertificateVerificationException, URISyntaxException, GeneralSecurityException,
+            SelfSignedVerificationException {
+        verifyOCSP(ocspHelper, additionalCerts, SignatureValidationOptions.defaults(), new RevocationStatus());
+    }
+
+    /**
+     * As {@link #verifyOCSP(OcspHelper, Set)}; the responder certificate's own chain and revocation
+     * check use the given options and record into the given status.
+     *
+     * @param ocspHelper      the OCSP helper.
+     * @param additionalCerts additional certificates for building the chain.
+     * @param options         network settings
+     * @param status          records certificates whose revocation status couldn't be determined
+     */
+    public static void verifyOCSP(OcspHelper ocspHelper, Set<X509Certificate> additionalCerts,
+                                  SignatureValidationOptions options, RevocationStatus status)
             throws RevokedCertificateException, IOException, OCSPException,
             CertificateVerificationException, URISyntaxException, GeneralSecurityException,
             SelfSignedVerificationException {
@@ -112,7 +130,8 @@ public class OCSPVerifier {
                 logger.log(Level.WARNING, "Could not convert OCSP responder certificate holder to X509Certificate", ex);
             }
         }
-        CertificateVerifier.verifyCertificate(ocspResponderCertificate, additionalCerts2, true, now);
+        CertificateVerifier.verifyCertificate(ocspResponderCertificate, additionalCerts2, true, now, options,
+                status);
         logger.finer("Check of OCSP responder certificate done");
     }
 }

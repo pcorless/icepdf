@@ -96,6 +96,8 @@ public final class ViewerPropertiesManager {
     public static final String PROPERTY_PKCS12_PROVIDER_KEYSTORE_PATH = "org.icepdf.core.signatures.keystore.pkcs12" +
             ".config.path";
     public static final String PROPERTY_SIGNATURE_TSA_URL = "org.icepdf.core.signatures.tsa.url";
+    // check certificate revocation online when validating; defaults to org.icepdf.core.signatures.online
+    public static final String PROPERTY_SIGNATURE_VALIDATION_ONLINE = "org.icepdf.core.signatures.validation.online";
     public static final String PROPERTY_SIGNATURE_IMAGE_PATH = "org.icepdf.core.signatures.image.path";
     public static final String PROPERTY_SIGNATURE_SHOW_TEXT = "org.icepdf.core.signatures.show.txt";
     public static final String PROPERTY_SIGNATURE_SHOW_IMAGE = "org.icepdf.core.signatures.show.image";

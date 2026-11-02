@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.ri.app;
 
+import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.application.Application;
@@ -429,6 +430,9 @@ public class ViewerApp extends Application {
         view.setFitMode(fit);
         if (fit == FitMode.NONE) view.setZoom(preferences.getDouble(ViewerPreferences.ZOOM, 1));
         view.setVerifySignaturesOnOpen(preferences.getBoolean(ViewerPreferences.VERIFY_SIGNATURES, true));
+        SignatureValidationOptions validation = SignatureValidationOptions.defaults();
+        view.setSignatureValidationOptions(validation.withOnline(
+                preferences.getBoolean(ViewerPreferences.SIGNATURES_ONLINE, validation.isOnline())));
         view.setAnnotationAuthor(preferences.get(ViewerPreferences.ANNOTATION_AUTHOR, System.getProperty("user.name")));
         view.setHighlightFormFields(preferences.getBoolean(ViewerPreferences.HIGHLIGHT_FIELDS, false));
         view.setPaintAnnotations(preferences.getBoolean(ViewerPreferences.PAINT_ANNOTATIONS, true));

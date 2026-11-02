@@ -157,6 +157,8 @@ public class SignatureValidationStatus {
     /** What is known of the signer's identity. */
     public enum Identity {
         VALID("valid"),
+        /** Trusted, but whether the certificate was revoked couldn't be found out (offline, server down). */
+        UNCHECKED("unchecked"),
         UNKNOWN("unknown"),
         REVOKED("revoked");
 
@@ -184,7 +186,41 @@ public class SignatureValidationStatus {
 
     public static Identity identityOf(SignatureValidator validator) {
         if (validator.isRevocation()) return Identity.REVOKED;
-        return validator.isCertificateChainTrusted() ? Identity.VALID : Identity.UNKNOWN;
+        if (!validator.isCertificateChainTrusted()) return Identity.UNKNOWN;
+        return validator.isRevocationChecked() ? Identity.VALID : Identity.UNCHECKED;
+    }
+
+    /**
+     * Whether checking again with the network could tell more: revocation went unchecked and the
+     * signature isn't already known bad or self-signed.
+     */
+    public static boolean canCheckOnline(SignatureValidator validator) {
+        return validator.isValidated() && !validator.isRevocationChecked() && !validator.isRevocation()
+                && !validator.isSelfSigned() && !validator.isSignedDataModified();
+    }
+
+    /**
+     * The signer's common name and e-mail address, from the certificate, which is known before
+     * validation runs.
+     *
+     * @return "name &lt;email&gt;", either part left out when missing; never null
+     */
+    public static String signerName(SignatureValidator validator) {
+        String commonName = null;
+        String email = null;
+        try {
+            X509Certificate certificate = validator.getSignerCertificate();
+            if (certificate != null) {
+                X500Name x500name = new X500Name(certificate.getSubjectX500Principal().getName());
+                if (x500name.getRDNs() != null) {
+                    commonName = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.CN);
+                    email = SignatureUtilities.parseRelativeDistinguishedName(x500name, BCStyle.EmailAddress);
+                }
+            }
+        } catch (RuntimeException e) {
+            // a malformed name: show none
+        }
+        return ((commonName != null ? commonName : "") + (email != null ? " <" + email + ">" : "")).trim();
     }
 
     public Icon getValidityIcon() {
