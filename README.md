@@ -9,7 +9,8 @@ icepdf is a fast, pure-Java PDF library. It parses and renders PDF documents wit
 that keep pace with native renderers. Embed it in a server to rasterize pages, or ship one of the two ready-made
 viewers, JavaFX or Swing, with annotations, forms, search, redaction and digital signatures built in.
 
-[Website](https://pcorless.github.io/icepdf/) · [Wiki](https://github.com/pcorless/icepdf/wiki) ·
+[Website](https://pcorless.github.io/icepdf/) · [Quick Start](https://github.com/pcorless/icepdf/wiki/Quick-Start) ·
+[Upgrading to 8.0](https://github.com/pcorless/icepdf/wiki/Upgrading-to-8) · [Wiki](https://github.com/pcorless/icepdf/wiki) ·
 [Releases](https://github.com/pcorless/icepdf/releases) · [Issues](https://github.com/pcorless/icepdf/issues)
 
 ## Get started
@@ -205,13 +206,12 @@ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/U
 extracting content.
 
 ## Learning
- 
-### Examples
 
-There are a bunch of examples located in the root of the project grouped by common usage scenarios. Similarly, the
-Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
-
- ### API Documentation
- 
- Both the Gradle and Maven builds will generate the API documentation for the Core and Viewer libraries. 
+* [Quick Start](https://github.com/pcorless/icepdf/wiki/Quick-Start): render, extract text and embed a viewer in a few lines.
+* [Usage Examples](https://github.com/pcorless/icepdf/wiki/Usage-Examples): the [examples](examples) folder holds one small application per feature,
+  grouped by common usage scenarios.
+* [Upgrading to 8.0](https://github.com/pcorless/icepdf/wiki/Upgrading-to-8): what to check when moving from 7.x.
+* [System Properties](https://github.com/pcorless/icepdf/wiki/System-Properties): threading, memory, image handling and rendering settings.
+* [Javadoc](https://javadoc.io/doc/com.github.pcorless.icepdf/icepdf-core). Both the Gradle and Maven builds also
+  generate the API documentation for the core and viewer libraries. 
  
