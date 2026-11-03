@@ -135,11 +135,9 @@ public class OnePageView extends AbstractDocumentView {
         float pageViewWidth = 0;
         float pageViewHeight = 0;
         int currCompIndex = documentViewController.getCurrentPageIndex();
-        Rectangle bounds = documentViewModel.getPageBounds(currCompIndex);
-        if (bounds != null) {
-            pageViewWidth = bounds.width;
-            pageViewHeight = bounds.height;
-        }
+        Dimension size = getPageViewSize(currCompIndex);
+        pageViewWidth = size.width;
+        pageViewHeight = size.height;
         // normalize the dimensions to a zoom level of zero.
         float currentZoom = documentViewController.getDocumentViewModel().getViewZoom();
         pageViewWidth = Math.abs(pageViewWidth / currentZoom);

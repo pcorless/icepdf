@@ -96,6 +96,26 @@ public abstract class AbstractDocumentView
     protected MouseWheelZoom mouseWheelZoom;
 
     /**
+     * Size of a page's decorated view at the current zoom, as the layout will place it. Read from the
+     * page component rather than from its bounds: bounds lag a zoom or page change until the next
+     * validate, and are empty for a page not laid out yet, which sent fit width to a wrong zoom (GH-667).
+     *
+     * @param pageIndex page to measure
+     * @return page view size, zero if the page has no component
+     */
+    protected Dimension getPageViewSize(int pageIndex) {
+        java.util.List<AbstractPageViewComponent> pageComponents = documentViewModel.getPageComponents();
+        if (pageComponents != null && pageIndex >= 0 && pageIndex < pageComponents.size()) {
+            AbstractPageViewComponent pageComponent = pageComponents.get(pageIndex);
+            if (pageComponent != null) {
+                Container decorator = pageComponent.getParent();
+                return decorator != null ? decorator.getPreferredSize() : pageComponent.getPreferredSize();
+            }
+        }
+        return new Dimension();
+    }
+
+    /**
      * Creates a new instance of AbstractDocumentView.
      *
      * @param documentViewController controller for MVC
