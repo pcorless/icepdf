@@ -15,7 +15,7 @@
  */
 
 /**
- * ICEpdf for JavaFX, in two layers.
+ * icepdf for JavaFX, in two layers.
  * <p>
  * The components, for an application that builds its own window:
  * <ul>

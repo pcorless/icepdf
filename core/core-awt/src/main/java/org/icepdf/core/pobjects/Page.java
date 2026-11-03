@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
  * <br>
  * <p>The page object also provides a method which will extract a page's content,
  * such as text and images.  The <code>paint</code> method is the core of
- * the ICEpdf renderer, allowing page content to be painted to any Java graphics
+ * the icepdf renderer, allowing page content to be painted to any Java graphics
  * context. </p>
  * <br>
  * <p>Page objects in a PDF document have different boundaries defined which

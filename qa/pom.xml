@@ -8,9 +8,9 @@
     </parent>
     <artifactId>qa</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: QA</name>
+    <name>icepdf :: QA</name>
     <description>
-        The ICEpdf common QA rendering compare.
+        The icepdf common QA rendering compare.
     </description>
 
     <modules>

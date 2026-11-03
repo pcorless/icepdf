@@ -42,13 +42,13 @@ import static org.icepdf.ri.common.preferences.SigningPreferencesPanel.PKCS_12_T
  * </tr>
  * <tr>
  * <td>-loadfile <i>filename</i></td>
- * <td>Starts the ICEpdf Viewer and displays the specified local PDF file.
+ * <td>Starts the icepdf Viewer and displays the specified local PDF file.
  * Use the following syntax: <br>
  * -loadfile c:/examplepath/file.pdf</td>
  * </tr>
  * <tr>
  * <td>-loadfile <i>filename</i></td>
- * <td>Starts the ICEpdf Viewer and displays the PDF file at the specified
+ * <td>Starts the icepdf Viewer and displays the PDF file at the specified
  * URL. Use the following syntax: <br>
  * -loadurl http://www.examplesite.com/file.pdf</td>
  * </tr>
@@ -71,7 +71,7 @@ public class Launcher {
 
     public static final String APPLICATION_LOOK_AND_FEEL = "application.lookandfeel";
 
-    // stores properties used by ICEpdf
+    // stores properties used by icepdf
     private static ViewerPropertiesManager propertiesManager;
 
     public static void main(String[] argv) {

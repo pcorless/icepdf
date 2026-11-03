@@ -30,7 +30,7 @@ import static org.icepdf.ri.images.IconPack.Variant;
  * Utility class providing a unified interface to all application icons.
  * <p/>
  * For a one-off, directly accessing the default icon pack, call {@link #get(String)}. When loading icons which
- * are meant to be customizable by applications embedding ICEpdf, call:
+ * are meant to be customizable by applications embedding icepdf, call:
  * <ul>
  *     <li>for a single icon {@link #getSingleIcon(String, Variant, IconSize)}</li>
  *     <li>for a button without different styles for its states,

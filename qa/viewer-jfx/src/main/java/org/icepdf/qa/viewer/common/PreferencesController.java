@@ -57,11 +57,11 @@ public class PreferencesController {
     public static final int CAPTURE_CONCURRENT_DOCUMENTS_VALUE =
             Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors() / 2));
     // Q: threads that render the pages of a single document. Floored at 2 - rendering pages of the
-    // same document concurrently is the stress condition that surfaces ICEpdf sync bugs.
+    // same document concurrently is the stress condition that surfaces icepdf sync bugs.
     public static final String CAPTURE_RENDER_THREADS_KEY = "captureRenderThreadsPerDocument";
     public static final int CAPTURE_RENDER_THREADS_VALUE = 4;
     public static final int CAPTURE_RENDER_THREADS_MIN = 2;
-    // Passthrough to each capture set's ICEpdf -Dorg.icepdf.core.library.imageThreadPoolSize. Only the
+    // Passthrough to each capture set's icepdf -Dorg.icepdf.core.library.imageThreadPoolSize. Only the
     // image-proxy decode path uses it, and it is read once when that version's Library class loads, so
     // a change takes effect only for a freshly created capture-set class loader.
     public static final String CAPTURE_IMAGE_THREAD_POOL_KEY = "captureImageThreadPoolSize";

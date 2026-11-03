@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DctDecoderTest {
 
     /**
-     * Encodes a test image in {@code format} and decodes it through the ICEpdf decoder for {@code filter}: left half
+     * Encodes a test image in {@code format} and decodes it through the icepdf decoder for {@code filter}: left half
      * black, right half white, so a subsampled read can be checked for content, not just size.  A gray image is
      * declared DeviceGray, an RGB one DeviceRGB; the stream has no page resources, so a JPX colour space other
      * than gray would not resolve.

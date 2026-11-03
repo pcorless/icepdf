@@ -1,5 +1,5 @@
 #!/bin/bash
-# Gradle 9 Wrapper Helper Script for ICEpdf
+# Gradle 9 Wrapper Helper Script for icepdf
 # This script ensures JAVA_HOME is set to Java 17+ before running Gradle
 
 # Check if Java 17+ is available

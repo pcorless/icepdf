@@ -1,4 +1,4 @@
-ICEpdf
+icepdf
 Copyright 2006-2026 ICEsoft Technologies Canada Corp. and Patrick Corless
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -12,12 +12,12 @@ The Apache Software Foundation (http://www.apache.org/):
     follow the form field layout of org.apache.pdfbox.pdmodel.interactive.form.
     AppearanceGeneratorHelper and org.apache.pdfbox.pdmodel.interactive.PlainText /
     PlainTextFormatter of Apache PDFBox 4.0.0 (development, commit cd53a45cb2),
-    rewritten for ICEpdf's object model.
+    rewritten for icepdf's object model.
 
 Apache PDFBox
 Copyright 2014 The Apache Software Foundation
 
-Third-party libraries distributed with ICEpdf, and their licenses and notices,
+Third-party libraries distributed with icepdf, and their licenses and notices,
 are listed in the licenses/ directory of the binary distribution.
 
 JPEG 2000 images are decoded by jpx-imageio (Apache License 2.0), which includes

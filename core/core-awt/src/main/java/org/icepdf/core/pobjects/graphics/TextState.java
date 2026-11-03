@@ -128,7 +128,7 @@ public class TextState {
     public AffineTransform tmatrix;
     public AffineTransform tlmatrix;
     /**
-     * Text Font - Associated ICEpdf font object
+     * Text Font - Associated icepdf font object
      */
     public Font font;
     /**

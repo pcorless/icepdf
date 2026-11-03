@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * Provenance: ORIGINAL (the requirement list is jpx-imageio's docs/IMAGEIO-CONTRACT.md).
  * <p>
- * The ImageIO plug-in contract a JPEG 2000 reader must meet to be a drop-in for ICEpdf and for
+ * The ImageIO plug-in contract a JPEG 2000 reader must meet to be a drop-in for icepdf and for
  * plain {@code ImageIO.read} users. Each check is PASS or FAIL and pinned per reader in
  * {@code baseline/contract-<reader>.tsv}: for JJ2000 the FAILs document where the old reader falls
  * short; for a new reader every line is expected to read PASS.

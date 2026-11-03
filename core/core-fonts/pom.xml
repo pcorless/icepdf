@@ -9,9 +9,9 @@
     </parent>
     <artifactId>icepdf-fonts</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Core :: Core Fonts</name>
+    <name>icepdf :: Core :: Core Fonts</name>
     <description>
-        The ICEpdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
+        The icepdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
     </description>
 
     <!-- the code is Apache 2.0, the bundled fonts OFL 1.1 (see META-INF/NOTICE) -->

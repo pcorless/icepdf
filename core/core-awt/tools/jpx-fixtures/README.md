@@ -1,6 +1,6 @@
 # JPEG 2000 tests (GH-613)
 
-ICEpdf decodes JPXDecode images with **jpx-imageio** (`com.github.pcorless:jpx-imageio`, a core
+icepdf decodes JPXDecode images with **jpx-imageio** (`com.github.pcorless:jpx-imageio`, a core
 dependency; source `~/dev/git/jpx-imageio`, github.com/pcorless/jpx-imageio). Its fixtures and their
 generator live there:
 
@@ -12,19 +12,19 @@ generator live there:
 | provenance rules, decisions log | `docs/PROVENANCE-RULES.md`, `docs/DECISIONS.md` |
 
 `core/core-awt/src/test/resources/jpx` is a copy of jpx-imageio's fixtures (byte-identical at
-jpx-imageio 21940e5) plus `baseline/`, which only ICEpdf has. Refresh it by copying the fixture
+jpx-imageio 21940e5) plus `baseline/`, which only icepdf has. Refresh it by copying the fixture
 folder over, keeping `baseline/`.
 
 ## Tests here
 
-ICEpdf's own JPEG 2000 path, with jpx-imageio (JpxDecoder prefers it over any other JPEG 2000 reader
+icepdf's own JPEG 2000 path, with jpx-imageio (JpxDecoder prefers it over any other JPEG 2000 reader
 on the class path):
 
 | Test | Checks |
 |---|---|
 | `JpxDecoderTest` | JPXDecode images through `ImageStream.getImage`: the PDF's /ColorSpace applied to the reader's raster (exact pixels for lossless RGB, palette and grey), /Indexed taking the PDF's table over the JP2 palette, DeviceCMYK, the TNsot under-count (GH-553), the bare-codestream retry, subsampling of really big images |
 | `Jp2CodestreamTest` | the codestream comes out of a JP2 file's jp2c box |
-| `Jpeg2000ConformanceTest` | each fixture decoded as ICEpdf does vs the reference: EXACT / EQUIVALENT / CLOSE / MISMATCH / ERROR / TIMEOUT |
+| `Jpeg2000ConformanceTest` | each fixture decoded as icepdf does vs the reference: EXACT / EQUIVALENT / CLOSE / MISMATCH / ERROR / TIMEOUT |
 | `Jpeg2000ImageReaderContractTest` | the ImageIO plug-in surface: PASS / FAIL per check |
 | `Jpeg2000HostileInputTest` | damaged streams end in bounded time without OOM or a hang |
 

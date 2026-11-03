@@ -87,7 +87,7 @@ public class WindowManager implements WindowManagementCallback {
 
         // Announce ourselves...
         if (Defs.booleanProperty("org.icepdf.core.verbose", true)) {
-            System.out.println("\nICEpdf Viewer " + Document.getLibraryVersion());
+            System.out.println("\nicepdf Viewer " + Document.getLibraryVersion());
         }
         return windowManager;
     }

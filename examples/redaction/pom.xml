@@ -9,8 +9,8 @@
     </parent>
     <artifactId>redaction</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Redaction</name>
+    <name>icepdf :: Examples :: Redaction</name>
     <description>
-        The ICEpdf redaction examples
+        The icepdf redaction examples
     </description>
 </project>

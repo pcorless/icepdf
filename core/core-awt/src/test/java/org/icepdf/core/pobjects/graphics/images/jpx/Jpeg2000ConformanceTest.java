@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * Provenance: ORIGINAL.
  * <p>
- * Decodes every generated fixture with the installed JPEG 2000 ImageIO reader the way ICEpdf does
+ * Decodes every generated fixture with the installed JPEG 2000 ImageIO reader the way icepdf does
  * ({@code read(0, param).getRaster()}) and scores it against the OpenJPEG reference components.
  * <p>
  * The test pins each reader's current outcome in its baseline file, so it passes for JJ2000 with

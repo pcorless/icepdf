@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>qa-viewer</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: QA :: Viewer</name>
+    <name>icepdf :: QA :: Viewer</name>
 
     <properties>
         <!-- mirrors qa/viewer-jfx/build.gradle: Java 11 toolchain, so JavaFX 11 -->

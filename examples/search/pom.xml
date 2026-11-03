@@ -8,9 +8,9 @@
     </parent>
     <artifactId>search</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Search</name>
+    <name>icepdf :: Examples :: Search</name>
     <description>
-        The ICEpdf OS search examples
+        The icepdf OS search examples
     </description>
 
     <modules>

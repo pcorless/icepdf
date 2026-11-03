@@ -21,7 +21,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
- * Product and build identification for ICEpdf.  The values are populated at
+ * Product and build identification for icepdf.  The values are populated at
  * build time from the {@code product-info.properties} classpath resource, which
  * both the Maven and Gradle builds filter with the current project version (see
  * the resource template in {@code src/main/resources}).  Loading the values from
@@ -78,7 +78,7 @@ public class ProductInfo {
             logger.fine("Could not read " + RESOURCE + "; using default product info.");
         }
         COMPANY = resolve(props, "company", "");
-        PRODUCT = resolve(props, "product", "ICEpdf");
+        PRODUCT = resolve(props, "product", "icepdf");
         VERSION = resolve(props, "version", "dev");
         RELEASE_TYPE = resolve(props, "releaseType", "");
         BUILD_NO = resolve(props, "build", "0");

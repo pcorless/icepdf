@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests ICEpdf's own CCITT fax decoder against faxes encoded by libtiff.
+ * Tests icepdf's own CCITT fax decoder against faxes encoded by libtiff.
  * <p>
  * Since GH-240 this is the decoder {@link org.icepdf.core.pobjects.graphics.images.FaxDecoder} uses;
  * TwelveMonkeys', which it used before, is now only a test dependency, kept as a second opinion.
@@ -171,7 +171,7 @@ public class CCITTFaxDecoderTest {
     }
 
     /**
-     * Decodes with ICEpdf's decoder, the way FaxDecoder reaches it.
+     * Decodes with icepdf's decoder, the way FaxDecoder reaches it.
      */
     private static byte[] decode(String name, String encoding, int k, boolean align) throws IOException {
         Picture picture = readPbm(name);

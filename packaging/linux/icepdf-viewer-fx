@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launcher shim for the ICEpdf JavaFX viewer.
+# Launcher shim for the icepdf JavaFX viewer.
 #
 # JavaFX has to be on the module path (java -jar fails with "JavaFX runtime components are
 # missing"), so this script sorts the jars in the install folder: javafx-* go on the module path,

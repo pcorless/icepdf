@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * The ICEpdf JavaFX viewer in a window of your own: {@link PdfViewer} is a JavaFX node holding the
+ * The icepdf JavaFX viewer in a window of your own: {@link PdfViewer} is a JavaFX node holding the
  * page view, its header bar, tool rail and side panels.  Put it in any layout.
  * <p>
  * {@code ./gradlew :examples:javafx:run --args="/path/to/file.pdf"}
@@ -50,7 +50,7 @@ public class PdfViewerExample extends Application {
         viewer.setOnLink(getHostServices()::showDocument);
 
         stage.setScene(new Scene(viewer, 1200, 900));
-        stage.setTitle("ICEpdf JavaFX viewer");
+        stage.setTitle("icepdf JavaFX viewer");
         stage.show();
 
         List<String> args = getParameters().getUnnamed();

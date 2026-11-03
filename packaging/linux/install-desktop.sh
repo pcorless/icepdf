@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Installs the ICEpdf viewer desktop entry, icon and launcher for the current user.
+# Installs the icepdf viewer desktop entry, icon and launcher for the current user.
 #
 #   ./packaging/linux/install-desktop.sh [path/to/icepdf-viewer-*.jar]     the Swing viewer
 #   ./packaging/linux/install-desktop.sh --fx [path/to/lib/folder]         the JavaFX viewer
@@ -41,7 +41,7 @@ if [ "${1:-}" = "--uninstall" ]; then
     rm -rf "$LIB_DIR" "$FX_LIB_DIR"
     update-desktop-database "$APP_DIR" 2>/dev/null || true
     gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-    echo "Removed ICEpdf desktop entry."
+    echo "Removed icepdf desktop entry."
     exit 0
 fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate the CCITT fax fixtures the decoder tests run against.
 
-ICEpdf carries its own CCITT decoder.  It was once reached only when the TwelveMonkeys one threw, so
+icepdf carries its own CCITT decoder.  It was once reached only when the TwelveMonkeys one threw, so
 nothing in the corpus exercised it; since GH-240 it is the only decoder, and these fixtures are its
 tests.
 

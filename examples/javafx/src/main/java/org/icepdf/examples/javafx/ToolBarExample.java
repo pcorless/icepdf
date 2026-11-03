@@ -43,7 +43,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * The ICEpdf JavaFX viewer with your own tool bar: page navigation (previous, current, next) and zoom.
+ * The icepdf JavaFX viewer with your own tool bar: page navigation (previous, current, next) and zoom.
  * <p>
  * The viewer's commands follow the command pattern.  Each command is a {@link ViewerAction}: an id,
  * a label, when it is enabled, and {@code execute}.  The actions are kept in an {@link ActionRegistry},
@@ -125,7 +125,7 @@ public class ToolBarExample extends Application {
                 .filter(actions::isAvailable).toArray(String[]::new));
 
         stage.setScene(scene);
-        stage.setTitle("ICEpdf JavaFX viewer - own tool bar");
+        stage.setTitle("icepdf JavaFX viewer - own tool bar");
         stage.show();
 
         List<String> args = getParameters().getUnnamed();

@@ -24,7 +24,7 @@ import java.awt.*;
  * hints for printing and screen presentation when rending a Page's content.</p>
  * <br>
  * <p>The "screen" and "print" configuration are configurable with system properties.
- * See the <i>ICEpdf Developer's Guide</i>  for more information about configuring
+ * See the <i>icepdf Developer's Guide</i>  for more information about configuring
  * these properites.</p>
  *
  * @author Mark Collette

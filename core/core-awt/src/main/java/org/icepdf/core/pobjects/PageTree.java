@@ -360,7 +360,7 @@ public class PageTree extends Dictionary {
      * Gets a Page from the PDF file, locks it for the user,
      * initializes the Page, and returns it.
      * <br>
-     * ICEpdf uses a caching and memory management mechanism
+     * icepdf uses a caching and memory management mechanism
      * to reduce the CPU, I/O, and time to access a Page,
      * which requires a locking and releasing protocol.
      * Calls to the <code>getPage</code> must be matched with

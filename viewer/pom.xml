@@ -8,9 +8,9 @@
     </parent>
     <artifactId>viewer</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Viewer</name>
+    <name>icepdf :: Viewer</name>
     <description>
-        The ICEpdf common viewer reference library.
+        The icepdf common viewer reference library.
     </description>
 
     <modules>

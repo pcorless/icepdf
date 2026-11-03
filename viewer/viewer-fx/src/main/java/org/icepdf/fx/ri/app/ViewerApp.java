@@ -56,7 +56,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The ICEpdf JavaFX viewer application: {@link PdfViewer} windows sharing one set of
+ * The icepdf JavaFX viewer application: {@link PdfViewer} windows sharing one set of
  * {@link ViewerPreferences} and one {@link UserLayout}.  It adds what an application owns and a
  * viewer doesn't: the windows, "New Window" and "Exit", Open Recent, the preferences dialog, window
  * placement, opening links in a browser and the prompt for unsaved changes.
@@ -413,7 +413,7 @@ public class ViewerApp extends Application {
         preferences.putBoolean(ViewerPreferences.WINDOW_MAXIMIZED, stage.isMaximized());
     }
 
-    /** The window's title is the selected document's: "name – ICEpdf". */
+    /** The window's title is the selected document's: "name – icepdf". */
     private static void followTitle(AppWindow window) {
         PdfViewer viewer = window.viewer();
         ChangeListener<String> text = (o, a, b) -> window.stage().setTitle(title(viewer.getCurrentDocument()));

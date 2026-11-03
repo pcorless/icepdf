@@ -51,7 +51,7 @@ import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 /**
- * Measures the candidate ways of getting an ICEpdf Java2D page render onto a JavaFX scene, so the
+ * Measures the candidate ways of getting an icepdf Java2D page render onto a JavaFX scene, so the
  * JavaFX page view is built on numbers rather than folklore.  See JAVAFX-PAGEVIEW-PLAN.md step 1.
  * <p>
  * Each case renders a viewport-sized device-pixel region of a page (the same region the Swing

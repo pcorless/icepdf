@@ -104,7 +104,7 @@ public class WatermarkPageCapture {
 
             // apply transparency
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.75f));
-            // ICEpdf red.
+            // icepdf red.
             g2.setColor(new Color(186, 0, 0));
             // draw Some text.
             String footerText = "This Page " + (page.getPageIndex() + 1);
