@@ -124,8 +124,33 @@ public class SignatureWidgetAnnotation extends AbstractWidgetAnnotation<Signatur
     }
 
     public void setSignatureDictionary(SignatureDictionary signatureDictionary) {
-        entries.put(V_KEY, signatureDictionary.getPObjectReference());
+        // an unwritten (cancelled) signature has no reference: the field is left unsigned, not /V null
+        Reference signatureReference = signatureDictionary.getPObjectReference();
+        setValue(entries, signatureReference);
         this.signatureDictionary = signatureDictionary;
+        // a widget that is only a kid of the field: /V belongs on the field
+        FieldDictionary parent = fieldDictionary.getParent();
+        FieldDictionary field = parent != null && fieldDictionary.getPartialFieldName() == null ? parent : null;
+        if (field != null) {
+            setValue(field.getEntries(), signatureReference);
+        }
+        // record the change, or an incremental save skips a field that was already in the file and
+        // nothing references the signature (GH-668)
+        StateManager stateManager = library.getStateManager();
+        if (getPObjectReference() != null) {
+            stateManager.addChange(new PObject(this, getPObjectReference()));
+        }
+        if (field != null && field.getPObjectReference() != null) {
+            stateManager.addChange(new PObject(field, field.getPObjectReference()));
+        }
+    }
+
+    private static void setValue(DictionaryEntries fieldEntries, Reference signatureReference) {
+        if (signatureReference != null) {
+            fieldEntries.put(V_KEY, signatureReference);
+        } else {
+            fieldEntries.remove(V_KEY);
+        }
     }
 
     @Override
