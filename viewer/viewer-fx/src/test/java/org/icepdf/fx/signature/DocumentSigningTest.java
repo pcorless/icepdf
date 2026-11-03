@@ -16,6 +16,7 @@
 package org.icepdf.fx.signature;
 
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.acroform.signature.appearance.SignatureType;
 import org.icepdf.core.pobjects.acroform.signature.handlers.Pkcs12SignerHandler;
 import org.icepdf.core.pobjects.acroform.signature.handlers.SimplePasswordCallbackHandler;
@@ -101,6 +102,51 @@ class DocumentSigningTest {
             reopened.dispose();
         }
         assertTrue(new File(signed.toString()).length() > Files.size(source), "an incremental update");
+    }
+
+    @DisplayName("a signature field already in the file, signed and saved, verifies after reopening (GH-668)")
+    @Test
+    void signsAnExistingField() throws Exception {
+        // a file with an empty signature field: add one and save it unsigned
+        Path source = temp.resolve("source.pdf");
+        Files.copy(resource("/forms/all_fields.pdf"), source);
+        Path withField = temp.resolve("with-field.pdf");
+        Document document = new Document();
+        document.setFile(source.toString());
+        DocumentSigning.addSignatureField(document, 0, new Rectangle2D.Double(300, 40, 200, 60));
+        try (java.io.OutputStream out = Files.newOutputStream(withField)) {
+            document.saveToOutputStream(out, org.icepdf.core.util.updater.WriteMode.INCREMENT_UPDATE);
+        }
+        document.dispose();
+
+        // sign that field: it is part of the file now, not an object created this session
+        Path signed = temp.resolve("signed.pdf");
+        document = new Document();
+        document.setFile(withField.toString());
+        Page page = document.getPageTree().getPage(0);
+        page.init();
+        SignatureWidgetAnnotation field = page.getAnnotations().stream()
+                .filter(SignatureWidgetAnnotation.class::isInstance).map(SignatureWidgetAnnotation.class::cast)
+                .filter(f -> !f.hasSignatureDictionary()).findFirst().orElseThrow();
+        Pkcs12SignerHandler signer = signer(null);
+        signer.setCertAlias(DocumentSigning.keyEntries(signer).get(0).alias());
+        DocumentSigning.prepare(field, signer, new DocumentSigning.Request(SignatureType.SIGNER, "Test Signer",
+                null, "Calgary", null), new SignatureAppearance(document.getCatalog().getLibrary()));
+        DocumentSigning.saveSigned(document, signed);
+        document.dispose();
+
+        Document reopened = new Document();
+        reopened.setFile(signed.toString());
+        try {
+            SignatureStatus status = SignatureVerifier.verifyAll(reopened).stream()
+                    .filter(SignatureStatus::isSigned).findFirst()
+                    .orElseThrow(() -> new AssertionError("the field's /V was not saved: no signed field"));
+            assertFalse(status.signedDataModified(), status.summary());
+            assertFalse(status.modifiedAfterSigning(), "the signature covers the whole file");
+            assertEquals("Calgary", status.location());
+        } finally {
+            reopened.dispose();
+        }
     }
 
     @DisplayName("a drawn signature is embedded as the field's image and the file still verifies")
