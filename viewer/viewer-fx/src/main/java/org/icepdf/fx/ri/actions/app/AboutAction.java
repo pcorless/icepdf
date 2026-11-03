@@ -18,6 +18,8 @@ package org.icepdf.fx.ri.actions.app;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.ViewerContext;
@@ -36,6 +38,16 @@ public final class AboutAction extends AbstractViewerAction {
         Alert about = new Alert(Alert.AlertType.INFORMATION, context.applicationName()
                 + "\n" + Messages.format("about.version", Document.getLibraryVersion()));
         about.setHeaderText(null);
+        // the project's cube in place of the information icon
+        java.net.URL cube = AboutAction.class.getResource("/org/icepdf/fx/images/icepdf-cube-128.png");
+        if (cube != null) {
+            // drawn from 128 px at 64 so it stays sharp on HiDPI screens
+            ImageView graphic = new ImageView(new Image(cube.toExternalForm()));
+            graphic.setFitWidth(64);
+            graphic.setFitHeight(64);
+            graphic.setSmooth(true);
+            about.setGraphic(graphic);
+        }
         if (context.window() != null) about.initOwner(context.window());
         about.showAndWait();
     }

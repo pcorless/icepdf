@@ -117,6 +117,7 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `ri/PdfViewer`, `ri/Theme`, `ri/ui/*` (EdgeDrawer, ViewerShell, ToolRail, UtilityPanel, HeaderBar, PageField, ZoomField, Toast), `ri/ui/viewer.css` | — (design: JAVAFX-API-PLAN; GNOME/libadwaita look and Firefox/Chrome vertical-tab panel behaviour as references only) | New. The colours are libadwaita-like values chosen by hand; no GNOME or browser files used. |
 | `ri/document/DocumentSession` | the retired viewer-fx `ViewerWindow` (its open/save code moved here) | Same project. |
 | `src/main/resources/org/icepdf/fx/images/icepdf-app-icon-*.png` | viewer-awt `icepdf-app-icon-*.png` | Byte-identical copies of the project's own app icon (16-256 px), drawn for the project. |
+| `src/main/resources/org/icepdf/fx/images/icepdf-cube-128.png` | `docs/assets/brand/icepdf-cube.svg` | The project's own cube graphic (the site's brand mark), rasterised at 128 px for the About dialog. |
 
 Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest`, `DocumentSearchTest` and `AnnotationRoundTripTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and
