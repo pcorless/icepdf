@@ -14,11 +14,7 @@
         The icepdf OS examples
     </description>
 
-    <properties>
-        <!-- built and verified with the release, never published (org.icepdf.examples isn't on Central);
-             the Central publishing plugin honours this per module -->
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
+    <!-- never published to Central: the release profile's excludeArtifacts list in the root pom -->
 
     <modules>
         <module>annotation</module>

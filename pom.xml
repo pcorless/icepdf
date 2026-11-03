@@ -153,6 +153,36 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
+                            <!-- the examples (org.icepdf.examples) are built and verified but never published.
+                                 Matched by artifactId; the plugin ignores maven.deploy.skip. Keep in step
+                                 with the modules under examples/. -->
+                            <excludeArtifacts>
+                                <excludeArtifact>annotation</excludeArtifact>
+                                <excludeArtifact>annotation-callback</excludeArtifact>
+                                <excludeArtifact>annotation-creation</excludeArtifact>
+                                <excludeArtifact>barecode-extraction</excludeArtifact>
+                                <excludeArtifact>capture</excludeArtifact>
+                                <excludeArtifact>component-awt</excludeArtifact>
+                                <excludeArtifact>examples</excludeArtifact>
+                                <excludeArtifact>extraction</excludeArtifact>
+                                <excludeArtifact>folder-capture</excludeArtifact>
+                                <excludeArtifact>image-extraction</excludeArtifact>
+                                <excludeArtifact>javafx</excludeArtifact>
+                                <excludeArtifact>loading-events</excludeArtifact>
+                                <excludeArtifact>metadata-extraction</excludeArtifact>
+                                <excludeArtifact>png-capture</excludeArtifact>
+                                <excludeArtifact>portfolio-capture</excludeArtifact>
+                                <excludeArtifact>print-services</excludeArtifact>
+                                <excludeArtifact>redaction</excludeArtifact>
+                                <excludeArtifact>search</excludeArtifact>
+                                <excludeArtifact>search-component</excludeArtifact>
+                                <excludeArtifact>search-headless</excludeArtifact>
+                                <excludeArtifact>signature-verification</excludeArtifact>
+                                <excludeArtifact>svg-capture</excludeArtifact>
+                                <excludeArtifact>text-extraction</excludeArtifact>
+                                <excludeArtifact>tiff-capture</excludeArtifact>
+                                <excludeArtifact>watermark-capture</excludeArtifact>
+                            </excludeArtifacts>
                         </configuration>
                     </plugin>
                     <plugin>
