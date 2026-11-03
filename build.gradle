@@ -76,10 +76,6 @@ distributions {
                     exclude 'javafx-*', 'icepdf-core*'
                 }
             }
-            // dependencies information
-            into('dependencies') {
-                from 'build/reports/project'
-            }
             // licenses copy
             into('licenses') {
                 from 'licenses'
