@@ -119,6 +119,20 @@ public class Images {
     }
 
     /**
+     * The application icon at every size it's drawn in, for {@link java.awt.Window#setIconImages}: the
+     * window manager picks the closest for the title bar, task switcher and dock.
+     *
+     * @return app icon images, smallest first
+     */
+    public static java.util.List<java.awt.Image> getAppIcons() {
+        java.util.List<java.awt.Image> icons = new java.util.ArrayList<>();
+        for (int size : new int[]{16, 24, 32, 48, 64, 128, 256}) {
+            icons.add(new ImageIcon(get("icepdf-app-icon-" + size + "x" + size + ".png")).getImage());
+        }
+        return icons;
+    }
+
+    /**
      * Get the current setting for the icon size or the given "else" value if preference is unset or is invalid
      * <p/>
      * This method is equivalent to calling {@code getDefaultIconSizeOr(propertiesManager.getPreferences(), elseValue)}

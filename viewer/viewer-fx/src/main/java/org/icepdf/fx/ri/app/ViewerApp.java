@@ -324,7 +324,8 @@ public class ViewerApp extends Application {
 
     private List<javafx.scene.image.Image> appIcons() {
         if (appIcons == null) {
-            appIcons = List.of(appIcon("icepdf-app-icon-32x32.png"), appIcon("icepdf-app-icon-64x64.png"));
+            appIcons = java.util.stream.IntStream.of(16, 24, 32, 48, 64, 128, 256)
+                    .mapToObj(size -> appIcon("icepdf-app-icon-" + size + "x" + size + ".png")).toList();
         }
         return appIcons;
     }

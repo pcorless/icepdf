@@ -116,7 +116,7 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `src/main/resources/org/icepdf/fx/ri/icons/placeholder-icons.properties`, `ri/icons/SvgIcons`, `signature/SignatureIcons` | — | Drawn for ICEpdf (no icon set copied). Same conventions as Lucide (ISC) and Tabler (MIT) - 24 grid, 2px round stroke - so a chosen set can replace them; that set will be recorded here and in NOTICE when it lands. |
 | `ri/PdfViewer`, `ri/Theme`, `ri/ui/*` (EdgeDrawer, ViewerShell, ToolRail, UtilityPanel, HeaderBar, PageField, ZoomField, Toast), `ri/ui/viewer.css` | — (design: JAVAFX-API-PLAN; GNOME/libadwaita look and Firefox/Chrome vertical-tab panel behaviour as references only) | New. The colours are libadwaita-like values chosen by hand; no GNOME or browser files used. |
 | `ri/document/DocumentSession` | the retired viewer-fx `ViewerWindow` (its open/save code moved here) | Same project. |
-| `src/main/resources/org/icepdf/fx/images/icepdf-app-icon-*.png` | viewer-awt `icepdf-app-icon-64x64.png`, `-64x64.resized.png` | Byte-identical copies of the project's own app icons. |
+| `src/main/resources/org/icepdf/fx/images/icepdf-app-icon-*.png` | viewer-awt `icepdf-app-icon-*.png` | Byte-identical copies of the project's own app icon (16-256 px), drawn for the project. |
 
 Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest`, `DocumentSearchTest` and `AnnotationRoundTripTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and
