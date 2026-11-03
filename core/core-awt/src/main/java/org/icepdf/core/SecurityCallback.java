@@ -19,7 +19,7 @@ import org.icepdf.core.pobjects.Document;
 
 /**
  * Security callback.
- * An application that uses ICEpdf can provide it with the callback.
+ * An application that uses icepdf can provide it with the callback.
  * This will allow the document class to ask an application for security related
  * resources.
  *

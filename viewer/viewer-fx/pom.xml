@@ -8,9 +8,9 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>icepdf-viewer-fx</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Viewer : JavaFX Viewer RI</name>
+    <name>icepdf :: Viewer : JavaFX Viewer RI</name>
     <description>
-        ICEpdf JavaFX reference implementation.
+        icepdf JavaFX reference implementation.
     </description>
 
     <properties>

@@ -82,7 +82,7 @@ public class PdfViewDemo extends Application {
             if (view.isPrintAllowed()) print();
         });
         stage.setScene(scene);
-        stage.setTitle("ICEpdf PdfView demo");
+        stage.setTitle("icepdf PdfView demo");
         stage.show();
         view.requestFocus();
 
@@ -549,6 +549,6 @@ public class PdfViewDemo extends Application {
         document = next;
         view.setDocument(next);
         if (old != null) old.dispose();
-        stage.setTitle(file.getName() + " - ICEpdf PdfView demo");
+        stage.setTitle(file.getName() + " - icepdf PdfView demo");
     }
 }

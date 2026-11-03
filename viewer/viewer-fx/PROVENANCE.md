@@ -1,13 +1,13 @@
 # viewer-fx provenance
 
-ICEpdf ships under the Apache License 2.0. This file records everything in `viewer/viewer-fx`
+icepdf ships under the Apache License 2.0. This file records everything in `viewer/viewer-fx`
 that did not come from a blank editor, so a reviewer can confirm nothing incompatible or
 unattributed got in. Keep it current: update it in the same commit that adds a dependency or
 adapted code.
 
 ## Rules
 
-- New code is written fresh, or ported from ICEpdf's own Apache-2.0 sources (listed below).
+- New code is written fresh, or ported from icepdf's own Apache-2.0 sources (listed below).
 - Every new `.java` file carries the repo's Apache 2.0 header (see `add_license_header.sh`).
 - A file derived from third-party code keeps its original copyright line and gets an entry
   in the root `NOTICE`, as with the PDFBox `GlyphCache` entry.
@@ -72,11 +72,11 @@ Third-party code adapted into this module. **Goal: this table stays empty.**
 |---|---|---|---|
 | none | | | |
 
-## Ported from ICEpdf (Apache 2.0, same project)
+## Ported from icepdf (Apache 2.0, same project)
 
 Logic carried over from the Swing viewer or core, recorded so the lineage is visible.
 
-| Our file | ICEpdf source | What was taken |
+| Our file | icepdf source | What was taken |
 |---|---|---|
 | `view/DocumentLayout`, `view/ViewMode` | viewer-awt `OneColumnPageViewLayout`, `TwoColumnPageViewLayout`, `OnePageViewLayout`, `TwoPageViewLayout`, `DocumentViewControllerImpl` view types | Behaviour only: the six view types (one page / column, two page / column, left or right cover) and vertical centring when content is shorter than the viewport. The code is new: no Swing types, and a pure function of page sizes. |
 | `view/TileRenderer` | viewer-awt `AbstractPageViewComponent.PageImageCaptureTask` | The Graphics2D set-up for a clipped region paint: clip, translate to region origin, scale to device px, `page.paint(SCREEN, …)`. Rewritten around tiles and regions. |
@@ -113,10 +113,10 @@ Logic carried over from the Swing viewer or core, recorded so the lineage is vis
 | `ri/actions/*` (ViewerAction, ToggleAction, ActionRegistry, ActionControls, ViewerContext, the action classes) | viewer-awt `SwingController` (the commands behind its menu and tool bar items), `SwingViewBuilder` (which commands exist, their shortcuts) | The command set and shortcuts. The structure is new: one action class per command, controls built from ids, a context for host operations; nothing of the Swing classes' code carried over. |
 | `ri/ViewerFeatures`, `ri/UserLayout`, `ri/RailArrangement`, `ri/SidePanel` | — (design: JAVAFX-API-PLAN two-tier configuration) | New. |
 | `ri/SwingProperties` | viewer-awt `ViewerPropertiesManager` (`PROPERTY_SHOW_*` key names) | The Swing settings keys, so a Swing RI settings file maps onto this viewer's commands and panels. Only the key strings are taken. |
-| `src/main/resources/org/icepdf/fx/ri/icons/placeholder-icons.properties`, `ri/icons/SvgIcons`, `signature/SignatureIcons` | — | Drawn for ICEpdf (no icon set copied). Same conventions as Lucide (ISC) and Tabler (MIT) - 24 grid, 2px round stroke - so a chosen set can replace them; that set will be recorded here and in NOTICE when it lands. |
+| `src/main/resources/org/icepdf/fx/ri/icons/placeholder-icons.properties`, `ri/icons/SvgIcons`, `signature/SignatureIcons` | — | Drawn for icepdf (no icon set copied). Same conventions as Lucide (ISC) and Tabler (MIT) - 24 grid, 2px round stroke - so a chosen set can replace them; that set will be recorded here and in NOTICE when it lands. |
 | `ri/PdfViewer`, `ri/Theme`, `ri/ui/*` (EdgeDrawer, ViewerShell, ToolRail, UtilityPanel, HeaderBar, PageField, ZoomField, Toast), `ri/ui/viewer.css` | — (design: JAVAFX-API-PLAN; GNOME/libadwaita look and Firefox/Chrome vertical-tab panel behaviour as references only) | New. The colours are libadwaita-like values chosen by hand; no GNOME or browser files used. |
 | `ri/document/DocumentSession` | the retired viewer-fx `ViewerWindow` (its open/save code moved here) | Same project. |
-| `src/main/resources/org/icepdf/fx/images/icepdf-app-icon-*.png` | viewer-awt `icepdf-app-icon-64x64.png`, `-64x64.resized.png` | Byte-identical copies of the project's own app icons. |
+| `src/main/resources/org/icepdf/fx/images/icepdf-app-icon-*.png` | viewer-awt `icepdf-app-icon-*.png` | Byte-identical copies of the project's own app icon (16-256 px), drawn for the project. |
 
 Test fixtures: `SelectionControllerTest`, `CaretNavigatorTest`, `DocumentSearchTest` and `AnnotationRoundTripTest` read `test_print.pdf`,
 `pdf_reference_addendum_redaction.pdf` and

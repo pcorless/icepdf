@@ -1,6 +1,6 @@
-# ICEpdf Swing Viewer
+# icepdf Swing Viewer
 
-ICEpdf Swing Viewer is a lightweight Java Swing application that demonstrates how to use ICEpdf Core to render PDF documents in a desktop environment.
+icepdf Swing Viewer is a lightweight Java Swing application that demonstrates how to use icepdf Core to render PDF documents in a desktop environment.
 
 The viewer provides navigation, search, bookmarks and zoom controls and can be run as an executable JAR or launched via Gradle/Maven. It serves both as a showcase for the core engine and as a reference implementation for building your own Swing‑based PDF viewers.
 
@@ -57,7 +57,7 @@ java -jar viewer/viewer-awt/target/icepdf-viewer-${VERSION}-jar-with-dependencie
 ---
 
 ## Quick Usage Example (Java API)
-Below is a minimal program that launches the SwingViewer directly using the ICEpdf APIs.
+Below is a minimal program that launches the SwingViewer directly using the icepdf APIs.
 
 ```java
 import org.icepdf.viewer.swt.SwingController;
@@ -70,7 +70,7 @@ public class LaunchDemo {
         SwingViewBuilder builder   = new SwingViewBuilder(controller);
 
         // Build the viewer frame
-        javax.swing.JFrame frame = builder.buildFrame("ICEpdf Demo");
+        javax.swing.JFrame frame = builder.buildFrame("icepdf Demo");
         frame.setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
@@ -82,12 +82,12 @@ public class LaunchDemo {
     }
 }
 ```
-The code above is functionally equivalent to running the bundled JAR, but it shows how you can embed ICEpdf Swing in your own Java applications.
+The code above is functionally equivalent to running the bundled JAR, but it shows how you can embed icepdf Swing in your own Java applications.
 
 ---
 
 ## API Documentation
-ICEpdf’s public API for the viewer consists mainly of `SwingController` and `SwingViewBuilder`. Javadoc can be generated from the module sources:
+icepdf’s public API for the viewer consists mainly of `SwingController` and `SwingViewBuilder`. Javadoc can be generated from the module sources:
 ```bash
 ./gradlew :viewer:viewer-awt:javadoc
 ```
@@ -104,4 +104,4 @@ See the repository root `CONTRIBUTING.md` for guidelines.
 ---
 
 ## License
-ICEpdf Swing Viewer is licensed under the Apache License 2.0 – see [LICENSE](../../LICENSE).
+icepdf Swing Viewer is licensed under the Apache License 2.0 – see [LICENSE](../../LICENSE).

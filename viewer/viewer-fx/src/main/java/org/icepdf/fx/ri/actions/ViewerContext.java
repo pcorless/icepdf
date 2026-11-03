@@ -60,7 +60,7 @@ public interface ViewerContext {
 
     /** Name for title bars and the About box. */
     default String applicationName() {
-        return "ICEpdf";
+        return "icepdf";
     }
 
     // ---- host operations (see Capability) -------------------------------------------------

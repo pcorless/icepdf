@@ -1074,7 +1074,7 @@ public class Library {
 
     public static void initializeThreadPool() {
 
-        logger.log(Level.FINE, () -> "Starting ICEpdf Thread Pool: " + commonPoolThreads + " threads.");
+        logger.log(Level.FINE, () -> "Starting icepdf Thread Pool: " + commonPoolThreads + " threads.");
 
         // the thread factory goes in the constructor: set afterwards, a task submitted in between
         // started a worker from the default (non-daemon) factory, which kept the JVM alive after
@@ -1085,7 +1085,7 @@ public class Library {
                     new LinkedBlockingQueue<>(), daemonThreadFactory("ICEpdf-thread-pool"));
         }
 
-        logger.log(Level.FINE, () -> "Starting ICEpdf image proxy Pool: " + imagePoolThreads + " threads.");
+        logger.log(Level.FINE, () -> "Starting icepdf image proxy Pool: " + imagePoolThreads + " threads.");
         if (imageThreadPool == null || imageThreadPool.isShutdown()) {
             imageThreadPool = new ThreadPoolExecutor(
                     imagePoolThreads, imagePoolThreads, KEEP_ALIVE_TIME, TimeUnit.SECONDS,
@@ -1132,7 +1132,7 @@ public class Library {
         imagePoolThreads = Math.max(1, image);
         resizePool(commonThreadPool, commonPoolThreads);
         resizePool(imageThreadPool, imagePoolThreads);
-        logger.log(Level.FINE, () -> "Resized ICEpdf thread pools: common=" + commonPoolThreads
+        logger.log(Level.FINE, () -> "Resized icepdf thread pools: common=" + commonPoolThreads
                 + ", image=" + imagePoolThreads);
     }
 
@@ -1158,7 +1158,7 @@ public class Library {
             }
             commonThreadPool.execute(runnable);
         } catch (RejectedExecutionException e) {
-            logger.severe("ICEpdf Common Thread Pool was shutdown!");
+            logger.severe("icepdf Common Thread Pool was shutdown!");
         }
     }
 
@@ -1169,7 +1169,7 @@ public class Library {
             }
             imageThreadPool.execute(callable);
         } catch (RejectedExecutionException e) {
-            logger.severe("ICEpdf Common Thread Pool was shutdown!");
+            logger.severe("icepdf Common Thread Pool was shutdown!");
         }
     }
 }

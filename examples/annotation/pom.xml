@@ -8,9 +8,9 @@
     </parent>
     <artifactId>annotation</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Annotation</name>
+    <name>icepdf :: Examples :: Annotation</name>
     <description>
-        The ICEpdf OS annotation examples
+        The icepdf OS annotation examples
     </description>
 
     <modules>

@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ImageCompareTask extends AbstractTestTask {
 
-    // ICEpdf system property that sizes the per-version image-proxy decode pool; sized from
+    // icepdf system property that sizes the per-version image-proxy decode pool; sized from
     // preferences before the capture-set class loaders (and their Library statics) are created.
     private static final String ICEPDF_IMAGE_THREAD_POOL_PROPERTY = "org.icepdf.core.library.imageThreadPoolSize";
 
@@ -143,7 +143,7 @@ public class ImageCompareTask extends AbstractTestTask {
         // read capture-concurrency preferences once for the whole run.
         concurrentDocuments = PreferencesController.getCaptureConcurrentDocuments();
         renderThreadsPerDocument = PreferencesController.getCaptureRenderThreadsPerDocument();
-        // Size ICEpdf's image-proxy pool before config() creates the class loaders: Library reads
+        // Size icepdf's image-proxy pool before config() creates the class loaders: Library reads
         // this property in a static initializer, so it must be set before that class is loaded.
         System.setProperty(ICEPDF_IMAGE_THREAD_POOL_PROPERTY,
                 Integer.toString(PreferencesController.getCaptureImageThreadPoolSize()));
@@ -195,12 +195,12 @@ public class ImageCompareTask extends AbstractTestTask {
             getTestInstance(captureSetA);
         } catch (Exception e) {
             e.printStackTrace();
-            throw new ConfigurationException("Capture set A classpath does not contain ICEpdf or is invalid.");
+            throw new ConfigurationException("Capture set A classpath does not contain icepdf or is invalid.");
         }
         try {
             getTestInstance(captureSetB);
         } catch (Exception e) {
-            throw new ConfigurationException("Capture set B classpath does not contain ICEpdf or is invalid.");
+            throw new ConfigurationException("Capture set B classpath does not contain icepdf or is invalid.");
         }
 
         // load the content set files and assign to hash, name -> ContentSet.
@@ -383,7 +383,7 @@ public class ImageCompareTask extends AbstractTestTask {
      * Captures the requested pages of a single document across the given capture sets. The page
      * callables for every capture set are submitted together to the document's own render pool, so
      * pages of the same document are always rendered by at least two threads concurrently - the
-     * stress condition that surfaces ICEpdf sync bugs.
+     * stress condition that surfaces icepdf sync bugs.
      */
     private void capturePages(ExecutorService renderPool, Path filePath, int documentIndex, CaptureSet... captureSet)
             throws InterruptedException, ExecutionException {

@@ -7,7 +7,7 @@ repositories {
     mavenCentral()
 }
 
-description = 'ICEpdf qa framework application'
+description = 'icepdf qa framework application'
 
 application {
     mainClass = "org.icepdf.qa.viewer.Launcher"

@@ -9,9 +9,9 @@
     </parent>
     <artifactId>core</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Core</name>
+    <name>icepdf :: Core</name>
     <description>
-        The ICEpdf common rendering core library.
+        The icepdf common rendering core library.
     </description>
 
     <modules>

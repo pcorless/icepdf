@@ -15,7 +15,7 @@
  *
  * The layout rules follow Apache PDFBox's AppearanceGeneratorHelper and PlainTextFormatter
  * (org.apache.pdfbox.pdmodel.interactive, Apache License 2.0), which follow Acrobat; rewritten for
- * ICEpdf's object model; see NOTICE.
+ * icepdf's object model; see NOTICE.
  */
 package org.icepdf.core.pobjects.annotations;
 

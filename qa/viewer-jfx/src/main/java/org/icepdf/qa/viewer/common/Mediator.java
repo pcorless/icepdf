@@ -37,7 +37,7 @@ import java.util.Optional;
  */
 public class Mediator {
 
-    public static final String TITLE_TEXT = "ICEpdf QA";
+    public static final String TITLE_TEXT = "icepdf QA";
     public static final String STATUS_TEXT = "Status: ";
 
     private final Stage primaryStage;

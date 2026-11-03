@@ -333,7 +333,7 @@ public final class ViewerPreferences {
             Files.createDirectories(file.getParent());
             Path temp = file.resolveSibling(file.getFileName() + ".tmp");
             try (OutputStream out = Files.newOutputStream(temp)) {
-                properties.store(out, "ICEpdf JavaFX viewer settings");
+                properties.store(out, "icepdf JavaFX viewer settings");
             }
             Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {

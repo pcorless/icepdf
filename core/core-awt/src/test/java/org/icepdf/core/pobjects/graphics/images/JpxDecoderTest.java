@@ -81,7 +81,7 @@ public class JpxDecoderTest {
     }
 
     // ------------------------------------------------------------------
-    // ICEpdf's JPXDecode path over real streams (GH-613 fixtures): the PDF's colour space applied
+    // icepdf's JPXDecode path over real streams (GH-613 fixtures): the PDF's colour space applied
     // to the reader's raster.
     // ------------------------------------------------------------------
 
@@ -242,7 +242,7 @@ public class JpxDecoderTest {
     public void tnsotUndercountDecodes() {
         assumeTrue(JpxDecoder.isDecoderAvailable(), "no JPEG 2000 reader installed");
         // tnsot-undercount is tileparts-res with TNsot one short. JJ2000 trusted the count and dropped the last
-        // tile-part, which ICEpdf repaired; jpx-imageio walks the tile-parts by their lengths (D-10), so no repair
+        // tile-part, which icepdf repaired; jpx-imageio walks the tile-parts by their lengths (D-10), so no repair
         BufferedImage undercount = decodeFixture("tnsot-undercount.j2k", 64, 64, "DeviceRGB");
         BufferedImage intact = decodeFixture("tileparts-res.j2k", 64, 64, "DeviceRGB");
         assertNotNull(undercount);

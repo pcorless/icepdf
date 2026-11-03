@@ -35,7 +35,7 @@ import java.nio.file.*;
 import java.util.ArrayList;
 
 /**
- * Class loader tests for having two version of ICEpdf in one JVM
+ * Class loader tests for having two version of icepdf in one JVM
  */
 public class ClassloaderTests {
 

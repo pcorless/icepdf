@@ -26,7 +26,7 @@ import org.icepdf.core.util.Library;
  * that is a hypertext link</p>
  * <br>
  * <p>The URI can be extracted from this object so that the content can
- * be loaded in a web browser.  ICEpdf does not currently support image map
+ * be loaded in a web browser.  icepdf does not currently support image map
  * URI's.</p>
  * @since 2.6
  */

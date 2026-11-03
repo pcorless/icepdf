@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>text-extraction</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Examples :: Extraction :: Text</name>
+    <name>icepdf :: Examples :: Extraction :: Text</name>
 
     <build>
         <plugins>

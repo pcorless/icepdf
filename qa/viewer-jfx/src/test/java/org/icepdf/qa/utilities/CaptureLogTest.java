@@ -43,7 +43,7 @@ public class CaptureLogTest {
                     new IOException("Could not find referenced cmap stream Adobe-UCS-UCS2"));
             CaptureLog.clearContext();
 
-            // an untagged thread, e.g. an ICEpdf pool thread, reports what was in flight
+            // an untagged thread, e.g. an icepdf pool thread, reports what was in flight
             CaptureLog.setContext("A: busy.pdf p2");
             Thread pool = new Thread(() -> logger.warning("decode failed"), "ICEpdf-thread-image-pool-1");
             pool.start();
@@ -85,7 +85,7 @@ public class CaptureLogTest {
         assertNotNull(log);
         try {
             CaptureLog.setContext("A: x.pdf p1");
-            // many FontBox records, one ICEpdf-thrown exception (via a JDK frame), one plain warning
+            // many FontBox records, one icepdf-thrown exception (via a JDK frame), one plain warning
             Logger fontBox = Logger.getLogger("org.apache.fontbox.ttf.GlyphSubstitutionTable");
             for (int i = 0; i < 5; i++) {
                 fontBox.warning("lookupListOffset is 0, LookupListTable is considered empty " + i);
@@ -104,7 +104,7 @@ public class CaptureLogTest {
         Path summaryFile = log.getLogFile().resolveSibling(
                 log.getLogFile().getFileName().toString().replace(".log", "-summary.txt"));
         String summary = new String(Files.readAllBytes(summaryFile), StandardCharsets.UTF_8);
-        int icepdf = summary.indexOf("-- Exceptions thrown from ICEpdf code --");
+        int icepdf = summary.indexOf("-- Exceptions thrown from icepdf code --");
         int shading = summary.indexOf("ShadingType2Pattern");
         int rest = summary.indexOf("-- Everything else --");
         int fontBoxSection = summary.indexOf("-- FontBox (5 records, by logger) --");

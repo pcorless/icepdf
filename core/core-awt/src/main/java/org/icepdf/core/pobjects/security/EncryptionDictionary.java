@@ -28,7 +28,7 @@ import java.util.List;
  * encrypted named reference.</p>
  * <br>
  * <p>The dictionary is composed of combinations of the following entries defined
- * by the different encryption types.  ICEpdf currently only supports the
+ * by the different encryption types.  icepdf currently only supports the
  * Standard Security Handler.</p>
  * <br>
  * <br>

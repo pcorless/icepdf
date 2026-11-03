@@ -12,9 +12,9 @@
     <properties>
         <jacoco.coverage.minimum>0.23</jacoco.coverage.minimum>
     </properties>
-    <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
+    <name>icepdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
-        ICEpdf Java Swing/AWT reference implementation.
+        icepdf Java Swing/AWT reference implementation.
     </description>
 
     <dependencies>

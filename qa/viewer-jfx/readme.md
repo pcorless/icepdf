@@ -1,4 +1,4 @@
-# ICEpdf QA
+# icepdf QA
 
 This is an optional capture/viewer utility for testing the render core for regressions. Capture can be taken for a
 particular build and compared against another. Capture results are stored in `~/dev/pdf-qa/results/` but can be

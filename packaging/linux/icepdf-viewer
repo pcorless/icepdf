@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launcher shim for the ICEpdf Swing viewer.
+# Launcher shim for the icepdf Swing viewer.
 #
 # The viewer's main class takes "-loadfile <path>" rather than a bare path, so
 # this script translates the file argument handed over by the desktop entry.

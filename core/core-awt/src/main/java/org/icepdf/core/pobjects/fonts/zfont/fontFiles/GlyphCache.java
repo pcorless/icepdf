@@ -26,7 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A simple glyph outline cache.  Glyph outlines in ICEpdf are produced in raw font (glyph) units
+ * A simple glyph outline cache.  Glyph outlines in icepdf are produced in raw font (glyph) units
  * and are independent of the font's point size and text/graphics-state transform, which are applied
  * separately at paint time.  This makes the outlines safe to cache and reuse for the lifetime of a
  * (derived) font instance.
@@ -39,8 +39,8 @@ import java.util.logging.Logger;
  * @author John Hewson
  * <p>
  * Derived from {@code org.apache.pdfbox.rendering.GlyphCache} of Apache PDFBox 3.0.6, used under
- * the Apache License, Version 2.0.  Changes for ICEpdf:
- * - keyed on the ICEpdf {@link ZSimpleFont} / {@link FontFile} model rather than PDFBox's
+ * the Apache License, Version 2.0.  Changes for icepdf:
+ * - keyed on the icepdf {@link ZSimpleFont} / {@link FontFile} model rather than PDFBox's
  *   {@code PDVectorFont}, so lookups take a {@code char} code and yield a {@link Shape}
  * - {@link java.util.concurrent.ConcurrentHashMap} rather than {@code HashMap}, as a font instance
  *   is shared by the page-rendering threads

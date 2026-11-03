@@ -57,7 +57,7 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 
 /**
- * The ICEpdf viewer as one component: a {@link PdfView} with a header bar, a tool rail, a utility
+ * The icepdf viewer as one component: a {@link PdfView} with a header bar, a tool rail, a utility
  * panel and full screen, built from the {@linkplain StandardActions actions}, shaped by what the
  * product offers ({@link ViewerFeatures}) and arranged as the user left it ({@link UserLayout}).
  * <pre>{@code

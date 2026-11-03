@@ -1,4 +1,4 @@
-description = 'ICEpdf core library jar project'
+description = 'icepdf core library jar project'
 
 def sectionName = 'org/icepdf/core/'
 def baseJarName = 'icepdf'
@@ -21,7 +21,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:${JUNIT_BOM_VERSION}"))
     testImplementation('org.junit.jupiter:junit-jupiter')
     testRuntimeOnly('org.junit.platform:junit-platform-launcher')
-    // test only: CCITTFaxDecoderTest checks ICEpdf's fax decoder against TwelveMonkeys' (GH-240)
+    // test only: CCITTFaxDecoderTest checks icepdf's fax decoder against TwelveMonkeys' (GH-240)
     testImplementation 'com.twelvemonkeys.imageio:imageio-tiff:' + "${MONKEY_VERSION}"
 }
 
@@ -35,7 +35,7 @@ publishing {
                 artifactId = 'icepdf-core'
                 version = "${VERSION + (RELEASE_TYPE?.trim() ? '-' + RELEASE_TYPE : '')}"
                 pom.withXml {
-                    asNode().appendNode('description', 'ICEpdf core rendering library.')
+                    asNode().appendNode('description', 'icepdf core rendering library.')
                     asNode().appendNode('url', 'https://github.com/pcorless/icepdf')
                     asNode().appendNode('scm')
                             .appendNode('connection', 'scm:git:https://github.com/pcorless/icepdf').parent()

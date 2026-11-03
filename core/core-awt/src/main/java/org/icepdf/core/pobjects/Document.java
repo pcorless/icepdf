@@ -58,7 +58,7 @@ import java.util.logging.Logger;
  * access to the hierarchy of objects contained in the body section of the
  * PDF document.  Most of the objects in the hierarchy are dictionaries which
  * contain references to page content and other objects such such as annotations.
- * For more information on the document object hierarchy, see the <i>ICEpdf
+ * For more information on the document object hierarchy, see the <i>icepdf
  * Developer's Guide</i>.</p>
  * <br>
  * <p>The <code>Document</code> class also provides access to methods responsible
@@ -78,10 +78,10 @@ public class Document {
             Logger.getLogger(Document.class.getName());
 
     /**
-     * Gets the version number of ICEpdf rendering core.  This is not the version
+     * Gets the version number of icepdf rendering core.  This is not the version
      * number of the PDF format used to encode this document.
      *
-     * @return version number of ICEpdf's rendering core.
+     * @return version number of icepdf's rendering core.
      */
     public static String getLibraryVersion() {
         return ProductInfo.VERSION +

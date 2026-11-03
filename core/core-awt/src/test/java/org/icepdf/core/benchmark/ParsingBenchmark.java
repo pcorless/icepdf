@@ -113,7 +113,7 @@ public class ParsingBenchmark {
             return;
         }
 
-        System.out.printf("ICEpdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b%n",
+        System.out.printf("icepdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b%n",
                 corpus.size(), WARMUP, ITERS, THREADS, MODE, PAINT);
         if (!CHILD) System.out.println(header());
 
@@ -141,7 +141,7 @@ public class ParsingBenchmark {
      * output, so no cross-file aggregate is printed here.
      */
     private static void runForked(List<Path> corpus) throws Exception {
-        System.out.printf("ICEpdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b"
+        System.out.printf("icepdf parsing benchmark | files=%d warmup=%d iters=%d threads=%d mode=%s paint=%b"
                         + " | forked one JVM per file%n",
                 corpus.size(), WARMUP, ITERS, THREADS, MODE, PAINT);
         System.out.println(header());

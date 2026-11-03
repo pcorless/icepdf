@@ -46,9 +46,9 @@ import static org.icepdf.fx.embed.SmokeSupport.fx;
 import static org.icepdf.fx.embed.SmokeSupport.onFx;
 
 /**
- * An application that embeds the bare page view - no ICEpdf header, rail or panels - and drives it
+ * An application that embeds the bare page view - no icepdf header, rail or panels - and drives it
  * from its own tool bar: previous / next page, zoom, and find.  Its buttons are its own controls;
- * they run ICEpdf's commands by id through {@link ActionControls}, and its labels (page "3 of 12",
+ * they run icepdf's commands by id through {@link ActionControls}, and its labels (page "3 of 12",
  * "125%", "2 of 14 hits") are bound to the view's JavaFX properties.
  * <p>
  * {@code ./gradlew :viewer:viewer-fx:embedSmoke -PsmokeArgs="outdir;doc.pdf[;search term]"}
@@ -65,7 +65,7 @@ public final class EmbedBasicSmoke {
 
         Host host = onFx(Host::new);
         System.out.println("embedding, basic:");
-        smoke.check("no ICEpdf chrome in the scene", onFx(() -> SmokeSupport.find(host.root, HeaderBar.class) == null
+        smoke.check("no icepdf chrome in the scene", onFx(() -> SmokeSupport.find(host.root, HeaderBar.class) == null
                 && SmokeSupport.find(host.root, EdgeDrawer.class) == null));
         smoke.check("commands are disabled with no document", onFx(() -> host.next.isDisabled() && host.zoomIn.isDisabled()
                 && host.findNext.isDisabled()));
@@ -79,7 +79,7 @@ public final class EmbedBasicSmoke {
                 onFx(() -> host.pageLabel.getText()));
         smoke.check("commands enabled once open", onFx(() -> !host.next.isDisabled() && !host.zoomIn.isDisabled()));
 
-        // previous / next: the application's buttons, ICEpdf's navigation actions.
+        // previous / next: the application's buttons, icepdf's navigation actions.
         if (pages >= 3) {
             fx(host.next::fire);
             fx(host.next::fire);
@@ -115,7 +115,7 @@ public final class EmbedBasicSmoke {
         smoke.check("Ctrl+F puts the caret in the application's search field", onFx(host.searchField::isFocused),
                 onFx(() -> host.stage.getScene().getFocusOwner()));
 
-        // find: the application's field searches; next / previous are ICEpdf's actions.
+        // find: the application's field searches; next / previous are icepdf's actions.
         fx(() -> {
             host.searchField.setText(term);
             host.searchField.getOnAction().handle(null);
@@ -326,7 +326,7 @@ public final class EmbedBasicSmoke {
         final BorderPane root;
 
         Host() {
-            // the application's own buttons, running ICEpdf's commands and greying out with them.
+            // the application's own buttons, running icepdf's commands and greying out with them.
             actions.bind(previous, "navigation.previous");
             actions.bind(next, "navigation.next");
             actions.bind(zoomIn, "view.zoom-in");

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-/* The ICEpdf viewer: minimal, document first.  Colours are looked-up variables set per theme class
-   on the root; everything below uses them.  Written for ICEpdf (no theme library or GNOME files). */
+/* The icepdf viewer: minimal, document first.  Colours are looked-up variables set per theme class
+   on the root; everything below uses them.  Written for icepdf (no theme library or GNOME files). */
 
 .icepdf-viewer.theme-light {
     -icepdf-window: #fafafa;

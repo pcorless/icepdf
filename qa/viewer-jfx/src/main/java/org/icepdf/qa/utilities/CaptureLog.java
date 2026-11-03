@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * Writes everything a QA run logs at WARNING or above, plus anything printed to {@code System.err}, to one file
  * per run under {@code <results>/logs/}, with every entry tagged with the document and page being captured.
  * <p>
- * Capture threads tag themselves with {@link #setContext(String)}.  ICEpdf also does work on its own pool threads
+ * Capture threads tag themselves with {@link #setContext(String)}.  icepdf also does work on its own pool threads
  * (image decoding, for one) that don't know which document they serve; entries from those carry the thread name
  * and the documents in flight at that moment, which with a handful of concurrent documents narrows it down.
  * <p>
@@ -261,7 +261,7 @@ public final class CaptureLog {
         StringBuilder summary = new StringBuilder("==== Summary: ").append(problems.size())
                 .append(" distinct problem(s), ").append(stderrLines).append(" line(s) of System.err ====\n");
         List<Problem> sorted = new ArrayList<>(problems.values());
-        // problems thrown from ICEpdf's own code first - those are the likely bugs - then by count
+        // problems thrown from icepdf's own code first - those are the likely bugs - then by count
         sorted.sort(Comparator.comparing((Problem p) -> !p.fromIcepdfCode()).thenComparing(p -> -p.count));
         List<Problem> fontBox = new ArrayList<>();
         boolean headed = false;
@@ -271,7 +271,7 @@ public final class CaptureLog {
                 continue;
             }
             if (!headed && problem.fromIcepdfCode()) {
-                summary.append("\n-- Exceptions thrown from ICEpdf code --\n");
+                summary.append("\n-- Exceptions thrown from icepdf code --\n");
                 headed = true;
             } else if (headed && !problem.fromIcepdfCode()) {
                 summary.append("\n-- Everything else --\n");
@@ -325,7 +325,7 @@ public final class CaptureLog {
         }
 
         /**
-         * True when the first non-JDK frame of the stack trace is ICEpdf code: ICEpdf threw, or passed bad
+         * True when the first non-JDK frame of the stack trace is icepdf code: icepdf threw, or passed bad
          * values to the JDK (an out-of-range {@code new Color(...)}, say), rather than a library such as FontBox.
          */
         boolean fromIcepdfCode() {

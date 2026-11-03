@@ -22,7 +22,7 @@ import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.ViewerContext;
 
-/** Shows the application name and the ICEpdf version. */
+/** Shows the application name and the icepdf version. */
 public final class AboutAction extends AbstractViewerAction {
 
     public static final String ID = "app.about";

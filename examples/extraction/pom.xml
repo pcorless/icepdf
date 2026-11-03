@@ -8,9 +8,9 @@
     </parent>
     <artifactId>extraction</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Extraction</name>
+    <name>icepdf :: Examples :: Extraction</name>
     <description>
-        The ICEpdf OS extraction examples
+        The icepdf OS extraction examples
     </description>
 
     <modules>

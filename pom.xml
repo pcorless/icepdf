@@ -6,9 +6,9 @@
     <artifactId>icepdf</artifactId>
     <version>8.0.0</version>
     <packaging>pom</packaging>
-    <name>ICEpdf</name>
+    <name>icepdf</name>
     <description>
-        ICEpdf is a PDF document rendering and viewing library
+        icepdf is a PDF document rendering and viewing library
     </description>
     <url>https://github.com/pcorless/icepdf/</url>
 
@@ -57,8 +57,8 @@
 
     <developers>
         <developer>
-            <name>ICEpdf Community</name>
-            <organization>ICEpdf Community</organization>
+            <name>icepdf Community</name>
+            <organization>icepdf Community</organization>
             <organizationUrl>https://github.com/pcorless/icepdf</organizationUrl>
         </developer>
         <developer>

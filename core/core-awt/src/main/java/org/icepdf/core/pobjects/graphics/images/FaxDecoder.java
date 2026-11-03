@@ -80,7 +80,7 @@ public class FaxDecoder extends AbstractImageDecoder {
         byte[] data = imageStream.getDecodedStreamBytes(0);
         byte[] decodedStreamData = null;
         try {
-            // GH-240: ICEpdf's own decoder.  It matched TwelveMonkeys' on every one of ~4,000 corpus faxes, is
+            // GH-240: icepdf's own decoder.  It matched TwelveMonkeys' on every one of ~4,000 corpus faxes, is
             // faster, and also reads the few TwelveMonkeys rejected, so it is the decoder now, not the fallback.
             decodedStreamData = ccittFaxDecodeCCITTFaxDecoder(data, k, encodedByteAlign, columns, rows, size);
         } catch (Exception e) {

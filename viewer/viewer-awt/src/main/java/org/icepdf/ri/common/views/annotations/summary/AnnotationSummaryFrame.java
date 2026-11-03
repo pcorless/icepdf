@@ -34,7 +34,7 @@ public class AnnotationSummaryFrame extends JFrame implements MutableDocument {
         this.controller = controller;
         messageBundle = controller.getMessageBundle();
 
-        setIconImage(new ImageIcon(Images.get("icepdf-app-icon-64x64.png")).getImage());
+        setIconImages(Images.getAppIcons());
         setTitle(messageBundle.getString("viewer.window.annotationSummary.title.default"));
     }
 

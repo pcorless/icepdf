@@ -9,9 +9,9 @@
     <groupId>org.icepdf.examples</groupId>
     <artifactId>examples</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples</name>
+    <name>icepdf :: Examples</name>
     <description>
-        The ICEpdf OS examples
+        The icepdf OS examples
     </description>
 
     <properties>

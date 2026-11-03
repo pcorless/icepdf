@@ -1,4 +1,4 @@
-# Java2D vs JavaFX Prism Rendering Analysis for ICEpdf
+# Java2D vs JavaFX Prism Rendering Analysis for icepdf
 
 ## Measured results, 2026-10-05 (supersedes the estimates below)
 
@@ -288,7 +288,7 @@ public class PageRenderer {
         return new Task<>() {
             @Override
             protected WritableImage call() {
-                // Use existing ICEpdf Java2D rendering
+                // Use existing icepdf Java2D rendering
                 BufferedImage bufferedImage = 
                     (BufferedImage) page.getImage(
                         0, 
@@ -387,7 +387,7 @@ public class HybridPageWidget extends StackPane {
 
 #### ✅ Pros
 1. **Performance** - Java2D is still faster for complex PDF rendering (2-3x)
-2. **Proven** - ICEpdf's Java2D code is mature, tested, debugged
+2. **Proven** - icepdf's Java2D code is mature, tested, debugged
 3. **Color accuracy** - Better ICC profile support
 4. **Low risk** - Known quantity, no surprises
 5. **Quick implementation** - Use existing code + JavaFX wrapper
@@ -654,7 +654,7 @@ public class HybridPageView extends StackPane {
         Task<WritableImage> renderTask = new Task<>() {
             @Override
             protected WritableImage call() {
-                // Use existing ICEpdf Java2D rendering
+                // Use existing icepdf Java2D rendering
                 page.init(); // Ensure page is initialized
                 
                 BufferedImage bufferedImage = (BufferedImage) page.getImage(
@@ -733,7 +733,7 @@ protected void handleMouseReleased(MouseEvent event) {
         selectionRect.getHeight() / scale
     );
     
-    // Use existing ICEpdf text extraction (happens in background)
+    // Use existing icepdf text extraction (happens in background)
     Task<String> extractTask = new Task<>() {
         @Override
         protected String call() {
@@ -753,7 +753,7 @@ protected void handleMouseReleased(MouseEvent event) {
 
 **Result:** 
 - ✅ Smooth, instant visual feedback (JavaFX)
-- ✅ Accurate text extraction (ICEpdf core)
+- ✅ Accurate text extraction (icepdf core)
 - ✅ Best of both worlds!
 
 ---
@@ -819,7 +819,7 @@ public class AnnotationNode extends Group {
 
 **Java2D equivalent:** Would require constant repaints, flickering, poor UX
 
-### Save Annotation Back to PDF (ICEpdf Core)
+### Save Annotation Back to PDF (icepdf Core)
 ```java
 @Override
 protected void handleMouseReleased(MouseEvent event) {
@@ -830,7 +830,7 @@ protected void handleMouseReleased(MouseEvent event) {
     Task<Void> saveTask = new Task<>() {
         @Override
         protected Void call() {
-            // Use existing ICEpdf annotation API
+            // Use existing icepdf annotation API
             annotation.setRect(new Rectangle2D.Float(
                 (float) (bounds.getMinX() / scale),
                 (float) (bounds.getMinY() / scale),

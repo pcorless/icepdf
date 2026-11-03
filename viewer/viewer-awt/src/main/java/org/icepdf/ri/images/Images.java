@@ -30,7 +30,7 @@ import static org.icepdf.ri.images.IconPack.Variant;
  * Utility class providing a unified interface to all application icons.
  * <p/>
  * For a one-off, directly accessing the default icon pack, call {@link #get(String)}. When loading icons which
- * are meant to be customizable by applications embedding ICEpdf, call:
+ * are meant to be customizable by applications embedding icepdf, call:
  * <ul>
  *     <li>for a single icon {@link #getSingleIcon(String, Variant, IconSize)}</li>
  *     <li>for a button without different styles for its states,
@@ -116,6 +116,20 @@ public class Images {
      */
     public static URL get(String name) {
         return Images.class.getResource(name);
+    }
+
+    /**
+     * The application icon at every size it's drawn in, for {@link java.awt.Window#setIconImages}: the
+     * window manager picks the closest for the title bar, task switcher and dock.
+     *
+     * @return app icon images, smallest first
+     */
+    public static java.util.List<java.awt.Image> getAppIcons() {
+        java.util.List<java.awt.Image> icons = new java.util.ArrayList<>();
+        for (int size : new int[]{16, 24, 32, 48, 64, 128, 256}) {
+            icons.add(new ImageIcon(get("icepdf-app-icon-" + size + "x" + size + ".png")).getImage());
+        }
+        return icons;
     }
 
     /**

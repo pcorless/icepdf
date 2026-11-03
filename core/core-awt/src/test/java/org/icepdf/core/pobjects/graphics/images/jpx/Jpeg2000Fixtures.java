@@ -267,7 +267,7 @@ public final class Jpeg2000Fixtures {
         }
     }
 
-    /** Decodes the fixture the way ICEpdf does (read(0, param).getRaster()) and compares. */
+    /** Decodes the fixture the way icepdf does (read(0, param).getRaster()) and compares. */
     public static Result decodeAndCompare(Reference ref) {
         Result r = new Result();
         Object[] decoded;

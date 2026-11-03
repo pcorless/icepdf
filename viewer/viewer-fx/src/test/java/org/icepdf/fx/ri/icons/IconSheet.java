@@ -91,7 +91,7 @@ public final class IconSheet {
             cell.setAlignment(Pos.CENTER_LEFT);
             grid.add(cell, i % columns, i / columns);
         }
-        Label title = new Label("ICEpdf placeholder icons - " + ids.size() + " (24 px, 16 px)" + (dark ? ", dark" : ""));
+        Label title = new Label("icepdf placeholder icons - " + ids.size() + " (24 px, 16 px)" + (dark ? ", dark" : ""));
         title.setTextFill(ink);
         title.setStyle("-fx-font-weight: bold;");
         VBox root = new VBox(8, title, grid);
