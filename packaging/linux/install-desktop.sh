@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Installs the icepdf viewer desktop entry, icon and launcher for the current user.
 #
-#   ./packaging/linux/install-desktop.sh [path/to/icepdf-viewer-*.jar]     the Swing viewer
-#   ./packaging/linux/install-desktop.sh --fx [path/to/lib/folder]         the JavaFX viewer
+#   ./packaging/linux/install-desktop.sh [path/to/lib/folder]                  the JavaFX viewer (default)
+#   ./packaging/linux/install-desktop.sh --swing [path/to/icepdf-viewer-*.jar] the Swing viewer
 #
-# Without an argument the most recent jar under viewer/viewer-awt/build/libs is used (Swing), or
-# viewer/viewer-fx/build/launcher/lib (JavaFX; build it with ./gradlew :viewer:viewer-fx:launcherLibs).
+# Without a path the JavaFX viewer comes from viewer/viewer-fx/build/launcher/lib (build it with
+# ./gradlew :viewer:viewer-fx:launcherLibs), and the Swing viewer from the most recent jar under
+# viewer/viewer-awt/build/libs.  --fx is still accepted and means the default.
 # Pass --uninstall to remove everything this script installed, both viewers.
 set -euo pipefail
 
@@ -45,8 +46,14 @@ if [ "${1:-}" = "--uninstall" ]; then
     exit 0
 fi
 
-if [ "${1:-}" = "--fx" ]; then
-    SRC="${2:-$REPO_ROOT/viewer/viewer-fx/build/launcher/lib}"
+MODE=fx
+case "${1:-}" in
+    --swing) MODE=swing; shift ;;
+    --fx) shift ;;
+esac
+
+if [ "$MODE" = "fx" ]; then
+    SRC="${1:-$REPO_ROOT/viewer/viewer-fx/build/launcher/lib}"
     if ! ls "$SRC"/icepdf-viewer-fx-*.jar >/dev/null 2>&1; then
         echo "No JavaFX viewer libraries in $SRC. Build them first:" >&2
         echo "  ./gradlew :viewer:viewer-fx:launcherLibs" >&2
@@ -85,7 +92,7 @@ if [ -z "$JAR" ]; then
 fi
 if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
     echo "No viewer jar found. Build one first:" >&2
-    echo "  ./gradlew :viewer:viewer-awt:assemble" >&2
+    echo "  ./gradlew :viewer:viewer-awt:assemble   (then run with --swing)" >&2
     exit 1
 fi
 

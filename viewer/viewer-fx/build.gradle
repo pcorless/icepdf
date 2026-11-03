@@ -37,7 +37,7 @@ def javafxModulePath = { JavaExec task ->
 }
 
 // The viewer jar with the jars it needs (JavaFX, core, fonts...) in one folder, for the Linux launcher:
-// ./gradlew :viewer:viewer-fx:launcherLibs, then packaging/linux/install-desktop.sh --fx
+// ./gradlew :viewer:viewer-fx:launcherLibs, then packaging/linux/install-desktop.sh
 tasks.register('launcherLibs', Sync) {
     group = 'distribution'
     description = 'Collects the viewer jar and its runtime jars in build/launcher/lib'
