@@ -27,7 +27,7 @@ import java.util.Arrays;
  * getColor (an ICC toRGB, a tint transform, plus a Color) is the cost, so a pixel whose samples repeat the
  * previous pixel's reuses its colour, and every converted colour is remembered by its packed samples (GH-617).
  *
- * @since 7.5.0
+ * @since 8.0
  */
 final class ColourSpacePixelConverter extends PixelConverter {
     private final PColorSpace colorSpace;

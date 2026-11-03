@@ -23,14 +23,14 @@ Swing/FX viewers.
 <dependency>
   <groupId>com.github.pcorless.icepdf</groupId>
   <artifactId>icepdf-core</artifactId>
-  <version>7.5.0-SNAPSHOT</version>   <!-- or the latest release -->
+  <version>8.0.0</version>   <!-- or the latest release -->
 </dependency>
 ```
 
 ## Gradle
 
 ```kotlin
-implementation('com.github.pcorless.icepdf:icepdf-core:7.5.0-SNAPSHOT')
+implementation('com.github.pcorless.icepdf:icepdf-core:8.0.0')
 ```
 
 ## Building the Library

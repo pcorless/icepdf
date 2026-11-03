@@ -21,7 +21,7 @@ package org.icepdf.core.pobjects.graphics.text;
  * {@code javax.swing.text.Position.Bias}.
  *
  * @see Caret
- * @since 7.5
+ * @since 8.0
  */
 public enum Bias {
     /**

@@ -33,7 +33,7 @@ import java.util.List;
  * the failure mode that makes zero-coverage gutter detection collapse a multi-column page to one
  * column.
  *
- * @since 7.5
+ * @since 8.0
  */
 final class ColumnLayout {
 

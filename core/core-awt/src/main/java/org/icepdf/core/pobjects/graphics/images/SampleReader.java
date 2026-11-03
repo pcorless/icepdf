@@ -19,7 +19,7 @@ package org.icepdf.core.pobjects.graphics.images;
  * Reads an image's samples most significant bit first from its decoded bytes, each row starting on a byte
  * boundary (8.9.3).  Past the end of the data it reads zeros.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 final class SampleReader {
     private final byte[] data;

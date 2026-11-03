@@ -22,7 +22,7 @@ package org.icepdf.core.util.redaction;
  * silently folded "I could not look here" into "I found nothing" would report a clean result for a
  * document it never examined.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class UnverifiableRegion {
 

@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
  * leak the length of every redacted term, which for a name, an account number or a date is a
  * meaningful amount of what the redaction was supposed to remove.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class TermMasker {
 

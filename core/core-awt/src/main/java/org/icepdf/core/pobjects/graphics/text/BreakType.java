@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.graphics.text;
 /**
  * Granularity of caret-boundary navigation used by {@link TextSequence#nextBoundary}.
  *
- * @since 7.5
+ * @since 8.0
  */
 public enum BreakType {
     /** A single glyph/character step. */

@@ -21,7 +21,7 @@ package org.icepdf.core.pobjects.graphics.text;
  * responsible for pairing this with a page index for document-level selection.
  *
  * @see TextSequence
- * @since 7.5
+ * @since 8.0
  */
 public final class Caret {
 

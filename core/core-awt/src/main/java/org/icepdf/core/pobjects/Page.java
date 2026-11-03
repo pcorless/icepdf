@@ -1902,7 +1902,7 @@ public class Page extends Dictionary {
      *
      * @param fontName      name the content stream will select the font by
      * @param fontReference the font object
-     * @since 7.5.0
+     * @since 8.0
      */
     public void addFontResource(Name fontName, Reference fontReference) {
         // The page gets its own /Resources, with its own /Font, written into the page dictionary.

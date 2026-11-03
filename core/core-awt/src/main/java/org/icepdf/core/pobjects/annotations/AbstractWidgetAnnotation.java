@@ -350,7 +350,7 @@ public abstract class AbstractWidgetAnnotation<T extends FieldDictionary> extend
 
     /**
      * @return the widget's appearance characteristics ({@code /MK}), or null if it has none
-     * @since 7.5
+     * @since 8.0
      */
     public AppearanceCharacteristics getAppearanceCharacteristics() {
         Object value = library.getObject(entries, AppearanceCharacteristics.MK_KEY);

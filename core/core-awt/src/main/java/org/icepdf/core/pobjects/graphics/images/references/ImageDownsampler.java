@@ -49,7 +49,7 @@ import java.util.WeakHashMap;
  * Enabled by default; {@code -Dorg.icepdf.core.imageReference.downsample=false} or
  * {@link #setEnabled(boolean)} turns it off.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class ImageDownsampler {
 

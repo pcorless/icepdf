@@ -48,7 +48,7 @@ import java.util.Set;
  * None of that is silently corrected. The redaction propagates either way, erring towards removing
  * too much, and this reports the cases where the caller should know it did.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 class SharedContentStreams {
 

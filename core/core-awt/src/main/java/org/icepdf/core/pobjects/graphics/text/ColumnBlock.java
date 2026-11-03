@@ -30,7 +30,7 @@ import java.awt.geom.Rectangle2D;
  *
  * @see TextSequence#columns()
  * @see TextSequence#caretAt(java.awt.geom.Point2D, OffsetRange)
- * @since 7.5
+ * @since 8.0
  */
 public final class ColumnBlock {
 

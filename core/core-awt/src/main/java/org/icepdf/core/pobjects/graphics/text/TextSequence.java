@@ -44,7 +44,7 @@ import java.util.List;
  * invalidated whenever the page re-sorts (optional-content visibility change, re-parse).
  *
  * @see PageText#getTextSequence()
- * @since 7.5
+ * @since 8.0
  */
 public final class TextSequence {
 

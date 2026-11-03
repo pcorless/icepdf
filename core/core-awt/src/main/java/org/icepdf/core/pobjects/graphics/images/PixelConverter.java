@@ -24,7 +24,7 @@ import org.icepdf.core.pobjects.graphics.RasterOps.SampleDecode;
  * Turns one pixel's samples into an ARGB value, for {@link RawDecoder}.  One converter is picked per image, so
  * the per-pixel work never re-tests the colour space or the bit depth.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 abstract class PixelConverter {
 

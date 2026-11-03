@@ -31,7 +31,7 @@ import java.util.List;
  * The blink is started/stopped by the text-selection view handler as the tool is installed/removed,
  * and reset to solid whenever the caret moves so it is immediately visible on interaction.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class CaretBlink {
 

@@ -30,7 +30,7 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
  * downsampling is enabled (the default).  This type keeps mip mapping on when it has been
  * disabled globally with {@code org.icepdf.core.imageReference.downsample=false}.
  * <p>
- * Before 7.5 each level was a {@link ScaledImageReference} sharing the source's image-pool key,
+ * Before 8.0 each level was a {@link ScaledImageReference} sharing the source's image-pool key,
  * so every level resolved to the full-size image and the mode painted the same as the default.
  *
  * @since 5.0

@@ -45,7 +45,7 @@ import java.util.Set;
  * Left unchecked this fails silently - a wrong glyph, or a blank where a letter should be - which is
  * the worst way for it to fail, because the document looks edited.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class TextEditCapability {
 

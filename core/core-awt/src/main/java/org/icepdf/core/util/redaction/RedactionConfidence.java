@@ -26,7 +26,7 @@ package org.icepdf.core.util.redaction;
  * The ordering here is worst to best, so {@link #compareTo} can be used to take the weakest result
  * across a set of documents.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public enum RedactionConfidence {
 

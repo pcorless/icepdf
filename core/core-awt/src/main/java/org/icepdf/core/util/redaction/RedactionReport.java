@@ -40,7 +40,7 @@ import java.util.Set;
  * precisely what the verification pass checked, and the one case - a rectangle over a long span
  * whose individual words recur elsewhere - where a clean result is narrower than it looks.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactionReport {
 

@@ -39,7 +39,7 @@ git diff core/core-awt/src/test/resources/jpx/baseline                    # revi
 To compare another reader, put its jar on the test class path and pick it with
 `-Djpx.reader=<SPI class name fragment>`; its baselines are written next to jpx-imageio's.
 
-| Suite | JJ2000 1.4.0 (until 7.5.0) | jpx-imageio 0.1.0 |
+| Suite | JJ2000 1.4.0 (until 8.0.0) | jpx-imageio 0.1.0 |
 |---|---|---|
 | conformance (68 decodes) | 48 EXACT, 3 EQUIVALENT, 9 CLOSE, 4 MISMATCH, 2 ERROR, 2 TIMEOUT | 65 EXACT, 3 EQUIVALENT (level-shifted signed, upsampled 4:2:0 / 4:2:2) |
 | contract (28 checks) | 23 PASS, 5 FAIL | 28 PASS |

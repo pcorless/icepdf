@@ -36,7 +36,7 @@ import java.util.TreeMap;
  * Shared between the builders so the two cannot drift: one had it fixed and the other did not, which
  * is how the fallback font kept the bug after the main path lost it.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public final class ToUnicodeCMap {
 

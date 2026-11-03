@@ -49,7 +49,7 @@ import static org.icepdf.core.pobjects.graphics.images.ImageParams.DECODE_KEY;
  * {@code /Decode} is removed rather than preserved - whatever the original said, the samples written
  * here follow the default reading.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class StencilEncoder implements ImageEncoder {
 

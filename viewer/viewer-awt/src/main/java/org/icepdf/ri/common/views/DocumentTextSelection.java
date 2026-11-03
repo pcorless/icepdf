@@ -26,7 +26,7 @@ package org.icepdf.ri.common.views;
  * manager; the offsets re-resolve against a page's {@code TextSequence} when it is
  * re-initialized.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class DocumentTextSelection {
 

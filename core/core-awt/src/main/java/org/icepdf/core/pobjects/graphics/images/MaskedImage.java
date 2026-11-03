@@ -35,7 +35,7 @@ import java.awt.image.Raster;
  * path; as a {@code BufferedImage} it is the <em>unmasked</em> base.  Whatever is not the paint path must
  * take {@link #composite()} instead, and {@link ImageStream#getImage} and the draw command already do.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class MaskedImage extends BufferedImage {
 

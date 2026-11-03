@@ -34,7 +34,7 @@ import java.util.Map;
  * The table is derived from the charset rather than written out by hand: 0x80-0x9F is where
  * Windows-1252 and Latin-1 differ and where a hand-written table would be wrong.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public final class WinAnsiEncoding {
 

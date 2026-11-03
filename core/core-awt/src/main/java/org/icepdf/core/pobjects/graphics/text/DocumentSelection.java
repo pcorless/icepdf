@@ -30,7 +30,7 @@ import java.util.function.IntFunction;
  * Toolkit-neutral counterpart of the Swing viewer's mutable {@code DocumentTextSelection}, with the
  * same anchor/focus semantics.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class DocumentSelection {
 

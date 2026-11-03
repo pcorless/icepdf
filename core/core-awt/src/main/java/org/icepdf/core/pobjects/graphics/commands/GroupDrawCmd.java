@@ -42,7 +42,7 @@ import java.awt.geom.Rectangle2D;
  * attributes ({@code isolated}, {@code knockout}, colour-space name, blend mode,
  * and bounding box) for whatever compositor chooses to act on them.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class GroupDrawCmd extends AbstractDrawCmd {
 

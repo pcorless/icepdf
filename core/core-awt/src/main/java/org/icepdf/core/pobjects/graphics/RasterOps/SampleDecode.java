@@ -20,7 +20,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
  * [Dmin, Dmax], a value in the colour space's own units (0..1 for most, L* 0..100 for Lab, the index for
  * Indexed).  A Dmin above Dmax inverts the samples.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public final class SampleDecode {
     // Dmin * maxSample, so a value is one product and one division: exactly sample / maxSample for [0 1] and

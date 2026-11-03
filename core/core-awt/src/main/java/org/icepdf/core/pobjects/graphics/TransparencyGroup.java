@@ -24,7 +24,7 @@ import org.icepdf.core.pobjects.Name;
  * whether the page content should be rendered into a shared transparency-group
  * buffer rather than painted straight onto the page backdrop.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class TransparencyGroup {
 
