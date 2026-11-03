@@ -1398,8 +1398,15 @@ public class PdfViewer extends StackPane {
                 case FIND -> features.shows(Chrome.HEADER);
                 case PAGE_NUMBER -> features.shows(Chrome.HEADER) && header != null && header.hasPageField();
                 case SIDE_PANEL -> features.shows(Chrome.SIDE_PANELS);
+                case OPEN_LINK -> onLink != null;
                 default -> true;
             };
+        }
+
+        @Override
+        public void openLink(String uri) {
+            if (onLink == null) throw new UnsupportedOperationException("link");
+            onLink.accept(uri);
         }
 
         @Override

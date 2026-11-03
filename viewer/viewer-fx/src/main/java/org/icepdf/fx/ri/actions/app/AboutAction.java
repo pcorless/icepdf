@@ -18,8 +18,11 @@ package org.icepdf.fx.ri.actions.app;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.scene.control.Alert;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.fx.ri.actions.AbstractViewerAction;
 import org.icepdf.fx.ri.actions.ViewerContext;
@@ -29,15 +32,31 @@ public final class AboutAction extends AbstractViewerAction {
 
     public static final String ID = "app.about";
 
+    /** The project's home page. */
+    public static final String HOME_PAGE = "https://github.com/pcorless/icepdf";
+
     public AboutAction() {
         super(ID, null);
     }
 
     @Override
     public void execute(ViewerContext context) {
-        Alert about = new Alert(Alert.AlertType.INFORMATION, context.applicationName()
-                + "\n" + Messages.format("about.version", Document.getLibraryVersion()));
+        Alert about = new Alert(Alert.AlertType.INFORMATION);
         about.setHeaderText(null);
+        Label text = new Label(context.applicationName()
+                + "\n" + Messages.format("about.version", Document.getLibraryVersion()));
+        // a link only where the host can open one; otherwise the address as text
+        javafx.scene.Node home;
+        if (context.has(ViewerContext.Capability.OPEN_LINK)) {
+            Hyperlink link = new Hyperlink(HOME_PAGE);
+            link.setOnAction(e -> context.openLink(HOME_PAGE));
+            link.setPadding(javafx.geometry.Insets.EMPTY);
+            home = link;
+        } else {
+            home = new Label(HOME_PAGE);
+        }
+        VBox content = new VBox(8, text, home);
+        about.getDialogPane().setContent(content);
         // the project's cube in place of the information icon
         java.net.URL cube = AboutAction.class.getResource("/org/icepdf/fx/images/icepdf-cube-128.png");
         if (cube != null) {
