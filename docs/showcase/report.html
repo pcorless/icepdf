@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kestrel Icefield Survey: Field Report 2026</title>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: "Noto Sans", sans-serif; color: #1b2330; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .page { width: 210mm; height: 297mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .pad { padding: 18mm 18mm 16mm; }
+  .runhead { display: flex; justify-content: space-between; font-size: 8.5pt; color: #5a6577; border-bottom: .6pt solid #c9d3df; padding-bottom: 2.5mm; margin-bottom: 8mm; }
+  .runhead b { color: #272485; letter-spacing: .04em; }
+  .folio { position: absolute; bottom: 9mm; left: 18mm; right: 18mm; display: flex; justify-content: space-between; font-size: 8pt; color: #8a94a6; }
+  h1, h2, h3 { color: #1a1f5c; margin: 0; }
+  h2 { font-size: 20pt; letter-spacing: -.01em; margin-bottom: 2mm; }
+  h3 { font-size: 11pt; margin: 6mm 0 2mm; }
+  .kicker { font-size: 8.5pt; text-transform: uppercase; letter-spacing: .14em; color: #3a6fc9; font-weight: 700; }
+  p { font-size: 9.6pt; line-height: 1.5; margin: 0 0 3mm; }
+
+  /* Cover */
+  .cover { background: #0d1640; color: #fff; }
+  .cover .photo { position: absolute; inset: 0; }
+  .cover .photo img, .cover .photo svg { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .cover .sky { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(15, 22, 70, .55) 0%, rgba(39, 36, 133, .12) 32%, rgba(255, 255, 255, 0) 45%, rgba(255, 255, 255, 0) 72%, rgba(13, 18, 60, .45) 86%, rgba(10, 14, 40, .80) 100%); }
+  .cover .panel { position: absolute; left: 16mm; right: 16mm; top: 26mm; padding: 10mm 11mm 9mm; border-radius: 5mm; background: rgba(255, 255, 255, .16); border: .8pt solid rgba(255, 255, 255, .45); }
+  .cover .panel .kicker { color: #c4eaff; }
+  .cover h1 { color: #fff; font-size: 36pt; line-height: 1.05; letter-spacing: -.02em; margin: 3mm 0 4mm; }
+  .cover .sub { font-size: 12pt; color: #e3eefc; margin: 0; }
+  .cover .meta { position: absolute; left: 16mm; right: 52mm; bottom: 16mm; display: flex; gap: 10mm; font-size: 9pt; color: #e3eefc; }
+  .cover .meta div b { display: block; font-size: 7.5pt; letter-spacing: .12em; text-transform: uppercase; color: #9cc4f0; margin-bottom: 1mm; }
+  .cover .badge { position: absolute; right: 16mm; bottom: 15mm; width: 30mm; height: 30mm; border-radius: 50%; background: rgba(58, 111, 201, .55); border: 1pt solid rgba(196, 234, 255, .8); display: grid; place-items: center; text-align: center; font-size: 8pt; line-height: 1.2; font-weight: 700; color: #fff; }
+
+  /* Page 2 */
+  .cols { column-count: 2; column-gap: 8mm; }
+  .cols p:first-child::first-letter { font-size: 26pt; float: left; line-height: .9; padding: 1mm 1.5mm 0 0; color: #272485; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+  th { white-space: nowrap; text-align: left; font-size: 7.8pt; text-transform: uppercase; letter-spacing: .06em; color: #5a6577; border-bottom: 1pt solid #272485; padding: 1.8mm 2mm; }
+  td { white-space: nowrap; padding: 1.5mm 2mm; border-bottom: .5pt solid #dde3ea; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #f3f6fb; }
+  .figure { margin-top: 4mm; border: .6pt solid #dde3ea; border-radius: 2mm; padding: 4mm 4mm 2mm; }
+  .caption { font-size: 8pt; color: #5a6577; margin-top: 1mm; }
+  .callout { margin-top: 4mm; display: flex; gap: 4mm; }
+  .callout div { flex: 1; background: linear-gradient(180deg, #eef4fd, #e2ebfa); border-radius: 2mm; padding: 2.5mm 4mm; }
+  .callout b { display: block; font-size: 14pt; color: #272485; }
+  .callout span { font-size: 8pt; color: #5a6577; }
+
+  /* Page 3 */
+  .warning { display: flex; gap: 3mm; align-items: center; background: #fff4e5; border: .8pt solid #f0b45a; color: #7a4a05; border-radius: 2mm; padding: 2.5mm 4mm; font-size: 8.8pt; margin: 3mm 0 5mm; }
+  .log td { vertical-align: top; }
+  .log td:last-child { white-space: normal; }
+  .log td:nth-child(1) { white-space: nowrap; color: #5a6577; }
+  .contacts { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 5mm; }
+  .contact { border: .6pt solid #dde3ea; border-radius: 2mm; padding: 3mm 4mm; font-size: 8.8pt; line-height: 1.55; }
+  .contact b { color: #1a1f5c; }
+
+  /* Page 4 */
+  .field-label { position: absolute; font-size: 8pt; color: #5a6577; text-transform: uppercase; letter-spacing: .08em; }
+  .field-box { position: absolute; border: .7pt solid #9aa6b6; border-radius: 1mm; background: #fbfcfe; }
+  .field-box.sig { border-style: dashed; border-color: #3a6fc9; background: #f3f7fe; }
+  .check-text { position: absolute; font-size: 9.4pt; }
+  .stamp { position: absolute; right: 18mm; top: 52mm; width: 44mm; padding: 3mm; border: 1.4pt solid #3a6fc9; border-radius: 2mm; color: #3a6fc9; text-align: center; font-weight: 700; font-size: 9pt; transform: rotate(-6deg); opacity: .85; }
+</style>
+</head>
+<body>
+
+<!-- 1. Cover: photo, gradient sky, translucent title panel -->
+<section class="page cover">
+  <div class="photo">{{COVER_PHOTO}}</div>
+  <div class="sky"></div>
+  <div class="panel">
+    <div class="kicker">Field report · Season 2026</div>
+    <h1>Kestrel Icefield Survey</h1>
+    <p class="sub">Fourteen days, six stations and 212&nbsp;km of traverse across the upper Kestrel basin: ice thickness, snowpack and summer melt.</p>
+  </div>
+  <div class="meta">
+    <div><b>Prepared by</b>North Ridge Glaciology Group</div>
+    <div><b>Report</b>KIS-2026-07</div>
+    <div><b>Status</b>Draft for review</div>
+  </div>
+  <div class="badge">6 stations<br>14 days<br>212 km</div>
+</section>
+
+<!-- 2. Summary: two columns, a table and a chart -->
+<section class="page"><div class="pad">
+  <div class="runhead"><b>KESTREL ICEFIELD SURVEY</b><span>Summary of findings</span></div>
+  <div class="kicker">Section 1</div>
+  <h2>Summary of findings</h2>
+  <div class="cols">
+    <p>The 2026 season ran from 2 to 15 July. A four-person team crossed the upper Kestrel basin on skis, hauling sledges between six survey stations set on the 2019 grid. At each station we drilled a <span data-hl="h1">shallow core, dug a snow pit and ran a ground-penetrating radar transect</span> across the flow line.</p>
+    <p>The headline result is the thinning at the lower stations. Station K4, at the foot of the icefall, has lost <span data-hl="h2">18&nbsp;m of ice thickness since the 2019 survey</span>, close to three times the loss measured at the plateau stations. Snow depth was near the long-term average everywhere except K5, where a late June storm left a wind-packed slab more than two metres deep.</p>
+    <p>Surface melt started early. The automatic weather station at K3 logged positive degree-days from the first morning, and the melt curve in Figure 1 shows the warm spell of 8 to 10 July clearly. Melt on those three days exceeded the whole of the first week.</p>
+    <p>All cores, pit profiles and radar files are archived under report KIS-2026-07. Station K6 could not be reached on the return leg because of crevassing, so its readings come from the outbound visit only. Recommendations for the 2027 season are on the sign-off page.</p>
+  </div>
+
+  <h3>Table 1. Station measurements</h3>
+  <table>
+    <thead><tr><th>Station</th><th class="n">Elevation (m)</th><th class="n">Ice (m)</th><th class="n">Since 2019 (m)</th><th class="n">Snow (cm)</th><th class="n">Surface (°C)</th></tr></thead>
+    <tbody>
+      <tr><td>K1 Plateau north</td><td class="n">2,410</td><td class="n">612</td><td class="n">−6.1</td><td class="n">184</td><td class="n">−4.2</td></tr>
+      <tr><td>K2 Plateau south</td><td class="n">2,365</td><td class="n">587</td><td class="n">−5.4</td><td class="n">171</td><td class="n">−3.9</td></tr>
+      <tr><td>K3 Weather station</td><td class="n">2,140</td><td class="n">455</td><td class="n">−9.8</td><td class="n">142</td><td class="n">−1.6</td></tr>
+      <tr><td>K4 Icefall foot</td><td class="n">1,720</td><td class="n">298</td><td class="n">−18.0</td><td class="n">96</td><td class="n">+0.4</td></tr>
+      <tr><td>K5 Moraine bench</td><td class="n">1,880</td><td class="n">341</td><td class="n">−12.3</td><td class="n">214</td><td class="n">−0.8</td></tr>
+      <tr><td>K6 Col camp</td><td class="n">2,050</td><td class="n">402</td><td class="n">−10.7</td><td class="n">131</td><td class="n">−2.1</td></tr>
+    </tbody>
+  </table>
+
+  <div class="figure">
+    {{MELT_CHART}}
+    <div class="caption">Figure 1. Daily surface melt at K3 (mm water equivalent) against the 2019 season, 2 to 15 July.</div>
+  </div>
+
+  <div class="callout">
+    <div><b>−18&nbsp;m</b><span>ice lost at K4 since 2019</span></div>
+    <div><b>41&nbsp;mm</b><span>peak daily melt, 9 July</span></div>
+    <div><b>5 of 6</b><span>stations revisited on the return leg</span></div>
+  </div>
+  <div class="folio"><span>North Ridge Glaciology Group · KIS-2026-07</span><span>2</span></div>
+</div></section>
+
+<!-- 3. Field log with fictional personal details, made to be redacted -->
+<section class="page"><div class="pad">
+  <div class="runhead"><b>KESTREL ICEFIELD SURVEY</b><span>Field log</span></div>
+  <div class="kicker">Section 2</div>
+  <h2>Field log</h2>
+  <div class="warning">⚠&nbsp; Contains personal contact details and permit numbers. Redact before the report is released publicly.</div>
+  <table class="log">
+    <thead><tr><th>Date</th><th>Observer</th><th>Phone</th><th>Permit</th><th>Entry</th></tr></thead>
+    <tbody>
+      <tr><td>2 Jul 07:40</td><td>Mara Lindqvist</td><td>+1 555 0142</td><td>KP-48213</td><td>Left base camp. Clear, −6 °C, light north wind.</td></tr>
+      <tr><td>3 Jul 18:15</td><td>Tomás Okafor</td><td>+1 555 0178</td><td>KP-48227</td><td>K1 core to 14 m. Radar line 1 complete.</td></tr>
+      <tr><td>4 Jul 12:05</td><td>Ines Whitcombe</td><td>+1 555 0119</td><td>KP-48230</td><td>K2 pit: 171 cm, ice lens at 60 cm.</td></tr>
+      <tr><td>5 Jul 16:50</td><td>Mara Lindqvist</td><td>+1 555 0142</td><td>KP-48213</td><td>K3 weather station serviced; logger swapped.</td></tr>
+      <tr><td>7 Jul 09:30</td><td>Devraj Halloran</td><td>+1 555 0163</td><td>KP-48241</td><td>Descended icefall by the east ramp. Roped all day.</td></tr>
+      <tr><td>8 Jul 14:20</td><td>Tomás Okafor</td><td>+1 555 0178</td><td>KP-48227</td><td>K4 surface melt ponds. Radar shows bed at 298 m.</td></tr>
+      <tr><td>10 Jul 11:10</td><td>Ines Whitcombe</td><td>+1 555 0119</td><td>KP-48230</td><td>K5 wind slab over 2 m. Pit abandoned at 214 cm.</td></tr>
+      <tr><td>12 Jul 19:45</td><td>Devraj Halloran</td><td>+1 555 0163</td><td>KP-48241</td><td>K6 reached late. Crevasse field south of camp.</td></tr>
+      <tr><td>14 Jul 08:00</td><td>Mara Lindqvist</td><td>+1 555 0142</td><td>KP-48213</td><td>K6 return skipped on safety grounds. Route via col.</td></tr>
+      <tr><td>15 Jul 17:30</td><td>Tomás Okafor</td><td>+1 555 0178</td><td>KP-48227</td><td>Back at base camp. All samples logged and cold.</td></tr>
+    </tbody>
+  </table>
+  <div class="contacts">
+    <div class="contact"><b>Expedition lead</b><br>Mara Lindqvist<br>+1 555 0142 · mara.lindqvist@example.org<br>Next of kin: Erik Lindqvist, +1 555 0190</div>
+    <div class="contact"><b>Base camp radio</b><br>Callsign KESTREL BASE · channel 3<br>Satellite phone +1 555 0101<br>Medical officer: Devraj Halloran</div>
+  </div>
+  <div class="folio"><span>North Ridge Glaciology Group · KIS-2026-07</span><span>3</span></div>
+</div></section>
+
+<!-- 4. Sign-off form: the boxes are drawn here, the fields are added afterwards on top of them -->
+<section class="page"><div class="pad">
+  <div class="runhead"><b>KESTREL ICEFIELD SURVEY</b><span>Review and sign-off</span></div>
+  <div class="kicker">Section 3</div>
+  <h2>Review and sign-off</h2>
+  <p style="max-width:120mm">Confirm the data archive and the redaction of the field log, add any comments, then sign. The report is released once the expedition lead and the group's data manager have both signed.</p>
+  <h3>Recommendations for 2027</h3>
+  <p style="max-width:130mm">Repeat the K4 radar line twice in the season to separate dynamic thinning from surface melt. Move K6 to the col to avoid the crevasse field. Add a second weather station at K5.</p>
+  <div class="stamp">DRAFT<br>NOT FOR RELEASE</div>
+  {{FIELDS}}
+  <div class="folio"><span>North Ridge Glaciology Group · KIS-2026-07</span><span>4</span></div>
+</div></section>
+
+<script>
+  // Measuring pass only (#anchors): report where the highlight anchors landed, in CSS px from the top of the
+  // document, so the build script can put highlight annotations over them.
+  if (location.hash === '#anchors') {
+    const out = document.createElement('pre');
+    out.id = 'anchors';
+    out.textContent = JSON.stringify([...document.querySelectorAll('[data-hl]')].map(e => ({
+      id: e.dataset.hl, rects: [...e.getClientRects()].map(r => [r.left + scrollX, r.top + scrollY, r.width, r.height])
+    })));
+    document.body.append(out);
+  }
+</script>
+</body>
+</html>

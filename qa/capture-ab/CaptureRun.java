@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 /**
  * Captures the first pages of each document as PNGs, the way the QA app's capture set does
  * ({@link PageCapture}: screen hints, crop box, no rotation, zoom 1), headless.  Run it once per
- * ICEpdf build, each with that build's jars on the class path, then compare the two output folders
+ * icepdf build, each with that build's jars on the class path, then compare the two output folders
  * with {@link Compare}.  See README.md.
  * <p>
  * {@code java CaptureRun <docs> <out dir> [doc threads] [pages per doc]}: {@code docs} is a folder of

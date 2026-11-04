@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Document search model is used by the DocumentSearchController as a way to
  * cache search results.  PDF document in general can be to big to keep all
- * data in memory at once.  ICEpdf uses a dispose/initialization on Page data
+ * data in memory at once.  icepdf uses a dispose/initialization on Page data
  * as memory is needed.  When this happens the selected text data will be lost
  * and we have to research the page in question the next time it is viewed.
  * <br>

@@ -20,11 +20,11 @@ import org.icepdf.core.pobjects.Name;
 /**
  * Immutable description of a transparency group's attributes (PDF §11.6.6).
  * Used to record the page-level {@code /Group} entry -- a group attribute on the
- * page dictionary that ICEpdf otherwise discards -- so a compositor can decide
+ * page dictionary that icepdf otherwise discards -- so a compositor can decide
  * whether the page content should be rendered into a shared transparency-group
  * buffer rather than painted straight onto the page backdrop.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class TransparencyGroup {
 

@@ -34,7 +34,7 @@ import java.util.List;
  * Appendix E/F.  This is the default reading order; {@code org.icepdf.core.views.page.text.readingOrder}
  * selects {@code ysort} or {@code plot} instead.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class XYCutReadingOrder {
 

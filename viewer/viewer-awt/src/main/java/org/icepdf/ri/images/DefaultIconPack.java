@@ -17,7 +17,7 @@ import javax.swing.*;
 import java.net.URL;
 
 /**
- * Icon pack definition for the default colour icons shipping with ICEpdf
+ * Icon pack definition for the default colour icons shipping with icepdf
  * <p/>
  * This icon pack supports all icon variants. Typical icon sizes are:
  * <ul>

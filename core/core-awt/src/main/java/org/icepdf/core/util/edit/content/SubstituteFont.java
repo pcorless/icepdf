@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * this is for, that is usually enough; for anything larger, republishing from the source is the
  * honest advice.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class SubstituteFont {
 

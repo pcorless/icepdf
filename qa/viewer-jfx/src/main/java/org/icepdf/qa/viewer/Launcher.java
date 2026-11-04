@@ -32,7 +32,7 @@ import org.icepdf.qa.viewer.project.ProjectPropertiesTabSet;
 import org.icepdf.qa.viewer.utilities.ImageLoader;
 
 /**
- * QA Launcher for testing ICEpdf library.  The test harness was written using pure JavaFX and was designed ot
+ * QA Launcher for testing icepdf library.  The test harness was written using pure JavaFX and was designed ot
  * aid developers in creating content sets and capture sets as needed for various version of the library.  The
  * test harness allows for results to be viewed in real time and config to be as easy as possible to setup
  * and verify.
@@ -88,7 +88,7 @@ public class Launcher extends Application {
 
     /**
      * Called by the JavaFX runtime when the application is shutting down (last window closed via the X button or the
-     * Exit menu). A completed or cancelled run leaves non-daemon worker threads alive — most notably ICEpdf's own
+     * Exit menu). A completed or cancelled run leaves non-daemon worker threads alive — most notably icepdf's own
      * internal {@code Library} thread pools, which live inside each capture-set's child classloader and cannot be
      * reached to shut down from here — and those keep the JVM running after the window is gone. Cancel any in-flight
      * run and force a hard exit so the process actually terminates.

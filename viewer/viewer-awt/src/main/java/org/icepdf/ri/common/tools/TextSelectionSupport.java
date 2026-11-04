@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * <b>Note:</b> as of Phase 2 Step 1 these are built and unit-tested but not yet wired into
  * the live handlers/painting; that happens in Step 2.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class TextSelectionSupport {
 

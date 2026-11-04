@@ -5,20 +5,20 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>core</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>icepdf-core</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Core :: Core Swing/AWT</name>
+    <name>icepdf :: Core :: Core Swing/AWT</name>
     <description>
-        The ICEpdf Common rendering core. Contains AWT based rendering core.
+        The icepdf Common rendering core. Contains AWT based rendering core.
     </description>
 
     <properties>
         <jacoco.coverage.minimum>0.59</jacoco.coverage.minimum>
         <!-- Values stamped into product-info.properties (see ProductInfo). -->
         <company>https://github.com/pcorless/</company>
-        <product>ICEpdf</product>
+        <product>icepdf</product>
         <releaseType></releaseType>
         <build>0</build>
         <revision>0</revision>
@@ -110,7 +110,7 @@
             <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
-        <!-- test only: CCITTFaxDecoderTest checks ICEpdf's fax decoder against TwelveMonkeys' (GH-240) -->
+        <!-- test only: CCITTFaxDecoderTest checks icepdf's fax decoder against TwelveMonkeys' (GH-240) -->
         <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-tiff</artifactId>

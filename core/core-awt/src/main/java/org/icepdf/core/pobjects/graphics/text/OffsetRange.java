@@ -20,7 +20,7 @@ package org.icepdf.core.pobjects.graphics.text;
  * {@link TextSequence}.  {@code start} is always {@code <= end}.
  *
  * @see TextSequence
- * @since 7.5
+ * @since 8.0
  */
 public final class OffsetRange {
 

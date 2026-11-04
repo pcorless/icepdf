@@ -52,4 +52,17 @@ class SimpleViewerContextTest {
         assertFalse(registry.get("search.find").isAvailable(context));
         assertThrows(UnsupportedOperationException.class, context::openDocument);
     }
+
+    @Test
+    void linksOnlyOnceTheHostCanOpenThem() {
+        SimpleViewerContext context = ViewerContext.of(null);
+        assertFalse(context.has(ViewerContext.Capability.OPEN_LINK));
+        assertThrows(UnsupportedOperationException.class, () -> context.openLink("https://example.com"));
+
+        List<String> opened = new ArrayList<>();
+        context.onLink(opened::add);
+        assertTrue(context.has(ViewerContext.Capability.OPEN_LINK));
+        context.openLink(org.icepdf.fx.ri.actions.app.AboutAction.HOME_PAGE);
+        assertEquals(List.of("https://github.com/pcorless/icepdf"), opened);
+    }
 }

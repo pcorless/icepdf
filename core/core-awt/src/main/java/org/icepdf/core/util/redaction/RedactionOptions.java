@@ -30,7 +30,7 @@ import java.util.Set;
  *             .targets(EnumSet.of(RedactionTarget.PAGE_CONTENT, RedactionTarget.IMAGES));
  * </pre>
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactionOptions {
 

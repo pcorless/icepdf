@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * each match replaced by {@link RedactionOptions#getMaskString()}. That keeps the structure working -
  * a bookmark still navigates, a field still has a value - while the content goes.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactedStringRewriter {
 

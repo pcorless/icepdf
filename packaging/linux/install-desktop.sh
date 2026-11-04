@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Installs the ICEpdf viewer desktop entry, icon and launcher for the current user.
+# Installs the icepdf viewer desktop entry, icon and launcher for the current user.
 #
-#   ./packaging/linux/install-desktop.sh [path/to/icepdf-viewer-*.jar]     the Swing viewer
-#   ./packaging/linux/install-desktop.sh --fx [path/to/lib/folder]         the JavaFX viewer
+#   ./packaging/linux/install-desktop.sh [path/to/lib/folder]                  the JavaFX viewer (default)
+#   ./packaging/linux/install-desktop.sh --swing [path/to/icepdf-viewer-*.jar] the Swing viewer
 #
-# Without an argument the most recent jar under viewer/viewer-awt/build/libs is used (Swing), or
-# viewer/viewer-fx/build/launcher/lib (JavaFX; build it with ./gradlew :viewer:viewer-fx:launcherLibs).
+# Without a path the JavaFX viewer comes from viewer/viewer-fx/build/launcher/lib (build it with
+# ./gradlew :viewer:viewer-fx:launcherLibs), and the Swing viewer from the most recent jar under
+# viewer/viewer-awt/build/libs.  --fx is still accepted and means the default.
 # Pass --uninstall to remove everything this script installed, both viewers.
 set -euo pipefail
 
@@ -15,37 +16,53 @@ HERE="$REPO_ROOT/packaging/linux"
 BIN_DIR="$HOME/.local/bin"
 LIB_DIR="$HOME/.local/lib/icepdf"
 APP_DIR="$HOME/.local/share/applications"
-ICON_DIR="$HOME/.local/share/icons/hicolor/64x64/apps"
+ICON_ROOT="$HOME/.local/share/icons/hicolor"
+ICON_SIZES="16 24 32 48 64 128 256"
 FX_LIB_DIR="$HOME/.local/lib/icepdf-fx"
+
+# install_icons <images folder> <icon name>: every PNG size plus the scalable SVG into hicolor
+install_icons() {
+    for size in $ICON_SIZES; do
+        local src="$1/icepdf-app-icon-${size}x${size}.png"
+        [ -f "$src" ] || { echo "Missing icon: $src" >&2; exit 1; }
+        install -D -m 0644 "$src" "$ICON_ROOT/${size}x${size}/apps/$2.png"
+    done
+    install -D -m 0644 "$HERE/icepdf.svg" "$ICON_ROOT/scalable/apps/$2.svg"
+}
 
 if [ "${1:-}" = "--uninstall" ]; then
     rm -f "$BIN_DIR/icepdf-viewer" \
           "$APP_DIR/icepdf-viewer.desktop" \
-          "$ICON_DIR/icepdf-viewer.png" \
           "$BIN_DIR/icepdf-viewer-fx" \
-          "$APP_DIR/icepdf-viewer-fx.desktop" \
-          "$ICON_DIR/icepdf-viewer-fx.png"
+          "$APP_DIR/icepdf-viewer-fx.desktop"
+    for name in icepdf-viewer icepdf-viewer-fx; do
+        for size in $ICON_SIZES; do rm -f "$ICON_ROOT/${size}x${size}/apps/$name.png"; done
+        rm -f "$ICON_ROOT/scalable/apps/$name.svg"
+    done
     rm -rf "$LIB_DIR" "$FX_LIB_DIR"
     update-desktop-database "$APP_DIR" 2>/dev/null || true
     gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-    echo "Removed ICEpdf desktop entry."
+    echo "Removed icepdf desktop entry."
     exit 0
 fi
 
-if [ "${1:-}" = "--fx" ]; then
-    SRC="${2:-$REPO_ROOT/viewer/viewer-fx/build/launcher/lib}"
+MODE=fx
+case "${1:-}" in
+    --swing) MODE=swing; shift ;;
+    --fx) shift ;;
+esac
+
+if [ "$MODE" = "fx" ]; then
+    SRC="${1:-$REPO_ROOT/viewer/viewer-fx/build/launcher/lib}"
     if ! ls "$SRC"/icepdf-viewer-fx-*.jar >/dev/null 2>&1; then
         echo "No JavaFX viewer libraries in $SRC. Build them first:" >&2
         echo "  ./gradlew :viewer:viewer-fx:launcherLibs" >&2
         exit 1
     fi
-    ICON_SRC="$REPO_ROOT/viewer/viewer-fx/src/main/resources/org/icepdf/fx/images/icepdf-app-icon-64x64.png"
-    [ -f "$ICON_SRC" ] || { echo "Missing icon: $ICON_SRC" >&2; exit 1; }
-
-    mkdir -p "$BIN_DIR" "$APP_DIR" "$ICON_DIR"
+    mkdir -p "$BIN_DIR" "$APP_DIR"
     rm -rf "$FX_LIB_DIR" && mkdir -p "$FX_LIB_DIR"
     install -m 0644 "$SRC"/*.jar "$FX_LIB_DIR/"
-    install -m 0644 "$ICON_SRC" "$ICON_DIR/icepdf-viewer-fx.png"
+    install_icons "$REPO_ROOT/viewer/viewer-fx/src/main/resources/org/icepdf/fx/images" icepdf-viewer-fx
     install -m 0755 "$HERE/icepdf-viewer-fx" "$BIN_DIR/icepdf-viewer-fx"
     install -m 0644 "$HERE/icepdf-viewer-fx.desktop" "$APP_DIR/icepdf-viewer-fx.desktop"
 
@@ -64,7 +81,7 @@ if [ "${1:-}" = "--fx" ]; then
     echo "  libs     $FX_LIB_DIR"
     echo "  launcher $BIN_DIR/icepdf-viewer-fx"
     echo "  desktop  $APP_DIR/icepdf-viewer-fx.desktop"
-    echo "  icon     $ICON_DIR/icepdf-viewer-fx.png"
+    echo "  icons    $ICON_ROOT/*/apps/icepdf-viewer-fx.*"
     exit 0
 fi
 
@@ -75,17 +92,14 @@ if [ -z "$JAR" ]; then
 fi
 if [ -z "$JAR" ] || [ ! -f "$JAR" ]; then
     echo "No viewer jar found. Build one first:" >&2
-    echo "  ./gradlew :viewer:viewer-awt:assemble" >&2
+    echo "  ./gradlew :viewer:viewer-awt:assemble   (then run with --swing)" >&2
     exit 1
 fi
 
-ICON_SRC="$REPO_ROOT/viewer/viewer-awt/src/main/resources/org/icepdf/ri/images/icepdf-app-icon-64x64.png"
-[ -f "$ICON_SRC" ] || { echo "Missing icon: $ICON_SRC" >&2; exit 1; }
-
-mkdir -p "$BIN_DIR" "$LIB_DIR" "$APP_DIR" "$ICON_DIR"
+mkdir -p "$BIN_DIR" "$LIB_DIR" "$APP_DIR"
 
 install -m 0644 "$JAR" "$LIB_DIR/$(basename "$JAR")"
-install -m 0644 "$ICON_SRC" "$ICON_DIR/icepdf-viewer.png"
+install_icons "$REPO_ROOT/viewer/viewer-awt/src/main/resources/org/icepdf/ri/images" icepdf-viewer
 install -m 0755 "$HERE/icepdf-viewer" "$BIN_DIR/icepdf-viewer"
 install -m 0644 "$HERE/icepdf-viewer.desktop" "$APP_DIR/icepdf-viewer.desktop"
 
@@ -105,4 +119,4 @@ echo "Installed:"
 echo "  jar     $LIB_DIR/$(basename "$JAR")"
 echo "  launcher $BIN_DIR/icepdf-viewer"
 echo "  desktop  $APP_DIR/icepdf-viewer.desktop"
-echo "  icon     $ICON_DIR/icepdf-viewer.png"
+echo "  icons    $ICON_ROOT/*/apps/icepdf-viewer.*"

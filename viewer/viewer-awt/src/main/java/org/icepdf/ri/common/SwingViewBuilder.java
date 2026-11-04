@@ -447,7 +447,7 @@ public class SwingViewBuilder implements ViewBuilder {
      */
     public JFrame buildViewerFrame() {
         JFrame viewer = new JFrame();
-        viewer.setIconImage(new ImageIcon(Images.get("icepdf-app-icon-64x64.png")).getImage());
+        viewer.setIconImages(Images.getAppIcons());
         viewer.setTitle(messageBundle.getString("viewer.window.title.default"));
         viewer.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         JMenuBar menuBar = buildCompleteMenuBar();

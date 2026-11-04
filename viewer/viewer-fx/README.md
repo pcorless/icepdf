@@ -1,7 +1,7 @@
-# ICEpdf JavaFX viewer (`viewer-fx`)
+# icepdf JavaFX viewer (`viewer-fx`)
 
 `PdfView` is an embeddable JavaFX `Control` for viewing, annotating and filling PDFs with the
-ICEpdf core. Pages are rendered by the core's Java2D engine into tiles. Each tile is shared with
+icepdf core. Pages are rendered by the core's Java2D engine into tiles. Each tile is shared with
 JavaFX with no copy (`PixelBuffer` over the same `int[]`). Everything interactive is a native JavaFX
 node: text selection, search highlights, annotation chrome and popups, and form field editors.
 

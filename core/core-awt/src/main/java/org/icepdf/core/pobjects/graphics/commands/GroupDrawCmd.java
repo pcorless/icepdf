@@ -28,7 +28,7 @@ import java.awt.geom.Rectangle2D;
  * Lightweight, inert marker delimiting the start and end of a transparency
  * group on the {@link org.icepdf.core.pobjects.graphics.Shapes} stack.
  * <br>
- * ICEpdf has historically carried no explicit group boundaries -- a buffered
+ * icepdf has historically carried no explicit group boundaries -- a buffered
  * group is a single {@link FormDrawCmd} wrapping the group's own sub-shapes, and
  * the page-level group (the page dictionary's {@code /Group} entry) had no
  * representation at all.  These markers make the boundaries explicit so a
@@ -42,7 +42,7 @@ import java.awt.geom.Rectangle2D;
  * attributes ({@code isolated}, {@code knockout}, colour-space name, blend mode,
  * and bounding box) for whatever compositor chooses to act on them.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class GroupDrawCmd extends AbstractDrawCmd {
 

@@ -1,4 +1,4 @@
-*ICEpdf Issue Reporting 
+*icepdf Issue Reporting 
 
 Issues are created to help identify and define a bug, improvement or a new feature.  The issue tracking system is designed to
 track one specific subject, so please don’t overfill a single issue, create another one to keep the ratio 1:1.  There is an 

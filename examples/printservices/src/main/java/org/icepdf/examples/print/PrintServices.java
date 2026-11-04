@@ -36,11 +36,11 @@ import java.util.logging.Logger;
 
 /**
  * <p>The PrintServices class is an example of how to use JDK 1.4+ print
- * services with ICEpdf.  The example first finds printers available to the
+ * services with icepdf.  The example first finds printers available to the
  * client machine and asks the user which one they whish to print to.  Once the
  * user enters their choice the printing process is started.</p>
  * <p/>
- * <p>As of ICEpdf 3.0 the PrintHelper class was implemented using print
+ * <p>As of icepdf 3.0 the PrintHelper class was implemented using print
  * services. This examples show how the to configue and print using the
  * PrintHelper class.  Gernally the page settings are defined with the page
  * constructor followed by a call to printHelper.setupPrintService(...) to

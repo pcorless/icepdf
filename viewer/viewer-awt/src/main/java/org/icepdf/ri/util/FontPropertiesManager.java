@@ -37,7 +37,7 @@ import java.util.prefs.Preferences;
  * // read/store the font cache.
  * FontPropertiesManager.getInstance().loadOrReadSystemFonts();
  *
- * <p>NOTE:  This class was significantly simplified in version 6.3 of ICEpdf and the release notes should be
+ * <p>NOTE:  This class was significantly simplified in version 6.3 of icepdf and the release notes should be
  * consulted if any custom font loading was implemented by the end user.</p>
  *
  * @since 6.3

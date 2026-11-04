@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Headless A/B of two ICEpdf builds: captures the first pages of each document with each build,
+# Headless A/B of two icepdf builds: captures the first pages of each document with each build,
 # then compares them.  See README.md.
 #
 #   qa/capture-ab/run-ab.sh <libs A> <libs B> <pdf folder | list file> <out dir> [doc threads] [pages]

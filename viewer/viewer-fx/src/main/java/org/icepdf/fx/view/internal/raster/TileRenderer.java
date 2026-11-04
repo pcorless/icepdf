@@ -42,7 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Renders page tiles and previews off the FX thread with the ICEpdf Java2D core.
+ * Renders page tiles and previews off the FX thread with the icepdf Java2D core.
  * <p>
  * Missing tiles of a page are coalesced into regions and each region is painted with a single
  * {@code page.paint}: the display list is traversed once per region rather than once per tile

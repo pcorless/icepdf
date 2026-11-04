@@ -1,140 +1,173 @@
-# icepdf
-Icepdf is a pure Java library for rendering and viewing PDF documents. It parses, renders, and annotates files to the latest PDF standards, with performance that rivals or beats many native libraries
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/icepdf-banner-dark.svg">
+    <img alt="icepdf" src="docs/assets/brand/icepdf-banner-light.svg" width="440">
+  </picture>
+</p>
 
-## Getting Started
-Whether you are long time user of the API or a new user, there ton of information on the 
-[Wiki](https://github.com/pcorless/icepdf/wiki) pages.  Create a pull requests and use the issue tracker, the more
-help and feedback we get the better we can make the project.
- 
-### Getting the jars, javadoc and source from maven central 
- ```xml
- <dependency>
- <groupId>com.github.pcorless.icepdf</groupId>
- <artifactId>icepdf-core</artifactId>
- <version>7.4.1</version>
-</dependency>
+icepdf is a fast, pure-Java PDF library. It parses and renders PDF documents with nothing but Java, at speeds
+that keep pace with native renderers. Embed it in a server to rasterize pages, or ship one of the two ready-made
+viewers, JavaFX or Swing, with annotations, forms, search, redaction and digital signatures built in.
+
+[Website](https://pcorless.github.io/icepdf/) · [Quick Start](https://github.com/pcorless/icepdf/wiki/Quick-Start) ·
+[Upgrading to 8.0](https://github.com/pcorless/icepdf/wiki/Upgrading-to-8) · [Wiki](https://github.com/pcorless/icepdf/wiki) ·
+[Releases](https://github.com/pcorless/icepdf/releases) · [Issues](https://github.com/pcorless/icepdf/issues)
+
+## Get started
+
+Core runs on Java 11. The JavaFX viewer needs Java 17 (it brings JavaFX 22 with it).
+
+```xml
 <dependency>
-<groupId>com.github.pcorless.icepdf</groupId>
-<artifactId>icepdf-viewer</artifactId>
-<version>7.4.1</version>
+  <groupId>com.github.pcorless.icepdf</groupId>
+  <artifactId>icepdf-core</artifactId>
+  <version>8.0.0</version>
 </dependency>
+<!-- JavaFX viewer -->
 <dependency>
-<!-- optional dependency for embedding fonts -->
-<groupId>com.github.pcorless.icepdf</groupId>
-<artifactId>icepdf-fonts</artifactId>
-<version>7.4.1</version>
+  <groupId>com.github.pcorless.icepdf</groupId>
+  <artifactId>icepdf-viewer-fx</artifactId>
+  <version>8.0.0</version>
 </dependency>
- ```
- 
+<!-- Swing viewer: icepdf-viewer. Optional bundled fonts: icepdf-fonts -->
+```
+
+```groovy
+dependencies {
+    implementation 'com.github.pcorless.icepdf:icepdf-core:8.0.0'
+    implementation 'com.github.pcorless.icepdf:icepdf-viewer-fx:8.0.0'
+    // Swing viewer: icepdf-viewer. Optional bundled fonts: icepdf-fonts
+}
+```
+
+### Try the JavaFX viewer
+
+From a clone of this repository (Gradle builds the core from source):
+
+```
+./gradlew :viewer:viewer-fx:run --args="/path/to/file.pdf"
+```
+
+### Embed the JavaFX viewer
+
+`PdfViewer` is the full reference viewer: tabs, annotations, forms, signing, redaction, printing, high-contrast
+themes and 13 languages. `PdfView` is the page view on its own, a control you drop into your own scene.
+
+```java
+public class Viewer extends Application {
+    @Override
+    public void start(Stage stage) {
+        FontSettings.apply();                  // cached system font scan
+        PdfViewer viewer = PdfViewer.create(); // every tool and panel
+        viewer.setOnLink(getHostServices()::showDocument);
+
+        stage.setScene(new Scene(viewer, 1200, 900));
+        stage.show();
+        viewer.open(Path.of("input.pdf"));
+    }
+}
+```
+
+More in [viewer/viewer-fx/README.md](viewer/viewer-fx/README.md) and the runnable
+[JavaFX examples](examples/javafx), such as `./gradlew :examples:javafx:run --args="file.pdf"`.
+
+### Render a page to PNG
+
+Rendering goes through Java2D, so it works headless on a server.
+
+```java
+Document document = new Document();
+document.setFile("input.pdf");
+
+float scale = 2f, rotation = 0f;
+Page page = document.getPageTree().getPage(0);
+page.init();
+PDimension size = page.getSize(Page.BOUNDARY_CROPBOX, rotation, scale);
+
+BufferedImage image = new BufferedImage((int) size.getWidth(), (int) size.getHeight(),
+        BufferedImage.TYPE_INT_RGB);
+Graphics2D g = image.createGraphics();
+page.paint(g, GraphicsRenderingHints.PRINT, Page.BOUNDARY_CROPBOX, rotation, scale);
+g.dispose();
+
+ImageIO.write(image, "png", new File("page-1.png"));
+document.dispose();
+```
+
+### Swing viewer
+
+The long-standing Swing viewer is built from `SwingController` and `SwingViewBuilder`. Use the whole window or
+just the viewer panel.
+
+```java
+SwingUtilities.invokeLater(() -> {
+    SwingController controller = new SwingController();
+    SwingViewBuilder factory = new SwingViewBuilder(controller);
+
+    JFrame frame = new JFrame("icepdf");
+    frame.getContentPane().add(factory.buildViewerPanel());
+    frame.pack();
+    frame.setVisible(true);
+
+    controller.openDocument("input.pdf");
+});
+```
+
 ## Getting the Code
 To get a local copy of the current code, clone it using git:
 ```
 $ git clone https://github.com/pcorless/icepdf.git
 $ cd icepdf
 ```
- 
-### Building ICEpdf
-In order to use the library you need to build at least the Core library and if you intend you use the Viewer
-component you'll also need to build the Viewer library.  The project can be built with Gradle or Maven, we have
-no preference, pick one that makes you happier.
 
-Builds as they are currently configured to target Java 11.
+### Building icepdf
+The project builds with Gradle or Maven; pick whichever you prefer. Core and the Swing viewer target Java 11;
+the JavaFX viewer targets Java 17.
+
+#### Building With Gradle
+
+```
+# core jar
+./gradlew :core:core-awt:assemble
+
+# JavaFX viewer jar, and run it
+./gradlew :viewer:viewer-fx:assemble
+./gradlew :viewer:viewer-fx:run
+
+# Swing viewer jar
+./gradlew :viewer:viewer-awt:assemble
+
+# an example, such as annotation creation
+./gradlew :examples:annotation:creation:assemble
+
+# distribution zip and tar archives
+./gradlew osDistZip osDistTar
+```
 
 #### Building With Maven
 ```
 # core module
-~$ mvn -pl :icepdf-core package
+mvn -pl :icepdf-core package
 
-# viewer module, -am insures dependencies are build 
-~$ mvn -pl :icepdf-viewer -am package
+# JavaFX viewer: install the core first, then run the viewer
+mvn -f core/core-awt/pom.xml install -DskipTests -Djacoco.skip=true
+mvn -f viewer/viewer-fx/pom.xml javafx:run
 
-# Viewer jar with all dependences in one self executing jar
-~$ mvn -pl :icepdf-viewer -am package -P assembly 
+# Swing viewer module, -am ensures dependencies are built
+mvn -pl :icepdf-viewer -am package
 
-# examples module, -am insures dependencies are build 
-~$ mvn -pl :png-capture -am package
-# or with full group id. 
-~$ mvn -pl org.icepdf.examples:png-capture -am package
-~$ java -jar icepdf-viewer-7.0.0-SNAPSHOT-jar-with-dependencies.jar
+# Swing viewer with all dependencies in one self-executing jar
+mvn -pl :icepdf-viewer -am package -P assembly
 
-# Whole project hierarchy can be built with or with full group id. 
-~$ mvn package
-
- ```
-#### Building With Gradle
-
-Build the core jar using the following Gradle command
-
-```~$ gradle :core:core-awt:assemble ```
-
-Build the viewer jar using the following Gradle command
-
-```~$ gradle :viewer:viewer-awt:assemble``` 
-
-Build the annotation creation example using the following Gradle command
-
-```~$  gradle :examples:annotation:creation:assemble```
-
-Build the distribution zip and tar archives
-
-```
-# defaultTasks allows for a call to just gradle 
-~$ gradle
-# or one can use the full task list 
-~$ gradle projectReport, sourcesJar, genPomFileForCoreJarPub, genPomFileForViewerJarPub, osDistZip, osDistTar
+# examples module, -am ensures dependencies are built
+mvn -pl :png-capture -am package
 ```
 
-## Using ICEpdf Viewer Swing/AWT Component
-The `org.icepdf.core.ri.common.SwingController` class provides convenience methods for the most common UI actions, 
-such as rotating the document, setting the zoom level, etc. The `org.icepdf.core.ri.common.SwingViewBuilder` class is 
-responsible for creating the PDF Viewer component panel populated with Swing components configured to work with the 
-SwingController.
+## More capture formats
 
-When using the SwingViewBuilder and SwingController classes, it is usually not necessary to use the Document object
-directly. The SwingController class does this for you.
-
-The following code snippet illustrates how to build a PDF Viewer component:
-```java
-String filePath = "somefilepath/myfile.pdf";
-
-// initiate font caching for faster startups
-FontPropertiesManager.getInstance().loadOrReadSystemFonts();
-
-// build a controller
-SwingController controller = new SwingController();
-
-// Build a SwingViewFactory configured with the controller
-SwingViewBuilder factory = new SwingViewBuilder(controller);
-
-// Use the factory to build a JPanel that is pre-configured
-//with a complete, active Viewer UI.
-JPanel viewerComponentPanel = factory.buildViewerPanel();
-
-// add copy keyboard command
-ComponentKeyBinding.install(controller, viewerComponentPanel);
-
-// add interactive mouse link annotation support via callback
-controller.getDocumentViewController().setAnnotationCallback(
-     new org.icepdf.ri.common.MyAnnotationCallback(
-            controller.getDocumentViewController()));
-
-// Create a JFrame to display the panel in
-JFrame window = new JFrame("Using the Viewer Component");
-window.getContentPane().add(viewerComponentPanel);
-window.pack();
-window.setVisible(true);
-
-// Open a PDF document to view
-controller.openDocument(filePath);
-```
-## Page Captures
-
-The Document class provides functionality for rendering PDF content into other formats via a Java2D graphics context.
-As a result, rendering PDF content to other formats is a relatively simple process with very powerful results. ICEpdf 
-also supports Java headless mode when rending PDF content, which can be useful for server side solutions.
-
-Examples of extraction techniques like png, svg, and tiff can be found examples/capture folder. The following is an
-example of how to save page captures in an SVG format
+Because pages paint to any Java2D graphics context, other output formats follow the same pattern as the PNG
+example above. Examples for PNG, SVG and TIFF are in the [examples/capture](examples/capture) folder. This one
+saves a page as SVG with Apache Batik:
  
  ```java
 String filePath = "somefilepath/myfile.pdf";
@@ -173,13 +206,12 @@ Make sure to take a look at the [Wiki](https://github.com/pcorless/icepdf/wiki/U
 extracting content.
 
 ## Learning
- 
-### Examples
 
-There are a bunch of examples located in the root of the project grouped by common usage scenarios. Similarly, the
-Wiki contains [example](https://github.com/pcorless/icepdf/wiki/Usage-Examples) information. 
-
- ### API Documentation
- 
- Both the Gradle and Maven builds will generate the API documentation for the Core and Viewer libraries. 
+* [Quick Start](https://github.com/pcorless/icepdf/wiki/Quick-Start): render, extract text and embed a viewer in a few lines.
+* [Usage Examples](https://github.com/pcorless/icepdf/wiki/Usage-Examples): the [examples](examples) folder holds one small application per feature,
+  grouped by common usage scenarios.
+* [Upgrading to 8.0](https://github.com/pcorless/icepdf/wiki/Upgrading-to-8): what to check when moving from 7.x.
+* [System Properties](https://github.com/pcorless/icepdf/wiki/System-Properties): threading, memory, image handling and rendering settings.
+* [Javadoc](https://javadoc.io/doc/com.github.pcorless.icepdf/icepdf-core). Both the Gradle and Maven builds also
+  generate the API documentation for the core and viewer libraries. 
  

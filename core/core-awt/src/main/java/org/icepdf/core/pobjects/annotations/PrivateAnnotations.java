@@ -18,7 +18,7 @@ package org.icepdf.core.pobjects.annotations;
 import org.icepdf.core.util.SystemProperties;
 
 /**
- * The private annotation rule.  ICEpdf's own /F bit {@link Annotation#FLAG_PRIVATE_CONTENTS}
+ * The private annotation rule.  icepdf's own /F bit {@link Annotation#FLAG_PRIVATE_CONTENTS}
  * (0x400, reserved by the PDF specification) marks a markup annotation as private to its author.
  * With {@code org.icepdf.core.page.annotation.privateProperty.enabled} set, a page leaves out
  * the private markup annotations of every other author (/T other than {@code user.name}), with

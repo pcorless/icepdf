@@ -27,7 +27,7 @@ import java.awt.*;
  * filled the slot first: when keys are quantised, a caller converts the colour its key stands for, not the
  * value it was given.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 final class ColorCache {
 

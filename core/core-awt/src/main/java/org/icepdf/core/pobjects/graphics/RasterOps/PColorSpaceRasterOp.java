@@ -46,7 +46,7 @@ public class PColorSpaceRasterOp implements RasterOp {
      * @param colorSpace  colour space of the samples.
      * @param decodeRange the image's Decode, or the colour space's default, as a pair per component.
      * @param hints       rendering hints.
-     * @since 7.5.0
+     * @since 8.0
      */
     public PColorSpaceRasterOp(PColorSpace colorSpace, float[] decodeRange, RenderingHints hints) {
         this.hints = hints;

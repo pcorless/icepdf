@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
- * <p>ICEpdf's standard security handler allows access permissions and up to two passwords
+ * <p>icepdf's standard security handler allows access permissions and up to two passwords
  * to be specified for a document: an owner password and a user password. An
  * application's decision to encrypt a document is based on whether the user
  * creating the document specifies any passwords or access restrictions (for example, in a

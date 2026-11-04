@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  * </ul>
  * Every match is mapped back to canonical offsets, the space selections and {@code rectsFor} use.
  *
- * @since 7.5
+ * @since 8.0
  */
 public final class TextSearch {
 

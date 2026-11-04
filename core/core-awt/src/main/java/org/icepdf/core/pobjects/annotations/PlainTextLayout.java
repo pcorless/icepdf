@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * The line breaking follows Apache PDFBox's PlainText (org.apache.pdfbox.pdmodel.interactive,
- * Apache License 2.0), rewritten for ICEpdf's font metrics; see NOTICE.
+ * Apache License 2.0), rewritten for icepdf's font metrics; see NOTICE.
  */
 package org.icepdf.core.pobjects.annotations;
 

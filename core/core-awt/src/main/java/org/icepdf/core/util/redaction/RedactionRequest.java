@@ -36,7 +36,7 @@ import java.util.List;
  * handle what is visible on the page, the terms handle the copies of the same words that live
  * elsewhere in the file and that no rectangle can cover.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactionRequest {
 

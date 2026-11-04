@@ -170,7 +170,7 @@ public class AFM {
     private float ascender = 0;
     private float descender = 0;
     private float maxWidth = 0;
-    private int avgWidth = 0;
+    private float avgWidth = 0;
     private int flags = 0;
 
     /*
@@ -264,7 +264,7 @@ public class AFM {
         return maxWidth;
     }
 
-    public int getAvgWidth() {
+    public float getAvgWidth() {
         return avgWidth;
     }
 
@@ -329,7 +329,7 @@ public class AFM {
                 }
             }
         }
-        // finalized average
-        avgWidth = avgWidth / count;
+        // finalized average; the widths are fractions of an em, so an int sum truncated every one to 0
+        avgWidth = count > 0 ? avgWidth / count : 0;
     }
 }

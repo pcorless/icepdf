@@ -212,7 +212,7 @@ public abstract class PColorSpace extends Dictionary {
      *
      * @param bitsPerComponent the image's bits per component.
      * @return {@code 2 * getNumComponents()} values.
-     * @since 7.5.0
+     * @since 8.0
      */
     public float[] getDefaultDecode(int bitsPerComponent) {
         float[] decode = new float[2 * getNumComponents()];

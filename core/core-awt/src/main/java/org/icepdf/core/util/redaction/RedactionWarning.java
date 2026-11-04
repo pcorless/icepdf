@@ -23,7 +23,7 @@ package org.icepdf.core.util.redaction;
  * rather than throwing - a shared object burned in place, a stream the encoder could not round-trip -
  * gets a warning here instead of a log line nobody reads.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactionWarning {
 

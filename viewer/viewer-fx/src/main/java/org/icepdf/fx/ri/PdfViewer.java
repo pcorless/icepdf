@@ -57,7 +57,7 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 
 /**
- * The ICEpdf viewer as one component: a {@link PdfView} with a header bar, a tool rail, a utility
+ * The icepdf viewer as one component: a {@link PdfView} with a header bar, a tool rail, a utility
  * panel and full screen, built from the {@linkplain StandardActions actions}, shaped by what the
  * product offers ({@link ViewerFeatures}) and arranged as the user left it ({@link UserLayout}).
  * <pre>{@code
@@ -1398,8 +1398,15 @@ public class PdfViewer extends StackPane {
                 case FIND -> features.shows(Chrome.HEADER);
                 case PAGE_NUMBER -> features.shows(Chrome.HEADER) && header != null && header.hasPageField();
                 case SIDE_PANEL -> features.shows(Chrome.SIDE_PANELS);
+                case OPEN_LINK -> onLink != null;
                 default -> true;
             };
+        }
+
+        @Override
+        public void openLink(String uri) {
+            if (onLink == null) throw new UnsupportedOperationException("link");
+            onLink.accept(uri);
         }
 
         @Override

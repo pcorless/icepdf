@@ -32,7 +32,7 @@ package org.icepdf.core.pobjects.graphics.RasterOps;
  * }
  * </pre>
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public final class ColourMemo {
     // slots: a small table for small images, at most 1M slots (8 MB, or 12 MB with wide keys) for the largest

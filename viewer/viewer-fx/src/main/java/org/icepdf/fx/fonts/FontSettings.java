@@ -200,7 +200,7 @@ public final class FontSettings {
             out.setProperty(VERSION_KEY, CACHE_VERSION);
             Path temp = file.resolveSibling(file.getFileName() + ".tmp");
             try (OutputStream stream = Files.newOutputStream(temp)) {
-                out.store(stream, "ICEpdf JavaFX viewer font cache");
+                out.store(stream, "icepdf JavaFX viewer font cache");
             }
             Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {

@@ -1,6 +1,6 @@
 # Headless capture A/B
 
-Renders the first pages of a set of documents with two ICEpdf builds and compares them pixel by pixel. It's the same capture the QA app (`qa/viewer-jfx`) does, without the UI, so it can run from a terminal or a script. On a 16-core desktop, the 2,195-document full-monty set takes about 90 seconds per build.
+Renders the first pages of a set of documents with two icepdf builds and compares them pixel by pixel. It's the same capture the QA app (`qa/viewer-jfx`) does, without the UI, so it can run from a terminal or a script. On a 16-core desktop, the 2,195-document full-monty set takes about 90 seconds per build.
 
 ## Running it
 

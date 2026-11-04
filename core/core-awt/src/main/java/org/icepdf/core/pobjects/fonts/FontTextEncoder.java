@@ -36,7 +36,7 @@ import java.util.Map;
  * field showing "Ab" with the usual {@code /Helv} produced {@code <00410062>}, which a simple font
  * reads as the four codes {@code 00 41 00 62}: a .notdef in front of every character.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class FontTextEncoder {
 

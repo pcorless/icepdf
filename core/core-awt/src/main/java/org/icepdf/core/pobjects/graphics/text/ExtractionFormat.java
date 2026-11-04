@@ -39,7 +39,7 @@ import java.awt.geom.Rectangle2D;
  *     per visual line; default {@code false}.  Paragraph boundaries still produce a blank line.</li>
  * </ul>
  *
- * @since 7.5
+ * @since 8.0
  */
 final class ExtractionFormat {
 

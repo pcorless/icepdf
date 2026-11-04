@@ -41,7 +41,7 @@ import java.util.List;
  * once into an ARGB buffer sized to the requested device bounds.  Pixels not
  * covered by any patch stay transparent so the surrounding content shows through.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class MeshShadingPaint implements Paint {
 

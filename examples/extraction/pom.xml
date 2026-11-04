@@ -4,13 +4,13 @@
     <parent>
         <groupId>org.icepdf.examples</groupId>
         <artifactId>examples</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>extraction</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Extraction</name>
+    <name>icepdf :: Examples :: Extraction</name>
     <description>
-        The ICEpdf OS extraction examples
+        The icepdf OS extraction examples
     </description>
 
     <modules>

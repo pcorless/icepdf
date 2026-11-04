@@ -34,6 +34,7 @@ public final class SimpleViewerContext implements ViewerContext {
     private final PdfView view;
     private final Map<Capability, Runnable> handlers = new EnumMap<>(Capability.class);
     private Runnable saveAs;
+    private Consumer<String> openLink;
     private Consumer<Task<Void>> printStarted = task -> { };
 
     SimpleViewerContext(PdfView view) {
@@ -52,7 +53,7 @@ public final class SimpleViewerContext implements ViewerContext {
 
     @Override
     public boolean has(Capability capability) {
-        return handlers.containsKey(capability);
+        return capability == Capability.OPEN_LINK ? openLink != null : handlers.containsKey(capability);
     }
 
     /** Find (Ctrl+F): typically puts the caret in the application's own search field. */
@@ -63,6 +64,12 @@ public final class SimpleViewerContext implements ViewerContext {
     /** Go to page (Ctrl+G): typically puts the caret in the application's own page number field. */
     public SimpleViewerContext onPageNumber(Runnable focusPageNumber) {
         return set(Capability.PAGE_NUMBER, focusPageNumber);
+    }
+
+    /** Links (the About box's home page): typically {@code getHostServices()::showDocument}. */
+    public SimpleViewerContext onLink(Consumer<String> openLink) {
+        this.openLink = openLink;
+        return this;
     }
 
     /** Open: asks for a file and opens it. */
@@ -138,6 +145,12 @@ public final class SimpleViewerContext implements ViewerContext {
     @Override
     public void closeDocument() {
         run(Capability.CLOSE);
+    }
+
+    @Override
+    public void openLink(String uri) {
+        if (openLink == null) throw new UnsupportedOperationException("link");
+        openLink.accept(uri);
     }
 
     @Override

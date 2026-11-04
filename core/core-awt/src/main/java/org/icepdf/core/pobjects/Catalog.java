@@ -84,9 +84,9 @@ public class Catalog extends Dictionary {
     private volatile boolean viewerPrefInited = false;
     private volatile boolean optionalContentInited = false;
 
-    // Announce ICEpdf Core
+    // Announce icepdf Core
     static {
-        logger.log(Level.INFO, () -> "ICEpdf Core " + Document.getLibraryVersion());
+        logger.log(Level.INFO, () -> "icepdf Core " + Document.getLibraryVersion());
     }
 
     public Catalog(Library library, DictionaryEntries dictionaryEntries) {

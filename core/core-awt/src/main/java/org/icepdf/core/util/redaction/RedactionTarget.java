@@ -24,7 +24,7 @@ package org.icepdf.core.util.redaction;
  * an outline title, a form field's value - so nothing can be burned and the string itself is
  * rewritten instead.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public enum RedactionTarget {
 

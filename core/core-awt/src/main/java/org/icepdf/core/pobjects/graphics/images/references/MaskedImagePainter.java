@@ -34,7 +34,7 @@ import java.awt.image.DataBufferInt;
  * out anti-aliased at any zoom.  The scratch buffers are bounded by the clip, and taken in bands so even a
  * clip the size of a large zoomed page costs a few megabytes at a time.
  *
- * @since 7.5
+ * @since 8.0
  */
 final class MaskedImagePainter {
 

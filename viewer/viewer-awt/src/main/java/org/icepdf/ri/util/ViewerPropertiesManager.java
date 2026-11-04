@@ -757,7 +757,7 @@ public final class ViewerPropertiesManager {
 
     public static boolean exportProperties(File file) {
         try (OutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
-            localProperties.store(out, "IcePDF properties file");
+            localProperties.store(out, "icepdf properties file");
             return true;
         } catch (IOException e) {
             logger.warning("Couldn't write to file " + file.getAbsolutePath());

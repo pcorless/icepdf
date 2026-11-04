@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.icepdf.examples</groupId>
         <artifactId>examples</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>redaction</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Examples :: Redaction</name>
+    <name>icepdf :: Examples :: Redaction</name>
     <description>
-        The ICEpdf redaction examples
+        The icepdf redaction examples
     </description>
 </project>

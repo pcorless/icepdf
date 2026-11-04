@@ -4,10 +4,10 @@
 Every fixture is small, hand-built and exercises one text-layout feature, so a golden diff points
 at a single cause.  No third-party dependency, matching blending/make_iso_fixture.py.
 
-Determinism matters more here than realism.  The fonts are non-embedded Helvetica, which ICEpdf
+Determinism matters more here than realism.  The fonts are non-embedded Helvetica, which icepdf
 substitutes with whatever the host has, so glyph advances would otherwise vary by machine and the
 goldens with them.  Each font therefore carries an explicit /Widths array with a single uniform
-width, which ICEpdf applies over the substituted face: every glyph advances exactly
+width, which icepdf applies over the substituted face: every glyph advances exactly
 WIDTH/1000 * fontsize, on any machine.
 
 Run from this directory:  python3 make_redaction_fixtures.py
@@ -407,7 +407,7 @@ def hidden_layer():
     turn back on, and visible to text extraction regardless.
 
     The form's /OC is a membership dictionary rather than the group directly.  Both are legal, but
-    only the OCMD path actually consults the group's off state in ICEpdf today - see
+    only the OCMD path actually consults the group's off state in icepdf today - see
     OptionalContent.isVisible(OptionalContentGroup), which reports any declared group as visible -
     so a fixture pointing /OC straight at the OCG is painted, and tests nothing.
     """

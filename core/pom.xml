@@ -5,13 +5,13 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>icepdf</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>core</artifactId>
     <packaging>pom</packaging>
-    <name>ICEpdf :: Core</name>
+    <name>icepdf :: Core</name>
     <description>
-        The ICEpdf common rendering core library.
+        The icepdf common rendering core library.
     </description>
 
     <modules>

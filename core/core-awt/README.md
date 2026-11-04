@@ -1,6 +1,6 @@
-# ICEpdf Core – AWT Rendering Library
+# icepdf Core – AWT Rendering Library
 
-ICEpdf Core is the foundation of the ICEpdf project, providing a pure‑Java implementation
+icepdf Core is the foundation of the icepdf project, providing a pure‑Java implementation
 that parses and renders PDF documents. The module builds on top of Java 2D (AWT) and is
 intended to be used either as a headless rendering engine or as the backend for
 Swing/FX viewers.
@@ -23,14 +23,14 @@ Swing/FX viewers.
 <dependency>
   <groupId>com.github.pcorless.icepdf</groupId>
   <artifactId>icepdf-core</artifactId>
-  <version>7.5.0-SNAPSHOT</version>   <!-- or the latest release -->
+  <version>8.0.0</version>   <!-- or the latest release -->
 </dependency>
 ```
 
 ## Gradle
 
 ```kotlin
-implementation('com.github.pcorless.icepdf:icepdf-core:7.5.0-SNAPSHOT')
+implementation('com.github.pcorless.icepdf:icepdf-core:8.0.0')
 ```
 
 ## Building the Library
@@ -98,7 +98,7 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md). Contributions are welcome! Make su
 
 ## License
 
-ICEpdf Core is licensed under the Apache License 2.0 – see [LICENSE](../../LICENSE).
+icepdf Core is licensed under the Apache License 2.0 – see [LICENSE](../../LICENSE).
 
 ---
 

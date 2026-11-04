@@ -75,7 +75,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A JavaFX control that displays a PDF {@link Document} rendered by the ICEpdf core.
+ * A JavaFX control that displays a PDF {@link Document} rendered by the icepdf core.
  * <p>
  * Drop it into any scene graph and drive it through properties:
  * <pre>{@code
@@ -473,7 +473,7 @@ public class PdfView extends Control {
      * default.  Redaction marks are never made private.
      * <p>
      * Private annotations are a viewer convention, not protection: with
-     * {@code org.icepdf.core.page.annotation.privateProperty.enabled} set, ICEpdf leaves out other
+     * {@code org.icepdf.core.page.annotation.privateProperty.enabled} set, icepdf leaves out other
      * authors' private annotations when it loads a page, but their text is still in the file and
      * other viewers show them.  Core compares the author with {@code user.name}, so keep
      * {@link #annotationAuthorProperty()} at its default while using private annotations, or the

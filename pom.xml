@@ -4,11 +4,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.github.pcorless.icepdf</groupId>
     <artifactId>icepdf</artifactId>
-    <version>7.5.0-SNAPSHOT</version>
+    <version>8.0.0</version>
     <packaging>pom</packaging>
-    <name>ICEpdf</name>
+    <name>icepdf</name>
     <description>
-        ICEpdf is a PDF document rendering and viewing library
+        icepdf is a PDF document rendering and viewing library
     </description>
     <url>https://github.com/pcorless/icepdf/</url>
 
@@ -57,8 +57,8 @@
 
     <developers>
         <developer>
-            <name>ICEpdf Community</name>
-            <organization>ICEpdf Community</organization>
+            <name>icepdf Community</name>
+            <organization>icepdf Community</organization>
             <organizationUrl>https://github.com/pcorless/icepdf</organizationUrl>
         </developer>
         <developer>
@@ -153,6 +153,36 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
+                            <!-- the examples (org.icepdf.examples) are built and verified but never published.
+                                 Matched by artifactId; the plugin ignores maven.deploy.skip. Keep in step
+                                 with the modules under examples/. -->
+                            <excludeArtifacts>
+                                <excludeArtifact>annotation</excludeArtifact>
+                                <excludeArtifact>annotation-callback</excludeArtifact>
+                                <excludeArtifact>annotation-creation</excludeArtifact>
+                                <excludeArtifact>barecode-extraction</excludeArtifact>
+                                <excludeArtifact>capture</excludeArtifact>
+                                <excludeArtifact>component-awt</excludeArtifact>
+                                <excludeArtifact>examples</excludeArtifact>
+                                <excludeArtifact>extraction</excludeArtifact>
+                                <excludeArtifact>folder-capture</excludeArtifact>
+                                <excludeArtifact>image-extraction</excludeArtifact>
+                                <excludeArtifact>javafx</excludeArtifact>
+                                <excludeArtifact>loading-events</excludeArtifact>
+                                <excludeArtifact>metadata-extraction</excludeArtifact>
+                                <excludeArtifact>png-capture</excludeArtifact>
+                                <excludeArtifact>portfolio-capture</excludeArtifact>
+                                <excludeArtifact>print-services</excludeArtifact>
+                                <excludeArtifact>redaction</excludeArtifact>
+                                <excludeArtifact>search</excludeArtifact>
+                                <excludeArtifact>search-component</excludeArtifact>
+                                <excludeArtifact>search-headless</excludeArtifact>
+                                <excludeArtifact>signature-verification</excludeArtifact>
+                                <excludeArtifact>svg-capture</excludeArtifact>
+                                <excludeArtifact>text-extraction</excludeArtifact>
+                                <excludeArtifact>tiff-capture</excludeArtifact>
+                                <excludeArtifact>watermark-capture</excludeArtifact>
+                            </excludeArtifacts>
                         </configuration>
                     </plugin>
                     <plugin>

@@ -41,7 +41,7 @@ public class TextContentEditor {
      * @param newText    the new text to replace the old text
      * @throws InterruptedException page init can be interrupted
      * @throws IOException          if an error occurs while writing the content stream
-     * @since 7.5.0
+     * @since 8.0
      */
     public static void updateText(Page page, Rectangle textBounds, String newText) throws InterruptedException,
             IOException {

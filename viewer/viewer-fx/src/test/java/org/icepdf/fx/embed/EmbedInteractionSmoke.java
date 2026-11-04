@@ -56,7 +56,7 @@ import static org.icepdf.fx.embed.SmokeSupport.onFx;
  * An application embedding the bare page view, as {@link EmbedBasicSmoke}, that also lets its users
  * work on the document: the usual keys for selecting and copying text (and pasting it into the
  * application's own notes field), undo and redo, a right-click menu on an annotation with its
- * properties dialog, and signing an empty signature field - ICEpdf's dialogs, opened from the
+ * properties dialog, and signing an empty signature field - icepdf's dialogs, opened from the
  * application's own handlers.
  * <p>
  * {@code ./gradlew :viewer:viewer-fx:embedInteractionSmoke -PsmokeArgs="outdir;doc.pdf[;keystore.pfx]"}
@@ -143,7 +143,7 @@ public final class EmbedInteractionSmoke {
         smoke.check("Ctrl+Y redoes it", redone != null);
 
         if (redone != null) {
-            // right-click: the application's menu factory, built from ICEpdf's annotation menu.
+            // right-click: the application's menu factory, built from icepdf's annotation menu.
             ContextMenu menu = onFx(() -> {
                 contextMenu(host.view, edge);
                 return javafx.stage.Window.getWindows().stream().filter(w -> w instanceof ContextMenu && w.isShowing())
@@ -275,7 +275,7 @@ public final class EmbedInteractionSmoke {
             actions.bind(redo, "edit.redo");
             actions.bind(copy, "edit.copy");
 
-            // right-click on an annotation: ICEpdf's menu, with its properties dialog.
+            // right-click on an annotation: icepdf's menu, with its properties dialog.
             AnnotationContextMenu.install(view, null);
             // an empty signature field clicked or drawn is signed; the copy goes where the application says.
             SignatureFlow.install(session).setTargetChooser((owner, suggested) -> signedCopy)

@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>viewer</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>icepdf-viewer</artifactId>
     <packaging>jar</packaging>
@@ -12,9 +12,9 @@
     <properties>
         <jacoco.coverage.minimum>0.23</jacoco.coverage.minimum>
     </properties>
-    <name>ICEpdf :: Viewer : Swing/AWT Viewer RI</name>
+    <name>icepdf :: Viewer : Swing/AWT Viewer RI</name>
     <description>
-        ICEpdf Java Swing/AWT reference implementation.
+        icepdf Java Swing/AWT reference implementation.
     </description>
 
     <dependencies>

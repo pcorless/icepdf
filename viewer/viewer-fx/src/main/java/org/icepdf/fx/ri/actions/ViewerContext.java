@@ -34,7 +34,7 @@ public interface ViewerContext {
     /** Application-level operations a host may offer. */
     enum Capability {
         OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER,
-        ANNOTATION_BOARD
+        ANNOTATION_BOARD, OPEN_LINK
     }
 
     /**
@@ -60,10 +60,15 @@ public interface ViewerContext {
 
     /** Name for title bars and the About box. */
     default String applicationName() {
-        return "ICEpdf";
+        return "icepdf";
     }
 
     // ---- host operations (see Capability) -------------------------------------------------
+
+    /** Opens a web link in the system's browser, the way the viewer follows a link in a document. */
+    default void openLink(String uri) {
+        throw new UnsupportedOperationException("link");
+    }
 
     /** Asks for a file and opens it. */
     default void openDocument() {

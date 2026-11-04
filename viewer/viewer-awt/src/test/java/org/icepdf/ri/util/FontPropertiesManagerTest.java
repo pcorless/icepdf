@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The font cache is the one piece of on-disk state a 7.4.x installation hands to 7.5.0, so these tests
+ * The font cache is the one piece of on-disk state a 7.4.x installation hands to 8.0.0, so these tests
  * pin down the upgrade path: a cache without a version is rescanned once and rewritten, a current cache
  * is trusted, and a cache that can't be parsed heals itself instead of failing every launch.
  * <p>
@@ -137,7 +137,7 @@ public class FontPropertiesManagerTest {
 
     @Test
     public void cacheRewrittenByOlderReleaseIsRescanned() throws Exception {
-        // 7.5 wrote version + count; a downgraded 7.4 then cleared the entries (it can't see the
+        // 8.0 wrote version + count; a downgraded 7.4 then cleared the entries (it can't see the
         // version node) and wrote its own smaller scan.
         fontNode.put(SENTINEL_FONT, "sentinel|0|/nonexistent/icepdf/sentinel.ttf");
         fontNode.node("cache").putInt("version", 2);

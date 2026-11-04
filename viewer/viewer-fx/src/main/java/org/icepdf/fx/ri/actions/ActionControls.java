@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * Makes ready-wired controls for a registry's actions in one viewer: menu items and buttons with the
  * action's text, tool tip and shortcut, enabled and (for toggles) selected as the action says, and
- * running it when used.  Applications with their own menus and tool bars use this to put ICEpdf's
+ * running it when used.  Applications with their own menus and tool bars use this to put icepdf's
  * commands in them: {@code controls.menuItem("document.print")}, or wire their own controls to
  * them: {@code controls.bind(myButton, "navigation.next")}.
  * <p>

@@ -27,7 +27,7 @@ import java.util.List;
  * table 189): the rotation, border and background colours a reader uses when it builds the widget's
  * appearance itself.
  *
- * @since 7.5
+ * @since 8.0
  */
 public class AppearanceCharacteristics extends Dictionary {
 

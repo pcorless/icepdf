@@ -58,7 +58,7 @@ import java.util.logging.Logger;
  * therefore reported as a failure. That is deliberate - somebody reading this report wants to know
  * whether the file is safe to release, and "the parts you asked for went" does not answer that.
  *
- * @since 7.5.0
+ * @since 8.0
  */
 public class RedactionVerifier {
 

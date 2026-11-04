@@ -254,7 +254,7 @@ public final class UserLayout {
             Files.createDirectories(file.toAbsolutePath().getParent());
             Path temp = file.resolveSibling(file.getFileName() + ".tmp");
             try (OutputStream out = Files.newOutputStream(temp)) {
-                p.store(out, "ICEpdf JavaFX viewer layout");
+                p.store(out, "icepdf JavaFX viewer layout");
             }
             Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (IOException e) {

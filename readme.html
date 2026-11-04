@@ -1,63 +1,85 @@
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-    <title>ICEpdf Library for Java @version@</title>
+    <meta charset="utf-8">
+    <title>icepdf @version@</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 52rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; color: #1c1f24; }
+        h1 { margin-bottom: .25rem; }
+        code, pre { font-family: ui-monospace, monospace; font-size: .92em; }
+        pre { background: #f3f5f8; padding: .75rem 1rem; overflow-x: auto; border-radius: 6px; }
+        table { border-collapse: collapse; }
+        td, th { text-align: left; padding: .25rem 1rem .25rem 0; vertical-align: top; }
+        td:first-child { white-space: nowrap; }
+        .lede { color: #5a6270; margin-top: 0; }
+    </style>
 </head>
 <body>
-<h2>ICEpdf Library for Java @version@</h2>
 
-<h3>Overview</h3>
+<h1>icepdf @version@</h1>
+<p class="lede">Pure-Java PDF rendering and viewing: render, view, annotate, fill, redact and sign PDF documents.
+    Apache License 2.0.</p>
 
-<p>
-    This bundle contains software source-code and executables for ICEpdf @version@ API. High-level overview of the
-    library can be found at <a href="https://github.com/pcorless/icepdf/wiki/Introduction-to-ICEpdf">
-    https://github.com/pcorless/icepdf/wiki/display/PDF/</a>
-</p>
+<h2>What's in this bundle</h2>
+<table>
+    <tr><td><code>libs/</code></td>
+        <td>The icepdf jars (core, fonts, the Swing viewer and the JavaFX viewer) and every third-party jar they
+            need at run time, except JavaFX itself.</td></tr>
+    <tr><td><code>libs-source/</code></td>
+        <td>Source jars for icepdf core and both viewers, for attaching to your IDE.</td></tr>
+    <tr><td><code>licenses/</code></td>
+        <td>The Apache License 2.0 and the licences of the bundled third-party libraries and adapted code.</td></tr>
+    <tr><td><code>NOTICE</code></td>
+        <td>Attribution notices for the code and libraries icepdf includes.</td></tr>
+    <tr><td><code>maven2/</code></td>
+        <td>The published POMs for core, the Swing viewer and the JavaFX viewer.</td></tr>
+</table>
+
+<h2>Run a viewer</h2>
+<p>The <strong>JavaFX viewer</strong> needs Java 17 or later and JavaFX 22 or later, which isn't in this bundle
+    because it's per platform. Download the JavaFX SDK for your platform from
+    <a href="https://gluonhq.com/products/javafx/">gluonhq.com</a>, then, from this folder:</p>
+<pre>java --module-path /path/to/javafx-sdk/lib --add-modules javafx.controls \
+     -cp "libs/*" org.icepdf.fx.ri.app.ViewerApp [file.pdf]</pre>
+<p>The <strong>Swing viewer</strong> needs Java 11 or later and nothing else:</p>
+<pre>java -jar libs/icepdf-viewer-@version@.jar</pre>
+
+<h2>Use the library</h2>
+<p>icepdf is on Maven Central under <code>com.github.pcorless.icepdf</code>:</p>
+<pre>&lt;dependency&gt;
+  &lt;groupId&gt;com.github.pcorless.icepdf&lt;/groupId&gt;
+  &lt;artifactId&gt;icepdf-core&lt;/artifactId&gt;
+  &lt;version&gt;@version@&lt;/version&gt;
+&lt;/dependency&gt;</pre>
+<p>Add <code>icepdf-viewer</code> for the Swing viewer or <code>icepdf-viewer-fx</code> for the JavaFX viewer.
+    For Gradle: <code>implementation 'com.github.pcorless.icepdf:icepdf-core:@version@'</code>.</p>
+
+<h2>Documentation</h2>
 <ul>
-    <li><a href="https://github.com/pcorless/icepdf/wiki/Release-Notes">Release Notes</a></li>
-    <li><a href="https://github.com/pcorless/icepdf/wiki/API-Documentation">JavaDoc</a></li>
-    <li><a href="https://github.com/pcorless/icepdf/wiki">Wiki</a></li>
-    <li><a href="https://github.com/pcorless/icepdf/wiki/Examples">Examples</a></li>
-    <li><a href="https://github.com/pcorless/icepdf/issuesn">Issue Tracker</a></li>
+    <li><a href="https://pcorless.github.io/icepdf/">Project site</a>: features, viewer demos and getting started</li>
+    <li><a href="https://github.com/pcorless/icepdf/releases">Release notes</a></li>
+    <li><a href="https://github.com/pcorless/icepdf/wiki/Quick-Start">Quick Start</a>: render, extract text and embed a viewer in a few lines</li>
+    <li><a href="https://github.com/pcorless/icepdf/wiki/Upgrading-to-8">Upgrading to 8.0</a>: what to check when moving from 7.x</li>
+    <li><a href="https://github.com/pcorless/icepdf/wiki">Wiki</a>: <a href="https://github.com/pcorless/icepdf/wiki/Usage-Examples">examples</a>,
+        <a href="https://github.com/pcorless/icepdf/wiki/System-Properties">system properties</a>, <a href="https://github.com/pcorless/icepdf/wiki/Dependencies">dependencies</a> and
+        <a href="https://github.com/pcorless/icepdf/wiki/Fonts">fonts</a></li>
+    <li><a href="https://javadoc.io/doc/com.github.pcorless.icepdf/icepdf-core/@version@">Javadoc</a></li>
 </ul>
 
-<h3>Dependencies and Licenses</h3>
-<p>The license can be found <a href='./licenses/ApacheLICENSE-2.0.txt'>here</a> and all other supporting library
-    licenses are located in the <a href="./licenses">licences</a> folder.</p>
-<p>Dependent jars can be found in the <a href="./libs">libs</a> folder and the corresponding source jars can be found
-    in the <a href='libs-sources'>libs-sources</a> folder of the distributed bundle.</p>
-<p>The dependency structure for the project libraries can be found <a href="./dependencies/dependencies.txt">here</a>
-    for the distributed bundle.</p>
+<h2>Source, issues and building</h2>
+<p>The source is on GitHub at <a href="https://github.com/pcorless/icepdf">github.com/pcorless/icepdf</a>.
+    Ask questions in <a href="https://github.com/pcorless/icepdf/discussions">Discussions</a> and report bugs in
+    the <a href="https://github.com/pcorless/icepdf/issues">issue tracker</a>; a sample PDF gets a problem fixed
+    fastest.</p>
+<p>To build from source, clone the repository and run <code>./gradlew assemble</code> or
+    <code>mvn package</code>. The examples are built from the repository too. See
+    <a href="https://github.com/pcorless/icepdf/wiki/Building-From-Source">Building from source</a> on the wiki
+    for details.</p>
 
-<h3>Source Code and Binary Access</h3>
-<p>The ICEpdf source code is available in its entirety from github
-    <a href="https://github.com/pcorless/icepdf">https://github.com/pcorless/icepdf</a>.</p>
+<h2>License</h2>
+<p>icepdf is licensed under the <a href="licenses/ApacheLICENSE-2.0.txt">Apache License 2.0</a>. The licences of
+    bundled libraries and adapted code are in <a href="licenses/">licenses/</a>, and attributions in
+    <a href="NOTICE">NOTICE</a>.</p>
 
-<h3>Building the ICEpdf library from source</h3>
-<p>The ICEpdf distribution bundle contains <a href='libs-sources'>libs-sources</a> folder that contains the source for
-    the core and viewer modules. This was intended for incorporation with a developers IDE and was not designed for
-    building the library from source.</p>
-
-<p>Building the ICEpdf library from source first requires that the libraries source is checked from github
-    <a href="https://github.com/pcorless/icepdf">https://github.com/pcorless/icepdf</a>. Once
-    downloaded the project can be build using Gradle or Maven. Similarly, the examples can only be build from
-    the svn checkout. Code references for examples can also be found on the
-    <a href="https://github.com/pcorless/icepdf/wiki/Examples">wiki</a>.</p>
-
-<h4>Maven Usages</h4>
-<p>For information on how to build the ICEpdf library from source using Maven please see
-    <a href="https://github.com/pcorless/icepdf/wiki/Maven-Build">https://github.com/pcorless/icepdf/wiki/Maven-Build</a>.
-</p>
-<p>For information on how to add these libraries to your Maven project please see
-    <a href="https://github.com/pcorless/icepdf/wiki/Maven-Dependencies">https://github.com/pcorless/icepdf/wiki/Maven-Dependencies</a>.
-</p>
-
-<h4>Gradle Usage</h4>
-<p>For information on how to build the ICEpdf library from source using Gradle please see
-    <a href="https://github.com/pcorless/icepdf/wiki/Gradle-Build">https://github.com/pcorless/icepdf/wiki/Gradle-Build</a>.
-</p>
-<p>For information on how to add these libraries to your Gradle project please see
-    <a href="https://github.com/pcorless/icepdf/wiki/Maven-Dependencies">https://github.com/pcorless/icepdf/wiki/display/PDF/Maven-Dependencies</a>.
-</p>
 </body>
 </html>

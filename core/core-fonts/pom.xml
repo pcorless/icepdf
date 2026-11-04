@@ -5,13 +5,13 @@
     <parent>
         <groupId>com.github.pcorless.icepdf</groupId>
         <artifactId>core</artifactId>
-        <version>7.5.0-SNAPSHOT</version>
+        <version>8.0.0</version>
     </parent>
     <artifactId>icepdf-fonts</artifactId>
     <packaging>jar</packaging>
-    <name>ICEpdf :: Core :: Core Fonts</name>
+    <name>icepdf :: Core :: Core Fonts</name>
     <description>
-        The ICEpdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
+        The icepdf Common rendering core. Contains Adobe PDF Core 14 fonts equivalents.
     </description>
 
     <!-- the code is Apache 2.0, the bundled fonts OFL 1.1 (see META-INF/NOTICE) -->
