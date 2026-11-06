@@ -16,15 +16,23 @@
 
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.StateManager;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
+import org.icepdf.core.pobjects.structure.CrossReference;
+import org.icepdf.core.util.Library;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Applies a document's redactions.
@@ -46,6 +54,8 @@ import java.util.List;
  * @since 7.2.0
  */
 public class Redactor {
+
+    private static final Name PIECE_INFO_KEY = new Name("PieceInfo");
 
     /**
      * States how the next write should redact this document. Optional - without it the write uses
@@ -87,7 +97,47 @@ public class Redactor {
         if (effective.hasTerms()) {
             new RedactedStringRewriter(document, effective, report).rewrite();
         }
+        // Not only with terms: a burn from annotations alone leaves the same copy behind.
+        if (effective.getOptions().redacts(RedactionTarget.APPLICATION_DATA)) {
+            removeApplicationData(document, stateManager, report);
+        }
         return report;
+    }
+
+    /**
+     * Removes each application's private data, {@code /PieceInfo}. Adobe Illustrator keeps an
+     * editable copy of the document there, so what was just burned off the page stays readable in
+     * the file. Only the application knows the format, so nothing can be masked reliably. The writer
+     * follows references, so what only this entry pointed at leaves the file with it.
+     */
+    private static void removeApplicationData(Document document, StateManager stateManager, RedactionReport report) {
+        Library library = document.getCatalog().getLibrary();
+        Set<Reference> visited = new HashSet<>();
+        int removed = 0;
+        for (CrossReference crossReference : library.getCrossReferenceRoot().getCrossReferences()) {
+            for (Reference reference : crossReference.getEntries().keySet()) {
+                if (visited.add(reference) && removeApplicationData(library, reference, stateManager)) {
+                    report.recordStringRewritten(RedactionTarget.APPLICATION_DATA);
+                    removed++;
+                }
+            }
+        }
+        if (removed > 0) {
+            report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed application private data from "
+                    + removed + " object(s): it can hold a copy of the document and cannot be redacted");
+        }
+    }
+
+    private static boolean removeApplicationData(Library library, Reference reference, StateManager stateManager) {
+        Object object = library.getObject(reference);
+        DictionaryEntries entries = object instanceof Dictionary ? ((Dictionary) object).getEntries()
+                : object instanceof DictionaryEntries ? (DictionaryEntries) object : null;
+        if (entries == null || entries.remove(PIECE_INFO_KEY) == null) {
+            return false;
+        }
+        Object changed = object instanceof Dictionary ? object : new Dictionary(library, entries);
+        stateManager.addChange(new PObject(changed, reference));
+        return true;
     }
 
     private static void burnAnnotations(Document document, RedactionRequest request,

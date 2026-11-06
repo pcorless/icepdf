@@ -91,6 +91,13 @@ public enum RedactionTarget {
     METADATA,
 
     /**
+     * An application's private data in {@code /PieceInfo}, on the catalog, a page or a form. Adobe
+     * Illustrator keeps an editable copy of the document there. Nothing here can be masked reliably,
+     * as only the application knows the format, so this covers removing it.
+     */
+    APPLICATION_DATA,
+
+    /**
      * Files attached to the document. Nothing here can be masked - an attachment is an arbitrary
      * file - so this covers removing them, controlled by
      * {@link RedactionOptions#isRemoveAttachments()}.
