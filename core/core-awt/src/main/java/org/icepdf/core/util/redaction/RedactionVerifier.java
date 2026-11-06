@@ -291,9 +291,9 @@ public class RedactionVerifier {
     /**
      * How often each term appears in the written document's objects, which the file's bytes can't
      * say: a filter or encryption hides a stream, encryption hides a string outside an object
-     * stream, and a hex string is never in the term's own bytes. Page content is left out, as {@link #streamsOf} covers it. A
-     * string counted here may have been counted by the scan of the bytes as well: what matters is
-     * whether the count is zero.
+     * stream, and a hex string is never in the term's own bytes. Page content is only read for its
+     * hex strings, as {@link #streamsOf} covers the rest. A string counted here may have been counted
+     * by the scan of the bytes as well: what matters is whether the count is zero.
      */
     private static Map<String, Integer> countInObjects(byte[] pdf, List<String> terms, List<UnverifiableRegion> regions)
             throws Exception {
@@ -322,7 +322,7 @@ public class RedactionVerifier {
             for (CrossReference crossReference : library.getCrossReferenceRoot().getCrossReferences()) {
                 for (Reference reference : crossReference.getEntries().keySet()) {
                     if (visited.add(reference)) {
-                        countInObject(library, reference, !pageContent.contains(reference), terms, counts, regions);
+                        countInObject(library, reference, pageContent.contains(reference), terms, counts, regions);
                     }
                 }
             }
@@ -332,13 +332,13 @@ public class RedactionVerifier {
         return counts;
     }
 
-    private static void countInObject(Library library, Reference reference, boolean readStream, List<String> terms,
+    private static void countInObject(Library library, Reference reference, boolean isPageContent, List<String> terms,
                                       Map<String, Integer> counts, List<UnverifiableRegion> regions) {
         try {
             Object object = library.getObject(reference);
             countInStrings(library, object, terms, counts, 0);
-            if (readStream && object instanceof Stream && !isBinary((Stream) object)) {
-                countInStream(((Stream) object).getDecodedStreamBytes(), terms, counts);
+            if (object instanceof Stream && !isBinary((Stream) object)) {
+                countInStream(((Stream) object).getDecodedStreamBytes(), isPageContent, terms, counts);
             }
         } catch (Exception e) {
             regions.add(new UnverifiableRegion(UnverifiableRegion.Reason.STREAM_NOT_PARSED,
@@ -391,8 +391,13 @@ public class RedactionVerifier {
         return false;
     }
 
-    /** A stream may hold text in any of these: a text stream is UTF-16, and XML is usually UTF-8. */
-    private static void countInStream(byte[] bytes, List<String> terms, Map<String, Integer> counts) {
+    /**
+     * A stream may hold text in any of these: a text stream is UTF-16, and XML is usually UTF-8.
+     *
+     * @param hexOnly only hex strings are counted: for page content, whose other text is already
+     *                searched, but where a hex string can hold alternate text no search decodes
+     */
+    private static void countInStream(byte[] bytes, boolean hexOnly, List<String> terms, Map<String, Integer> counts) {
         if (bytes == null || bytes.length == 0) {
             return;
         }
@@ -408,10 +413,15 @@ public class RedactionVerifier {
             byte[] decoded = fromHex(hex.group(1));
             hexStrings.append(new String(decoded, StandardCharsets.ISO_8859_1)).append('\n')
                     .append(new String(decoded, StandardCharsets.UTF_16BE)).append('\n');
+            // real files have UTF-16 at an odd offset too, after a stray leading byte
+            if (decoded.length > 1) {
+                hexStrings.append(new String(decoded, 1, decoded.length - 1, StandardCharsets.UTF_16BE)).append('\n');
+            }
         }
         for (String term : terms) {
             // the same characters read the same in several encodings, so the most of them, not the sum
-            int inText = Math.max(countInSyntax(latin1, term), Math.max(countIn(utf8, term), countIn(utf16, term)));
+            int inText = hexOnly ? 0
+                    : Math.max(countInSyntax(latin1, term), Math.max(countIn(utf8, term), countIn(utf16, term)));
             counts.merge(term, inText + countIn(hexStrings.toString(), term), Integer::sum);
         }
     }

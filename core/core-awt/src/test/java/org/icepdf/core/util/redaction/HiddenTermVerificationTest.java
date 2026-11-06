@@ -107,10 +107,31 @@ public class HiddenTermVerificationTest {
         assertFound(" /RV 7 0 R", compressed("/Type /EmbeddedFile", "<xfa:data><name>" + TERM + "</name></xfa:data>"));
     }
 
-    @DisplayName("a term in an application's private data is a failure")
+    @DisplayName("a term in a stream of no known kind is a failure")
     @Test
-    public void privateApplicationData() throws Exception {
-        assertFound(" /PieceInfo << /App << /Private << /Data 7 0 R >> >> >>", compressed("", "(" + TERM + ") text"));
+    public void streamOfNoKnownKind() throws Exception {
+        assertFound(" /X << /Data 7 0 R >>", compressed("", "(" + TERM + ") text"));
+    }
+
+    @DisplayName("a term in a hex string in page content is a failure")
+    @Test
+    public void hexStringInPageContent() throws Exception {
+        assertEquals(RedactionConfidence.FAILED, pageContentConfidence("<FEFF"
+                + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">"));
+    }
+
+    @DisplayName("a UTF-16 term at an odd offset of a hex string in page content is a failure")
+    @Test
+    public void misalignedHexStringInPageContent() throws Exception {
+        assertEquals(RedactionConfidence.FAILED, pageContentConfidence("<00"
+                + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">"));
+    }
+
+    @DisplayName("a hex string in page content without the term verifies")
+    @Test
+    public void otherHexStringInPageContent() throws Exception {
+        assertEquals(RedactionConfidence.VERIFIED, pageContentConfidence("<FEFF"
+                + hexOf("other".getBytes(StandardCharsets.UTF_16BE)) + ">"));
     }
 
     @DisplayName("a term nowhere in the file verifies")
@@ -210,9 +231,17 @@ public class HiddenTermVerificationTest {
         assertTrue(confidence == RedactionConfidence.VERIFIED, "got " + confidence);
     }
 
+    /** The string as a marked-content property, as a tagged document writes alternate text. */
+    private RedactionConfidence pageContentConfidence(String hexString) throws Exception {
+        return confidence(TERM, fixture("/Span << /Alt " + hexString + " >> BDC " + PAGE_CONTENT + " EMC", "", "<< >>"));
+    }
+
     private RedactionConfidence confidence(String term, String fieldEntries, String extraObject) throws Exception {
+        return confidence(term, fixture(PAGE_CONTENT, fieldEntries, extraObject));
+    }
+
+    private RedactionConfidence confidence(String term, byte[] pdf) throws Exception {
         Document document = new Document();
-        byte[] pdf = fixture(fieldEntries, extraObject);
         document.setInputStream(new ByteArrayInputStream(pdf), "hidden.pdf");
         try {
             Redactor.configure(document, RedactionRequest.ofTerms(
@@ -250,7 +279,7 @@ public class HiddenTermVerificationTest {
     }
 
     /** A field whose entries say where the term is, away from any page text. */
-    private static byte[] fixture(String fieldEntries, String extraObject) {
+    private static byte[] fixture(String pageContent, String fieldEntries, String extraObject) {
         String[] objects = {
                 "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [6 0 R] /DA (/Helv 12 Tf 0 g) "
                         + "/DR << /Font << /Helv 3 0 R >> >> >> >>",
@@ -258,7 +287,7 @@ public class HiddenTermVerificationTest {
                 "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>",
                 "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> "
                         + "/Contents 5 0 R /Annots [6 0 R] >>",
-                "<< /Length " + PAGE_CONTENT.length() + " >>\nstream\n" + PAGE_CONTENT + "\nendstream",
+                "<< /Length " + pageContent.length() + " >>\nstream\n" + pageContent + "\nendstream",
                 "<< /Type /Annot /Subtype /Widget /FT /Tx /T (field) /V (kept) /Rect [72 400 300 420] /F 4 /P 4 0 R "
                         + "/DA (/Helv 12 Tf 0 g)" + fieldEntries + " >>",
                 extraObject,
