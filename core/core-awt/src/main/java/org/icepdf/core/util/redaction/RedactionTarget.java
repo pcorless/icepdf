@@ -76,7 +76,8 @@ public enum RedactionTarget {
     ANNOTATION_CONTENTS,
 
     /**
-     * Form field values, both {@code /V} and the {@code /DV} default that is easy to forget.
+     * The strings of form fields: {@code /V} and the {@code /DV} default that is easy to forget, rich
+     * text, a choice field's options, the field's names and tooltip, and a widget's {@code /Contents}.
      */
     FORM_VALUES,
 
