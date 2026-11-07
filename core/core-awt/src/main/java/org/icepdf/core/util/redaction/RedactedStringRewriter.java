@@ -17,8 +17,10 @@ package org.icepdf.core.util.redaction;
 
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
+import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
+import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
 import org.icepdf.core.pobjects.actions.GoToAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -34,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.logging.Logger;
 
 /**
@@ -58,6 +62,14 @@ public class RedactedStringRewriter {
     private final RedactionOptions options;
     private final RedactionReport report;
     private final TermMasker masker;
+
+    /** A field's strings that decide what it shows, so a widget drawing them has to be redrawn. */
+    private static final Name[] FIELD_VALUE_KEYS = {FieldDictionary.V_KEY, FieldDictionary.DV_KEY,
+            VariableTextFieldDictionary.RV_KEY, ChoiceFieldDictionary.OPT_KEY};
+    /** A field's other strings, which aren't drawn. */
+    private static final Name[] FIELD_NAME_KEYS = {FieldDictionary.T_KEY, FieldDictionary.TU_KEY,
+            FieldDictionary.TM_KEY, Annotation.CONTENTS_KEY};
+    private static final Pattern HEX_STRING = Pattern.compile("<([0-9A-Fa-f\\s]+)>");
 
     private static final Name STRUCT_TREE_ROOT_KEY = new Name("StructTreeRoot");
     private static final Name KIDS_KEY = new Name("K");
@@ -230,10 +242,13 @@ public class RedactedStringRewriter {
     }
 
     /**
-     * Values typed into form fields.
+     * The strings of form fields: values typed in, and the names and options around them.
      * <p>
      * Both {@code /V} and {@code /DV}: the default value is a separate copy of the same string and
      * is easy to forget, so a field reset would put the redacted text straight back on the page.
+     * Rich text, a choice field's options, the field's names and a widget's own {@code /Contents}
+     * routinely repeat the value too. A value may be a string, an array or a text stream. A masked
+     * name can no longer be found by an action or a script that asks for it by name.
      * Fields nest, and a value usually sits on the parent rather than on the widget that draws it,
      * so this walks the whole tree. A widget that inherits a masked value is regenerated too.
      */
@@ -271,7 +286,7 @@ public class RedactedStringRewriter {
     }
 
     /**
-     * @return true when this field's own entries were masked
+     * @return true when a string of this field that a widget draws was masked
      */
     private boolean rewriteFieldDictionary(FieldDictionary field, AbstractWidgetAnnotation<?> widget,
                                            Library library, boolean inheritedValueMasked) {
@@ -290,17 +305,25 @@ public class RedactedStringRewriter {
                             "the change could not be recorded");
             return false;
         }
-        boolean rewritten = maskFieldEntry(field, FieldDictionary.V_KEY, library, reference);
-        rewritten |= maskFieldEntry(field, FieldDictionary.DV_KEY, library, reference);
-        if (rewritten) {
+        boolean rewritten = false;
+        for (Name key : FIELD_VALUE_KEYS) {
+            rewritten |= maskFieldEntry(field, key, library, reference);
+        }
+        boolean nameRewritten = false;
+        for (Name key : FIELD_NAME_KEYS) {
+            nameRewritten |= maskFieldEntry(field, key, library, reference);
+        }
+        if (rewritten || nameRewritten) {
             report.recordStringRewritten(RedactionTarget.FORM_VALUES);
         }
-        if (widget != null && (rewritten || (inheritedValueMasked && !field.hasFieldValue()))) {
+        if (widget != null && (rewritten || (inheritedValueMasked && !field.hasFieldValue())
+                || drawsTerm(field, library))) {
             // The widget draws its value from a generated appearance stream, which still carries the
             // old text as glyphs. Regenerate it so what is drawn matches what the field now says.
             // A widget without /Type /Annot is built here, apart from the page's instance and not yet
             // initialised, and with no appearance loaded the reset would quietly do nothing.
             try {
+                maskChoiceOptions(field);
                 widget.init();
                 widget.resetAppearanceStream(new AffineTransform());
             } catch (InterruptedException e) {
@@ -319,18 +342,97 @@ public class RedactedStringRewriter {
 
     private boolean maskFieldEntry(FieldDictionary field, Name key, Library library,
                                    Reference reference) {
-        Object value = library.getObject(field.getEntries(), key);
-        if (!(value instanceof StringObject)) {
+        Object value = field.getEntries().get(key);
+        Object masked = maskedValue(value, library, reference);
+        if (masked == value) {
             return false;
         }
-        String text = Utils.convertStringObject(library, (StringObject) value);
-        String masked = masker.mask(text);
-        if (masked.equals(text)) {
-            return false;
-        }
-        field.getEntries().put(key, new LiteralStringObject(masked, reference));
+        field.getEntries().put(key, masked);
         library.getStateManager().addChange(new PObject(field, reference));
         return true;
+    }
+
+    /**
+     * @return the value with its strings masked, or the same instance when nothing matched. A text
+     * stream comes back as a string, and the stream leaves the file with the last reference to it.
+     */
+    private Object maskedValue(Object value, Library library, Reference reference) {
+        Object resolved = value instanceof Reference ? library.getObject((Reference) value) : value;
+        String text = null;
+        if (resolved instanceof StringObject) {
+            text = Utils.convertStringObject(library, (StringObject) resolved);
+        } else if (resolved instanceof Stream) {
+            byte[] bytes = ((Stream) resolved).getDecodedStreamBytes();
+            text = bytes != null ? Utils.decodeTextString(bytes) : null;
+        } else if (resolved instanceof List) {
+            List<Object> masked = new ArrayList<>();
+            boolean changed = false;
+            for (Object element : (List<?>) resolved) {
+                Object maskedElement = maskedValue(element, library, reference);
+                changed |= maskedElement != element;
+                masked.add(maskedElement);
+            }
+            return changed ? masked : value;
+        }
+        if (text == null) {
+            return value;
+        }
+        String masked = masker.mask(text);
+        return masked.equals(text) ? value : new LiteralStringObject(masked, reference);
+    }
+
+    /** A choice field read its options when it was built, and draws those rather than {@code /Opt}. */
+    private void maskChoiceOptions(FieldDictionary field) {
+        if (field instanceof ChoiceFieldDictionary && ((ChoiceFieldDictionary) field).getOptions() != null) {
+            for (ChoiceFieldDictionary.ChoiceOption option : ((ChoiceFieldDictionary) field).getOptions()) {
+                option.setLabel(masker.mask(option.getLabel()));
+                option.setValue(masker.mask(option.getValue()));
+            }
+        }
+    }
+
+    /** Whether the field's appearance draws a term, though nothing that was masked said so. */
+    private boolean drawsTerm(FieldDictionary field, Library library) {
+        Object appearances = library.getObject(field.getEntries(), Annotation.APPEARANCE_STREAM_KEY);
+        if (!(appearances instanceof DictionaryEntries)) {
+            return false;
+        }
+        Object normal = library.getObject((DictionaryEntries) appearances, Annotation.APPEARANCE_STREAM_NORMAL_KEY);
+        if (normal instanceof DictionaryEntries) {
+            // a button's normal appearance has one stream per state
+            for (Object state : ((DictionaryEntries) normal).values()) {
+                Object resolved = state instanceof Reference ? library.getObject((Reference) state) : state;
+                if (resolved instanceof Stream && streamHoldsTerm((Stream) resolved)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return normal instanceof Stream && streamHoldsTerm((Stream) normal);
+    }
+
+    private boolean streamHoldsTerm(Stream stream) {
+        byte[] bytes = stream.getDecodedStreamBytes();
+        if (bytes == null) {
+            return false;
+        }
+        String content = new String(bytes, StandardCharsets.ISO_8859_1);
+        if (masker.matches(content)) {
+            return true;
+        }
+        Matcher hex = HEX_STRING.matcher(content);
+        while (hex.find()) {
+            String digits = hex.group(1).replaceAll("\\s", "");
+            byte[] decoded = new byte[digits.length() / 2];
+            for (int i = 0; i < decoded.length; i++) {
+                decoded[i] = (byte) Integer.parseInt(digits.substring(2 * i, 2 * i + 2), 16);
+            }
+            if (masker.matches(new String(decoded, StandardCharsets.ISO_8859_1))
+                    || masker.matches(Utils.decodeTextString(decoded))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
