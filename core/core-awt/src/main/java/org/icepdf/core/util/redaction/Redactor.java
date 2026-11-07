@@ -16,6 +16,7 @@
 
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.Catalog;
 import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
@@ -56,6 +57,8 @@ import java.util.Set;
 public class Redactor {
 
     private static final Name PIECE_INFO_KEY = new Name("PieceInfo");
+    private static final Name XFA_KEY = new Name("XFA");
+    private static final Name NEEDS_RENDERING_KEY = new Name("NeedsRendering");
 
     /**
      * States how the next write should redact this document. Optional - without it the write uses
@@ -100,6 +103,7 @@ public class Redactor {
         // Not only with terms: a burn from annotations alone leaves the same copy behind.
         if (effective.getOptions().redacts(RedactionTarget.APPLICATION_DATA)) {
             removeApplicationData(document, stateManager, report);
+            removeXfa(document, stateManager, report);
         }
         return report;
     }
@@ -138,6 +142,35 @@ public class Redactor {
         Object changed = object instanceof Dictionary ? object : new Dictionary(library, entries);
         stateManager.addChange(new PObject(changed, reference));
         return true;
+    }
+
+    /**
+     * Removes a form's XFA, a second copy of its contents in XML beside the AcroForm fields. XFA isn't
+     * parsed here, so nothing in it can be masked. The AcroForm fields stay, and are what a reader
+     * uses once it has gone. The writer follows references, so the packets leave the file with the
+     * entry. {@code /NeedsRendering} goes too, as it asks a reader to build the pages from the XFA.
+     */
+    private static void removeXfa(Document document, StateManager stateManager, RedactionReport report) {
+        Catalog catalog = document.getCatalog();
+        Library library = catalog.getLibrary();
+        Object held = catalog.getEntries().get(Catalog.ACRO_FORM_KEY);
+        Object acroForm = held instanceof Reference ? library.getObject((Reference) held) : held;
+        DictionaryEntries entries = acroForm instanceof Dictionary ? ((Dictionary) acroForm).getEntries()
+                : acroForm instanceof DictionaryEntries ? (DictionaryEntries) acroForm : null;
+        if (entries == null || entries.remove(XFA_KEY) == null) {
+            return;
+        }
+        if (held instanceof Reference) {
+            Object changed = acroForm instanceof Dictionary ? acroForm : new Dictionary(library, entries);
+            stateManager.addChange(new PObject(changed, (Reference) held));
+        }
+        // an AcroForm written inline is part of the catalog
+        catalog.getEntries().remove(NEEDS_RENDERING_KEY);
+        stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        report.recordStringRewritten(RedactionTarget.APPLICATION_DATA);
+        report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed XFA form data: it can hold a copy of the "
+                + "form's contents and cannot be redacted. The AcroForm fields remain, and usage rights or "
+                + "signatures may no longer be valid");
     }
 
     private static void burnAnnotations(Document document, RedactionRequest request,

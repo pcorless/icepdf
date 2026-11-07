@@ -94,7 +94,8 @@ public enum RedactionTarget {
     /**
      * An application's private data in {@code /PieceInfo}, on the catalog, a page or a form. Adobe
      * Illustrator keeps an editable copy of the document there. Nothing here can be masked reliably,
-     * as only the application knows the format, so this covers removing it.
+     * as only the application knows the format, so this covers removing it. A form's XFA goes the
+     * same way, as XFA isn't parsed here.
      */
     APPLICATION_DATA,
 
