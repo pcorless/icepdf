@@ -252,6 +252,9 @@ public class FieldDictionary extends Dictionary {
                 if (parentReference instanceof Reference) {
                     parentField.setPObjectReference((Reference) parentReference);
                 }
+            } else if (value instanceof FieldDictionary) {
+                // a parent with a pending change resolves to its dictionary rather than its entries.
+                parentField = (FieldDictionary) value;
             }
         }
         return parentField;

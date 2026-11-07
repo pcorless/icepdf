@@ -235,7 +235,7 @@ public class RedactedStringRewriter {
      * Both {@code /V} and {@code /DV}: the default value is a separate copy of the same string and
      * is easy to forget, so a field reset would put the redacted text straight back on the page.
      * Fields nest, and a value usually sits on the parent rather than on the widget that draws it,
-     * so this walks the whole tree.
+     * so this walks the whole tree. A widget that inherits a masked value is regenerated too.
      */
     private void rewriteFormValues() {
         InteractiveForm form = document.getCatalog().getInteractiveForm();
@@ -244,32 +244,39 @@ public class RedactedStringRewriter {
         }
         Library library = document.getCatalog().getLibrary();
         for (Object field : form.getFields()) {
-            rewriteField(field, library);
+            rewriteField(field, library, false);
         }
     }
 
-    private void rewriteField(Object field, Library library) {
+    /**
+     * @param inheritedValueMasked whether an ancestor's value was masked, which a field without its
+     *                             own value inherits
+     */
+    private void rewriteField(Object field, Library library, boolean inheritedValueMasked) {
         Object resolved = field instanceof Reference ? library.getObject((Reference) field) : field;
         if (resolved instanceof AbstractWidgetAnnotation) {
             rewriteFieldDictionary(((AbstractWidgetAnnotation<?>) resolved).getFieldDictionary(),
-                    (AbstractWidgetAnnotation<?>) resolved, library);
+                    (AbstractWidgetAnnotation<?>) resolved, library, inheritedValueMasked);
         } else if (resolved instanceof FieldDictionary) {
-            rewriteFieldDictionary((FieldDictionary) resolved, null, library);
-        }
-        if (resolved instanceof FieldDictionary) {
-            List<Object> kids = ((FieldDictionary) resolved).getKids();
+            FieldDictionary dictionary = (FieldDictionary) resolved;
+            boolean masked = rewriteFieldDictionary(dictionary, null, library, false);
+            List<Object> kids = dictionary.getKids();
             if (kids != null) {
+                boolean passedDown = masked || (inheritedValueMasked && !dictionary.hasFieldValue());
                 for (Object kid : kids) {
-                    rewriteField(kid, library);
+                    rewriteField(kid, library, passedDown);
                 }
             }
         }
     }
 
-    private void rewriteFieldDictionary(FieldDictionary field, AbstractWidgetAnnotation<?> widget,
-                                        Library library) {
+    /**
+     * @return true when this field's own entries were masked
+     */
+    private boolean rewriteFieldDictionary(FieldDictionary field, AbstractWidgetAnnotation<?> widget,
+                                           Library library, boolean inheritedValueMasked) {
         if (field == null) {
-            return;
+            return false;
         }
         // A field merged with its widget has its reference on the annotation, not on the field
         // dictionary built from the same entries, so the change has to be registered against
@@ -281,25 +288,33 @@ public class RedactedStringRewriter {
             report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
                     "A form field value matched a term but the field has no object reference, so " +
                             "the change could not be recorded");
-            return;
+            return false;
         }
         boolean rewritten = maskFieldEntry(field, FieldDictionary.V_KEY, library, reference);
         rewritten |= maskFieldEntry(field, FieldDictionary.DV_KEY, library, reference);
-        if (!rewritten) {
-            return;
+        if (rewritten) {
+            report.recordStringRewritten(RedactionTarget.FORM_VALUES);
         }
-        report.recordStringRewritten(RedactionTarget.FORM_VALUES);
-        if (widget != null) {
+        if (widget != null && (rewritten || (inheritedValueMasked && !field.hasFieldValue()))) {
             // The widget draws its value from a generated appearance stream, which still carries the
             // old text as glyphs. Regenerate it so what is drawn matches what the field now says.
+            // A widget without /Type /Annot is built here, apart from the page's instance and not yet
+            // initialised, and with no appearance loaded the reset would quietly do nothing.
             try {
+                widget.init();
                 widget.resetAppearanceStream(new AffineTransform());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
+                        "Interrupted before a masked field's appearance stream was regenerated, " +
+                                "so the old text may still be drawn: " + widget.getPObjectReference());
             } catch (RuntimeException e) {
                 report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
                         "Field value was masked but its appearance stream could not be regenerated, " +
                                 "so the old text may still be drawn: " + widget.getPObjectReference());
             }
         }
+        return rewritten;
     }
 
     private boolean maskFieldEntry(FieldDictionary field, Name key, Library library,

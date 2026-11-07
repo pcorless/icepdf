@@ -614,12 +614,19 @@ public abstract class Annotation extends Dictionary {
                 annot = new PolyAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {
                 Name fieldType = library.getName(entries, FieldDictionary.FT_KEY);
-                if (fieldType == null) {
-                    // get type from parent object if the widget and field dictionary aren't combined.
-                    Object tmp = library.getObject(entries, FieldDictionary.PARENT_KEY);
-                    if (tmp instanceof DictionaryEntries) {
-                        fieldType = library.getName((DictionaryEntries) tmp, FieldDictionary.FT_KEY);
+                // /FT is inheritable, from any level if the widget and field dictionary aren't combined;
+                // the depth guards against a malformed /Parent cycle.  A changed parent resolves to its
+                // typed dictionary rather than its entries.
+                Object ancestor = library.getObject(entries, FieldDictionary.PARENT_KEY);
+                for (int depth = 0; fieldType == null && depth < 32; depth++) {
+                    if (ancestor instanceof Dictionary) {
+                        ancestor = ((Dictionary) ancestor).getEntries();
                     }
+                    if (!(ancestor instanceof DictionaryEntries)) {
+                        break;
+                    }
+                    fieldType = library.getName((DictionaryEntries) ancestor, FieldDictionary.FT_KEY);
+                    ancestor = library.getObject((DictionaryEntries) ancestor, FieldDictionary.PARENT_KEY);
                 }
                 if (FieldDictionaryFactory.TYPE_BUTTON.equals(fieldType)) {
                     annot = new ButtonWidgetAnnotation(library, entries);

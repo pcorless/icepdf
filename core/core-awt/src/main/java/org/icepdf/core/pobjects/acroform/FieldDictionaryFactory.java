@@ -66,7 +66,11 @@ public class FieldDictionaryFactory {
                 return widget;
             }
         }
-        return buildField(library, entries);
+        FieldDictionary field = buildField(library, entries);
+        if (reference != null) {
+            field.setPObjectReference(reference);
+        }
+        return field;
     }
 
     public static FieldDictionary buildField(Library library,
