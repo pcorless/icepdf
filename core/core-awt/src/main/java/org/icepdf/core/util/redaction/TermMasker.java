@@ -15,8 +15,12 @@
  */
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,6 +47,53 @@ public class TermMasker {
     public TermMasker(List<SearchTerm> terms, String mask) {
         this.terms = terms;
         this.mask = mask;
+    }
+
+    /**
+     * Reads a string the way a redaction has to: including the forms a PDF isn't supposed to hold but
+     * real files do, because a term a viewer can read and this can't would be left in the file.
+     * {@link Utils#convertStringObject} stays strict for everything else.
+     *
+     * @param library  the document's library, for decrypting
+     * @param value    string to read
+     * @return its text
+     */
+    public static String decodeString(Library library, StringObject value) {
+        return decodeText(value.getDecryptedRawBytes(library.getSecurityManager()));
+    }
+
+    /**
+     * Decodes a text string as {@link Utils#decodeTextString} does, and also UTF-16 little endian with
+     * a byte order mark, and UTF-16 with none when its bytes show it: mostly zeros on one side of each
+     * pair and none on the other, as text in a Latin script has. Text outside it with no mark can't be
+     * told from other bytes, and stays undecoded.
+     *
+     * @param bytes string's bytes, decrypted
+     * @return its text
+     */
+    public static String decodeText(byte[] bytes) {
+        if (bytes == null || Utils.isUtf16Be(bytes)) {
+            return Utils.decodeTextString(bytes);
+        }
+        if (bytes.length >= 2 && (bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xFE) {
+            return new String(bytes, 2, bytes.length - 2, StandardCharsets.UTF_16LE);
+        }
+        if (bytes.length >= 4 && bytes.length % 2 == 0) {
+            int zerosFirst = 0;
+            int zerosSecond = 0;
+            for (int i = 0; i < bytes.length; i += 2) {
+                zerosFirst += bytes[i] == 0 ? 1 : 0;
+                zerosSecond += bytes[i + 1] == 0 ? 1 : 0;
+            }
+            int pairs = bytes.length / 2;
+            if (zerosFirst == 0 && zerosSecond * 4 >= pairs * 3) {
+                return new String(bytes, StandardCharsets.UTF_16LE);
+            }
+            if (zerosSecond == 0 && zerosFirst * 4 >= pairs * 3) {
+                return new String(bytes, StandardCharsets.UTF_16BE);
+            }
+        }
+        return Utils.decodeTextString(bytes);
     }
 
     /**

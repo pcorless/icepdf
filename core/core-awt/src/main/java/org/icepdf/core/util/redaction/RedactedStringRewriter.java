@@ -155,7 +155,7 @@ public class RedactedStringRewriter {
             if (!(value instanceof StringObject)) {
                 continue;
             }
-            String text = Utils.convertStringObject(library, (StringObject) value);
+            String text = TermMasker.decodeString(library, (StringObject) value);
             String masked = masker.mask(text);
             if (!masked.equals(text)) {
                 element.put(key, new LiteralStringObject(masked, owner));
@@ -360,10 +360,10 @@ public class RedactedStringRewriter {
         Object resolved = value instanceof Reference ? library.getObject((Reference) value) : value;
         String text = null;
         if (resolved instanceof StringObject) {
-            text = Utils.convertStringObject(library, (StringObject) resolved);
+            text = TermMasker.decodeString(library, (StringObject) resolved);
         } else if (resolved instanceof Stream) {
             byte[] bytes = ((Stream) resolved).getDecodedStreamBytes();
-            text = bytes != null ? Utils.decodeTextString(bytes) : null;
+            text = bytes != null ? TermMasker.decodeText(bytes) : null;
         } else if (resolved instanceof List) {
             List<Object> masked = new ArrayList<>();
             boolean changed = false;
@@ -428,7 +428,7 @@ public class RedactedStringRewriter {
                 decoded[i] = (byte) Integer.parseInt(digits.substring(2 * i, 2 * i + 2), 16);
             }
             if (masker.matches(new String(decoded, StandardCharsets.ISO_8859_1))
-                    || masker.matches(Utils.decodeTextString(decoded))) {
+                    || masker.matches(TermMasker.decodeText(decoded))) {
                 return true;
             }
         }
@@ -482,7 +482,7 @@ public class RedactedStringRewriter {
             for (int i = 0; i < namesAndValues.size(); i += 2) {
                 Object name = namesAndValues.get(i);
                 String text = name instanceof StringObject
-                        ? Utils.convertStringObject(library, (StringObject) name)
+                        ? TermMasker.decodeString(library, (StringObject) name)
                         : String.valueOf(name);
                 String renamed = renames.get(text);
                 if (renamed != null) {
@@ -526,7 +526,7 @@ public class RedactedStringRewriter {
         for (int i = 0; i < namesAndValues.size(); i += 2) {
             Object name = namesAndValues.get(i);
             String text = name instanceof StringObject
-                    ? Utils.convertStringObject(document.getCatalog().getLibrary(), (StringObject) name)
+                    ? TermMasker.decodeString(document.getCatalog().getLibrary(), (StringObject) name)
                     : String.valueOf(name);
             taken.add(text);
         }
@@ -701,7 +701,7 @@ public class RedactedStringRewriter {
     private String stringEntry(Dictionary dictionary, Name key, Library library) {
         Object value = library.getObject(dictionary.getEntries(), key);
         return value instanceof StringObject
-                ? Utils.convertStringObject(library, (StringObject) value) : null;
+                ? TermMasker.decodeString(library, (StringObject) value) : null;
     }
 
     private boolean maskAnnotationEntry(String value, Consumer<String> setter) {

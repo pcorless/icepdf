@@ -353,7 +353,7 @@ public class RedactionVerifier {
             return;
         }
         if (value instanceof StringObject) {
-            String text = Utils.convertStringObject(library, (StringObject) value);
+            String text = TermMasker.decodeString(library, (StringObject) value);
             for (String term : terms) {
                 counts.merge(term, countIn(text, term), Integer::sum);
             }
@@ -413,10 +413,8 @@ public class RedactionVerifier {
             byte[] decoded = fromHex(hex.group(1));
             hexStrings.append(new String(decoded, StandardCharsets.ISO_8859_1)).append('\n')
                     .append(new String(decoded, StandardCharsets.UTF_16BE)).append('\n');
-            // real files have UTF-16 at an odd offset too, after a stray leading byte
-            if (decoded.length > 1) {
-                hexStrings.append(new String(decoded, 1, decoded.length - 1, StandardCharsets.UTF_16BE)).append('\n');
-            }
+            // not a PDF text string, but real files have it
+            hexStrings.append(new String(decoded, StandardCharsets.UTF_16LE)).append('\n');
         }
         for (String term : terms) {
             // the same characters read the same in several encodings, so the most of them, not the sum

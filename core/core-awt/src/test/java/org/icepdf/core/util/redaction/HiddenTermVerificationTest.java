@@ -120,11 +120,11 @@ public class HiddenTermVerificationTest {
                 + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">"));
     }
 
-    @DisplayName("a UTF-16 term at an odd offset of a hex string in page content is a failure")
+    @DisplayName("a little-endian term in a hex string in page content is a failure")
     @Test
-    public void misalignedHexStringInPageContent() throws Exception {
-        assertEquals(RedactionConfidence.FAILED, pageContentConfidence("<00"
-                + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">"));
+    public void littleEndianHexStringInPageContent() throws Exception {
+        assertEquals(RedactionConfidence.FAILED, pageContentConfidence("<"
+                + hexOf(TERM.getBytes(StandardCharsets.UTF_16LE)) + ">"));
     }
 
     @DisplayName("a hex string in page content without the term verifies")
