@@ -304,7 +304,7 @@ public class ContentStreamRedactorCallback extends ContentStreamCallback {
             if (!(value instanceof StringObject)) {
                 continue;
             }
-            String text = Utils.convertStringObject(library, (StringObject) value);
+            String text = TermMasker.decodeString(library, (StringObject) value);
             String replacement = masker.mask(text);
             if (!replacement.equals(text)) {
                 entries.put(key, new LiteralStringObject(replacement));
