@@ -66,45 +66,45 @@ public class HiddenTermVerificationTest {
     @DisplayName("a term in a compressed stream value is a failure")
     @Test
     public void compressedStreamValue() throws Exception {
-        assertFound(" /RV 7 0 R", compressed("", TERM));
+        assertFound(" /X 7 0 R", compressed("", TERM));
     }
 
     @DisplayName("a UTF-16 term in a compressed stream is a failure")
     @Test
     public void utf16CompressedStream() throws Exception {
-        assertFound(" /RV 7 0 R", compressed("", "þÿ" + latin1Of(TERM.getBytes(StandardCharsets.UTF_16BE))));
+        assertFound(" /X 7 0 R", compressed("", "þÿ" + latin1Of(TERM.getBytes(StandardCharsets.UTF_16BE))));
     }
 
     @DisplayName("a UTF-8 term with an accent in a compressed stream is a failure")
     @Test
     public void utf8CompressedStream() throws Exception {
         String accented = "bravó";
-        assertEquals(RedactionConfidence.FAILED, confidence(accented, " /RV 7 0 R",
+        assertEquals(RedactionConfidence.FAILED, confidence(accented, " /X 7 0 R",
                 compressed("", latin1Of(("<name>" + accented + "</name>").getBytes(StandardCharsets.UTF_8)))));
     }
 
     @DisplayName("a term in a hex string is a failure")
     @Test
     public void hexString() throws Exception {
-        assertFound(" /TU <" + hex(TERM) + ">", "<< >>");
+        assertFound(" /X <" + hex(TERM) + ">", "<< >>");
     }
 
     @DisplayName("a UTF-16 term in a hex string is a failure")
     @Test
     public void utf16HexString() throws Exception {
-        assertFound(" /TU <FEFF" + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">", "<< >>");
+        assertFound(" /X <FEFF" + hexOf(TERM.getBytes(StandardCharsets.UTF_16BE)) + ">", "<< >>");
     }
 
     @DisplayName("a term in compressed XFA data is a failure")
     @Test
     public void compressedXfa() throws Exception {
-        assertFound(" /RV 7 0 R", compressed("", "<xfa:data><name>" + TERM + "</name></xfa:data>"));
+        assertFound(" /X 7 0 R", compressed("", "<xfa:data><name>" + TERM + "</name></xfa:data>"));
     }
 
     @DisplayName("a term in a stream typed as an embedded file is a failure")
     @Test
     public void embeddedFileType() throws Exception {
-        assertFound(" /RV 7 0 R", compressed("/Type /EmbeddedFile", "<xfa:data><name>" + TERM + "</name></xfa:data>"));
+        assertFound(" /X 7 0 R", compressed("/Type /EmbeddedFile", "<xfa:data><name>" + TERM + "</name></xfa:data>"));
     }
 
     @DisplayName("a term in a stream of no known kind is a failure")
