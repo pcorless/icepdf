@@ -15,14 +15,21 @@
  */
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.Dictionary;
+import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.ObjectStream;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
 import org.icepdf.core.pobjects.Stream;
+import org.icepdf.core.pobjects.StringObject;
 import org.icepdf.core.pobjects.structure.CrossReference;
 import org.icepdf.core.pobjects.structure.CrossReferenceCompressedEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.search.SearchTerm;
+import org.icepdf.core.util.Library;
+import org.icepdf.core.util.Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +40,8 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Checks a redacted document and records what that established.
@@ -48,7 +57,9 @@ import java.util.logging.Logger;
  * <li><b>Searching the reopened document</b> proves the text is not <em>reachable</em>.</li>
  * <li><b>Scanning the bytes</b> proves it is not <em>present</em>. A string left in a content stream
  *     without its operator is never shown and never extracted, so a search reports it clean while it
- *     sits in the file for anyone who opens it in an editor.</li>
+ *     sits in the file for anyone who opens it in an editor. Filters and encryption hide things from
+ *     a scan of the file itself, so for a named term every object is read too: its strings decoded,
+ *     hex or not, and its stream decompressed unless the stream is binary.</li>
  * </ul>
  * What it cannot check is recorded too, as {@link UnverifiableRegion}s. A pass that folded "I could
  * not look here" into "I found nothing" would report a clean result for a document it never examined.
@@ -69,6 +80,17 @@ public class RedactionVerifier {
      * handful of them lands the document well below anything a reasonable threshold would pass.
      */
     private static final float PENALTY = 0.1f;
+
+    private static final Pattern HEX_STRING = Pattern.compile("<([0-9A-Fa-f\\s]+)>");
+    private static final Name TYPE_KEY = new Name("Type");
+    private static final Name SUBTYPE_KEY = new Name("Subtype");
+    private static final Set<Name> BINARY_TYPES = new HashSet<>(Arrays.asList(
+            new Name("XRef"), new Name("ObjStm"), new Name("CMap")));
+    private static final Set<Name> BINARY_SUBTYPES = new HashSet<>(Arrays.asList(
+            new Name("Image"), new Name("Type1C"), new Name("CIDFontType0C"), new Name("OpenType")));
+    // font programs, sampled functions, mesh shadings and ICC profiles, which have no /Type to go by
+    private static final List<Name> BINARY_KEYS = Arrays.asList(new Name("Length1"), new Name("FunctionType"),
+            new Name("ShadingType"), new Name("N"));
 
     private RedactionVerifier() {
     }
@@ -104,6 +126,7 @@ public class RedactionVerifier {
             String writtenText = allText(writtenBytes, regions);
             String writtenStreams = allStreams(writtenBytes, regions);
             String writtenObjectStreams = allObjectStreams(writtenBytes, regions);
+            Map<String, Integer> inObjects = countInObjects(writtenBytes, terms, regions);
             String originalText = textOf(original, regions);
             String originalStreams = null;
 
@@ -116,7 +139,8 @@ public class RedactionVerifier {
                 if (terms.contains(term)) {
                     // named: it should be gone from the whole document.
                     int raw = countInSyntax(writtenStreams, term) + countRawBytes(writtenBytes, term)
-                            + countRawBytes(writtenObjectStreams.getBytes(StandardCharsets.ISO_8859_1), term);
+                            + countRawBytes(writtenObjectStreams.getBytes(StandardCharsets.ISO_8859_1), term)
+                            + inObjects.getOrDefault(term, 0);
                     rawMatches += raw;
                     leaks += hits + raw;
                 } else {
@@ -262,6 +286,153 @@ public class RedactionVerifier {
         } finally {
             document.dispose();
         }
+    }
+
+    /**
+     * How often each term appears in the written document's objects, which the file's bytes can't
+     * say: a filter or encryption hides a stream, encryption hides a string outside an object
+     * stream, and a hex string is never in the term's own bytes. Page content is only read for its
+     * hex strings, as {@link #streamsOf} covers the rest. A string counted here may have been counted
+     * by the scan of the bytes as well: what matters is whether the count is zero.
+     */
+    private static Map<String, Integer> countInObjects(byte[] pdf, List<String> terms, List<UnverifiableRegion> regions)
+            throws Exception {
+        Map<String, Integer> counts = new HashMap<>();
+        if (terms.isEmpty()) {
+            return counts;
+        }
+        Document document = new Document();
+        document.setByteArray(pdf, 0, pdf.length, "verification");
+        try {
+            Library library = document.getCatalog().getLibrary();
+            Set<Reference> pageContent = new HashSet<>();
+            for (int i = 0, max = document.getNumberOfPages(); i < max; i++) {
+                try {
+                    Page page = document.getPageTree().getPage(i);
+                    page.init();
+                    for (Stream stream : page.getContentStreams()) {
+                        pageContent.add(stream.getPObjectReference());
+                    }
+                } catch (Exception e) {
+                    // textOf and streamsOf report this page; its content is simply looked at here too
+                    logger.log(Level.FINE, "Page could not be read while listing page content", e);
+                }
+            }
+            Set<Reference> visited = new HashSet<>();
+            for (CrossReference crossReference : library.getCrossReferenceRoot().getCrossReferences()) {
+                for (Reference reference : crossReference.getEntries().keySet()) {
+                    if (visited.add(reference)) {
+                        countInObject(library, reference, pageContent.contains(reference), terms, counts, regions);
+                    }
+                }
+            }
+        } finally {
+            document.dispose();
+        }
+        return counts;
+    }
+
+    private static void countInObject(Library library, Reference reference, boolean isPageContent, List<String> terms,
+                                      Map<String, Integer> counts, List<UnverifiableRegion> regions) {
+        try {
+            Object object = library.getObject(reference);
+            countInStrings(library, object, terms, counts, 0);
+            if (object instanceof Stream && !isBinary((Stream) object)) {
+                countInStream(((Stream) object).getDecodedStreamBytes(), isPageContent, terms, counts);
+            }
+        } catch (Exception e) {
+            regions.add(new UnverifiableRegion(UnverifiableRegion.Reason.STREAM_NOT_PARSED,
+                    "Object " + reference + " could not be read: " + e.getClass().getSimpleName()));
+        }
+    }
+
+    /** Strings nested directly in an object. References aren't followed: each object gets its own turn. */
+    private static void countInStrings(Library library, Object value, List<String> terms,
+                                       Map<String, Integer> counts, int depth) {
+        if (depth > 64) {
+            return;
+        }
+        if (value instanceof StringObject) {
+            String text = Utils.convertStringObject(library, (StringObject) value);
+            for (String term : terms) {
+                counts.merge(term, countIn(text, term), Integer::sum);
+            }
+        } else if (value instanceof Dictionary) {
+            countInStrings(library, ((Dictionary) value).getEntries(), terms, counts, depth + 1);
+        } else if (value instanceof DictionaryEntries) {
+            for (Object entry : ((DictionaryEntries) value).values()) {
+                countInStrings(library, entry, terms, counts, depth + 1);
+            }
+        } else if (value instanceof List) {
+            for (Object entry : (List<?>) value) {
+                countInStrings(library, entry, terms, counts, depth + 1);
+            }
+        }
+    }
+
+    /**
+     * A stream of bytes rather than of text: a short term can turn up in one by chance, and a font's
+     * own name in its character map is no leak. An {@code /EmbeddedFile} is read: a kept attachment
+     * holding the term is a leak, and XFA packets can be typed that way too.
+     */
+    private static boolean isBinary(Stream stream) {
+        if (stream instanceof ObjectStream) {
+            return true; // the objects in it get their own turn
+        }
+        DictionaryEntries entries = stream.getEntries();
+        if (BINARY_TYPES.contains(entries.get(TYPE_KEY)) || BINARY_SUBTYPES.contains(entries.get(SUBTYPE_KEY))) {
+            return true;
+        }
+        for (Name key : BINARY_KEYS) {
+            if (entries.containsKey(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A stream may hold text in any of these: a text stream is UTF-16, and XML is usually UTF-8.
+     *
+     * @param hexOnly only hex strings are counted: for page content, whose other text is already
+     *                searched, but where a hex string can hold alternate text no search decodes
+     */
+    private static void countInStream(byte[] bytes, boolean hexOnly, List<String> terms, Map<String, Integer> counts) {
+        if (bytes == null || bytes.length == 0) {
+            return;
+        }
+        String latin1 = new String(bytes, StandardCharsets.ISO_8859_1);
+        if (latin1.contains("begincmap")) {
+            return; // a /ToUnicode map has no /Type, and holds the font's name
+        }
+        String utf8 = new String(bytes, StandardCharsets.UTF_8);
+        String utf16 = new String(bytes, StandardCharsets.UTF_16BE);
+        StringBuilder hexStrings = new StringBuilder();
+        Matcher hex = HEX_STRING.matcher(latin1);
+        while (hex.find()) {
+            byte[] decoded = fromHex(hex.group(1));
+            hexStrings.append(new String(decoded, StandardCharsets.ISO_8859_1)).append('\n')
+                    .append(new String(decoded, StandardCharsets.UTF_16BE)).append('\n');
+            // real files have UTF-16 at an odd offset too, after a stray leading byte
+            if (decoded.length > 1) {
+                hexStrings.append(new String(decoded, 1, decoded.length - 1, StandardCharsets.UTF_16BE)).append('\n');
+            }
+        }
+        for (String term : terms) {
+            // the same characters read the same in several encodings, so the most of them, not the sum
+            int inText = hexOnly ? 0
+                    : Math.max(countInSyntax(latin1, term), Math.max(countIn(utf8, term), countIn(utf16, term)));
+            counts.merge(term, inText + countIn(hexStrings.toString(), term), Integer::sum);
+        }
+    }
+
+    private static byte[] fromHex(String hex) {
+        String digits = hex.replaceAll("\\s", "");
+        byte[] bytes = new byte[digits.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            bytes[i] = (byte) Integer.parseInt(digits.substring(2 * i, 2 * i + 2), 16);
+        }
+        return bytes;
     }
 
     private static String streamsOf(Document document, List<UnverifiableRegion> regions) {
