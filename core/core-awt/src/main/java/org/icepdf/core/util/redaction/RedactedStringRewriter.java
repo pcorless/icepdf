@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
+import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
 import org.icepdf.core.pobjects.actions.GoToAction;
@@ -62,6 +63,8 @@ public class RedactedStringRewriter {
     private final RedactionOptions options;
     private final RedactionReport report;
     private final TermMasker masker;
+    /** Whether a signature was removed from a field in this rewrite. */
+    private boolean signatureRemoved;
 
     /** A field's strings that decide what it shows, so a widget drawing them has to be redrawn. */
     private static final Name[] FIELD_VALUE_KEYS = {FieldDictionary.V_KEY, FieldDictionary.DV_KEY,
@@ -69,6 +72,7 @@ public class RedactedStringRewriter {
     /** A field's other strings, which aren't drawn. */
     private static final Name[] FIELD_NAME_KEYS = {FieldDictionary.T_KEY, FieldDictionary.TU_KEY,
             FieldDictionary.TM_KEY, Annotation.CONTENTS_KEY};
+    private static final Name PERMS_KEY = new Name("Perms");
     private static final Pattern HEX_STRING = Pattern.compile("<([0-9A-Fa-f\\s]+)>");
 
     private static final Name STRUCT_TREE_ROOT_KEY = new Name("StructTreeRoot");
@@ -258,8 +262,20 @@ public class RedactedStringRewriter {
             return;
         }
         Library library = document.getCatalog().getLibrary();
+        signatureRemoved = false;
         for (Object field : form.getFields()) {
             rewriteField(field, library, false);
+        }
+        if (signatureRemoved) {
+            // some signing tools also list the appearance in the form's resources
+            Catalog catalog = document.getCatalog();
+            Object held = catalog.getEntries().get(Catalog.ACRO_FORM_KEY);
+            if (held instanceof Reference) {
+                removeFormsDrawingTerm(form.getEntries(), form, (Reference) held, library);
+            } else {
+                // an AcroForm written inline is part of the catalog
+                removeFormsDrawingTerm(form.getEntries(), catalog, catalog.getPObjectReference(), library);
+            }
         }
     }
 
@@ -305,14 +321,14 @@ public class RedactedStringRewriter {
                             "the change could not be recorded");
             return false;
         }
+        if (FieldDictionaryFactory.TYPE_SIGNATURE.equals(field.getFieldType())) {
+            return removeSignature(field, widget, library, reference, inheritedValueMasked);
+        }
         boolean rewritten = false;
         for (Name key : FIELD_VALUE_KEYS) {
             rewritten |= maskFieldEntry(field, key, library, reference);
         }
-        boolean nameRewritten = false;
-        for (Name key : FIELD_NAME_KEYS) {
-            nameRewritten |= maskFieldEntry(field, key, library, reference);
-        }
+        boolean nameRewritten = maskFieldNames(field, library, reference);
         if (rewritten || nameRewritten) {
             report.recordStringRewritten(RedactionTarget.FORM_VALUES);
         }
@@ -338,6 +354,212 @@ public class RedactedStringRewriter {
             }
         }
         return rewritten;
+    }
+
+    private boolean maskFieldNames(FieldDictionary field, Library library, Reference reference) {
+        boolean rewritten = false;
+        for (Name key : FIELD_NAME_KEYS) {
+            rewritten |= maskFieldEntry(field, key, library, reference);
+        }
+        return rewritten;
+    }
+
+    /**
+     * A signature field's value is a signature dictionary: the signer's name, location, reason and
+     * contact details, and the signature itself, whose certificates name the signer again. The
+     * certificates can't be masked, and a masked name would no longer match them. So a signature that
+     * holds a term, or whose appearance draws one, is removed from the field, and its appearance with
+     * it. The document's rewrite has already broken the signature, as it covers the bytes of the file
+     * as signed. What goes is the record that it was signed, and the report says so.
+     *
+     * @return true when the field's signature was removed, which a widget without a value of its own
+     * inherits
+     */
+    private boolean removeSignature(FieldDictionary field, AbstractWidgetAnnotation<?> widget, Library library,
+                                    Reference reference, boolean inheritedRemoved) {
+        boolean nameRewritten = maskFieldNames(field, library, reference);
+        Object value = field.getEntries().get(FieldDictionary.V_KEY);
+        Object signature = value instanceof Reference ? library.getObject((Reference) value) : value;
+        DictionaryEntries signatureEntries = signature instanceof Dictionary ? ((Dictionary) signature).getEntries()
+                : signature instanceof DictionaryEntries ? (DictionaryEntries) signature : null;
+        boolean drawsTerm = widget != null && appearanceDrawsTerm(field.getEntries(), library);
+        boolean removed = false;
+        if (signatureEntries != null && (drawsTerm || holdsTerm(signatureEntries, library, 0))) {
+            field.getEntries().remove(FieldDictionary.V_KEY);
+            if (value instanceof Reference) {
+                removePermissions((Reference) value, library);
+            }
+            library.getStateManager().addChange(new PObject(field, reference));
+            report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed the signature from signature field "
+                    + reference + ": its signer details or appearance held a redacted term, and a signature "
+                    + "can't be masked. The document is no longer signed by it");
+            removed = true;
+        }
+        boolean appearanceRemoved = false;
+        if (widget != null && (removed || drawsTerm || (inheritedRemoved && !field.hasFieldValue()))) {
+            // some signing tools also list the appearance in the widget's resources
+            removeFormsDrawingTerm(field.getEntries(), field, reference, library);
+            if (field.getEntries().remove(Annotation.APPEARANCE_STREAM_KEY) != null) {
+                library.getStateManager().addChange(new PObject(field, reference));
+                appearanceRemoved = true;
+                if (!removed && !inheritedRemoved) {
+                    report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed the appearance of signature "
+                            + "field " + reference + ": it drew a redacted term");
+                }
+            }
+        }
+        signatureRemoved |= removed || appearanceRemoved;
+        if (removed || appearanceRemoved || nameRewritten) {
+            report.recordStringRewritten(RedactionTarget.FORM_VALUES);
+        }
+        return removed;
+    }
+
+    /**
+     * Whether a string in a signature dictionary, or in a dictionary or array written inline in it,
+     * holds a term. Each string is read as text and as its bytes, as the signature in
+     * {@code /Contents} is binary, with the signer's name in its certificates.
+     */
+    private boolean holdsTerm(Object value, Library library, int depth) {
+        if (depth > 8) {
+            return false;
+        }
+        if (value instanceof StringObject) {
+            StringObject string = (StringObject) value;
+            byte[] decrypted = string.getDecryptedRawBytes(library.getSecurityManager());
+            byte[] raw = string.getRawBytes();
+            return masker.matches(TermMasker.decodeString(library, string))
+                    || (decrypted != null && masker.matches(new String(decrypted, StandardCharsets.ISO_8859_1)))
+                    // a signature's /Contents is never encrypted
+                    || (raw != null && masker.matches(new String(raw, StandardCharsets.ISO_8859_1)));
+        }
+        if (value instanceof Dictionary) {
+            value = ((Dictionary) value).getEntries();
+        }
+        if (value instanceof DictionaryEntries) {
+            for (Object entry : ((DictionaryEntries) value).values()) {
+                if (holdsTerm(entry, library, depth + 1)) {
+                    return true;
+                }
+            }
+        } else if (value instanceof List) {
+            for (Object element : (List<?>) value) {
+                if (holdsTerm(element, library, depth + 1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether any of a widget's appearances draws a term, including in the forms they draw: a
+     * signature's appearance usually draws its text from a nested form, {@code /n2}.
+     */
+    private boolean appearanceDrawsTerm(DictionaryEntries widget, Library library) {
+        Object appearances = library.getObject(widget, Annotation.APPEARANCE_STREAM_KEY);
+        if (!(appearances instanceof DictionaryEntries)) {
+            return false;
+        }
+        Set<Reference> visited = new HashSet<>();
+        for (Object appearance : ((DictionaryEntries) appearances).values()) {
+            Object resolved = appearance instanceof Reference ? library.getObject((Reference) appearance) : appearance;
+            if (resolved instanceof DictionaryEntries) {
+                // one appearance per state
+                for (Object state : ((DictionaryEntries) resolved).values()) {
+                    if (formDrawsTerm(state, library, visited, 0)) {
+                        return true;
+                    }
+                }
+            } else if (formDrawsTerm(appearance, library, visited, 0)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean formDrawsTerm(Object form, Library library, Set<Reference> visited, int depth) {
+        if (depth > 8 || (form instanceof Reference && !visited.add((Reference) form))) {
+            return false;
+        }
+        Object resolved = form instanceof Reference ? library.getObject((Reference) form) : form;
+        if (!(resolved instanceof Form)) {
+            return false;
+        }
+        if (streamHoldsTerm((Stream) resolved)) {
+            return true;
+        }
+        DictionaryEntries resources = entriesOf(library.getObject(((Form) resolved).getEntries(), Page.RESOURCES_KEY));
+        DictionaryEntries xObjects = resources != null
+                ? entriesOf(library.getObject(resources, Resources.XOBJECT_KEY)) : null;
+        if (xObjects != null) {
+            for (Object xObject : xObjects.values()) {
+                if (formDrawsTerm(xObject, library, visited, depth + 1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Removes the forms in a dictionary's {@code /DR} resources that draw a term.
+     *
+     * @param owner          the dictionary holding {@code /DR}
+     * @param ownerObject    the object it is written in, for registering the change
+     * @param ownerReference that object's reference
+     */
+    private void removeFormsDrawingTerm(DictionaryEntries owner, Object ownerObject, Reference ownerReference,
+                                        Library library) {
+        Object resourcesHeld = owner.get(InteractiveForm.DR_KEY);
+        Object resources = resourcesHeld instanceof Reference ? library.getObject((Reference) resourcesHeld) : resourcesHeld;
+        DictionaryEntries resourceEntries = resources instanceof Dictionary ? ((Dictionary) resources).getEntries()
+                : resources instanceof DictionaryEntries ? (DictionaryEntries) resources : null;
+        if (resourceEntries == null) {
+            return;
+        }
+        Object xObjectsHeld = resourceEntries.get(Resources.XOBJECT_KEY);
+        Object xObjects = xObjectsHeld instanceof Reference ? library.getObject((Reference) xObjectsHeld) : xObjectsHeld;
+        if (!(xObjects instanceof DictionaryEntries) || !((DictionaryEntries) xObjects).values()
+                .removeIf(xObject -> formDrawsTerm(xObject, library, new HashSet<>(), 0))) {
+            return;
+        }
+        // registered against the object the XObject dictionary is written in
+        if (xObjectsHeld instanceof Reference) {
+            library.getStateManager().addChange(new PObject(
+                    new Dictionary(library, (DictionaryEntries) xObjects), (Reference) xObjectsHeld));
+        } else if (resourcesHeld instanceof Reference) {
+            Object changed = resources instanceof Dictionary ? resources : new Dictionary(library, resourceEntries);
+            library.getStateManager().addChange(new PObject(changed, (Reference) resourcesHeld));
+        } else if (ownerReference != null) {
+            library.getStateManager().addChange(new PObject(ownerObject, ownerReference));
+        }
+    }
+
+    private static DictionaryEntries entriesOf(Object value) {
+        return value instanceof Dictionary ? ((Dictionary) value).getEntries()
+                : value instanceof DictionaryEntries ? (DictionaryEntries) value : null;
+    }
+
+    /**
+     * Drops the document's permission entries that name a removed signature, which would otherwise
+     * still carry it into the file.
+     */
+    private void removePermissions(Reference signature, Library library) {
+        Catalog catalog = document.getCatalog();
+        Object held = catalog.getEntries().get(PERMS_KEY);
+        Object perms = held instanceof Reference ? library.getObject((Reference) held) : held;
+        DictionaryEntries entries = perms instanceof Dictionary ? ((Dictionary) perms).getEntries()
+                : perms instanceof DictionaryEntries ? (DictionaryEntries) perms : null;
+        if (entries == null || !entries.values().removeIf(signature::equals)) {
+            return;
+        }
+        if (held instanceof Reference) {
+            Object changed = perms instanceof Dictionary ? perms : new Dictionary(library, entries);
+            library.getStateManager().addChange(new PObject(changed, (Reference) held));
+        } else {
+            library.getStateManager().addChange(new PObject(catalog, catalog.getPObjectReference()));
+        }
     }
 
     private boolean maskFieldEntry(FieldDictionary field, Name key, Library library,
