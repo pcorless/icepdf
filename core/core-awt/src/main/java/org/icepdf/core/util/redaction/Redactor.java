@@ -82,10 +82,15 @@ public class Redactor {
      * @return what was removed
      * @throws InterruptedException if page initialisation is interrupted
      * @throws IOException          if a content stream cannot be rewritten
+     * @throws RedactionRefusedException if a signature names a term, which can't be redacted
      */
     public static RedactionReport redact(Document document, RedactionRequest request)
             throws InterruptedException, IOException {
         RedactionRequest effective = request != null ? request : RedactionRequest.ofAnnotations();
+        // Before anything changes: a signature naming a term can't be redacted.
+        if (effective.hasTerms()) {
+            new RedactedStringRewriter(document, effective, new RedactionReport()).refuseSignaturesWithTerms();
+        }
         RedactionReport report = new RedactionReport();
         StateManager stateManager = document.getCatalog().getLibrary().getStateManager();
 

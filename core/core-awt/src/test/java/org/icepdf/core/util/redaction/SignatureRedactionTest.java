@@ -44,77 +44,54 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * GH-691: a signature that names a redacted term. The signer's name is in the signature dictionary,
  * in the certificates inside the signature, and usually drawn by the field's appearance. None of
- * that can be masked without the rest disagreeing, so the signature goes, with its appearance.
+ * that can be masked without the rest disagreeing, so the redaction is refused and nothing written.
  */
 public class SignatureRedactionTest {
 
     private static final String TERM = "bravo";
     private static final Reference FIELD = new Reference(6, 0);
-    private static final Reference SIGNATURE = new Reference(8, 0);
     private static final Name PERMS = new Name("Perms");
     private static final Name DOC_MDP = new Name("DocMDP");
 
-    @DisplayName("a signer's name in /Name: the signature and its appearance leave the file")
+    @DisplayName("a signer's name in /Name is refused")
     @Test
     public void signerName() throws Exception {
-        Saved saved = redact(fixture(signature("/Name (" + TERM + ")", "unrelated"), "Signed"));
-
-        saved.assertSignatureRemoved();
-        assertEquals(RedactionConfidence.VERIFIED_WITH_WARNINGS, saved.report.getConfidence(),
-                saved.report.toString());
+        assertRefused(fixture(signature("/Name (" + TERM + ")", "unrelated"), "Signed"), "Signature1");
     }
 
-    @DisplayName("a term only in the certificates inside the signature")
+    @DisplayName("a term only in the certificates inside the signature is refused")
     @Test
     public void certificate() throws Exception {
-        Saved saved = redact(fixture(signature("/Name (someone)", "CN=" + TERM), "Signed"));
-
-        saved.assertSignatureRemoved();
+        assertRefused(fixture(signature("/Name (someone)", "CN=" + TERM), "Signed"), "Signature1");
     }
 
-    @DisplayName("a term only in the appearance's nested form")
+    @DisplayName("a term only in the appearance's nested form is refused")
     @Test
     public void appearance() throws Exception {
-        Saved saved = redact(fixture(signature("/Name (someone)", "unrelated"), "Signed by " + TERM));
-
-        saved.assertSignatureRemoved();
+        assertRefused(fixture(signature("/Name (someone)", "unrelated"), "Signed by " + TERM), "Signature1");
     }
 
-    @DisplayName("a term in /Location")
+    @DisplayName("a term in /Location is refused")
     @Test
     public void location() throws Exception {
-        Saved saved = redact(fixture(signature("/Location (" + TERM + " town)", "unrelated"), "Signed"));
-
-        saved.assertSignatureRemoved();
+        assertRefused(fixture(signature("/Location (" + TERM + " town)", "unrelated"), "Signed"), "Signature1");
     }
 
-    @DisplayName("a value on a parent field, drawn by its widget")
+    @DisplayName("a signature on a parent field is refused")
     @Test
     public void parentField() throws Exception {
-        Saved saved = redact(parentFixture(signature("/Name (" + TERM + ")", "unrelated")));
-
-        assertFalse(saved.allText.contains(TERM), "the signature is still in the file");
-        Document document = open(saved.pdf);
-        try {
-            Library library = document.getCatalog().getLibrary();
-            assertFalse(entries(library, FIELD).containsKey(FieldDictionary.V_KEY));
-            assertFalse(entries(library, new Reference(11, 0)).containsKey(Annotation.APPEARANCE_STREAM_KEY));
-        } finally {
-            document.dispose();
-        }
+        assertRefused(parentFixture(signature("/Name (" + TERM + ")", "unrelated")), "Signature1");
     }
 
-    @DisplayName("the report counts it and says the document is no longer signed")
+    @DisplayName("a term in the field's own name is masked in the message")
     @Test
-    public void reportSaysSo() throws Exception {
-        Saved saved = redact(fixture(signature("/Name (" + TERM + ")", "unrelated"), "Signed"));
-
-        assertEquals(1, saved.report.getCountsByTarget().get(RedactionTarget.FORM_VALUES));
-        assertEquals(1, saved.report.getWarnings().size(), saved.report.getWarnings().toString());
-        assertTrue(saved.report.getWarnings().get(0).toString().contains("no longer signed"));
+    public void fieldNameMasked() throws Exception {
+        byte[] pdf = fixture(signature("/Name (" + TERM + ")", "unrelated"), "Signed");
+        String renamed = new String(pdf, StandardCharsets.ISO_8859_1).replace("/T (Signature1)", "/T (" + TERM + " sig1)");
+        assertRefused(renamed.getBytes(StandardCharsets.ISO_8859_1), "**** sig1");
     }
 
-    @DisplayName("a signature without a term stays, with its appearance")
+    @DisplayName("a signature without a term is left alone and the redaction goes ahead")
     @Test
     public void unrelatedSignatureStays() throws Exception {
         Saved saved = redact(fixture(signature("/Name (someone)", "unrelated"), "Signed"));
@@ -129,10 +106,10 @@ public class SignatureRedactionTest {
         } finally {
             document.dispose();
         }
-        assertEquals(Collections.emptyList(), saved.report.getWarnings());
+        assertEquals(RedactionConfidence.VERIFIED, saved.report.getConfidence(), saved.report.toString());
     }
 
-    @DisplayName("left out of scope, the signature stays and verification fails")
+    @DisplayName("with form values out of scope there's no refusal, and verification fails")
     @Test
     public void outOfScope() throws Exception {
         Saved saved = save(open(fixture(signature("/Name (" + TERM + ")", "unrelated"), "Signed")),
@@ -145,6 +122,23 @@ public class SignatureRedactionTest {
 
     // -- helpers ---------------------------------------------------------------------------------
 
+    private static void assertRefused(byte[] pdf, String fieldName) throws Exception {
+        Document document = open(pdf);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            Redactor.configure(document, RedactionRequest.ofTerms(terms()));
+            RedactionRefusedException refused = assertThrows(RedactionRefusedException.class,
+                    () -> document.writeToOutputStream(out, WriteMode.FULL_UPDATE));
+            assertEquals(fieldName, refused.getFieldName());
+            assertTrue(refused.getMessage().contains("'" + fieldName + "'"), refused.getMessage());
+            assertTrue(refused.getMessage().contains("signature"), refused.getMessage());
+            assertFalse(refused.getMessage().contains(TERM), "the message gives the term away");
+        } finally {
+            document.dispose();
+        }
+        assertEquals(0, out.size(), "nothing should be written");
+    }
+
     private static final class Saved {
         final byte[] pdf;
         final RedactionReport report;
@@ -155,23 +149,6 @@ public class SignatureRedactionTest {
             this.pdf = pdf;
             this.report = report;
             this.allText = allText;
-        }
-
-        void assertSignatureRemoved() throws Exception {
-            assertFalse(allText.contains(TERM), "the signature is still in the file");
-            Document document = open(pdf);
-            try {
-                Library library = document.getCatalog().getLibrary();
-                DictionaryEntries field = entries(library, FIELD);
-                assertFalse(field.containsKey(FieldDictionary.V_KEY), "the field is still signed");
-                assertFalse(field.containsKey(Annotation.APPEARANCE_STREAM_KEY), "the appearance is still there");
-                assertNull(library.getDictionary(document.getCatalog().getEntries(), PERMS).get(DOC_MDP),
-                        "the permissions still name the signature");
-                assertEquals("Signature1", library.getString(field, FieldDictionary.T_KEY), "the field stays");
-                assertEquals(1, document.getNumberOfPages());
-            } finally {
-                document.dispose();
-            }
         }
     }
 
@@ -191,11 +168,11 @@ public class SignatureRedactionTest {
         return document;
     }
 
-    private Saved redact(byte[] pdf) throws Exception {
+    private static Saved redact(byte[] pdf) throws Exception {
         return save(open(pdf), RedactionRequest.ofTerms(terms()));
     }
 
-    private Saved save(Document document, RedactionRequest request) throws Exception {
+    private static Saved save(Document document, RedactionRequest request) throws Exception {
         try {
             Redactor.configure(document, request);
             ByteArrayOutputStream out = new ByteArrayOutputStream();
