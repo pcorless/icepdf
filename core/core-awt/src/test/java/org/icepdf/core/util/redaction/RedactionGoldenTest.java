@@ -178,11 +178,11 @@ public class RedactionGoldenTest {
         assertFalse(remaining.contains("bravo"), "the targeted word must go");
         // What the neighbours look like afterwards is the measurement. Recorded as an assertion so
         // a change in the predicate shows up here rather than silently.
-        // Measured: the only collateral is a space glyph on the line above, whose bounds overlap
-        // the redaction region. No word on either neighbouring line is lost. Pinned exactly so a
-        // change of predicate shows up as a diff here rather than silently widening the blast
-        // radius.
-        assertEquals("above line  text | middle   word | below line text",
+        // Measured: no word or space on either neighbouring line is lost, and the middle line keeps
+        // the spaces either side of the removed word. Pinned exactly so a change of predicate shows
+        // up as a diff here rather than silently widening the blast radius. (The doubled spaces
+        // pinned here before were the line breaks' extraction spaces, misplaced: GH-676.)
+        assertEquals("above line text | middle  word | below line text",
                 remaining.trim().replace("\n", " | "),
                 "intersection flagging reached further than the measured baseline");
     }
