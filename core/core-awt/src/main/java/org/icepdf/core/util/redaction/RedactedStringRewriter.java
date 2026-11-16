@@ -21,9 +21,12 @@ import org.icepdf.core.pobjects.acroform.ChoiceFieldDictionary;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
+import org.icepdf.core.pobjects.actions.Action;
 import org.icepdf.core.pobjects.actions.GoToAction;
+import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
+import org.icepdf.core.pobjects.structure.CrossReference;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.Utils;
 
@@ -99,6 +102,9 @@ public class RedactedStringRewriter {
         }
         if (options.redacts(RedactionTarget.DESTINATIONS)) {
             rewriteDestinations();
+        }
+        if (options.redacts(RedactionTarget.LINKS)) {
+            rewriteLinks();
         }
         if (options.redacts(RedactionTarget.TAGGED_TEXT)) {
             rewriteTaggedText();
@@ -618,6 +624,68 @@ public class RedactedStringRewriter {
             return null;
         }
         return renames.get(destination.getNamedDestination());
+    }
+
+    /**
+     * The addresses URI actions open.
+     * <p>
+     * A link's address often repeats what it is about: a person's page, a {@code mailto:} address, a
+     * search for a name. The action can sit on a link, in a link's {@code /PA}, in an annotation's or
+     * a field's additional actions, on a bookmark, in the document's open action or in a chain of
+     * {@code /Next} actions, so every object in the file is looked at rather than each of those
+     * places. A masked address no longer goes where it did.
+     */
+    private void rewriteLinks() {
+        Library library = document.getCatalog().getLibrary();
+        Set<Reference> visited = new HashSet<>();
+        for (CrossReference crossReference : library.getCrossReferenceRoot().getCrossReferences()) {
+            for (Reference reference : crossReference.getEntries().keySet()) {
+                if (!visited.add(reference)) {
+                    continue;
+                }
+                Object object = library.getObject(reference);
+                DictionaryEntries entries = object instanceof Dictionary ? ((Dictionary) object).getEntries()
+                        : object instanceof DictionaryEntries ? (DictionaryEntries) object : null;
+                if (entries != null && maskUris(entries, reference, library)) {
+                    Object changed = object instanceof Dictionary ? object : new Dictionary(library, entries);
+                    library.getStateManager().addChange(new PObject(changed, reference));
+                }
+            }
+        }
+    }
+
+    /**
+     * Masks the URI actions in a value and the dictionaries and arrays written inline in it. A
+     * reference is an object of its own, which {@link #rewriteLinks()} reaches anyway.
+     *
+     * @param owner the object the value is written in, which a masked string is encrypted for
+     * @return true when something was masked
+     */
+    private boolean maskUris(Object value, Reference owner, Library library) {
+        boolean masked = false;
+        if (value instanceof DictionaryEntries) {
+            DictionaryEntries entries = (DictionaryEntries) value;
+            if (Action.ACTION_TYPE_URI.equals(entries.get(Action.ACTION_TYPE_KEY))
+                    && entries.get(URIAction.URI_KEY) instanceof StringObject) {
+                String uri = TermMasker.decodeString(library, (StringObject) entries.get(URIAction.URI_KEY));
+                String maskedUri = masker.mask(uri);
+                if (!maskedUri.equals(uri)) {
+                    entries.put(URIAction.URI_KEY, new LiteralStringObject(maskedUri, owner));
+                    report.recordStringRewritten(RedactionTarget.LINKS);
+                    masked = true;
+                }
+            }
+            for (Object entry : entries.values()) {
+                masked |= maskUris(entry, owner, library);
+            }
+        } else if (value instanceof Dictionary) {
+            masked = maskUris(((Dictionary) value).getEntries(), owner, library);
+        } else if (value instanceof List) {
+            for (Object element : (List<?>) value) {
+                masked |= maskUris(element, owner, library);
+            }
+        }
+        return masked;
     }
 
     /**

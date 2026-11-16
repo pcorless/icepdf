@@ -87,6 +87,12 @@ public enum RedactionTarget {
     DESTINATIONS,
 
     /**
+     * The address a URI action opens, on a link, a bookmark, an additional action or the document's
+     * open action. A masked address no longer goes where it did.
+     */
+    LINKS,
+
+    /**
      * Document information dictionary and XMP metadata, which routinely echo document content.
      */
     METADATA,
