@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Document;
 import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.Names;
 import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
 import org.icepdf.core.pobjects.Reference;
@@ -59,6 +60,9 @@ public class Redactor {
     private static final Name PIECE_INFO_KEY = new Name("PieceInfo");
     private static final Name XFA_KEY = new Name("XFA");
     private static final Name NEEDS_RENDERING_KEY = new Name("NeedsRendering");
+    private static final Name SPIDER_INFO_KEY = new Name("SpiderInfo");
+    private static final Name NAMES_KEY = new Name("Names");
+    private static final Name URLS_KEY = new Name("URLS");
 
     /**
      * States how the next write should redact this document. Optional - without it the write uses
@@ -104,6 +108,7 @@ public class Redactor {
         if (effective.getOptions().redacts(RedactionTarget.APPLICATION_DATA)) {
             removeApplicationData(document, stateManager, report);
             removeXfa(document, stateManager, report);
+            removeWebCapture(document, stateManager, report);
         }
         return report;
     }
@@ -171,6 +176,43 @@ public class Redactor {
         report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed XFA form data: it can hold a copy of the "
                 + "form's contents and cannot be redacted. The AcroForm fields remain, and usage rights or "
                 + "signatures may no longer be valid");
+    }
+
+    /**
+     * Removes Web Capture data: {@code /SpiderInfo} on the catalog, and the {@code /IDS} and
+     * {@code /URLS} name trees. They record where each page was captured from, with its address and
+     * title, and a page's title usually repeats its heading. A reader doesn't need them to show the
+     * pages. The writer follows references, so what only these entries pointed at leaves the file.
+     */
+    private static void removeWebCapture(Document document, StateManager stateManager, RedactionReport report) {
+        Catalog catalog = document.getCatalog();
+        Library library = catalog.getLibrary();
+        boolean catalogChanged = catalog.getEntries().remove(SPIDER_INFO_KEY) != null;
+        boolean removed = catalogChanged;
+        Object held = catalog.getEntries().get(NAMES_KEY);
+        Object names = held instanceof Reference ? library.getObject((Reference) held) : held;
+        DictionaryEntries entries = names instanceof Dictionary ? ((Dictionary) names).getEntries()
+                : names instanceof DictionaryEntries ? (DictionaryEntries) names : null;
+        if (entries != null) {
+            boolean fromNames = entries.remove(Names.IDS_KEY) != null;
+            fromNames |= entries.remove(URLS_KEY) != null;
+            if (fromNames && held instanceof Reference) {
+                Object changed = names instanceof Dictionary ? names : new Dictionary(library, entries);
+                stateManager.addChange(new PObject(changed, (Reference) held));
+            } else if (fromNames) {
+                // a name dictionary written inline is part of the catalog
+                catalogChanged = true;
+            }
+            removed |= fromNames;
+        }
+        if (catalogChanged) {
+            stateManager.addChange(new PObject(catalog, catalog.getPObjectReference()));
+        }
+        if (removed) {
+            report.recordStringRewritten(RedactionTarget.APPLICATION_DATA);
+            report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT, "Removed Web Capture data: it records the "
+                    + "address and title of each captured page, which can repeat what was redacted");
+        }
     }
 
     private static void burnAnnotations(Document document, RedactionRequest request,
