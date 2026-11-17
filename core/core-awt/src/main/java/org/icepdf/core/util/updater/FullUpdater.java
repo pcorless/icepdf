@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.acroform.signature.DocumentSigner;
 import org.icepdf.core.pobjects.graphics.images.references.ImageReference;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.CrossReferenceStream;
 import org.icepdf.core.util.Defs;
 import org.icepdf.core.util.Library;
 import org.icepdf.core.util.SignatureManager;
@@ -264,6 +265,13 @@ public class FullUpdater {
                 return;
             }
             Object objectReferenceValue = pobject.getObject();
+            if (isFileStructure(objectReferenceValue)) {
+                // The writer builds its own cross-reference and object streams, so the old ones are
+                // never copied. A dictionary that points at one is malformed, and reads it as no value.
+                // Writing null keeps it that way, and keeps the number from going to a new object.
+                writer.writePObject(new PObject(null, objectReference));
+                return;
+            }
 
             StateManager.Change change = stateManager.getChange(objectReference);
             if (change != null) {
@@ -282,6 +290,15 @@ public class FullUpdater {
             object = objectReferenceValue;
         }
         writeInlinePrimitive(writer, name, object);
+    }
+
+    /**
+     * A cross-reference stream or an object stream, which is how the file was stored rather than part
+     * of the document. Copying an old object stream would also copy the old versions of the objects
+     * in it.
+     */
+    private static boolean isFileStructure(Object value) {
+        return value instanceof CrossReferenceStream || value instanceof ObjectStream;
     }
 
     private void writeInlinePrimitive(BaseWriter writer, Name name, Object value) throws IOException {
