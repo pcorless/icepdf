@@ -99,10 +99,11 @@ public class LineText extends AbstractText implements TextSelect {
         // we just a new work sorting later will add the line breaks
         else if (getCurrentWord().detectNewLine(sprite)) {
             // add the break
-            WordText spaceWord = currentWord.buildSpaceWord(sprite, false);
-            spaceWord.setWhiteSpace(true);
-            // add space word,
-            addWord(spaceWord);
+            WordText spaceWord = currentWord.buildLineBreakSpace(sprite);
+            if (spaceWord != null) {
+                spaceWord.setWhiteSpace(true);
+                addWord(spaceWord);
+            }
             // ready a new word
             currentWord = null;
             // add as a new word, nothing special otherwise

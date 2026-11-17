@@ -233,6 +233,34 @@ public class WordText extends AbstractText implements TextSelect {
         return c >= 48 && c <= 57;
     }
 
+    /**
+     * The space, if any, between this word's last glyph and a glyph that starts a new line.
+     * <p>
+     * When the glyph goes back to the start of a line, none: the line break separates them. Placed by
+     * the gap between the two, as {@link #buildSpaceWord} does, the space fell back inside the line
+     * that ended, and once its words were sorted it doubled a space or split a word (GH-676). When the
+     * glyph carries on along the line, as a superscript or a cell on another baseline does, the
+     * space goes directly after the last glyph.
+     *
+     * @param sprite first glyph after the line break
+     * @return a word holding one space, or null when the glyph starts a new line
+     */
+    protected WordText buildLineBreakSpace(GlyphText sprite) {
+        if (detectVerticalText && currentGlyph.isVerticalWriting()) {
+            return buildSpaceWord(sprite, false);
+        }
+        Rectangle2D.Double previous = currentGlyph.getTextExtractionBounds();
+        Rectangle2D.Double next = sprite.getTextExtractionBounds();
+        boolean backwards = currentGlyph.getWriteDirection().getX() < 0;
+        if (backwards ? next.x >= previous.x : next.x <= previous.x) {
+            return null;
+        }
+        double width = Math.max(previous.width, next.width) / 2f;
+        double x = backwards ? previous.x - width : previous.x + previous.width;
+        WordText whiteSpace = new WordText(this.pageRotation);
+        return autoSpaceCalculation(x, new Rectangle2D.Double(x, previous.y, width, previous.height), whiteSpace);
+    }
+
     protected WordText buildSpaceWord(GlyphText sprite, boolean autoSpaceInsertion) {
 
         // because we are in a normalized user space we can work with ints
