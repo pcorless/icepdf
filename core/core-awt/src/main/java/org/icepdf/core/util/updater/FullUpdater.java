@@ -136,16 +136,23 @@ public class FullUpdater {
                     ? document.getRedactionRequest() : RedactionRequest.ofAnnotations();
             Document tmpDocument = new Document();
             tmpRedactionOutputStream = new FileOutputStream(tmpRedactionFilePath.toFile());
+            boolean redacted = false;
             try {
                 tmpDocument.setFile(tmpFilePath.toString());
                 bytesWritten = writeDocument(tmpDocument, tmpRedactionOutputStream, true);
                 document.setRedactionReport(redactionReport);
+                redacted = true;
             } catch (PDFSecurityException e) {
                 throw new RuntimeException(e);
             } finally {
                 // clean up
                 tmpDocument.dispose();
                 tmpRedactionOutputStream.close();
+                if (!redacted) {
+                    // a refused or failed redaction leaves no unredacted copy behind
+                    Files.deleteIfExists(tmpFilePath);
+                    Files.deleteIfExists(tmpRedactionFilePath);
+                }
             }
         }
         Path currentPath;
@@ -206,7 +213,13 @@ public class FullUpdater {
         if (redact) {
             // The document being burned here is a reopened copy, so the caller's request has to be
             // handed across; the report goes back the same way once the burn is done.
-            redactionReport = Redactor.redact(document, redactionRequest);
+            try {
+                redactionReport = Redactor.redact(document, redactionRequest);
+            } catch (IOException | RuntimeException e) {
+                ImageReference.useProxy = useImagePoxy;
+                output.close();
+                throw e;
+            }
         }
 
         // A cross-reference stream is never encrypted, nor are the strings of its dictionary, so an
