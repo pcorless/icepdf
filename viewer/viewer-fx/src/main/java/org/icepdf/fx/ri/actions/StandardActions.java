@@ -27,6 +27,8 @@ import org.icepdf.fx.ri.actions.document.PrintAction;
 import org.icepdf.fx.ri.actions.document.PropertiesAction;
 import org.icepdf.fx.ri.actions.document.SaveAction;
 import org.icepdf.fx.ri.actions.document.ExportRedactedAction;
+import org.icepdf.fx.ri.actions.document.RemoveWatermarksAction;
+import org.icepdf.fx.ri.actions.document.WatermarkAction;
 import org.icepdf.fx.ri.actions.document.SaveAsAction;
 import org.icepdf.fx.ri.actions.edit.CopyAction;
 import org.icepdf.fx.ri.actions.edit.DeleteAnnotationAction;
@@ -58,7 +60,7 @@ public final class StandardActions {
     public static ActionRegistry registry() {
         ActionRegistry registry = new ActionRegistry();
         // document
-        registry.register(new OpenAction()).register(new OpenInNewTabAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction()).register(new ExportRedactedAction())
+        registry.register(new OpenAction()).register(new OpenInNewTabAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction()).register(new ExportRedactedAction()).register(new WatermarkAction()).register(new RemoveWatermarksAction())
                 .register(new PrintAction()).register(new PropertiesAction()).register(new CloseAction());
         // application
         registry.register(new NewWindowAction()).register(new PreferencesAction()).register(new AboutAction())

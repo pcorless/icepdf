@@ -27,6 +27,9 @@ import javafx.stage.Window;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.annotations.WatermarkAnnotation;
+import org.icepdf.core.util.watermark.Watermark;
+import org.icepdf.core.util.watermark.Watermarks;
 import org.icepdf.core.util.redaction.RedactionReport;
 import org.icepdf.core.util.updater.WriteMode;
 import org.icepdf.fx.view.PdfView;
@@ -39,6 +42,7 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
@@ -471,6 +475,60 @@ public final class DocumentSession {
                 }
             }
         }
+    }
+
+    /**
+     * Puts the watermark on every page, replacing any a page already has, and redraws the pages.
+     * Like any annotation edit it is saved with the document; an incremental save keeps the earlier
+     * revision, without the watermark, in the file.
+     *
+     * @return the number of pages watermarked; 0 when nothing is open or the session is busy
+     */
+    public int applyWatermark(Watermark watermark) {
+        if (document == null || reportBusy()) return 0;
+        view.commitFieldEdit();
+        try {
+            int pages = Watermarks.apply(document, watermark);
+            watermarksChanged();
+            return pages;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return 0;
+        }
+    }
+
+    /**
+     * Takes every watermark annotation off the document, and redraws the pages.
+     *
+     * @return the number removed
+     */
+    public int removeWatermarks() {
+        if (document == null || reportBusy()) return 0;
+        try {
+            int removed = Watermarks.remove(document);
+            if (removed > 0) watermarksChanged();
+            return removed;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return 0;
+        }
+    }
+
+    /** The text of the document's first watermark, or null when it has none: what the dialog starts from. */
+    public String currentWatermarkText() {
+        if (document == null) return null;
+        try {
+            List<WatermarkAnnotation> found = Watermarks.find(document);
+            return found.isEmpty() ? null : found.get(0).getText();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
+    }
+
+    private void watermarksChanged() {
+        view.refreshContent();
+        view.refreshModified();
     }
 
     /** True when the open document has redactions marked but not yet burned in. */

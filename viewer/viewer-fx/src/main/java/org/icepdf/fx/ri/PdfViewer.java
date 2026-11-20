@@ -44,6 +44,7 @@ import org.icepdf.fx.ri.actions.ViewerContext;
 import org.icepdf.fx.ri.document.DocumentPane;
 import org.icepdf.fx.ri.document.DocumentSession;
 import org.icepdf.fx.ri.document.SignatureFlow;
+import org.icepdf.fx.watermark.WatermarkDialog;
 import org.icepdf.fx.ri.icons.IconProvider;
 import org.icepdf.fx.ri.icons.SvgIcons;
 import org.icepdf.fx.ri.ui.*;
@@ -70,7 +71,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.print", null, "document.properties", "view.annotation-board", null,
+            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.watermark", "document.remove-watermarks", "document.print", null, "document.properties", "view.annotation-board", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -763,6 +764,44 @@ public class PdfViewer extends StackPane {
         });
     }
 
+    /**
+     * Asks for a watermark (starting from the document's current one) and puts it on every page. Saved
+     * with the document like any other edit.
+     */
+    public void watermark() {
+        DocumentPane pane = pane();
+        DocumentSession session = pane.getSession();
+        if (session.getDocument() == null || session.reportBusy()) return;
+        double[] shown = shownPageSize(session);
+        WatermarkDialog dialog = new WatermarkDialog(context.window(), shown[0], shown[1], session.currentWatermarkText());
+        dialog.showAndWait().ifPresent(watermark -> {
+            int pages = session.applyWatermark(watermark);
+            if (pages > 0) showMessage(Messages.format("viewer.watermarked", pages));
+        });
+    }
+
+    /** Takes the watermark off every page. */
+    public void removeWatermarks() {
+        DocumentSession session = pane().getSession();
+        if (session.getDocument() == null || session.reportBusy()) return;
+        int removed = session.removeWatermarks();
+        showMessage(removed > 0 ? Messages.format("viewer.watermarksRemoved", removed) : Messages.get("viewer.noWatermarks"));
+    }
+
+    /** The current page's width and height as shown (its own rotation applied), in points. */
+    private static double[] shownPageSize(DocumentSession session) {
+        try {
+            org.icepdf.core.pobjects.Page page = session.getDocument().getPageTree()
+                    .getPage(Math.max(0, session.getView().getCurrentPageIndex()));
+            page.init();
+            org.icepdf.core.pobjects.PDimension size = page.getSize(0f);
+            return new double[]{size.getWidth(), size.getHeight()};
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return new double[]{612, 792};
+        }
+    }
+
     private void showRedactionReport(String name, org.icepdf.core.util.redaction.RedactionReport report) {
         StringBuilder text = new StringBuilder();
         text.append(Messages.format("viewer.report.textRemoved", report.getGlyphsRemoved())).append('\n');
@@ -1449,6 +1488,16 @@ public class PdfViewer extends StackPane {
         @Override
         public void exportRedacted() {
             PdfViewer.this.exportRedacted();
+        }
+
+        @Override
+        public void watermark() {
+            PdfViewer.this.watermark();
+        }
+
+        @Override
+        public void removeWatermarks() {
+            PdfViewer.this.removeWatermarks();
         }
 
         @Override

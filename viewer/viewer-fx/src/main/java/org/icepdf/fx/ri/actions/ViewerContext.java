@@ -33,7 +33,7 @@ public interface ViewerContext {
 
     /** Application-level operations a host may offer. */
     enum Capability {
-        OPEN, SAVE, EXPORT_REDACTED, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER,
+        OPEN, SAVE, EXPORT_REDACTED, WATERMARK, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER,
         ANNOTATION_BOARD, OPEN_LINK
     }
 
@@ -88,6 +88,16 @@ public interface ViewerContext {
     /** Writes a copy with the redactions burned in. */
     default void exportRedacted() {
         throw new UnsupportedOperationException("export redacted");
+    }
+
+    /** Asks for a watermark and puts it on every page. */
+    default void watermark() {
+        throw new UnsupportedOperationException("watermark");
+    }
+
+    /** Takes the watermark off every page. */
+    default void removeWatermarks() {
+        throw new UnsupportedOperationException("remove watermarks");
     }
 
     /** Closes the document (asking about unsaved changes). */
