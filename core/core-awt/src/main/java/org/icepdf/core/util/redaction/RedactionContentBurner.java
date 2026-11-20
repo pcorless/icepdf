@@ -16,10 +16,16 @@
 
 package org.icepdf.core.util.redaction;
 
+import org.icepdf.core.pobjects.Dictionary;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Form;
+import org.icepdf.core.pobjects.Name;
+import org.icepdf.core.pobjects.PObject;
 import org.icepdf.core.pobjects.Page;
+import org.icepdf.core.pobjects.PageTree;
 import org.icepdf.core.pobjects.Reference;
+import org.icepdf.core.pobjects.StateManager;
+import org.icepdf.core.pobjects.Stream;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.Appearance;
 import org.icepdf.core.pobjects.annotations.AppearanceState;
@@ -31,6 +37,7 @@ import java.awt.geom.GeneralPath;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -160,6 +167,12 @@ public class RedactionContentBurner {
                             + "its appearance is not a form and was not redacted");
             return;
         }
+        // An appearance can be one stream drawn by many annotations - a watermark shared by every page
+        // of a size. Burning it in place would punch this redaction's hole into every one of them.
+        if (form.getPObjectReference() != null
+                && drawnByAnotherAnnotation(page.getLibrary(), form.getPObjectReference(), annotation)) {
+            form = ownCopy(page.getLibrary(), annotation, form);
+        }
         // Glyphs inside an appearance arrive in its own coordinates, so the callback needs the way
         // out to page space to know which of them a redaction covers.
         ContentStreamRedactorCallback callback = new ContentStreamRedactorCallback(
@@ -167,6 +180,87 @@ public class RedactionContentBurner {
                 annotation.getAppearanceToPageSpace(appearanceState), masker);
         form.init(callback);
         callback.endContentStream();
+    }
+
+    /**
+     * Whether any annotation other than {@code self}, on any page, draws the given appearance stream.
+     * Read from the raw dictionaries, so pages need not be initialised.
+     */
+    static boolean drawnByAnotherAnnotation(Library library, Reference appearance, Annotation self) {
+        PageTree pages = library.getCatalog().getPageTree();
+        for (int i = 0; i < pages.getNumberOfPages(); i++) {
+            Page page = pages.getPage(i);
+            List<?> annots = library.getArray(page.getEntries(), Page.ANNOTS_KEY);
+            if (annots == null) {
+                continue;
+            }
+            for (Object entry : annots) {
+                if (entry instanceof Reference && entry.equals(self.getPObjectReference())) {
+                    continue;
+                }
+                Object annot = entry instanceof Reference ? library.getObject((Reference) entry) : entry;
+                DictionaryEntries entries = annot instanceof Dictionary ? ((Dictionary) annot).getEntries()
+                        : annot instanceof DictionaryEntries ? (DictionaryEntries) annot : null;
+                if (entries != null && entries != self.getEntries() && drawsAppearance(library, entries, appearance)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean drawsAppearance(Library library, DictionaryEntries annotation, Reference appearance) {
+        Object ap = library.getObject(annotation, Annotation.APPEARANCE_STREAM_KEY);
+        if (!(ap instanceof DictionaryEntries)) {
+            return false;
+        }
+        for (Object state : ((DictionaryEntries) ap).values()) {
+            if (appearance.equals(state)) {
+                return true;
+            }
+            // an appearance with on/off states keeps a dictionary of streams under each key
+            if (state instanceof Reference) {
+                state = library.getObject((Reference) state);
+            }
+            if (state instanceof DictionaryEntries && ((DictionaryEntries) state).containsValue(appearance)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Gives the annotation a copy of its normal appearance to burn, leaving the shared original as
+     * it was for the annotations that still draw it.
+     */
+    private static Form ownCopy(Library library, Annotation annotation, Form shared) {
+        StateManager stateManager = library.getStateManager();
+        byte[] content = shared.getDecodedStreamBytes();
+        DictionaryEntries entries = new DictionaryEntries();
+        for (Map.Entry<Name, Object> e : shared.getEntries().entrySet()) {
+            Name key = e.getKey();
+            // the copy is written decoded; the writer compresses it again
+            if (!Stream.FILTER_KEY.equals(key) && !Stream.DECODEPARAM_KEY.equals(key)
+                    && !Dictionary.LENGTH_KEY.equals(key)) {
+                entries.put(key, e.getValue());
+            }
+        }
+        Reference reference = stateManager.getNewReferenceNumber();
+        Form copy = new Form(library, entries, content);
+        copy.setPObjectReference(reference);
+        copy.setRawBytes(content);
+        library.addObject(copy, reference);
+        stateManager.addChange(new PObject(copy, reference));
+
+        DictionaryEntries appearances = new DictionaryEntries();
+        Object ap = library.getObject(annotation.getEntries(), Annotation.APPEARANCE_STREAM_KEY);
+        if (ap instanceof DictionaryEntries) {
+            appearances.putAll((DictionaryEntries) ap);
+        }
+        appearances.put(Annotation.APPEARANCE_STREAM_NORMAL_KEY, reference);
+        annotation.getEntries().put(Annotation.APPEARANCE_STREAM_KEY, appearances);
+        stateManager.addChange(new PObject(annotation, annotation.getPObjectReference()));
+        return copy;
     }
 
     /**

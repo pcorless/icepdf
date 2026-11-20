@@ -24,6 +24,7 @@
  *     attachments, layers, signatures, search, properties);</li>
  *     <li>{@code org.icepdf.fx.print}, {@code org.icepdf.fx.signature}: printing, signature checks and
  *     signing, each with its dialog;</li>
+ *     <li>{@code org.icepdf.fx.watermark}: the watermark dialog;</li>
  *     <li>{@code org.icepdf.fx.fonts}: the system font scan core draws with.</li>
  * </ul>
  * The reference viewer built from them ({@code ri}), for an application that wants a whole viewer:
@@ -55,6 +56,7 @@ module org.icepdf.fx {
     exports org.icepdf.fx.panels;
     exports org.icepdf.fx.print;
     exports org.icepdf.fx.signature;
+    exports org.icepdf.fx.watermark;
     exports org.icepdf.fx.fonts;
     exports org.icepdf.fx.ri;
     exports org.icepdf.fx.ri.actions;
