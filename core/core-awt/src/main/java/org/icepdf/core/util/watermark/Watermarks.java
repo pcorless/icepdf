@@ -88,7 +88,6 @@ public final class Watermarks {
         Map<String, Reference> shared = new HashMap<>();
         for (int i = first; i <= last; i++) {
             Page page = pages.getPage(i);
-            page.init();
             removeFrom(page);
             Rectangle2D box = page.getPageBoundary(Page.BOUNDARY_CROPBOX).toJava2dCoordinates();
             int rotation = clockwiseRotation(page);
@@ -115,7 +114,6 @@ public final class Watermarks {
 
     /** The watermark annotations on one page: normally none or one. */
     public static List<WatermarkAnnotation> on(Page page) throws InterruptedException {
-        page.init();
         List<WatermarkAnnotation> found = new ArrayList<>();
         List<Annotation> annotations = page.getAnnotations();
         if (annotations != null) {
@@ -138,7 +136,6 @@ public final class Watermarks {
         PageTree pages = document.getPageTree();
         for (int i = 0; i < pages.getNumberOfPages(); i++) {
             Page page = pages.getPage(i);
-            page.init();
             removed += removeFrom(page);
         }
         return removed;

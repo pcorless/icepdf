@@ -117,6 +117,28 @@ public class WatermarksTest {
         }
     }
 
+    @DisplayName("apply, find and remove read annotations only: no page's content is parsed")
+    @Test
+    public void pagesAreNotParsed() throws Exception {
+        Document document = new Document();
+        document.setFile(Paths.get(TWO_PAGES).toString());
+        try {
+            Watermarks.apply(document, Watermark.of("Unparsed"));
+            assertEquals(2, Watermarks.find(document).size());
+            for (int i = 0; i < 2; i++) {
+                Page page = document.getPageTree().getPage(i);
+                assertFalse(page.isInitiated(), "page " + (i + 1) + " parsed");
+                // the page is an edit now, so its content is held softly once it is parsed
+                assertTrue(document.getStateManager().contains(page.getPObjectReference()));
+                page.init();
+                assertNotNull(page.getShapes());
+            }
+            assertEquals(2, Watermarks.remove(document));
+        } finally {
+            document.dispose();
+        }
+    }
+
     @DisplayName("a page range is watermarked alone")
     @Test
     public void pageRange() throws Exception {
