@@ -139,6 +139,14 @@ public final class TileScheduler {
         emptyLayers.remove(pageIndex);
     }
 
+    /**
+     * What the pages draw changed ({@code contentVersion} moved on): a layer found empty may not be
+     * any more - a watermark just put an annotation on a page that had none.
+     */
+    public void forgetEmptyLayers() {
+        emptyLayers.clear();
+    }
+
     /** A new document: generations start over. */
     public void clearGenerations() {
         generations.clear();
