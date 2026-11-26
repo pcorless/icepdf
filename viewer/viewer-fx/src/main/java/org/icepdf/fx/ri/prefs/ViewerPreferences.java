@@ -15,6 +15,8 @@
  */
 package org.icepdf.fx.ri.prefs;
 
+import org.icepdf.core.util.watermark.Watermark;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,6 +84,14 @@ public final class ViewerPreferences {
     public static final String PRINT_ORIENTATION = "print.orientation";
     public static final String PRINT_SIDES = "print.sides";
     public static final String PRINT_ANNOTATIONS = "print.annotations";
+    public static final String WATERMARK_TEXT = "watermark.text";
+    public static final String WATERMARK_FONT = "watermark.font";
+    /** In points; 0 fits an overlay to the page. */
+    public static final String WATERMARK_SIZE = "watermark.size";
+    /** As {@code #rrggbb}. */
+    public static final String WATERMARK_COLOR = "watermark.color";
+    public static final String WATERMARK_OPACITY = "watermark.opacity";
+    public static final String WATERMARK_POSITION = "watermark.position";
     public static final String SEARCH_CASE = "search.caseSensitive";
     public static final String SEARCH_WHOLE_WORD = "search.wholeWord";
     public static final String SEARCH_FOLD_ACCENTS = "search.foldAccents";
@@ -320,6 +330,38 @@ public final class ViewerPreferences {
         putEnum(PRINT_ORIENTATION, defaults.orientation());
         put(PRINT_SIDES, defaults.sides());
         putBoolean(PRINT_ANNOTATIONS, defaults.annotations());
+    }
+
+    /** The last watermark applied (the {@code watermark.*} keys), or null if none is stored. */
+    public Watermark getWatermarkDefaults() {
+        String text = get(WATERMARK_TEXT, null);
+        if (text == null || text.isBlank()) return null;
+        Watermark w = Watermark.of(text);
+        w = w.withFont(getEnum(WATERMARK_FONT, Watermark.StandardFont.class, w.getFont()))
+                .withPosition(getEnum(WATERMARK_POSITION, Watermark.Position.class, w.getPosition()));
+        double size = getDouble(WATERMARK_SIZE, w.getFontSize());
+        if (size >= 0 && size <= 1000) w = w.withFontSize((float) size);
+        double opacity = getDouble(WATERMARK_OPACITY, w.getOpacity());
+        if (opacity >= 0 && opacity <= 1) w = w.withOpacity((float) opacity);
+        String color = get(WATERMARK_COLOR, null);
+        if (color != null) {
+            try {
+                w = w.withColor(java.awt.Color.decode(color.trim()));
+            } catch (NumberFormatException ignored) {
+                // a hand-edited bad value keeps the default
+            }
+        }
+        return w;
+    }
+
+    /** Stores a watermark for {@link #getWatermarkDefaults()}; call {@link #save()} to write it. */
+    public void setWatermarkDefaults(Watermark watermark) {
+        put(WATERMARK_TEXT, watermark.getText());
+        putEnum(WATERMARK_FONT, watermark.getFont());
+        putDouble(WATERMARK_SIZE, watermark.getFontSize());
+        put(WATERMARK_COLOR, String.format("#%06x", watermark.getColor().getRGB() & 0xFFFFFF));
+        putDouble(WATERMARK_OPACITY, watermark.getOpacity());
+        putEnum(WATERMARK_POSITION, watermark.getPosition());
     }
 
     public void clearRecentFiles() {

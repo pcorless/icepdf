@@ -70,4 +70,41 @@ class WatermarkDialogTest {
             assertTrue(apply.isDisabled(), "blank text can't");
         });
     }
+
+    private static final Watermark LAST = Watermark.of("Internal")
+            .withFont(Watermark.StandardFont.COURIER)
+            .withFontSize(20)
+            .withColor(new java.awt.Color(200, 0, 0))
+            .withOpacity(0.8f)
+            .withPosition(Watermark.Position.HEADER);
+
+    @DisplayName("starts from the last watermark applied")
+    @Test
+    void remembersTheLastWatermark() {
+        Watermark watermark = Fx.call(() -> {
+            WatermarkDialog dialog = new WatermarkDialog(null, 612, 792, null);
+            dialog.setDefaults(LAST);
+            return dialog.watermark();
+        });
+        assertEquals("Internal", watermark.getText());
+        assertEquals(Watermark.StandardFont.COURIER, watermark.getFont());
+        assertEquals(20f, watermark.getFontSize());
+        assertEquals(new java.awt.Color(200, 0, 0), watermark.getColor());
+        assertEquals(0.8f, watermark.getOpacity(), 1e-6);
+        assertEquals(Watermark.Position.HEADER, watermark.getPosition());
+    }
+
+    @DisplayName("the document's own watermark text wins over the last one applied; fit to page is remembered")
+    @Test
+    void documentTextWins() {
+        Watermark watermark = Fx.call(() -> {
+            WatermarkDialog dialog = new WatermarkDialog(null, 612, 792, "CONFIDENTIAL");
+            dialog.setDefaults(LAST.withPosition(Watermark.Position.OVERLAY).withFontSize(0));
+            return dialog.watermark();
+        });
+        assertEquals("CONFIDENTIAL", watermark.getText());
+        assertEquals(Watermark.Position.OVERLAY, watermark.getPosition());
+        assertEquals(0f, watermark.getFontSize(), "fit to the page");
+        assertEquals(Watermark.StandardFont.COURIER, watermark.getFont());
+    }
 }

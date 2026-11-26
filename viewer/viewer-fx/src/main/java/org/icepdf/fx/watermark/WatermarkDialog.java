@@ -59,6 +59,7 @@ public class WatermarkDialog extends Dialog<Watermark> {
     private final Canvas preview = new Canvas(PREVIEW_SIZE, PREVIEW_SIZE);
     private final double pageWidth;
     private final double pageHeight;
+    private final boolean documentText;
 
     /**
      * @param pageWidth   the current page's width as shown, in points (height for a quarter-turned page)
@@ -77,7 +78,8 @@ public class WatermarkDialog extends Dialog<Watermark> {
         getDialogPane().lookupButton(apply).disableProperty().bind(
                 javafx.beans.binding.Bindings.createBooleanBinding(() -> text.getText().isBlank(), text.textProperty()));
 
-        text.setText(initialText != null && !initialText.isBlank() ? initialText : Messages.get("watermarkDialog.defaultText"));
+        documentText = initialText != null && !initialText.isBlank();
+        text.setText(documentText ? initialText : Messages.get("watermarkDialog.defaultText"));
         text.setPrefColumnCount(24);
         font.getItems().addAll(Watermark.StandardFont.values());
         font.setValue(Watermark.StandardFont.HELVETICA_BOLD);
@@ -131,6 +133,35 @@ public class WatermarkDialog extends Dialog<Watermark> {
         opacity.valueProperty().addListener((o, a, b) -> drawPreview());
 
         setResultConverter(button -> button == apply && !text.getText().isBlank() ? watermark() : null);
+        drawPreview();
+    }
+
+    /**
+     * Starts from the last watermark applied: its font, size, position, colour and opacity, and its
+     * text unless the document already has a watermark (whose text the dialog keeps).
+     *
+     * @param last the last watermark applied, or null to keep the defaults
+     */
+    public void setDefaults(Watermark last) {
+        if (last == null) return;
+        if (!documentText) text.setText(last.getText());
+        font.setValue(last.getFont());
+        switch (last.getPosition()) {
+            case HEADER -> header.setSelected(true);
+            case FOOTER -> footer.setSelected(true);
+            default -> overlay.setSelected(true);
+        }
+        boolean fit = last.getPosition() == Watermark.Position.OVERLAY && last.getFontSize() == 0;
+        fitToPage.setSelected(fit);
+        if (last.getFontSize() > 0) {
+            SpinnerValueFactory.IntegerSpinnerValueFactory sizes =
+                    (SpinnerValueFactory.IntegerSpinnerValueFactory) fontSize.getValueFactory();
+            int size = Math.round(last.getFontSize());
+            sizes.setValue(Math.max(sizes.getMin(), Math.min(sizes.getMax(), size)));
+        }
+        java.awt.Color c = last.getColor();
+        color.setValue(Color.rgb(c.getRed(), c.getGreen(), c.getBlue()));
+        opacity.setValue(Math.max(opacity.getMin(), Math.min(opacity.getMax(), last.getOpacity())));
         drawPreview();
     }
 

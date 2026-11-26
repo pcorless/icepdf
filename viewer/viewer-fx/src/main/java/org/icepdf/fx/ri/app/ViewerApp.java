@@ -16,6 +16,7 @@
 package org.icepdf.fx.ri.app;
 
 import org.icepdf.core.pobjects.acroform.signature.SignatureValidationOptions;
+import org.icepdf.core.util.watermark.Watermark;
 import org.icepdf.fx.i18n.Messages;
 
 import javafx.application.Application;
@@ -31,6 +32,7 @@ import org.icepdf.fx.ri.FileHistory;
 import org.icepdf.fx.ri.PdfViewer;
 import org.icepdf.fx.ri.UserLayout;
 import org.icepdf.fx.ri.ViewerFeatures;
+import org.icepdf.fx.ri.WatermarkStore;
 import org.icepdf.fx.ri.document.DocumentPane;
 import org.icepdf.fx.ri.Theme;
 import org.icepdf.fx.view.FitMode;
@@ -121,6 +123,19 @@ public class ViewerApp extends Application {
         @Override
         public void save(org.icepdf.fx.print.PrintDefaults defaults) {
             preferences.setPrintDefaults(defaults);
+            preferences.save();
+        }
+    };
+
+    private final WatermarkStore watermarkStore = new WatermarkStore() {
+        @Override
+        public Watermark load() {
+            return preferences.getWatermarkDefaults();
+        }
+
+        @Override
+        public void save(Watermark watermark) {
+            preferences.setWatermarkDefaults(watermark);
             preferences.save();
         }
     };
@@ -359,6 +374,7 @@ public class ViewerApp extends Application {
         javafx.beans.binding.Bindings.bindContentBidirectional(viewer.getToolColors(), toolColors);
         viewer.setSigningStore(signing);
         viewer.setPrintStore(printStore);
+        viewer.setWatermarkStore(watermarkStore);
         viewer.setOnNewWindow(() -> newWindow(null));
         viewer.setOnExit(this::exit);
         viewer.setOnPreferences(() -> showPreferences(window));

@@ -129,6 +129,7 @@ public class PdfViewer extends StackPane {
             FXCollections.observableHashMap();
     private SigningStore signingStore = SigningStore.inMemory();
     private PrintStore printStore = PrintStore.inMemory();
+    private WatermarkStore watermarkStore = WatermarkStore.inMemory();
     private java.util.List<javafx.scene.input.KeyCombination> actionKeys = java.util.List.of();
     private final javafx.scene.control.Menu recentMenu = new javafx.scene.control.Menu(Messages.get("viewer.openRecent"));
     private Consumer<String> onLink;
@@ -774,7 +775,9 @@ public class PdfViewer extends StackPane {
         if (session.getDocument() == null || session.reportBusy()) return;
         double[] shown = shownPageSize(session);
         WatermarkDialog dialog = new WatermarkDialog(context.window(), shown[0], shown[1], session.currentWatermarkText());
+        dialog.setDefaults(watermarkStore.load());
         dialog.showAndWait().ifPresent(watermark -> {
+            watermarkStore.save(watermark);
             int pages = session.applyWatermark(watermark);
             if (pages > 0) showMessage(Messages.format("viewer.watermarked", pages));
         });
@@ -1120,6 +1123,11 @@ public class PdfViewer extends StackPane {
     /** Remembers the printer, paper and layout chosen for the last print; the print dialog starts from them. */
     public void setPrintStore(PrintStore printStore) {
         this.printStore = printStore != null ? printStore : PrintStore.inMemory();
+    }
+
+    /** Remembers the last watermark applied; the watermark dialog starts from it. */
+    public void setWatermarkStore(WatermarkStore watermarkStore) {
+        this.watermarkStore = watermarkStore != null ? watermarkStore : WatermarkStore.inMemory();
     }
 
     /** Remembers recent files and the chooser's folder; shows "Open Recent" in the menu. */

@@ -15,6 +15,7 @@
  */
 package org.icepdf.fx.ri.prefs;
 
+import org.icepdf.core.util.watermark.Watermark;
 import org.icepdf.fx.view.FitMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -120,5 +121,35 @@ class ViewerPreferencesTest {
         assertNull(reloaded.getToolColor(org.icepdf.fx.view.ToolMode.FREE_TEXT));
         reloaded.put(ViewerPreferences.TOOL_COLOR_PREFIX + "ink", "not a colour");
         assertNull(reloaded.getToolColor(org.icepdf.fx.view.ToolMode.INK));
+    }
+
+    @DisplayName("the last watermark survives a save and load; a bad colour keeps the default")
+    @Test
+    void watermarkDefaults(@TempDir Path dir) {
+        Path file = dir.resolve("viewer.properties");
+        ViewerPreferences preferences = ViewerPreferences.load(file);
+        assertNull(preferences.getWatermarkDefaults());
+        Watermark mark = Watermark.of("Brouillon é")
+                .withFont(Watermark.StandardFont.TIMES_BOLD)
+                .withFontSize(0)
+                .withColor(new java.awt.Color(0, 112, 192))
+                .withOpacity(0.3f)
+                .withPosition(Watermark.Position.OVERLAY);
+        preferences.setWatermarkDefaults(mark);
+        preferences.save();
+
+        ViewerPreferences reloaded = ViewerPreferences.load(file);
+        Watermark read = reloaded.getWatermarkDefaults();
+        assertEquals("Brouillon é", read.getText());
+        assertEquals(Watermark.StandardFont.TIMES_BOLD, read.getFont());
+        assertEquals(0f, read.getFontSize());
+        assertEquals(new java.awt.Color(0, 112, 192), read.getColor());
+        assertEquals(0.3f, read.getOpacity(), 1e-6);
+        assertEquals(Watermark.Position.OVERLAY, read.getPosition());
+
+        reloaded.put(ViewerPreferences.WATERMARK_COLOR, "not a colour");
+        reloaded.put(ViewerPreferences.WATERMARK_OPACITY, "7");
+        assertEquals(java.awt.Color.GRAY, reloaded.getWatermarkDefaults().getColor());
+        assertEquals(0.5f, reloaded.getWatermarkDefaults().getOpacity());
     }
 }
