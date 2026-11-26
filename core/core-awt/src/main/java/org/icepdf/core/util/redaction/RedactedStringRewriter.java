@@ -23,7 +23,9 @@ import org.icepdf.core.pobjects.acroform.FieldDictionaryFactory;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.VariableTextFieldDictionary;
 import org.icepdf.core.pobjects.actions.Action;
+import org.icepdf.core.pobjects.actions.FormAction;
 import org.icepdf.core.pobjects.actions.GoToAction;
+import org.icepdf.core.pobjects.actions.LaunchAction;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
 import org.icepdf.core.pobjects.annotations.MarkupAnnotation;
@@ -776,7 +778,8 @@ public class RedactedStringRewriter {
     }
 
     /**
-     * The addresses URI actions open.
+     * The addresses URI actions open, and the files and URLs other actions name (see
+     * {@link #maskActionFiles}).
      * <p>
      * A link's address often repeats what it is about: a person's page, a {@code mailto:} address, a
      * search for a name. The action can sit on a link, in a link's {@code /PA}, in an annotation's or
@@ -824,6 +827,10 @@ public class RedactedStringRewriter {
                     masked = true;
                 }
             }
+            Object actionType = entries.get(Action.ACTION_TYPE_KEY);
+            if (actionType instanceof Name && FILE_ACTIONS.contains(actionType)) {
+                masked |= maskActionFiles(entries, owner, library);
+            }
             for (Object entry : entries.values()) {
                 masked |= maskUris(entry, owner, library);
             }
@@ -832,6 +839,79 @@ public class RedactedStringRewriter {
         } else if (value instanceof List) {
             for (Object element : (List<?>) value) {
                 masked |= maskUris(element, owner, library);
+            }
+        }
+        return masked;
+    }
+
+    /** Actions that name a file or a URL to open, submit to or read from: {@code /F} (PDF 32000-2 12.6.4). */
+    private static final Set<Name> FILE_ACTIONS = Set.of(Action.ACTION_TYPE_GOTO_REMOTE, new Name("GoToE"),
+            Action.ACTION_TYPE_LAUNCH, Action.ACTION_TYPE_SUBMIT_SUBMIT, new Name("ImportData"), new Name("Thread"));
+
+    /** The strings of a file specification dictionary that name the file (PDF 32000-2 7.11.3). */
+    private static final List<Name> FILE_NAME_KEYS = List.of(FileSpecification.F_KEY, FileSpecification.UF_KEY,
+            FileSpecification.DOS_KEY, FileSpecification.MAC_KEY, FileSpecification.UNIX_KEY);
+
+    /** A Windows launch's parameters (PDF 32000-1 12.6.4.5): the file, its directory and the command line. */
+    private static final List<Name> WINDOWS_LAUNCH_KEYS = List.of(new Name("F"), new Name("D"), new Name("P"));
+
+    /**
+     * Masks the file or URL an action names: a submit-form's URL, the file a launch, remote go-to,
+     * embedded go-to, import-data or thread action opens, the parameters of a Windows launch, and a
+     * remote go-to's named destination, which names a place in the other file the same way a local one
+     * does. A file specification held as an object of its own is masked and recorded as a change here,
+     * as nothing marks it as belonging to an action when the scan reaches it.
+     *
+     * @return true when the action itself was changed
+     */
+    private boolean maskActionFiles(DictionaryEntries action, Reference owner, Library library) {
+        boolean masked = false;
+        Object file = action.get(FormAction.F_KEY);
+        if (file instanceof Reference) {
+            Reference fileReference = (Reference) file;
+            Object resolved = library.getObject(fileReference);
+            DictionaryEntries fileEntries = resolved instanceof Dictionary ? ((Dictionary) resolved).getEntries()
+                    : resolved instanceof DictionaryEntries ? (DictionaryEntries) resolved : null;
+            if (fileEntries != null && maskStrings(fileEntries, FILE_NAME_KEYS, fileReference, library)) {
+                Object changed = resolved instanceof Dictionary ? resolved : new Dictionary(library, fileEntries);
+                library.getStateManager().addChange(new PObject(changed, fileReference));
+            }
+        } else if (file instanceof StringObject) {
+            masked |= maskStrings(action, List.of(FormAction.F_KEY), owner, library);
+        } else {
+            DictionaryEntries fileEntries = file instanceof Dictionary ? ((Dictionary) file).getEntries()
+                    : file instanceof DictionaryEntries ? (DictionaryEntries) file : null;
+            if (fileEntries != null) {
+                masked |= maskStrings(fileEntries, FILE_NAME_KEYS, owner, library);
+            }
+        }
+        Object windows = action.get(LaunchAction.WIN_KEY);
+        if (windows instanceof DictionaryEntries) {
+            masked |= maskStrings((DictionaryEntries) windows, WINDOWS_LAUNCH_KEYS, owner, library);
+        }
+        if (Action.ACTION_TYPE_GOTO_REMOTE.equals(action.get(Action.ACTION_TYPE_KEY))) {
+            masked |= maskStrings(action, List.of(GoToAction.DESTINATION_KEY), owner, library);
+        }
+        return masked;
+    }
+
+    /**
+     * Masks the string values of the given keys, recording each under {@link RedactionTarget#LINKS}.
+     *
+     * @param owner the object the strings are written in, which a masked string is encrypted for
+     * @return true when something was masked
+     */
+    private boolean maskStrings(DictionaryEntries entries, List<Name> keys, Reference owner, Library library) {
+        boolean masked = false;
+        for (Name key : keys) {
+            if (entries.get(key) instanceof StringObject) {
+                String text = TermMasker.decodeString(library, (StringObject) entries.get(key));
+                String maskedText = masker.mask(text);
+                if (!maskedText.equals(text)) {
+                    entries.put(key, new LiteralStringObject(maskedText, owner));
+                    report.recordStringRewritten(RedactionTarget.LINKS);
+                    masked = true;
+                }
             }
         }
         return masked;
@@ -953,7 +1033,7 @@ public class RedactedStringRewriter {
     }
 
     /**
-     * The XMP metadata stream.
+     * The XMP metadata streams: the document's, and those of any page, image, form, font or property list.
      * <p>
      * Separate from the information dictionary and usually a duplicate of it - title, subject,
      * keywords and author again, in XML - so redacting only {@code /Info} leaves the same words
@@ -965,23 +1045,51 @@ public class RedactedStringRewriter {
      * chosen to remove from the document anyway.
      */
     private void rewriteXmpMetadata() {
-        Stream metadata = document.getCatalog().getMetaData();
-        if (metadata == null) {
-            return;
+        Library library = document.getCatalog().getLibrary();
+        Set<Reference> masked = new HashSet<>();
+        // The catalog's stream by its key, as a writer may leave out its /Type.
+        Stream catalogMetadata = document.getCatalog().getMetaData();
+        if (catalogMetadata != null && maskXmp(catalogMetadata, library)) {
+            masked.add(catalogMetadata.getPObjectReference());
         }
+        // Any other stream or dictionary can carry XMP of its own (PDF 32000-2 14.3.2): a page, an image, a
+        // form, a font, a marked-content property list.  Those are found by their /Type /Metadata.
+        Set<Reference> visited = new HashSet<>(masked);
+        for (CrossReference crossReference : library.getCrossReferenceRoot().getCrossReferences()) {
+            for (Reference reference : crossReference.getEntries().keySet()) {
+                if (!visited.add(reference)) {
+                    continue;
+                }
+                Object object = library.getObject(reference);
+                if (object instanceof Stream && object != catalogMetadata
+                        && METADATA_TYPE.equals(((Stream) object).getEntries().get(Dictionary.TYPE_KEY))) {
+                    maskXmp((Stream) object, library);
+                }
+            }
+        }
+    }
+
+    private static final Name METADATA_TYPE = new Name("Metadata");
+
+    /**
+     * Masks one XMP stream as text.
+     *
+     * @return true when something was masked
+     */
+    private boolean maskXmp(Stream metadata, Library library) {
         byte[] raw = metadata.getDecodedStreamBytes();
         if (raw == null || raw.length == 0) {
-            return;
+            return false;
         }
         String xmp = new String(raw, StandardCharsets.UTF_8);
         String masked = masker.mask(xmp);
         if (masked.equals(xmp)) {
-            return;
+            return false;
         }
         metadata.setRawBytes(masked.getBytes(StandardCharsets.UTF_8));
-        Library library = document.getCatalog().getLibrary();
         library.getStateManager().addChange(new PObject(metadata, metadata.getPObjectReference()));
         report.recordStringRewritten(RedactionTarget.METADATA);
+        return true;
     }
 
     private void rewriteInfoEntry(String value, Consumer<String> setter) {

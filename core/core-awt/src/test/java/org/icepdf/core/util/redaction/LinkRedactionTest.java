@@ -110,6 +110,56 @@ public class LinkRedactionTest {
         assertMasked(redact(fixture("/A << /S /URI /URI <" + hex + "> >>", "")), 1);
     }
 
+    @DisplayName("where a form is submitted, as a URL string")
+    @Test
+    public void submitFormUrl() throws Exception {
+        assertMasked(redact(fixture("/A << /S /SubmitForm /F (https://example.com/" + TERM + "/submit) >>", "")), 1);
+    }
+
+    @DisplayName("where a form is submitted, as a URL file specification")
+    @Test
+    public void submitFormFileSpecification() throws Exception {
+        assertMasked(redact(fixture(
+                "/A << /S /SubmitForm /F << /FS /URL /F (https://example.com/" + TERM + ") >> >>", "")), 1);
+    }
+
+    @DisplayName("the file a launch opens, and a Windows launch's parameters")
+    @Test
+    public void launch() throws Exception {
+        assertMasked(redact(fixture("/A << /S /Launch /F (" + TERM + ".txt) /Win << /F (notepad.exe) "
+                + "/D (C:\\\\Users\\\\" + TERM + ") /P (" + TERM + ".txt) >> >>", "")), 3);
+    }
+
+    @DisplayName("a remote go-to's file, every name the file has, and its named destination")
+    @Test
+    public void remoteGoTo() throws Exception {
+        assertMasked(redact(fixture("/A << /S /GoToR /F << /Type /Filespec /F (" + TERM + ".pdf) /UF ("
+                + TERM + ".pdf) >> /D (" + TERM + "-section) >>", "")), 3);
+    }
+
+    @DisplayName("a file specification in an object of its own")
+    @Test
+    public void indirectFileSpecification() throws Exception {
+        assertMasked(redact(fixture("/A << /S /GoToR /F 8 0 R /D [0 /Fit] >>", "",
+                "<< /Type /Filespec /F (reports/" + TERM + ".pdf) >>")), 1);
+    }
+
+    @DisplayName("an embedded go-to, import-data and thread action")
+    @Test
+    public void otherFileActions() throws Exception {
+        assertMasked(redact(fixture("/A << /S /GoToE /F (" + TERM + "-1.pdf) /D [0 /Fit] /T << /R /C /N (a) >> "
+                + "/Next [<< /S /ImportData /F (" + TERM + ".fdf) >> << /S /Thread /F (" + TERM
+                + "-2.pdf) /D 0 >>] >>", "")), 3);
+    }
+
+    @DisplayName("a file specification outside an action is left to its own target")
+    @Test
+    public void fileSpecificationOutsideAction() throws Exception {
+        Saved saved = redact(fixture("", "", "<< /Type /Filespec /F (" + TERM + ".pdf) >>"));
+
+        assertNull(saved.report.getCountsByTarget().get(RedactionTarget.LINKS));
+    }
+
     @DisplayName("the rest of the address stays, and the link still has its action")
     @Test
     public void restStays() throws Exception {
