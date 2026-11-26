@@ -98,11 +98,22 @@ import java.util.logging.Logger;
             if (objectStart == pos || objectStart <= 0) {
                 break;
             }
-            int generation = ByteBufferUtil.findReverseNexNumber(byteBuffer);
-            int objectNumber = ByteBufferUtil.findReverseNexNumber(byteBuffer);
+            int generation;
+            int objectNumber;
+            try {
+                generation = ByteBufferUtil.findReverseNexNumber(byteBuffer);
+                objectNumber = ByteBufferUtil.findReverseNexNumber(byteBuffer);
+            } catch (NumberFormatException e) {
+                // " obj" that isn't preceded by "n g", such as the word in a stream or comment
+                pos = objectStart;
+                continue;
+            }
+            // the scan stops on the white space before the object number, or at 0 when the object starts the file
+            int objectOffset = byteBuffer.get(byteBuffer.position()) <= 32
+                    ? byteBuffer.position() + 1 : byteBuffer.position();
             if (crossReference.getEntryNoDescendents(new Reference(objectNumber, generation)) == null) {
                 crossReference.addEntry(
-                        new CrossReferenceUsedEntry(objectNumber, generation, byteBuffer.position() + 1));
+                        new CrossReferenceUsedEntry(objectNumber, generation, objectOffset));
             } else {
                 logger.fine("Not inserting " + objectNumber + " already present in file.");
             }

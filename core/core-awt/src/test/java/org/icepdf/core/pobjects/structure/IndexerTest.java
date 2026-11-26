@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -353,7 +354,9 @@ public class IndexerTest {
     @Test
     public void notAPdf() {
         // This fixture is a zip archive, not a damaged PDF: there are no objects to find, so there
-        // is nothing to rebuild from and saying so is the right answer.
-        assertThrows(IllegalStateException.class, () -> open("bad_encoding.pdf"));
+        // is nothing to rebuild from and saying so is the right answer.  It is an IOException that
+        // says so (GH-677), not an internal error.
+        IOException e = assertThrows(IOException.class, () -> open("bad_encoding.pdf"));
+        assertTrue(e.getMessage().startsWith("Not a PDF"), e.getMessage());
     }
 }

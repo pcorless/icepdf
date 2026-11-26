@@ -449,6 +449,9 @@ public class Document {
             }
 
             PTrailer trailerDictionary = crossReferenceRoot.getTrailerDictionary();
+            if (trailerDictionary == null) {
+                throw new IOException(notAPdfMessage(header, "no trailer found"));
+            }
 
             // finalized security
             boolean madeSecurityManager = library.makeSecurityManager(trailerDictionary);
@@ -461,6 +464,9 @@ public class Document {
             library.indexDeferredObjectStreams();
 
             catalog = trailerDictionary.getRootCatalog();
+            if (catalog == null) {
+                throw new IOException(notAPdfMessage(header, "no document catalog found"));
+            }
             catalog.init();
             library.setCatalog(catalog);
 
@@ -474,8 +480,18 @@ public class Document {
         } catch (Exception e) {
             dispose();
             logger.log(Level.SEVERE, "Error loading PDF Document.", e);
-            throw new IllegalStateException(e.getMessage());
+            throw new IllegalStateException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Message for input that has no usable PDF structure, so a caller can tell "this isn't a PDF" from a
+     * damaged PDF that loaded or from an internal error.
+     */
+    private static String notAPdfMessage(Header header, String reason) {
+        return header.isVersionMarkerFound()
+                ? "Not a readable PDF: " + reason + "."
+                : "Not a PDF: no %PDF- header and " + reason + ".";
     }
 
     /**

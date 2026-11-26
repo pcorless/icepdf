@@ -41,9 +41,17 @@ public class ByteBufferUtil {
         return findReverseString(byteBuffer, limit, 0, stingBytes);
     }
 
+    /**
+     * Reads the token that ends just before the buffer's position, scanning back to the previous white space,
+     * and parses it as an integer.  The position is left on that white space, or at 0 when the token starts
+     * the buffer.
+     *
+     * @throws NumberFormatException if the token is not an integer.
+     */
     public static int findReverseNexNumber(ByteBuffer byteBuffer) {
         int end = byteBuffer.position();
-        int start = 0;
+        // -1: no white space before the token, so it starts at offset 0
+        int start = -1;
         for (int i = end - 1; i >= 0; i--) {
             if (byteBuffer.get(i) <= 32) {
                 start = i;
@@ -53,8 +61,8 @@ public class ByteBufferUtil {
         byteBuffer.position(start + 1);
         byte[] number = new byte[end - start - 1];
         byteBuffer.get(number);
-        byteBuffer.position(start); // skip white space.
-        return Integer.parseInt(new String(number));
+        byteBuffer.position(Math.max(start, 0)); // skip white space.
+        return Integer.parseInt(new String(number, StandardCharsets.ISO_8859_1));
     }
 
     public static int findReverseString(ByteBuffer byteBuffer, int start, int end, final byte[] stingBytes) {
