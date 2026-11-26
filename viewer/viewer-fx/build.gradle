@@ -173,7 +173,26 @@ publishing {
 }
 
 test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'soft-memory'
+    }
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+    dependsOn 'softMemoryTest'
+}
+
+// Tests of what the GC may take from softly held caches (an edited page's parsed content): soft
+// references normally go only under heap pressure, so this JVM clears them on every collection.
+tasks.register('softMemoryTest', Test) {
+    description = 'Runs the soft-memory tagged tests with soft references cleared on every GC'
+    group = 'verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform {
+        includeTags 'soft-memory'
+    }
+    jvmArgs '-XX:SoftRefLRUPolicyMSPerMB=0'
     testLogging {
         events "passed", "skipped", "failed"
     }

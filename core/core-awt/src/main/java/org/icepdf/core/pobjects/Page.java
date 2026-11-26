@@ -35,6 +35,7 @@ import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -182,8 +183,12 @@ public class Page extends Dictionary {
     private final Object annotationsLock = new Object();
     // Contents
     private List<Stream> contents;
-    // Container for all shapes stored on page
-    private Shapes shapes = null;
+    // Container for all shapes stored on page.  Held strongly while nothing but the page tree's weak
+    // reference and its users hold the page.  A page the state manager holds - an unsaved edit, such as
+    // a watermark on every page - lives as long as the document, so its shapes move to editedShapes
+    // and the GC may take them; the page is then parsed again when next needed.  Read through shapes().
+    private volatile Shapes shapes = null;
+    private volatile SoftReference<Shapes> editedShapes;
 
     // the collection of objects listening for page paint events
     private final List<PaintPageListener> paintPageListeners = new ArrayList<>(8);
@@ -227,7 +232,46 @@ public class Page extends Dictionary {
     }
 
     public boolean isInitiated() {
-        return inited;
+        return inited && !shapesCollected();
+    }
+
+    /**
+     * The parsed shapes, or null before init.  A page the state manager holds keeps them softly
+     * (see {@link #shapes}): the first read after the page becomes an edit moves them there.
+     */
+    private Shapes shapes() {
+        Shapes s = shapes;
+        if (s != null) {
+            if (isHeldByStateManager()) {
+                editedShapes = new SoftReference<>(s);
+                shapes = null;
+            }
+            return s;
+        }
+        SoftReference<Shapes> soft = editedShapes;
+        return soft != null ? soft.get() : null;
+    }
+
+    /** True when the page was parsed, held its shapes softly, and the GC has taken them. */
+    private boolean shapesCollected() {
+        SoftReference<Shapes> soft = editedShapes;
+        return shapes == null && soft != null && soft.get() == null;
+    }
+
+    private void setShapes(Shapes s) {
+        if (isHeldByStateManager()) {
+            editedShapes = new SoftReference<>(s);
+            shapes = null;
+        } else {
+            editedShapes = null;
+            shapes = s;
+        }
+    }
+
+    private boolean isHeldByStateManager() {
+        StateManager stateManager = library.getStateManager();
+        Reference reference = getPObjectReference();
+        return stateManager != null && reference != null && stateManager.contains(reference);
     }
 
     private void initPageContents() throws InterruptedException {
@@ -421,7 +465,7 @@ public class Page extends Dictionary {
                 inited = false;
             }
             // make sure we are not revisiting this method
-            if (inited) {
+            if (inited && !shapesCollected()) {
                 return;
             }
             pageInitialized = false;
@@ -475,13 +519,14 @@ public class Page extends Dictionary {
 
                     // pass in option group references into parse.
                     if (streams.length > 0) {
-                        shapes = cp.parse(streams, this).getShapes();
+                        Shapes parsed = cp.parse(streams, this).getShapes();
+                        setShapes(parsed);
                         // record the page-level transparency group (/Group on the
                         // page dict), normally discarded.  A page that is itself a
                         // transparency group can be rendered into a shared group
                         // buffer so its inner groups blend against each other before
                         // reaching the page backdrop (see Shapes#getPageGroup).
-                        initPageGroup();
+                        initPageGroup(parsed);
                     }
                     // content streams are only needed for parsing; the Shapes built above are what painting uses.
                     // Release each stream's decompressed cache (re-derivable from the still-compressed rawBytes) so
@@ -501,13 +546,13 @@ public class Page extends Dictionary {
                     // Page-level init fault discards ALL content for the page;
                     // record for the race-audit tripwire before we drop it.
                     RenderExceptionMonitor.record("Page.init", e);
-                    shapes = new Shapes();
+                    setShapes(new Shapes());
                     logger.log(Level.WARNING, "Error initializing Page; all page content discarded.", e);
                 }
             }
             // empty page, nothing to do.
             else {
-                shapes = new Shapes();
+                setShapes(new Shapes());
                 inited = true;
                 logger.log(Level.WARNING, "Error initializing Page, no page content.");
             }
@@ -526,7 +571,7 @@ public class Page extends Dictionary {
      * {@link Shapes#setPageGroup}.  Mirrors {@code Form.initGroup}.  No-op when the
      * page is not a transparency group.
      */
-    private void initPageGroup() {
+    private void initPageGroup(Shapes shapes) {
         if (shapes == null) {
             return;
         }
@@ -703,7 +748,7 @@ public class Page extends Dictionary {
      */
     public void paintPageContent(Graphics g, int renderHintType, float userRotation, float userZoom,
                                  boolean paintAnnotations, boolean paintSearchHighlight) throws InterruptedException {
-        if (!inited) {
+        if (!isInitiated()) {
             init();
         }
 
@@ -714,6 +759,13 @@ public class Page extends Dictionary {
     private void paintPageContent(Graphics2D g2, int renderHintType, float userRotation, float userZoom,
                                   boolean paintAnnotations, boolean paintSearchHighlight,
                                   Shape viewportClip) throws InterruptedException {
+        // held locally for the whole paint: an edited page's shapes are soft and the GC may take
+        // them; if it already has, parse the page again
+        Shapes shapes = shapes();
+        if (shapes == null && shapesCollected()) {
+            init();
+            shapes = shapes();
+        }
         // draw page content
         if (shapes != null) {
             pagePainted = false;
@@ -731,8 +783,8 @@ public class Page extends Dictionary {
             try {
                 // the page's big images start decoding now, side by side, at the size they're drawn
                 shapes.prefetchImages(g2);
-                if (isPageGroupBufferCandidate()) {
-                    paintPageGroupBuffered(g2, viewportClip);
+                if (isPageGroupBufferCandidate(shapes)) {
+                    paintPageGroupBuffered(g2, viewportClip, shapes);
                 } else {
                     shapes.paint(g2, this);
                 }
@@ -826,12 +878,13 @@ public class Page extends Dictionary {
      * isolated makes its translucent groups interact with each other instead of
      * the paper (dark halos), so it stays on the existing direct path.
      */
-    private boolean isPageGroupBufferCandidate() {
+    private boolean isPageGroupBufferCandidate(Shapes shapes) {
         TransparencyGroup pageGroup = shapes != null ? shapes.getPageGroup() : null;
         return pageGroup != null && DeviceCMYK.DEVICECMYK_KEY.equals(pageGroup.getColorSpace());
     }
 
-    private void paintPageGroupBuffered(Graphics2D g2, Shape viewportClip) throws InterruptedException {
+    private void paintPageGroupBuffered(Graphics2D g2, Shape viewportClip, Shapes shapes)
+            throws InterruptedException {
         AffineTransform savedTx = g2.getTransform();
         Shape savedClip = g2.getClip();
         // device-space pixel bounds of the current clip (the page footprint).
@@ -1744,9 +1797,10 @@ public class Page extends Dictionary {
      * @throws InterruptedException thread interrupted.
      */
     public PageText getViewText() throws InterruptedException {
-        if (!inited) {
+        if (!isInitiated()) {
             init();
         }
+        Shapes shapes = shapes();
         if (shapes != null) {
             return shapes.getPageText();
         } else {
@@ -1763,7 +1817,7 @@ public class Page extends Dictionary {
      * @return shapes object associated with this Page,  can be null.
      */
     public Shapes getShapes() {
-        return shapes;
+        return shapes();
     }
 
     /**
@@ -1777,6 +1831,7 @@ public class Page extends Dictionary {
     public synchronized PageText getText() throws InterruptedException {
 
         // we only do this once per page
+        Shapes shapes = shapes();
         if (inited) {
             if (shapes != null && shapes.getPageText() != null) {
                 return shapes.getPageText();
@@ -1886,10 +1941,11 @@ public class Page extends Dictionary {
      * @throws InterruptedException thread interrupted.
      */
     public synchronized List<Image> getImages() throws InterruptedException {
-        if (!inited) {
+        if (!isInitiated()) {
             init();
         }
-        return shapes.getImages();
+        Shapes shapes = shapes();
+        return shapes != null ? shapes.getImages() : new ArrayList<>();
     }
 
     /**

@@ -215,6 +215,7 @@ final class PdfViewSkin extends SkinBase<PdfView> implements InputRouter.Host {
         // the pages draw differently (a layer toggled): new tiles, the old ones shown until they come;
         // previews are rebuilt too.
         registerChangeListener(control.contentVersionProperty(), o -> {
+            tiles.forgetEmptyLayers();
             cache.removeIf(key -> key instanceof CacheKey.Preview);
             layers.values().forEach(PageLayer::clearPreview);
             refresh();

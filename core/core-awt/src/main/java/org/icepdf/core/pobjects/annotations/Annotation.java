@@ -367,6 +367,11 @@ public abstract class Annotation extends Dictionary {
     public static final Name SUBTYPE_FREE_TEXT = new Name("FreeText");
     public static final Name SUBTYPE_TEXT = new Name("Text");
     /**
+     * Watermark annotation (PDF 1.6): content printed at a fixed size and position on the page,
+     * whatever the page's dimensions, such as "Draft" or "Confidential".
+     */
+    public static final Name SUBTYPE_WATERMARK = new Name("Watermark");
+    /**
      * If set, do not display the annotation if it does not belong to one of the
      * standard annotation types and no annotation handler is available. If clear,
      * display such an unknown annotation using an appearance stream specified
@@ -610,6 +615,8 @@ public abstract class Annotation extends Dictionary {
                 annot = new PopupAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_REDACT)) {
                 annot = new RedactionAnnotation(library, entries);
+            } else if (subType.equals(Annotation.SUBTYPE_WATERMARK)) {
+                annot = new WatermarkAnnotation(library, entries);
             } else if (PolyAnnotation.isPolyAnnotation(subType)) {
                 annot = new PolyAnnotation(library, entries);
             } else if (subType.equals(Annotation.SUBTYPE_WIDGET)) {

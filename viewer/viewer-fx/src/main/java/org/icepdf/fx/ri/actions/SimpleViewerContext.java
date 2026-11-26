@@ -34,6 +34,7 @@ public final class SimpleViewerContext implements ViewerContext {
     private final PdfView view;
     private final Map<Capability, Runnable> handlers = new EnumMap<>(Capability.class);
     private Runnable saveAs;
+    private Runnable removeWatermarks;
     private Consumer<String> openLink;
     private Consumer<Task<Void>> printStarted = task -> { };
 
@@ -88,6 +89,12 @@ public final class SimpleViewerContext implements ViewerContext {
         return set(Capability.EXPORT_REDACTED, export);
     }
 
+    /** Watermark, and Remove Watermarks. */
+    public SimpleViewerContext onWatermark(Runnable watermark, Runnable remove) {
+        this.removeWatermarks = remove;
+        return set(Capability.WATERMARK, watermark);
+    }
+
     /** Close: closes the document. */
     public SimpleViewerContext onClose(Runnable close) {
         return set(Capability.CLOSE, close);
@@ -140,6 +147,17 @@ public final class SimpleViewerContext implements ViewerContext {
     @Override
     public void exportRedacted() {
         run(Capability.EXPORT_REDACTED);
+    }
+
+    @Override
+    public void watermark() {
+        run(Capability.WATERMARK);
+    }
+
+    @Override
+    public void removeWatermarks() {
+        if (removeWatermarks == null) throw new UnsupportedOperationException("remove watermarks");
+        removeWatermarks.run();
     }
 
     @Override

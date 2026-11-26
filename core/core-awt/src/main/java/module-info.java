@@ -67,6 +67,7 @@ module org.icepdf.core {
     // before now, so nothing outside core could configure a redaction or see what one did.
     exports org.icepdf.core.util.redaction;
     exports org.icepdf.core.util.updater;
+    exports org.icepdf.core.util.watermark;
     exports org.icepdf.core.pobjects.fonts.builders;
 
 }
