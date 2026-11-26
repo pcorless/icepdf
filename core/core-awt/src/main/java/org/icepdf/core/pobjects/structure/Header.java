@@ -35,6 +35,8 @@ public class Header {
 
     private double version;
 
+    private boolean versionMarkerFound;
+
     public ByteBuffer parseHeader(ByteBuffer byteBuffer) {
         byteBuffer.limit(Math.min(byteBuffer.limit(), 8 * 1024));
         ByteBuffer headerBuffer = byteBuffer.slice();
@@ -54,13 +56,15 @@ public class Header {
         }
         // check if we found the version flags.
         if (matchPosition == matchLength) {
+            versionMarkerFound = true;
             version = parseVersion(headerBuffer);
         } else {
             version = 1.0;
         }
 
-        // check for some bad bytes
-        if (headerBuffer.position() > PDF_VERSION_LENGTH) {
+        // check for some bad bytes.  Only when the marker was found: without one the scan ran to the end of
+        // the window, and slicing there would throw away the start of a headerless file.
+        if (versionMarkerFound && headerBuffer.position() > PDF_VERSION_LENGTH) {
             int offset = headerBuffer.position() - PDF_VERSION_LENGTH;
             byteBuffer.position(offset);
             byteBuffer = byteBuffer.slice();
@@ -71,6 +75,16 @@ public class Header {
     }
 
 
+    /**
+     * Whether the %PDF- marker was found in the first 8KB of the file.  A file without one may still be a
+     * damaged PDF that reindexing can recover, so its absence alone is not a reason to refuse the file.
+     *
+     * @return true if the version marker was found.
+     */
+    public boolean isVersionMarkerFound() {
+        return versionMarkerFound;
+    }
+
     public double getVersion() {
         return version;
     }
@@ -80,6 +94,9 @@ public class Header {
     }
 
     private static double parseVersion(ByteBuffer buffer) {
+        if (buffer.remaining() < 3) {
+            return 1.0;
+        }
         byte[] versionBytes = new byte[3];
         buffer.get(versionBytes);
         try {
