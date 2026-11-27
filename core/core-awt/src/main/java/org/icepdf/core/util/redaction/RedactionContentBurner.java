@@ -190,6 +190,9 @@ public class RedactionContentBurner {
         PageTree pages = library.getCatalog().getPageTree();
         for (int i = 0; i < pages.getNumberOfPages(); i++) {
             Page page = pages.getPage(i);
+            if (page == null) {
+                continue; // counted but missing from the tree (GH-702)
+            }
             List<?> annots = library.getArray(page.getEntries(), Page.ANNOTS_KEY);
             if (annots == null) {
                 continue;
