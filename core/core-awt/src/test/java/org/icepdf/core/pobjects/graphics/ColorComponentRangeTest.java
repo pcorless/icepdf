@@ -26,16 +26,16 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ColorComponentRangeTest {
 
-    @DisplayName("a named Separation colour clamps an out-of-range tint")
+    @DisplayName("a Separation clamps an out-of-range tint")
     @Test
     public void separationTintIsClamped() {
         Separation black = new Separation(new Library(), new DictionaryEntries(), new Name("Black"),
-                new Name("DeviceGray"), null);
+                new Name("DeviceGray"), SeparationCacheTest.grayBlack());
         assertEquals(Color.BLACK, assertDoesNotThrow(() -> black.getColor(new float[]{1.5f}, true)),
                 "tint above 1 is full colour");
         assertEquals(Color.WHITE, assertDoesNotThrow(() -> black.getColor(new float[]{-0.5f}, true)),
                 "tint below 0 is no colour");
-        assertEquals(new Color(128, 128, 128), black.getColor(new float[]{0.5f}, true),
+        assertEquals(new DeviceGray(null, null).getColor(new float[]{0.5f}), black.getColor(new float[]{0.5f}, true),
                 "in-range tints are unchanged");
     }
 

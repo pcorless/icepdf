@@ -29,9 +29,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Device CMYK colour space definitions. The primary purpose of this colour
- * space is to convert cymk colours to rgb.  No ICC profile is used in this
- * process and the generated rgb colour is just and approximation.
+ * Device CMYK colour space definitions. Colours convert to sRGB through an ICC profile, the bundled SWOP TR003
+ * characterisation unless {@code org.icepdf.core.pobjects.graphics.cmyk} names another profile file, with
+ * black-point compensation (see {@link CmykColorConverter}).  With
+ * {@code org.icepdf.core.cmyk.disableICCProfile=true} an analytic approximation is used instead.
  */
 public class DeviceCMYK extends PColorSpace {
 
@@ -44,6 +45,11 @@ public class DeviceCMYK extends PColorSpace {
     private static final DeviceGray DEVICE_GRAY = new DeviceGray(null, null);
     // CMYK ICC color profile.
     private static final ICC_ColorSpace iccCmykColorSpace;
+    // converts through iccCmykColorSpace; null when the profile could not be loaded
+    private static final CmykColorConverter cmykColorConverter;
+
+    // the default profile: SWOP TR003 coated #3 (CGATS TR 003), CC0, built by colord from the NPES/CGATS data
+    private static final String DEFAULT_PROFILE = "/org/icepdf/core/pobjects/graphics/res/SWOP_TR003_coated_3.icc";
 
     // disable icc color profile lookups as they can be slow. n
     private static boolean disableICCCmykColorSpace;
@@ -53,15 +59,17 @@ public class DeviceCMYK extends PColorSpace {
 
         // check for a custom CMYK ICC colour profile specified using system properties.
         iccCmykColorSpace = getIccCmykColorSpace();
-        // every thread converts through this one space; JDK 11 builds its transform and component scaling
-        // unsynchronized on the first toRGB, so build them now
+        // every thread converts through this one space; the converter builds its transforms now, as JDK 11
+        // builds them unsynchronized on first use
+        CmykColorConverter converter = null;
         if (iccCmykColorSpace != null) {
             try {
-                iccCmykColorSpace.toRGB(new float[4]);
+                converter = new CmykColorConverter(iccCmykColorSpace);
             } catch (Exception e) {
                 logger.log(Level.FINE, "Error preparing the CMYK colour profile", e);
             }
         }
+        cmykColorConverter = converter;
     }
 
     public DeviceCMYK(Library l, DictionaryEntries h) {
@@ -82,7 +90,22 @@ public class DeviceCMYK extends PColorSpace {
      * @return valid rgb colour object.
      */
     public Color getColor(float[] f, boolean fillAndStroke) {
-        return alternative2(f, fillAndStroke);
+        return alternative2(f, fillAndStroke, getConverter());
+    }
+
+    /**
+     * @return this document's CMYK conversion, the output intent's profile when it has one (GH-647)
+     */
+    public CmykColorConverter getConverter() {
+        return converterFor(library);
+    }
+
+    /**
+     * @param library a document, or null
+     * @return the document's CMYK conversion, the default one without a document; null when no profile loaded
+     */
+    public static CmykColorConverter converterFor(Library library) {
+        return library != null ? library.getCmykColorConverter() : cmykColorConverter;
     }
 
     /*
@@ -190,17 +213,16 @@ public class DeviceCMYK extends PColorSpace {
      *          0.0 and 1.0
      * @return valid rgb colour object.
      */
-    private static Color alternative2(float[] f, boolean fillAndStroke) {
+    private static Color alternative2(float[] f, boolean fillAndStroke, CmykColorConverter converter) {
         float inCyan = f[0];
         float inMagenta = f[1];
         float inYellow = f[2];
         float inBlack = f[3];
 
         // check if we have a valid ICC profile to work with
-        if (!disableICCCmykColorSpace && iccCmykColorSpace != null) {
+        if (!disableICCCmykColorSpace && converter != null) {
             try {
-                f = iccCmykColorSpace.toRGB(f);
-                return new Color(f[0], f[1], f[2]);
+                return new Color(converter.toArgb(f));
             } catch (Exception e) {
                 logger.warning("Error using iccCmykColorSpace in DeviceCMYK.");
             }
@@ -252,7 +274,7 @@ public class DeviceCMYK extends PColorSpace {
 
     /**
      * Gets the ICC Color Profile found in the icepdf-core.jar at the location
-     * /org/icepdf/core/pobjects/graphics/res/ or the ICC Color Profiel
+     * /org/icepdf/core/pobjects/graphics/res/ or the ICC Color Profile file
      * specified by the system property org.icepdf.core.pobjects.graphics.cmyk.
      *
      * @return associated ICC CMYK Color space.
@@ -265,7 +287,7 @@ public class DeviceCMYK extends PColorSpace {
             InputStream profileStream;
             customCMYKProfilePath = Defs.sysProperty("org.icepdf.core.pobjects.graphics.cmyk");
             if (customCMYKProfilePath == null) {
-                customCMYKProfilePath = "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc";
+                customCMYKProfilePath = DEFAULT_PROFILE;
                 profileStream = DeviceCMYK.class.getResourceAsStream(customCMYKProfilePath);
             } else {
                 profileStream = new FileInputStream(customCMYKProfilePath);
@@ -277,6 +299,15 @@ public class DeviceCMYK extends PColorSpace {
             logger.warning("Error loading ICC color profile: " + customCMYKProfilePath);
         }
         return null;
+    }
+
+    /**
+     * The default conversion, for documents without a CMYK output intent; shared by all threads.
+     *
+     * @return the converter for the default DeviceCMYK profile, or null when the profile could not be loaded.
+     */
+    public static CmykColorConverter getCmykColorConverter() {
+        return cmykColorConverter;
     }
 
     /**

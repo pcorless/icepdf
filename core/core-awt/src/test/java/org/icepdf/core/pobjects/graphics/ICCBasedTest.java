@@ -22,6 +22,7 @@ import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.Test;
 
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -44,7 +45,7 @@ public class ICCBasedTest {
     private static ICCBased cmykProfile() throws IOException {
         byte[] profile;
         try (InputStream in = DeviceCMYK.class.getResourceAsStream(
-                "/org/icepdf/core/pobjects/graphics/res/CoatedFOGRA27.icc")) {
+                "/org/icepdf/core/pobjects/graphics/res/SWOP_TR003_coated_3.icc")) {
             profile = in.readAllBytes();
         }
         Library library = new Library();
@@ -53,11 +54,9 @@ public class ICCBasedTest {
         return new ICCBased(library, new Stream(library, entries, profile));
     }
 
-    /** The conversion ICCBased makes, without a cache. */
+    /** The conversion ICCBased makes, without a cache: a four-component profile goes through the CMYK converter. */
     private static int direct(ColorSpace colorSpace, float[] f) {
-        float[] rgb = colorSpace.toRGB(f);
-        return 0xff000000 | ((int) (rgb[0] * 255) & 0xff) << 16 | ((int) (rgb[1] * 255) & 0xff) << 8
-                | ((int) (rgb[2] * 255) & 0xff);
+        return new CmykColorConverter((ICC_ColorSpace) colorSpace).toArgb(f);
     }
 
     private static float[] sample(int packed) {

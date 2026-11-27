@@ -70,10 +70,22 @@ public class SeparationCacheTest {
         }
     }
 
+    /** Black over DeviceGray, ink 1 at tint 0 to 0 at tint 1. */
+    static DictionaryEntries grayBlack() {
+        DictionaryEntries tint = new DictionaryEntries();
+        tint.put(new Name("FunctionType"), 2);
+        tint.put(new Name("Domain"), Arrays.asList(0f, 1f));
+        tint.put(new Name("C0"), Arrays.asList(1f));
+        tint.put(new Name("C1"), Arrays.asList(0f));
+        tint.put(new Name("N"), 1f);
+        return tint;
+    }
+
+    /** GH-647: Black takes its tint transform and alternate like every colorant, and its tints still agree. */
     @Test
-    public void namedColourTintsMatchAcrossThreads() throws Exception {
+    public void blackTintsMatchAcrossThreads() throws Exception {
         Separation black = new Separation(new Library(), new DictionaryEntries(), new Name("Black"),
-                new Name("DeviceGray"), null);
+                new Name("DeviceGray"), grayBlack());
         int tints = 3000;
         ExecutorService pool = Executors.newFixedThreadPool(8);
         try {
@@ -84,9 +96,9 @@ public class SeparationCacheTest {
                     Random random = new Random(seed);
                     for (int i = 0; i < 50_000; i++) {
                         float tint = random.nextInt(tints) / (float) (tints - 1);
-                        int light = Math.round((1 - tint) * 255);
-                        assertEquals(0xff000000 | light << 16 | light << 8 | light,
-                                black.getColor(new float[]{tint}, true).getRGB(), "tint " + tint);
+                        int expected = new DeviceGray(null, null).getColor(
+                                Function.getFunction(new Library(), grayBlack()).calculate(new float[]{tint})).getRGB();
+                        assertEquals(expected, black.getColor(new float[]{tint}, true).getRGB(), "tint " + tint);
                     }
                     return null;
                 }));

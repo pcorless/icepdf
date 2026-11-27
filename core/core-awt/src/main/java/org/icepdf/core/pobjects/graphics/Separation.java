@@ -18,7 +18,6 @@ package org.icepdf.core.pobjects.graphics;
 import org.icepdf.core.pobjects.DictionaryEntries;
 import org.icepdf.core.pobjects.Name;
 import org.icepdf.core.pobjects.functions.Function;
-import org.icepdf.core.util.ColorUtil;
 import org.icepdf.core.util.Library;
 
 import java.awt.*;
@@ -64,8 +63,6 @@ public class Separation extends PColorSpace {
 
     public static final Name SEPARATION_KEY = new Name("Separation");
 
-    // named colour reference if valid conversion took place
-    protected Color namedColor;
     // alternative colour space, named colour can not be resolved.
     protected final PColorSpace alternate;
     // transform for colour tint, named function type
@@ -96,32 +93,12 @@ public class Separation extends PColorSpace {
         alternate = getColorSpace(l, alternateSpace);
 
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));
-        // see if name can be converted to a known colour.
+        // every colorant, Black included, paints through its tint transform and alternate, as a CMYK alternate
+        // is the ink and a screen colour isn't (GH-648, GH-647)
         if (name instanceof Name) {
             String colorName = ((Name) name).getName().toLowerCase();
-            // only Black still paints as a screen colour. Every other colorant takes its tint transform and
-            // alternate: a CMYK alternate is the ink, while the screen colour is far off it (Blue painted
-            // (0,0,255) where the ink is (46,48,146)), and an RGB or Gray alternate gives the screen colour
-            // anyway (GH-648). Black waits on the K-only policy of GH-647.
-            if (!colorName.equals("black")) {
-                // sniff out All or Null
-                if (colorName.equals(COLORANT_ALL)) {
-                    // The special colorant name All shall refer collectively to all colorants
-                    // available on an output device, including those for the standard process
-                    // colorants. When a Separation space with this colorant name is the current
-                    // colour space, painting operators shall apply tint values to all available
-                    // colorants at once.
-                    boolean isAll = true;
-                } else if (colorName.equals(COLORANT_NONE)) {
-                    isNone = true;
-                }
-                // return as we don't care about the namedColor if subtractive.
-                return;
-            }
-            // get colour value if any
-            int colorVaue = ColorUtil.convertNamedColor(colorName.toLowerCase());
-            if (colorVaue != -1) {
-                namedColor = new Color(colorVaue);
+            if (colorName.equals(COLORANT_NONE)) {
+                isNone = true;
             }
         }
     }
@@ -135,8 +112,16 @@ public class Separation extends PColorSpace {
         return 1;
     }
 
+    /**
+     * A Separation no longer paints its colorant's screen colour: every colorant goes through the tint transform
+     * and alternate space (GH-647, GH-648).
+     *
+     * @return false
+     * @deprecated always false; to be removed
+     */
+    @Deprecated
     public boolean isNamedColor() {
-        return namedColor != null;
+        return false;
     }
 
     /**
@@ -149,29 +134,6 @@ public class Separation extends PColorSpace {
      * @return new RGB colour composed from the components array.
      */
     public Color getColor(float[] components, boolean fillAndStroke) {
-        // there are couple notes in the spec that say that even know namedColor
-        // is for subtractive color devices, if the named colour can be represented
-        // in a additive device then it should be used over the alternate colour.
-        if (namedColor != null) {
-            // a tint is 0..1 by definition; a tint transform or shading function that overshoots must not
-            // turn into an out-of-range Color (which throws and drops the whole shading)
-            float tint = Math.max(0f, Math.min(1f, components[0]));
-            this.tint = tint;
-            int key = Float.floatToIntBits(tint);
-            Color color = colorCache.get(key);
-            if (color == null) {
-                // apply tint as an alpha value.
-                float[] colour = namedColor.getComponents(null);
-                float tint2 = 1 - tint;
-                color = new Color(
-                        tint2 + (colour[0] * tint),
-                        tint2 + (colour[1] * tint),
-                        tint2 + (colour[2] * tint));
-                colorCache.put(key, color);
-            }
-            return color;
-        }
-
         // the function couldn't be initiated then use the alternative colour
         // space.  The alternate colour space can be any device or CIE-based
         // colour space. However Separation is usually specified using only one
@@ -191,10 +153,13 @@ public class Separation extends PColorSpace {
             if (components.length != 1) {
                 return alternate.getColor(tintTransform.calculate(components.clone()));
             }
-            int key = Float.floatToIntBits(components[0]);
+            // a tint is 0..1 by definition; a shading function that overshoots must not drive the tint
+            // transform outside its domain into an out-of-range Color (which throws and drops the shading)
+            float tint = Math.max(0f, Math.min(1f, components[0]));
+            int key = Float.floatToIntBits(tint);
             Color color = colorCache.get(key);
             if (color == null) {
-                color = alternate.getColor(tintTransform.calculate(new float[]{components[0]}));
+                color = alternate.getColor(tintTransform.calculate(new float[]{tint}));
                 colorCache.put(key, color);
             }
             return color;

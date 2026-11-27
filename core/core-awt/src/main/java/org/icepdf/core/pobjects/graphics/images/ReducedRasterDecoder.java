@@ -280,8 +280,7 @@ final class ReducedRasterDecoder extends AbstractImageDecoder {
                 int[] table = indexTable((Indexed) raster, bpc);
                 return s -> s[0] < table.length ? table[s[0]] : 0xFF000000;
             }
-        } else if (raster instanceof CalGray
-                || (raster instanceof Separation && ((Separation) raster).isNamedColor())) {
+        } else if (raster instanceof CalGray) {
             if (lowBits) {
                 int[] table = grayTable(bpc);
                 return s -> table[s[0]];

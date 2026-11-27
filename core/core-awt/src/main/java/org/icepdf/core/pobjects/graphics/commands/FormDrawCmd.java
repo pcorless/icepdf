@@ -996,7 +996,7 @@ public class FormDrawCmd extends AbstractDrawCmd {
             }
         }
         return CmykGroupCompositor.compose(srcInk, srcAlpha, backdropArgb,
-                toBlendingMode(blend), ca, w, h);
+                toBlendingMode(blend), ca, w, h, DeviceCMYK.converterFor(xForm.getLibrary()));
     }
 
     /**

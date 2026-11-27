@@ -83,6 +83,16 @@ public final class CmykGroupCompositor {
     public static BufferedImage compose(byte[] srcInk, int[] srcAlpha, int[] backdropArgb,
                                         BlendComposite.BlendingMode mode, float ca,
                                         int w, int h) {
+        return compose(srcInk, srcAlpha, backdropArgb, mode, ca, w, h, DeviceCMYK.getCmykColorConverter());
+    }
+
+    /**
+     * As {@link #compose(byte[], int[], int[], BlendComposite.BlendingMode, float, int, int)}, converting the
+     * blended ink through the document's CMYK conversion ({@link DeviceCMYK#converterFor}, GH-647).
+     */
+    public static BufferedImage compose(byte[] srcInk, int[] srcAlpha, int[] backdropArgb,
+                                        BlendComposite.BlendingMode mode, float ca,
+                                        int w, int h, CmykColorConverter converter) {
         int n = w * h;
         // Blended ink, interleaved C,M,Y,K -- fed to the ICC convert in one pass.
         byte[] outInk = new byte[n * 4];
@@ -111,7 +121,7 @@ public final class CmykGroupCompositor {
         Raster srcRaster = Raster.createInterleavedRaster(
                 new DataBufferByte(outInk, outInk.length), w, h, w * 4, 4,
                 new int[]{0, 1, 2, 3}, null);
-        new IccCmykRasterOp(null).filter(srcRaster, rgb.getRaster());
+        new IccCmykRasterOp(null, converter).filter(srcRaster, rgb.getRaster());
         // Overlay the group's own alpha (ICC convert emits opaque 0xff): the
         // contribution carries ca*ag, so SRC_OVER over the page gives §11.4.6.
         int[] argb = ((java.awt.image.DataBufferInt) rgb.getRaster().getDataBuffer()).getData();

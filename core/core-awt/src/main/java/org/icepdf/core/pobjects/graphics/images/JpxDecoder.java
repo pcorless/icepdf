@@ -124,18 +124,13 @@ public class JpxDecoder extends AbstractImageDecoder {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
                         imageParams.getDecodeRange());
             } else if (colourSpace instanceof DeviceCMYK && bitsPerComponent == 8) {
-                tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                tmpImage = ImageUtility.convertCmykToRgb(wr, decode, DeviceCMYK.converterFor(colourSpace.getLibrary()));
             } else if ((colourSpace instanceof DeviceGray)
                     && bitsPerComponent == 8) {
                 tmpImage = ImageUtility.makeGrayBufferedImage(wr);
             } else if (colourSpace instanceof Separation) {
-                if (((Separation) colourSpace).isNamedColor()) {
-                    tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
-//                    tmpImage = ImageUtility.makeGrayBufferedImage(wr);
-                } else {
-                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
-                            imageParams.getDecodeRange());
-                }
+                tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                        imageParams.getDecodeRange());
             } else if (colourSpace instanceof Indexed) {
                 tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
             } else if ((colourSpace instanceof DeviceN || colourSpace instanceof CalGray

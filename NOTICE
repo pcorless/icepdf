@@ -17,6 +17,15 @@ The Apache Software Foundation (http://www.apache.org/):
 Apache PDFBox
 Copyright 2014 The Apache Software Foundation
 
+The default CMYK colour profile, org/icepdf/core/pobjects/graphics/res/
+SWOP_TR003_coated_3.icc, is the "SWOP TR003 Coated" profile from colord
+(https://www.freedesktop.org/software/colord/, Copyright 2012 Richard Hughes,
+CC0 1.0). Its characterization data is CGATS TR 003 (Copyright 2007 NPES The
+Association for Suppliers of Printing, Publishing and Converting Technologies);
+profiles based on these data may be distributed with no further permission from
+CGATS, provided this Technical Report is identified as the source of the
+characterization data.
+
 Third-party libraries distributed with icepdf, and their licenses and notices,
 are listed in the licenses/ directory of the binary distribution.
 
