@@ -15,10 +15,10 @@
  */
 package org.icepdf.core.pobjects.graphics.RasterOps;
 
+import org.icepdf.core.pobjects.graphics.CmykColorConverter;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 
 import java.awt.*;
-import java.awt.color.ColorSpace;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.*;
@@ -34,16 +34,28 @@ import java.awt.image.*;
  */
 public class IccCmykRasterOp implements RasterOp {
     private final RenderingHints hints;
-    private final ColorSpace colorSpace;
+    private final CmykColorConverter converter;
 
     public IccCmykRasterOp(RenderingHints hints) {
+        this(hints, DeviceCMYK.getCmykColorConverter());
+    }
+
+    /**
+     * @param converter the document's CMYK conversion ({@link DeviceCMYK#converterFor}); null converts
+     *                  analytically, as with the ICC profile disabled
+     */
+    public IccCmykRasterOp(RenderingHints hints, CmykColorConverter converter) {
         this.hints = hints;
-        this.colorSpace = DeviceCMYK.getIccCmykColorSpace();
+        this.converter = converter;
     }
 
     public WritableRaster filter(Raster src, WritableRaster dest) {
 
         if (dest == null) dest = src.createCompatibleWritableRaster();
+        if (converter == null) {
+            // the profile didn't load: the analytic conversion, as with the ICC profile disabled
+            return new CMYKRasterOp(hints).filter(src, dest);
+        }
 
         // may have to add some instance of checks
         byte[] srcPixels = ((DataBufferByte) src.getDataBuffer()).getData();
@@ -51,8 +63,6 @@ public class IccCmykRasterOp implements RasterOp {
 
         int bands = src.getNumBands();
         float[] colorValue = new float[bands];
-
-        float[] rgbColorValue;
 
         // ICC colorSpace.toRGB is a per-pixel native round-trip and is by far the
         // most expensive step here.  Flat regions (common in scanned CMYK pages)
@@ -81,12 +91,7 @@ public class IccCmykRasterOp implements RasterOp {
                     colorValue[2] = (cmyk >>> 8 & 0xff) / 255.0f;
                     colorValue[3] = (cmyk & 0xff) / 255.0f;
 
-                    rgbColorValue = colorSpace.toRGB(colorValue);
-
-                    lastArgb = (0xff << 24) |
-                            (((int) (rgbColorValue[0] * 255) & 0xff) << 16) |
-                            (((int) (rgbColorValue[1] * 255) & 0xff) << 8) |
-                            ((int) (rgbColorValue[2] * 255) & 0xff);
+                    lastArgb = converter.toArgb(colorValue);
                     memo.put(slot, cmyk, lastArgb);
                 }
                 lastCmyk = cmyk;

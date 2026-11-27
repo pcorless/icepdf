@@ -46,7 +46,8 @@ public class DeviceN extends PColorSpace {
     public static final Name DEVICEN_SUB_TYPE_KEY = new Name("DeviceN");
     public static final Name NCHANNEL_SUB_TYPE_KEY = new Name("NChannel");
 
-    private static final DeviceCMYK deviceCMYK = new DeviceCMYK(null, null);
+    // the process colorants convert as this document's DeviceCMYK does, its output intent included (GH-647)
+    private final DeviceCMYK deviceCMYK;
     private final List<Name> names;
     private final PColorSpace alternate;
     private final Function tintTransform;
@@ -56,6 +57,7 @@ public class DeviceN extends PColorSpace {
     @SuppressWarnings("unchecked")
     DeviceN(Library l, DictionaryEntries h, Object names, Object alternativeSpace, Object tintTransform, Object attributes) {
         super(l, h);
+        deviceCMYK = new DeviceCMYK(l, null);
         this.names = (java.util.List) names;
         alternate = getColorSpace(l, alternativeSpace);
         this.tintTransform = Function.getFunction(l, l.getObject(tintTransform));

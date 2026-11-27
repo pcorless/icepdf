@@ -24,6 +24,8 @@ import org.icepdf.core.pobjects.acroform.SignatureHandler;
 import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.fonts.Font;
 import org.icepdf.core.pobjects.fonts.FontDescriptor;
+import org.icepdf.core.pobjects.graphics.CmykColorConverter;
+import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.icepdf.core.pobjects.graphics.ICCBased;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
@@ -121,6 +123,12 @@ public class Library {
     private final ObjectLoader objectLoader;
 
     private Catalog catalog;
+
+    // DeviceCMYK's conversion for this document: the output intent's profile or the default (GH-647);
+    // resolved on first use, once the catalog is known
+    private final Object cmykColorConverterLock = new Object();
+    private volatile boolean cmykColorConverterResolved;
+    private CmykColorConverter cmykColorConverter;
 
     private SecurityManager securityManager;
 
@@ -1034,6 +1042,31 @@ public class Library {
      */
     public void setCatalog(Catalog c) {
         catalog = c;
+    }
+
+    /**
+     * The conversion DeviceCMYK colours, images and groups of this document go through: the profile of the
+     * document's CMYK output intent when it has one (see {@link CmykColorConverter#fromOutputIntents(Library)}),
+     * otherwise the default DeviceCMYK profile.
+     *
+     * @return the converter, or null when no profile could be loaded at all.
+     */
+    public CmykColorConverter getCmykColorConverter() {
+        if (!cmykColorConverterResolved) {
+            Catalog catalog = this.catalog;
+            if (catalog == null) {
+                // too early to read the output intents; don't remember the default
+                return DeviceCMYK.getCmykColorConverter();
+            }
+            synchronized (cmykColorConverterLock) {
+                if (!cmykColorConverterResolved) {
+                    CmykColorConverter converter = CmykColorConverter.fromOutputIntents(this);
+                    cmykColorConverter = converter != null ? converter : DeviceCMYK.getCmykColorConverter();
+                    cmykColorConverterResolved = true;
+                }
+            }
+        }
+        return cmykColorConverter;
     }
 
     /**

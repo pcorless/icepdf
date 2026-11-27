@@ -15,10 +15,10 @@
  */
 package org.icepdf.core.pobjects.graphics.RasterOps;
 
+import org.icepdf.core.pobjects.graphics.CmykColorConverter;
 import org.icepdf.core.pobjects.graphics.DeviceCMYK;
 import org.junit.jupiter.api.Test;
 
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.DataBufferInt;
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * GH-617: the colour cache must not change a single pixel. Every case is checked against a direct
- * {@code toRGB} of each pixel, the conversion the op made before it remembered colours.
+ * conversion of each pixel (GH-647: through the CMYK converter), the conversion the op makes without a cache.
  */
 public class IccCmykRasterOpTest {
 
@@ -43,16 +43,13 @@ public class IccCmykRasterOpTest {
     }
 
     private static void assertMatchesDirect(byte[] cmyk, int[] got) {
-        ColorSpace cs = DeviceCMYK.getIccCmykColorSpace();
+        CmykColorConverter converter = DeviceCMYK.getCmykColorConverter();
         float[] value = new float[4];
         for (int i = 0; i < got.length; i++) {
             for (int c = 0; c < 4; c++) {
                 value[c] = (cmyk[i * 4 + c] & 0xff) / 255.0f;
             }
-            float[] rgb = cs.toRGB(value);
-            int expected = (((int) (rgb[0] * 255) & 0xff) << 16) |
-                    (((int) (rgb[1] * 255) & 0xff) << 8) |
-                    ((int) (rgb[2] * 255) & 0xff);
+            int expected = converter.toArgb(value) & 0xffffff;
             int pixel = i;
             assertEquals(expected, got[i] & 0xffffff, () -> "pixel " + pixel);
             assertEquals(0xff, got[i] >>> 24, () -> "pixel " + pixel + " alpha");

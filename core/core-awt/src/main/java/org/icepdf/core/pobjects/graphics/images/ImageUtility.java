@@ -1571,9 +1571,10 @@ public class ImageUtility {
      * precise method is used to calculate the resultan RGB color.
      *
      * @param cmykRaster CMYK base raster to convert to RGB.
+     * @param converter  the document's CMYK conversion, {@link DeviceCMYK#converterFor}
      * @return Buffered image representation of raster.
      */
-    static BufferedImage convertCmykToRgb(Raster cmykRaster, float[] decode) {
+    static BufferedImage convertCmykToRgb(Raster cmykRaster, float[] decode, CmykColorConverter converter) {
         BufferedImage rgbImage = makeBufferedImage(cmykRaster);
 
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
@@ -1583,7 +1584,7 @@ public class ImageUtility {
             DecodeRasterOp decodeRasterOp = new DecodeRasterOp(decode, null);
             decodeRasterOp.filter(cmykRaster, (WritableRaster) cmykRaster);
             // convert it to rgb
-            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
+            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null, converter);
             cmykToRgb.filter(cmykRaster, rgbRaster);
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
@@ -1634,7 +1635,7 @@ public class ImageUtility {
         return convertSpaceToRgb(yCbCrRaster, colorSpace, decode, decodeRange);
     }
 
-    static BufferedImage convertYCCKToRgb(Raster ycckRaster, float[] decode) {
+    static BufferedImage convertYCCKToRgb(Raster ycckRaster, float[] decode, CmykColorConverter converter) {
         BufferedImage rgbImage = makeBufferedImage(ycckRaster);
         if (!DeviceCMYK.isDisableICCCmykColorSpace()) {
             WritableRaster rgbRaster = rgbImage.getRaster();
@@ -1646,7 +1647,7 @@ public class ImageUtility {
             YCCKRasterOp ycckRasterOp = new YCCKRasterOp(null);
             ycckRasterOp.filter(ycckRaster, (WritableRaster) ycckRaster);
             // convert it to rgb
-            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null);
+            IccCmykRasterOp cmykToRgb = new IccCmykRasterOp(null, converter);
             cmykToRgb.filter(ycckRaster, rgbRaster);
         } else {
             WritableRaster rgbRaster = rgbImage.getRaster();
@@ -1886,24 +1887,22 @@ public class ImageUtility {
                     img = new BufferedImage(cm, wr, false, null);
                 }
             }
-        } else if (colourSpace instanceof Separation || colourSpace instanceof CalGray) {
-            if (colourSpace instanceof CalGray || ((Separation) colourSpace).isNamedColor()) {
-                DataBuffer db = new DataBufferByte(data, dataLength);
-                WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
-                int[] cmap = null;
-                if (bitsPerComponent == 1) {
-                    cmap = GRAY_1_BIT_INDEX_TO_RGB;
-                } else if (bitsPerComponent == 2) {
-                    cmap = GRAY_2_BIT_INDEX_TO_RGB;
-                } else if (bitsPerComponent == 4) {
-                    cmap = GRAY_4_BIT_INDEX_TO_RGB;
-                } else if (bitsPerComponent == 8) {
-                    return null;
-                }
-                ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
-                        db.getDataType());
-                img = new BufferedImage(cm, wr, false, null);
+        } else if (colourSpace instanceof CalGray) {
+            DataBuffer db = new DataBufferByte(data, dataLength);
+            WritableRaster wr = Raster.createPackedRaster(db, width, height, bitsPerComponent, new Point(0, 0));
+            int[] cmap = null;
+            if (bitsPerComponent == 1) {
+                cmap = GRAY_1_BIT_INDEX_TO_RGB;
+            } else if (bitsPerComponent == 2) {
+                cmap = GRAY_2_BIT_INDEX_TO_RGB;
+            } else if (bitsPerComponent == 4) {
+                cmap = GRAY_4_BIT_INDEX_TO_RGB;
+            } else if (bitsPerComponent == 8) {
+                return null;
             }
+            ColorModel cm = new IndexColorModel(bitsPerComponent, cmap.length, cmap, 0, false, -1,
+                    db.getDataType());
+            img = new BufferedImage(cm, wr, false, null);
         }
         // todo add further raw decode types to help speed up image decode
         return img;

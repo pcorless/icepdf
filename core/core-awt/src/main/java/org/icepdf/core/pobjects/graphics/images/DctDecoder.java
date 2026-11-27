@@ -50,6 +50,11 @@ public class DctDecoder extends AbstractImageDecoder {
     private static final String ADOBE = "Adobe";
     private static final Name COLOR_TRANSFORM_KEY = new Name("ColorTransform");
 
+    /** CMYK samples convert as the document's DeviceCMYK does, through its output intent if any (GH-647). */
+    private static CmykColorConverter cmykConverter(PColorSpace colourSpace) {
+        return DeviceCMYK.converterFor(colourSpace != null ? colourSpace.getLibrary() : null);
+    }
+
     // Set by getJPEGEncoding: true when the encoding came from a definitive Adobe
     // APP14 marker (authoritative), false when it was inferred from the SOS/SOF
     // component count (a heuristic an explicit ColorTransform DecodeParm may override).
@@ -167,12 +172,12 @@ public class DctDecoder extends AbstractImageDecoder {
                 tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
                         imageParams.getDecodeRange());
             } else if (jpegEncoding == JPEG_ENC_CMYK && bitsPerComponent == 8 && bands > 1) {
-                tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                tmpImage = ImageUtility.convertCmykToRgb(wr, decode, cmykConverter(colourSpace));
             } else if (jpegEncoding == JPEG_ENC_YCbCr && bitsPerComponent == 8 && bands > 1) {
                 tmpImage = convertYCbCr(wr, colourSpace, decode, imageParams);
             } else if (jpegEncoding == JPEG_ENC_YCCK && bitsPerComponent == 8 && bands > 1) {
                 // YCCK to RGB works better if an CMYK intermediate is used, but slower.
-                tmpImage = ImageUtility.convertYCCKToRgb(wr, decode);
+                tmpImage = ImageUtility.convertYCCKToRgb(wr, decode, cmykConverter(colourSpace));
             } else if (jpegEncoding == JPEG_ENC_GRAY && bitsPerComponent == 8) {
                 // In DCTDecode with ColorSpace=DeviceGray, the samples are gray values (2000_SID_Service_Info.core)
                 // In DCTDecode with ColorSpace=Separation, the samples are Y values (45-14550BGermanForWeb.core AKA 4570.core)
@@ -180,13 +185,8 @@ public class DctDecoder extends AbstractImageDecoder {
                 if (!(colourSpace instanceof DeviceGray) &&
                         !(colourSpace instanceof ICCBased) &&
                         !(colourSpace instanceof Indexed)) {
-                    if (colourSpace instanceof Separation &&
-                            ((Separation) colourSpace).isNamedColor()) {
-                        tmpImage = ImageUtility.convertGrayToRgb(wr, decode);
-                    } else {
-                        tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
-                                imageParams.getDecodeRange());
-                    }
+                    tmpImage = ImageUtility.convertSpaceToRgb(wr, colourSpace, decode,
+                            imageParams.getDecodeRange());
                 } else {
                     if (colourSpace instanceof Indexed) {
                         tmpImage = ImageUtility.applyIndexColourModel(wr, colourSpace, bitsPerComponent);
@@ -212,7 +212,7 @@ public class DctDecoder extends AbstractImageDecoder {
                 }
                 // still some corner cases around 4  components and one or the other.
                 else if (wr.getNumBands() == 4 && !(colourSpace instanceof ICCBased)) {
-                    tmpImage = ImageUtility.convertCmykToRgb(wr, decode);
+                    tmpImage = ImageUtility.convertCmykToRgb(wr, decode, cmykConverter(colourSpace));
                 } else {
                     tmpImage = ImageUtility.convertYCbCrToRGB(wr, decode);
                 }

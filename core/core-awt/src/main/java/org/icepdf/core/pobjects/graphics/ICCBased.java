@@ -35,8 +35,9 @@ public class ICCBased extends PColorSpace {
     private static final Logger logger =
             Logger.getLogger(ICCBased.class.getName());
 
-    // guards profile parsing only (JDK-8033238); converting a colour takes no lock
-    private static final Object lock = new Object();
+    // guards profile parsing only (JDK-8033238); converting a colour takes no lock. Output intent profiles
+    // parse under it too (CmykColorConverter)
+    static final Object lock = new Object();
 
     // 16384 slots: the colours a page's fills, strokes and shadings use; images remember their own (GH-617)
     private static final int CACHE_BITS = 14;
@@ -49,6 +50,8 @@ public class ICCBased extends PColorSpace {
     private PColorSpace alternate;
     private final Stream stream;
     private ColorSpace colorSpace;
+    // a four-component profile converts with black-point compensation, as DeviceCMYK does (GH-647)
+    private CmykColorConverter cmykConverter;
     // each component's minimum and 255 / (max - min), read once from the profile for the cache key
     private float[] keyMin;
     private float[] keyScale;
@@ -102,6 +105,9 @@ public class ICCBased extends PColorSpace {
                     // so getColor can convert without one
                     int n = iccColorSpace.getNumComponents();
                     iccColorSpace.toRGB(new float[n]);
+                    if (n == 4) {
+                        cmykConverter = new CmykColorConverter(iccColorSpace);
+                    }
                     keyMin = new float[n];
                     keyScale = new float[n];
                     for (int i = 0; i < n; i++) {
@@ -131,7 +137,7 @@ public class ICCBased extends PColorSpace {
 
     /**
      * Packs the components into a cache key, each quantised to 8 bits across its range; a missing component
-     * counts as 0, as in {@link #calculateColor(float[], ColorSpace)}.  For the usual 0..1 range this is the
+     * counts as 0, as in {@link #calculateColor(float[], ColorSpace, CmykColorConverter)}.  For the usual 0..1 range this is the
      * {@code (int) (f * 255)} the cache always keyed on.
      */
     private int generateKey(float[] f) {
@@ -168,12 +174,12 @@ public class ICCBased extends PColorSpace {
         if (colorSpace != null && !failed) {
             try {
                 if (colorSpace.getNumComponents() > 4) {
-                    return new Color(calculateColor(f, colorSpace));
+                    return new Color(calculateColor(f, colorSpace, cmykConverter));
                 }
                 int key = generateKey(f);
                 Color color = colorCache.get(key);
                 if (color == null) {
-                    color = new Color(calculateColor(keyComponents(key), colorSpace));
+                    color = new Color(calculateColor(keyComponents(key), colorSpace, cmykConverter));
                     colorCache.put(key, color);
                 }
                 return color;
@@ -185,7 +191,7 @@ public class ICCBased extends PColorSpace {
         return alternate.getColor(f);
     }
 
-    private static int calculateColor(float[] f, ColorSpace colorSpace) {
+    private static int calculateColor(float[] f, ColorSpace colorSpace, CmykColorConverter cmykConverter) {
         int n = colorSpace.getNumComponents();
         // Get the reverse of f, and only take n values
         // Might as well limit the bounds while we're at it
@@ -203,6 +209,9 @@ public class ICCBased extends PColorSpace {
                 curr = 1.0f;
             }
             fvalue[i] = curr;
+        }
+        if (cmykConverter != null) {
+            return cmykConverter.toArgb(fvalue);
         }
         float[] frgbvalue = colorSpace.toRGB(fvalue);
         return (0xFF000000) |
