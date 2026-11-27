@@ -334,7 +334,9 @@ public class RedactedStringRewriter {
             try {
                 maskChoiceOptions(field);
                 widget.init();
-                widget.resetAppearanceStream(new AffineTransform());
+                if (appearanceDrawsText(widget)) {
+                    widget.resetAppearanceStream(new AffineTransform());
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 report.warn(RedactionWarning.Kind.UNSUPPORTED_CONTENT,
@@ -347,6 +349,34 @@ public class RedactedStringRewriter {
             }
         }
         return rewritten;
+    }
+
+    /** A text-showing operator. */
+    private static final Pattern TEXT_OPERATORS = Pattern.compile("(?<![A-Za-z])(?:Tj|TJ)(?![A-Za-z])|['\"]");
+    /** A string with something in it: a literal that isn't {@code ()}, or a hex string that isn't {@code <>}. */
+    private static final Pattern NON_EMPTY_STRING = Pattern.compile("\\((?!\\))|<(?![<>])\\s*[0-9A-Fa-f]");
+    /** A form XObject drawn, which may show text of its own. */
+    private static final Pattern DO_OPERATOR = Pattern.compile("(?<![A-Za-z])Do(?![A-Za-z])");
+
+    /**
+     * Whether a widget's appearance draws any text. One with no appearance, or one that draws a frame
+     * and no text, or shows only an empty string, shows nothing of the value, so it has nothing to
+     * redact; redrawing it would show the rest of the value where nothing showed before, and the border
+     * and background Acrobat draws from {@code /MK} with it (GH-689). A form it draws is assumed to
+     * show text.
+     */
+    private static boolean appearanceDrawsText(AbstractWidgetAnnotation<?> widget) {
+        if (!widget.hasAppearanceStream()) {
+            return false;
+        }
+        Stream appearance = widget.getAppearanceStream();
+        byte[] bytes = appearance != null ? appearance.getDecodedStreamBytes() : null;
+        if (bytes == null) {
+            return false;
+        }
+        String content = new String(bytes, StandardCharsets.ISO_8859_1);
+        return DO_OPERATOR.matcher(content).find()
+                || TEXT_OPERATORS.matcher(content).find() && NON_EMPTY_STRING.matcher(content).find();
     }
 
     private boolean maskFieldEntry(FieldDictionary field, Name key, Library library,

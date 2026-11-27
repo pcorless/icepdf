@@ -167,6 +167,48 @@ public class FieldStringRedactionTest {
                 "the appearance should draw the value now");
     }
 
+    @DisplayName("a field with no appearance isn't given one (GH-689)")
+    @Test
+    public void noAppearanceStaysNone() throws Exception {
+        Saved saved = redact(TEXT_FIELD + " /V (" + TERM + " report) /MK << /BC [1 0 0] /BG [0 1 0] >>", "<< >>");
+
+        saved.assertNoTerm();
+        assertTrue(saved.text.contains("**** report"), "the value is masked");
+        assertFalse(saved.streams.contains("/Tx BMC"), "no appearance drawn where none was: " + saved.streams);
+    }
+
+    @DisplayName("an appearance that draws only a frame isn't redrawn (GH-689)")
+    @Test
+    public void frameOnlyAppearanceKept() throws Exception {
+        String frame = "0 0 1 rg 0 0 228 20 re f /Tx BMC EMC";
+        Saved saved = redact(TEXT_FIELD + " /V (" + TERM + " report) /MK << /BC [1 0 0] >> /AP << /N 7 0 R >>",
+                compressed(FORM, frame));
+
+        saved.assertNoTerm();
+        assertTrue(saved.text.contains("**** report"), "the value is masked");
+        assertTrue(saved.streams.contains(frame), "the appearance is as it was: " + saved.streams);
+        assertEquals(1, saved.streams.split("/Tx BMC", -1).length - 1, "and no other appearance: " + saved.streams);
+    }
+
+    @DisplayName("an appearance that shows only an empty string isn't redrawn (GH-689)")
+    @Test
+    public void emptyStringAppearanceKept() throws Exception {
+        String empty = "/Tx BMC BT 0 g /Helv 9 Tf 2 14 Td <>' ET EMC";
+        Saved saved = redact(TEXT_FIELD + " /V (" + TERM + " report) /AP << /N 7 0 R >>", compressed(FORM, empty));
+
+        saved.assertNoTerm();
+        assertTrue(saved.streams.contains(empty), "the appearance is as it was: " + saved.streams);
+    }
+
+    @DisplayName("control: an appearance drawing the value is redrawn with the mask")
+    @Test
+    public void textAppearanceRedrawn() throws Exception {
+        Saved saved = redact(TEXT_FIELD + " /V (" + TERM + " report) /AP << /N 7 0 R >>", appearance(TERM + " report"));
+
+        saved.assertNoTerm();
+        assertTrue(saved.streams.contains("(**** report) Tj"), saved.streams);
+    }
+
     @DisplayName("an appearance drawing the term as a hex string is redrawn too")
     @Test
     public void hexAppearanceDiffersFromValue() throws Exception {
