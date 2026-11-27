@@ -55,11 +55,16 @@ public class FieldAppearanceGeneratorTest {
 
     /** As {@link #form(String, String...)}, with other objects numbered after the widgets. */
     private Path form(String name, List<String> widgets, List<String> extras) throws Exception {
+        return form(name, widgets, extras, "");
+    }
+
+    /** As {@link #form(String, List, List)}, with more fonts in the AcroForm's /DR. */
+    private Path form(String name, List<String> widgets, List<String> extras, String drFonts) throws Exception {
         List<String> objects = new ArrayList<>();
         StringBuilder kids = new StringBuilder();
         for (int i = 0; i < widgets.size(); i++) kids.append(i + 5).append(" 0 R ");
         objects.add("<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [" + kids + "] "
-                + "/DR << /Font << /Helv 4 0 R >> >> /DA (/Helv 0 Tf 0 g) >> >>");
+                + "/DR << /Font << /Helv 4 0 R " + drFonts + " >> >> /DA (/Helv 0 Tf 0 g) >> >>");
         objects.add("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
         objects.add("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 400] /Annots [" + kids + "] >>");
         objects.add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>");
@@ -296,6 +301,64 @@ public class FieldAppearanceGeneratorTest {
             assertTrue(dark > 200, "the value is drawn: " + dark + " dark pixels");
         } finally {
             reopened.dispose();
+        }
+    }
+
+    @DisplayName("a fixed size whose capitals are taller than the clip shrinks to fit (GH-689)")
+    @Test
+    void fixedSizeTooTallShrinks() throws Exception {
+        // clip 9.3 high; Helvetica capitals at 14pt are 10.05
+        String content = generated(text("short", "0 0 200 11.3", "/DA (/Helv 14 Tf 0 g) /V (****)"));
+        Matcher tf = Pattern.compile("/Helv ([\\d.]+) Tf").matcher(content);
+        assertTrue(tf.find(), content);
+        float size = Float.parseFloat(tf.group(1));
+        assertTrue(size < 14, "shrunk: " + content);
+        assertEquals(9.3 / 0.718, size, 0.05, "capitals just fit the clip");
+    }
+
+    @DisplayName("control: a fixed size that fits is kept")
+    @Test
+    void fixedSizeThatFitsKept() throws Exception {
+        assertTrue(generated(text("fits", "0 0 200 20", "/DA (/Helv 14 Tf 0 g) /V (x)")).contains("/Helv 14 Tf"));
+    }
+
+    @DisplayName("a multi-line field shorter than a line keeps its first baseline in the box (GH-689)")
+    @Test
+    void shortMultiLineBaseline() throws Exception {
+        String content = generated(text("tiny", "0 0 200 10", "/Ff 4096 /DA (/Helv 8 Tf 0 g) /V (****)"));
+        float[] td = numbersBefore(content, "Td");
+        // clip bottom 1, Helvetica descent 207 at 8pt; content top 8 less the bbox height 9.248 would be -1.25
+        assertEquals(1 + 0.207 * 8, td[1], 0.01, "the descender just inside the clip:\n" + content);
+    }
+
+    @DisplayName("an embedded subset missing a character the value uses falls back to Helvetica (GH-689)")
+    @Test
+    void subsetMissingGlyphFallsBack() throws Exception {
+        assertTrue(subsetField("****").contains("/Helv "), "the mask isn't in the subset");
+    }
+
+    @DisplayName("control: an embedded subset that has every character is kept")
+    @Test
+    void subsetWithGlyphsKept() throws Exception {
+        assertTrue(subsetField("aaa").contains("/Sub "), "every character is in the subset");
+    }
+
+    /** A field in an embedded subset TrueType whose /Widths give 'a' a width and '*' none. */
+    private String subsetField(String value) throws Exception {
+        StringBuilder widths = new StringBuilder();
+        for (int code = 32; code <= 126; code++) widths.append(code == 'a' ? "556 " : code == ' ' ? "278 " : "0 ");
+        String program = "<< /Length 4 >>\nstream\nxxxx\nendstream";
+        Document document = new Document();
+        document.setFile(form("subset", List.of(text("s", "0 0 200 20", "/DA (/Sub 10 Tf 0 g) /V (" + value + ")")),
+                List.of("<< /Type /Font /Subtype /TrueType /BaseFont /ABCDEF+Arial /FirstChar 32 /LastChar 126 "
+                                + "/Widths [" + widths + "] /FontDescriptor 7 0 R /Encoding /WinAnsiEncoding >>",
+                        "<< /Type /FontDescriptor /FontName /ABCDEF+Arial /Flags 32 /FontBBox [0 -200 1000 900] "
+                                + "/ItalicAngle 0 /Ascent 900 /Descent -200 /CapHeight 700 /StemV 80 /FontFile2 8 0 R >>",
+                        program), "/Sub 6 0 R").toString());
+        try {
+            return regenerate(document, 0);
+        } finally {
+            document.dispose();
         }
     }
 

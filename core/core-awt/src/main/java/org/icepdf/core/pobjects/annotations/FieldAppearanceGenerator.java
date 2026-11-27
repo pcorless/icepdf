@@ -110,10 +110,11 @@ final class FieldAppearanceGenerator {
     private Result build(String existingContent, Rectangle2D existingBox, AffineTransform existingMatrix) {
         resolveDefaultAppearance();
         Font font = widget.getTextFont(fontName);
-        if (font == null || !isWritable(font)) {
+        if (font == null || !isWritable(font) || lacksGlyphs(font, value())) {
             // a /DA font the document doesn't have would draw nothing, and a composite font with a
             // CMap other than Identity can't be written from Unicode without the CMap reversed: use
-            // Helvetica, as the field appearance did before (and as a reader substitutes).
+            // Helvetica, as the field appearance did before (and as a reader substitutes).  So does an
+            // embedded subset that left out a character the value uses, which would draw nothing there.
             useStandardFont();
             font = widget.getTextFont(fontName);
             if (font != null && !isWritable(font)) font = null;
@@ -204,6 +205,43 @@ final class FieldAppearanceGenerator {
         if (font.getSubTypeFormat() != Font.CID_FORMAT) return true;
         Name encoding = font.getEncoding();
         return encoding != null && encoding.getName().startsWith("Identity-");
+    }
+
+    /**
+     * Whether an embedded simple font is missing a glyph the text uses, going by {@code /Widths}: a
+     * subset gives the characters it left out a width of 0, or leaves them outside FirstChar to
+     * LastChar.  The font program can't be asked, as a substitute answers for it.  Masked text is the
+     * usual case: a subset made for the original value seldom has the {@code *} the mask is made of.
+     */
+    private boolean lacksGlyphs(Font font, String text) {
+        if (text == null || font.getSubTypeFormat() == Font.CID_FORMAT || !isEmbedded(font)) return false;
+        Object widths = library.getObject(font.getEntries(), WIDTHS_KEY);
+        Object first = library.getObject(font.getEntries(), Font.FIRST_CHAR_KEY);
+        if (!(widths instanceof List) || !(first instanceof Number)) return false;
+        List<?> list = (List<?>) widths;
+        int firstChar = ((Number) first).intValue();
+        org.icepdf.core.pobjects.fonts.FontTextEncoder encoder = org.icepdf.core.pobjects.fonts.FontTextEncoder.of(font);
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (Character.isWhitespace(c)) continue;
+            int code = encoder.codeOf(c);
+            if (code < 0) continue; // dropped when written, in any font of this encoding
+            int index = code - firstChar;
+            Object width = index >= 0 && index < list.size() ? library.getObject(list.get(index)) : null;
+            if (!(width instanceof Number) || ((Number) width).floatValue() == 0) return true;
+        }
+        return false;
+    }
+
+    private static final Name WIDTHS_KEY = new Name("Widths");
+
+    private static boolean isEmbedded(Font font) {
+        org.icepdf.core.pobjects.fonts.FontDescriptor descriptor = font.getFontDescriptor();
+        if (descriptor == null) return false;
+        DictionaryEntries entries = descriptor.getEntries();
+        return entries.get(org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE) != null
+                || entries.get(org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_2) != null
+                || entries.get(org.icepdf.core.pobjects.fonts.FontDescriptor.FONT_FILE_3) != null;
     }
 
     /** Swaps the /DA font for {@link #STANDARD_FONT}, keeping its size and colour. */
@@ -401,6 +439,13 @@ final class FieldAppearanceGenerator {
         float size = fontSize;
         if (size == 0) {
             size = listBox ? DEFAULT_FONT_SIZE : autoFontSize(value, content);
+        } else if (!listBox && !comb && !isMultiLine()) {
+            // a fixed size whose capitals are taller than the clip shows only their lower part, and of
+            // a mask nothing, as * sits at the top of the capitals: shrink to fit, as auto-size would.
+            float cap = metrics.getCapHeight() / 1000f;
+            if (cap * size > clip.getHeight()) {
+                size = Math.max(MINIMUM_FONT_SIZE, (float) clip.getHeight() / cap);
+            }
         }
 
         out.append("q\n").append(rect(clip)).append(" re W n\n");
@@ -421,7 +466,10 @@ final class FieldAppearanceGenerator {
             drawListOptions(out, content, topIndex, size);
         } else if (isMultiLine()) {
             float leading = metrics.getBoundingBoxHeight() * scale;
-            float y = (float) content.getMaxY() - leading;
+            // a field shorter than a line would put the first baseline below the box: keep it where the
+            // descender just stays inside the clip, as a single line's is.
+            float y = Math.max((float) content.getMaxY() - leading,
+                    (float) clip.getMinY() - metrics.getDescent() * scale);
             List<PlainTextLayout.Line> lines = new ArrayList<>();
             for (String paragraph : PlainTextLayout.paragraphs(value)) {
                 lines.addAll(PlainTextLayout.lines(paragraph, metrics, size, (float) content.getWidth()));
