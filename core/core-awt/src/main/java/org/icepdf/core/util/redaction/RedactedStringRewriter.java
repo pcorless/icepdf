@@ -712,6 +712,10 @@ public class RedactedStringRewriter {
         PageTree pageTree = document.getPageTree();
         for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
             Page page = pageTree.getPage(i);
+            if (page == null) {
+                // counted but missing from the tree (GH-702); the Redactor reports it
+                continue;
+            }
             List<Reference> references = page.getAnnotationReferences();
             if (references == null) {
                 continue;
@@ -958,6 +962,10 @@ public class RedactedStringRewriter {
         PageTree pageTree = document.getPageTree();
         for (int i = 0, max = pageTree.getNumberOfPages(); i < max; i++) {
             Page page = pageTree.getPage(i);
+            if (page == null) {
+                // counted but missing from the tree (GH-702); the Redactor reports it
+                continue;
+            }
             List<Reference> references = page.getAnnotationReferences();
             if (references == null) {
                 continue;

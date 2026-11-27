@@ -234,6 +234,13 @@ public class Redactor {
         int pageCount = document.getNumberOfPages();
         for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
             Page page = document.getPageTree().getPage(pageIndex);
+            if (page == null) {
+                // The page tree counts more pages than it holds (GH-702). A page that can't be read can't be
+                // burned, so the caller has to hear that it wasn't looked at.
+                report.warn(RedactionWarning.Kind.STREAM_NOT_PARSED,
+                        "Page " + pageIndex + " could not be read, so nothing on it was redacted");
+                continue;
+            }
             List<RedactionAnnotation> redactionAnnotations = page.getRedactionAnnotations();
             if (redactionAnnotations == null || redactionAnnotations.isEmpty()) {
                 continue;
