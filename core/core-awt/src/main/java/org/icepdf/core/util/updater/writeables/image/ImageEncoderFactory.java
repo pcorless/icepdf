@@ -27,7 +27,8 @@ import static org.icepdf.core.pobjects.graphics.images.ImageDecoderFactory.*;
  * create a new encoded byte[] that best matches the color data of the original data.  Rough guide
  * <ul>
  *     <li>CCITTFAX_DECODE_FILTERS, JBIG2_DECODE_FILTERS -> CCITTFAX encoder</li>
- *     <li>DCT_DECODE_FILTERS, JPX_DECODE_FILTERS -> png flate encoder</li>
+ *     <li>DCT_DECODE_FILTERS -> JPEG (DCTDecode), JPX_DECODE_FILTERS -> JPEG 2000 (JPXDecode), for grey and RGB
+ *     without alpha (GH-697); anything else they can't take -> png flate encoder</li>
  *     <li>fall back to raw raster encoding</li>
  * </ul>
  * The basic idea is that we are only writing images that have been altered by the redaction tooling. All images that
@@ -61,9 +62,13 @@ public class ImageEncoderFactory {
         if (containsFilter(imageStream, CCITTFAX_DECODE_FILTERS) ||
                 containsFilter(imageStream, JBIG2_DECODE_FILTERS)) {
             return new FaxEncoder(imageStream);
-        } else if (containsFilter(imageStream, DCT_DECODE_FILTERS) ||
-                containsFilter(imageStream, JPX_DECODE_FILTERS)) {
-            return new PredictorEncoder(imageStream);
+        } else if (containsFilter(imageStream, DCT_DECODE_FILTERS)) {
+            // kept as JPEG: Flate made a scanned page several times larger (GH-697)
+            return LossyEncoding.components(imageStream.getDecodedImage()) > 0
+                    ? new DctEncoder(imageStream) : new PredictorEncoder(imageStream);
+        } else if (containsFilter(imageStream, JPX_DECODE_FILTERS)) {
+            return LossyEncoding.components(imageStream.getDecodedImage()) > 0
+                    ? new JpxEncoder(imageStream) : new PredictorEncoder(imageStream);
         } else {
             return new RasterEncoder(imageStream);
         }
@@ -97,8 +102,12 @@ public class ImageEncoderFactory {
             // Also the fax encoder, so JBIG2 becomes CCITT.
             return true;
         }
-        // Everything else - DCT and JPX through the predictor encoder, the rest through the raster
-        // encoder - comes out Flate.
+        if (containsFilter(imageStream, DCT_DECODE_FILTERS) || containsFilter(imageStream, JPX_DECODE_FILTERS)) {
+            // Kept as JPEG or JPEG 2000 - unless the image has a colour-key mask, whose alpha only the predictor
+            // encoder can carry: decided before the burn, so from the dictionary, as burnBaseImage decides it.
+            return imageStream.getImageParams().isColorKeyMask();
+        }
+        // Everything else goes through the raster encoder and comes out Flate.
         return !containsFilter(imageStream, FLATE_DECODE_FILTERS);
     }
 

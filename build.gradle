@@ -31,6 +31,13 @@ allprojects {
 
     repositories {
         mavenCentral()
+        // GH-697: jpx-imageio's JPEG 2000 writer is a local snapshot until its next release;
+        // `mvn install` it from its own checkout. Only that library is taken from here.
+        mavenLocal {
+            content {
+                includeModule 'com.github.pcorless', 'jpx-imageio'
+            }
+        }
     }
 
     // show api deprecation

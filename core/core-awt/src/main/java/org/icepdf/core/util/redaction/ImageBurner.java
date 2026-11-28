@@ -21,6 +21,7 @@ import org.icepdf.core.pobjects.annotations.Annotation;
 import org.icepdf.core.pobjects.annotations.RedactionAnnotation;
 import org.icepdf.core.pobjects.graphics.CalGray;
 import org.icepdf.core.pobjects.graphics.DeviceGray;
+import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.PColorSpace;
 import org.icepdf.core.pobjects.graphics.images.ImageDecoder;
 import org.icepdf.core.pobjects.graphics.images.ImageParams;
@@ -78,7 +79,10 @@ public class ImageBurner {
         ImageStream imageStream = imageReference.getImageStream();
         BufferedImage image = imageStream.getDecodedImage();
         if (image == null) {
-            image = imageReference.getBaseImage();
+            // The image's own samples at their own resolution: its masks are burned separately below, each at
+            // theirs. The composite the page paints is at a mask's resolution when that's higher, and writing it
+            // back made the image many times its size (GH-697).
+            image = imageReference.getUnmaskedImage();
         }
         List<RedactionAnnotation> areas = new ArrayList<>(annotations.size());
         for (RedactionAnnotation annotation : annotations) {
@@ -96,8 +100,11 @@ public class ImageBurner {
         // of them: the samples themselves, the stencil deciding which of them are painted, and the
         // soft mask deciding how opaque they are.  Leaving any one alone leaves either content or the
         // shape of it behind.
-        burnMaskStream(imageStream, placement, areas);
-        burnSoftMask(imageStream, placement, areas);
+        // the drawing's graphics state, which the mask decoders need: a CCITT /Mask decoded without one threw, the
+        // rest of the page's content was skipped and nothing was burned, with no warning
+        GraphicsState graphicsState = imageReference.getGraphicsState();
+        burnMaskStream(imageStream, placement, areas, graphicsState);
+        burnSoftMask(imageStream, placement, areas, graphicsState);
         return burnBaseImage(imageStream, placement, image, areas, redactionColor);
     }
 
@@ -109,9 +116,9 @@ public class ImageBurner {
      * documents in particular carry content in the mask rather than the image.
      */
     private static void burnMaskStream(ImageStream imageStream, AffineTransform placement,
-                                       List<RedactionAnnotation> areas) {
+                                       List<RedactionAnnotation> areas, GraphicsState graphicsState) {
         ImageStream maskImageStream = imageStream.getImageParams().getMaskImageStream();
-        ImageDecoder maskDecoder = imageStream.getImageParams().getMask(null);
+        ImageDecoder maskDecoder = imageStream.getImageParams().getMask(graphicsState);
         if (maskImageStream == null || maskDecoder == null) {
             return;
         }
@@ -148,9 +155,9 @@ public class ImageBurner {
      * treating it like any other image would erase the redaction rather than apply it.
      */
     private static void burnSoftMask(ImageStream imageStream, AffineTransform placement,
-                                     List<RedactionAnnotation> areas) {
+                                     List<RedactionAnnotation> areas, GraphicsState graphicsState) {
         ImageStream softMask = imageStream.getImageParams().getSMaskImageStream();
-        ImageDecoder softMaskDecoder = imageStream.getImageParams().getSMask(null);
+        ImageDecoder softMaskDecoder = imageStream.getImageParams().getSMask(graphicsState);
         if (softMask == null || softMaskDecoder == null) {
             return;
         }
