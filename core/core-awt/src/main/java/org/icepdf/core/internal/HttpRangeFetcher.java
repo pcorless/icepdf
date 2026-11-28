@@ -186,38 +186,27 @@ public final class HttpRangeFetcher implements RangeFetcher {
         return Math.max(0, Math.min(millis, MAX_RETRY_PAUSE_MILLIS));
     }
 
-    // not interruptible, like the fetch: the viewer interrupts the renders it cancels
-    private static void pause(long millis) {
-        long until = System.nanoTime() + millis * 1_000_000;
-        boolean interrupted = false;
-        for (long left = millis; left > 0; left = (until - System.nanoTime()) / 1_000_000) {
-            try {
-                Thread.sleep(left);
-            } catch (InterruptedException e) {
-                interrupted = true;
-            }
-        }
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
     @Override
     public long length() {
         return length;
     }
 
     @Override
-    public void fetch(long from, byte[] target, int offset, int count) throws IOException {
+    public void fetch(long from, byte[] target, int offset, int count, FetchAttempt attempt) throws IOException {
         long last = from + count - 1;
         HttpRequest request = request(uri, headers, requestTimeout)
                 .header("Range", "bytes=" + from + "-" + last)
                 .build();
         HttpResponse<byte[]> response = send(client, request);
+        attempt.status = response.statusCode();
         // a server that says it's busy gets a pause, as long as it asks for (within reason), then another try
         for (int retry = 1; retry <= BUSY_RETRIES && isBusy(response.statusCode()); retry++) {
-            pause(retryAfterMillis(response, retry));
+            long pause = retryAfterMillis(response, retry);
+            Uninterruptibly.sleep(pause);
+            attempt.retries = retry;
+            attempt.retryWaitMillis += pause;
             response = send(client, request);
+            attempt.status = response.statusCode();
         }
         if (response.statusCode() != 206) {
             throw new RangeFetchException("HTTP " + response.statusCode() + " for range " + from + "-" + last

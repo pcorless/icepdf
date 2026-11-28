@@ -22,6 +22,10 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import org.icepdf.core.pobjects.FetchStats;
+import org.icepdf.core.pobjects.FetchStats.Initiator;
+
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -33,6 +37,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +97,41 @@ public final class RangeCache {
 
     private final AtomicLong bytesFetched = new AtomicLong();
     private final AtomicLong requests = new AtomicLong();
+
+    // what the requests cost, for FetchStats: the latest of them, and totals
+    /** Requests the log keeps. */
+    public static final int LOG_SIZE = 1000;
+    // guarded by itself
+    private final ArrayDeque<LogEntry> log = new ArrayDeque<>();
+    private final AtomicInteger sending = new AtomicInteger();
+    private final AtomicInteger waiting = new AtomicInteger();
+    private final AtomicLong retries = new AtomicLong();
+    private final AtomicLong failures = new AtomicLong();
+    private volatile long originNanos = System.nanoTime();
+
+    /** One request, as it goes. */
+    private static final class LogEntry {
+        final long id;
+        final long startNanos;
+        final long from;
+        final int length;
+        final Initiator initiator;
+        final String thread;
+        volatile long sentNanos;
+        volatile long endNanos = -1;
+        volatile String error;
+        final FetchAttempt attempt = new FetchAttempt();
+
+        LogEntry(long id, long startNanos, long from, int length, Initiator initiator, String thread) {
+            this.id = id;
+            this.startNanos = startNanos;
+            this.from = from;
+            this.length = length;
+            this.initiator = initiator;
+            this.thread = thread;
+            sentNanos = startNanos;
+        }
+    }
 
     /**
      * @param fetcher   the source of the bytes; the cache closes it
@@ -173,12 +213,26 @@ public final class RangeCache {
      * document's length). Only whole blocks count, and a last block that ends the document.
      */
     public void seed(byte[] bytes) {
+        long now = System.nanoTime();
+        seed(bytes, now, now, 206);
+    }
+
+    /**
+     * {@link #seed(byte[])}, logged as the request that fetched them: sent at {@code startNanos}, answered with
+     * {@code status} at {@code endNanos} ({@link System#nanoTime()}). The document's clock starts at its start.
+     */
+    public void seed(byte[] bytes, long startNanos, long endNanos, int status) {
+        originNanos = Math.min(originNanos, startNanos);
+        LogEntry entry = new LogEntry(requests.incrementAndGet(), startNanos, 0, bytes.length, Initiator.OPEN,
+                Thread.currentThread().getName());
+        entry.attempt.status = status;
+        entry.endNanos = endNanos;
+        record(entry);
         int count = Math.min(bytes.length, length);
         ByteBuffer target = mapped.duplicate();
         target.put(bytes, 0, count);
         int blocks = count == length ? blockCount : count / blockSize;
         bytesFetched.addAndGet(count);
-        requests.incrementAndGet();
         if (blocks > 0) {
             finish(new int[]{0, blocks - 1}, null);
         }
@@ -189,6 +243,13 @@ public final class RangeCache {
      * chunk past {@code from}, over bytes not fetched yet: what follows a stream is often read next.
      */
     public void ensure(long from, long count) throws IOException {
+        ensure(from, count, Initiator.STREAM);
+    }
+
+    /**
+     * {@link #ensure(long, long)}, for {@code initiator}'s sake.
+     */
+    public void ensure(long from, long count, Initiator initiator) throws IOException {
         if (complete || count <= 0) {
             return;
         }
@@ -203,17 +264,17 @@ public final class RangeCache {
         // a range that ends where fetched bytes begin is likely one of a run read backward: read behind too
         int after = presentFrom(last + 1, 1);
         int readBehind = after > 0 ? Math.max(0, first - after) : first;
-        fetchBlocks(first, last, readBehind, readAhead);
+        fetchBlocks(first, last, readBehind, readAhead, initiator);
     }
 
     /**
      * Makes {@code [from, to)} readable and nothing more.
      */
-    private void ensureExactly(int from, int to) throws IOException {
+    private void ensureExactly(int from, int to, Initiator initiator) throws IOException {
         if (!complete && from < to) {
             int first = from / blockSize;
             int last = (to - 1) / blockSize;
-            fetchBlocks(first, last, first, last);
+            fetchBlocks(first, last, first, last, initiator);
         }
     }
 
@@ -245,10 +306,10 @@ public final class RangeCache {
                 int last = (end - 1) / blockSize;
                 int behind = run > 0 ? Math.max(0, first - run) : first;
                 int ahead = run < 0 ? Math.min(blockCount - 1, last - run) : last;
-                fetchBlocks(first, last, behind, ahead);
+                fetchBlocks(first, last, behind, ahead, Initiator.OBJECT);
                 run = 0;
             } else {
-                ensureExactly(start, end);
+                ensureExactly(start, end, Initiator.OBJECT);
             }
             int scanFrom = Math.max(start, searched - longest + 1);
             int found = -1;
@@ -325,7 +386,7 @@ public final class RangeCache {
 
     private void prefetchWindow(int[] window) {
         try {
-            ensureExactly(window[0], window[1]);
+            ensureExactly(window[0], window[1], Initiator.PREFETCH);
         } catch (IOException | RuntimeException e) {
             logger.log(Level.FINE, "A prefetch failed; its objects are read when asked for", e);
         }
@@ -337,7 +398,7 @@ public final class RangeCache {
      */
     public void ensureAll() throws IOException {
         if (!complete) {
-            fetchBlocks(0, blockCount - 1, 0, blockCount - 1);
+            fetchBlocks(0, blockCount - 1, 0, blockCount - 1, Initiator.WHOLE_FILE);
         }
     }
 
@@ -360,7 +421,8 @@ public final class RangeCache {
      * {@code readAhead} while the blocks there are missing too, and one that starts at {@code first} back to
      * {@code readBehind}.
      */
-    private void fetchBlocks(int first, int last, int readBehind, int readAhead) throws IOException {
+    private void fetchBlocks(int first, int last, int readBehind, int readAhead, Initiator initiator)
+            throws IOException {
         List<CompletableFuture<Void>> waits = new ArrayList<>();
         // each batch is one request: the runs of missing blocks it brings, gaps of a block or two between them included
         List<List<int[]>> batches = new ArrayList<>();
@@ -413,7 +475,7 @@ public final class RangeCache {
         for (int i = 0; i < batches.size(); i++) {
             List<int[]> request = batches.get(i);
             try {
-                fetchRequest(request);
+                fetchRequest(request, initiator);
                 for (int[] run : request) {
                     finish(run, null);
                 }
@@ -440,7 +502,7 @@ public final class RangeCache {
             } catch (CompletionException e) {
                 // the other thread's fetch failed; try once ourselves
                 logger.log(Level.FINE, "A shared fetch failed, retrying", e.getCause());
-                fetchBlocks(first, last, first, last);
+                fetchBlocks(first, last, first, last, initiator);
                 return;
             }
         }
@@ -480,15 +542,29 @@ public final class RangeCache {
      * Fetches the span of a request's runs in one go, and writes only the runs: the gaps between them are
      * already here, or another thread's to write.
      */
-    private void fetchRequest(List<int[]> runs) throws IOException {
+    private void fetchRequest(List<int[]> runs, Initiator initiator) throws IOException {
         int from = runs.get(0)[0] * blockSize;
         int to = (int) Math.min(length, (long) (runs.get(runs.size() - 1)[1] + 1) * blockSize);
         byte[] bytes = new byte[to - from];
+        LogEntry entry = new LogEntry(requests.incrementAndGet(), System.nanoTime(), from, bytes.length, initiator,
+                Thread.currentThread().getName());
+        record(entry);
         // not interruptible: the viewer interrupts the renders it cancels, and the bytes are wanted anyway
+        waiting.incrementAndGet();
         permits.acquireUninterruptibly();
+        waiting.decrementAndGet();
+        sending.incrementAndGet();
+        entry.sentNanos = System.nanoTime();
         try {
-            fetcher.fetch(from, bytes, 0, bytes.length);
+            fetcher.fetch(from, bytes, 0, bytes.length, entry.attempt);
+        } catch (IOException | RuntimeException e) {
+            entry.error = String.valueOf(e.getMessage() != null ? e.getMessage() : e);
+            failures.incrementAndGet();
+            throw e;
         } finally {
+            entry.endNanos = System.nanoTime();
+            retries.addAndGet(entry.attempt.retries);
+            sending.decrementAndGet();
             permits.release();
         }
         ByteBuffer target = mapped.duplicate();
@@ -499,7 +575,43 @@ public final class RangeCache {
             target.put(bytes, start - from, end - start);
         }
         bytesFetched.addAndGet(bytes.length);
-        requests.incrementAndGet();
+    }
+
+    private void record(LogEntry entry) {
+        synchronized (log) {
+            log.addLast(entry);
+            while (log.size() > LOG_SIZE) {
+                log.removeFirst();
+            }
+        }
+    }
+
+    /**
+     * @return what fetching has cost so far
+     */
+    public FetchStats stats() {
+        List<FetchStats.Request> recent;
+        synchronized (log) {
+            recent = new ArrayList<>(log.size());
+            for (LogEntry e : log) {
+                long end = e.endNanos;
+                recent.add(new FetchStats.Request(e.id, millis(e.startNanos - originNanos), e.from, e.length,
+                        e.initiator, e.thread, millis(e.sentNanos - e.startNanos),
+                        end < 0 ? -1 : millis(end - e.sentNanos), end < 0 ? 0 : e.attempt.status,
+                        e.attempt.retries, e.attempt.retryWaitMillis, e.error));
+            }
+        }
+        BitSet here;
+        synchronized (this) {
+            here = (BitSet) present.clone();
+        }
+        return new FetchStats(length, bytesFetched.get(), requests.get(), sending.get(), waiting.get(),
+                maxConcurrent, retries.get(), failures.get(), millis(System.nanoTime() - originNanos), complete,
+                recent, here, blockSize);
+    }
+
+    private static long millis(long nanos) {
+        return Math.max(0, nanos / 1_000_000);
     }
 
     private synchronized void finish(int[] run, Exception failure) {

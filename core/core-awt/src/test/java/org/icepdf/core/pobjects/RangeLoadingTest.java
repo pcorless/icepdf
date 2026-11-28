@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -235,8 +236,43 @@ public class RangeLoadingTest {
     @Test
     public void aBusyServerIsWaitedFor() throws Exception {
         busyLeft.set(2);
-        assertRendersAsLocal(resource("/updater/DSCP73_om_en.pdf"), UrlLoadOptions.defaults(), 1);
-        assertEquals(0, busyLeft.get(), "the busy answers were all given");
+        byte[] bytes = resource("/updater/DSCP73_om_en.pdf");
+        served = bytes;
+        Document local = local(bytes);
+        Document remote = remote(UrlLoadOptions.defaults());
+        try {
+            assertSameImage(render(local, 0), render(remote, 0), "page 0");
+            assertEquals(0, busyLeft.get(), "the busy answers were all given");
+            FetchStats stats = remote.getFetchStats();
+            assertEquals(2, stats.getRetries());
+            assertEquals(0, stats.getFailures());
+            assertTrue(stats.getRecentRequests().stream().anyMatch(r -> r.getRetries() > 0 && r.getStatus() == 206));
+            assertEquals(FetchStats.Initiator.OPEN, stats.getRecentRequests().get(0).getInitiator());
+            assertEquals(requests.get(), stats.getRequestCount() + stats.getRetries(),
+                    "every request the server saw is in the log, retries as retries");
+            assertNull(local.getFetchStats(), "a local document has none");
+        } finally {
+            local.dispose();
+            remote.dispose();
+        }
+    }
+
+    @Test
+    public void aThrottleSlowsTheFetch() throws Exception {
+        byte[] bytes = resource("/updater/DSCP73_om_en.pdf");
+        served = bytes;
+        long started = System.nanoTime();
+        Document remote = remote(UrlLoadOptions.builder()
+                .throttle(new NetworkThrottle(Duration.ofMillis(100), 0)).build());
+        try {
+            render(remote, 0);
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            long requestsMade = remote.getFetchStats().getRequestCount();
+            // each request waits 100 ms; at most four at once
+            assertTrue(millis >= 100 * requestsMade / 4, millis + " ms for " + requestsMade + " requests");
+        } finally {
+            remote.dispose();
+        }
     }
 
     @Test

@@ -20,6 +20,8 @@ import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.internal.HttpRangeFetcher;
 import org.icepdf.core.internal.RangeCache;
+import org.icepdf.core.internal.RangeFetcher;
+import org.icepdf.core.internal.ThrottledLink;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
@@ -354,21 +356,33 @@ public class Document {
         } catch (URISyntaxException e) {
             throw new IOException("Not a valid URI: " + url, e);
         }
+        ThrottledLink link = options.getThrottle() != null ? new ThrottledLink(options.getThrottle()) : null;
         if (!options.isRangeRequests()) {
             byte[] whole = HttpRangeFetcher.fetchAll(client, uri, options.getHeaders(), options.getRequestTimeout());
+            if (link != null) {
+                link.transfer(whole.length);
+            }
             setByteArray(whole, 0, whole.length, url.toString());
             return;
         }
+        long sent = System.nanoTime();
         HttpRangeFetcher.Opened opened = HttpRangeFetcher.open(client, uri, options.getHeaders(),
                 options.getRequestTimeout(), options.getChunkSize());
         if (opened.getWholeDocument() != null) {
             byte[] whole = opened.getWholeDocument();
+            if (link != null) {
+                link.transfer(whole.length);
+            }
             setByteArray(whole, 0, whole.length, url.toString());
             return;
         }
-        RangeCache cache = new RangeCache(opened.getFetcher(), options.getChunkSize(), options.getBlockSize(),
+        if (link != null) {
+            link.transfer(opened.getFirstChunk().length);
+        }
+        RangeFetcher fetcher = link != null ? link.wrap(opened.getFetcher()) : opened.getFetcher();
+        RangeCache cache = new RangeCache(fetcher, options.getChunkSize(), options.getBlockSize(),
                 options.getProbeSize(), options.getMaxConcurrentRequests());
-        cache.seed(opened.getFirstChunk());
+        cache.seed(opened.getFirstChunk(), sent, System.nanoTime(), 206);
         setRangeCache(cache, url.toString());
     }
 
@@ -396,6 +410,17 @@ public class Document {
     }
 
     /**
+     * @return what fetching this document has cost so far, for a network panel or a log: requests, retries,
+     * which parts of the file have arrived. Null for a document not fetched in ranges (a local file, or one a
+     * server sent whole).
+     * @since 8.1
+     */
+    public FetchStats getFetchStats() {
+        RangeCache cache = rangeCache;
+        return cache != null ? cache.stats() : null;
+    }
+
+    /**
      * @return the document's length in bytes, or 0 when no document is open
      * @since 8.1
      */
@@ -416,8 +441,8 @@ public class Document {
         rangeCache = cache;
         try {
             // the header, and the end of the file: startxref and, usually, the cross-reference itself
-            cache.ensure(0, 8 * 1024);
-            cache.ensure(cache.length() - TAIL_FETCH, TAIL_FETCH);
+            cache.ensure(0, 8 * 1024, FetchStats.Initiator.OPEN);
+            cache.ensure(cache.length() - TAIL_FETCH, TAIL_FETCH, FetchStats.Initiator.OPEN);
             documentByteBuffer = cache.getBuffer();
             setInputStream(documentByteBuffer);
         } catch (Exception e) {

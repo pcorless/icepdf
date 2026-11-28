@@ -27,6 +27,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.input.KeyCode;
@@ -53,7 +55,8 @@ import java.util.function.Function;
 /**
  * A live look at rendering, for debugging: the shared render pool's threads and queue, every
  * view's cache and jobs, and the heap, with 60-second sparklines of heap, queue depth and busy
- * threads.  One window for the process, whichever viewer window opened it; it polls
+ * threads.  A second tab shows the network: what each remote document has fetched, its requests, and a
+ * throttle to slow them ({@link NetworkTab}).  One window for the process, whichever viewer window opened it; it polls
  * {@link RenderService#snapshot()} four times a second while it is showing, and not at all
  * otherwise.
  * <p>
@@ -80,6 +83,8 @@ public final class DevToolsWindow {
     private final Stage stage = new Stage(StageStyle.UTILITY);
     private final VBox root = new VBox(10);
     private final ScrollPane pane = new ScrollPane(root);
+    private final NetworkTab network = new NetworkTab();
+    private final TabPane tabs = new TabPane();
     private final Timeline poll = new Timeline(new KeyFrame(POLL, e -> update()));
 
     private final ProgressBar heapBar = new ProgressBar(0);
@@ -104,7 +109,7 @@ public final class DevToolsWindow {
     private final Label counters = new Label();
 
     private Theme theme;
-    private final ChangeListener<Theme.Mode> themeListener = (o, was, now) -> theme.style(pane);
+    private final ChangeListener<Theme.Mode> themeListener = (o, was, now) -> theme.style(tabs);
 
     private DevToolsWindow() {
         stage.setTitle(Messages.get("devtools.title"));
@@ -154,7 +159,11 @@ public final class DevToolsWindow {
                 heading("devtools.views"), views,
                 heading("devtools.counters"), counters);
         pane.setFitToWidth(true);
-        stage.setScene(new Scene(pane, 820, 860));
+        Tab rendering = new Tab(Messages.get("devtools.tab.rendering"), pane);
+        Tab networkTab = new Tab(Messages.get("devtools.tab.network"), network.getNode());
+        for (Tab tab : List.of(rendering, networkTab)) tab.setClosable(false);
+        tabs.getTabs().setAll(rendering, networkTab);
+        stage.setScene(new Scene(tabs, 820, 860));
         stage.getScene().getAccelerators().put(KEY, this::hide);
 
         poll.setCycleCount(Animation.INDEFINITE);
@@ -192,6 +201,21 @@ public final class DevToolsWindow {
         return stage;
     }
 
+    /** The network tab; for the tests. */
+    NetworkTab network() {
+        return network;
+    }
+
+    /** Shows the network tab. */
+    public void showNetwork() {
+        tabs.getSelectionModel().select(1);
+    }
+
+    /** Rows in the network tab's request table; for the tests. */
+    public int networkRowCount() {
+        return network.rowCount();
+    }
+
     /** Rows in the threads, queue and views tables; for the smoke runs. */
     public int[] rowCounts() {
         return new int[]{threads.getItems().size(), queue.getItems().size(), views.getItems().size()};
@@ -205,7 +229,7 @@ public final class DevToolsWindow {
         if (theme != null) theme.effectiveProperty().removeListener(themeListener);
         theme = next;
         if (theme != null) {
-            theme.style(pane);
+            theme.style(tabs);
             theme.effectiveProperty().addListener(themeListener);
         }
     }
@@ -228,6 +252,7 @@ public final class DevToolsWindow {
         heapLine.setColour(fill < 0.60 ? HEAP_OK : fill < 0.85 ? HEAP_HIGH : HEAP_FULL);
         heapBar.setStyle(plain ? "" : "-fx-accent: " + web(heapLine.colour) + ";");
         for (Sparkline line : List.of(heapLine, queueLine, activeLine)) line.draw(ink, plain);
+        network.update(ink, plain);
 
         threads.getItems().setAll(s.threads());
         queue.getItems().setAll(s.queue());
@@ -257,14 +282,14 @@ public final class DevToolsWindow {
         return kind == null ? "" : Messages.get("devtools.kind." + kind.name().toLowerCase(Locale.ROOT));
     }
 
-    private static Label heading(String key) {
+    static Label heading(String key) {
         Label heading = new Label(Messages.get(key));
         heading.getStyleClass().add("devtools-heading");
         heading.setStyle("-fx-font-weight: bold;");
         return heading;
     }
 
-    private static VBox caption(Sparkline line, Label caption) {
+    static VBox caption(Sparkline line, Label caption) {
         caption.setGraphic(line.dot);
         return new VBox(2, line, caption);
     }
@@ -274,7 +299,7 @@ public final class DevToolsWindow {
                 Math.round(c.getGreen() * 255), Math.round(c.getBlue() * 255));
     }
 
-    private static <T> TableColumn<T, String> column(String key, double width, Function<T, String> value) {
+    static <T> TableColumn<T, String> column(String key, double width, Function<T, String> value) {
         TableColumn<T, String> column = new TableColumn<>();
         // the header is a label so a terse heading ("Rasters") can explain itself on hover.
         Label header = new Label(Messages.get(key));
@@ -293,7 +318,7 @@ public final class DevToolsWindow {
     }
 
     /** The last minute of one figure, scaled to its own peak, in its own colour. */
-    private static final class Sparkline extends Canvas {
+    static final class Sparkline extends Canvas {
         Color colour;
         // the caption's legend dot, kept in the line's colour.
         final javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(4);
@@ -309,6 +334,11 @@ public final class DevToolsWindow {
         void setColour(Color colour) {
             this.colour = colour;
             dot.setFill(colour);
+        }
+
+        void clear() {
+            count = 0;
+            next = 0;
         }
 
         void add(double value) {

@@ -32,9 +32,10 @@ public interface RangeFetcher extends Closeable {
     /**
      * Reads {@code length} bytes starting at {@code from} into {@code target} at {@code offset}.
      *
+     * @param attempt what the fetch took, filled in as it goes
      * @throws IOException if the bytes can't be had; the caller may retry
      */
-    void fetch(long from, byte[] target, int offset, int length) throws IOException;
+    void fetch(long from, byte[] target, int offset, int length, FetchAttempt attempt) throws IOException;
 
     @Override
     default void close() {

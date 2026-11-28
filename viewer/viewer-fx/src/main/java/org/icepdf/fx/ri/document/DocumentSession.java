@@ -27,6 +27,7 @@ import javafx.stage.Window;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.NetworkThrottle;
 import org.icepdf.core.pobjects.UrlLoadOptions;
 import org.icepdf.core.pobjects.annotations.WatermarkAnnotation;
 import org.icepdf.core.util.watermark.Watermark;
@@ -44,8 +45,12 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -90,7 +95,51 @@ public final class DocumentSession {
     // a remote document's address (GH-662): the open one, and the one being read
     private final ReadOnlyObjectWrapper<URI> url = new ReadOnlyObjectWrapper<>(this, "url");
     private final ReadOnlyObjectWrapper<URI> loadingUrl = new ReadOnlyObjectWrapper<>(this, "loadingUrl");
-    private UrlLoadOptions urlLoadOptions = UrlLoadOptions.defaults();
+    private UrlLoadOptions urlLoadOptions = UrlLoadOptions.builder().throttle(NETWORK_THROTTLE).build();
+    // the remote document being read, before it shows; for the devtools network tab
+    private volatile Document loadingDocument;
+
+    /**
+     * The viewer's network throttle (GH-662): every remote document goes through it unless its options say
+     * otherwise, so the devtools can slow them all at once. Off unless the
+     * {@value UrlLoadOptions#THROTTLE_LATENCY_PROPERTY} or {@value UrlLoadOptions#THROTTLE_BANDWIDTH_PROPERTY}
+     * properties set it.
+     */
+    public static final NetworkThrottle NETWORK_THROTTLE = initialThrottle();
+    // every session, for the devtools to find the remote documents in
+    private static final Set<DocumentSession> SESSIONS = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static NetworkThrottle initialThrottle() {
+        NetworkThrottle fromProperties = UrlLoadOptions.defaults().getThrottle();
+        return fromProperties != null
+                ? new NetworkThrottle(fromProperties.getLatency(), fromProperties.getBytesPerSecond())
+                : NetworkThrottle.off();
+    }
+
+    /** A remote document open, or opening, in a session; see {@link #remoteDocuments()}. */
+    public record RemoteDocument(String name, URI uri, Document document) {
+    }
+
+    /**
+     * @return the remote documents open or opening in any session, for the devtools network tab; FX thread
+     */
+    public static List<RemoteDocument> remoteDocuments() {
+        List<RemoteDocument> remote = new ArrayList<>();
+        synchronized (SESSIONS) {
+            for (DocumentSession session : SESSIONS) {
+                Document loading = session.loadingDocument;
+                URI loadingAddress = session.loadingUrl.get();
+                if (loading != null && loadingAddress != null) {
+                    remote.add(new RemoteDocument(displayName(loadingAddress), loadingAddress, loading));
+                }
+                URI address = session.url.get();
+                if (session.document != null && address != null && session.document != loading) {
+                    remote.add(new RemoteDocument(displayName(address), address, session.document));
+                }
+            }
+        }
+        return remote;
+    }
     // bumped by every open and close: a load that finishes under an older ticket is thrown away.
     private int ticket;
     private Document document;
@@ -103,6 +152,9 @@ public final class DocumentSession {
 
     public DocumentSession(PdfView view) {
         this.view = view;
+        synchronized (SESSIONS) {
+            SESSIONS.add(this);
+        }
     }
 
     public PdfView getView() {
@@ -336,9 +388,9 @@ public final class DocumentSession {
         return true;
     }
 
-    /** How {@link #openUrl} fetches; range requests with the defaults unless set. */
+    /** How {@link #openUrl} fetches; range requests with the defaults, through {@link #NETWORK_THROTTLE}, unless set. */
     public void setUrlLoadOptions(UrlLoadOptions options) {
-        this.urlLoadOptions = options != null ? options : UrlLoadOptions.defaults();
+        this.urlLoadOptions = options != null ? options : UrlLoadOptions.builder().throttle(NETWORK_THROTTLE).build();
     }
 
     /** The name a remote document goes by: the last part of its path, else its host. */
@@ -367,6 +419,9 @@ public final class DocumentSession {
         Thread worker = new Thread(() -> {
             Document next = new Document();
             next.setSecurityCallback(callback);
+            if (uri != null) {
+                loadingDocument = next;
+            }
             Throwable failure = null;
             try {
                 opener.open(next);
@@ -383,6 +438,11 @@ public final class DocumentSession {
                 }
             }
             Throwable failed = failure;
+            Platform.runLater(() -> {
+                if (loadingDocument == next) {
+                    loadingDocument = null;
+                }
+            });
             Platform.runLater(() -> loaded(mine, path, uri, name, page, failed == null ? next : null, failed,
                     callback, done));
         }, "pdf-open");

@@ -28,7 +28,8 @@ public class UrlLoadOptionsTest {
 
     private static final String[] PROPERTIES = {UrlLoadOptions.RANGE_REQUESTS_PROPERTY,
             UrlLoadOptions.CHUNK_SIZE_PROPERTY, UrlLoadOptions.BLOCK_SIZE_PROPERTY, UrlLoadOptions.PROBE_SIZE_PROPERTY,
-            UrlLoadOptions.MAX_CONCURRENT_REQUESTS_PROPERTY};
+            UrlLoadOptions.MAX_CONCURRENT_REQUESTS_PROPERTY, UrlLoadOptions.THROTTLE_LATENCY_PROPERTY,
+            UrlLoadOptions.THROTTLE_BANDWIDTH_PROPERTY};
 
     @AfterEach
     void clear() {
@@ -45,6 +46,18 @@ public class UrlLoadOptionsTest {
         assertEquals(2048, options.getBlockSize());
         assertEquals(512, options.getProbeSize());
         assertEquals(4, options.getMaxConcurrentRequests());
+        assertNull(options.getThrottle());
+    }
+
+    @Test
+    public void throttlePropertiesGiveEveryDocumentAThrottle() {
+        System.setProperty(UrlLoadOptions.THROTTLE_LATENCY_PROPERTY, "150");
+        System.setProperty(UrlLoadOptions.THROTTLE_BANDWIDTH_PROPERTY, "200");
+        NetworkThrottle throttle = UrlLoadOptions.defaults().getThrottle();
+        assertNotNull(throttle);
+        assertEquals(150, throttle.getLatency().toMillis());
+        assertEquals(200 * 1024, throttle.getBytesPerSecond());
+        assertNull(UrlLoadOptions.builder().throttle(null).build().getThrottle());
     }
 
     @Test

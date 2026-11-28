@@ -15,11 +15,14 @@
  */
 package org.icepdf.core.internal;
 
+import org.icepdf.core.pobjects.FetchStats;
+import org.icepdf.core.pobjects.NetworkThrottle;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -27,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -59,11 +63,13 @@ public class RangeCacheTest {
         }
 
         @Override
-        public void fetch(long from, byte[] target, int offset, int length) throws IOException {
+        public void fetch(long from, byte[] target, int offset, int length, FetchAttempt attempt)
+                throws IOException {
             requests.incrementAndGet();
             peak.accumulateAndGet(live.incrementAndGet(), Math::max);
             try {
                 fetchNow(from, target, offset, length);
+                attempt.status = 206;
             } finally {
                 live.decrementAndGet();
             }
@@ -246,6 +252,129 @@ public class RangeCacheTest {
             assertEquals(1, fetcher.requests.get());
         } finally {
             cache.close();
+        }
+    }
+
+    @Test
+    public void statsLogEachRequestWithWhatItWasFor() throws IOException {
+        byte[] data = randomBytes(40_000);
+        byte[] marker = "endobj".getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(marker, 0, data, 20_300, marker.length);
+        ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
+        RangeCache cache = cache(fetcher, 4);
+        try {
+            byte[] first = new byte[2048];
+            System.arraycopy(data, 0, first, 0, first.length);
+            long start = System.nanoTime();
+            cache.seed(first, start, start + 5_000_000, 206);
+            cache.ensureUntil(20_100, marker);
+            cache.prefetch(new int[]{30_000});
+            fetcher.failuresLeft = 1;
+            assertThrows(IOException.class, () -> cache.ensure(10_000, 10));
+            cache.ensureAll();
+            FetchStats stats = cache.stats();
+            List<FetchStats.Request> log = stats.getRecentRequests();
+            assertEquals(List.of(FetchStats.Initiator.OPEN, FetchStats.Initiator.OBJECT,
+                            FetchStats.Initiator.PREFETCH, FetchStats.Initiator.STREAM,
+                            FetchStats.Initiator.WHOLE_FILE),
+                    log.stream().map(FetchStats.Request::getInitiator).collect(Collectors.toList()));
+            assertEquals(5, stats.getRequestCount());
+            assertEquals(1, stats.getFailures());
+            FetchStats.Request open = log.get(0);
+            assertEquals(5, open.getDurationMillis());
+            assertEquals(206, open.getStatus());
+            FetchStats.Request object = log.get(1);
+            assertEquals(19 * 1024, object.getFrom());
+            assertEquals(1024, object.getLength());
+            assertFalse(object.isPending());
+            assertTrue(log.get(3).isFailed());
+            assertEquals(Thread.currentThread().getName(), object.getThread());
+            for (int i = 1; i < log.size(); i++) {
+                assertEquals(log.get(i - 1).getId() + 1, log.get(i).getId());
+            }
+            assertTrue(stats.isComplete());
+            assertEquals(data.length, stats.getBytesPresent());
+            assertArrayEquals(new float[]{1f, 1f}, stats.getCoverage(2));
+            assertEquals(0, stats.getInFlight());
+        } finally {
+            cache.close();
+        }
+    }
+
+    @Test
+    public void coverageShowsWhatsHere() throws IOException {
+        byte[] data = randomBytes(8 * 1024);
+        RangeCache cache = new RangeCache(new ArrayFetcher(data, 1024), 1024, 1024, 256, 4);
+        try {
+            cache.ensure(0, 2048);
+            FetchStats stats = cache.stats();
+            assertArrayEquals(new float[]{1f, 0f, 0f, 0f}, stats.getCoverage(4));
+            assertArrayEquals(new float[]{0.5f, 0f}, stats.getCoverage(2));
+            assertEquals(2048, stats.getBytesPresent());
+            assertFalse(stats.isComplete());
+        } finally {
+            cache.close();
+        }
+    }
+
+    @Test
+    public void theLogKeepsTheLatest() throws IOException {
+        int made = RangeCache.LOG_SIZE + 50;
+        byte[] data = randomBytes(2 * made * 1024);
+        RangeCache cache = new RangeCache(new ArrayFetcher(data, 1024), 1024, 1024, 256, 4);
+        try {
+            // every other block: a request each
+            for (int block = 0; block < 2 * made; block += 2) {
+                cache.ensure(block * 1024L, 10);
+            }
+            FetchStats stats = cache.stats();
+            assertEquals(RangeCache.LOG_SIZE, stats.getRecentRequests().size());
+            assertEquals(made, stats.getRequestCount());
+            assertEquals(stats.getRequestCount(), stats.getRecentRequests().get(RangeCache.LOG_SIZE - 1).getId());
+        } finally {
+            cache.close();
+        }
+    }
+
+    @Test
+    public void aThrottledLinkWaitsTheLatencyAndSharesTheBandwidth() throws IOException {
+        byte[] data = randomBytes(64 * 1024);
+        NetworkThrottle throttle = new NetworkThrottle(Duration.ofMillis(50), 64 * 1024);
+        ThrottledLink link = new ThrottledLink(throttle);
+        RangeFetcher fetcher = link.wrap(new ArrayFetcher(data, 1024));
+        byte[] target = new byte[16 * 1024];
+        long started = System.nanoTime();
+        // 50 ms, then 16 KB at 64 KB/s: 250 ms
+        fetcher.fetch(0, target, 0, target.length, new FetchAttempt());
+        long millis = (System.nanoTime() - started) / 1_000_000;
+        assertTrue(millis >= 290 && millis < 600, millis + " ms");
+        // turned off while in use: the next request is quick
+        throttle.set(Duration.ZERO, 0);
+        assertTrue(throttle.isOff());
+        started = System.nanoTime();
+        fetcher.fetch(0, target, 0, target.length, new FetchAttempt());
+        assertTrue((System.nanoTime() - started) / 1_000_000 < 100);
+        // two at once share the pipe: 2 x 16 KB at 64 KB/s is half a second, not a quarter
+        throttle.set(Duration.ZERO, 64 * 1024);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            started = System.nanoTime();
+            List<Future<?>> both = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                both.add(pool.submit(() -> {
+                    fetcher.fetch(0, new byte[16 * 1024], 0, 16 * 1024, new FetchAttempt());
+                    return null;
+                }));
+            }
+            for (Future<?> f : both) {
+                f.get();
+            }
+            millis = (System.nanoTime() - started) / 1_000_000;
+            assertTrue(millis >= 480, millis + " ms");
+        } catch (Exception e) {
+            fail(e);
+        } finally {
+            pool.shutdown();
         }
     }
 

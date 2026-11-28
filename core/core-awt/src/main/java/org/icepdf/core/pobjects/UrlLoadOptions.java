@@ -50,6 +50,8 @@ import java.util.logging.Logger;
  * <tr><td>{@value #BLOCK_SIZE_PROPERTY}</td><td>2048</td><td>{@link Builder#blockSize}</td></tr>
  * <tr><td>{@value #PROBE_SIZE_PROPERTY}</td><td>512</td><td>{@link Builder#probeSize}</td></tr>
  * <tr><td>{@value #MAX_CONCURRENT_REQUESTS_PROPERTY}</td><td>4</td><td>{@link Builder#maxConcurrentRequests}</td></tr>
+ * <tr><td>{@value #THROTTLE_LATENCY_PROPERTY}</td><td>0 (ms)</td><td>{@link Builder#throttle}</td></tr>
+ * <tr><td>{@value #THROTTLE_BANDWIDTH_PROPERTY}</td><td>0 (KB/s, no limit)</td><td>{@link Builder#throttle}</td></tr>
  * </table>
  * A high-latency link does better with bigger blocks and probes (fewer, larger requests); a slow or metered one with
  * smaller (fewer bytes). A value out of range is brought into range, and one that isn't a number is ignored.
@@ -65,6 +67,10 @@ public final class UrlLoadOptions {
     public static final String BLOCK_SIZE_PROPERTY = "org.icepdf.core.url.blockSize";
     public static final String PROBE_SIZE_PROPERTY = "org.icepdf.core.url.probeSize";
     public static final String MAX_CONCURRENT_REQUESTS_PROPERTY = "org.icepdf.core.url.maxConcurrentRequests";
+    /** Milliseconds a throttle adds before each request; with the bandwidth, see {@link NetworkThrottle}. */
+    public static final String THROTTLE_LATENCY_PROPERTY = "org.icepdf.core.url.throttle.latency";
+    /** Kilobytes a second a throttle lets through; 0 for no limit. */
+    public static final String THROTTLE_BANDWIDTH_PROPERTY = "org.icepdf.core.url.throttle.bandwidth";
 
     static final int MIN_CHUNK_SIZE = 1024;
     static final int MIN_BLOCK_SIZE = 256;
@@ -75,6 +81,7 @@ public final class UrlLoadOptions {
     private final int blockSize;
     private final int probeSize;
     private final int maxConcurrentRequests;
+    private final NetworkThrottle throttle;
     private final Duration connectTimeout;
     private final Duration requestTimeout;
     private final Map<String, String> headers;
@@ -87,6 +94,7 @@ public final class UrlLoadOptions {
         blockSize = Math.min(builder.blockSize, chunkSize);
         probeSize = Math.min(builder.probeSize, chunkSize);
         maxConcurrentRequests = builder.maxConcurrentRequests;
+        throttle = builder.throttle;
         connectTimeout = builder.connectTimeout;
         requestTimeout = builder.requestTimeout;
         headers = Collections.unmodifiableMap(new LinkedHashMap<>(builder.headers));
@@ -124,6 +132,13 @@ public final class UrlLoadOptions {
         return maxConcurrentRequests;
     }
 
+    /**
+     * @return the slower network requests go over, or null for the real one
+     */
+    public NetworkThrottle getThrottle() {
+        return throttle;
+    }
+
     public Duration getConnectTimeout() {
         return connectTimeout;
     }
@@ -150,12 +165,20 @@ public final class UrlLoadOptions {
         private int probeSize = property(PROBE_SIZE_PROPERTY, RangeCache.DEFAULT_PROBE_SIZE, MIN_PROBE_SIZE);
         private int maxConcurrentRequests = property(MAX_CONCURRENT_REQUESTS_PROPERTY,
                 RangeCache.DEFAULT_MAX_CONCURRENT, 1);
+        private NetworkThrottle throttle = propertyThrottle();
         private Duration connectTimeout = Duration.ofSeconds(30);
         private Duration requestTimeout = Duration.ofSeconds(60);
         private final Map<String, String> headers = new LinkedHashMap<>();
         private HttpClient httpClient;
 
         private Builder() {
+        }
+
+        private static NetworkThrottle propertyThrottle() {
+            int latency = property(THROTTLE_LATENCY_PROPERTY, 0, 0);
+            int kilobytes = property(THROTTLE_BANDWIDTH_PROPERTY, 0, 0);
+            return latency > 0 || kilobytes > 0
+                    ? new NetworkThrottle(Duration.ofMillis(latency), kilobytes * 1024L) : null;
         }
 
         private static int property(String name, int defaultValue, int least) {
@@ -224,6 +247,16 @@ public final class UrlLoadOptions {
                 throw new IllegalArgumentException("max concurrent requests below 1: " + maxConcurrentRequests);
             }
             this.maxConcurrentRequests = maxConcurrentRequests;
+            return this;
+        }
+
+        /**
+         * @param throttle a slower network to send requests over, for trying out how a document fetches on one
+         *                 (like a browser's network throttling); null for the real network. It can be changed
+         *                 while documents are open, and shared by many.
+         */
+        public Builder throttle(NetworkThrottle throttle) {
+            this.throttle = throttle;
             return this;
         }
 
