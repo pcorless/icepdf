@@ -65,14 +65,18 @@ public class StencilEncoder implements ImageEncoder {
         int height = image.getHeight();
         int width = image.getWidth();
 
+        // A stencil decoded for painting carries the fill colour where it paints and is transparent
+        // elsewhere, so its alpha says which sample was which (the colour is whatever fill was in force).
+        // An image's /Mask is decoded as it is applied (ImageUtility.applyExplicitMask), with no alpha:
+        // black paints the image and white leaves the page alone. Reading that one by alpha took every
+        // pixel as paint and wrote a mask that hid nothing (GH-697).
+        boolean byAlpha = image.getColorModel().hasAlpha();
         ByteArrayOutputStream packed = new ByteArrayOutputStream(((width + 7) / 8) * height);
         try (MemoryCacheImageOutputStream bits = new MemoryCacheImageOutputStream(packed)) {
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
-                    // A decoded stencil paints where it is opaque and leaves the page alone where it
-                    // is transparent, so the alpha channel - not the colour, which is whatever fill
-                    // colour was in force - is what says which sample this was.
-                    boolean paints = (image.getRGB(x, y) >>> 24) != 0;
+                    int argb = image.getRGB(x, y);
+                    boolean paints = byAlpha ? (argb >>> 24) != 0 : (argb & 0xFFFFFF) != 0xFFFFFF;
                     bits.writeBits(paints ? 0 : 1, 1);
                 }
                 int bitOffset = bits.getBitOffset();

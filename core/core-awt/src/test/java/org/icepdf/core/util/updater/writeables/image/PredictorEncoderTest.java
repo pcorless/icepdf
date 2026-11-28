@@ -22,6 +22,7 @@ import org.icepdf.core.pobjects.Resources;
 import org.icepdf.core.pobjects.graphics.GraphicsState;
 import org.icepdf.core.pobjects.graphics.Shapes;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
+import org.icepdf.core.pobjects.graphics.images.ImageUtility;
 import org.icepdf.core.util.Library;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,13 +40,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests re-encoding an image that arrived as a JPEG.
+ * Tests the predictor (Flate) encoder on an image that arrived as a JPEG.
  * <p>
- * This is the path a redaction takes over a photograph or a scan.  The burn draws over the decoded
- * pixels and the result has to be written back, and it cannot go back as a JPEG - the point of the
- * burn is that the covered pixels are gone, and re-compressing lossily would leave ghosts of them.
- * So the image comes back as Flate with a PNG predictor instead, and the dictionary has to be
- * rewritten to match or it stops describing its own samples.
+ * A burned JPEG is now written back as a JPEG ({@link DctEncoder}, GH-697, see {@link LossyReencodingTest}):
+ * the burn overwrites the covered pixels before anything is encoded, so a lossy encoder never sees what was
+ * removed and can't leave a trace of it. The predictor encoder is still what takes what the lossy encoders
+ * don't (black-and-white content, alpha), so it's driven directly here, and the dictionary has to be rewritten
+ * to match or it stops describing its own samples.
  * <p>
  * The check that matters is a round trip: whatever is written has to decode back to the picture
  * that went in.  An encoder that produces bytes no decoder accepts fails nothing else - the save
@@ -105,7 +106,8 @@ public class PredictorEncoderTest {
         ImageStream stream = jpegStream(source);
         BufferedImage decoded = stream.getImage(graphicsState(), resources());
         assertNotNull(decoded, "the fixture should decode before it is re-encoded");
-        stream.setDecodedImage(decoded);
+        // as the factory does before choosing an encoder: a decoded image may be held indexed
+        stream.setDecodedImage(ImageUtility.unpackIndexed(decoded));
         return stream;
     }
 
@@ -125,14 +127,12 @@ public class PredictorEncoderTest {
     // choosing the encoder
     // ------------------------------------------------------------------
 
-    @DisplayName("a JPEG is re-encoded with the predictor encoder, not back to JPEG")
+    @DisplayName("an image arriving with no stream to match is written by the predictor encoder")
     @Test
-    public void factoryPicksThePredictorEncoder() throws Exception {
-        // Writing it back as a JPEG would re-compress lossily over the burn, leaving ghosts of
-        // exactly the pixels the redaction was meant to remove.
-        assertInstanceOf(PredictorEncoder.class,
-                ImageEncoderFactory.createEncodedImage(decodedAndReady(
-                        picture(BufferedImage.TYPE_INT_RGB))));
+    public void factoryPicksThePredictorEncoderForANewImage() throws Exception {
+        ImageStream stream = decodedAndReady(picture(BufferedImage.TYPE_INT_RGB));
+        stream.setRawBytes(new byte[0]);
+        assertInstanceOf(PredictorEncoder.class, ImageEncoderFactory.createEncodedImage(stream));
     }
 
     // ------------------------------------------------------------------
@@ -143,7 +143,7 @@ public class PredictorEncoderTest {
     @Test
     public void colourRoundTrip() throws Exception {
         ImageStream source = decodedAndReady(picture(BufferedImage.TYPE_INT_RGB));
-        ImageStream encoded = ImageEncoderFactory.createEncodedImage(source).encode();
+        ImageStream encoded = new PredictorEncoder(source).encode();
 
         BufferedImage back = encoded.getImage(graphicsState(), resources());
         assertNotNull(back, "the re-encoded image has to decode again");
@@ -160,7 +160,7 @@ public class PredictorEncoderTest {
         // redaction is ever burned over.  The encoder had no case for it and returned null, and
         // ImageStreamWriter dereferences what it returns - so saving the redaction threw.
         ImageStream source = decodedAndReady(picture(BufferedImage.TYPE_BYTE_GRAY));
-        ImageStream encoded = ImageEncoderFactory.createEncodedImage(source).encode();
+        ImageStream encoded = new PredictorEncoder(source).encode();
         assertNotNull(encoded, "a greyscale image has to encode to something");
 
         BufferedImage back = encoded.getImage(graphicsState(), resources());
@@ -175,8 +175,8 @@ public class PredictorEncoderTest {
         // The colour space has to agree with the samples that were written.  Saying DeviceRGB over
         // one byte per pixel claims three components where the stream holds one, and /Colors in the
         // decode parameters says one - a dictionary contradicting itself.
-        ImageStream encoded = ImageEncoderFactory
-                .createEncodedImage(decodedAndReady(picture(BufferedImage.TYPE_BYTE_GRAY))).encode();
+        ImageStream encoded = new PredictorEncoder(
+                decodedAndReady(picture(BufferedImage.TYPE_BYTE_GRAY))).encode();
 
         assertEquals("DeviceGray", encoded.getEntries().get(new Name("ColorSpace")).toString());
 
@@ -189,8 +189,8 @@ public class PredictorEncoderTest {
     @DisplayName("a colour image is still described as colour")
     @Test
     public void colourKeepsItsColourSpace() throws Exception {
-        ImageStream encoded = ImageEncoderFactory
-                .createEncodedImage(decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
+        ImageStream encoded = new PredictorEncoder(
+                decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
 
         assertEquals("DeviceRGB", encoded.getEntries().get(new Name("ColorSpace")).toString());
         DictionaryEntries decodeParams = (DictionaryEntries)
@@ -206,8 +206,8 @@ public class PredictorEncoderTest {
     @Test
     public void filterIsRewritten() throws Exception {
         // The dictionary still said DCTDecode while the bytes were Flate, nothing would decode it.
-        ImageStream encoded = ImageEncoderFactory
-                .createEncodedImage(decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
+        ImageStream encoded = new PredictorEncoder(
+                decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
 
         Object filter = encoded.getEntries().get(new Name("Filter"));
         assertNotNull(filter, "the re-encoded image has to say what it was encoded with");
@@ -217,8 +217,8 @@ public class PredictorEncoderTest {
     @DisplayName("the size and depth still describe the samples that were written")
     @Test
     public void dimensionsSurvive() throws Exception {
-        ImageStream encoded = ImageEncoderFactory
-                .createEncodedImage(decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
+        ImageStream encoded = new PredictorEncoder(
+                decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
 
         DictionaryEntries entries = encoded.getEntries();
         assertEquals(16, ((Number) entries.get(new Name("Width"))).intValue());
@@ -232,8 +232,8 @@ public class PredictorEncoderTest {
     public void streamHasContent() throws Exception {
         // A zero length stream is a page with a blank where the picture was, and the save that
         // produced it reports success.
-        ImageStream encoded = ImageEncoderFactory
-                .createEncodedImage(decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
+        ImageStream encoded = new PredictorEncoder(
+                decodedAndReady(picture(BufferedImage.TYPE_INT_RGB))).encode();
         assertTrue(encoded.getRawBytes().length > 0, "the encoded image should hold some bytes");
     }
 }

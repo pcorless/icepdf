@@ -16,12 +16,14 @@
 package org.icepdf.core.util.updater.writeables;
 
 import org.icepdf.core.io.CountingOutputStream;
+import org.icepdf.core.pobjects.graphics.images.ImageParams;
 import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.security.SecurityManager;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoder;
 import org.icepdf.core.util.updater.writeables.image.ImageEncoderFactory;
 import org.icepdf.core.util.updater.writeables.image.RasterEncoder;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 /**
@@ -40,6 +42,7 @@ public class ImageStreamWriter extends StreamWriter {
         byte[] outputData;
         // decoded image is only set if the image was touch via a redaction burn and will always be unencrypted
         if (imageStream.getDecodedImage() != null) {
+            BufferedImage written = imageStream.getDecodedImage();
             ImageEncoder imageEncoder = ImageEncoderFactory.createEncodedImage(imageStream);
             ImageStream encoded = imageEncoder.encode();
             if (encoded == null) {
@@ -49,6 +52,10 @@ public class ImageStreamWriter extends StreamWriter {
                 encoded = new RasterEncoder(imageStream).encode();
             }
             imageStream = encoded;
+            // the size of what was written: a raster need not be the size the dictionary first gave, and a
+            // reader that trusts /Width over the samples draws a smeared image (GH-697)
+            imageStream.getEntries().put(ImageParams.WIDTH_KEY, written.getWidth());
+            imageStream.getEntries().put(ImageParams.HEIGHT_KEY, written.getHeight());
             outputData = imageStream.getRawBytes();
 
             // check if we need to encrypt the stream

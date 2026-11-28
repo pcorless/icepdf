@@ -560,6 +560,23 @@ public abstract class ImageReference implements Callable<BufferedImage> {
     }
 
     /**
+     * @return the graphics state the image is drawn in: its fill colour paints a stencil, and a fax mask's
+     * decoder needs it
+     * @since 8.1
+     */
+    public GraphicsState getGraphicsState() {
+        return graphicsState;
+    }
+
+    /**
+     * @return the image's own samples, without its masks, as {@link ImageStream#getUnmaskedImage} decodes them
+     * @since 8.1
+     */
+    public BufferedImage getUnmaskedImage() {
+        return imageStream.getUnmaskedImage(graphicsState, resources);
+    }
+
+    /**
      * Creates a scaled image to match that of the instance vars width/height.
      *
      * @return decoded/encoded BufferedImage for the respective ImageStream.

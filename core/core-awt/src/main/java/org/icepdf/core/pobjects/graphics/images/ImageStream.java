@@ -235,6 +235,37 @@ public class ImageStream extends Stream {
     }
 
     /**
+     * The image's own samples, decoded as {@link #getImage} decodes them but without its {@code /SMask} or
+     * {@code /Mask} applied, for redaction (GH-697): each of the three is burned at its own resolution and
+     * written back on its own. The composite {@link #getImage} returns is at the mask's resolution when that's
+     * higher, so burning it wrote an image several times the size, under a dictionary still giving the
+     * original's. A stencil ({@code /ImageMask true}) comes out painted in the fill colour, as it does there.
+     * Neither pooled nor taken from the pool.
+     *
+     * @param graphicsState graphic state for image or parent form
+     * @param resources     resources containing image reference
+     * @return the image, or null when it couldn't be decoded
+     * @since 8.1
+     */
+    public BufferedImage getUnmaskedImage(GraphicsState graphicsState, Resources resources) {
+        imageParams = new ImageParams(library, entries, resources);
+        if (decodedImage != null) {
+            return decodedImage;
+        }
+        try (DecodeBudget.Permit ignored = DecodeBudget.acquire(imageParams.getWidth(), imageParams.getHeight())) {
+            ImageDecoder imageDecoder = ImageDecoderFactory.createDecoder(this, graphicsState);
+            BufferedImage image = imageDecoder.decode();
+            if (image == null && imageDecoder instanceof RasterDecoder) {
+                image = new RawDecoder(this, graphicsState).decode();
+            }
+            if (image != null && imageParams.isImageMask()) {
+                image = ImageUtility.applyExplicitMask(image, graphicsState.getFillColor());
+            }
+            return image;
+        }
+    }
+
+    /**
      * The image as the paint path wants it: like {@link #getImage}, except that an explicit stencil
      * {@code /Mask} may be left unapplied, as a {@link MaskedImage} combined only where it is drawn.
      *
