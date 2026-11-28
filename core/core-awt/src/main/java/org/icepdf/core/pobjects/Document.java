@@ -366,7 +366,8 @@ public class Document {
             setByteArray(whole, 0, whole.length, url.toString());
             return;
         }
-        RangeCache cache = new RangeCache(opened.getFetcher(), options.getChunkSize());
+        RangeCache cache = new RangeCache(opened.getFetcher(), options.getChunkSize(), options.getBlockSize(),
+                options.getProbeSize(), options.getMaxConcurrentRequests());
         cache.seed(opened.getFirstChunk());
         setRangeCache(cache, url.toString());
     }

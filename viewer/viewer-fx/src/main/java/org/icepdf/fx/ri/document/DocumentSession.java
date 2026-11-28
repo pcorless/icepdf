@@ -370,6 +370,9 @@ public final class DocumentSession {
             Throwable failure = null;
             try {
                 opener.open(next);
+                if (uri != null) {
+                    prefetchPages(next);
+                }
             } catch (Exception | Error e) {
                 // an Error too (a hostile file can exhaust the heap or the stack): loading must end.
                 failure = e;
@@ -385,6 +388,18 @@ public final class DocumentSession {
         }, "pdf-open");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    /**
+     * The view reads every page's size as it opens a document; for a remote one, fetch those dictionaries in
+     * parallel first instead of one at a time. Best effort: a page it misses is fetched when read.
+     */
+    private static void prefetchPages(Document document) {
+        try {
+            document.getPageTree().prefetchPages();
+        } catch (RuntimeException e) {
+            Logger.getLogger(DocumentSession.class.getName()).log(Level.FINE, "Page prefetch failed", e);
+        }
     }
 
     /** A path standing for a remote document's name, for the password prompt. */

@@ -15,12 +15,16 @@
  */
 package org.icepdf.core.pobjects;
 
+import org.icepdf.core.internal.RangeCache;
+import org.icepdf.core.util.Defs;
+
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 
 /**
  * How {@link Document#setUrl(java.net.URL, UrlLoadOptions)} opens a remote document (GH-662).
@@ -35,13 +39,42 @@ import java.util.Objects;
  *         .requestTimeout(Duration.ofSeconds(30))
  *         .build());
  * }</pre>
+ * <p>
+ * How the bytes are fetched can be tuned for a network without code: each builder setting starts from a system
+ * property, when it's set.
+ * <table>
+ * <caption>System properties</caption>
+ * <tr><th>Property</th><th>Default</th><th>Builder setting</th></tr>
+ * <tr><td>{@value #RANGE_REQUESTS_PROPERTY}</td><td>true</td><td>{@link Builder#rangeRequests}</td></tr>
+ * <tr><td>{@value #CHUNK_SIZE_PROPERTY}</td><td>65536</td><td>{@link Builder#chunkSize}</td></tr>
+ * <tr><td>{@value #BLOCK_SIZE_PROPERTY}</td><td>2048</td><td>{@link Builder#blockSize}</td></tr>
+ * <tr><td>{@value #PROBE_SIZE_PROPERTY}</td><td>512</td><td>{@link Builder#probeSize}</td></tr>
+ * <tr><td>{@value #MAX_CONCURRENT_REQUESTS_PROPERTY}</td><td>4</td><td>{@link Builder#maxConcurrentRequests}</td></tr>
+ * </table>
+ * A high-latency link does better with bigger blocks and probes (fewer, larger requests); a slow or metered one with
+ * smaller (fewer bytes). A value out of range is brought into range, and one that isn't a number is ignored.
  *
  * @since 8.1
  */
 public final class UrlLoadOptions {
 
+    private static final Logger logger = Logger.getLogger(UrlLoadOptions.class.getName());
+
+    public static final String RANGE_REQUESTS_PROPERTY = "org.icepdf.core.url.rangeRequests";
+    public static final String CHUNK_SIZE_PROPERTY = "org.icepdf.core.url.chunkSize";
+    public static final String BLOCK_SIZE_PROPERTY = "org.icepdf.core.url.blockSize";
+    public static final String PROBE_SIZE_PROPERTY = "org.icepdf.core.url.probeSize";
+    public static final String MAX_CONCURRENT_REQUESTS_PROPERTY = "org.icepdf.core.url.maxConcurrentRequests";
+
+    static final int MIN_CHUNK_SIZE = 1024;
+    static final int MIN_BLOCK_SIZE = 256;
+    static final int MIN_PROBE_SIZE = 64;
+
     private final boolean rangeRequests;
     private final int chunkSize;
+    private final int blockSize;
+    private final int probeSize;
+    private final int maxConcurrentRequests;
     private final Duration connectTimeout;
     private final Duration requestTimeout;
     private final Map<String, String> headers;
@@ -50,6 +83,10 @@ public final class UrlLoadOptions {
     private UrlLoadOptions(Builder builder) {
         rangeRequests = builder.rangeRequests;
         chunkSize = builder.chunkSize;
+        // a block or a probe bigger than a chunk would read ahead of what a chunk allows
+        blockSize = Math.min(builder.blockSize, chunkSize);
+        probeSize = Math.min(builder.probeSize, chunkSize);
+        maxConcurrentRequests = builder.maxConcurrentRequests;
         connectTimeout = builder.connectTimeout;
         requestTimeout = builder.requestTimeout;
         headers = Collections.unmodifiableMap(new LinkedHashMap<>(builder.headers));
@@ -75,6 +112,18 @@ public final class UrlLoadOptions {
         return chunkSize;
     }
 
+    public int getBlockSize() {
+        return blockSize;
+    }
+
+    public int getProbeSize() {
+        return probeSize;
+    }
+
+    public int getMaxConcurrentRequests() {
+        return maxConcurrentRequests;
+    }
+
     public Duration getConnectTimeout() {
         return connectTimeout;
     }
@@ -95,14 +144,27 @@ public final class UrlLoadOptions {
     }
 
     public static final class Builder {
-        private boolean rangeRequests = true;
-        private int chunkSize = 64 * 1024;
+        private boolean rangeRequests = Defs.booleanProperty(RANGE_REQUESTS_PROPERTY, true);
+        private int chunkSize = property(CHUNK_SIZE_PROPERTY, RangeCache.DEFAULT_CHUNK_SIZE, MIN_CHUNK_SIZE);
+        private int blockSize = property(BLOCK_SIZE_PROPERTY, RangeCache.BLOCK_SIZE, MIN_BLOCK_SIZE);
+        private int probeSize = property(PROBE_SIZE_PROPERTY, RangeCache.DEFAULT_PROBE_SIZE, MIN_PROBE_SIZE);
+        private int maxConcurrentRequests = property(MAX_CONCURRENT_REQUESTS_PROPERTY,
+                RangeCache.DEFAULT_MAX_CONCURRENT, 1);
         private Duration connectTimeout = Duration.ofSeconds(30);
         private Duration requestTimeout = Duration.ofSeconds(60);
         private final Map<String, String> headers = new LinkedHashMap<>();
         private HttpClient httpClient;
 
         private Builder() {
+        }
+
+        private static int property(String name, int defaultValue, int least) {
+            int value = Defs.intProperty(name, defaultValue);
+            if (value < least) {
+                logger.warning(() -> name + "=" + value + " is below " + least + "; using " + least);
+                return least;
+            }
+            return value;
         }
 
         /**
@@ -115,13 +177,53 @@ public final class UrlLoadOptions {
         }
 
         /**
-         * @param chunkSize the bytes each request asks for at least, 64 KB by default; at least 1 KB
+         * @param chunkSize the read-ahead of a range read, such as a stream's, 64 KB by default; at least 1 KB.
+         *                  An object's dictionary is read in a few kilobytes.
          */
         public Builder chunkSize(int chunkSize) {
-            if (chunkSize < 1024) {
+            if (chunkSize < MIN_CHUNK_SIZE) {
                 throw new IllegalArgumentException("chunk size below 1 KB: " + chunkSize);
             }
             this.chunkSize = chunkSize;
+            return this;
+        }
+
+        /**
+         * @param blockSize the unit bytes are tracked and fetched in, 2 KB by default; at least 256 bytes, and at
+         *                  most the chunk size. Smaller wastes fewer bytes around each object read alone; bigger
+         *                  makes fewer requests.
+         */
+        public Builder blockSize(int blockSize) {
+            if (blockSize < MIN_BLOCK_SIZE) {
+                throw new IllegalArgumentException("block size below " + MIN_BLOCK_SIZE + ": " + blockSize);
+            }
+            this.blockSize = blockSize;
+            return this;
+        }
+
+        /**
+         * @param probeSize the first read of an object, 512 bytes by default (rounded up to the end of its block);
+         *                  at least 64 bytes, and at most the chunk size. Most dictionaries end inside it; a bigger
+         *                  object reads on in growing windows.
+         */
+        public Builder probeSize(int probeSize) {
+            if (probeSize < MIN_PROBE_SIZE) {
+                throw new IllegalArgumentException("probe size below " + MIN_PROBE_SIZE + ": " + probeSize);
+            }
+            this.probeSize = probeSize;
+            return this;
+        }
+
+        /**
+         * @param maxConcurrentRequests the requests a document has out at once, 4 by default (what a browser
+         *                              allows a host); at least 1. Every reader shares them: renders, and the
+         *                              prefetch of {@link PageTree#prefetchPages()}.
+         */
+        public Builder maxConcurrentRequests(int maxConcurrentRequests) {
+            if (maxConcurrentRequests < 1) {
+                throw new IllegalArgumentException("max concurrent requests below 1: " + maxConcurrentRequests);
+            }
+            this.maxConcurrentRequests = maxConcurrentRequests;
             return this;
         }
 

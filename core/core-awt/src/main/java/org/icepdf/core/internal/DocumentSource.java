@@ -105,6 +105,21 @@ public final class DocumentSource {
     }
 
     /**
+     * Fetches the start of the objects at these buffer offsets in parallel, for a range source; see
+     * {@link RangeCache#prefetch}.
+     */
+    public void prefetch(int[] positions) {
+        RangeCache cache = rangeCache;
+        if (cache != null && !cache.isComplete()) {
+            int[] shifted = new int[positions.length];
+            for (int i = 0; i < positions.length; i++) {
+                shifted[i] = positions[i] < 0 ? -1 : (int) Math.min(Integer.MAX_VALUE, base + positions[i]);
+            }
+            cache.prefetch(shifted);
+        }
+    }
+
+    /**
      * Makes the whole document readable: fetches whatever of a range source is still missing.
      */
     public void ensureAll() throws IOException {

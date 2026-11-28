@@ -40,6 +40,10 @@ public final class HttpRangeFetcher implements RangeFetcher {
 
     private static final Pattern CONTENT_RANGE = Pattern.compile("bytes\\s+(\\d+)-(\\d+)/(\\d+)");
 
+    /** Tries after a 429 or 503 answer before the range fails. */
+    static final int BUSY_RETRIES = 2;
+    static final long MAX_RETRY_PAUSE_MILLIS = 10_000;
+
     private final HttpClient client;
     private final URI uri;
     private final Map<String, String> headers;
@@ -161,6 +165,43 @@ public final class HttpRangeFetcher implements RangeFetcher {
         }
     }
 
+    private static boolean isBusy(int status) {
+        return status == 429 || status == 503;
+    }
+
+    /**
+     * @return the pause a busy answer asks for in Retry-After's seconds, else one that doubles each retry;
+     * at most {@link #MAX_RETRY_PAUSE_MILLIS}
+     */
+    static long retryAfterMillis(HttpResponse<?> response, int retry) {
+        long millis = 500L << retry;
+        String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+        if (retryAfter != null) {
+            try {
+                millis = Long.parseLong(retryAfter.trim()) * 1000;
+            } catch (NumberFormatException e) {
+                // an HTTP date: keep the doubling pause
+            }
+        }
+        return Math.max(0, Math.min(millis, MAX_RETRY_PAUSE_MILLIS));
+    }
+
+    // not interruptible, like the fetch: the viewer interrupts the renders it cancels
+    private static void pause(long millis) {
+        long until = System.nanoTime() + millis * 1_000_000;
+        boolean interrupted = false;
+        for (long left = millis; left > 0; left = (until - System.nanoTime()) / 1_000_000) {
+            try {
+                Thread.sleep(left);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     @Override
     public long length() {
         return length;
@@ -173,6 +214,11 @@ public final class HttpRangeFetcher implements RangeFetcher {
                 .header("Range", "bytes=" + from + "-" + last)
                 .build();
         HttpResponse<byte[]> response = send(client, request);
+        // a server that says it's busy gets a pause, as long as it asks for (within reason), then another try
+        for (int retry = 1; retry <= BUSY_RETRIES && isBusy(response.statusCode()); retry++) {
+            pause(retryAfterMillis(response, retry));
+            response = send(client, request);
+        }
         if (response.statusCode() != 206) {
             throw new RangeFetchException("HTTP " + response.statusCode() + " for range " + from + "-" + last
                     + " of " + uri);

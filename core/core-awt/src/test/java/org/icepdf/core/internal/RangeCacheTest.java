@@ -31,8 +31,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * GH-662: the range cache fetches each chunk once, whatever asks for it and on whichever thread, and what it
- * hands back is the document's bytes.
+ * GH-662: the range cache fetches each block once, whatever asks for it and on whichever thread, in requests sized
+ * to what's read, at most a few at once; what it hands back is the document's bytes.
  */
 public class RangeCacheTest {
 
@@ -40,6 +40,8 @@ public class RangeCacheTest {
     static final class ArrayFetcher implements RangeFetcher {
         final byte[] data;
         final AtomicInteger requests = new AtomicInteger();
+        final AtomicInteger live = new AtomicInteger();
+        final AtomicInteger peak = new AtomicInteger();
         final int[] timesFetched;
         final int chunk;
         volatile int failuresLeft;
@@ -59,6 +61,15 @@ public class RangeCacheTest {
         @Override
         public void fetch(long from, byte[] target, int offset, int length) throws IOException {
             requests.incrementAndGet();
+            peak.accumulateAndGet(live.incrementAndGet(), Math::max);
+            try {
+                fetchNow(from, target, offset, length);
+            } finally {
+                live.decrementAndGet();
+            }
+        }
+
+        private void fetchNow(long from, byte[] target, int offset, int length) throws IOException {
             if (failuresLeft > 0) {
                 failuresLeft--;
                 throw new IOException("planned failure");
@@ -95,19 +106,26 @@ public class RangeCacheTest {
         }
     }
 
+    /** Chunks of 4 KB, blocks of 1 KB, a first read of 256 bytes. */
+    private static RangeCache cache(ArrayFetcher fetcher, int maxConcurrent) throws IOException {
+        return new RangeCache(fetcher, 4096, 1024, 256, maxConcurrent);
+    }
+
     @Test
-    public void fetchesOnlyTheChunksAskedFor() throws IOException {
-        byte[] data = randomBytes(10_000);
+    public void aRangeReadReadsAheadAChunk() throws IOException {
+        byte[] data = randomBytes(20_000);
         ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
-        RangeCache cache = new RangeCache(fetcher, 1024);
+        RangeCache cache = cache(fetcher, 4);
         try {
             cache.ensure(2100, 100);
+            // blocks 2 to 6: from the start, a chunk on
             assertEquals(1, fetcher.requests.get());
-            assertEquals(1024, cache.getBytesFetched());
+            assertEquals(5 * 1024, cache.getBytesFetched());
             assertSame(data, cache.getBuffer(), 2100, 2200);
-            assertEquals(0, cache.getBuffer().get(0), "chunk 0 was not fetched");
+            assertEquals(0, cache.getBuffer().get(0), "block 0 was not fetched");
+            assertEquals(0, fetcher.timesFetched[7]);
             // asking again costs nothing
-            cache.ensure(2048, 1024);
+            cache.ensure(2048, 4096);
             assertEquals(1, fetcher.requests.get());
             assertFalse(cache.isComplete());
         } finally {
@@ -116,16 +134,27 @@ public class RangeCacheTest {
     }
 
     @Test
-    public void adjacentMissingChunksComeInOneRequest() throws IOException {
-        byte[] data = randomBytes(10_000);
+    public void missingRunsAShortGapApartComeInOneRequest() throws IOException {
+        byte[] data = randomBytes(20_000);
         ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
-        RangeCache cache = new RangeCache(fetcher, 1024);
+        RangeCache cache = new RangeCache(fetcher, 1024, 1024, 256, 4);
         try {
             cache.ensure(5000, 10);
-            // chunks 0-3 then 5-9: two runs around the chunk already present
+            // blocks 0-3 and 5-19 around block 4: one request over the gap
+            cache.ensureAll();
+            assertEquals(2, fetcher.requests.get());
+            assertTrue(cache.isComplete());
+            assertSame(data, cache.getBuffer(), 0, data.length);
+        } finally {
+            cache.close();
+        }
+        fetcher = new ArrayFetcher(data, 1024);
+        cache = new RangeCache(fetcher, 4096, 1024, 256, 4);
+        try {
+            cache.ensure(4096, 4096);
+            // blocks 0-3 and 8-19, four blocks apart: two requests
             cache.ensureAll();
             assertEquals(3, fetcher.requests.get());
-            assertTrue(cache.isComplete());
             assertSame(data, cache.getBuffer(), 0, data.length);
         } finally {
             cache.close();
@@ -133,20 +162,88 @@ public class RangeCacheTest {
     }
 
     @Test
-    public void ensureUntilReadsThroughTheMarker() throws IOException {
-        byte[] data = randomBytes(20_000);
+    public void aMarkerSearchStartsSmallAndGrows() throws IOException {
+        byte[] data = randomBytes(40_000);
         byte[] marker = "endobj".getBytes(StandardCharsets.US_ASCII);
-        System.arraycopy(marker, 0, data, 7000, marker.length);
+        System.arraycopy(marker, 0, data, 300, marker.length);
+        System.arraycopy(marker, 0, data, 30_000, marker.length);
         ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
-        RangeCache cache = new RangeCache(fetcher, 1024);
+        RangeCache cache = cache(fetcher, 4);
         try {
-            assertEquals(7006, cache.ensureUntil(100, marker));
-            assertSame(data, cache.getBuffer(), 100, 7006);
-            // the read-ahead doubles (1 KB, 2 KB, 4 KB...), so it stops within a window of the marker
-            assertEquals(0, fetcher.timesFetched[9], "nothing past the window holding the marker");
+            // a small object, alone: one block
+            assertEquals(306, cache.ensureUntil(100, marker));
+            assertEquals(1, fetcher.requests.get());
+            assertEquals(1024, cache.getBytesFetched());
+            // a big one, far from anything fetched: windows growing fourfold, nothing far past the marker
+            assertEquals(30_006, cache.ensureUntil(20_100, marker));
+            assertSame(data, cache.getBuffer(), 20_100, 30_006);
+            assertEquals(0, fetcher.timesFetched[37], "nothing past the window holding the marker");
             // no marker: to the end
-            assertEquals(data.length, cache.ensureUntil(8000, "nowhere".getBytes(StandardCharsets.US_ASCII)));
-            assertTrue(cache.isComplete());
+            assertEquals(data.length, cache.ensureUntil(31_000, "nowhere".getBytes(StandardCharsets.US_ASCII)));
+            assertSame(data, cache.getBuffer(), 31_000, data.length);
+            assertFalse(cache.isComplete(), "the start was never asked for");
+        } finally {
+            cache.close();
+        }
+    }
+
+    @Test
+    public void aRunOfObjectsReadsOnAsFarAsTheRunIsLong() throws IOException {
+        byte[] data = randomBytes(40_000);
+        byte[] marker = "endobj".getBytes(StandardCharsets.US_ASCII);
+        for (int at = 500; at < data.length; at += 1000) {
+            System.arraycopy(marker, 0, data, at, marker.length);
+        }
+        ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
+        RangeCache cache = cache(fetcher, 4);
+        try {
+            cache.ensure(0, 3 * 1024);
+            // blocks 0-3 present; the next object follows on: read ahead four blocks, the run's length
+            int requests = fetcher.requests.get();
+            cache.ensureUntil(4100, marker);
+            assertEquals(requests + 1, fetcher.requests.get());
+            assertEquals(1, fetcher.timesFetched[8]);
+            assertEquals(0, fetcher.timesFetched[9]);
+            // an object alone, whose search reaches blocks 19-21; then one just before it: a run read backward,
+            // so read behind as far as the run is long
+            cache.ensureUntil(20_100, marker);
+            assertEquals(1, fetcher.timesFetched[21]);
+            assertEquals(0, fetcher.timesFetched[18]);
+            requests = fetcher.requests.get();
+            cache.ensureUntil(19_100, marker);
+            assertEquals(requests + 1, fetcher.requests.get());
+            assertEquals(1, fetcher.timesFetched[15]);
+            assertEquals(0, fetcher.timesFetched[14], "the run ahead is three blocks long");
+        } finally {
+            cache.close();
+        }
+    }
+
+    @Test
+    public void prefetchFetchesEachWindowInParallelWithinTheCap() throws IOException {
+        byte[] data = randomBytes(300_000);
+        ArrayFetcher fetcher = new ArrayFetcher(data, 1024);
+        fetcher.delayMillis = 20;
+        RangeCache cache = cache(fetcher, 3);
+        try {
+            int[] offsets = new int[64];
+            for (int i = 0; i < offsets.length; i++) {
+                offsets[i] = 100 + i * 4096;
+            }
+            long started = System.nanoTime();
+            cache.prefetch(offsets);
+            long millis = (System.nanoTime() - started) / 1_000_000;
+            assertEquals(64, fetcher.requests.get(), "windows four blocks apart: a request each");
+            assertTrue(fetcher.peak.get() <= 3, "at most 3 out at once, not " + fetcher.peak.get());
+            assertTrue(fetcher.peak.get() >= 2, "in parallel");
+            assertTrue(millis < 64 * 20, millis + " ms");
+            for (int offset : offsets) {
+                assertSame(data, cache.getBuffer(), offset, offset + 256);
+            }
+            // windows close together share a request
+            fetcher.requests.set(0);
+            cache.prefetch(new int[]{270_100, 271_300, 272_500});
+            assertEquals(1, fetcher.requests.get());
         } finally {
             cache.close();
         }
@@ -190,7 +287,7 @@ public class RangeCacheTest {
         byte[] data = randomBytes(256 * chunk + 100);
         ArrayFetcher fetcher = new ArrayFetcher(data, chunk);
         fetcher.delayMillis = 2;
-        RangeCache cache = new RangeCache(fetcher, chunk);
+        RangeCache cache = new RangeCache(fetcher, chunk, 1024, 256, 2);
         ExecutorService pool = Executors.newFixedThreadPool(8);
         try {
             List<Future<?>> results = new ArrayList<>();
@@ -214,9 +311,13 @@ public class RangeCacheTest {
             for (Future<?> result : results) {
                 result.get();
             }
+            // a block is fetched again only inside a short gap one request spans; never twice by racing threads
+            long wire = 0;
             for (int c = 0; c < fetcher.timesFetched.length; c++) {
-                assertTrue(fetcher.timesFetched[c] <= 1, "chunk " + c + " fetched " + fetcher.timesFetched[c] + " times");
+                wire += fetcher.timesFetched[c];
             }
+            assertTrue(wire < fetcher.timesFetched.length * 3L / 2, wire + " blocks for " + fetcher.timesFetched.length);
+            assertTrue(fetcher.peak.get() <= 2, "at most 2 out at once, not " + fetcher.peak.get());
         } finally {
             pool.shutdown();
             cache.close();

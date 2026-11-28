@@ -53,6 +53,10 @@ public class RangeLoadingTest {
     private volatile String requiredAuthorization;
     private final AtomicLong bytesServed = new AtomicLong();
     private final AtomicInteger requests = new AtomicInteger();
+    private final AtomicInteger live = new AtomicInteger();
+    private final AtomicInteger peak = new AtomicInteger();
+    // range requests still to answer 503, "busy"
+    private final AtomicInteger busyLeft = new AtomicInteger();
 
     @BeforeEach
     void start() throws IOException {
@@ -69,6 +73,15 @@ public class RangeLoadingTest {
 
     private void serve(HttpExchange exchange) throws IOException {
         requests.incrementAndGet();
+        peak.accumulateAndGet(live.incrementAndGet(), Math::max);
+        try {
+            answer(exchange);
+        } finally {
+            live.decrementAndGet();
+        }
+    }
+
+    private void answer(HttpExchange exchange) throws IOException {
         byte[] data = served;
         if (requiredAuthorization != null
                 && !requiredAuthorization.equals(exchange.getRequestHeaders().getFirst("Authorization"))) {
@@ -77,6 +90,12 @@ public class RangeLoadingTest {
             return;
         }
         String range = exchange.getRequestHeaders().getFirst("Range");
+        if (range != null && !range.startsWith("bytes=0-") && busyLeft.getAndUpdate(n -> Math.max(0, n - 1)) > 0) {
+            exchange.getResponseHeaders().add("Retry-After", "0");
+            exchange.sendResponseHeaders(503, -1);
+            exchange.close();
+            return;
+        }
         try (OutputStream out = exchange.getResponseBody()) {
             if (mode == Mode.GZIP) {
                 ByteArrayOutputStream zipped = new ByteArrayOutputStream();
@@ -181,6 +200,43 @@ public class RangeLoadingTest {
             local.dispose();
             remote.dispose();
         }
+    }
+
+    @Test
+    public void prefetchedPagesHaveTheirSizesFromAFewPercentOfTheFile() throws Exception {
+        // a linearized manual: each page's dictionary sits beside its content, 132 of them across the file
+        byte[] bytes = resource("/updater/DSCP73_om_en.pdf");
+        served = bytes;
+        Document local = local(bytes);
+        Document remote = remote(UrlLoadOptions.defaults());
+        try {
+            long beforePrefetch = requests.get();
+            remote.getPageTree().prefetchPages();
+            long prefetchRequests = requests.get() - beforePrefetch;
+            long afterPrefetch = requests.get();
+            for (int page = 0; page < local.getNumberOfPages(); page++) {
+                PDimension expected = local.getPageTree().getPage(page).getSize(Page.BOUNDARY_CROPBOX, 0f, 1f);
+                PDimension actual = remote.getPageTree().getPage(page).getSize(Page.BOUNDARY_CROPBOX, 0f, 1f);
+                assertEquals(expected.getWidth(), actual.getWidth(), "page " + page);
+                assertEquals(expected.getHeight(), actual.getHeight(), "page " + page);
+            }
+            assertTrue(prefetchRequests > 1, prefetchRequests + " prefetch requests");
+            assertTrue(requests.get() - afterPrefetch <= 2,
+                    "the sizes waited on " + (requests.get() - afterPrefetch) + " requests after the prefetch");
+            assertTrue(bytesServed.get() < bytes.length / 5, bytesServed.get() + " of " + bytes.length);
+            assertTrue(peak.get() <= 4, "at most 4 requests out at once, not " + peak.get());
+            assertSameImage(render(local, 0), render(remote, 0), "page 0");
+        } finally {
+            local.dispose();
+            remote.dispose();
+        }
+    }
+
+    @Test
+    public void aBusyServerIsWaitedFor() throws Exception {
+        busyLeft.set(2);
+        assertRendersAsLocal(resource("/updater/DSCP73_om_en.pdf"), UrlLoadOptions.defaults(), 1);
+        assertEquals(0, busyLeft.get(), "the busy answers were all given");
     }
 
     @Test

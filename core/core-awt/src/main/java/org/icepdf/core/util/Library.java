@@ -30,7 +30,11 @@ import org.icepdf.core.pobjects.graphics.images.ImageStream;
 import org.icepdf.core.pobjects.graphics.images.references.ImagePool;
 import org.icepdf.core.pobjects.security.JceProvider;
 import org.icepdf.core.pobjects.security.SecurityManager;
+import org.icepdf.core.pobjects.structure.CrossReference;
+import org.icepdf.core.pobjects.structure.CrossReferenceCompressedEntry;
+import org.icepdf.core.pobjects.structure.CrossReferenceEntry;
 import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
+import org.icepdf.core.pobjects.structure.CrossReferenceUsedEntry;
 import org.icepdf.core.pobjects.structure.Header;
 import org.icepdf.core.pobjects.structure.Indexer;
 import org.icepdf.core.pobjects.structure.exceptions.CrossReferenceStateException;
@@ -43,6 +47,9 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -609,6 +616,47 @@ public class Library {
         }
         Object o = dictionaryEntries.get(key);
         return o != null && (!(o instanceof Reference) || isValidEntry((Reference) o));
+    }
+
+    /**
+     * Fetches the start of these objects in parallel, for a document still being fetched (GH-662); the objects
+     * then parse without waiting on the network. An object in an object stream brings the start of its stream.
+     * For any other document it does nothing.
+     *
+     * @param references objects about to be read
+     */
+    public void prefetchObjects(Collection<Reference> references) {
+        if (documentSource.isComplete() || references.isEmpty() || crossReferenceRoot == null) {
+            return;
+        }
+        int[] offsets = new int[references.size()];
+        int count = 0;
+        Set<Reference> streams = new HashSet<>();
+        for (Reference reference : references) {
+            CrossReferenceEntry entry = findEntry(reference);
+            if (entry instanceof CrossReferenceCompressedEntry) {
+                Reference stream = ((CrossReferenceCompressedEntry) entry).getObjectNumberOfContainingObjectStream();
+                entry = streams.add(stream) ? findEntry(stream) : null;
+            }
+            if (entry instanceof CrossReferenceUsedEntry) {
+                offsets[count++] = ((CrossReferenceUsedEntry) entry).getFilePositionOfObject();
+            }
+        }
+        documentSource.prefetch(Arrays.copyOf(offsets, count));
+    }
+
+    private CrossReferenceEntry findEntry(Reference reference) {
+        try {
+            for (CrossReference crossReference : crossReferenceRoot.getCrossReferences()) {
+                CrossReferenceEntry entry = crossReference.getEntry(reference);
+                if (entry != null) {
+                    return entry;
+                }
+            }
+        } catch (ObjectStateException | CrossReferenceStateException | IOException | RuntimeException e) {
+            logger.log(Level.FINE, "No cross-reference entry to prefetch " + reference, e);
+        }
+        return null;
     }
 
     public int getOffset(Reference reference) throws CrossReferenceStateException, ObjectStateException, IOException {
