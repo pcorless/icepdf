@@ -71,7 +71,7 @@ import java.util.function.Consumer;
 public class PdfViewer extends StackPane {
 
     private static final String[] MENU = {
-            "document.open-new-tab", "document.new-tab", "document.save-as", "document.export-redacted", "document.watermark", "document.remove-watermarks", "document.print", null, "document.properties", "view.annotation-board", null,
+            "document.open-new-tab", "document.open-url", "document.new-tab", "document.save-as", "document.export-redacted", "document.watermark", "document.remove-watermarks", "document.print", null, "document.properties", "view.annotation-board", null,
             "view.full-screen", "view.mode.single-page", "view.mode.continuous", "view.mode.facing",
             "view.mode.facing-continuous", "view.cover-page", null, "view.rotate-clockwise",
             "view.rotate-counterclockwise", "view.show-annotations", "view.highlight-fields", null,
@@ -318,6 +318,45 @@ public class PdfViewer extends StackPane {
         return added.getSession().open(file, opened -> {
             if (!opened && added.getSession().getDocument() == null && documents.contains(added)) removeDocument(added);
         });
+    }
+
+    /**
+     * Opens a remote PDF (GH-662), fetching it as it's read: in the selected document when that's empty,
+     * else in a new tab (without tabs it replaces the document).  An address that's open already shows
+     * its tab.  @return false if the user kept the current document
+     */
+    public boolean openUrl(java.net.URI uri) {
+        if (!features.isMultipleDocuments()) return session().openUrl(uri);
+        for (DocumentPane pane : documents) {
+            if (uri.equals(pane.getSession().getUrl()) || uri.equals(pane.getSession().getLoadingUrl())) {
+                selectDocument(pane);
+                return true;
+            }
+        }
+        if (pane().getSession().getDocument() == null && !pane().getSession().isLoading()) return session().openUrl(uri);
+        DocumentPane added = addDocument();
+        return added.getSession().openUrl(uri, opened -> {
+            if (!opened && added.getSession().getDocument() == null && documents.contains(added)) removeDocument(added);
+        });
+    }
+
+    /**
+     * The address typed into Open URL, as an http or https URI; null (and a message) when it isn't one.
+     * A bare host and path gets https.
+     */
+    java.net.URI parseUrl(String typed) {
+        String text = typed == null ? "" : typed.strip();
+        if (text.isEmpty()) return null;
+        if (!text.contains("://")) text = "https://" + text;
+        try {
+            java.net.URI uri = new java.net.URI(text);
+            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
+            if ((scheme.equals("http") || scheme.equals("https")) && uri.getHost() != null) return uri;
+        } catch (java.net.URISyntaxException e) {
+            // reported below
+        }
+        onError.accept(Messages.format("viewer.badUrl", typed.strip()));
+        return null;
     }
 
     private DocumentPane paneShowing(Path file) {
@@ -1468,6 +1507,17 @@ public class PdfViewer extends StackPane {
         @Override
         public void showAnnotationBoard() {
             if (view() != null) AnnotationBoard.show(window(), view(), colorLabels);
+        }
+
+        @Override
+        public void openUrl() {
+            javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+            dialog.initOwner(window());
+            dialog.setTitle(Messages.get("viewer.openUrlTitle"));
+            dialog.setHeaderText(null);
+            dialog.setContentText(Messages.get("viewer.openUrlPrompt"));
+            dialog.getEditor().setPrefColumnCount(40);
+            dialogs.showAndWait(dialog).map(PdfViewer.this::parseUrl).ifPresent(PdfViewer.this::openUrl);
         }
 
         @Override

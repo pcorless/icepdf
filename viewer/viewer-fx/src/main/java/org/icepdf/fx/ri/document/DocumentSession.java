@@ -27,6 +27,8 @@ import javafx.stage.Window;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.pobjects.Document;
+import org.icepdf.core.pobjects.NetworkThrottle;
+import org.icepdf.core.pobjects.UrlLoadOptions;
 import org.icepdf.core.pobjects.annotations.WatermarkAnnotation;
 import org.icepdf.core.util.watermark.Watermark;
 import org.icepdf.core.util.watermark.Watermarks;
@@ -37,13 +39,18 @@ import org.icepdf.fx.view.PdfView;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -85,6 +92,54 @@ public final class DocumentSession {
     private int writes;
     private final java.util.List<Worker<?>> heldJobs = new java.util.ArrayList<>();
     private final ReadOnlyObjectWrapper<Path> loadingFile = new ReadOnlyObjectWrapper<>(this, "loadingFile");
+    // a remote document's address (GH-662): the open one, and the one being read
+    private final ReadOnlyObjectWrapper<URI> url = new ReadOnlyObjectWrapper<>(this, "url");
+    private final ReadOnlyObjectWrapper<URI> loadingUrl = new ReadOnlyObjectWrapper<>(this, "loadingUrl");
+    private UrlLoadOptions urlLoadOptions = UrlLoadOptions.builder().throttle(NETWORK_THROTTLE).build();
+    // the remote document being read, before it shows; for the devtools network tab
+    private volatile Document loadingDocument;
+
+    /**
+     * The viewer's network throttle (GH-662): every remote document goes through it unless its options say
+     * otherwise, so the devtools can slow them all at once. Off unless the
+     * {@value UrlLoadOptions#THROTTLE_LATENCY_PROPERTY} or {@value UrlLoadOptions#THROTTLE_BANDWIDTH_PROPERTY}
+     * properties set it.
+     */
+    public static final NetworkThrottle NETWORK_THROTTLE = initialThrottle();
+    // every session, for the devtools to find the remote documents in
+    private static final Set<DocumentSession> SESSIONS = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static NetworkThrottle initialThrottle() {
+        NetworkThrottle fromProperties = UrlLoadOptions.defaults().getThrottle();
+        return fromProperties != null
+                ? new NetworkThrottle(fromProperties.getLatency(), fromProperties.getBytesPerSecond())
+                : NetworkThrottle.off();
+    }
+
+    /** A remote document open, or opening, in a session; see {@link #remoteDocuments()}. */
+    public record RemoteDocument(String name, URI uri, Document document) {
+    }
+
+    /**
+     * @return the remote documents open or opening in any session, for the devtools network tab; FX thread
+     */
+    public static List<RemoteDocument> remoteDocuments() {
+        List<RemoteDocument> remote = new ArrayList<>();
+        synchronized (SESSIONS) {
+            for (DocumentSession session : SESSIONS) {
+                Document loading = session.loadingDocument;
+                URI loadingAddress = session.loadingUrl.get();
+                if (loading != null && loadingAddress != null) {
+                    remote.add(new RemoteDocument(displayName(loadingAddress), loadingAddress, loading));
+                }
+                URI address = session.url.get();
+                if (session.document != null && address != null && session.document != loading) {
+                    remote.add(new RemoteDocument(displayName(address), address, session.document));
+                }
+            }
+        }
+        return remote;
+    }
     // bumped by every open and close: a load that finishes under an older ticket is thrown away.
     private int ticket;
     private Document document;
@@ -97,6 +152,9 @@ public final class DocumentSession {
 
     public DocumentSession(PdfView view) {
         this.view = view;
+        synchronized (SESSIONS) {
+            SESSIONS.add(this);
+        }
     }
 
     public PdfView getView() {
@@ -201,6 +259,24 @@ public final class DocumentSession {
         return true;
     }
 
+    /** The address of the open remote document ({@link #openUrl}), or null; such a document has no file. */
+    public ReadOnlyObjectProperty<URI> urlProperty() {
+        return url.getReadOnlyProperty();
+    }
+
+    public URI getUrl() {
+        return url.get();
+    }
+
+    /** The address of the remote document being read, or null. */
+    public ReadOnlyObjectProperty<URI> loadingUrlProperty() {
+        return loadingUrl.getReadOnlyProperty();
+    }
+
+    public URI getLoadingUrl() {
+        return loadingUrl.get();
+    }
+
     /** The file being read (absolute), or null when nothing is loading. */
     public ReadOnlyObjectProperty<Path> loadingFileProperty() {
         return loadingFile.getReadOnlyProperty();
@@ -289,16 +365,69 @@ public final class DocumentSession {
     }
 
     private void openAt(Path path, int page, Consumer<Boolean> done) {
+        Path absolute = path.toAbsolutePath();
+        load(absolute, null, page, done, next -> next.setFile(path.toString()));
+    }
+
+    /**
+     * Starts opening a remote document (GH-662), after asking about unsaved changes to the current one.
+     * An {@code http} or {@code https} document is fetched as it's read (see {@link #setUrlLoadOptions});
+     * it has no file, so saving it asks where.
+     *
+     * @return false if the user chose to keep the current document
+     */
+    public boolean openUrl(URI uri) {
+        return openUrl(uri, ok -> { });
+    }
+
+    /** {@link #openUrl(URI)}, then {@code done} with whether it opened (not called when superseded). */
+    public boolean openUrl(URI uri, Consumer<Boolean> done) {
+        if (reportBusy() || !confirmDiscard()) return false;
+        UrlLoadOptions options = urlLoadOptions;
+        load(null, uri, -1, done, next -> next.setUrl(uri.toURL(), options));
+        return true;
+    }
+
+    /** How {@link #openUrl} fetches; range requests with the defaults, through {@link #NETWORK_THROTTLE}, unless set. */
+    public void setUrlLoadOptions(UrlLoadOptions options) {
+        this.urlLoadOptions = options != null ? options : UrlLoadOptions.builder().throttle(NETWORK_THROTTLE).build();
+    }
+
+    /** The name a remote document goes by: the last part of its path, else its host. */
+    public static String displayName(URI uri) {
+        String path = uri.getPath();
+        if (path != null) {
+            String trimmed = path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
+            String last = trimmed.substring(trimmed.lastIndexOf('/') + 1);
+            if (!last.isEmpty()) return last;
+        }
+        return uri.getHost() != null ? uri.getHost() : uri.toString();
+    }
+
+    /** Reads a document on a worker thread; {@code path} or {@code uri} says where from. */
+    private interface Opener {
+        void open(Document next) throws Exception;
+    }
+
+    private void load(Path path, URI uri, int page, Consumer<Boolean> done, Opener opener) {
         int mine = ++ticket;
-        loadingFile.set(path.toAbsolutePath());
+        loadingFile.set(path);
+        loadingUrl.set(uri);
         loading.set(true);
-        SecurityCallback callback = security.apply(owner, path);
+        String name = path != null ? path.getFileName().toString() : displayName(uri);
+        SecurityCallback callback = security.apply(owner, path != null ? path : promptPath(name));
         Thread worker = new Thread(() -> {
             Document next = new Document();
             next.setSecurityCallback(callback);
+            if (uri != null) {
+                loadingDocument = next;
+            }
             Throwable failure = null;
             try {
-                next.setFile(path.toString());
+                opener.open(next);
+                if (uri != null) {
+                    prefetchPages(next);
+                }
             } catch (Exception | Error e) {
                 // an Error too (a hostile file can exhaust the heap or the stack): loading must end.
                 failure = e;
@@ -309,14 +438,41 @@ public final class DocumentSession {
                 }
             }
             Throwable failed = failure;
-            Platform.runLater(() -> loaded(mine, path, page, failed == null ? next : null, failed, callback, done));
+            Platform.runLater(() -> {
+                if (loadingDocument == next) {
+                    loadingDocument = null;
+                }
+            });
+            Platform.runLater(() -> loaded(mine, path, uri, name, page, failed == null ? next : null, failed,
+                    callback, done));
         }, "pdf-open");
         worker.setDaemon(true);
         worker.start();
     }
 
-    private void loaded(int mine, Path path, int page, Document next, Throwable failure, SecurityCallback callback,
-                        Consumer<Boolean> done) {
+    /**
+     * The view reads every page's size as it opens a document; for a remote one, fetch those dictionaries in
+     * parallel first instead of one at a time. Best effort: a page it misses is fetched when read.
+     */
+    private static void prefetchPages(Document document) {
+        try {
+            document.getPageTree().prefetchPages();
+        } catch (RuntimeException e) {
+            Logger.getLogger(DocumentSession.class.getName()).log(Level.FINE, "Page prefetch failed", e);
+        }
+    }
+
+    /** A path standing for a remote document's name, for the password prompt. */
+    private static Path promptPath(String name) {
+        try {
+            return Path.of(name);
+        } catch (java.nio.file.InvalidPathException e) {
+            return Path.of("document.pdf");
+        }
+    }
+
+    private void loaded(int mine, Path path, URI uri, String name, int page, Document next, Throwable failure,
+                        SecurityCallback callback, Consumer<Boolean> done) {
         if (mine != ticket) {
             // a newer open or a close came first.
             if (next != null) next.dispose();
@@ -324,35 +480,40 @@ public final class DocumentSession {
         }
         loading.set(false);
         loadingFile.set(null);
+        loadingUrl.set(null);
+        String where = path != null ? path.toString() : String.valueOf(uri);
         if (failure instanceof PDFSecurityException) {
             boolean cancelled = callback instanceof PasswordPrompt prompt && prompt.isCancelled();
-            if (!cancelled) onError.accept(Messages.format("documentSession.wrongPassword", path.getFileName()));
+            if (!cancelled) onError.accept(Messages.format("documentSession.wrongPassword", name));
             done.accept(false);
             return;
         }
         if (failure != null) {
-            logger.log(Level.WARNING, "Could not open " + path, failure);
-            onError.accept(Messages.format("documentSession.openFailed", path.getFileName(), Messages.reason(failure)));
+            logger.log(Level.WARNING, "Could not open " + where, failure);
+            onError.accept(Messages.format("documentSession.openFailed", name, Messages.reason(failure)));
             done.accept(false);
             return;
         }
         Document old = document;
         Path oldFile = file.get();
+        URI oldUrl = url.get();
         document = next;
-        file.set(path.toAbsolutePath());
+        file.set(path);
+        url.set(uri);
         try {
             view.setDocument(next);
         } catch (RuntimeException e) {
             // read, but the view can't show it (a broken page tree, say): keep the old document.
-            logger.log(Level.WARNING, "Could not show " + path, e);
+            logger.log(Level.WARNING, "Could not show " + where, e);
             document = old;
             file.set(oldFile);
+            url.set(oldUrl);
             try {
                 view.setDocument(old);
             } finally {
                 next.dispose();
             }
-            onError.accept(Messages.format("documentSession.openFailed", path.getFileName(), Messages.reason(e)));
+            onError.accept(Messages.format("documentSession.openFailed", name, Messages.reason(e)));
             done.accept(false);
             return;
         }
@@ -377,9 +538,11 @@ public final class DocumentSession {
         ticket++;
         loading.set(false);
         loadingFile.set(null);
+        loadingUrl.set(null);
         Document old = document;
         document = null;
         file.set(null);
+        url.set(null);
         view.setDocument(null);
         if (old != null) old.dispose();
         view.refreshModified();

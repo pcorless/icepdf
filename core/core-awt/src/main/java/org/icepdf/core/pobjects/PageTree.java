@@ -19,6 +19,7 @@ import org.icepdf.core.pobjects.graphics.WatermarkCallback;
 import org.icepdf.core.util.Library;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -407,6 +408,52 @@ public class PageTree extends Dictionary {
      */
     public String toString() {
         return "PAGES= " + entries.toString();
+    }
+
+    /**
+     * For a document still being fetched ({@link Document#setUrl(java.net.URL, UrlLoadOptions)}), fetches every
+     * page's dictionary at once, a level of the page tree at a time, with a few requests in parallel. Call it
+     * before reading every page's size, for a scroll view or thumbnails: one page at a time, each would wait its
+     * own turn on the network. For any other document it does nothing.
+     *
+     * @since 8.1
+     */
+    public void prefetchPages() {
+        if (library.getDocumentSource().isComplete()) {
+            return;
+        }
+        if (!inited) {
+            init();
+        }
+        List<PageTree> level = new ArrayList<>();
+        level.add(this);
+        while (!level.isEmpty()) {
+            List<Reference> references = new ArrayList<>();
+            for (PageTree tree : level) {
+                for (Object kid : tree.kids.references) {
+                    if (kid instanceof Reference) {
+                        references.add((Reference) kid);
+                    }
+                }
+            }
+            library.prefetchObjects(references);
+            List<PageTree> next = new ArrayList<>();
+            for (PageTree tree : level) {
+                Kids treeKids = tree.kids;
+                for (int i = 0; i < treeKids.references.size(); i++) {
+                    if (!(treeKids.references.get(i) instanceof Reference)) {
+                        continue;
+                    }
+                    Object kid = tree.getPageOrPagesPotentiallyNotInitedFromReferenceAt(treeKids, i);
+                    if (kid instanceof PageTree && kid != tree) {
+                        PageTree child = (PageTree) kid;
+                        child.init();
+                        next.add(child);
+                    }
+                }
+            }
+            level = next;
+        }
     }
 
     /**

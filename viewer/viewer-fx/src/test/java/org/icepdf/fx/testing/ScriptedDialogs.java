@@ -19,6 +19,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.TextInputDialog;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
 import org.icepdf.fx.ri.ui.ViewerDialogs;
@@ -40,6 +41,7 @@ public final class ScriptedDialogs implements ViewerDialogs {
 
     private final Deque<Path> files = new ArrayDeque<>();
     private final Deque<ButtonBar.ButtonData> answers = new ArrayDeque<>();
+    private final Deque<String> typed = new ArrayDeque<>();
     /** The chooser titles and question texts, in order. */
     public final List<String> asked = new ArrayList<>();
     /** The informing dialogs shown (a redaction report). */
@@ -56,6 +58,12 @@ public final class ScriptedDialogs implements ViewerDialogs {
     /** The next question is answered with its button of this kind ({@code YES} replace/open/save, {@code NO} don't). */
     public ScriptedDialogs answer(ButtonBar.ButtonData button) {
         answers.add(button);
+        return this;
+    }
+
+    /** The next text prompt (Open URL) is answered with {@code text}, as if typed and OK pressed. */
+    public ScriptedDialogs type(String text) {
+        typed.add(text);
         return this;
     }
 
@@ -78,6 +86,10 @@ public final class ScriptedDialogs implements ViewerDialogs {
     @SuppressWarnings("unchecked")
     public <R> Optional<R> showAndWait(Dialog<R> dialog) {
         asked.add(dialog.getContentText());
+        if (dialog instanceof TextInputDialog) {
+            String text = typed.poll();
+            return text != null ? Optional.of((R) text) : Optional.empty();
+        }
         ButtonBar.ButtonData wanted = answers.poll();
         if (wanted == null || !(dialog instanceof Alert)) return Optional.empty();
         for (ButtonType button : dialog.getDialogPane().getButtonTypes()) {

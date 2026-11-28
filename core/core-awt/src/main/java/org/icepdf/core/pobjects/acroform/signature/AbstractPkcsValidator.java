@@ -631,6 +631,12 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
 
         byte[] firstSection;
         byte[] secondSection;
+        // the digest covers the signed byte range: a range source fetches the rest first (GH-662)
+        try {
+            library.getDocumentSource().ensureAll();
+        } catch (IOException e) {
+            throw new SignatureIntegrityException("Could not fetch the signed bytes", e);
+        }
         synchronized (library.getDocumentSource().getLock()) {
             ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();
             documentByteBuffer.position(0);
@@ -798,6 +804,13 @@ public abstract class AbstractPkcsValidator implements SignatureValidator {
         ArrayList<Integer> byteRange = signatureFieldDictionary.getSignatureDictionary().getByteRange();
         Library library = signatureFieldDictionary.getLibrary();
 
+        // the byte range is checked against the whole file: a range source fetches the rest first (GH-662)
+        try {
+            library.getDocumentSource().ensureAll();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not fetch the document to check the signed byte range", e);
+            return false;
+        }
         synchronized (library.getDocumentSource().getLock()) {
             ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();
             documentByteBuffer.position(0);

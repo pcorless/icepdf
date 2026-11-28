@@ -404,6 +404,18 @@
     -fx-background-insets: 0, 3;
 }
 
+/* how much of a remote document has arrived, while its pages fetch (GH-662) */
+.icepdf-viewer .fetch-status {
+    -fx-background-color: -icepdf-toast;
+    -fx-background-radius: 12;
+    -fx-border-color: -icepdf-toast-border;
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+    -fx-text-fill: -icepdf-toast-fg;
+    -fx-padding: 4 12 4 12;
+    -fx-font-size: 0.9em;
+}
+
 /* redaction reminder, floating over the top of the document */
 .icepdf-viewer .redaction-banner {
     -fx-background-color: -icepdf-warning-border, -icepdf-warning;

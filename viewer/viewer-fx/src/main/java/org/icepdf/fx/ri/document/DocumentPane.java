@@ -17,6 +17,9 @@ package org.icepdf.fx.ri.document;
 
 import org.icepdf.fx.i18n.Messages;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.geometry.Insets;
@@ -27,6 +30,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.util.Duration;
 import org.icepdf.core.pobjects.actions.URIAction;
 import org.icepdf.fx.panels.*;
 import org.icepdf.fx.view.PdfView;
@@ -54,7 +58,12 @@ public final class DocumentPane {
     private final SignaturePanel signatures = new SignaturePanel(view);
     private final CollectionView collection = new CollectionView();
     private final HBox redactionBanner = new HBox(10);
-    private final StackPane node = new StackPane(view, collection, redactionBanner);
+    // how much of a remote document has arrived, shown while its pages are fetching (GH-662)
+    private final Label fetchStatus = new Label();
+    private final StackPane node = new StackPane(view, collection, redactionBanner, fetchStatus);
+    private final Timeline fetchPoll = new Timeline(new KeyFrame(Duration.millis(250), e -> updateFetchStatus()));
+    private long lastBytesLoaded = -1;
+    private long lastFetchMillis;
     // the user closed the redaction reminder for this document.
     private boolean redactionBannerDismissed;
     private Runnable onExportRedacted;
@@ -89,6 +98,12 @@ public final class DocumentPane {
         });
         session.fileProperty().addListener((o, a, b) -> refreshTitle());
         session.loadingFileProperty().addListener((o, a, b) -> refreshTitle());
+        session.urlProperty().addListener((o, a, b) -> {
+            refreshTitle();
+            watchFetching();
+        });
+        session.loadingUrlProperty().addListener((o, a, b) -> refreshTitle());
+        buildFetchStatus();
         // the wait cursor while the file is read or a redacted copy written; the view keeps it until the first pages are painted.
         // what fails in the view (an undo, marking search hits) reaches the user with the session's errors.
         view.addEventHandler(org.icepdf.fx.view.PdfViewErrorEvent.ERROR, e -> session.reportError(e.getMessage()));
@@ -243,10 +258,61 @@ public final class DocumentPane {
     /** Works the title out again (after anything that changes the file or the modified state). */
     public void refreshTitle() {
         Path loading = session.getLoadingFile();
+        java.net.URI loadingUrl = session.getLoadingUrl();
         Path file = session.getFile();
-        // a file still loading names its tab already.
-        if (loading != null && file == null) title.set(loading.getFileName().toString());
-        else title.set(file == null ? "" : (view.isModified() ? "• " : "") + file.getFileName());
+        java.net.URI url = session.getUrl();
+        String name = file != null ? file.getFileName().toString()
+                : url != null ? DocumentSession.displayName(url) : null;
+        // a document still loading names its tab already.
+        if (name == null && loading != null) title.set(loading.getFileName().toString());
+        else if (name == null && loadingUrl != null) title.set(DocumentSession.displayName(loadingUrl));
+        else title.set(name == null ? "" : (view.isModified() ? "• " : "") + name);
+    }
+
+    private void buildFetchStatus() {
+        fetchStatus.getStyleClass().add("fetch-status");
+        fetchStatus.setVisible(false);
+        fetchStatus.setMouseTransparent(true);
+        // bottom left: side panels slide over the right of the document
+        StackPane.setAlignment(fetchStatus, Pos.BOTTOM_LEFT);
+        StackPane.setMargin(fetchStatus, new Insets(0, 0, 16, 16));
+        fetchPoll.setCycleCount(Animation.INDEFINITE);
+    }
+
+    /** Polls a remote document's progress until all of it has arrived. */
+    private void watchFetching() {
+        fetchPoll.stop();
+        lastBytesLoaded = -1;
+        fetchStatus.setVisible(false);
+        org.icepdf.core.pobjects.Document document = session.getDocument();
+        if (session.getUrl() != null && document != null && !document.isFullyLoaded()) fetchPoll.play();
+    }
+
+    /** Shows the progress while bytes are arriving, and hides it a moment after they stop. */
+    private void updateFetchStatus() {
+        org.icepdf.core.pobjects.Document document = session.getDocument();
+        if (document == null || session.getUrl() == null) {
+            fetchPoll.stop();
+            fetchStatus.setVisible(false);
+            return;
+        }
+        long loaded = document.getBytesLoaded();
+        long total = document.getDocumentLength();
+        long now = System.currentTimeMillis();
+        if (loaded != lastBytesLoaded) {
+            if (lastBytesLoaded >= 0) lastFetchMillis = now;
+            lastBytesLoaded = loaded;
+        }
+        boolean complete = document.isFullyLoaded();
+        fetchStatus.setText(Messages.format("documentPane.fetched", size(loaded), size(total)));
+        fetchStatus.setVisible(now - lastFetchMillis < 1500);
+        if (complete && !fetchStatus.isVisible()) fetchPoll.stop();
+    }
+
+    /** A byte count for people: 512 KB, 3.4 MB. */
+    static String size(long bytes) {
+        if (bytes < 1024 * 1024) return Messages.format("documentPane.kilobytes", Math.max(1, Math.round(bytes / 1024.0)));
+        return Messages.format("documentPane.megabytes", Math.round(bytes / (1024.0 * 102.4)) / 10.0);
     }
 
     /**
