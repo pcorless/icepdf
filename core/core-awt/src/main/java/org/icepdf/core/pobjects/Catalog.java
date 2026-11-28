@@ -20,6 +20,7 @@ import org.icepdf.core.pobjects.structure.CrossReferenceRoot;
 import org.icepdf.core.pobjects.structure.Indexer;
 import org.icepdf.core.util.Library;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -173,6 +174,13 @@ public class Catalog extends Dictionary {
         CrossReferenceRoot crossReferenceRoot = library.getCrossReferenceRoot();
         ByteBuffer byteBuffer = library.getDocumentSource().getBuffer();
         if (crossReferenceRoot == null || byteBuffer == null) {
+            return null;
+        }
+        try {
+            // the candidates come from scanning every byte: a range source fetches the rest first (GH-662)
+            library.getDocumentSource().ensureAll();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Could not fetch the document to recover its page tree", e);
             return null;
         }
         List<Reference> kids = new ArrayList<>();

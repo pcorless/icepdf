@@ -18,6 +18,7 @@ package org.icepdf.core.util;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.exceptions.PDFSecurityException;
 import org.icepdf.core.internal.DocumentSource;
+import org.icepdf.core.internal.RangeFetchException;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.acroform.SignatureHandler;
@@ -200,6 +201,11 @@ public class Library {
         if (obj == null && crossReferenceRoot != null) {
             try {
                 obj = crossReferenceRoot.loadObject(objectLoader, reference, hint);
+            } catch (RangeFetchException e) {
+                // the bytes of a remote document didn't arrive: the file isn't damaged, and rebuilding its index
+                // would only fetch everything; the next look may succeed (GH-662)
+                logger.log(Level.WARNING, e, () -> "Could not fetch " + reference + originSuffix());
+                return null;
             } catch (ObjectStateException | CrossReferenceStateException | IOException e) {
                 if (rebuildingCrossReference.get()) {
                     // already rebuilding on this thread; the new table isn't in place yet, so just miss.
@@ -306,6 +312,8 @@ public class Library {
         boolean outermost = !rebuildingCrossReference.get();
         rebuildingCrossReference.set(Boolean.TRUE);
         try {
+            // indexing scans every byte: a range source fetches the rest first (GH-662)
+            documentSource.ensureAll();
             synchronized (documentSource.getLock()) {
                 crossReferenceRoot = indexer.indexObjects(documentSource.getBuffer());
                 setCrossReferenceRoot(crossReferenceRoot);

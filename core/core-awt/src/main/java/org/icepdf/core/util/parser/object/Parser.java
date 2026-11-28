@@ -17,6 +17,7 @@
 package org.icepdf.core.util.parser.object;
 
 
+import org.icepdf.core.internal.DocumentSource;
 import org.icepdf.core.pobjects.*;
 import org.icepdf.core.pobjects.structure.CrossReference;
 import org.icepdf.core.pobjects.structure.CrossReferenceStream;
@@ -53,10 +54,28 @@ public class Parser {
     //                                                         e    n    d    s    t    r    e    a   m
     public static final byte[] END_STREAM_MARKER = new byte[]{101, 110, 100, 115, 116, 114, 101, 97, 109};
 
+    // the stream keyword and the end of line that must follow it (§7.3.8.1)
+    private static final byte[] STREAM_LF = {115, 116, 114, 101, 97, 109, 10};
+    private static final byte[] STREAM_CRLF = {115, 116, 114, 101, 97, 109, 13};
+    //                                                         s    t    a    r   t    x    r    e    f
+    private static final byte[] START_XREF_MARKER = new byte[]{115, 116, 97, 114, 116, 120, 114, 101, 102};
+
     private final Library library;
 
     public Parser(Library library) {
         this.library = library;
+    }
+
+    /**
+     * @return the document's source while some of it is still to be fetched, else null: every buffer this
+     * parser reads objects and cross-references from is the document's own
+     */
+    private DocumentSource documentSource() {
+        if (library == null) {
+            return null;
+        }
+        DocumentSource source = library.getDocumentSource();
+        return source.isComplete() ? null : source;
     }
 
     public PObject getPObject(ByteBuffer byteBuffer, int objectOffsetStart)
@@ -65,6 +84,12 @@ public class Parser {
         int objectOffsetEnd;
         int streamOffsetStart;
         ByteBuffer streamByteBuffer;
+        // a range source fetches the object before it's read: through its endobj, or through the stream keyword
+        // when it has a stream, which then comes whole by its /Length below (GH-662)
+        DocumentSource source = documentSource();
+        if (source != null) {
+            source.ensureUntil(objectOffsetStart, END_OBJ_MARKER, STREAM_LF, STREAM_CRLF);
+        }
         byteBuffer.position(objectOffsetStart);
 
         // grab the pieces of the object
@@ -106,9 +131,16 @@ public class Parser {
             streamOffsetStart = byteBuffer.position();
             // a negative /Length is as good as none; the zero-length recovery below measures the stream instead
             int streamLength = Math.max(0, getLength(objectData));
+            if (source != null) {
+                // the stream's bytes and the endstream after them; binary data can hold a stray endobj
+                source.ensure(streamOffsetStart, (long) streamLength + END_STREAM_MARKER.length + 32);
+            }
             // some writers get /Length wrong (or point it past the end of the file); when it doesn't land on
             // endstream, measure the stream up to the endstream marker instead.
             if (streamLength > 0 && !endStreamFollows(byteBuffer, (long) streamOffsetStart + streamLength)) {
+                if (source != null) {
+                    source.ensureUntil(streamOffsetStart, END_STREAM_MARKER);
+                }
                 int streamOffsetEnd = findEndStream(byteBuffer, streamOffsetStart);
                 if (streamOffsetEnd >= 0) {
                     logger.fine(() -> "Stream /Length " + getLength(objectData) + " of object " + objectNumber +
@@ -241,6 +273,12 @@ public class Parser {
         if (startXref < 0 || startXref >= byteBuffer.limit()) {
             throw new CrossReferenceStateException();
         }
+        // a range source fetches the section first: a table through the startxref after its trailer, a
+        // cross-reference stream as an object (getPObject) (GH-662)
+        DocumentSource source = documentSource();
+        if (source != null) {
+            source.ensure(Math.max(0, startXref - 10), 64);
+        }
         // sometimes the offset is off just by a few bytes
         byteBuffer.position(Math.max(0, startXref - 10));
         int xrefPositionStart = byteBuffer.position();
@@ -258,6 +296,9 @@ public class Parser {
         if (foundXrefMarker) {
             // update the xref position as we will have removed any white space.
             startXref = xrefPositionStart + lookAheadBuffer.position();
+            if (source != null) {
+                source.ensureUntil(startXref, START_XREF_MARKER);
+            }
             // scan ahead to find the trailer position
             byteBuffer.position(startXref);
             boolean foundTrailerMarker = ByteBufferUtil.findString(byteBuffer, TRAILER_MARKER);

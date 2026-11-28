@@ -18,6 +18,8 @@ package org.icepdf.core.pobjects;
 import org.icepdf.core.SecurityCallback;
 import org.icepdf.core.application.ProductInfo;
 import org.icepdf.core.exceptions.PDFSecurityException;
+import org.icepdf.core.internal.HttpRangeFetcher;
+import org.icepdf.core.internal.RangeCache;
 import org.icepdf.core.pobjects.acroform.FieldDictionary;
 import org.icepdf.core.pobjects.acroform.InteractiveForm;
 import org.icepdf.core.pobjects.annotations.AbstractWidgetAnnotation;
@@ -41,7 +43,10 @@ import org.icepdf.core.util.updater.modifiers.PageRemovalModifier;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -49,6 +54,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,6 +79,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class Document {
+
+    // bytes a range source fetches from the end of the file on opening: Trailer looks up to 32000 back for startxref
+    private static final int TAIL_FETCH = 64 * 1024;
 
     private static final Logger logger =
             Logger.getLogger(Document.class.getName());
@@ -135,6 +144,8 @@ public class Document {
     private FileChannel documentFileChannel;
     private RandomAccessFile randomAccessFile;
     private ByteBuffer documentByteBuffer;
+    // the remote bytes of a document opened over HTTP range requests (GH-662)
+    private RangeCache rangeCache;
     private CrossReferenceRoot crossReferenceRoot;
 
     // what the next write should redact, and what the last one did
@@ -309,6 +320,112 @@ public class Document {
     }
 
     /**
+     * Load a PDF file from the given URL, as {@link UrlLoadOptions} says (GH-662).  With range requests on, an
+     * {@code http} or {@code https} document is fetched as it's read rather than downloaded first: opening it
+     * fetches the start and end of the file, and each page then fetches the objects it draws.  Saving and
+     * signature validation fetch whatever is left.  A server that can't serve byte ranges sends the whole
+     * document, which is then opened as {@link #setUrl(URL)} would.
+     *
+     * @param url     location of the document
+     * @param options how to fetch it
+     * @throws PDFSecurityException if a security provider can not be found
+     *                              or there is an error decrypting the file.
+     * @throws IOException          if a problem downloading, setting up, or parsing the file.
+     * @since 8.1
+     */
+    public void setUrl(URL url, UrlLoadOptions options)
+            throws PDFSecurityException, IOException {
+        String scheme = url.getProtocol().toLowerCase(Locale.ROOT);
+        if (!scheme.equals("http") && !scheme.equals("https")) {
+            setUrl(url);
+            return;
+        }
+        HttpClient client = options.getHttpClient();
+        if (client == null) {
+            HttpClient.Builder builder = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL);
+            if (options.getConnectTimeout() != null) {
+                builder.connectTimeout(options.getConnectTimeout());
+            }
+            client = builder.build();
+        }
+        URI uri;
+        try {
+            uri = url.toURI();
+        } catch (URISyntaxException e) {
+            throw new IOException("Not a valid URI: " + url, e);
+        }
+        if (!options.isRangeRequests()) {
+            byte[] whole = HttpRangeFetcher.fetchAll(client, uri, options.getHeaders(), options.getRequestTimeout());
+            setByteArray(whole, 0, whole.length, url.toString());
+            return;
+        }
+        HttpRangeFetcher.Opened opened = HttpRangeFetcher.open(client, uri, options.getHeaders(),
+                options.getRequestTimeout(), options.getChunkSize());
+        if (opened.getWholeDocument() != null) {
+            byte[] whole = opened.getWholeDocument();
+            setByteArray(whole, 0, whole.length, url.toString());
+            return;
+        }
+        RangeCache cache = new RangeCache(opened.getFetcher(), options.getChunkSize());
+        cache.seed(opened.getFirstChunk());
+        setRangeCache(cache, url.toString());
+    }
+
+    /**
+     * @return false while a document opened with {@link #setUrl(URL, UrlLoadOptions)} still has bytes to
+     * fetch; true for any other document, which is read whole before it opens
+     * @since 8.1
+     */
+    public boolean isFullyLoaded() {
+        RangeCache cache = rangeCache;
+        return cache == null || cache.isComplete();
+    }
+
+    /**
+     * @return the bytes of the document read so far: all of them, unless it's still being fetched
+     * ({@link #isFullyLoaded()})
+     * @since 8.1
+     */
+    public long getBytesLoaded() {
+        RangeCache cache = rangeCache;
+        if (cache != null) {
+            return cache.isComplete() ? cache.length() : Math.min(cache.getBytesFetched(), cache.length());
+        }
+        return getDocumentLength();
+    }
+
+    /**
+     * @return the document's length in bytes, or 0 when no document is open
+     * @since 8.1
+     */
+    public long getDocumentLength() {
+        RangeCache cache = rangeCache;
+        if (cache != null) {
+            return cache.length();
+        }
+        ByteBuffer buffer = library.getDocumentSource().getBuffer();
+        return buffer != null ? buffer.capacity() : 0;
+    }
+
+    /**
+     * Opens a document from a range source; package private so tests can supply their own (GH-662).
+     */
+    void setRangeCache(RangeCache cache, String pathOrURL) throws PDFSecurityException, IOException {
+        setDocumentOrigin(pathOrURL);
+        rangeCache = cache;
+        try {
+            // the header, and the end of the file: startxref and, usually, the cross-reference itself
+            cache.ensure(0, 8 * 1024);
+            cache.ensure(cache.length() - TAIL_FETCH, TAIL_FETCH);
+            documentByteBuffer = cache.getBuffer();
+            setInputStream(documentByteBuffer);
+        } catch (Exception e) {
+            logLoadFailure("Failed to open the document from " + pathOrURL, e);
+            throw e;
+        }
+    }
+
+    /**
      * Load a PDF file from the given input stream and initiates the document's Catalog.
      * If the system property org.icepdf.core.streamcache.enabled=true, the file
      * will be cached to a temp file; otherwise, the complete document stream will
@@ -415,9 +532,14 @@ public class Document {
             // load the head
             // repository of all PDF object associated with this document.
             Header header = new Header();
+            int capacity = input.capacity();
             input = header.parseHeader(input);
 
             library.getDocumentSource().setBuffer(input);
+            if (rangeCache != null) {
+                // the header may have sliced off junk before %PDF; offsets are the slice's
+                library.getDocumentSource().setRangeCache(rangeCache, capacity - input.capacity());
+            }
             library.setFileHeader(header);
 
             // create instance of CrossReferenceRoot as we may need it the trailer can't be correctly decoded.
@@ -639,6 +761,16 @@ public class Document {
             }
         }
 
+        if (rangeCache != null) {
+            synchronized (library.getDocumentSource().getLock()) {
+                library.getDocumentSource().setRangeCache(null, 0);
+                library.getDocumentSource().setBuffer(ByteBuffer.allocate(0));
+            }
+            rangeCache.close();
+            rangeCache = null;
+            documentByteBuffer = null;
+        }
+
         String fileToDelete = getDocumentCachedFilePath();
         if (fileToDelete != null) {
             File file = new File(fileToDelete);
@@ -679,6 +811,8 @@ public class Document {
      */
     public long writeToOutputStream(OutputStream out, WriteMode writeMode) throws IOException, InterruptedException {
         warnIfRedactionsPending(writeMode);
+        // saving copies every byte: a range source fetches what it hasn't yet (GH-662)
+        library.getDocumentSource().ensureAll();
         if (documentFileChannel != null) {
             synchronized (library.getDocumentSource().getLock()) {
                 ByteBuffer documentByteBuffer = library.getDocumentSource().getBuffer();

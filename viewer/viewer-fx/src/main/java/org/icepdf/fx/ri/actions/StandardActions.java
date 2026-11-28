@@ -23,6 +23,7 @@ import org.icepdf.fx.ri.actions.document.CloseAction;
 import org.icepdf.fx.ri.actions.document.NewTabAction;
 import org.icepdf.fx.ri.actions.document.OpenAction;
 import org.icepdf.fx.ri.actions.document.OpenInNewTabAction;
+import org.icepdf.fx.ri.actions.document.OpenUrlAction;
 import org.icepdf.fx.ri.actions.document.PrintAction;
 import org.icepdf.fx.ri.actions.document.PropertiesAction;
 import org.icepdf.fx.ri.actions.document.SaveAction;
@@ -60,7 +61,7 @@ public final class StandardActions {
     public static ActionRegistry registry() {
         ActionRegistry registry = new ActionRegistry();
         // document
-        registry.register(new OpenAction()).register(new OpenInNewTabAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction()).register(new ExportRedactedAction()).register(new WatermarkAction()).register(new RemoveWatermarksAction())
+        registry.register(new OpenAction()).register(new OpenInNewTabAction()).register(new OpenUrlAction()).register(new NewTabAction()).register(new SaveAction()).register(new SaveAsAction()).register(new ExportRedactedAction()).register(new WatermarkAction()).register(new RemoveWatermarksAction())
                 .register(new PrintAction()).register(new PropertiesAction()).register(new CloseAction());
         // application
         registry.register(new NewWindowAction()).register(new PreferencesAction()).register(new AboutAction())

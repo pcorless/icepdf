@@ -34,7 +34,7 @@ public interface ViewerContext {
     /** Application-level operations a host may offer. */
     enum Capability {
         OPEN, SAVE, EXPORT_REDACTED, WATERMARK, CLOSE, NEW_TAB, NEW_WINDOW, EXIT, PREFERENCES, SIDE_PANEL, FULL_SCREEN, FIND, PAGE_NUMBER,
-        ANNOTATION_BOARD, OPEN_LINK
+        ANNOTATION_BOARD, OPEN_LINK, OPEN_URL
     }
 
     /**
@@ -73,6 +73,11 @@ public interface ViewerContext {
     /** Asks for a file and opens it. */
     default void openDocument() {
         throw new UnsupportedOperationException("open");
+    }
+
+    /** Asks for the address of a remote PDF and opens it, fetching it as it's read. */
+    default void openUrl() {
+        throw new UnsupportedOperationException("open url");
     }
 
     /** Saves the document in place. */

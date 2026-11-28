@@ -78,6 +78,11 @@ public final class SimpleViewerContext implements ViewerContext {
         return set(Capability.OPEN, open);
     }
 
+    /** Open URL: asks for the address of a remote PDF and opens it. */
+    public SimpleViewerContext onOpenUrl(Runnable openUrl) {
+        return set(Capability.OPEN_URL, openUrl);
+    }
+
     /** Save, and Save As (null: Save As runs {@code save} too, for an application that always asks where). */
     public SimpleViewerContext onSave(Runnable save, Runnable saveAs) {
         this.saveAs = saveAs;
@@ -131,6 +136,11 @@ public final class SimpleViewerContext implements ViewerContext {
     @Override
     public void openDocument() {
         run(Capability.OPEN);
+    }
+
+    @Override
+    public void openUrl() {
+        run(Capability.OPEN_URL);
     }
 
     @Override
